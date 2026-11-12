@@ -527,7 +527,7 @@ static void isr(void)
     }
 }
 
-extern "C" __attribute__((interrupt)) void USBHS_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void USBHS_IRQHandler(void)
 {
     isr();
 }

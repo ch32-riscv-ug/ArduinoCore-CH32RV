@@ -86,7 +86,7 @@ static inline uint32_t ch32rv_irq_save(void)
     uint32_t old;
 #if CH32RV_IRQ_IN_GINTENR
     const uint32_t mask = 0x88u;
-    /* One csrrc, not csrr + csrc: as two statements GCC may give old and mask
+    /* One csrrc, not csrr + csrc: as two statements the compiler may give old and mask
      * the same register (old is not early-clobber), and csrc then clears every
      * set bit. On a V4F gintenr is a full view of mstatus, so that dropped FS
      * and the next ISR that saved an FP register trapped (mcause 2 on fsw). */

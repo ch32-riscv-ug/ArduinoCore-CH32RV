@@ -3,123 +3,48 @@ name=CH32 RISC-V (ArduinoCore-CH32RV)
 version=0.6.0
 
 # Toolchain lookup: empty compiler.path means PATH lookup. For a pinned toolchain pass
-#   --build-property "compiler.path=/path/to/xpack-riscv-none-elf-gcc/bin/"
+#   --build-property "compiler.path=/path/to/ch32rv-toolchain/bin/"
 compiler.path=
-compiler.objcopy.cmd=riscv-none-elf-objcopy
-compiler.size.cmd=riscv-none-elf-size
+compiler.c.cmd=clang
+compiler.cpp.cmd=clang++
+# llvm-ar: an archive of LLVM bitcode needs LLVM's symbol table.
+compiler.ar.cmd=llvm-ar
+compiler.objcopy.cmd=llvm-objcopy
+compiler.size.cmd=llvm-size
 
 # ---------------------------------------------------------------- compiler
-# Two compilers, chosen by the Compiler menu (compiler) in boards.txt through
-# build.toolchain: gcc (the xPack GNU RISC-V Embedded GCC) or clang (the
-# RISC-V-only clang + lld from ch32-riscv-ug/ch32rv-clang). Everything that
-# differs is a compiler.gcc.* / compiler.clang.* pair below, picked by
-# compiler.<x>={compiler.{build.toolchain}.<x>}; the recipes use only the
-# picked names. docs/clang-evaluation.ja.md has the measurements.
+# clang + lld from ch32-riscv-ug/ch32rv-toolchain, with its C library (picolibc),
+# runtime (compiler-rt) and C++ library (libc++). clang picks the library
+# build from -march / -mabi by itself (lib/clang-runtimes/multilib.yaml next
+# to its bin/), so no path to them is named here.
 #
-# clang brings no C library and no runtime of its own: it compiles against
-# newlib's headers and links newlib-nano and libgcc from the GCC install, so
-# compiler.path must name GCC's bin/ either way (the packaged platform.txt
-# does; a development build passes it, see the top of this file). objcopy and
-# size are GCC's for both. GCC's driver picks the newlib multilib from
-# -march/-mabi; clang's does not know xPack's set (it takes the default, which
-# is rv32imac), so compiler.multilib.<march>.<mabi> names it - GCC's own
-# answer to -print-multi-directory, checked by tests/unit/test_clang_platform.py.
-build.toolchain=gcc
-compiler.clang.path=
-compiler.gcc.version=15.2.0
-compiler.gcc.root={compiler.path}..
-compiler.multilib.rv32ec_zicsr.ilp32e=rv32ec/ilp32e
-compiler.multilib.rv32ec_zmmul_zicsr.ilp32e=rv32ec/ilp32e
-compiler.multilib.rv32imc_zicsr.ilp32=rv32imc/ilp32
-compiler.multilib.rv32imac_zicsr.ilp32=.
-compiler.multilib.rv32imafc_zicsr.ilp32f=rv32imafc_zicsr_zaamo_zalrsc/ilp32f
-compiler.multilib.rv32imafc_zicsr_zba_zbb_zbs.ilp32f=rv32imafc_zicsr_zaamo_zalrsc/ilp32f
-compiler.multilib={compiler.multilib.{build.march}.{build.mabi}}
-
-compiler.gcc.bin.path={compiler.path}
-compiler.gcc.c.cmd=riscv-none-elf-gcc
-compiler.gcc.cpp.cmd=riscv-none-elf-g++
-compiler.gcc.ar.cmd=riscv-none-elf-gcc-ar
-compiler.clang.bin.path={compiler.clang.path}
-compiler.clang.c.cmd=clang
-compiler.clang.cpp.cmd=clang++
-# llvm-ar: an archive of LLVM bitcode needs LLVM's symbol table.
-compiler.clang.ar.cmd=llvm-ar
-compiler.bin.path={compiler.{build.toolchain}.bin.path}
-compiler.c.cmd={compiler.{build.toolchain}.c.cmd}
-compiler.cpp.cmd={compiler.{build.toolchain}.cpp.cmd}
-compiler.ar.cmd={compiler.{build.toolchain}.ar.cmd}
-
-# -Oz: clang's -Os keeps more speed than size and is often larger than GCC's
-# -Os; -Oz is 3-22% smaller than GCC on CH32V003 (with LTO and XW). GCC's -Oz
-# is its -Os on RISC-V.
-compiler.gcc.opt_flags=-Os
-compiler.clang.opt_flags=-Oz
-compiler.opt_flags={compiler.{build.toolchain}.opt_flags}
 # build.march_xw is "_xwchc" where every QingKe core of the series has WCH's
 # XW compressed instructions (ch32-device-data cores.csv `xw`; not V3A / V4A,
-# so not CH32V103), empty elsewhere. LLVM has them as Xwchc; xPack's GCC does
-# not, so only clang gets them.
+# so not CH32V103), empty elsewhere. The libraries are built with XW too,
+# except a plain rv32imac for CH32V103.
 build.march_xw=
-compiler.gcc.march={build.march}
-compiler.clang.march={build.march}{build.march_xw}
-compiler.march={compiler.{build.toolchain}.march}
-compiler.gcc.target_flags=
-compiler.clang.target_flags=--target=riscv32-unknown-elf
-compiler.target_flags={compiler.{build.toolchain}.target_flags}
-# The system headers, in the order GCC's driver searches them: libstdc++
-# (generic, then the multilib's bits/c++config.h) before newlib, as
-# libstdc++'s <cstdlib> and the rest #include_next newlib's. -nostdlibinc
-# keeps clang's own headers (stdint.h, stdarg.h, ...).
-compiler.gcc.c.sysinc=
-compiler.gcc.cpp.sysinc=
-compiler.clang.c.sysinc=-nostdlibinc "-isystem{compiler.gcc.root}/riscv-none-elf/include"
-compiler.clang.cpp.sysinc=-nostdlibinc "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}" "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}/riscv-none-elf/{compiler.multilib}" "-isystem{compiler.gcc.root}/riscv-none-elf/include/c++/{compiler.gcc.version}/backward" "-isystem{compiler.gcc.root}/riscv-none-elf/include"
-compiler.c.sysinc={compiler.{build.toolchain}.c.sysinc}
-compiler.cpp.sysinc={compiler.{build.toolchain}.cpp.sysinc}
+compiler.march={build.march}{build.march_xw}
+compiler.target_flags=--target=riscv32-unknown-elf
 # A string literal followed by a macro ("%"U16_F, lwIP's printf formats) is a
-# C++11 user-defined literal: g++ warns and expands the macro, clang++ stops.
-# arduino-cli's library detection runs .c files through the C++ command too,
-# so lwIP's C failed with clang. The flag makes clang do what GCC does.
-compiler.gcc.cpp.compat_flags=
-compiler.clang.cpp.compat_flags=-Wno-reserved-user-defined-literal
-compiler.cpp.compat_flags={compiler.{build.toolchain}.cpp.compat_flags}
-# The link. GCC: its driver adds the multilib's newlib-nano (nano.specs) and
-# libgcc; GNU ld warns about the one RWX segment (see the combine recipe).
-# clang: lld, nothing implicit (-nostdlib), the same libraries named.
-compiler.gcc.ld_flags=--specs=nano.specs -Wl,--no-warn-rwx-segments
-compiler.gcc.libs=-lc -lm
-compiler.clang.ld_flags=--target=riscv32-unknown-elf -fuse-ld=lld -nostdlib "-L{compiler.gcc.root}/riscv-none-elf/lib/{compiler.multilib}" "-L{compiler.gcc.root}/lib/gcc/riscv-none-elf/{compiler.gcc.version}/{compiler.multilib}"
-compiler.clang.libs=-lc_nano -lm -lgcc
-compiler.ld_flags={compiler.{build.toolchain}.ld_flags}
-compiler.libs={compiler.{build.toolchain}.libs}
-# The Optimize menu's LTO. GCC's objects are fat (see build.optimize_flags);
-# lld would link a fat object's machine code and skip its bitcode (its
-# --fat-lto-objects is off), so clang's are bitcode only. Its libc is not
-# bitcode, so the _sbrk trouble GCC had does not arise.
-compiler.gcc.lto_flags=-flto -ffat-lto-objects
-compiler.clang.lto_flags=-flto
-compiler.lto_flags={compiler.{build.toolchain}.lto_flags}
-# The Floating Point menu's Float entries: unsuffixed constants as float.
-compiler.gcc.fp32_flags=-fsingle-precision-constant
-compiler.clang.fp32_flags=-cl-single-precision-constant
-compiler.fp32_flags={compiler.{build.toolchain}.fp32_flags}
+# C++11 user-defined literal: clang++ stops there unless told to expand the
+# macro. arduino-cli's library detection runs .c files through the C++
+# command too, so lwIP's C needs it as well.
+compiler.cpp.compat_flags=-Wno-reserved-user-defined-literal
+# The link: lld, nothing implicit (-nostdlib), the libraries named in
+# compiler.libs. libc++abi after libc++, which refers to it.
+compiler.ld_flags=-fuse-ld=lld -nostdlib
+compiler.libs=-lc++ -lc++abi -lc -lclang_rt.builtins
 
 compiler.warning_flags=-Wall
-# Link-time optimisation: 9-24% less flash (core_contracts, usb_classes,
-# OepProbe, a TLS client), the same speed (CryptoBench on CH32X035: ECC and
-# SHA-256 within 2%, AES-GCM 3.5% slower; 2026-10-21). The objects are fat -
-# machine code beside the IR - because libc refers to _sbrk only after the
-# LTO pass has run: with IR alone the core's _sbrk is not seen, libgloss's
-# semihosting one is linked instead, and its ecall traps at the first malloc.
-# -msave-restore takes 4-5% more but costs ECC 7-9% in speed, so it is a
-# choice in the Optimize menu (opt) in boards.txt, as is building without LTO.
-# With LTO the code is generated again at the link, so the combine recipe
-# repeats the code-generation flags: -Os and the per-function sections that
-# --gc-sections needs (on OepProbe for CH32X035, 48 bytes; it depends on the
-# sketch).
-build.optimize_flags={compiler.lto_flags}
-compiler.common_flags={compiler.target_flags} -march={compiler.march} -mabi={build.mabi} {compiler.opt_flags} -g -ffunction-sections -fdata-sections {compiler.warning_flags} {build.optimize_flags}
+# The Optimize menu (opt) in boards.txt sets the level and link-time
+# optimisation: -Oz with LTO by default. With LTO the code is generated again
+# at the link, so the combine recipe repeats the code-generation flags: the
+# level and the per-function sections that --gc-sections needs. The objects
+# are bitcode only (lld links a fat object's machine code and skips its
+# bitcode); the libraries are machine code, which is what keeps the core's
+# sbrk() and _exit() in the link when libc asks for them after LTO.
+build.optimize_flags=-Oz -flto
+compiler.common_flags={compiler.target_flags} -march={compiler.march} -mabi={build.mabi} -g -ffunction-sections -fdata-sections {compiler.warning_flags} {build.optimize_flags}
 # api/deprecated-avr-comp is on the include path so that <avr/dtostrf.h> and
 # <avr/pgmspace.h> resolve the way AVR sketches spell them. ArduinoCore-API
 # ships those headers for exactly that reason, and samd/renesas add the same
@@ -147,9 +72,9 @@ build.ramsplit_defines=
 build.rstpin_defines=
 # The Watchdog menu's USER value and mask (ch32rv_option_user.c); empty for the factory entry and where the series has no such menu.
 build.iwdg_defines=
-compiler.c.flags={compiler.common_flags} {compiler.c.sysinc} -std=gnu11 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
-compiler.cpp.flags={compiler.common_flags} {compiler.cpp.sysinc} {compiler.cpp.compat_flags} -std=gnu++17 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
-compiler.S.flags={compiler.common_flags} {compiler.c.sysinc} -x assembler-with-cpp {build.startup_defines} {build.core_run_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
+compiler.c.flags={compiler.common_flags} -std=gnu11 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} "-I{build.core.path}/api/deprecated-avr-comp"
+compiler.cpp.flags={compiler.common_flags} {compiler.cpp.compat_flags} -std=gnu++17 {build.core_defines} {build.core_run_defines} {build.clock_defines} {build.clock_src_defines} {build.periph_defines} {build.vio18_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} {build.fp_flags} {build.parse_defines} {compiler.stdio_flags} {compiler.vector_defines} -fno-exceptions -fno-rtti -fno-threadsafe-statics "-I{build.core.path}/api/deprecated-avr-comp" "-I{build.core.path}/api/deprecated"
+compiler.S.flags={compiler.common_flags} -x assembler-with-cpp {build.startup_defines} {build.core_run_defines} {build.ramsplit_defines} {build.rstpin_defines} {build.iwdg_defines} -DCH32RV_VECTORS=vectors_{build.vector_variant}.inc
 # The three generated interrupt tables share one stem, so a board - or a
 # single pnum menu entry, for a part on a different die - selects all
 # three at once (CH32V203RBT6 is CH32V20x_D8 while the rest of CH32V203
@@ -169,13 +94,13 @@ compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO
 compiler.version_defines=-DCH32RV_VERSION_MAJOR=0 -DCH32RV_VERSION_MINOR=6 -DCH32RV_VERSION_PATCH=0
 
 build.extra_flags=
-# Chosen by the Floating Point menu (rtlib) in boards.txt. fp_flags reach every
+# Chosen by the Floating Point menu (rtlib) in boards.txt, reaching every
 # C/C++ compile: float or double arithmetic (CH32RV_FP_FLOAT with
-# -fsingle-precision-constant), printf's %f (CH32RV_PRINTF_FLOAT), newlib's
-# printf (CH32RV_PRINTF_NEWLIB); see cores/arduino/ch32rv_format.h. rtlib_flags
-# reach the link: newlib-nano's float printf / scanf.
+# -cl-single-precision-constant), printf's %f (CH32RV_PRINTF_FLOAT),
+# picolibc's printf / scanf with floating point (CH32RV_PRINTF_LIBC,
+# CH32RV_SCANF_LIBC); see cores/arduino/ch32rv_format.h and
+# cores/arduino/ch32rv_vf*_libc.c.
 build.fp_flags=
-build.rtlib_flags=
 # Chosen by the parseFloat menu: CH32RV_PARSE_FLOAT, or nothing to parse the
 # way the arithmetic does (cores/arduino/ch32rv_parse_float.h).
 build.parse_defines=
@@ -211,31 +136,21 @@ recipe.hooks.prebuild.2.pattern=/usr/bin/env bash -c "[ -f '{build.opt.path}' ] 
 recipe.hooks.prebuild.1.pattern.windows=cmd /c if exist "{build.source.path}\{build.opt.name}" COPY /y "{build.source.path}\{build.opt.name}" "{build.opt.path}"
 recipe.hooks.prebuild.2.pattern.windows=cmd /c if not exist "{build.opt.path}" type nul > "{build.opt.path}"
 
-recipe.c.o.pattern="{compiler.bin.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.c.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
-recipe.cpp.o.pattern="{compiler.bin.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
-recipe.S.o.pattern="{compiler.bin.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
-recipe.ar.pattern="{compiler.bin.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
-# newlib-nano is the default runtime; build.rtlib_flags selects float printf/scanf.
-# ADR-0004 proposes newlib-nano as the default runtime with %f as a menu opt-in,
-# but that ADR is still Proposed - it is not authority for this change. What is
-# measured: the full newlib formatter is ~40 KB, so a printf sketch on CH32X035
-# goes 48,492 -> 7,064 bytes and fits CH32V003's 16 KB at all. nano drops %f by
-# default; the printf menu in boards.txt adds it back with -u _printf_float.
-# --start-group around core.a and -lc: the core's syscall stubs must beat the
-# libgloss ones, which are *semihosting* - they issue `ecall`, and a CH32 with
-# no environment-call handler traps that straight to the reset vector. libgloss
-# comes after core.a on the driver's implicit link line, so left-to-right
-# resolution used to pick its _sbrk and _write: any sketch that allocated
-# (String, new, malloc) or called printf() rebooted in a loop and printed
-# nothing at all. The group makes the linker come back to core.a when libc asks
-# for those symbols, and costs nothing when the sketch needs neither
-# (Blink stays 932 bytes on CH32X035). The sketch's objects and the libraries'
-# archives (dot_a_linkage) are in the group too: the archives come in the order
-# the sketch includes them, and one library's archive may need another's that
-# came earlier (a sketch with NetworkClientSecure.h before Network.h).
-# --no-warn-rwx-segments: .init_array (writable) shares the single FLASH segment with
-# text; acceptable for MCU flash layout. Revisit with PHDRS in the real core.
-recipe.c.combine.pattern="{compiler.bin.path}{compiler.c.cmd}" -march={compiler.march} -mabi={build.mabi} {compiler.opt_flags} -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles {compiler.ld_flags} {build.rtlib_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections {build.ld_layout_flags} "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" {compiler.libs} -Wl,--end-group
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.c.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
+recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.S.flags} {compiler.S.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
+recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "{object_file}"
+# core.a comes before the libraries, and everything is in one group. The core
+# defines what picolibc leaves to the program (sbrk, write, _exit, stdout -
+# syscalls.c, ch32rv_sbrk.c, ch32rv_stdio_file.c) and its own printf,
+# strftime and others in place of picolibc's; a core member is linked only
+# when something asks for one of its symbols, so a sketch that never prints
+# links no formatter and no UART. The sketch's objects and the libraries'
+# archives (dot_a_linkage) are in the group too: the archives come in the
+# order the sketch includes them, and one library's archive may need
+# another's that came earlier (a sketch with NetworkClientSecure.h before
+# Network.h).
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" {compiler.target_flags} -march={compiler.march} -mabi={build.mabi} -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles {compiler.ld_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections {build.ld_layout_flags} "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" {compiler.libs} -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 
@@ -396,9 +311,11 @@ pluggable_monitor.pattern.ch32rv-bootloader="{runtime.tools.ch32rv.path}/ch32rv"
 #   arduino-cli debug --debug-property server.openocd.path=/path/to/openocd
 # docs/debugger.ja.md has the per-OS locations and the rest of the recipe.
 debug.executable={build.path}/{build.project_name}.elf
+# GDB comes with the toolchain (ch32rv-toolchain's bin/riscv32-unknown-elf-gdb).
+# arduino-cli's "gcc" toolchain type is the one that drives a GDB.
 debug.toolchain=gcc
-debug.toolchain.prefix=riscv-none-elf
-debug.toolchain.path={runtime.tools.xpack-riscv-none-elf-gcc.path}/bin/
+debug.toolchain.prefix=riscv32-unknown-elf
+debug.toolchain.path={runtime.tools.ch32rv-toolchain.path}/bin/
 debug.server=openocd
 debug.server.openocd.path=openocd
 debug.server.openocd.scripts_dir={runtime.platform.path}/debug

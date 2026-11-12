@@ -1,5 +1,5 @@
-/* Conversions newlib does not provide but the Arduino API declares.
- * itoa/utoa come from newlib; only the long forms are missing
+/* Conversions picolibc does not provide but the Arduino API declares.
+ * itoa/utoa come from picolibc; only the long forms are missing
  * (api/itoa.h declares all four). */
 #include "api/itoa.h"
 

@@ -2,8 +2,8 @@
 clock), on the host, across millis()'s 32-bit wrap at 49.7 days.
 
 syscalls.c is compiled with the host C compiler and every symbol in the object
-gets a prefix (objcopy --prefix-symbols), so its _gettimeofday, _exit and
-errno do not meet the host libc's. The driver supplies the prefixed millis()
+gets a prefix (objcopy --prefix-symbols), so its gettimeofday, write, _exit
+and errno do not meet the host libc's. The driver supplies the prefixed millis()
 and serial hook, steps the fake millis() across the wrap and prints what the
 clock says; the expected values are written out here.
 """
@@ -24,15 +24,16 @@ DRIVER = r"""
 #include <sys/time.h>
 
 static uint32_t fake_ms;
-int core_errno;
+static int fake_errno;
+int *core___errno_location(void) { return &fake_errno; }   /* the host's errno, prefixed */
 unsigned long core_millis(void) { return fake_ms; }
 size_t core_ch32rv_serial_write_bytes(const unsigned char *d, size_t n) { (void)d; return n; }
-int core__gettimeofday(struct timeval *tv, void *tz);
+int core_gettimeofday(struct timeval *tv, void *tz);
 int core_settimeofday(const struct timeval *tv, const void *tz);
 
 static long long now_ms(void) {
     struct timeval tv;
-    core__gettimeofday(&tv, NULL);
+    core_gettimeofday(&tv, NULL);
     return (long long)tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
@@ -66,8 +67,7 @@ def results(tmp_path_factory):
         pytest.skip("no host C compiler / objcopy")
     work = tmp_path_factory.mktemp("time")
     obj = work / "syscalls.o"
-    # newlib's headers bring CLOCKS_PER_SEC in by the way; the host's need time.h.
-    subprocess.run([cc, "-std=gnu11", "-c", "-O1", "-include", "time.h", str(SRC), "-o", str(obj)], check=True)
+    subprocess.run([cc, "-std=gnu11", "-c", "-O1", str(SRC), "-o", str(obj)], check=True)
     subprocess.run([objcopy, "--prefix-symbols=core_", str(obj)], check=True)
     (work / "driver.c").write_text(DRIVER)
     exe = work / "driver"

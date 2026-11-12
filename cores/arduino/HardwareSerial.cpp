@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_interrupt.h"
 
 using namespace arduino;
 
@@ -541,7 +542,7 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(void)
     }
 }
 
-extern "C" __attribute__((interrupt)) void ch32rv_usart_irq(void)
+extern "C" CH32RV_INTERRUPT void ch32rv_usart_irq(void)
 {
     if (USART_COUNT == 1) {          /* one vector, so no need to ask which */
         if (owner[0]) {

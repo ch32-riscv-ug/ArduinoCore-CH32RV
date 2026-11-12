@@ -4,9 +4,9 @@
  * printf, the heap or TZ parsing coming in with it. %s %z %Z read the time zone
  * as it was last set (tzset(), configTzTime(), localtime_r()) and do not call
  * tzset() themselves: TZ changed with setenv() alone is seen after the next
- * tzset(). Under every entry of the Floating Point menu, the newlib ones too:
- * the time zone is the core's (internal/ch32rv_tz.h), which newlib's strftime
- * would not see. */
+ * tzset(). Under every entry of the Floating Point menu, the picolibc ones
+ * too: the time zone is the core's (internal/ch32rv_tz.h), which picolibc's
+ * strftime would not see. */
 #include "internal/ch32rv_format.h"
 
 #include <stdbool.h>

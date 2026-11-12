@@ -1,40 +1,29 @@
-/* Minimal newlib syscall stubs.
+/* The system calls picolibc leaves to the program.
  *
- * printf()/puts() reach the serial monitor through _write; everything else is
- * a well-behaved failure rather than a link error, so a sketch that pulls in
- * an unexpected libc corner fails predictably instead of silently.
+ * printf()/puts() do not come here: the core prints through its own formatter
+ * (ch32rv_stdio_out.c), and stdio's FILEs are in ch32rv_stdio_file.c. What is
+ * here is answered without an operating system: write() to the monitor port,
+ * read() at end of file, and the file system calls (open(), unlink(), stat()
+ * and the rest, which fopen() and remove() reach) failing with ENOSYS rather
+ * than as a link error, so a sketch that pulls in an unexpected libc corner
+ * fails predictably at run time.
  *
- * These have to beat the libgloss versions, which are *semihosting* stubs: they
- * issue `ecall`, and a CH32 with no environment-call handler traps that to the
- * reset vector. libgloss is scanned after core.a, so plain left-to-right
- * resolution picked its _write and printf() rebooted the board. platform.txt
- * links core.a inside --start-group/--end-group, which makes the linker come
- * back to this object when libc asks for _write.
- *
- * _sbrk is deliberately *not* here - see ch32rv_sbrk.c for why.
- *
- * The same goes for every other libgloss stub a sketch can reach through libc:
- * time() and gettimeofday() (_gettimeofday), clock() (_times), fopen()
- * (_open), remove() (_unlink), stat() (_stat), link() (_link) each issued an
- * ecall. They are answered here.
+ * sbrk() is deliberately *not* here - see ch32rv_sbrk.c for why.
  */
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 unsigned long millis(void);
 
-#include "internal/ch32rv_libc.h"
 #include "internal/ch32rv_rtc.h"
 #include "internal/ch32rv_serial_write.h"
 
-#undef errno
-extern int errno;
-
-ssize_t _write(int fd, const void *buf, size_t count)
+ssize_t write(int fd, const void *buf, size_t count)
 {
     if (fd != STDOUT_FILENO && fd != STDERR_FILENO) {
         errno = EBADF;
@@ -43,32 +32,27 @@ ssize_t _write(int fd, const void *buf, size_t count)
     return (ssize_t)ch32rv_serial_write_bytes((const uint8_t *)buf, count);
 }
 
-ssize_t _read(int fd, void *buf, size_t count)
+ssize_t read(int fd, void *buf, size_t count)
 {
     (void)fd; (void)buf; (void)count;
     return 0;   /* EOF */
 }
 
-int _close(int fd)             { (void)fd; errno = EBADF; return -1; }
-/* st_blksize matters: newlib's __swhatbuf_r reads it to size the buffer it
- * mallocs for stdout, and leaving it unset means that size comes from whatever
- * was on the stack. */
-int _fstat(int fd, struct stat *st)
+int close(int fd)              { (void)fd; errno = EBADF; return -1; }
+int fstat(int fd, struct stat *st)
 {
     (void)fd;
     st->st_mode = S_IFCHR;
     st->st_blksize = 64;
     return 0;
 }
-int _isatty(int fd)            { (void)fd; return 1; }
-off_t _lseek(int fd, off_t off, int whence) { (void)fd; (void)off; (void)whence; return 0; }
-int _getpid(void)              { return 1; }
-int _kill(int pid, int sig)    { (void)pid; (void)sig; errno = EINVAL; return -1; }
+int isatty(int fd)             { (void)fd; return 1; }
+off_t lseek(int fd, off_t off, int whence) { (void)fd; (void)off; (void)whence; return 0; }
 
-int _open(const char *path, int flags, int mode) { (void)path; (void)flags; (void)mode; errno = ENOSYS; return -1; }
-int _unlink(const char *path)  { (void)path; errno = ENOSYS; return -1; }
-int _link(const char *a, const char *b) { (void)a; (void)b; errno = ENOSYS; return -1; }
-int _stat(const char *path, struct stat *st) { (void)path; (void)st; errno = ENOSYS; return -1; }
+int open(const char *path, int flags, ...) { (void)path; (void)flags; errno = ENOSYS; return -1; }
+int unlink(const char *path)   { (void)path; errno = ENOSYS; return -1; }
+int link(const char *a, const char *b) { (void)a; (void)b; errno = ENOSYS; return -1; }
+int stat(const char *path, struct stat *st) { (void)path; (void)st; errno = ENOSYS; return -1; }
 
 /* The wall clock. Where there is an RTC (ch32rv_rtc.h) it is the RTC, which
  * keeps counting through resets and sleep. Elsewhere: milliseconds since
@@ -92,12 +76,8 @@ static uint64_t uptime_ms(void)
     return uptime_high | now;
 }
 
-#if CH32RV_LIBC_PICOLIBC
-/* picolibc's time() and friends call gettimeofday() itself, newlib's reach _gettimeofday(). */
-int gettimeofday(struct timeval *tv, void *tz) __attribute__((alias("_gettimeofday")));
-#endif
-
-int _gettimeofday(struct timeval *tv, void *tz)
+/* time() reads it. */
+int gettimeofday(struct timeval *restrict tv, void *restrict tz)
 {
     (void)tz;
 #ifdef CH32RV_HAS_RTC
@@ -136,12 +116,8 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz)
     return 0;
 }
 
-/* clock(): CPU time is the time since reset here. newlib's time.h defines
- * CLOCKS_PER_SEC (1000 on RISC-V); a library whose time.h leaves it out gets the same. */
-#ifndef CLOCKS_PER_SEC
-#define CLOCKS_PER_SEC 1000
-#endif
-clock_t _times(struct tms *buf)
+/* clock() reads it: CPU time is the time since reset here. */
+clock_t times(struct tms *buf)
 {
     const clock_t ticks = (clock_t)(uptime_ms() * CLOCKS_PER_SEC / 1000u);
     if (buf) {

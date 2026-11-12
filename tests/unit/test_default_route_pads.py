@@ -7,6 +7,7 @@ has one of its pads as its own NRST / SWD / BOOT, gets its own default (emit_mis
 part and not one of its debug or strap pads (V006E8R6 / E8R7 and V005E6R6 have NRST on PC5, SPI1's series-wide SCK;
 the small X035 packages do not bond PA10 / PA11, I2C1's)."""
 import csv
+import json
 import os
 import pathlib
 import re
@@ -15,19 +16,36 @@ import subprocess
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-TABLES = REPO / ".tools" / "ch32-device-data" / "index" / "pinout.csv"
-ROLES = {"SERIAL": ("TX", "RX"), "I2C": ("SCL", "SDA"), "SPI": ("SCK", "MISO", "MOSI")}
+
+
+def toolchain_bin() -> pathlib.Path | None:
+    """The toolchain's bin/: CH32_TOOLCHAIN_BIN, else the pinned one under <repo>/.tools
+    (tools/index/fetch_tools.py --tool ch32rv-toolchain)."""
+    override = os.environ.get("CH32_TOOLCHAIN_BIN")
+    if override:
+        path = pathlib.Path(override)
+    else:
+        frag = json.loads((REPO / "tools/index/tools_ch32rv_toolchain.json").read_text(encoding="utf-8"))
+        path = REPO / ".tools" / frag["name"] / frag["version"] / "bin"
+    return path if any((path / n).exists() for n in ("clang", "clang.exe")) else None
 
 
 @pytest.fixture(scope="module")
-def gcc_bin() -> str:
-    override = os.environ.get("CH32_GCC_BIN")
-    if override:
-        return override
-    found = sorted(d for d in (REPO / ".tools" / "xpack-riscv-none-elf-gcc").glob("*") if (d / "bin").is_dir())
-    if not found:
-        pytest.skip("the RISC-V toolchain is not fetched: uv run tools/index/fetch_tools.py")
-    return str(found[-1] / "bin")
+def clang_bin() -> pathlib.Path:
+    path = toolchain_bin()
+    if path is None:
+        pytest.skip("the toolchain is not fetched: uv run tools/index/fetch_tools.py --tool ch32rv-toolchain")
+    return path
+
+
+@pytest.fixture(scope="module")
+def clang_cmd(clang_bin) -> list:
+    """clang for the target (rv32imac with XW, as CH32X035 / V20x are built), ready for the source's flags."""
+    return [str(clang_bin / "clang"), "--target=riscv32-unknown-elf", "-march=rv32imac_zicsr_xwchc", "-mabi=ilp32"]
+
+
+TABLES = REPO / ".tools" / "ch32-device-data" / "index" / "pinout.csv"
+ROLES = {"SERIAL": ("TX", "RX"), "I2C": ("SCL", "SDA"), "SPI": ("SCK", "MISO", "MOSI")}
 
 
 @pytest.fixture(scope="module")
@@ -60,12 +78,12 @@ def parts():
     return out
 
 
-def defaults(gcc_bin, series, variant, part, tmp_path):
+def defaults(clang_cmd, series, variant, part, tmp_path):
     """{'SPI1_SCK': 'PC5', ...}: the default pads the variant gives this part (the macros as they stand at the end,
-    gcc -dM)."""
+    clang -dM)."""
     source = tmp_path / "probe.c"
     source.write_text("#include \"pins_arduino.h\"\n")
-    result = subprocess.run([str(pathlib.Path(gcc_bin) / "riscv-none-elf-gcc"), "-E", "-dM",
+    result = subprocess.run([*clang_cmd, "-E", "-dM",
                              f"-DCH32RV_SERIES_{series}", f"-DCH32RV_PART_{part}",
                              "-I", str(REPO / "variants" / variant), "-I", str(REPO / "cores" / "arduino"),
                              str(source)], capture_output=True, text=True, check=True)
@@ -82,14 +100,14 @@ def defaults(gcc_bin, series, variant, part, tmp_path):
     return {name: pad for name, pad in found.items() if name.rsplit("_", 1)[0] not in absent}
 
 
-def test_every_default_pad_is_bonded_and_not_a_debug_or_strap_pad(gcc_bin, pinout, tmp_path):
+def test_every_default_pad_is_bonded_and_not_a_debug_or_strap_pad(clang_cmd, pinout, tmp_path):
     pads, forbidden = pinout
     wrong = []
     checked = 0
     for board, series, variant, part in parts():
         if part not in pads:
             continue                       # a board-fixed part device-data names differently
-        for name, value in defaults(gcc_bin, series, variant, part, tmp_path).items():
+        for name, value in defaults(clang_cmd, series, variant, part, tmp_path).items():
             pad = value
             if not re.fullmatch(r"P[A-K]\d+", pad):
                 continue                   # not a pad name

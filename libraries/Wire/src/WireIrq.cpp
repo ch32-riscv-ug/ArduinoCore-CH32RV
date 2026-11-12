@@ -7,7 +7,7 @@
 
 void ch32rv_wire_dispatch(uint32_t cause);   /* Wire.cpp */
 
-extern "C" __attribute__((interrupt)) void ch32rv_wire_irq(void)
+extern "C" CH32RV_INTERRUPT void ch32rv_wire_irq(void)
 {
     uint32_t cause;
     __asm__ volatile("csrr %0, mcause" : "=r"(cause));

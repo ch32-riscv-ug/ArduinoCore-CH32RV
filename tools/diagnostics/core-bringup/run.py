@@ -43,8 +43,8 @@ def main():
     work.mkdir(parents=True, exist_ok=False)
     metadata = json.loads((REPO / "tools/index/tools_ch32rv.json").read_text())
     tool = REPO / ".tools/ch32rv" / metadata["version"] / "ch32rv"
-    gcc_version = json.loads((REPO / "tools/index/tools_xpack_gcc.json").read_text())["version"]
-    gcc = REPO / ".tools/xpack-riscv-none-elf-gcc" / gcc_version / "bin"
+    toolchain_version = json.loads((REPO / "tools/index/tools_ch32rv_toolchain.json").read_text())["version"]
+    toolchain = REPO / ".tools/ch32rv-toolchain" / toolchain_version / "bin"
     env = dict(os.environ, ARDUINO_DIRECTORIES_USER=str(work / "user"),
                ARDUINO_DIRECTORIES_DATA=str(work / "data"),
                ARDUINO_DIRECTORIES_DOWNLOADS=str(work / "downloads"))
@@ -54,14 +54,14 @@ def main():
     board = args.chip[:8]
     fqbn = f"ch32-riscv-ug:ch32rv:{board}:pnum={args.chip}"
     command = ["arduino-cli", "compile", "--fqbn", fqbn,
-               "--build-property", f"compiler.path={gcc}{os.sep}",
+               "--build-property", f"compiler.path={toolchain}{os.sep}",
                "--build-path", str(work / "build"), str(pathlib.Path(__file__).parent / "core_minimal")]
     build = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
     (work / "compile.log").write_text(build.stdout + build.stderr)
     if build.returncode:
         raise RuntimeError("Compile failed; see compile.log")
     result = {"chip": args.chip, "fqbn": fqbn, "tool": metadata["version"],
-              "gcc": gcc_version,
+              "toolchain": toolchain_version,
               "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
               "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)),
               "compiled": True, "executed": False}

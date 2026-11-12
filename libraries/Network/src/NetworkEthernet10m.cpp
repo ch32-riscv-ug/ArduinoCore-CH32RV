@@ -139,7 +139,7 @@ static void negotiationInit()
     phyLinked = false;
 }
 
-extern "C" __attribute__((interrupt)) void ETH_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void ETH_IRQHandler(void)
 {
     const uint8_t f = EIR;
     if (f & EIR_RXIF) {

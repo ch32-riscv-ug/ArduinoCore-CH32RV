@@ -3,34 +3,26 @@
  * It has to be separate from syscalls.c because of how the linker pulls
  * archive members. Everything in cores/arduino ends up in core.a, and a member
  * is only extracted when something already needs a symbol it defines. Put
- * _sbrk next to _write and any sketch that allocates - `new`, String, malloc -
- * drags the whole HardwareSerial driver in behind _write, which costs ~1.7 KB
+ * sbrk next to write and any sketch that allocates - `new`, String, malloc -
+ * drags the whole HardwareSerial driver in behind write, which costs ~1.7 KB
  * on a part that may only have 16 KB of flash. Alone in here it costs its own
  * few dozen bytes.
  *
- * Getting *our* _sbrk linked at all matters more than its size: libgloss ships
- * a semihosting one that issues `ecall`, and on a CH32 with no environment-call
- * handler that traps to the reset vector. A sketch with a global String used to
- * reboot in a loop and print nothing whatsoever. platform.txt now links core.a
- * inside --start-group/--end-group so the archive is rescanned when libc asks
- * for _sbrk, which is what makes this definition win over libgloss's.
+ * picolibc has a fallback sbrk() of its own (weak, over __heap_start and
+ * __heap_end); this one replaces it, with the stack margin below.
  */
 #include <errno.h>
 #include <stddef.h>
 #include <sys/types.h>
 
 #include "internal/ch32rv_heap.h"
-#include "internal/ch32rv_libc.h"
-
-#undef errno
-extern int errno;
 
 extern char _end[];        /* linker script: first byte above .bss */
 extern char _heap_end[];   /* linker script: bottom of the reserved stack */
 
 size_t ch32rv_heap_stack_margin;   /* internal/ch32rv_heap.h */
 
-void *_sbrk(ptrdiff_t incr)
+void *sbrk(ptrdiff_t incr)
 {
     static char *brk;
     char *prev;
@@ -59,8 +51,3 @@ void *_sbrk(ptrdiff_t incr)
     brk = next;
     return prev;
 }
-
-#if CH32RV_LIBC_PICOLIBC
-/* picolibc's malloc() calls sbrk() itself, newlib's reaches _sbrk(). */
-void *sbrk(ptrdiff_t incr) __attribute__((alias("_sbrk")));
-#endif

@@ -177,7 +177,7 @@ def invoke(command, log, *, env=None, timeout=180):
 
 def tool_paths():
     versions = {}
-    for name, metadata in [("ch32rv", "tools_ch32rv.json"), ("gcc", "tools_xpack_gcc.json")]:
+    for name, metadata in [("ch32rv", "tools_ch32rv.json"), ("toolchain", "tools_ch32rv_toolchain.json")]:
         versions[name] = json.loads((REPO / "tools/index" / metadata).read_text())["version"]
     tool = REPO / ".tools/ch32rv" / versions["ch32rv"] / "ch32rv"
     # CH32_TEST_CH32RV: another ch32rv binary (one built ahead of its release) in place of the pinned one; the
@@ -186,29 +186,19 @@ def tool_paths():
     if other:
         tool = pathlib.Path(other).resolve()
         versions["ch32rv"] = str(tool)
-    gcc = REPO / ".tools/xpack-riscv-none-elf-gcc" / versions["gcc"] / "bin"
-    if not tool.is_file() or not (gcc / "riscv-none-elf-gcc").is_file():
-        raise ValueError("fetch pinned ch32rv and xpack-riscv-none-elf-gcc first (tools/index/fetch_tools.py)")
-    return tool, gcc, versions
+    # CH32_TOOLCHAIN_BIN: another toolchain's bin/ (one built ahead of its release) in place of the pinned one; the
+    # results record it as `toolchain: <path>`.
+    toolchain = REPO / ".tools/ch32rv-toolchain" / versions["toolchain"] / "bin"
+    other = os.environ.get("CH32_TOOLCHAIN_BIN", "").strip()
+    if other:
+        toolchain = pathlib.Path(other).resolve()
+        versions["toolchain"] = str(toolchain)
+    if not tool.is_file() or not any((toolchain / n).is_file() for n in ("clang", "clang.exe")):
+        raise ValueError("fetch pinned ch32rv and ch32rv-toolchain first (tools/index/fetch_tools.py)")
+    return tool, toolchain, versions
 
 
-def bench_compiler():
-    """The Compiler menu's entry the bench builds with: CH32_TEST_COMPILER (gcc or clang), else the board's default."""
-    value = os.environ.get("CH32_TEST_COMPILER", "").strip().lower()
-    if value not in ("", "gcc", "clang"):
-        raise ValueError(f"CH32_TEST_COMPILER={value!r}: gcc or clang")
-    return value
-
-
-def with_compiler(fqbn):
-    """The FQBN with compiler=<CH32_TEST_COMPILER> added to its options (a board menu outranks platform.local.txt)."""
-    value = bench_compiler()
-    if not value:
-        return fqbn
-    return fqbn + ("," if fqbn.count(":") >= 3 else ":") + f"compiler={value}"
-
-
-def isolated_environment(work, tool, gcc):
+def isolated_environment(work, tool, toolchain):
     env = dict(os.environ)
     for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
         env.pop(key, None)
@@ -238,23 +228,13 @@ def isolated_environment(work, tool, gcc):
                        "    args += ['--discovery-timeout', '10s']\n"
                        "os.execv(command, [command, *args])\n")
     wrapper.chmod(0o755)
-    env["PATH"] = str(bin_dir) + os.pathsep + str(gcc) + os.pathsep + env.get("PATH", "")
+    env["PATH"] = str(bin_dir) + os.pathsep + str(toolchain) + os.pathsep + env.get("PATH", "")
     platform = work / "user/hardware/ch32-riscv-ug/ch32rv"
     platform.mkdir(parents=True)
     for name in ("cores", "variants", "libraries", "platform.txt", "boards.txt", "programmers.txt"):
         (platform / name).symlink_to(REPO / name, target_is_directory=(REPO / name).is_dir())
-    # CH32_TEST_COMPILER=clang: the Compiler menu's Clang (the FQBN gets compiler=clang, see with_compiler()),
-    # from the pinned ch32rv-clang; GCC's install still gives its newlib-nano and libgcc.
-    clang_line = ""
-    if bench_compiler() == "clang":
-        version = json.loads((REPO / "tools/index/tools_ch32rv_clang.json").read_text())["version"]
-        clang = REPO / ".tools/ch32rv-clang" / version / "bin"
-        if not (clang / "clang").exists() and not (clang / "clang.exe").exists():
-            raise ValueError("CH32_TEST_COMPILER=clang: fetch ch32rv-clang first (tools/index/fetch_tools.py)")
-        clang_line = f"compiler.clang.path={clang}{os.sep}\n"
     (platform / "platform.local.txt").write_text(
-        clang_line +
-        f"compiler.path={gcc}{os.sep}\n"
+        f"compiler.path={toolchain}{os.sep}\n"
         f"runtime.tools.ch32rv.path={tool.parent}\n"
         f"tools.ch32rv.path={tool.parent}\n"
         "tools.ch32rv.cmd=ch32rv\n"
@@ -348,7 +328,7 @@ def stage_case(work, name, case, target):
         (directory / "build_opt.h").write_text(opts)
     build_id = uuid.uuid4().hex[:12]
     staged = {k: v for k, v in target.items() if k != "snapshot"}
-    settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case, compiler=bench_compiler() or "default")
+    settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case)
     # The lines of gpio, spi, softspi, wire, softwire and sd come from the probe's labels (bench_lines.py).
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
@@ -356,7 +336,7 @@ def stage_case(work, name, case, target):
         shutil.copyfile(sketch, directory / f"{case}.ino")
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
-            f"profiles:\n  {name}:\n    fqbn: {json.dumps(with_compiler(target['fqbn']))}\n"
+            f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
             f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"
@@ -484,10 +464,10 @@ def parse_options(argv=None):
 def main(argv=None):
     args, parser = parse_options(argv)
     chip = os.environ.get("CH32RV_CHIP")       # read before the isolated environment drops it (place.resolve)
-    tool, gcc, versions = tool_paths()
+    tool, toolchain, versions = tool_paths()
     work = args.out.resolve()
     work.mkdir(parents=True, exist_ok=False)
-    env = isolated_environment(work, tool, gcc)
+    env = isolated_environment(work, tool, toolchain)
     report = dict(execute=args.execute, tools=versions,
                   commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
                   dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO)), cases=[], probes={},

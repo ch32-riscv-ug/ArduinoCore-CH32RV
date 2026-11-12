@@ -1,14 +1,14 @@
 """Floating Point (rtlib) and parseFloat (parsefloat): two menus, every pair selectable.
 
 parseFloat's first entry defines nothing, so ch32rv_parse_float.h parses the way the arithmetic does (integers
-under Float, double under Double): the default pair, Float + printf %f with parseFloat in integers, and each newlib
+under Float, double under Double): the default pair, Float + printf %f with parseFloat in integers, and each picolibc
 entry keep the parsing they had as one menu of 17.
 """
 import pathlib
 import re
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-RTLIB = ["fltf", "flt", "dbl", "dblf", "nanofp", "nanofs", "dblfs", "fltfs", "nanofps"]
+RTLIB = ["fltf", "flt", "dbl", "dblf", "libcfp", "libcfs", "dblfs", "fltfs", "libcfps"]
 PARSE = {"auto": "", "int": "-DCH32RV_PARSE_FLOAT=2", "float": "-DCH32RV_PARSE_FLOAT=3",
          "double": "-DCH32RV_PARSE_FLOAT=1"}
 

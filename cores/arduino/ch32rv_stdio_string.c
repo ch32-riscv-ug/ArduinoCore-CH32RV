@@ -1,12 +1,12 @@
 /* snprintf, sprintf, vsnprintf and vsprintf on the core's formatter
- * (ch32rv_format.h), in place of newlib-nano's: the same conversions and %f
- * as Print::printf, by the Floating Point menu; no FILE, no heap, a few hundred
- * bytes of stack rather than 400-600. Defined here, they take the place of the
- * library's (core.a is searched before libc; see ch32rv_string.c). The newlib
- * entries of the menu keep newlib's. */
+ * (ch32rv_format.h), in place of picolibc's: the same conversions and %f
+ * as Print::printf, by the Floating Point menu; no FILE, no heap. Defined
+ * here, they take the place of the library's (core.a is searched before libc;
+ * see ch32rv_string.c), for picolibc's own callers too (asctime_r calls
+ * snprintf). The picolibc entries of the menu keep picolibc's. */
 #include "internal/ch32rv_format.h"
 
-#if !CH32RV_PRINTF_NEWLIB
+#if !CH32RV_PRINTF_LIBC
 
 #include <stdint.h>
 #include <stdio.h>
@@ -60,14 +60,5 @@ int sprintf(char *buf, const char *format, ...)
     va_end(ap);
     return n;
 }
-
-/* newlib's integer-only names share an object with the names above
- * (sniprintf with snprintf, ...); asctime and strsignal call siprintf
- * (strftime is the core's, ch32rv_strftime.c). Defined here too, that object
- * is not pulled in to collide with these. */
-int vsniprintf(char *, size_t, const char *, va_list) __attribute__((used, alias("vsnprintf")));
-int sniprintf(char *, size_t, const char *, ...) __attribute__((used, alias("snprintf")));
-int vsiprintf(char *, const char *, va_list) __attribute__((used, alias("vsprintf")));
-int siprintf(char *, const char *, ...) __attribute__((used, alias("sprintf")));
 
 #endif

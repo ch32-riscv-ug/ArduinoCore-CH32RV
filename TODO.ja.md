@@ -43,25 +43,32 @@
 - [ ] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
   優先して置くか（今はリンクの順）。
 
-## Clang への移行（2026-11-11 から）
+## Clang だけにする（2026-11-12 に方針を決めた）
 
-計画は docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
+GCC を外し、ch32rv-toolchain（clang と lld、picolibc、compiler-rt、libc++、GDB）だけにする。中間の状態（両方を選べる、
+裏で GCC を使う）は作らない。部品を ch32rv-toolchain で先に作り、揃ったらコアを一気に切り替える。計画の経緯は
+docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 
-- [ ] 既定を Clang にする（Compiler メニューの順）。XW は全部のコアで実機で動いた（2026-11-12）。V103 は ch32rv の
-  修正版（e958bbe、console-rtt は 15d9a89）で GCC と同じ結果。修正の入った ch32rv がリリースされたら同梱を上げる。
-- [ ] Clang の既定の最適化: `-Oz` は L103 の synckit で割り込みの処理が遅く、上限 50 µs を超えた（55 µs。`-Os` は 40 µs、
-  GCC は 43 µs）。`-Oz` のままにするか、`-Os` にするか、Optimize メニューで選べるようにするか。
-- [ ] 段 2（GCC を外す）: picolibc と compiler-rt を、multilib.yaml の 4 組（rv32ec / rv32imc / rv32imac / rv32imafc）
-  にまとめて ch32rv-clang に入れる。platform.txt の Clang の側を sysroot だけの形にする。
-- [ ] C++ のヘッダー: GCC の libstdc++ のヘッダーを配るか、例外と RTTI を外した libc++ に移るかを、全部の例のビルドと
-  大きさで比べる。
-- [ ] compiler-rt の浮動小数から int への変換は、範囲外で飽和しない（libgcc と RISC-V の命令は飽和する）。飽和させる版を
-  コアで持つか決める。
-- [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ（GCC はシフトに開く）。時間に厳しいところ（printf の数の変換など）
-  を洗い出す。
-- [ ] Windows の ch32rv-clang が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
-- [ ] gdb の出どころ（今は xPack の GCC に入っているもの）。GCC を外すときに決める。
-- [ ] V003 の Clang で、TZ のスケッチが GCC より 108 B 大きい理由（段 0 の後）。
+- [x] コアの書き換え（コンパイラの分岐、newlib の名前、Compiler メニュー、xPack の依存を削除。Optimize に `-Oz`
+  （既定）/ `-Os` / `-O2` / `-O3`、Floating Point の newlib の項目を picolibc の項目に）。手元の ch32rv-toolchain で確認。
+- [ ] ch32rv-toolchain の新しいリリース（v23.1.5-2: ライブラリ、gdb、割り込みのパッチ入り）を CI で作り、
+  `tools_ch32rv_toolchain.json` を `bump_tool.py ch32rv-toolchain 23.1.5-2` で上げる。それまで main の CI は通らない
+  （xPack の依存は消してある）。上がったら CI で例を全部ビルドする。
+- [x] リポジトリの名前を ch32rv-toolchain に変えた（2026-11-12）。コアの tool 名、index、環境変数（`CH32_TOOLCHAIN_BIN`）も合わせた。
+- [x] 割り込みは `WCH-Interrupt-fast`（clang のパッチ）にした。naked 関数で HPE に任せる案は、FPU のあるコアで浮動小数点の
+  レジスタを壊し、命令も多い。HPE の無い V103 は普通の `interrupt`（`CH32RV_INTERRUPT`、internal/ch32rv_interrupt.h）。
+  入れ子は、V4F の 4 段も HWSTKOVEN が 0 なので HPE の 3 段を超えない。
+- [x] 実機（手元で作ったパッチ入りの版、2026-11-12）: X035 は 22 件すべて、V003 / V006 / V307 / V203 / L103 / V103 / M030 も
+  今回の変更による失敗は無し。L103 の synckit は `-Oz` のまま 47 µs（前は 55 µs で上限 50 µs を超えていた）。
+  LinkE の uart の失敗は、console-sdi の SDI のデータが LinkE に残っていたため（ハブの口の電源を入れ直すと通る。ch32rv に報告）。
+  V003 の periph の NG は、GCC の版でも出る PC4 の刺激の飛び込み（環境）。
+- [ ] リリースの版で、もう一度全部の系列を流す。
+- [ ] コアが持つ libc の代わり（strftime、mktime、tzset、gmtime、memcpy などと ch32rv_softfloat.c、ch32rv_div.S）を、picolibc と
+  compiler-rt のものと測り直す。小さくならないものは外す（引き算は外した。割り算、変換、clz / ctz はコアの方が小さい）。
+- [ ] printf-float.ja.md と README の大きさの表は GCC と newlib の頃のもの。測り直す。
+- [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ。時間に厳しいところ（printf の数の変換など）を洗い出す。
+- [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
+- [ ] V103 は ch32rv の修正版（e958bbe、console-rtt は 15d9a89）で動く。修正の入った ch32rv がリリースされたら同梱を上げる。
 
 ## PIOC（CH32X035、CH32V205、CH32H41x）
 

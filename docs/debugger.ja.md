@@ -27,11 +27,11 @@ arduino-cli debug \
   -P wch-link ./MySketch
 ```
 
-repository を Arduino hardware directory として直接使う場合は、xPack GDB の directory も指定します。
+repository を Arduino hardware directory として直接使う場合は、GDB（ch32rv-toolchain の `bin/`）の directory も指定します。
 
 ```sh
 arduino-cli debug \
-  --debug-property toolchain.path=/path/to/xpack/bin/ \
+  --debug-property toolchain.path=/path/to/ch32rv-toolchain/bin/ \
   --debug-property server.openocd.path=/path/to/openocd \
   --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 \
   -P wch-link ./MySketch

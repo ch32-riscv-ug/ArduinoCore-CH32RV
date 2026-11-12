@@ -10,11 +10,13 @@
 | `flt` Float (32-bit) | float | 出さない（書式のまま） | なし |
 | `dbl` Double (64-bit) | double | 出さない | なし |
 | `dblf` Double (64-bit) + printf %f | double | コア | なし |
-| `nanofp` Double (64-bit) + newlib printf %f %e %g | double | newlib | なし |
-| `nanofs` Double (64-bit) + newlib scanf %f | double | 出さない | newlib |
-| `dblfs` Double (64-bit) + printf %f + newlib scanf %f | double | コア | newlib |
-| `fltfs` Float (32-bit) + printf %f + newlib scanf %f | float | コア | newlib |
-| `nanofps` Double (64-bit) + newlib printf/scanf %f %e %g | double | newlib | newlib |
+| `libcfp` Double (64-bit) + picolibc printf %f %e %g | double | picolibc | なし |
+| `libcfs` Double (64-bit) + picolibc scanf %f | double | 出さない | picolibc |
+| `dblfs` Double (64-bit) + printf %f + picolibc scanf %f | double | コア | picolibc |
+| `fltfs` Float (32-bit) + printf %f + picolibc scanf %f | float | コア | picolibc |
+| `libcfps` Double (64-bit) + picolibc printf/scanf %f %e %g | double | picolibc | picolibc |
+
+「なし」の項目でも scanf は使えます。整数だけの版（picolibc の既定）で、`%f` は読みません。
 
 ## parseFloat のメニュー
 
@@ -34,7 +36,7 @@
   - AVR の Arduino（double が 32 bit）と同じ精度で、有効数字は 7 桁ほどです。
   - double の正確な定数が要るときは、`(double)3.14159265358979L` と書きます。`L` を付けずにキャストしただけでは、float の精度のままです。
 - **計算が double の選択肢**：`Serial.print(float)`、`String(float)`、`dtostrf()` の出力は、以前のコアと同じです。
-- **newlib の選択肢**（`nanofp`、`nanofps`）：printf の系統は newlib の書式化に戻ります。`%e` と `%g` も出せますが、newlib-nano の浮動小数の書式化が入るので、約 21 KB 増えます。
+- **picolibc の選択肢**（`libcfp`、`libcfps`）：printf の系統は picolibc の書式化（double の版）に戻ります。`%e` と `%g` も出せます。picolibc の浮動小数の書式化が入るので、約 6 KB 増えます（newlib の頃は約 21 KB）。
 - **printf の `%f` を有効にしていない選択肢**：`%f` は書式の文字列（`%.2f` など）のまま出ます。浮動小数の処理は何もつながりません。
 
 ## 既定と選び方
@@ -83,9 +85,13 @@ V003 で、機能を足していったときの実測です。
 2. `flt`（soft-float だけ）
 3. `dbl`（小数を使うと soft-double）
 4. `dblf`（printf を使うと soft-double）
-5. newlib の `nanofp`、`nanofs`、`dblfs`、`fltfs`、`nanofps`（+21〜31 KB）
+5. picolibc の `libcfp`、`libcfs`、`dblfs`、`fltfs`、`libcfps`（+5〜9 KB）
 
-### 大きさの実測（スケッチ全体、2026-10-28。V003・X035 の float の列は 2026-10-29）
+picolibc の項目の大きさ（2026-11-12）は、`sscanf("%f")` と `snprintf("%f %e %g")` を 1 回ずつ使うスケッチで、
+`dbl` より増える分です。X035 で `libcfp` +5.8 KB、`libcfs` +5.0 KB、`dblfs` +9.3 KB、`fltfs` +5.9 KB、`libcfps` +9.3 KB。
+V003 と V307 もこれと 1 KB 以内の差で、V003（16 KB）では `dblfs` が 16,328 B、`libcfps` が 16 B はみ出しました。
+
+### 大きさの実測（スケッチ全体、2026-10-28。V003・X035 の float の列は 2026-10-29。GCC と newlib の頃の測定）
 
 | スケッチ | 系列 | 以前（newlib） | `dbl` | `dblf` | `flt` | `fltf` |
 |---|---|---|---|---|---|---|
@@ -137,7 +143,7 @@ V003 で、機能を足していったときの実測です。
 
 ## printf が扱う書式
 
-コアの書式化（newlib の選択肢以外）が扱うものです。
+コアの書式化（picolibc の選択肢以外）が扱うものです。
 
 - **変換**：`d i u o x X c s p %`、`%f %F`（メニューで有効にしたとき）
 - **フラグ**：`-` `0` `+` 空白 `#`
@@ -154,24 +160,24 @@ V003 で、機能を足していったときの実測です。
 - **`%f` の丸め**：`Serial.print(double)` と同じく、最後の桁の 0.5 を足してから切り捨てます。ちょうど半分の値（`123456.78125` を 4 桁）では、C は偶数に丸めて `.7812`、このコアは `.7813` を出します。
 - **大きすぎる値**：絶対値が 4294967040 を超えると `ovf` を出します（`Serial.print` と同じ）。
 - **`nan` と `inf`**：`%f` では、`nan`、`inf`、`-inf` を出します。`Serial.print` では、今までどおり符号なしの `nan`、`inf` です。
-- **newlib の中から呼ばれる printf**：`strftime()`、`asctime()`、`strsignal()` は、newlib の `sniprintf` / `siprintf` を呼びます。コアはこの名前（と `iprintf`、`viprintf`、`vsniprintf`、`vsiprintf`）も定義しているので、これらもコアの書式化で動きます。
-  - コアの名前と newlib の名前がぶつかって、リンクに失敗することはありません。
+- **picolibc の中から呼ばれる printf**：picolibc の関数が `snprintf` などを呼ぶと、コアの定義が先に見つかるので、コアの書式化で動きます。
+  - コアの名前と picolibc の名前がぶつかって、リンクに失敗することはありません。
   - `strftime()` はコアにあります（次の節）。
 
 ### スタックと出力のしかた
 
 - **スタック**：printf 1 回で、以前は 500〜700 B 使っていました。スタックの確保（512 B）をはみ出して、ヒープを壊すことがありました。今は 240〜340 B です。
 - **出力のしかた**：行を一時領域に組み立てずに、出力先へ少しずつ書きます。ヒープも使いません。
-- **`printf()`、`puts()`、`putchar()`**：newlib の FILE を通さず、すぐに標準出力の先（`Serial` など）へ書きます。
+- **`printf()`、`puts()`、`putchar()`**：picolibc の FILE を通さず、すぐに標準出力の先（`Serial` など）へ書きます。
   - この 3 つを混ぜても、順番どおりに出ます。
-  - `fputs()`、`fwrite()`、`fprintf()` で `stdout` に書くものは newlib のまま（行ごとのバッファ）です。同じ行で混ぜると、順番が入れ替わることがあります。
-- **newlib の選択肢では**、printf の系統は newlib のものに戻ります。
+  - `fputs()`、`fwrite()`、`fprintf()` で `stdout` に書くものは picolibc の FILE を通りますが、バッファを持たず 1 文字ずつすぐに書くので、混ぜても順番は入れ替わりません（`cores/arduino/ch32rv_stdio_file.c`）。
+- **picolibc の選択肢では**、printf の系統は picolibc のものに戻ります。
 
 ## 時刻の関数
 
-`strftime()`、`gmtime_r()`、`gmtime()`、`localtime_r()`、`localtime()`、`tzset()` は、コアのものを使います（`cores/arduino/ch32rv_strftime.c`、`ch32rv_gmtime.c`、`ch32rv_localtime.c`、`ch32rv_tzset.c`）。出す文字と結果は newlib 4.5 と同じです。`mktime()`、`time()`、`ctime()` などは newlib のままです。
+`strftime()`、`gmtime_r()`、`gmtime()`、`localtime_r()`、`localtime()`、`tzset()` は、コアのものを使います（`cores/arduino/ch32rv_strftime.c`、`ch32rv_gmtime.c`、`ch32rv_localtime.c`、`ch32rv_tzset.c`）。`mktime()` もコアのものです（`ch32rv_mktime.c`）。出す文字と結果は newlib 4.5 と同じです。`time()`、`ctime()` などは picolibc のものです。
 
-newlib のものでは、次のものが一緒に入っていました。
+C ライブラリが newlib だった頃は、そのままでは次のものが一緒に入っていました（picolibc と比べた大きさは、まだ測っていません）。
 
 - `strftime()`：newlib の printf と、TZ を読むための sscanf と malloc
 - `gmtime_r()`：64 bit の割り算（RV32 で 1.9 KB）
@@ -179,7 +185,7 @@ newlib のものでは、次のものが一緒に入っていました。
 
 コアのものは、これらを使いません。
 
-| スケッチ（Float + printf %f） | 系列 | newlib | コア |
+| スケッチ（Float + printf %f、GCC の頃） | 系列 | newlib | コア |
 |---|---|---|---|
 | `gmtime_r()` の結果を `Serial.print` | V003 | 5640 | 2960 |
 | | X035 | 5384 | 3208 |

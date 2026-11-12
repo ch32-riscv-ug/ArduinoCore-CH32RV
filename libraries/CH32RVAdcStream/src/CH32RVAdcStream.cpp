@@ -346,7 +346,7 @@ void CH32RVAdcStream::isr()
     }
 }
 
-extern "C" __attribute__((interrupt)) void CH_HANDLER(void)
+extern "C" CH32RV_INTERRUPT void CH_HANDLER(void)
 {
     if (active) {
         active->isr();

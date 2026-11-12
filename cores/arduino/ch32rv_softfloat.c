@@ -1,53 +1,44 @@
 /* Calls the compiler makes itself (soft-float and bit counting), smaller
- * than libgcc's.
- *
- * Subtraction: libgcc's (__subsf3, __subdf3) is a second copy of its addition,
- * 1.2 KB in float and 2.2 KB in double on RV32: here it is the addition with
- * the sign of b turned over, which IEEE 754 makes the same result (checked bit for bit against
- * libgcc's on V003 and X035, NaN, infinity, subnormals and cancellation among
- * 400,000 pairs). A sketch that both adds and subtracts is 1.2 KB (float) or
- * 2.2 KB (double) smaller; one that only subtracts takes libgcc's addition in
- * place of its subtraction: 100 B smaller in float, 50-120 B larger in double.
+ * than the runtime library's (compiler-rt; sizes on rv32ec at -Oz, against
+ * this file's): __truncdfsf2 332 B (190), __extendsfdf2 210 B (98),
+ * __clzsi2 104 B (78), __ctzsi2 82 B (72). They were first written against
+ * libgcc, whose tables and second copies made the difference larger.
  *
  * float to double (__extendsfdf2, for Serial.print(float) and any float
  * passed as a double): the bits moved over; a NaN keeps its sign and payload
- * and is made quiet, as libgcc's does (the same as every float on the host,
- * all 2^32 of them).
+ * and is made quiet (the same as every float on the host, all 2^32 of them).
  *
- * Leading zeros (__clzsi2), for libgcc's own soft-float: without libgcc's
- * 256-byte table, the same counts (all 2^32 inputs, and 32 for 0).
+ * Leading zeros (__clzsi2), for the runtime's own soft-float: the same counts
+ * (all 2^32 inputs, and 32 for 0).
  *
- * Trailing zeros (__ctzsi2, for __builtin_ctz: the EXTI dispatch): libgcc's
- * looks the lowest bit up in the same 256-byte table, 364 B in all; this one
- * is a few compares. Not built where Zbb makes it one instruction.
+ * Trailing zeros (__ctzsi2, for __builtin_ctz: the EXTI dispatch): a few
+ * compares. Not built where Zbb makes it one instruction.
  *
  * double to float (__truncdfsf2, for printf's %f under Float, where the
  * argument comes as a double, and any double stored in a float): rounded to
  * nearest, ties to even, subnormals and overflow to infinity as IEEE 754 has
- * them, so every non-NaN result is libgcc's bit for bit; a NaN of any sign and
- * payload becomes the canonical 0x7fc00000, as libgcc's does on RISC-V (its
- * code run in an emulator against this one, 2026-11-12). libgcc's is 344 B without an
- * FPU, and 1,056 B with a single-precision one (V30x, X315, H41x), where it
- * also reads the rounding mode from frm and sets fflags: this one always
- * rounds to nearest and sets no flags (nothing in the core or Arduino changes
- * frm).
+ * them, so every non-NaN result is any IEEE 754 implementation's bit for bit;
+ * a NaN of any sign and payload becomes the canonical 0x7fc00000, as an FPU's
+ * fcvt.s.d does on RISC-V (and libgcc's did: its code run in an emulator
+ * against this one, 2026-11-12). It always rounds to nearest and sets no
+ * flags (nothing in the core or Arduino changes frm).
  *
- * GCC emits these calls when LTO is done; core.a is built with fat objects,
- * so the linker takes them from here before it reaches libgcc. lld (clang)
- * extracts an archive member of LTO IR that defines a runtime library call
- * before LTO (handleLibcall in lld/ELF/Driver.cpp), with the same result. Each one is
- * `used`: once a non-LTO object (libc's strtod, with __subdf3) brings this
- * object in, its definitions are LTO's, and one that nothing called before
- * LTO would be dropped and leave the later call undefined. Float only
- * without an FPU, double unless the FPU does double (V30x and others do
- * single only). */
+ * The code generator emits these calls after LTO. lld extracts an archive
+ * member of LTO bitcode that defines a runtime library call before LTO
+ * (handleLibcall in lld/ELF/Driver.cpp), so the linker takes them from here
+ * before it reaches compiler-rt. Each one is `used`: once a non-LTO object
+ * (picolibc's strtod) brings this object in, its definitions are LTO's, and
+ * one that nothing called before LTO would be dropped and leave the later
+ * call undefined. Float only without an FPU, double unless the FPU does
+ * double (V30x and others do single only). Subtraction is the runtime's: in
+ * compiler-rt it is already the addition with b's sign turned over. */
 #include <stdint.h>
 #include <string.h>
 
 #if !defined(__riscv_flen) || __riscv_flen < 64
-/* libgcc's soft-float counts leading zeros with __clzsi2 and its 256-byte
- * table; this one, in the object that subtraction and float-to-double bring
- * in, is defined before the linker reaches libgcc, so the table stays out. */
+/* The runtime's soft-float counts leading zeros with __clzsi2; this one, in
+ * the object that float-to-double brings in, is defined before the linker
+ * reaches compiler-rt. */
 __attribute__((used)) int __clzsi2(unsigned x)
 {
     int n = 0;
@@ -67,7 +58,7 @@ __attribute__((used)) int __clzsi2(unsigned x)
         n += 2;
         x <<= 2;
     }
-    return n + !(x >> 31) + !x; /* 32 for 0, as libgcc's */
+    return n + !(x >> 31) + !x; /* 32 for 0 */
 }
 #endif
 
@@ -96,21 +87,7 @@ __attribute__((used)) int __ctzsi2(unsigned x)
 }
 #endif
 
-#if !defined(__riscv_flen)
-float __addsf3(float a, float b);
-
-__attribute__((used)) float __subsf3(float a, float b)
-{
-    uint32_t u;
-    memcpy(&u, &b, sizeof u);
-    u ^= 0x80000000u;
-    memcpy(&b, &u, sizeof u);
-    return __addsf3(a, b);
-}
-#endif
-
 #if !defined(__riscv_flen) || __riscv_flen < 64
-double __adddf3(double a, double b);
 
 __attribute__((used)) double __extendsfdf2(float a)
 {
@@ -119,7 +96,7 @@ __attribute__((used)) double __extendsfdf2(float a)
     uint32_t e = u >> 23 & 0xffu, m = u & 0x7fffffu, w[2];
     w[1] = u & 0x80000000u;
     w[0] = 0;
-    if (e == 0xffu) { /* infinity, or NaN made quiet: sign and payload kept, as libgcc does */
+    if (e == 0xffu) { /* infinity, or NaN made quiet: sign and payload kept */
         w[1] |= 0x7ff00000u | (m ? 0x80000u : 0u) | m >> 3;
         w[0] = m << 29;
     } else if (e || m) {
@@ -148,7 +125,7 @@ __attribute__((used)) float __truncdfsf2(double a)
     uint32_t m = (w[1] & 0xfffffu) << 3 | w[0] >> 29; /* the 23 bits a float keeps */
     uint32_t rest = w[0] & 0x1fffffffu;              /* the 29 below them */
     uint32_t u;
-    if (de == 0x7ff) { /* infinity, or NaN: the canonical one, as libgcc's (RISC-V's) */
+    if (de == 0x7ff) { /* infinity, or NaN: the canonical one, as RISC-V's fcvt.s.d */
         u = (m | rest) ? 0x7fc00000u : s | 0x7f800000u;
     } else if (de == 0) { /* zero or a double subnormal: far below a float's */
         u = s;
@@ -180,14 +157,5 @@ __attribute__((used)) float __truncdfsf2(double a)
     float f;
     memcpy(&f, &u, sizeof f);
     return f;
-}
-
-__attribute__((used)) double __subdf3(double a, double b)
-{
-    uint32_t w[2];
-    memcpy(w, &b, sizeof w);
-    w[1] ^= 0x80000000u; /* little-endian: the sign is in the high word */
-    memcpy(&b, w, sizeof w);
-    return __adddf3(a, b);
 }
 #endif

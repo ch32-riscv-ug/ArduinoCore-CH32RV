@@ -4,7 +4,7 @@
  * so each Print-derived class in this core that a sketch prints to (Serial1..,
  * SerialDMSeq, SerialSDI, SerialRTT, SerialDMDATA) adds the member with
  * CH32RV_PRINTF_MEMBER. The formatting is the core's own (ch32rv_format.h),
- * or newlib's when the Floating Point menu asks for it; %f follows that menu. */
+ * or picolibc's when the Floating Point menu asks for it; %f follows that menu. */
 #pragma once
 
 #include "api/Print.h"

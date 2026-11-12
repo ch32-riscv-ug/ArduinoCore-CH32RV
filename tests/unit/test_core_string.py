@@ -23,6 +23,8 @@ def lib(tmp_path_factory):
         pytest.skip("no host C compiler")
     out = tmp_path_factory.mktemp("ch32rv_string") / "ch32rv_string.so"
     subprocess.run([cc, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-fno-builtin", "-shared", "-fPIC",
+                    # no_builtin is clang's (the core's compiler); the host's GCC need not know it.
+                    "-Wno-attributes",
                     "-Dmemcpy=t_memcpy", "-Dmemmove=t_memmove", "-Dmemset=t_memset", *map(str, SRCS), "-o", str(out)],
                    check=True)
     lib = ctypes.CDLL(str(out))

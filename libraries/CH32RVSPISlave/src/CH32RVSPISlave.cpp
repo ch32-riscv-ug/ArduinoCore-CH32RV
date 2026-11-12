@@ -313,7 +313,7 @@ uint8_t CH32RVSPISlave::available() const
 }
 
 #define CH32RV_SPI_SLAVE_HANDLER(n)                                            \
-    extern "C" __attribute__((interrupt)) void SPI##n##_IRQHandler(void)       \
+    extern "C" CH32RV_INTERRUPT void SPI##n##_IRQHandler(void)       \
     {                                                                          \
         if (by_number[n]) {                                                    \
             by_number[n]->isr();                                               \

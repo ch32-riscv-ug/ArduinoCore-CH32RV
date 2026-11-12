@@ -11,6 +11,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_interrupt.h"
 
 #ifndef CH32RV_EXTI_LINES
 #define CH32RV_EXTI_LINES 16   /* generated exti_<variant>.h overrides (24 on X033/X035) */
@@ -145,7 +146,7 @@ static void ch32rv_exti_dispatch(uint32_t lines)
  * vector table, so a family that groups the lines differently needs no change
  * here. */
 #define CH32RV_EXTI_DEFINE_ISR(handler, group_mask, irqn)      \
-    __attribute__((interrupt)) void handler(void)            \
+    CH32RV_INTERRUPT void handler(void)            \
     {                                                        \
         ch32rv_exti_dispatch(group_mask);                      \
     }

@@ -9,7 +9,7 @@ set -e
 ELF=$1; FN=$2
 C=${CH32RV:-ch32rv}
 P="--probe ${PROBE:-serial:49808F06CE30} --non-interactive --chip CH32H417"
-NM=${NM:-riscv-none-elf-nm}
+NM=${NM:-llvm-nm}
 addr=$($NM -C "$ELF" | awk -v f="$FN" '{s=$3; for (i=4;i<=NF;i++) s=s" "$i} s==f {print "0x"$1; exit}')
 entry=$($NM "$ELF" | awk '$3=="ch32rv_loadcode_ram"{print "0x"$1}')
 sp=$($NM "$ELF" | awk '$3=="_eusrstack"{print "0x"$1}')

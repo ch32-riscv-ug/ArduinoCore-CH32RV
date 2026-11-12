@@ -21,7 +21,7 @@ arduino-cli core install ch32-riscv-ug:ch32rv \
   --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
-toolchain と書き込みツール `ch32rv` も一緒にインストールされます。書き込み時は IDE の port で
+toolchain（ch32-riscv-ug/ch32rv-toolchain：clang と lld、picolibc、compiler-rt、libc++、GDB）と書き込みツール `ch32rv` も一緒にインストールされます。書き込み時は IDE の port で
 WCH-Link、OEP probe、または対応ボードのブートローダを選び、「書き込み」を実行します。
 
 系列ごとのビルド、書き込みの実装範囲は
@@ -46,9 +46,8 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Part Number (`pnum`) | `ANY` | 型番。`ANY` は系列内の最小 flash/RAM を宣言するため、同じ系列のどの型番にも載せられる |
 | CPU Clock (`clock`) | 系列ごと | システムクロック。項目名に周波数と、その周波数で使えるもの（USB、Ethernet）を書いてある。既定は V20x / V30x が 96 MHz、V103 が 72 MHz、X035 が 48 MHz、V00x が 24 MHz、L103 / M103 が 8 MHz、M030 が 72 MHz、V205 が 160 MHz（M030 と V205 は実機で確かめて EVT の既定に上げた。L103 / M103 の PLL の項目は「not checked」で、L103 は 72 / 96 MHz で動いている間、OEP probe が接続できない（WCH-LinkE はできる）。試すときは [起動待ち](docs/upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付ける）。V208 / V203RB の Ethernet は `60MHz (Ethernet, no USB)` を選ぶ。V407 / V467 は 200 MHz（120 / 60 / 20 MHz も選べる。V407WEU6 で実機確認）。X315 は 20 MHz で、240 MHz も選べる（HSI から USBHS PLL。X315MCU6 で実機確認）。H41x にはまだ無い。いまのクロックは `getCpuFrequencyMhz()` / `getApbFrequency()`（arduino-esp32 と同じ）で取れる。実行中に変える API は無い |
 | Clock Source (`clocksrc`) | `hsi`（V208 は `hse`） | `hse` にすると、CPU Clock の同じ周波数を外付けの水晶（HSE）から作る。水晶の周波数は EVT の前提のもの（V00x 24 MHz、V103 / V20x / V205 / V30x / L103 8 MHz）で、ベンチの基板はどれもそれだった。V208 は 32 MHz で、10BASE-T が水晶の精度（±100 ppm）を求めるので `hse` を既定にした。HSI でもベンチではリンクしたが規格の外（8 MHz の項目は PLL を使わず HSI のまま）。起動時に水晶が立たなければ（1〜2.5 ms で立つところを約 10 ms 待つ）、止まらずに HSI で同じ周波数を作る。どちらで動いているかは `CH32RV.clockSource()` で分かる。USB HS と Ethernet の HSE の周波数の既定も、このメニューの値になる。M030・X315・V407・H41x にはまだ無い（[A の機能の全体設計](docs/peripheral-a-design.ja.md) 5.5） |
-| Optimize (`opt`) | `oslto` | `-Os` に LTO。flash が 9〜24% 減り、速さは同じ（X035 で実測）。`osltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`osstd` は LTO なし |
-| Compiler (`compiler`) | `gcc` | `clang` は RISC-V だけの clang と lld（ch32-riscv-ug/ch32rv-clang）で、`-Oz` にし、XW のあるコアでは WCH の XW 命令も使う。V003 で GCC より 3〜22% 小さい（docs/clang-evaluation.ja.md）。libc は GCC のものを使う。clang のパッケージが出たら既定にする |
-| Floating Point (`rtlib`) | `fltf` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、newlib の printf / scanf の浮動小数 |
+| Optimize (`opt`) | `ozlto` | `-Oz` に LTO。いちばん小さい（LTO で flash が 9〜24% 減り、速さは同じ。X035 で実測）。`oslto`（`-Os`）は約 8% 大きく、そのぶん速い（L103 の 8 MHz で、割り込みを含む区間が 55 µs から 40 µs）。`o2lto`（`-O2`）と `o3lto`（`-O3`）は速さを優先する。`ozltosr` は `-msave-restore` も足してさらに 4〜5% 減るが、関数呼び出しの多い処理（楕円曲線暗号など）が 7〜9% 遅くなる。`ozstd` は LTO なし |
+| Floating Point (`rtlib`) | `fltf` | 浮動小数を double と float のどちらで計算するか、printf の `%f`、picolibc の printf / scanf の浮動小数 |
 | parseFloat (`parsefloat`) | `auto` | `Serial.parseFloat()` の計算。`auto` は Floating Point に合わせる（Float なら整数、Double なら double） |
 | USART1〜10、I2C1〜2、SPI1〜3（`usartN`、`i2cN`、`spiN`） | `auto` | その周辺の端子の決め方。AUTO は `begin()` で決める（既定の端子か、`setPins()` で選んだもの）。FIX は端子をビルドで決める（既定でない端子を使うとき、`setPins()` より Serial で 472〜1028 B、Wire で 28〜100 B 小さい）。Disable はその周辺をリンクしない（X035 で Serial 以外の USART を外すと 456 B 減る）。`Serial`、`Serial1`… の名前は、有効な周辺を番号順に並べたものなので、Disable にすると後ろの名前が詰まる。I2C と SPI の Software は、その名前（`Wire`、`SPI`…）を、その周辺の既定の端子の SoftWire / SoftSPI にする（周辺の回路はリンクしない。V003 の Wire の例で 2996 B、ハードの I2C は 4008 B） |
 | Flash / RAM Split (`ramsplit`) | `256k_64k` / `512k_200k`（工場出荷） | SRAM を、待ちなしの flash の写しと RAM に分ける割合。V303 / V305 / V307 / V317（320 KB、5 通り）と、V407 / V467 の RET6・VET6・WEU6（512 KB + 200 KB か 576 KB + 136 KB）（[support-status.ja.md](docs/support-status.ja.md)）。工場出荷でない値は、起動時にコアがオプションバイトを書き換える |
@@ -61,7 +60,7 @@ printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Ser
 既定（`fltf`）は AVR と同じく float で計算し、printf の `%f` も出します。double で計算するより、FPU のない系列で数 KB、V30x・X3x5・H41x で十数 KB 小さくなります。
 15 桁の精度が要るとき（GPS の緯度経度など）は `dbl` / `dblf` を選びます。小数を使わずに printf を使うときは、`%f` なしの `flt` で約 0.9 KB（FPU のある系列で 1.5 KB）小さくなります。FPU のない系列では、小数の表示に soft-float を使いません（float の計算を値のビットに対して行います）。
 小数も printf も使わなければ、どの選択肢でも大きさは同じです。
-`strftime()`、`gmtime_r()`、`localtime_r()`、`tzset()` もコアのもので、newlib のものより 2〜10 KB 小さくなります（出す文字は同じです）。
+`strftime()`、`gmtime_r()`、`localtime_r()`、`mktime()`、`tzset()` もコアのもので、出す文字は newlib 4.5 と同じです。
 `Serial.parseFloat()` の計算は、parseFloat のメニューで、double（`double`：いちばん近い float）、整数（`int`：11 桁までいちばん近い float、double の計算なし）、float（`float`：いちばん小さいが、最後の 1 ビットがずれることがある）から選べます。
 選択肢と費用、C との違いは [printf と浮動小数](docs/printf-float.ja.md) にあります。
 

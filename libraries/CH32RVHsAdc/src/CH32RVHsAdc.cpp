@@ -215,7 +215,7 @@ void CH32RVHsAdc::isr()
     _filled++;
 }
 
-extern "C" __attribute__((interrupt)) void HSADC_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void HSADC_IRQHandler(void)
 {
     if (active) {
         active->isr();

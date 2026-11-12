@@ -942,12 +942,12 @@ static void ep_out_isr(uint8_t ep)
     }
 }
 
-extern "C" __attribute__((interrupt)) void USBSS_LINK_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void USBSS_LINK_IRQHandler(void)
 {
     link_isr();
 }
 
-extern "C" __attribute__((interrupt)) void USBSS_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void USBSS_IRQHandler(void)
 {
     const uint32_t st = USB_STATUS;
     if ((st & USBSS_UDIF_SETUP) && !(st & USBSS_UDIF_STATUS)) {

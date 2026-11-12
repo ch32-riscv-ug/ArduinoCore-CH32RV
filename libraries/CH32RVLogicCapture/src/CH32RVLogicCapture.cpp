@@ -275,7 +275,7 @@ uint32_t CH32RVLogicCapture::captureBurst(uint16_t *buffer, uint16_t samples)
     return done && us ? (uint32_t)((uint64_t)samples * 1000000u / us) : 0;
 }
 
-extern "C" __attribute__((interrupt)) void LC_HANDLER(void)
+extern "C" CH32RV_INTERRUPT void LC_HANDLER(void)
 {
     if (active) {
         active->isr();

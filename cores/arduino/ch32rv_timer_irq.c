@@ -7,6 +7,7 @@
 #include "CH32RVTimer.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_timer_internal.h"
+#include "internal/ch32rv_interrupt.h"
 
 typedef struct {
     CH32RVTimerCallback callback;
@@ -94,7 +95,7 @@ static void timer_irq_dispatch(uint8_t timer)
 
 #define TIMER_HANDLER(number, kind, bits, channels, complementary, base,       \
                       clkaddr, clkmask, irq, handler)                           \
-    __attribute__((interrupt)) void handler(void)                               \
+    CH32RV_INTERRUPT void handler(void)                               \
     {                                                                            \
         timer_irq_dispatch(number);                                               \
     }

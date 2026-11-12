@@ -37,12 +37,12 @@
 extern "C" size_t deliverEvents(void) __attribute__((weak));
 
 /* assert()'s end, here because this object is always linked: defined before
- * libc is searched, newlib's assert.o - which prints through fiprintf to
- * stderr - is never pulled in. It was, by String alone: String's toDouble()
- * names atof, whose strtod reaches an assert, and fiprintf brought stdio's
- * three FILEs (__sf), 312 B of RAM on V003 that no code used after LTO had
- * dropped toDouble(). The same words as newlib's, to the same place
- * (_write's), then a stop. Linked only where an assert can fire. */
+ * libc is searched, the C library's - which prints through fprintf to
+ * stderr - is never pulled in. Under newlib it was, by String alone: String's
+ * toDouble() names atof, whose strtod reaches an assert, and fiprintf brought
+ * stdio's three FILEs (__sf), 312 B of RAM on V003 that no code used after
+ * LTO had dropped toDouble(). The same words as newlib's, to the monitor
+ * port, then a stop. Linked only where an assert can fire. */
 static void ch32rv_assert_out(const char *text)
 {
     if (text) {

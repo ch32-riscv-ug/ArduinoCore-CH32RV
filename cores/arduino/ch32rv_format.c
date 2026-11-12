@@ -255,7 +255,7 @@ static int number(const char **f)
 }
 
 /* (hi:lo) /= base, returning the remainder: on one word while the value fits, else 16 bits at a time,
- * so %lld needs no 64-bit division or shift from libgcc. */
+ * so %lld needs no 64-bit division or shift from the runtime library. */
 static unsigned divide(uint32_t *hi, uint32_t *lo, unsigned base)
 {
     const uint32_t h = *hi;

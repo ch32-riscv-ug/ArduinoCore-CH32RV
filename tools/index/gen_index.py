@@ -3,13 +3,12 @@
 
 - Packages the platform entries (PLATFORM_ENTRIES) as a .tar.bz2 (single root folder).
 - In the packaged platform.txt, compiler.path is rewritten to the installed
-  tool ({runtime.tools...}); the working tree keeps the PATH/-override default
-  for symlink-mode development.
+  toolchain ({runtime.tools.ch32rv-toolchain.path}/bin/); the working tree keeps
+  the PATH/-override default for symlink-mode development.
 - Emits package_ch32-riscv-ug_index.json referencing the archive at --base-url.
-- Tool section: --tools github uses tools/index/tools_xpack_gcc.json and
-  tools_ch32rv.json (direct links to the upstream GitHub Releases), and
-  tools_ch32rv_clang.json when it is there (the Compiler menu's Clang;
-  compiler.clang.path is rewritten to it the same way); --tools
+- Tool section: --tools github uses tools/index/tools_ch32rv_toolchain.json (the
+  toolchain) and tools_ch32rv.json (the uploader), direct links to their
+  GitHub Releases; --tools
   local rewrites the URL of the tools named by --local-tools to --base-url
   while keeping the official checksums. Only those, because the archive has to
   actually be served there - a tool nobody staged locally must keep pointing at
@@ -34,7 +33,10 @@ import tempfile
 
 MAINTAINER = "CH32 RISC-V UG"
 WEBSITE = "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV"
-TOOL_NAME = "xpack-riscv-none-elf-gcc"
+# The toolchain (ch32-riscv-ug/ch32rv-toolchain): clang, lld, the LLVM tools,
+# picolibc, compiler-rt, libc++ and GDB.
+TOOL_NAME = "ch32rv-toolchain"
+TOOL_FRAGMENT = "tools_ch32rv_toolchain.json"
 # The bundled uploader (ADR-0008): the platform declares one upload tool and
 # it is this one.
 UPLOAD_TOOL_NAME = "ch32rv"
@@ -44,16 +46,8 @@ UPLOAD_TOOL_NAME = "ch32rv"
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32rv"
 
-# The Compiler menu's Clang (ch32-riscv-ug/ch32rv-clang). Optional until its
-# fragment is in this directory: without it the package carries no clang and
-# compiler.clang.path stays a PATH lookup.
-CLANG_TOOL_NAME = "ch32rv-clang"
-CLANG_FRAGMENT = "tools_ch32rv_clang.json"
-
 COMPILER_PATH_DEV = "compiler.path="
 COMPILER_PATH_PKG = ("compiler.path={runtime.tools." + TOOL_NAME + ".path}/bin/")
-CLANG_PATH_DEV = "compiler.clang.path="
-CLANG_PATH_PKG = ("compiler.clang.path={runtime.tools." + CLANG_TOOL_NAME + ".path}/bin/")
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -169,16 +163,6 @@ def sync_version_defines(platform_dir: pathlib.Path, version: str) -> bool:
     return True
 
 
-def clang_fragment() -> dict | None:
-    path = pathlib.Path(__file__).parent / CLANG_FRAGMENT
-    if not path.exists():
-        return None
-    frag = json.loads(path.read_text(encoding="utf-8"))
-    if frag["name"] != CLANG_TOOL_NAME:
-        raise SystemExit(f"{CLANG_FRAGMENT} names {frag['name']!r}, expected {CLANG_TOOL_NAME!r}")
-    return frag
-
-
 def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -> pathlib.Path:
     root = f"ArduinoCore-CH32RV-{version}"
     archive = out / f"{root}.tar.bz2"
@@ -201,10 +185,6 @@ def build_archive(platform_dir: pathlib.Path, out: pathlib.Path, version: str) -
                  for line in text.splitlines()]
         if COMPILER_PATH_PKG not in lines:
             raise SystemExit("platform.txt: expected exact line 'compiler.path=' to rewrite")
-        if clang_fragment() is not None:
-            lines = [CLANG_PATH_PKG if line == CLANG_PATH_DEV else line for line in lines]
-            if CLANG_PATH_PKG not in lines:
-                raise SystemExit("platform.txt: expected exact line 'compiler.clang.path=' to rewrite")
         ptxt.write_text("\n".join(lines) + "\n", encoding="utf-8")
         with tarfile.open(archive, "w:bz2") as tar:
             tar.add(staged, arcname=root, recursive=True)
@@ -237,7 +217,7 @@ def main(argv=None) -> None:
     archive = build_archive(args.platform, args.out, args.version)
 
     here = pathlib.Path(__file__).parent
-    tool = json.loads((here / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
+    tool = json.loads((here / TOOL_FRAGMENT).read_text(encoding="utf-8"))
     uploader = json.loads((here / "tools_ch32rv.json").read_text(encoding="utf-8"))
     for frag, name in ((tool, TOOL_NAME), (uploader, UPLOAD_TOOL_NAME)):
         if frag["name"] != name:
@@ -249,12 +229,9 @@ def main(argv=None) -> None:
             "repacked", "comment"}
     uploader_systems = [{k: v for k, v in e.items() if k not in drop}
                         for e in uploader["systems"]]
-    clang = clang_fragment()
-    clang_systems = ([{k: v for k, v in e.items() if k not in drop} for e in clang["systems"]]
-                     if clang else [])
     if args.tools == "local":
         wanted = {n.strip() for n in args.local_tools.split(",") if n.strip()}
-        unknown = wanted - {TOOL_NAME, UPLOAD_TOOL_NAME} - ({CLANG_TOOL_NAME} if clang else set())
+        unknown = wanted - {TOOL_NAME, UPLOAD_TOOL_NAME}
         if unknown:
             raise SystemExit(f"--local-tools: unknown tool {sorted(unknown)}")
 
@@ -265,8 +242,6 @@ def main(argv=None) -> None:
             systems = localize(systems)
         if UPLOAD_TOOL_NAME in wanted:
             uploader_systems = localize(uploader_systems)
-        if CLANG_TOOL_NAME in wanted:
-            clang_systems = localize(clang_systems)
 
     index = {
         "packages": [{
@@ -291,15 +266,13 @@ def main(argv=None) -> None:
                      "version": tool["version"]},
                     {"packager": PACKAGER, "name": UPLOAD_TOOL_NAME,
                      "version": uploader["version"]},
-                ] + ([{"packager": PACKAGER, "name": CLANG_TOOL_NAME,
-                       "version": clang["version"]}] if clang else []),
+                ],
             }],
             "tools": [
                 {"name": TOOL_NAME, "version": tool["version"], "systems": systems},
                 {"name": UPLOAD_TOOL_NAME, "version": uploader["version"],
                  "systems": uploader_systems},
-            ] + ([{"name": CLANG_TOOL_NAME, "version": clang["version"],
-                   "systems": clang_systems}] if clang else []),
+            ],
         }],
     }
     if args.merge:

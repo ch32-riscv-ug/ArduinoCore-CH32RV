@@ -15,6 +15,7 @@ silently wrong numbers.
 Values come from each family's own EVT header (RCC_HPRE_DIVn); the mapping from
 family to encoding lives in tools/generate/generate.py.
 """
+import json
 import os
 import pathlib
 import subprocess
@@ -24,21 +25,36 @@ import pytest
 REPO = pathlib.Path(__file__).resolve().parents[2]
 
 
+def toolchain_bin() -> pathlib.Path | None:
+    """The toolchain's bin/: CH32_TOOLCHAIN_BIN, else the pinned one under <repo>/.tools
+    (tools/index/fetch_tools.py --tool ch32rv-toolchain)."""
+    override = os.environ.get("CH32_TOOLCHAIN_BIN")
+    if override:
+        path = pathlib.Path(override)
+    else:
+        frag = json.loads((REPO / "tools/index/tools_ch32rv_toolchain.json").read_text(encoding="utf-8"))
+        path = REPO / ".tools" / frag["name"] / frag["version"] / "bin"
+    return path if any((path / n).exists() for n in ("clang", "clang.exe")) else None
+
+
+@pytest.fixture(scope="module")
+def clang_bin() -> pathlib.Path:
+    path = toolchain_bin()
+    if path is None:
+        pytest.skip("the toolchain is not fetched: uv run tools/index/fetch_tools.py --tool ch32rv-toolchain")
+    return path
+
+
+@pytest.fixture(scope="module")
+def clang_cmd(clang_bin) -> list:
+    """clang for the target (rv32imac with XW, as CH32X035 / V20x are built), ready for the source's flags."""
+    return [str(clang_bin / "clang"), "--target=riscv32-unknown-elf", "-march=rv32imac_zicsr_xwchc", "-mabi=ilp32"]
+
+
 @pytest.fixture(scope="module")
 def repo() -> pathlib.Path:
     return REPO
 
-
-@pytest.fixture(scope="module")
-def gcc_bin() -> str:
-    """The pinned RISC-V toolchain: CH32_GCC_BIN, else <repo>/.tools (tools/index/fetch_tools.py)."""
-    override = os.environ.get("CH32_GCC_BIN")
-    if override:
-        return override
-    found = sorted(d for d in (REPO / ".tools" / "xpack-riscv-none-elf-gcc").glob("*") if (d / "bin").is_dir())
-    if not found:
-        pytest.skip("the RISC-V toolchain is not fetched: uv run tools/index/fetch_tools.py")
-    return str(found[-1] / "bin")
 
 # (linear?, HSI, F_CPU, field) - the field is what RCC_CFGR0[7:4] must become.
 #
@@ -81,7 +97,7 @@ REFUSES = [
 ]
 
 
-def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
+def compile_probe(clang_cmd, repo, tmp_path, linear, hsi, f_cpu, expect=None,
                   sysclk=None):
     """Compile a TU that asserts the field, and return (rc, output).
 
@@ -97,7 +113,7 @@ def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
     src.write_text(body, encoding="utf-8")
     sysclk = hsi if sysclk is None else sysclk
     proc = subprocess.run(
-        [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
+        [*clang_cmd, "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",
          f"-DF_CPU={f_cpu}L", f"-DCH32RV_HSI_HZ={hsi}",
          f"-DCH32RV_CLOCK_SYSCLK_HZ={sysclk}",
@@ -108,19 +124,19 @@ def compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu, expect=None,
 
 
 @pytest.mark.parametrize("linear,hsi,f_cpu,field", ENCODES)
-def test_ratio_picks_the_right_field(gcc_bin, repo, tmp_path, linear, hsi,
+def test_ratio_picks_the_right_field(clang_cmd, repo, tmp_path, linear, hsi,
                                      f_cpu, field):
     """The _Static_assert is the test: a wrong field is a compile error."""
-    rc, out = compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu,
+    rc, out = compile_probe(clang_cmd, repo, tmp_path, linear, hsi, f_cpu,
                             expect=field)
     assert rc == 0, out
 
 
 @pytest.mark.parametrize("linear,hsi,f_cpu,mentions", REFUSES)
-def test_impossible_ratio_is_refused(gcc_bin, repo, tmp_path, linear, hsi,
+def test_impossible_ratio_is_refused(clang_cmd, repo, tmp_path, linear, hsi,
                                      f_cpu, mentions):
     """And a ratio the hardware cannot reach has to say so, not round quietly."""
-    rc, out = compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu)
+    rc, out = compile_probe(clang_cmd, repo, tmp_path, linear, hsi, f_cpu)
     assert rc != 0, f"F_CPU={f_cpu} off a {hsi} Hz oscillator should not compile"
     assert mentions in out, out
 
@@ -150,31 +166,31 @@ PLL_CASES = [
 
 
 @pytest.mark.parametrize("linear,hsi,sysclk,f_cpu,field", PLL_CASES)
-def test_prescaler_divides_sysclk_not_the_oscillator(gcc_bin, repo, tmp_path,
+def test_prescaler_divides_sysclk_not_the_oscillator(clang_cmd, repo, tmp_path,
                                                      linear, hsi, sysclk,
                                                      f_cpu, field):
-    rc, out = compile_probe(gcc_bin, repo, tmp_path, linear, hsi, f_cpu,
+    rc, out = compile_probe(clang_cmd, repo, tmp_path, linear, hsi, f_cpu,
                             expect=field, sysclk=sysclk)
     assert rc == 0, out
 
 
-def test_f_cpu_above_sysclk_is_refused(gcc_bin, repo, tmp_path):
+def test_f_cpu_above_sysclk_is_refused(clang_cmd, repo, tmp_path):
     """The prescaler can only divide; asking for more than the PLL produces is
     a mistake worth catching at compile time rather than at 2x the clock."""
-    rc, out = compile_probe(gcc_bin, repo, tmp_path, 0, 8_000_000, 200_000_000,
+    rc, out = compile_probe(clang_cmd, repo, tmp_path, 0, 8_000_000, 200_000_000,
                             sysclk=144_000_000)
     assert rc != 0, out
     assert "F_CPU is above SYSCLK" in out, out
 
 
-def test_sysclk_above_the_oscillator_needs_a_pll_setting(gcc_bin, repo,
+def test_sysclk_above_the_oscillator_needs_a_pll_setting(clang_cmd, repo,
                                                          tmp_path):
     """SYSCLK and the PLL setting are generated together, so one without the
     other means boards.txt was hand-edited or half-regenerated."""
     src = tmp_path / "probe.c"
     src.write_text("#include <internal/ch32rv_clock.h>\n", encoding="utf-8")
     proc = subprocess.run(
-        [f"{gcc_bin}/riscv-none-elf-gcc", "-std=c11", "-fsyntax-only",
+        [*clang_cmd, "-std=c11", "-fsyntax-only",
          f"-I{repo / 'cores' / 'arduino'}",
          "-DF_CPU=144000000L", "-DCH32RV_HSI_HZ=8000000",
          "-DCH32RV_CLOCK_SYSCLK_HZ=144000000", "-DCH32RV_CLOCK_USE_PLL=0",

@@ -13,10 +13,6 @@ int core_clz(unsigned x);
 int core_ctz(unsigned x);
 double core_ext(float a);
 float core_trunc(double a);
-double core_add(double a, double b)
-{
-    return a + b;
-}
 
 static int failures;
 

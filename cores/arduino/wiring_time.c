@@ -17,6 +17,7 @@
 #error "CH32RV_CLOCK_INIT is required (see build.clock_init in boards.txt)"
 #endif
 #include CH32RV_GENERATED_(CH32RV_CLOCK_INIT)
+#include "internal/ch32rv_interrupt.h"
 
 /* Where the PLL word goes: RCC_CFGR0, or (CH32H41x) RCC_PLLCFGR. */
 #ifdef CH32RV_CLOCK_PLL_ADDR
@@ -397,7 +398,7 @@ static inline int ch32rv_clock_is_ours(void)
     return 1;
 }
 
-__attribute__((interrupt)) void CH32RV_SYSTICK_HANDLER(void)
+CH32RV_INTERRUPT void CH32RV_SYSTICK_HANDLER(void)
 {
     /* Put the clock back within a millisecond of a probe moving it. Here and
      * not between loop() calls, because a sketch blocked in delay(), a busy
@@ -468,7 +469,7 @@ void ch32rv_clock_check(void)
 }
 
 /* ticks -> microseconds without a division. QingKe V2 (CH32V003, rv32ec) has
- * neither divide nor multiply in hardware, and the libgcc division in the
+ * neither divide nor multiply in hardware, and the runtime's division in the
  * old `ticks / CH32RV_TICKS_PER_US` made every micros() call cost several
  * microseconds: delayMicroseconds() on the V003 ran 16-17 us long with
  * 9-15 us of jitter (2026-09-22, OEP capture), against +3 us on the X035.
@@ -482,23 +483,17 @@ void ch32rv_clock_check(void)
 #define CH32RV_US_DIV_ODD (CH32RV_TICKS_PER_US >> CH32RV_US_DIV_K)
 #define CH32RV_US_DIV_S   (CH32RV_US_DIV_ODD <= 9u ? 16u : CH32RV_US_DIV_ODD <= 15u ? 18u : 19u)
 #define CH32RV_US_DIV_R   (((1u << CH32RV_US_DIV_S) + CH32RV_US_DIV_ODD - 1u) / CH32RV_US_DIV_ODD)
-/* The multiply by the reciprocal is spelled out per bit: GCC at -Os on rv32e
- * otherwise emits a __mulsi3 libcall for it (seen in the V003 disassembly),
- * which is the very cost this is meant to remove. Each `((R >> b) & 1)` is a
- * constant, so only the set bits of R survive as a shift and an add. Each
- * shifted term goes through an empty asm: clang folds the shifts and adds
- * back into one multiply, and at -Oz on rv32ec calls __mulsi3 for it (V003,
- * 2026-11-12: two calls in micros(), whose extra microseconds made
- * CH32RVAdcStream's measured rate 7.5 % low). Under clang only. */
+/* The multiply by the reciprocal is spelled out per bit, and each shifted
+ * term goes through an empty asm: otherwise the compiler folds the shifts and
+ * adds back into one multiply, and at -Oz on rv32ec calls __mulsi3 for it
+ * (V003, 2026-11-12: two calls in micros(), whose extra microseconds made
+ * CH32RVAdcStream's measured rate 7.5 % low) - the very cost this is meant to
+ * remove. Each `((R >> b) & 1)` is a constant, so only the set bits of R
+ * survive as a shift and an add. */
 /* T wraps each term: CH32RV_MULC_PLAIN where the result must be a constant
  * expression (the static assertions below), CH32RV_OPAQUE_U32 in code. */
 #define CH32RV_MULC_PLAIN(v) (v)
-#if defined(__clang__)
 #define CH32RV_OPAQUE_U32(v) __extension__({ uint32_t ch32rv_v_ = (v); __asm__("" : "+r"(ch32rv_v_)); ch32rv_v_; })
-#else
-/* GCC keeps the shifts and adds as written; the asm would only cost it registers (rv32e: +48 B, spills). */
-#define CH32RV_OPAQUE_U32(v) (v)
-#endif
 #define CH32RV_MULC_BIT(x, R, b, T) (((R) >> (b)) & 1u ? T((uint32_t)(x) << (b)) : 0u)
 #define CH32RV_MULC_T(x, R, T) (CH32RV_MULC_BIT(x, R, 0, T) + CH32RV_MULC_BIT(x, R, 1, T) + CH32RV_MULC_BIT(x, R, 2, T) + CH32RV_MULC_BIT(x, R, 3, T) + \
 CH32RV_MULC_BIT(x, R, 4, T) + CH32RV_MULC_BIT(x, R, 5, T) + CH32RV_MULC_BIT(x, R, 6, T) + CH32RV_MULC_BIT(x, R, 7, T) + \
@@ -526,12 +521,8 @@ unsigned long micros(void)
         ticks = CH32RV_SYSTICK_CNT - ch32rv_systick_base;
     } while (ms != ch32rv_millis_counter);
 
-#if defined(__clang__)
-    /* ms * 1000 spelled out the same way: clang calls __mulsi3 for the plain form on rv32ec. */
+    /* ms * 1000 spelled out the same way: the plain form calls __mulsi3 on rv32ec. */
     return CH32RV_MULC(ms, 1000u) + CH32RV_US_FROM_TICKS(ticks);
-#else
-    return ms * 1000u + CH32RV_US_FROM_TICKS(ticks);
-#endif
 }
 
 /* A busy wait's pause between polls. On the CH32H41x V5F, which has no data

@@ -1,6 +1,7 @@
 /* memcpy, memmove and memset a word at a time.
  *
- * newlib-nano builds these for size: one byte per loop turn. On CH32H417's
+ * The C library is built for size: one byte per loop turn (newlib-nano's
+ * then, picolibc's at -Oz now: memcpy is 22 bytes on rv32ec). On CH32H417's
  * V3F that is 9-10 MB/s for memcpy against 72 MB/s for a word loop (32 KB,
  * measured 2026-10-21), and every USB class, Print and String goes through
  * them. Defined here, they take the place of the library's: the linker only
@@ -12,7 +13,7 @@
  *
  * No part here is relied on to take a misaligned word access: when source and
  * destination are aligned differently, memcpy reads aligned source words and
- * shifts them together. GCC would turn the loops below back into calls to
+ * shifts them together. The compiler would turn the loops below back into calls to
  * these very functions, so the file is built without that pattern.
  *
  * Not on the rv32e parts (CH32V00x, M007): there the 16 KB of flash weighs

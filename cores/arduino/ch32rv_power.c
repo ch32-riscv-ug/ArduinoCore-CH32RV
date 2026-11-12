@@ -4,6 +4,7 @@
 #include "internal/ch32rv_power.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_interrupt.h"
 
 volatile uint32_t ch32rv_time_domain;
 volatile uint8_t ch32rv_wake_cause;
@@ -80,7 +81,7 @@ void ch32rv_serial_sleep_prepare(void) __attribute__((weak));   /* HardwareSeria
 
 static volatile uint32_t awu_events;
 
-__attribute__((interrupt)) void AWU_IRQHandler(void)
+CH32RV_INTERRUPT void AWU_IRQHandler(void)
 {
     CH32RV_EXTI_INTFR = 1u << AWU_LINE;
     awu_events++;
@@ -228,7 +229,7 @@ static void deep_wfi(void)
 #if POWER_RTC
 static volatile uint32_t alarm_events;
 
-__attribute__((interrupt)) void RTCAlarm_IRQHandler(void)
+CH32RV_INTERRUPT void RTCAlarm_IRQHandler(void)
 {
     CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
     CH32RV_REG16(0x40002804u) &= ~(1u << 1);   /* RTC CTLRL.ALRF */

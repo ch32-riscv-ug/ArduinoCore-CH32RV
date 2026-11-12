@@ -27,17 +27,17 @@ arduino-cli compile \
 全 section の概要:
 
 ```sh
-riscv-none-elf-size -A /tmp/ch32rv-build/<sketch>.ino.elf
+llvm-size -A /tmp/ch32rv-build/<sketch>.ino.elf
 ```
 
 大きい symbol の順:
 
 ```sh
-riscv-none-elf-nm --size-sort -S -r --radix=d \
+llvm-nm --size-sort -S -r --radix=d \
   /tmp/ch32rv-build/<sketch>.ino.elf | head -30
 ```
 
-tool は Board Manager が導入した xPack GCC の `bin/`、または `.tools/` にあります。
+tool は Board Manager が導入した ch32rv-toolchain の `bin/`、または `.tools/` にあります。
 
 ## Map file の読み方
 

@@ -239,7 +239,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.compiler=Compiler\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -353,14 +353,14 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
     return lines
 
 
-# newlib-nano always; floating point in printf / scanf is opt-in (ADR-0004,
-# approved 2026-10-01). The newlib entries keep the ids the WCH core,
-# ch32-riscv-arduino and STM32duino use for the same choice. On CH32X035 a printf sketch is 48,492 bytes with the full
-# newlib formatter and 7,064 with nano; the float costs below were measured on
-# CH32X035 with one sscanf("%f") + snprintf("%f") sketch (2026-10-01: 10,092
-# bytes plain). Every board gets every entry: the choice is per sketch.
-# The Floating Point menu: (key, label, fp_flags for every compile, rtlib_flags
-# for the link, newlib's KB). Float is AVR's way (its double is 32 bits): float
+# Floating point in printf / scanf is opt-in (ADR-0004, approved 2026-10-01).
+# picolibc is built with its integer-only printf and scanf as the default
+# (ch32rv-toolchain's build-runtimes.sh); the picolibc entries make its double
+# ones the vfprintf / vfscanf (cores/arduino/ch32rv_vf*_libc.c), linked only
+# when a sketch formats or parses. Every board gets every entry: the choice
+# is per sketch.
+# The Floating Point menu: (key, label, fp_flags for every compile, picolibc's
+# KB). Float is AVR's way (its double is 32 bits): float
 # arithmetic, constants included; print(float), String(float) and %f share the
 # core's fixed-point text (cores/arduino/internal/ch32rv_format.h). printf's %f links
 # floating point only where the entry says so; without it %f prints as written.
@@ -369,33 +369,35 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
 # float to 11 digits) or in float (the smallest, the last bit off on one input
 # in eight) (cores/arduino/internal/ch32rv_parse_float.h). Its first entry defines
 # nothing and parses the way the arithmetic does: integers under Float, double
-# under Double - the newlib entries' way, and with the default Float + %f, the
+# under Double - the picolibc entries' way, and with the default Float + %f, the
 # default before the menus were split.
-# {compiler.fp32_flags}: the compiler's own flag (platform.txt; GCC
-# -fsingle-precision-constant, clang -cl-single-precision-constant).
-_F32 = "-DCH32RV_FP_FLOAT=1 {compiler.fp32_flags}"
+# -cl-single-precision-constant: unsuffixed floating constants are float.
+_F32 = "-DCH32RV_FP_FLOAT=1 -cl-single-precision-constant"
 _PF = "-DCH32RV_PRINTF_FLOAT=1"
-_NEWLIB = "-DCH32RV_PRINTF_NEWLIB=1"
-_UPF = "-Wl,-u,_printf_float"
-_USF = "-Wl,-u,_scanf_float"
-# (key, label, fp_flags, rtlib_flags, newlib's KB). The default (first) is Float
+_LIBCP = "-DCH32RV_PRINTF_LIBC=1"
+_LIBCS = "-DCH32RV_SCANF_LIBC=1"
+# (key, label, fp_flags, picolibc's KB). The KB are what one sscanf("%f") +
+# snprintf("%f %e %g") sketch grows by over the Double entry (CH32X035,
+# 2026-11-12; V003 and V307 within 1 KB of it); 9 KB of them leave a 16 KB
+# part little room (V003: 16,328 B of 16,384 for dblfs, 16 B over for
+# libcfps). The default (first) is Float
 # with printf's %f on every board: a sketch that uses floats pays 0.6-0.8 KB for
 # %f (V003), and one that uses neither floats nor printf pays nothing under any
 # entry; only printf without floats pays for %f (+5.2 KB on V003, +1.5 KB on
 # V307), and printf is a luxury on a 16 KB part anyway
 # (docs/printf-float.ja.md). The rest go smallest first by what each links:
 # soft-float before soft-double, printf's %f after what it adds to (measured
-# on V003, X035 and V307, 2026-10-29), newlib last.
+# on V003, X035 and V307, 2026-10-29), picolibc last.
 RTLIB_MENU = (
-    ("fltf", "Float (32-bit) + printf %f (default)", f"{_F32} {_PF}", "", 0),
-    ("flt", "Float (32-bit)", _F32, "", 0),
-    ("dbl", "Double (64-bit)", "", "", 0),
-    ("dblf", "Double (64-bit) + printf %f", _PF, "", 0),
-    ("nanofp", "Double (64-bit) + newlib printf %f %e %g", _NEWLIB, _UPF, 21),
-    ("nanofs", "Double (64-bit) + newlib scanf %f", "", _USF, 24),
-    ("dblfs", "Double (64-bit) + printf %f + newlib scanf %f", _PF, _USF, 24),
-    ("fltfs", "Float (32-bit) + printf %f + newlib scanf %f", f"{_F32} {_PF}", _USF, 24),
-    ("nanofps", "Double (64-bit) + newlib printf/scanf %f %e %g", _NEWLIB, f"{_UPF} {_USF}", 31),
+    ("fltf", "Float (32-bit) + printf %f (default)", f"{_F32} {_PF}", 0),
+    ("flt", "Float (32-bit)", _F32, 0),
+    ("dbl", "Double (64-bit)", "", 0),
+    ("dblf", "Double (64-bit) + printf %f", _PF, 0),
+    ("libcfp", "Double (64-bit) + picolibc printf %f %e %g", _LIBCP, 6),
+    ("libcfs", "Double (64-bit) + picolibc scanf %f", _LIBCS, 5),
+    ("dblfs", "Double (64-bit) + printf %f + picolibc scanf %f", f"{_PF} {_LIBCS}", 9),
+    ("fltfs", "Float (32-bit) + printf %f + picolibc scanf %f", f"{_F32} {_PF} {_LIBCS}", 6),
+    ("libcfps", "Double (64-bit) + picolibc printf/scanf %f %e %g", f"{_LIBCP} {_LIBCS}", 9),
 )
 # (key, label, parse_defines). On V003 a parseFloat sketch is 4836 B in float,
 # 5848 B in integers and 8012 B in double (2026-10-31).
@@ -603,15 +605,21 @@ def vio18_menu(board: str) -> list[str]:
         lines.append(f"{board}.menu.vio18.{key}.build.vio18_defines={flags}")
     return lines
 
-# Optimisation (platform.txt build.optimize_flags). LTO by default; measured on
-# CH32X035 2026-10-21: LTO 9-24% less flash at the same speed, -msave-restore a
-# further 4-5% for 7-9% slower ECC. The menu id and the first entries are
+# Optimisation (platform.txt build.optimize_flags): the level and LTO. -Oz
+# with LTO by default: on CH32V003 3-22% smaller than GCC's -Os was
+# (docs/clang-evaluation.ja.md). -Os keeps more speed: an interrupt path on
+# CH32L103 at 8 MHz took 40 us against -Oz's 55 (2026-11-12), for 8% more
+# flash. -O2 and -O3 put speed first and take more flash than either.
+# LTO measured on CH32X035 2026-10-21: 9-24% less flash at the same
+# speed; -msave-restore a further 4-5% for 7-9% slower ECC. The menu id is
 # STM32duino's for the same choice.
 OPT_MENU = (
-    ("oslto", "Smallest (-Os) with LTO (default)", "{compiler.lto_flags}"),
-    ("osltosr", "Smallest (-Os) with LTO and -msave-restore (slower calls)",
-     "{compiler.lto_flags} -msave-restore"),
-    ("osstd", "Smallest (-Os) without LTO", ""),
+    ("ozlto", "Smallest (-Oz) with LTO (default)", "-Oz -flto"),
+    ("oslto", "Small and faster (-Os) with LTO", "-Os -flto"),
+    ("o2lto", "Fast (-O2) with LTO", "-O2 -flto"),
+    ("o3lto", "Fastest (-O3) with LTO", "-O3 -flto"),
+    ("ozltosr", "Smallest (-Oz) with LTO and -msave-restore (slower calls)", "-Oz -flto -msave-restore"),
+    ("ozstd", "Smallest (-Oz) without LTO", "-Oz"),
 )
 
 
@@ -787,24 +795,6 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
             f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
 
 
-# Compiler (platform.txt build.toolchain; the compiler.gcc.* / compiler.clang.*
-# pairs there). GCC first, the default, until the ch32rv-clang package is in
-# the index: Clang then becomes the default (-Oz, lld, LTO, XW where the cores
-# have it; docs/clang-evaluation.ja.md).
-COMPILER_MENU = (
-    ("gcc", "GCC"),
-    ("clang", "Clang"),
-)
-
-
-def compiler_menu(board: str) -> list[str]:
-    lines = []
-    for key, label in COMPILER_MENU:
-        lines.append(f"{board}.menu.compiler.{key}={label}")
-        lines.append(f"{board}.menu.compiler.{key}.build.toolchain={key}")
-    return lines
-
-
 # Series -> True where every QingKe core it has carries WCH's XW compressed
 # instructions (ch32-device-data cores.csv `xw`, series.csv `core`; a dual-core
 # series names both, "QingKe V5F + QingKe V3F"). Filled in main().
@@ -823,6 +813,12 @@ def load_series_xw(tables: pathlib.Path) -> dict:
     return out
 
 
+def intsyscr_hpe(defines: str) -> bool:
+    """Whether the startup code turns HPE on: bit 0 of CH32RV_INTSYSCR_INIT."""
+    m = re.search(r"-DCH32RV_INTSYSCR_INIT=(0x[0-9a-fA-F]+|\d+)", defines)
+    return bool(m) and int(m.group(1), 0) & 1 == 1
+
+
 def opt_menu(board: str) -> list[str]:
     lines = []
     for key, label, flags in OPT_MENU:
@@ -835,13 +831,12 @@ def rtlib_menu(board: str, min_flash: int) -> list[str]:
     """The C runtime menu for one board. A float entry says what it costs, and
     on a board with a 16 KB part it says that part cannot take it."""
     lines = []
-    for key, label, fp_flags, flags, kb_cost in RTLIB_MENU:
+    for key, label, fp_flags, kb_cost in RTLIB_MENU:
         if kb_cost:
             label += f" (+~{kb_cost} KB"
-            label += "; too big for 16 KB parts)" if min_flash <= 16 * 1024 else ")"
+            label += "; tight on 16 KB parts)" if min_flash <= 16 * 1024 and kb_cost >= 9 else ")"
         lines.append(f"{board}.menu.rtlib.{key}={label}")
         lines.append(f"{board}.menu.rtlib.{key}.build.fp_flags={fp_flags}")
-        lines.append(f"{board}.menu.rtlib.{key}.build.rtlib_flags={flags}")
     return lines
 
 
@@ -4106,8 +4101,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
-    # XW for clang (platform.txt build.march_xw): only where every series the
-    # board's parts belong to has it, so CH32V103 (QingKe V3A) never gets it.
+    # XW (platform.txt build.march_xw): only where every series the board's
+    # parts belong to has it, so CH32V103 (QingKe V3A) never gets it.
     if all(SERIES_XW.get(r["series"], False) for r in rows):
         lines.append(f"{board}.build.march_xw=_xwchc")
     # The clock: the CPU Clock menu's first entry where there is one.
@@ -4142,6 +4137,10 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         + (" -DCH32RV_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
         + (f" -DCH32RV_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
         + (" -DCH32RV_PFIC_RESET_SCTLR=1" if fact['pfic_reset_sctlr'] else "")
+        # HPE (INTSYSCR bit 0, set by the startup code): the interrupt
+        # handlers leave the integer caller-saved registers to the hardware
+        # (CH32RV_INTERRUPT, internal/ch32rv_irq.h). Not on CH32V103.
+        + (" -DCH32RV_HPE=1" if intsyscr_hpe(fam['defines']) else "")
         + (f" -DCH32RV_IWDG_BASE={fact['iwdg_base']:#x}u"
            if fact['iwdg_base'] else "")
         + (f" -DCH32RV_RNG_BASE={fact['rng_base']:#x}u"
@@ -4284,8 +4283,6 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
             lines += clocksrc_menu(board, series)
         lines.append("")
     lines += opt_menu(board)
-    lines.append("")
-    lines += compiler_menu(board)
     lines.append("")
     lines += rtlib_menu(board, min_flash)
     lines.append("")
@@ -4464,10 +4461,9 @@ def main() -> int:
         # and the Floating Point menu every board has
         flash = int(re.search(rf"^{board_id}\.upload\.maximum_size=(\d+)", text, re.M).group(1))
         text += "\n" + "\n".join(rtlib_menu(board_id, flash) + parsefloat_menu(board_id)) + "\n"
-        # and the Compiler menu, with XW for clang where the series has it
+        # and XW where the series has it
         if SERIES_XW.get(series, False):
             text += f"{board_id}.build.march_xw=_xwchc\n"
-        text += "\n" + "\n".join(compiler_menu(board_id)) + "\n"
         named_boards.append(text)
     outputs[args.platform / "boards.txt"] = (
         gen_header() + "\n" + MENU_HEADER + "\n" + "\n".join(boards_blocks)

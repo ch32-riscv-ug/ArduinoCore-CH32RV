@@ -5,7 +5,7 @@
 
 #include "internal/ch32rv_format.h"
 
-#if CH32RV_PRINTF_NEWLIB
+#if CH32RV_PRINTF_LIBC
 #include <stdio.h>
 #include <stdlib.h>
 #endif
@@ -17,8 +17,8 @@ static void to_print(void *ctx, const char *s, size_t n)
 
 size_t ch32rv_vprintf(arduino::Print &out, const char *format, va_list ap)
 {
-#if CH32RV_PRINTF_NEWLIB
-    /* newlib's own formatting, for its complete %f / %e / %g. */
+#if CH32RV_PRINTF_LIBC
+    /* picolibc's own formatting, for its complete %f / %e / %g. */
     char small[64];
     va_list copy;
     va_copy(copy, ap);

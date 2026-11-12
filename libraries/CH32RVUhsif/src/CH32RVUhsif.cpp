@@ -389,7 +389,7 @@ void CH32RVUhsif::isr()
     }
 }
 
-extern "C" __attribute__((interrupt)) void UHSIF_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void UHSIF_IRQHandler(void)
 {
     if (active) {
         active->isr();

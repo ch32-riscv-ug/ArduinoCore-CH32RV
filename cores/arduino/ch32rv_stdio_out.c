@@ -1,14 +1,14 @@
 /* printf, vprintf, puts and putchar straight to the stdout port
- * (ch32rv_stdout.cpp) on the core's formatter, in place of newlib-nano's,
- * which go through a FILE, a 64-byte line buffer from the heap and newlib's
- * formatter. GCC turns printf("text\n") into puts() and printf("c") into
- * putchar(), so all four are here and keep their order. fputs(), fwrite() and
- * fprintf() on stdout stay newlib's, line-buffered: mixed with these on one
- * line they can come out of order. The newlib entries of the Floating Point
- * menu keep newlib's. */
+ * (ch32rv_stdout.cpp) on the core's formatter, in place of picolibc's, which
+ * go through a FILE and picolibc's formatter. The compiler may turn
+ * printf("text\n") into puts() and printf("c") into putchar(), so all four
+ * are here and keep their order. fputs(), fwrite() and fprintf() on stdout are
+ * picolibc's, through the unbuffered FILE of ch32rv_stdio_file.c, so they keep
+ * the order too. The picolibc entries of the Floating Point menu keep
+ * picolibc's. */
 #include "internal/ch32rv_format.h"
 
-#if !CH32RV_PRINTF_NEWLIB
+#if !CH32RV_PRINTF_LIBC
 
 #include <stdio.h>
 #include <string.h>
@@ -50,10 +50,5 @@ int putchar(int c)
     to_stdout(0, &ch, 1);
     return (unsigned char)c;
 }
-
-/* newlib's integer-only names, in the same object as printf and vprintf
- * there (see ch32rv_stdio_string.c). */
-int viprintf(const char *, va_list) __attribute__((used, alias("vprintf")));
-int iprintf(const char *, ...) __attribute__((used, alias("printf")));
 
 #endif

@@ -1,13 +1,14 @@
 /* 32-bit division where the core has no divide instruction (CH32V003's
  * rv32ec, the V00x's rv32ec_zmmul): __udivsi3, __umodsi3, __divsi3 and
- * __modsi3, ahead of the toolchain's runtime library (libgcc, or clang's
- * compiler-rt, whose C versions are 296 B for the unsigned division alone).
+ * __modsi3, ahead of the toolchain's runtime library (compiler-rt, whose C
+ * versions are 684 B for the four on rv32ec at -Oz).
  * Written for this core, shift and subtract: the divisor is moved up under
  * the dividend first, so a small quotient takes few rounds; the signed entries
  * go straight to the unsigned one when both operands are non-negative.
  * Results are libgcc's for every input (x / 0 all ones, x % 0 x, INT_MIN / -1
  * INT_MIN; 2026-11-12, both run in an emulator over 35,000 pairs and the
- * edges), in the same number of instructions; 146 B against libgcc's 176 B.
+ * edges), in the same number of instructions; 146 B against libgcc's 176 B
+ * and compiler-rt's 684 B.
  * Uses a0-a3 and t1-t2 only (t1 keeps the return address of the signed and
  * remainder entries, t2 the sign), so it suits ilp32e and needs no stack. */
 #if !defined(__riscv_div)

@@ -491,12 +491,12 @@ static void isr(void)
     ISTR = (uint16_t)~(is & 0x7F00u & ~(I_RESET | I_SUSP | I_WKUP));   /* the rest: errors, SOF */
 }
 
-extern "C" __attribute__((interrupt)) void USB_LP_CAN1_RX0_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void USB_LP_CAN1_RX0_IRQHandler(void)
 {
     isr();
 }
 
-extern "C" __attribute__((interrupt)) void USB_HP_CAN1_TX_IRQHandler(void)
+extern "C" CH32RV_INTERRUPT void USB_HP_CAN1_TX_IRQHandler(void)
 {
     isr();
 }

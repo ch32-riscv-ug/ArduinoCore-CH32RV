@@ -72,7 +72,7 @@ jobs:
           path: .tools/cache
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch pinned toolchain
-        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
+        run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv-toolchain
       - name: Build every example for this profile
         run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}"
 
@@ -93,6 +93,6 @@ jobs:
           path: .tools/cache
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
       - name: Fetch pinned toolchain
-        run: uv run --no-project python tools/index/fetch_tools.py --tool xpack-riscv-none-elf-gcc
+        run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv-toolchain
       - name: Install package and compile in isolated directories
         run: uv run --no-project python tools/index/install_check.py "${{ runner.temp }}/ch32-package-check"

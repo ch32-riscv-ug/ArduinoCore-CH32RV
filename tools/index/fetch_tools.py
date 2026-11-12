@@ -4,7 +4,7 @@
 # ///
 """Put every tool the tests need inside the project, at a predictable path.
 
-The tests need a RISC-V toolchain, the ch32rv uploader (ADR-0008) and the
+The tests need the RISC-V toolchain (ch32rv-toolchain), the ch32rv uploader (ADR-0008) and the
 ch32-device-data tables.
 Before this they came from environment variables pointing at wherever the
 author happened to have unpacked them, which is not something another machine
@@ -249,19 +249,18 @@ def env_defaults(root: pathlib.Path) -> dict:
     frags = fragments()
     where = paths(root)
     out = {}
-    gcc = frags.get("xpack-riscv-none-elf-gcc")
-    if gcc:
-        out["CH32_GCC_BIN"] = where["xpack-riscv-none-elf-gcc"] / "bin"
-        entry = next((s for s in gcc["systems"] if s["host"] == host_key()), None)
+    clang = frags.get("ch32rv-toolchain")
+    if clang:
+        # The toolchain (platform.txt compiler.path): clang, lld, the LLVM
+        # tools, picolibc / compiler-rt / libc++ and GDB.
+        out["CH32_TOOLCHAIN_BIN"] = where["ch32rv-toolchain"] / "bin"
+        entry = next((s for s in clang["systems"] if s["host"] == host_key()), None)
         if entry:
             # install_check.py serves this locally instead of pulling it from
             # GitHub on every run.
-            out["CH32_XPACK_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
+            out["CH32_TOOLCHAIN_ARCHIVE"] = root / "cache" / entry["archiveFileName"]
     if "ch32rv" in frags:
         out["CH32_CH32RV"] = str(pathlib.Path(where["ch32rv"]) / "ch32rv")
-    if "ch32rv-clang" in frags:
-        # The Compiler menu's Clang (platform.txt compiler.clang.path).
-        out["CH32_CLANG_BIN"] = where["ch32rv-clang"] / "bin"
     out["CH32_TABLES"] = where[DEVICE_DATA]
     return out
 

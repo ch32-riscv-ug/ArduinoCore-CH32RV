@@ -90,7 +90,7 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
 
 /* Run a function from RAM: `CH32RV_RAMFUNC void f(void) { ... }`. It costs
  * its size in RAM. No flash wait states, and it keeps running while the flash
- * is erased or programmed - but a call out of it into flash code (libgcc, an
+ * is erased or programmed - but a call out of it into flash code (the runtime library, an
  * interrupt handler) stops there as usual. On CH32H41x everything already runs
  * from RAM. */
 #define CH32RV_RAMFUNC __attribute__((section(".highcode"), noinline))
@@ -131,6 +131,7 @@ static inline uint32_t getApbFrequency(void) { return (uint32_t)CH32RV_HCLK_HZ; 
 /* Where the global interrupt enable lives (gintenr or mstatus, by core) and
  * the save / restore pair: ch32rv_irq.h, which CH32RVSyncKit uses too. */
 #include "internal/ch32rv_irq.h"
+#include "internal/ch32rv_interrupt.h"
 
 /* deliverEvents(): where the libraries' notification callbacks (onRx and the
  * like) run - after every loop() and where a sketch calls it, never inside

@@ -15,12 +15,10 @@ index pulled down.
 
 This tool is independent of the test workspace and only builds sketches.
 
-The xPack archive is served from <repo>/.tools/cache rather than fetched from
-GitHub on every run (400 MB). CH32_CH32RV_ARCHIVE does the same for the
-bundled uploader; without it ch32rv is downloaded from its release, which is
-what CI does.
-
-On Windows the work directory has to be shallow - see check_path_budget.
+The toolchain archive (ch32rv-toolchain) is served from <repo>/.tools/cache
+rather than fetched from GitHub on every run. CH32_CH32RV_ARCHIVE does the
+same for the bundled uploader; without it ch32rv is downloaded from its
+release, which is what CI does.
 """
 import argparse
 import contextlib
@@ -59,13 +57,6 @@ FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
 # something it should not have.
 FORBIDDEN = ("tests", "docs", "tools", "vendor", ".git", ".github")
 
-# Measured, not guessed: `riscv-none-elf-g++ -E -v` prints this include
-# directory verbatim, unresolved dot-dots and all, and GCC opens it that way -
-# canonicalising only for diagnostics. On Windows that makes the depth of the
-# sandbox a correctness question; see the note on _short_root in conftest.py.
-GCC_HEADER_TAIL = ("/bin/../lib/gcc/riscv-none-elf/{v}/../../../../riscv-none-elf"
-                   "/include/c++/{v}/riscv-none-elf/rv32ec/ilp32e/bits/c++config.h")
-MAX_PATH = 259
 
 
 # PA1 rather than LED_BUILTIN: a Generic board is a silicon series, not a PCB,
@@ -126,26 +117,6 @@ void setup() {
 }
 void loop() {}
 """
-
-
-def check_path_budget(work: pathlib.Path) -> None:
-    """Refuse too deep a sandbox now, while the reason is still legible.
-
-    Past the limit this fails as "bits/c++config.h: No such file or directory",
-    naming a path that is short and plainly present - so the hunt starts in the
-    wrong place. One check up front costs nothing and says what is wrong.
-    """
-    if os.name != "nt":
-        return
-    frag = json.loads((HERE / "tools_xpack_gcc.json").read_text(encoding="utf-8"))
-    root = work / "data" / "packages" / PACKAGER / "tools" / frag["name"] / frag["version"]
-    longest = len(str(root)) + len(GCC_HEADER_TAIL.format(v=frag["version"].split("-")[0]))
-    if longest > MAX_PATH:
-        raise Failure(
-            f"this sandbox is {longest - MAX_PATH} characters too deep for "
-            f"Windows: the toolchain installs under {root}, and GCC would then "
-            f"have to open a {longest}-character path to reach its own headers. "
-            f"Point CH32_TEST_TMP at a shorter directory.")
 
 
 @contextlib.contextmanager
@@ -253,21 +224,20 @@ def stage_platform_copy(dest: pathlib.Path) -> pathlib.Path:
 
 def run(work: pathlib.Path, port: int = 8731) -> dict:
     work.mkdir(parents=True, exist_ok=True)
-    check_path_budget(work)
     www = work / "www"
     www.mkdir(exist_ok=True)
     if shutil.which("arduino-cli") is None:
         raise Failure("arduino-cli is not on PATH")
 
     defaults = env_defaults(REPO / ".tools")
-    xpack = pathlib.Path(os.environ.get("CH32_XPACK_ARCHIVE")
-                         or defaults["CH32_XPACK_ARCHIVE"])
-    if not xpack.exists():
-        raise Failure(f"no xPack archive at {xpack}; "
+    toolchain = pathlib.Path(os.environ.get("CH32_TOOLCHAIN_ARCHIVE")
+                             or defaults["CH32_TOOLCHAIN_ARCHIVE"])
+    if not toolchain.exists():
+        raise Failure(f"no toolchain archive at {toolchain}; "
                       f"run: uv run tools/index/fetch_tools.py")
     uploader_archive = os.environ.get("CH32_CH32RV_ARCHIVE")
 
-    local_tools = ["xpack-riscv-none-elf-gcc"]
+    local_tools = ["ch32rv-toolchain"]
     if uploader_archive:
         local_tools.append("ch32rv")
 
@@ -278,7 +248,7 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
             "--platform", str(REPO), "--out", str(www),
             "--base-url", base_url, "--tools", "local",
             "--local-tools", ",".join(local_tools)])
-        stage_archive(xpack, HERE / "tools_xpack_gcc.json", www)
+        stage_archive(toolchain, HERE / "tools_ch32rv_toolchain.json", www)
         if uploader_archive:
             stage_archive(pathlib.Path(uploader_archive),
                           HERE / "tools_ch32rv.json", www)
