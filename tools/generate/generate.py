@@ -813,6 +813,16 @@ def load_series_xw(tables: pathlib.Path) -> dict:
     return out
 
 
+# The board menu's order: V, then X, L, M and H, each by number
+# (CH32V002 ... CH32V467, CH32X033 ... CH32X315, CH32L103, CH32M007 ...).
+SERIES_LETTERS = "VXLMH"
+
+
+def series_menu_order(series: str) -> tuple:
+    letter, number = series[4], int(series[5:8])
+    return (SERIES_LETTERS.index(letter), number)
+
+
 def intsyscr_hpe(defines: str) -> bool:
     """Whether the startup code turns HPE on: bit 0 of CH32RV_INTSYSCR_INIT."""
     m = re.search(r"-DCH32RV_INTSYSCR_INIT=(0x[0-9a-fA-F]+|\d+)", defines)
@@ -4382,7 +4392,7 @@ def main() -> int:
     outputs = {}
     boards_blocks = []
     used_variants = set()
-    for series in SERIES_CONFIG:
+    for series in sorted(SERIES_CONFIG, key=series_menu_order):
         rows = by_board[series]
         block, ld_files = gen_board(
             series, rows, ch32rv, facts, die,
