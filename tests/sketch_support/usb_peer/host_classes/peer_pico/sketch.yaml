@@ -6,7 +6,7 @@ profiles:
   pico:
     fqbn: rp2040:rp2040:generic:boot2=boot2_generic_03h_4_padded_checksum,uploadmethod=picoprobe_cmsis_dap,usbstack=tinyusb
     platforms:
-      - platform: rp2040:rp2040 (6.3.1)
+      - platform: rp2040:rp2040 (6.3.2)
         platform_index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
     libraries:
       - RTT Stream (1.4.1)

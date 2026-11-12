@@ -7,7 +7,7 @@ profiles:
       - platform: esp32:esp32 (3.3.12)
         platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
     libraries:
-      - EspUsbHost (2.10.0)
+      - EspUsbHost (2.10.1)
   # The ESP32-P4 (v1.x silicon) on its OTG HS port; Serial is its USB-Serial/JTAG.
   p4_host:
     fqbn: esp32:esp32:esp32p4:ChipVariant=prev3,USBMode=hwcdc,CDCOnBoot=cdc
@@ -15,5 +15,5 @@ profiles:
       - platform: esp32:esp32 (3.3.12)
         platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
     libraries:
-      - EspUsbHost (2.10.0)
+      - EspUsbHost (2.10.1)
 default_profile: s3_host

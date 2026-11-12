@@ -213,6 +213,13 @@ def isolated_environment(work, tool, toolchain):
     for name in ("data", "downloads"):
         (cache / name).mkdir(parents=True, exist_ok=True)
         env[f"ARDUINO_DIRECTORIES_{name.upper()}"] = str(cache / name)
+    # Its indexes are refreshed every run: a peer's sketch.yaml raised to a
+    # version newer than the cached index fails with "Library ... not found"
+    # (EspUsbDevice 3.2.0, 2026-11-12). Offline, the cached ones stay.
+    try:
+        subprocess.run(["arduino-cli", "update"], env=env, capture_output=True, timeout=120, check=False)
+    except subprocess.TimeoutExpired:
+        pass
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     # A short discovery timeout can fall back to serial before OEP/HID add events arrive.
     # Keep the standard plugin lifecycle and give the real CLI time to discover typed ports.
