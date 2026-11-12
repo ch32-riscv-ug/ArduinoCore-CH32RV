@@ -51,9 +51,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 
 - [x] コアの書き換え（コンパイラの分岐、newlib の名前、Compiler メニュー、xPack の依存を削除。Optimize に `-Oz`
   （既定）/ `-Os` / `-O2` / `-O3`、Floating Point の newlib の項目を picolibc の項目に）。手元の ch32rv-toolchain で確認。
-- [ ] ch32rv-toolchain の新しいリリース（v23.1.5-2: ライブラリ、gdb、割り込みのパッチ入り）を CI で作り、
-  `tools_ch32rv_toolchain.json` を `bump_tool.py ch32rv-toolchain 23.1.5-2` で上げる。それまで main の CI は通らない
-  （xPack の依存は消してある）。上がったら CI で例を全部ビルドする。
+- [x] ch32rv-toolchain v23.1.5-2（ライブラリ、gdb、割り込みのパッチ入り）を CI で作り、同梱を上げた（2026-11-12）。
+- [ ] main の CI で例を全部ビルドする（push のあと）。
 - [x] リポジトリの名前を ch32rv-toolchain に変えた（2026-11-12）。コアの tool 名、index、環境変数（`CH32_TOOLCHAIN_BIN`）も合わせた。
 - [x] 割り込みは `WCH-Interrupt-fast`（clang のパッチ）にした。naked 関数で HPE に任せる案は、FPU のあるコアで浮動小数点の
   レジスタを壊し、命令も多い。HPE の無い V103 は普通の `interrupt`（`CH32RV_INTERRUPT`、internal/ch32rv_interrupt.h）。
