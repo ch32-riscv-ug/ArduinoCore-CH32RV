@@ -109,10 +109,14 @@ def tty_of(topology, interface=None, sysfs=SYSFS):
 
 def boards(path=REPO / "boards.txt"):
     """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus. A board without a CPU Clock
-    menu (H41x, X305: one clock) gives its own build.f_cpu."""
+    menu takes the first entry of the menu that sets f_cpu (H41x's CPU Core), else its own build.f_cpu (X305)."""
     text = path.read_text(encoding="utf-8")
     first_clock = {}
     for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.[^.=\n]+\.build\.f_cpu=(\d+)L?$", text, re.M):
+        first_clock.setdefault(board, int(hz))
+    # No CPU Clock menu: the first entry of the menu that sets it (H41x's CPU Core, V5F 400 MHz by default), else
+    # the board's own (X305).
+    for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.menu\.[a-z0-9_]+\.[^.=\n]+\.build\.f_cpu=(\d+)L?$", text, re.M):
         first_clock.setdefault(board, int(hz))
     for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.build\.f_cpu=(\d+)L?$", text, re.M):
         first_clock.setdefault(board, int(hz))
