@@ -1,6 +1,7 @@
 /* Deep sleep that keeps RAM (ch32rv_power.h). Measured 2026-10-28 on V003,
  * X035 and V307: docs/peripheral-a-design.ja.md 5.1. */
 #include "Arduino.h"
+#include <stdbool.h>
 #include "internal/ch32rv_power.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
@@ -211,8 +212,16 @@ uint32_t ch32rv_power_awu_max_us(void)
 static void deep_wfi(void)
 {
 #if POWER_RTC
-    /* Stop: PDDS clear, the regulator in its low-power mode. */
+    /* Stop: PDDS clear. The regulator in its low-power mode (LPDS) on V20x /
+     * V30x. On L103 / M103 and V205 LPDS is their "stop mode 3", which wants
+     * FLASH_LP preset first (the reference manuals): entered without it the
+     * part never came back from a 1.5 s sleep (L103, 2026-11-12), so they
+     * stop in mode 1 (LPDS clear) - mode 3's lower current is a TODO. */
+#if defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || defined(CH32RV_SERIES_CH32V205)
+    PWR_CTLR &= ~(PWR_CTLR_PDDS | PWR_CTLR_LPDS);
+#else
     PWR_CTLR = (PWR_CTLR & ~PWR_CTLR_PDDS) | PWR_CTLR_LPDS;
+#endif
     PFIC_SCTLR |= SCTLR_SLEEPDEEP;
     __asm__ volatile ("wfi");
     PFIC_SCTLR &= ~SCTLR_SLEEPDEEP;
@@ -389,21 +398,28 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
         }
         /* The next stop ends on a whole second: the timer's last whole
          * second, or half the IWDG's time on, whichever comes first. */
+        /* Second 0 is a real time: an RTC started a moment ago (the first
+         * use since power-up, here) counts from 0, and a 200 ms sleep ends in
+         * second 0. With 0 meaning "no alarm" it went to stop with none set
+         * and never woke (V203 / V208 / V307 / L103 / V205, 2026-11-12). */
         uint32_t alarm = 0;
+        bool have_alarm = false;
         if (timer_ms) {
             alarm = end_s;
+            have_alarm = true;
         }
         if (wdt_slice_us) {
             const uint32_t w = s + (wdt_slice_us / 1000000u ? wdt_slice_us / 1000000u : 1u);
-            if (!alarm || w < alarm) {
+            if (!have_alarm || w < alarm) {
                 alarm = w;
+                have_alarm = true;
             }
         }
-        if (alarm && alarm <= s) {
+        if (have_alarm && alarm <= s) {
             /* Under a second to go: a plain WFI, SysTick wakes it each ms. */
             __asm__ volatile ("wfi");
         } else {
-            if (alarm) {
+            if (have_alarm) {
                 ch32rv_rtc_alarm(alarm);
             }
             const uint32_t events = alarm_events;
