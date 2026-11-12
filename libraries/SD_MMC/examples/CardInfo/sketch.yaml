@@ -16,37 +16,37 @@ profiles:
   ch32v303:
     fqbn: ch32-riscv-ug:ch32rv:CH32V303:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32v305:
     fqbn: ch32-riscv-ug:ch32rv:CH32V305:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32v307:
     fqbn: ch32-riscv-ug:ch32rv:CH32V307:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32v317:
     fqbn: ch32-riscv-ug:ch32rv:CH32V317:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32v407:
     fqbn: ch32-riscv-ug:ch32rv:CH32V407:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32v467:
     fqbn: ch32-riscv-ug:ch32rv:CH32V467:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   # CH32X033: omitted, requires SDIO, which CH32X033 does not have
@@ -60,18 +60,18 @@ profiles:
   ch32h415:
     fqbn: ch32-riscv-ug:ch32rv:CH32H415:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h416:
     fqbn: ch32-riscv-ug:ch32rv:CH32H416:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h417:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.7.0)
+      - platform: ch32-riscv-ug:ch32rv (0.7.1)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
