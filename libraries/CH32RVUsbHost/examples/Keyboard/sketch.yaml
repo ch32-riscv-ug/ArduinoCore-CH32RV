@@ -3,27 +3,39 @@
 # see docs/examples-build-rules.ja.md.
 
 profiles:
-  ch32x035:
-    fqbn: ch32-riscv-ug:ch32rv:CH32X035:pnum=ANY
+  # CH32V003: omitted, requires USBFS, which CH32V003 does not have
+  # CH32V002: omitted, requires USBFS, which CH32V002 does not have
+  # CH32V004: omitted, requires USBFS, which CH32V004 does not have
+  # CH32V005: omitted, requires USBFS, which CH32V005 does not have
+  # CH32V006: omitted, requires USBFS, which CH32V006 does not have
+  # CH32V007: omitted, requires USBFS, which CH32V007 does not have
+  # CH32M007: omitted, requires USBFS, which CH32M007 does not have
+  ch32v103:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V103:pnum=ANY
     platforms:
       - platform: ch32-riscv-ug:ch32rv (0.6.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  # CH32V003: omitted, requires USBFS, which CH32V003 does not have
   ch32v203:
     fqbn: ch32-riscv-ug:ch32rv:CH32V203:pnum=ANY
     platforms:
       - platform: ch32-riscv-ug:ch32rv (0.6.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  ch32l103:
-    fqbn: ch32-riscv-ug:ch32rv:CH32L103:pnum=ANY
+  ch32v208:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V208:pnum=ANY
     platforms:
       - platform: ch32-riscv-ug:ch32rv (0.6.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  ch32v103:
-    fqbn: ch32-riscv-ug:ch32rv:CH32V103:pnum=ANY
+  ch32v303:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V303:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32v305:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V305:pnum=ANY
     platforms:
       - platform: ch32-riscv-ug:ch32rv (0.6.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
@@ -34,5 +46,53 @@ profiles:
       - platform: ch32-riscv-ug:ch32rv (0.6.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
-  # CH32V006: omitted, requires USBFS, which CH32V006 does not have
+  ch32v317:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V317:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32x033:
+    fqbn: ch32-riscv-ug:ch32rv:CH32X033:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32x035:
+    fqbn: ch32-riscv-ug:ch32rv:CH32X035:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32l103:
+    fqbn: ch32-riscv-ug:ch32rv:CH32L103:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32m103:
+    fqbn: ch32-riscv-ug:ch32rv:CH32M103:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  ch32v205:
+    fqbn: ch32-riscv-ug:ch32rv:CH32V205:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  # CH32V407: omitted, requires USBFS, which CH32V407 does not have
+  # CH32V467: omitted, requires USBFS, which CH32V467 does not have
+  # CH32X305: omitted, requires USBFS, which CH32X305 does not have
+  # CH32X315: omitted, requires USBFS, which CH32X315 does not have
+  ch32m030:
+    fqbn: ch32-riscv-ug:ch32rv:CH32M030:pnum=ANY
+    platforms:
+      - platform: ch32-riscv-ug:ch32rv (0.6.0)
+        platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+
+  # CH32H415: omitted, requires USBFS, which CH32H415 does not have
+  # CH32H416: omitted, requires USBFS, which CH32H416 does not have
+  # CH32H417: omitted, requires USBFS, which CH32H417 does not have
 default_profile: ch32x035

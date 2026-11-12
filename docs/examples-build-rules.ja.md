@@ -9,8 +9,8 @@ uv run --no-project python tools/generate/sync_example_profiles.py --check
 ```
 
 profile はコンパイル条件の宣言であり、実機検証済み・公開済みなどの状態を示しません。
-profile 用の代表 generic board は生成器で明示し、ベンチの有無や検証結果とは独立させます。
-ANY の flash/RAM 下限、variant の peripheral capability から要件を満たす候補を選びます。
+profile は、boards.txt にあるすべての generic board（系列ごとに 1 つ）から作り、ベンチの有無や検証結果とは独立させます。
+ANY の flash/RAM 下限、variant の peripheral capability から要件を満たすものを選び、満たさない系列は理由をコメントで残します。
 profile の存在を、その系列の全 part/package/route の動作保証にしません。
 
 example が追加の機能を必要とする場合は .ino に宣言します。
