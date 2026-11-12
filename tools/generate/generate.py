@@ -701,6 +701,29 @@ CLOCK_MENU = {
 }
 
 
+# APB1 divided where HCLK would take I2C's peripheral clock past the 4-60 MHz
+# its FREQ field allows (every family's reference manual; V00x / M030 8-48):
+# on the STM32F1-shaped families, whose RCC_CFGR0 has PPRE1 at [10:8]
+# (internal/ch32rv_clock.h). The others (V205, V4x7, X3x5, H41x, M030) are
+# still to do: TODO.ja.md.
+I2C_MAX_HZ = 60_000_000
+
+# family -> the RCC clock-enable addresses of its second peripheral bus
+# (APB2PCENR, PB2PCENR, HB2PCENR in registers.csv), filled by main(): a timer
+# enabled there counts that bus's clock (CH32RV_TIMER_BUS2_MASK).
+RCC_BASE = 0x40021000
+BUS2_ENABLE = {}
+
+
+def load_bus2_enables(tables: pathlib.Path) -> dict:
+    out: dict = {}
+    for r in read_table(tables, "registers.csv", ("family", "type", "register", "offset")):
+        if r["type"] == "RCC" and re.fullmatch(r"A?H?P?B2PCENR", r["register"]):
+            out.setdefault(r["family"], set()).add(RCC_BASE + int(r["offset"], 16))
+    return out
+PPRE1_FAMILIES = {"CH32V20x", "CH32V307", "CH32L103", "CH32V103"}
+
+
 def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock_for) -> list[str]:
     """The CPU Clock entries: F_CPU and the clock setting for each, checked."""
     lines = []
@@ -734,7 +757,14 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: flash latency {latency} does not fit")
         lines.append(f"{board}.menu.clock.{key}={label}")
         lines.append(f"{board}.menu.clock.{key}.build.f_cpu={hclk_mhz * 1000000}L")
-        ppre2_define = f" -DCH32RV_CLOCK_PPRE2_DIV={ppre2}" if ppre2 != 1 else ""
+        ppre1 = 1
+        if SERIES_CONFIG[series]["family"] in PPRE1_FAMILIES:
+            while hclk_mhz * 1000000 / ppre1 > I2C_MAX_HZ:
+                ppre1 *= 2
+        if ppre1 > 4:
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: APB1 would need /{ppre1} for I2C")
+        ppre2_define = (f" -DCH32RV_CLOCK_PPRE2_DIV={ppre2}" if ppre2 != 1 else "") + \
+                       (f" -DCH32RV_CLOCK_PPRE1_DIV={ppre1}" if ppre1 != 1 else "")
         lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}{ppre2_define}")
         if series == "CH32V208":
             lines.append(f"{board}.menu.clock.{key}.build.clock_hse_defines={v208_hse_defines(clk)}")
@@ -3986,6 +4016,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     out.append(" * number, kind, counter bits, channels, complementary, base,")
     out.append(" * clock-enable address/mask, update IRQ, update handler. ---- */")
     out.append(f"#define CH32RV_TIMER_COUNT {len(timer_caps)}")
+    # Which timers sit on the second bus (bit n: TIMn): they count PCLK2's
+    # timer clock, the rest PCLK1's (CH32RVTimer.h ch32rv_timer_clock_hz).
+    bus2 = set().union(*(BUS2_ENABLE.get(f, set()) for f in families)) if families else set()
+    bus2_mask = sum(1 << n for n in timer_caps if clken.get(f"TIM{n}", (0, 0))[0] in bus2)
+    out.append(f"#define CH32RV_TIMER_BUS2_MASK {bus2_mask:#x}u")
     if timer_caps:
         out.append("#define CH32RV_TIMER_TABLE(X) \\")
         ordered_caps = sorted(timer_caps.items())
@@ -4405,6 +4440,7 @@ def main() -> int:
             by_board.setdefault(board, []).append(r)
 
     forbidden = load_forbidden_pads(args.tables)
+    BUS2_ENABLE.update(load_bus2_enables(args.tables))
     resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))

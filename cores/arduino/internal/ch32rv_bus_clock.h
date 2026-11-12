@@ -3,11 +3,13 @@
  * must see the same values).
  *
  * HCLK: what the peripherals and timers count; F_CPU except on CH32H41x with
- * the V5F (internal/ch32rv_clock.h). APB1 runs at HCLK. APB2 does too, except
- * where a CPU Clock entry would take the ADC (PCLK2 / 8 at most) past its
- * ceiling: V20x / V30x at 120 and 144 MHz halve it (CH32RV_CLOCK_PPRE2_DIV,
- * boards.txt), which moves USART1, SPI1 and the ADC. The APB2 timers still
- * count HCLK: an APB prescaler other than /1 doubles their clock back. */
+ * the V5F (internal/ch32rv_clock.h). Each APB bus runs at HCLK unless a CPU
+ * Clock entry divides it (boards.txt): APB2 where the ADC (PCLK2 / 8 at most)
+ * would pass its ceiling - USART1, SPI1, the ADC move; APB1 where I2C would
+ * pass its 60 MHz (FREQ's range on every family, the reference manuals) -
+ * USART2 and up, SPI2 / 3 and I2C move. A timer counts its bus's clock, twice
+ * that when the bus is divided (CH32RV_TIMCLK1_HZ / 2_HZ): halving a bus
+ * leaves its timers on HCLK, quartering it does not. */
 #pragma once
 
 #ifndef CH32RV_HCLK_HZ
@@ -16,5 +18,10 @@
 #ifndef CH32RV_CLOCK_PPRE2_DIV
 #define CH32RV_CLOCK_PPRE2_DIV 1
 #endif
-#define CH32RV_PCLK1_HZ CH32RV_HCLK_HZ
+#ifndef CH32RV_CLOCK_PPRE1_DIV
+#define CH32RV_CLOCK_PPRE1_DIV 1
+#endif
+#define CH32RV_PCLK1_HZ (CH32RV_HCLK_HZ / CH32RV_CLOCK_PPRE1_DIV)
 #define CH32RV_PCLK2_HZ (CH32RV_HCLK_HZ / CH32RV_CLOCK_PPRE2_DIV)
+#define CH32RV_TIMCLK1_HZ (CH32RV_CLOCK_PPRE1_DIV == 1 ? CH32RV_PCLK1_HZ : 2u * CH32RV_PCLK1_HZ)
+#define CH32RV_TIMCLK2_HZ (CH32RV_CLOCK_PPRE2_DIV == 1 ? CH32RV_PCLK2_HZ : 2u * CH32RV_PCLK2_HZ)

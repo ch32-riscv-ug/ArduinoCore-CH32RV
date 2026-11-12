@@ -27,9 +27,10 @@ const CH32RVTimerOwner servo_owner = {
     &servo_owner_identity, timer_quiesce, nullptr
 };
 
-/* The timer counts microseconds, so a pulse width is a tick count. The
- * prescaler comes straight from F_CPU because Milestone 1 leaves both APB
- * prescalers at /1. */
+/* The timer counts microseconds, so a pulse width is a tick count: the
+ * prescaler is the timer's own clock in MHz (ch32rv_timer_clock_hz - the
+ * buses' timers count different clocks where a CPU Clock entry divides APB1
+ * by four). */
 inline void timer_set(uint16_t us)
 {
     if (us < 2u) {
@@ -59,13 +60,17 @@ void timer_start(void)
     if (timer_running && ch32rv_timer_lease_valid(&timer_lease)) {
         return;
     }
+    /* The preferred timer, else the first free one - each asked with its own
+     * clock's prescaler, which CH32RV_TIMER_ANY could not carry. */
     CH32RVTimerRequest request = {
         CH32RV_SERVO_TIMER, CH32RV_TIMER_WHOLE,
-        {(uint16_t)((CH32RV_HCLK_HZ / 1000000u) - 1u), 99u, 0}
+        {(uint16_t)((ch32rv_timer_clock_hz(CH32RV_SERVO_TIMER) / 1000000u) - 1u), 99u, 0}
     };
     timer_lease = ch32rv_timer_try_acquire(&request, &servo_owner);
-    if (!ch32rv_timer_lease_valid(&timer_lease)) {
-        request.timer = CH32RV_TIMER_ANY;
+    for (size_t i = 0; i < ch32rv_timer_count() && !ch32rv_timer_lease_valid(&timer_lease); i++) {
+        const CH32RVTimerCapability *cap = ch32rv_timer_capability(i);
+        request.timer = cap->number;
+        request.base.prescaler = (uint16_t)((ch32rv_timer_clock_hz(cap->number) / 1000000u) - 1u);
         timer_lease = ch32rv_timer_try_acquire(&request, &servo_owner);
     }
     if (!ch32rv_timer_lease_valid(&timer_lease)) {

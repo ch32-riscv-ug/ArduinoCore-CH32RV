@@ -7,6 +7,7 @@
  */
 #include "Arduino.h"
 #include "CH32RVTimer.h"
+#include "internal/ch32rv_bus_clock.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_timer_internal.h"
 
@@ -292,6 +293,16 @@ static CH32RVTimerLease acquire(const CH32RVTimerRequest *request,
 size_t ch32rv_timer_count(void)
 {
     return CH32RV_TIMER_COUNT;
+}
+
+uint32_t ch32rv_timer_clock_hz(uint8_t timer)
+{
+#if CH32RV_TIMCLK1_HZ == CH32RV_TIMCLK2_HZ
+    (void)timer;
+    return CH32RV_TIMCLK1_HZ;
+#else
+    return timer < 32u && ((CH32RV_TIMER_BUS2_MASK >> timer) & 1u) ? CH32RV_TIMCLK2_HZ : CH32RV_TIMCLK1_HZ;
+#endif
 }
 
 const CH32RVTimerCapability *ch32rv_timer_capability(size_t index)

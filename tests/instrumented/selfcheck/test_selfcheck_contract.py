@@ -91,10 +91,10 @@ def ready(dut):
     nonce = secrets.token_hex(4)
     m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
-    f_cpu, hclk, pclk1, pclk2, cfgr0, from_reg = ask(
-        dut, "clocks", rb"CLOCKS (\d+) (\d+) (\d+) (\d+) ([0-9a-f]+) (\d+)").groups()
+    f_cpu, hclk, pclk1, pclk2, cfgr0, from_reg, from_reg1 = ask(
+        dut, "clocks", rb"CLOCKS (\d+) (\d+) (\d+) (\d+) ([0-9a-f]+) (\d+) (\d+)").groups()
     return dict(f_cpu=int(f_cpu), hclk=int(hclk), pclk1=int(pclk1), pclk2=int(pclk2), cfgr0=int(cfgr0, 16),
-                pclk2_register=int(from_reg))
+                pclk2_register=int(from_reg), pclk1_register=int(from_reg1))
 
 
 def test_time_rate(dut, ready, record_property):
@@ -124,6 +124,8 @@ def test_clocks(ready, record_property):
         pytest.skip("the family's RCC has no PPRE2 field this test decodes")
     assert ready["pclk2_register"] == ready["pclk2"], \
         f"RCC_CFGR0 {ready['cfgr0']:#010x} gives PCLK2 {ready['pclk2_register']}, the build assumes {ready['pclk2']}"
+    assert ready["pclk1_register"] == ready["pclk1"], \
+        f"RCC_CFGR0 {ready['cfgr0']:#010x} gives PCLK1 {ready['pclk1_register']}, the build assumes {ready['pclk1']}"
 
 
 @pytest.mark.parametrize("baud", [115200, 1000000])

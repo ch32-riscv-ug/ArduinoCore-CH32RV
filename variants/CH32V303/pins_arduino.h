@@ -695,6 +695,7 @@
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */
 #define CH32RV_TIMER_COUNT 10
+#define CH32RV_TIMER_BUS2_MASK 0x702u
 #define CH32RV_TIMER_TABLE(X) \
     X(1, 1, 16, 4, 1, CH32RV_TIM1_BASE, 0x40021018u, 0x00000800u, CH32RV_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
     X(2, 2, 16, 4, 0, CH32RV_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32RV_IRQN_TIM2, TIM2_IRQHandler) \

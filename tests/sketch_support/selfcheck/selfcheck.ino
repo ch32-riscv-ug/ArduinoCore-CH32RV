@@ -7,6 +7,7 @@
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   clocks                    CLOCKS <F_CPU> <HCLK> <PCLK1> <PCLK2> <CFGR0 hex> <PCLK2 from CFGR0, or 0>
+ *                             <PCLK1 from CFGR0, or 0>
  *   ports                     PORTS <count>: the HardwareSerial objects (Serial, Serial1, ...)
  *   tx <k> <baud> <n>         port k sends n bytes: TX <USARTn> <sent> <microseconds to the last stop bit> <BRR>
  *   rx <k> <n>                port k at 9600 receives n bytes the sketch sends on its RX pad (made an output):
@@ -119,6 +120,20 @@ static uint32_t pclk2_from_register(uint32_t cfgr0)
 #if !CH32RV_HPRE_LINEAR && !defined(CH32RV_SERIES_CH32H417) && !defined(CH32RV_SERIES_CH32H416) && \
     !defined(CH32RV_SERIES_CH32H415)
     const uint32_t field = (cfgr0 >> 11) & 7u;
+    const uint32_t div = field < 4u ? 1u : 2u << (field - 4u);
+    return (uint32_t)CH32RV_HCLK_HZ / div;
+#else
+    (void)cfgr0;
+    return 0;
+#endif
+}
+
+/* The same for PCLK1 (PPRE1, [10:8]). */
+static uint32_t pclk1_from_register(uint32_t cfgr0)
+{
+#if !CH32RV_HPRE_LINEAR && !defined(CH32RV_SERIES_CH32H417) && !defined(CH32RV_SERIES_CH32H416) && \
+    !defined(CH32RV_SERIES_CH32H415)
+    const uint32_t field = (cfgr0 >> 8) & 7u;
     const uint32_t div = field < 4u ? 1u : 2u << (field - 4u);
     return (uint32_t)CH32RV_HCLK_HZ / div;
 #else
@@ -424,10 +439,11 @@ static void reply(char *command)
         SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "clocks")) {
         const uint32_t cfgr0 = CH32RV_RCC_CFGR0;
-        SerialDMSeq.printf("CLOCKS %lu %lu %lu %lu %08lx %lu\r\n", (unsigned long)F_CPU,
+        SerialDMSeq.printf("CLOCKS %lu %lu %lu %lu %08lx %lu %lu\r\n", (unsigned long)F_CPU,
                            (unsigned long)CH32RV_HCLK_HZ, (unsigned long)CH32RV_PCLK1_HZ,
                            (unsigned long)CH32RV_PCLK2_HZ, (unsigned long)cfgr0,
-                           (unsigned long)pclk2_from_register(cfgr0));
+                           (unsigned long)pclk2_from_register(cfgr0),
+                           (unsigned long)pclk1_from_register(cfgr0));
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {

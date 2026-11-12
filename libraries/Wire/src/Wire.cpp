@@ -6,10 +6,10 @@
 
 using namespace arduino;
 
-/* The I2C block hangs off PCLK1. The supported clock configuration leaves the
- * APB prescaler at /1, so PCLK1 is HCLK == F_CPU. Any non-unity APB setting
- * must provide the actual peripheral clock here. */
-static const uint32_t CH32RV_I2C_PCLK1 = CH32RV_HCLK_HZ;
+/* The I2C block hangs off PCLK1, which the CPU Clock entry keeps within
+ * FREQ's 4-60 MHz by dividing APB1 where HCLK is above it
+ * (internal/ch32rv_bus_clock.h). */
+static const uint32_t CH32RV_I2C_PCLK1 = CH32RV_PCLK1_HZ;
 
 namespace {
 

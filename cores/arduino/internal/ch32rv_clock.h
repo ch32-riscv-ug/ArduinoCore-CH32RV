@@ -65,12 +65,26 @@ between them."
 #ifndef CH32RV_CLOCK_PPRE2_DIV
 #define CH32RV_CLOCK_PPRE2_DIV 1
 #endif
+/* The STM32F1-shaped field, 3 bits: 0xx /1, 100 /2, 101 /4, 110 /8, 111 /16. */
+#define CH32RV_PPRE_CODE(div) ((div) == 1 ? 0u : (div) == 2 ? 4u : (div) == 4 ? 5u : (div) == 8 ? 6u : 7u)
 #if CH32RV_CLOCK_PPRE2_DIV == 1
 #define CH32RV_PPRE2_FIELD 0u
-#elif CH32RV_CLOCK_PPRE2_DIV == 2 && !CH32RV_HPRE_LINEAR
-#define CH32RV_PPRE2_FIELD (0x4u << 11)
+#elif !CH32RV_HPRE_LINEAR && (CH32RV_CLOCK_PPRE2_DIV == 2 || CH32RV_CLOCK_PPRE2_DIV == 4)
+#define CH32RV_PPRE2_FIELD (CH32RV_PPRE_CODE(CH32RV_CLOCK_PPRE2_DIV) << 11)
 #else
-#error "CH32RV_CLOCK_PPRE2_DIV: only /1, or /2 on the families with RCC_CFGR0's PPRE2 field"
+#error "CH32RV_CLOCK_PPRE2_DIV: only /1, or /2 / 4 on the families with RCC_CFGR0's PPRE2 field"
+#endif
+/* APB1's, RCC_CFGR0[10:8] in the same code: /1 unless the entry divides it to
+ * keep I2C's peripheral clock within 60 MHz (Arduino.h's CH32RV_PCLK1_HZ). */
+#ifndef CH32RV_CLOCK_PPRE1_DIV
+#define CH32RV_CLOCK_PPRE1_DIV 1
+#endif
+#if CH32RV_CLOCK_PPRE1_DIV == 1
+#define CH32RV_PPRE1_FIELD 0u
+#elif !CH32RV_HPRE_LINEAR && (CH32RV_CLOCK_PPRE1_DIV == 2 || CH32RV_CLOCK_PPRE1_DIV == 4)
+#define CH32RV_PPRE1_FIELD (CH32RV_PPRE_CODE(CH32RV_CLOCK_PPRE1_DIV) << 8)
+#else
+#error "CH32RV_CLOCK_PPRE1_DIV: only /1, or /2 / 4 on the families with RCC_CFGR0's PPRE1 field"
 #endif
 
 /* The AHB prescaler is four bits in RCC_CFGR0[7:4], and the CH32 line encodes

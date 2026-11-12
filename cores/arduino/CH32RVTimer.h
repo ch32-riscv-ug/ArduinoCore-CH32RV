@@ -87,6 +87,10 @@ typedef struct {
 
 size_t ch32rv_timer_count(void);
 const CH32RVTimerCapability *ch32rv_timer_capability(size_t index);
+/* The clock a timer counts, in Hz: its bus's, twice that when the CPU Clock
+ * entry divides the bus (internal/ch32rv_bus_clock.h). A constant where both
+ * buses' timers count HCLK. */
+uint32_t ch32rv_timer_clock_hz(uint8_t timer);
 const CH32RVTimerCapability *ch32rv_timer_capability_for(uint8_t timer);
 bool ch32rv_timer_get_status(uint8_t timer, CH32RVTimerStatus *status);
 

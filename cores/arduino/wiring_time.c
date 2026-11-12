@@ -227,8 +227,8 @@ void SystemInit(void)
 #endif
 #endif
 
-    /* APB1 stays at /1, and APB2 too unless the CPU Clock entry halves it for
-     * the ADC (CH32RV_CLOCK_PPRE2_DIV, Arduino.h's CH32RV_PCLK2_HZ).
+    /* APB1 and APB2 stay at /1 unless the CPU Clock entry divides them - APB2
+     * for the ADC, APB1 for I2C (internal/ch32rv_bus_clock.h).
      *
      * EVT does not do this: CH32V103/V20x/V30x/L103 set PPRE1=/2 at every PLL
      * frequency, /1 only at 24 MHz. That is exactly where STM32F1's 36 MHz
@@ -250,7 +250,7 @@ void SystemInit(void)
                         CH32RV_CLOCK_FPRE_MASK);
     CH32RV_RCC_CFGR0 |= CH32RV_RCC_CFGR0_SW_HSI |
                       CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE |
-                      CH32RV_PPRE2_FIELD;
+                      CH32RV_PPRE1_FIELD | CH32RV_PPRE2_FIELD;
     while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
            (CH32RV_RCC_CFGR0_SW_HSI << 2)) {
     }
@@ -383,7 +383,8 @@ static inline int ch32rv_clock_is_ours(void)
     }
     if ((cfgr0 & (CH32RV_RCC_CFGR0_HPRE_MASK | CH32RV_RCC_CFGR0_PPRE1_MASK |
                   CH32RV_RCC_CFGR0_PPRE2_MASK | CH32RV_CLOCK_FPRE_MASK)) !=
-        (CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE | CH32RV_PPRE2_FIELD)) {
+        (CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE | CH32RV_PPRE1_FIELD |
+         CH32RV_PPRE2_FIELD)) {
         return 0;
     }
     if (use_pll) {
