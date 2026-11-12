@@ -206,7 +206,7 @@ def tool_paths():
 
 def isolated_environment(work, tool, toolchain):
     env = dict(os.environ)
-    for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
+    for key in ("CH32RV_PROBE", "CH32RV_PROBE_RECORD", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
         env.pop(key, None)
     env["ARDUINO_DIRECTORIES_USER"] = str(work / "user")
     # Packages a profile installs (an ESP32 peer's pinned core and libraries)
@@ -485,6 +485,10 @@ def parse_options(argv=None):
 def main(argv=None):
     args, parser = parse_options(argv)
     chip = os.environ.get("CH32RV_CHIP")       # read before the isolated environment drops it (place.resolve)
+    try:
+        link_records = places.link_record_from_env()
+    except places.PlaceError as error:
+        parser.error(str(error))
     tool, toolchain, versions = tool_paths()
     work = args.out.resolve()
     work.mkdir(parents=True, exist_ok=False)
@@ -510,7 +514,7 @@ def main(argv=None):
         for address in args.probe:
             try:
                 target = places.resolve(address, tool, env, work / "preflight" / address.replace("://", "-").replace("/", "-"),
-                                        chip=chip)
+                                        chip=chip, link_record=link_records.get(places.canonical(address)))
             except Exception as error:
                 name = address
                 report["cases"].extend(dict(target=name, address=address, case=case, status="ENVIRONMENT_ERROR",

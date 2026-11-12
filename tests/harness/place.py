@@ -231,9 +231,9 @@ def _item_tests(item):
     return [test] if isinstance(test, str) else list(test)
 
 
-def series_has(case, series, items=None, caps=None):
+def series_has(case, series, items=None, caps=None, part=None):
     """Whether the series has what the case tests (coverage.toml's needs / any_of / also / not_on); a case no item
-    names is taken as every series'."""
+    names is taken as every series'. also / not_on name a series or a part (`part`: the one at hand)."""
     if items is None:
         items, caps = series_needs()
     mine = [i for i in items if any(t.partition("::")[0] == case for t in _item_tests(i))]
@@ -241,9 +241,10 @@ def series_has(case, series, items=None, caps=None):
         return True
     have = caps.get(series, set())
     for item in mine:
-        if series in item.get("not_on", []):
+        names = {series, (part or "").upper()} - {""}
+        if names & set(item.get("not_on", [])):
             continue
-        if series in item.get("also", []):
+        if names & set(item.get("also", [])):
             return True
         need, any_of = set(item.get("needs", [])), set(item.get("any_of", []))
         if need <= have and (not any_of or any_of & have):
@@ -276,9 +277,14 @@ def choose_cases(place, items=None, caps=None):
         lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
         if lacking:
             out["uart"] = "skip: the probe labels no " + " / ".join(f"{place.get('port_name') or '<port>'}.{l}" for l in lacking)
+    # A console the probe cannot carry (ch32rv capabilities: SDI is a WCH-LinkE's only).
+    for case in [c for c in out if c.startswith("console-") and out[c] == "run"]:
+        can = place.get("probe_capabilities", {}).get("monitor " + case.removeprefix("console-"))
+        if can and not can["supported"]:
+            out[case] = f"skip: the probe: {can['reason']}"
     parts = core.get("parts", {})
     out["sd"] = "run" if "sd" in parts else "skip: no sd in the record's parts"
-    out["eth"] = ("run" if "eth" in parts and series_has("eth", series, items, caps)
+    out["eth"] = ("run" if "eth" in parts and series_has("eth", series, items, caps, part)
                   else "skip: no eth in the record's parts" if "eth" not in parts else f"skip: {series} has no Ethernet")
     out["pd"] = ("run" if "pd" in core and series_has("pd", series, items, caps)
                  else "skip: no pd in the record" if "pd" not in core else f"skip: {series} has no USB PD")
@@ -360,10 +366,32 @@ def chip_info(tool, address, part, log, env):
     return info.get("target") or {}
 
 
-def resolve(address, tool, env, logs, *, chip=None):
+def probe_capabilities(tool, address, part, log, env):
+    """{op: {supported, reason}} from ch32rv capabilities for the probe and the part (static: it does not attach),
+    e.g. a WCH-Link(CH549) has no "monitor sdi"."""
+    command = [str(tool), "--probe", address, "--non-interactive", "--json", "capabilities", "--chip", part]
+    log.parent.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
+    log.write_text(json.dumps(command) + "\n" + result.stdout + result.stderr)
+    try:
+        info = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise PlaceError(f"ch32rv capabilities gave no JSON (exit {result.returncode}): see {log}")
+    if not info.get("ok"):
+        raise PlaceError(f"ch32rv capabilities failed: {info.get('error') or info}; see {log}")
+    return {c["op"]: dict(supported=bool(c.get("supported")), reason=c.get("reason", ""))
+            for c in info.get("result", {}).get("capabilities", [])}
+
+
+def resolve(address, tool, env, logs, *, chip=None, link_record=None):
     """The place of `address`: the facts above, as one dict (run_hardware.py stages it as case.json's target).
-    chip: the part when the chip ID leaves several and no record names it (CH32RV_CHIP, ch32rv's own variable)."""
+    chip: the part when the chip ID leaves several and no record names it (CH32RV_CHIP, ch32rv's own variable).
+    link_record: a WCH-Link's core record, which it cannot keep itself (CH32RV_PROBE_RECORD, for the Link that
+    CH32RV_PROBE names); an OEP port's record is the one on its probe."""
     parsed = parse(address)
+    if link_record is not None and parsed["kind"] == "oep":
+        raise PlaceError(f"{address}: an OEP port keeps its record on the probe (tests/bench_record.py set); "
+                         "CH32RV_PROBE_RECORD is for a WCH-Link")
     place = dict(address=address, kind=parsed["kind"], warnings=[])
     if parsed["kind"] == "oep":
         topology, vid, pid, serial = usb_device(parsed["unit"])
@@ -376,7 +404,7 @@ def resolve(address, tool, env, logs, *, chip=None):
         recorded_part = facts["port_record"].get("part")
     else:
         topology, vid, pid, serial = usb_device(parsed["serial"])
-        place.update(name="link-" + parsed["serial"].lower(), lines={}, pads={}, record={}, port_record={},
+        place.update(name="link-" + parsed["serial"].lower(), lines={}, pads={}, record=dict(link_record or {}), port_record={},
                      snapshot=None, port=tty_of(topology))
         recorded_part = None
     place.update(usb_topology=topology, usb_vid=vid, usb_pid=pid, usb_serial=serial,
@@ -394,7 +422,7 @@ def resolve(address, tool, env, logs, *, chip=None):
         if not wanted:
             raise PlaceError(f"{address}: the chip ID leaves {', '.join(names) or info.get('family')}: "
                              + ("write the part in the port record (tests/bench_record.py --part)" if parsed["kind"] == "oep"
-                                else "set CH32RV_CHIP in tests/.env (a WCH-Link keeps no record)"))
+                                else "set CH32RV_CHIP in tests/.env (a WCH-Link keeps no record of its own)"))
         if names and wanted not in names:
             raise PlaceError(f"{address}: the part {wanted} is not one of the chip's {', '.join(names)}")
         info = chip_info(tool, address, wanted, logs / "info-part.log", env)
@@ -431,6 +459,7 @@ def resolve(address, tool, env, logs, *, chip=None):
             place["pd_vbus_pin"] = pin_number(core["pd"]["vbus_pin"])
     if parsed["kind"] == "oep" and "nrst" in place["lines"]:
         place["nrst_channel"] = place["lines"]["nrst"]
+    place["probe_capabilities"] = probe_capabilities(tool, address, part, logs / "capabilities.log", env)
     place["cases"] = choose_cases(place)
     return place
 
@@ -454,6 +483,37 @@ def peer_tty(serial, sysfs=SYSFS, mac=None, identify=BOARD_IDENTIFY):
     if tty is None:
         raise PlaceError(f"ESP32 peer {serial}: its USB device has no tty")
     return tty
+
+
+def canonical(address):
+    """An address as one spelling (a WCH-Link's serial in upper case), to compare two."""
+    parsed = parse(address)
+    return f"wchlink://{parsed['serial']}" if parsed["kind"] == "wchlink" else address
+
+
+def link_record_from_env(path=None):
+    """{CH32RV_PROBE's address: CH32RV_PROBE_RECORD} when both are set: the core record (RECORDS.ja.md §4, the
+    same members and checks) of the WCH-Link that CH32RV_PROBE names, which keeps no record of its own. The pair
+    goes together in tests/.env; another --probe does not get it. {} when CH32RV_PROBE_RECORD is not set."""
+    text = os.environ.get("CH32RV_PROBE_RECORD", "").strip()
+    if not text:
+        return {}
+    address = address_from_env(path)
+    if not address:
+        raise PlaceError("CH32RV_PROBE_RECORD is the record of the WCH-Link CH32RV_PROBE names; CH32RV_PROBE is not set")
+    if parse(address)["kind"] != "wchlink":
+        raise PlaceError(f"CH32RV_PROBE_RECORD: CH32RV_PROBE is {address}, an OEP port, which keeps its record on the "
+                         "probe (tests/bench_record.py set); the variable is for a WCH-Link")
+    try:
+        record = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise PlaceError(f"CH32RV_PROBE_RECORD is not JSON: {error}")
+    if not isinstance(record, dict):
+        raise PlaceError("CH32RV_PROBE_RECORD is not a JSON object")
+    problems = records.check_core(record)
+    if problems:
+        raise PlaceError("CH32RV_PROBE_RECORD: " + "; ".join(problems))
+    return {canonical(address): record}
 
 
 def address_from_env(path=None):

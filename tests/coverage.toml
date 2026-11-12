@@ -6,7 +6,8 @@
 #        them (any of them counts). No test: a feature the tests do not cover yet ("no test" in the report).
 # needs: clock-enable names of the series' variant (tests/harness/series.py series_capabilities);
 #        any_of: at least one of them. also: series that have it although the names miss it. not_on: series that
-#        have the names but not what the item tests. A series without them shows n/a.
+#        have the names but not what the item tests. also / not_on may name a part instead (choosing a bench's
+#        cases; the coverage report is per series and does not see parts). A series without them shows n/a.
 # tests/harness/place.py reads the same items to choose the cases a series can run.
 
 [[item]]
@@ -86,7 +87,8 @@ id = "eth"
 test = "eth"
 scope = "series"
 any_of = ["ETH_MAC", "ETH"]
-also = ["CH32V208"]   # its MAC's clock enable is not named ETH in the variant
+also = ["CH32V208", "CH32V203RBT6"]   # the 10M MAC: its clock enable is not named ETH in the variant
+not_on = ["CH32V208CBU6"]            # the QFN48 V208 has no Ethernet (libraries/Network/src/NetworkEthernet.h)
 
 [[item]]
 id = "pd"

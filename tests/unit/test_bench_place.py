@@ -49,7 +49,8 @@ def test_fqbn_and_clock_come_from_boards_txt():
         place.fqbn_of("CH32X999Z9")
 
 
-def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, address="oep://30eda0e31108/x035"):
+def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, address="oep://30eda0e31108/x035",
+                 link_record=None, capabilities=None):
     root = sysfs(tmp_path, {"3-1.4.2": ("1209", "4f45", "30eda0e31108")})
     monkeypatch.setattr(place, "SYSFS", root)
     monkeypatch.setattr(place, "usb_device", lambda serial, sysfs=root: ("3-1.4.2", "1209", "4f45", serial))
@@ -64,7 +65,9 @@ def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, 
             got["sku"] = part
         return got
     monkeypatch.setattr(place, "chip_info", chip)
-    return place.resolve(address, "ch32rv", None, tmp_path / "logs"), calls
+    monkeypatch.setattr(place, "tty_of", lambda topology, interface=None, sysfs=None: "/dev/ttyACM0")
+    monkeypatch.setattr(place, "probe_capabilities", lambda tool, a, part, log, env: dict(capabilities or {}))
+    return place.resolve(address, "ch32rv", None, tmp_path / "logs", link_record=link_record), calls
 
 
 X035 = dict(sku="CH32X035C8T6", family="CH32X035", uid="1ff9abcd880ebc48", chip_id="0x03510601")
@@ -243,3 +246,47 @@ def test_serial_routes_come_from_the_variant():
     routes = series.serial_routes("CH32X035")
     assert (0, "PA2", "PA3") in routes[2] and (0, "PB10", "PB11") in routes[1]
     assert series.serial_routes("CH32NOPE") == {}
+
+
+V203RB = dict(sku="CH32V203RBT6", family="CH32V20x", uid="88bf46b13f897019", chip_id="0x2034052c")
+NO_SDI = {"monitor sdi": dict(supported=False, reason="SDI print forwarding is WCH-LinkE only"),
+          "monitor dmdata": dict(supported=True, reason="any probe")}
+
+
+def test_a_console_the_probe_cannot_carry_is_skipped(monkeypatch, tmp_path):
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=V203RB, address="wchlink://BC5F4B9807F7", capabilities=NO_SDI)
+    assert p["cases"]["console-sdi"] == "skip: the probe: SDI print forwarding is WCH-LinkE only"
+    assert p["cases"]["console-dmdata"] == "run" and p["cases"]["console-rtt"] == "run"   # no row: left as it was
+
+
+def test_a_wch_link_takes_its_record_from_the_environment(monkeypatch, tmp_path):
+    eth = {"parts": {"eth": {"to": "lan"}}}
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=V203RB, address="wchlink://BC5F4B9807F7", link_record=eth)
+    assert p["record"] == eth and p["cases"]["eth"] == "run"
+    p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=V203RB, address="wchlink://BC5F4B9807F7")
+    assert p["cases"]["eth"] == "skip: no eth in the record's parts"
+    with pytest.raises(place.PlaceError, match="OEP port keeps its record on the probe"):
+        fake_resolve(monkeypatch, tmp_path / "c", info=X035, link_record=eth)
+    with pytest.raises(place.PlaceError, match="core record has errors"):
+        fake_resolve(monkeypatch, tmp_path / "d", info=V203RB, address="wchlink://BC5F4B9807F7",
+                     link_record={"usb": {"to": "esp32-s3"}})
+
+
+def test_the_link_record_pairs_with_ch32rv_probe(monkeypatch, tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("CH32RV_PROBE=wchlink://bc5f4b9807f7\n")
+    monkeypatch.delenv("CH32RV_PROBE", raising=False)
+    monkeypatch.delenv("CH32RV_PROBE_RECORD", raising=False)
+    assert place.link_record_from_env(env) == {}
+    monkeypatch.setenv("CH32RV_PROBE_RECORD", '{"parts": {"eth": {"to": "lan"}}}')
+    got = place.link_record_from_env(env)
+    assert got == {"wchlink://BC5F4B9807F7": {"parts": {"eth": {"to": "lan"}}}}
+    assert got.get(place.canonical("wchlink://BC5F4B9807F7")) and not got.get(place.canonical("wchlink://FBC18F0680B0"))
+    monkeypatch.setenv("CH32RV_PROBE", "oep://30eda0e31108/x035")
+    with pytest.raises(place.PlaceError, match="an OEP port"):
+        place.link_record_from_env(env)
+    monkeypatch.setenv("CH32RV_PROBE", "wchlink://BC5F4B9807F7")
+    for bad, why in (("[1]", "not a JSON object"), ("{", "not JSON"), ('{"parts": {"eth": {}}}', "CH32RV_PROBE_RECORD: ")):
+        monkeypatch.setenv("CH32RV_PROBE_RECORD", bad)
+        with pytest.raises(place.PlaceError, match=why):
+            place.link_record_from_env(env)

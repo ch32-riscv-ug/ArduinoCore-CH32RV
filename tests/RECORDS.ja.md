@@ -133,6 +133,7 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
 - 壊れたオブジェクト（crc が合わない、oep-if-memo §3）と、JSON のオブジェクトでないものは、空として読み、警告を出します。書き直せば直ります。
 - 検査に通らない記録があれば、チップに触る前に止まります。
 - メモ欄を持たないプローブと WCH-Link は、記録を持てません。記録の要る case は流れません。
+- WCH-Link だけは、`CH32RV_PROBE` と対の環境変数 `CH32RV_PROBE_RECORD` に、§4 と同じ形のコアの記録を JSON で書けます（例: tests/.env に `CH32RV_PROBE_RECORD='{"parts": {"eth": {"to": "lan"}}}'`。uv の env-file は一重引用符で囲まないと読めません）。効くのは `CH32RV_PROBE` が指す WCH-Link だけで、同じ検査を通します。ほかの `--probe` には渡しません。`CH32RV_PROBE` が OEP の口のときは、記録はプローブにあるので止まります。
 
 ## 6. 書き方と見方
 
