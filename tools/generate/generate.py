@@ -1550,6 +1550,8 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     afio_ports: dict = {}
     for r in read_table(tables, "registers.csv",
                         ("family", "type", "register", "offset", "field")):
+        if r["type"] == "RCC" and r["register"] == "RSTSCKR" and r["offset"]:
+            afio_off.setdefault((r["family"], "RSTSCKR"), set()).add(int(r["offset"], 16))
         if r["type"] != "AFIO" or not r["offset"]:
             continue
         reg = r["register"]
@@ -1666,6 +1668,9 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
                           afio_off[(family, "AFLR")])
             if (family, "AFLR") in afio_off else None,
             afio_af_ports=len(afio_ports.get(family, ())),
+            # RCC_RSTSCKR (reset flags, LSION): 0x24 but on CH32H417, 0x28.
+            rcc_rstsckr=one(family, "the RCC RSTSCKR offset", afio_off[(family, "RSTSCKR")])
+            if (family, "RSTSCKR") in afio_off else None,
         )
     return facts
 
@@ -4230,6 +4235,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         # ch32rv_gpio.h), so the families that match keep their command line.
         + (f" -DCH32RV_AFIO_EXTICR_OFFSET={fact['afio_exticr']:#x}u"
            if fact['afio_exticr'] not in (None, 0x08) else "")
+        + (f" -DCH32RV_RCC_RSTSCKR_OFFSET={fact['rcc_rstsckr']:#x}u"
+           if fact['rcc_rstsckr'] not in (None, 0x24) else "")
         + (f" -DCH32RV_AFIO_AFLR_OFFSET={fact['afio_aflr']:#x}u"
            if fact['afio_aflr'] not in (None, 0x20) else "")
         + (f" -DCH32RV_AFIO_AF_PORTS={fact['afio_af_ports']}u"

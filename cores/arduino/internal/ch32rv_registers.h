@@ -408,7 +408,13 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
  * bits, which readers should ignore rather than misname. The flags survive
  * everything except a write of RMVF, so they describe the *oldest* unread
  * reset, not necessarily the latest. */
-#define CH32RV_RCC_RSTSCKR  CH32RV_REG32(CH32RV_RCC_BASE + 0x24u)
+/* 0x24 on every family but CH32H417 (0x28; device-data registers.csv, via
+ * boards.txt): reading 0x24 there gave resetReason() "unknown" after a
+ * restart() and a watchdog reset alike, and LSION missed (2026-11-12). */
+#ifndef CH32RV_RCC_RSTSCKR_OFFSET
+#define CH32RV_RCC_RSTSCKR_OFFSET 0x24u
+#endif
+#define CH32RV_RCC_RSTSCKR  CH32RV_REG32(CH32RV_RCC_BASE + CH32RV_RCC_RSTSCKR_OFFSET)
 #define CH32RV_RST_RMVF     (1u << 24)   /* write 1 to clear all flags */
 #define CH32RV_RST_PIN      (1u << 26)   /* NRST pin                    */
 #define CH32RV_RST_POR      (1u << 27)   /* power on                    */
