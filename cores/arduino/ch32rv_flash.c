@@ -167,9 +167,14 @@ static bool write_one(uint32_t a, const uint8_t *src, bool aligned)
     }
     for (uint32_t i = 0; i < CH32RV_FLASH_WRITE_SIZE / 4u; i++) {
         dst[i] = load_word(src + 4u * i, aligned);
+        /* Each word out to the flash before WR_BSY is read and PG_STRT is
+         * set: H41x's V5F holds stores back, and its pages kept their erased
+         * contents (the writes reported success, 2026-11-13). */
+        __asm__ volatile("fence" ::: "memory");
         while (FL_STATR & SR_WR_BSY) {
         }
     }
+    __asm__ volatile("fence" ::: "memory");
     FL_CTLR |= CR_PG_STRT;
 #endif
     ok = done_ok() && ok;
