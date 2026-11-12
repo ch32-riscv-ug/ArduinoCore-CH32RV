@@ -704,8 +704,9 @@ CLOCK_MENU = {
 # APB1 divided where HCLK would take I2C's peripheral clock past the 4-60 MHz
 # its FREQ field allows (every family's reference manual; V00x / M030 8-48):
 # on the STM32F1-shaped families, whose RCC_CFGR0 has PPRE1 at [10:8]
-# (internal/ch32rv_clock.h). The others (V205, V4x7, X3x5, H41x, M030) are
-# still to do: TODO.ja.md.
+# (internal/ch32rv_clock.h): those and V205 / V4x7, whose manuals give the
+# same field. X3x5 and H41x have no APB prescaler for their peripherals, and
+# M030 is still to do: TODO.ja.md.
 I2C_MAX_HZ = 60_000_000
 
 # family -> the RCC clock-enable addresses of its second peripheral bus
@@ -721,7 +722,9 @@ def load_bus2_enables(tables: pathlib.Path) -> dict:
         if r["type"] == "RCC" and re.fullmatch(r"A?H?P?B2PCENR", r["register"]):
             out.setdefault(r["family"], set()).add(RCC_BASE + int(r["offset"], 16))
     return out
-PPRE1_FAMILIES = {"CH32V20x", "CH32V307", "CH32L103", "CH32V103"}
+
+
+PPRE1_FAMILIES = {"CH32V20x", "CH32V307", "CH32L103", "CH32V103", "CH32V205", "CH32V407"}
 
 
 def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock_for) -> list[str]:

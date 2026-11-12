@@ -54,7 +54,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] ch32rv-toolchain v23.1.5-2（ライブラリ、gdb、割り込みのパッチ入り）を CI で作り、同梱を上げた（2026-11-12）。
 - [x] main の CI で例を全部ビルドした。例の profile を全系列（27）に広げ、合わなかった例は要件で外した（ETHERNET、SERIAL1、
   variant の `#define` の名前を要件に書けるようにした）。
-- [ ] I2C の FREQ の範囲は 4〜60 MHz（全系列のリファレンスマニュアル。V00x / M030 は 8〜48）。F1 型（V20x / V30x、L103 / M103、V103）は、CPU Clock の項目ごとに APB1 を分周して 60 MHz 以下にした（2026-11-12）。タイマーは自分のバスのクロックで数える（`ch32rv_timer_clock_hz()`）。残り: V205・V407 / V467（同じ PPRE1 の欄がある）、X315・H417（ペリフェラルの APB 分周が無く、I2C が HCLK で動く: 240 / 100 MHz）、M030（上限 48 MHz、既定 72 MHz）。63 MHz を超える APB1 で I2C を実機で試したことはまだない。
+- [ ] I2C の FREQ の範囲は 4〜60 MHz（全系列のリファレンスマニュアル。V00x / M030 は 8〜48）。F1 型（V20x / V30x、L103 / M103、V103）と V205・V407 / V467 は、CPU Clock の項目ごとに APB1 を分周して 60 MHz 以下にした（2026-11-12）。タイマーは自分のバスのクロックで数える（`ch32rv_timer_clock_hz()`）。残り: X315・H417（ペリフェラルの APB 分周が無く、I2C が HCLK で動く: 240 / 100 MHz）、M030（上限 48 MHz、既定 72 MHz）。63 MHz を超える APB1 で I2C を実機で試したことはまだない。
 - [ ] H417 の V3F ビルド（CPU Core = V3F）で、SerialDMSeq に送った行がときどき崩れる（selfcheck の `ready <nonce>` が `UNKNOWN ready` になる。0.30.5 で 10 回中 2 回、0.30.6 で 4 回中 1 回）。ch32rv の記録では、ホストが送った 8 フレームはどれも DUT が受け取りを返している（2026-11-12、[ch32rv]）。V5F ビルドでは起きない。selfcheck / selfbus は UNKNOWN で行全体と語の数を返すようにした。次に起きたら、欠けたのか余計に来たのかを見る。
 - [x] X305 の SPI1 の既定を PA5 / PD3 / PA6 にした（X315 と同じ）。候補の端子を絞るとき、デバッグ・起動設定の端子を後回しにする。同じ規則で H415 / H416 の Wire は I2C1 の PB6 / PB7 になった（H417 は I2C2 のまま）。
 - [x] Network ライブラリの `ETH` を CH32V208CBU6 では定義しない（Ethernet が無い、device-data capabilities.csv）。ANY と他の V208 は今までどおり。
