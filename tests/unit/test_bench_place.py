@@ -214,6 +214,10 @@ def test_update_keeps_other_members_and_writes_only_changes(monkeypatch):
         records.update(None, "x035", core_changes={"usb": {"to": "pc"}})
     records.update(None, "x035", port_changes={"target": "ch32x035-1ff9"})
     assert json.loads(store["oep.probe.memo/port/x035"]) == {"target": "ch32x035-1ff9"}
+    # Emptying a record is refused, not done by deleting it (v208 / m030's records were found gone, 2026-11-12).
+    with pytest.raises(ValueError, match="empty"):
+        records.update(None, "x035", port_changes={"target": None})
+    assert json.loads(store["oep.probe.memo/port/x035"]) == {"target": "ch32x035-1ff9"}
 
 
 def test_a_part_without_a_peripheral_and_a_port_without_its_lines():

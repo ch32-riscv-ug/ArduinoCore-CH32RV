@@ -218,7 +218,8 @@ def encode(record):
 def update(host, port, *, port_changes=None, core_changes=None, remove=()):
     """Merge changes into the port's records inside the session the caller holds (the memo write needs the lock, so
     no other host writes between this read and write, oep-if-memo §4.2): read, set the given members (None removes
-    one), keep the rest, write only what changed. Returns {name: (before, after)} of what was written."""
+    one), keep the rest, write only what changed, and never empty a record (refused). Returns {name: (before, after)} of
+    what was written."""
     from oep_client import memo
     mm = memo.Memo(host)
     written = {}
@@ -248,9 +249,10 @@ def update(host, port, *, port_changes=None, core_changes=None, remove=()):
         data = encode(after)
         if len(data) > mm.max_object:
             raise ValueError(f"{name}: {len(data)} bytes, the probe keeps at most {mm.max_object}")
-        if after:
-            mm.write(name, data)
-        else:
-            mm.delete(name)
+        if not after:
+            # Never empties a record: a probe's v208 and m030 records were found gone on 2026-11-12 with no tool but
+            # this one able to delete a memo object - to drop a whole record, delete it on the probe on purpose.
+            raise ValueError(f"{name}: the change would leave the record empty; refusing to delete it")
+        mm.write(name, data)
         written[name] = (before, after)
     return written
