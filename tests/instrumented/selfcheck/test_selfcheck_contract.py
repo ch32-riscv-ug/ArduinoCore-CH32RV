@@ -102,7 +102,7 @@ def test_time_rate(dut, ready, record_property):
     import time as host_time
 
     def stamp():
-        m = ask(dut, "time", rb"TIME (\d+) (\d+)")
+        m = ask(dut, "time", rb"TIME (\d+) (\d+)[ 0-9a-f]*")
         return host_time.monotonic(), int(m.group(1)), int(m.group(2))
     h0, ms0, us0 = stamp()
     host_time.sleep(5)
@@ -134,12 +134,17 @@ def test_serial_transmit(dut, ready, baud, record_property):
     if not count:
         pytest.skip("no HardwareSerial on this board")
     n = 64
-    results, wrong, closed = {}, [], []
+    results, wrong, closed, unreachable = {}, [], [], []
     for k in range(count):
         m = ask(dut, f"tx {k} {baud} {n}", rb"TX (\d+) (?:(CLOSED)|(\d+) (\d+) (\d+))", timeout=15)
         number = int(m.group(1))
         if m.group(2):
-            closed.append(f"port {k} (USART{number})")
+            clock = min(ready["pclk1"], ready["pclk2"]) if not number else \
+                ready["pclk2"] if number == 1 else ready["pclk1"]
+            if (clock + baud // 2) // baud < 16:
+                unreachable.append(f"port {k} ({clock} Hz / 16 is below {baud} baud)")
+            else:
+                closed.append(f"port {k} (USART{number})")
             continue
         sent, took, brr = (int(x) for x in m.groups()[2:])
         clock = ready["pclk2"] if number == 1 else ready["pclk1"]
@@ -155,6 +160,8 @@ def test_serial_transmit(dut, ready, baud, record_property):
     record_property("ports", json.dumps(results))
     if closed:
         record_property("closed", ", ".join(closed))
+    if not results and unreachable and not closed:
+        pytest.skip("begin() refuses a divider below 16: " + ", ".join(unreachable))
     assert results, "no port opened"
     assert not wrong, " | ".join(wrong)
 
@@ -201,7 +208,10 @@ def test_spi(dut, ready, record_property):
     ideal = 128 * 8 * 1e6 / sck
     record_property("spi", json.dumps(dict(spi=number, us=took, br=br, sck=sck)))
     assert br == want_br, f"SPI{number}: BR {br}, want {want_br} ({clock} Hz bus, 500 kHz asked)"
-    assert 0.98 * ideal <= took <= 1.25 * ideal, f"SPI{number}: 128 bytes took {took} us, {ideal:.0f} at {sck} Hz"
+    # Between bytes the CPU writes and reads DATAR: about 50 cycles a byte on V003 at 8 MHz (6 us, 2026-11-13).
+    gaps = 128 * 64 * 1e6 / ready["f_cpu"]
+    assert 0.98 * ideal <= took <= 1.25 * ideal + gaps, \
+        f"SPI{number}: 128 bytes took {took} us, {ideal:.0f} at {sck} Hz (F_CPU {ready['f_cpu']})"
 
 
 def test_gpio(dut, ready, record_property):
@@ -268,7 +278,7 @@ def test_pwm(dut, ready, hz, record_property):
 def test_vref(dut, ready, record_property):
     value, full, vdd = (int(x) for x in ask(dut, "vref", rb"VREF (-?\d+) (\d+) (\d+)").groups())
     if value < 0 or not full:
-        pytest.skip("no ADC")
+        pytest.skip("no ADC (or not at this CPU Clock)")
     if value == 0:
         pytest.skip("no internal reference in the data (CH32M030)")
     record_property("vref", json.dumps(dict(raw=value, full=full, vdd_mv=vdd)))

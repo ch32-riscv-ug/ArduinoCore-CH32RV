@@ -24,7 +24,8 @@
  *   pwm <pin> <duty> <hz>     analogWrite(pin, duty) at hz, the pad read for 50 ms:
  *                             PWM <pin> <timer> <channel> <rising edges> <samples at 1> <samples>,
  *                             PWM <pin> NONE (no timer channel, or a DAC pad) or PWM <pin> HELD (never driven)
- *   time                      TIME <millis()> <micros()>, read together
+ *   time                      TIME <millis()> <micros()>, read together, then SysTick CTLR and its counter
+ *                             twice a moment apart (hex)
  *   vref                      VREF <analogReadVref()> <full scale> <CH32RV.getVddMillivolts()>,
  *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
@@ -488,9 +489,15 @@ static void reply(char *command)
         const uint32_t ms = millis();
         const uint32_t us = micros();
         interrupts();
-        SerialDMSeq.printf("TIME %lu %lu\r\n", (unsigned long)ms, (unsigned long)us);
+        /* SysTick's control word and counter twice, for a clock that stands still. */
+        const uint32_t ctlr = CH32RV_SYSTICK_CTLR, c0 = CH32RV_SYSTICK_CNT;
+        for (volatile int i = 0; i < 1000; i++) {
+        }
+        const uint32_t c1 = CH32RV_SYSTICK_CNT;
+        SerialDMSeq.printf("TIME %lu %lu %lx %lx %lx\r\n", (unsigned long)ms, (unsigned long)us, (unsigned long)ctlr,
+                           (unsigned long)c0, (unsigned long)c1);
     } else if (!strcmp(argv[0], "vref")) {
-#if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS)
+#if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS) && CH32RV_ADC_CLOCK_OK
         analogReadResolution(CH32RV_ADC_BITS);
         SerialDMSeq.printf("VREF %d %d %lu\r\n", analogReadVref(), (1 << CH32RV_ADC_BITS) - 1,
                            (unsigned long)CH32RV.getVddMillivolts());

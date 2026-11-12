@@ -291,7 +291,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 
 - [ ] V205・X305 / X315 の Wire（プルアップの配線が要る）と、既定以外の route。V205 は LinkE の接続で s0 が壊れるので、結果はリセットごとに 1 回だけ読む。
 - [ ] V20x / V30x の ADC の校正値（EVT の Get_CalibrationValue）。V307 ではその値が 1728 で、当てると VDD が 2.64 V になり不自然（当てない今は 3.19 V）。外部の電圧計と照合して決める。
-- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、各項目の実機確認（UART の速度・ADC・USB）。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
+- [x] CPU Clock の全部の項目を、ベンチの DUT で selfcheck（時計・Serial・SPI・GPIO・PWM・ADC）で確かめた（2026-11-13）。
+  V006 の 8 MHz は、SystemInit() が flash の待ちを先に 0 へ下げてから HPRE /3 を書いていたので、リセットの直後の HSI 24 MHz を
+  待ち 0 で走り、SysTick が止まったり起動しなかったりした（待ちは上げるときだけ先に、下げるのは分周のあと。CFGR0 も 1 回で書く）。
+  X035 の 8 MHz は ADC のクロックが下限（3 MHz）に届かず変換が終わらない。項目を「no ADC」にし、ADC の呼び出しをビルドエラーにした。
+- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、USB を各項目で確かめること。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
 - PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。

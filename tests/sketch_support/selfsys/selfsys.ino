@@ -50,7 +50,7 @@ static bool held(pin_size_t p)
     return up == down;
 }
 
-#if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS)
+#if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS) && CH32RV_ADC_CLOCK_OK
 #define SELFSYS_ADC 1
 /* ADC1's base: the instance a pad reaches is 1 everywhere but on the parts
  * with a second ADC, whose pads this check leaves out (ADC 1 only). */
@@ -145,7 +145,11 @@ static void reply(char *command)
         SerialDMSeq.printf("ID - 0 %s\r\n", CH32RV.getChipModel());
 #endif
     } else if (!strcmp(argv[0], "temp")) {
+#if CH32RV_ADC_CLOCK_OK
         const float t = analogReadTemp();
+#else
+        const float t = NAN;                     /* no ADC at this CPU Clock: a build error to call */
+#endif
 #ifdef CH32RV_ADC_TEMP_CAL_ADDR
         SerialDMSeq.printf("TEMP %d %08lx\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f),
                            (unsigned long)*(const volatile uint32_t *)CH32RV_ADC_TEMP_CAL_ADDR);
