@@ -638,22 +638,25 @@ OPT_MENU = (
 #   Ethernet on V208 / V203RB: HCLK 60 or 120 MHz (NetworkEthernet10m.cpp);
 #     no entry gives both, as no SYSCLK is both a multiple USBPRE takes and
 #     one ETHPRE takes.
-# V003 / V00x / X035 / V407 / X315 / H41x keep their one clock as default;
-# where USB at a lower clock is not known to work the label says so. A PLL
-# entry becomes a default only once it has run on the part: M030 at 72 MHz
-# (G8R7, 2026-10-22); L103 / M103 and V205 stay at 8 MHz.
-_V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
-                ("72", 72, 72, "72MHz (no USB)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
-_V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
-                ("72", 72, 72, "72MHz (no USB FS)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
+# The default is the fastest entry that has run on the part and, where the
+# series has USB, keeps it (2026-11-12). Entries run from the fastest down.
+# V20x / V30x stop at 96 MHz: at 120 or 144 MHz the ADC (PCLK2 / 8 at most)
+# would pass its 14 MHz unless APB2 ran at HCLK / 2, and this core takes
+# F_CPU as every bus clock. Where USB at a lower clock is not
+# known to work the label says so.
+_V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"),
+                ("72", 72, 72, "72MHz (no USB)"), ("48", 48, 48, "48MHz (USB)"),
+                ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
+_V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"),
+                ("72", 72, 72, "72MHz (no USB FS)"), ("48", 48, 48, "48MHz (USB)"),
+                ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
                 ("8", 24, 8, "8MHz (lowest power)")]
-# L103 / M103 stay at 8 MHz by default: the one 96 MHz image tried (CH32L103C8T6
-# behind an OEP RP2350 probe, 2026-10-22) left the part answering no debug
-# attach at all, even after a power cycle - not understood yet, and a default
-# must not do that. The PLL entries stay selectable.
-_L103_CLOCKS = [("8", 8, 8, "8MHz (HSI, lowest power, no USB)"), ("96", 96, 96, "96MHz (USB, not checked)"),
-                ("72", 72, 72, "72MHz (USB, not checked)"), ("48", 48, 48, "48MHz (USB, not checked)")]
+# L103 / M103: 96 MHz. A WCH-LinkE attaches to the part at 96 / 72 / 48 MHz;
+# the OEP RP2350 probe cannot at 72 / 96 MHz (2026-10-22, a probe-side fault
+# the OEP project is to fix), so the bench runs its OEP L103 at 48 MHz.
+_L103_CLOCKS = [("96", 96, 96, "96MHz (USB, not checked)"), ("72", 72, 72, "72MHz (USB, not checked)"),
+                ("48", 48, 48, "48MHz (USB, not checked)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
 _X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
                 ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
 CLOCK_MENU = {
@@ -661,9 +664,10 @@ CLOCK_MENU = {
     **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
     "CH32V103": [("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
-    "CH32V203": _V20X_CLOCKS[:3] + [("60", 120, 60, "60MHz (Ethernet on V203RB, no USB)")] + _V20X_CLOCKS[3:],
-    "CH32V208": [("96", 96, 96, "96MHz (USB, no Ethernet)"), ("60", 120, 60, "60MHz (Ethernet, no USB)"),
-                 ("48", 48, 48, "48MHz (USB, no Ethernet)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
+    "CH32V203": _V20X_CLOCKS[:2] + [("60", 120, 60, "60MHz (Ethernet on V203RB, no USB)")] + _V20X_CLOCKS[2:],
+    "CH32V208": [("96", 96, 96, "96MHz (USB, no Ethernet)"), ("72", 72, 72, "72MHz (no USB, no Ethernet)"),
+                 ("60", 120, 60, "60MHz (Ethernet, no USB)"), ("48", 48, 48, "48MHz (USB, no Ethernet)"),
+                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
     **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
     "CH32X033": _X035_CLOCKS, "CH32X035": _X035_CLOCKS,
     "CH32L103": _L103_CLOCKS, "CH32M103": _L103_CLOCKS,
@@ -689,8 +693,8 @@ CLOCK_MENU = {
     # is half the core's are not offered (this core takes F_CPU as every bus
     # clock), nor 312.5 MHz (micros()'s reciprocal, as V407's 175). Both run
     # on a CH32X315MCU6 (2026-10-28: millis() against the wall clock, the loop
-    # rate 12x 20 MHz's); 20 MHz stays the default, as for V407 before its run.
-    "CH32X315": [("20", 20, 20, "20MHz (HSI, lowest power)"), ("240", 240, 240, "240MHz")],
+    # rate 12x 20 MHz's); 240 MHz the default since (2026-11-12), as V407's 200.
+    "CH32X315": [("240", 240, 240, "240MHz"), ("20", 20, 20, "20MHz (HSI, lowest power)")],
     "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],
 }
