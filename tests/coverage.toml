@@ -251,6 +251,11 @@ scope = "series"
 not_on = ["CH32M030"]
 
 [[item]]
+id = "selfcheck-time-rate"  # millis() / micros() against the host's clock
+test = "selfcheck::test_time_rate"
+scope = "series"
+
+[[item]]
 id = "selfcheck-clocks"     # the bus clocks the build assumes are RCC's (no wiring)
 test = "selfcheck::test_clocks"
 scope = "series"
@@ -276,6 +281,12 @@ id = "selfcheck-pwm"        # every PWM pad's period and duty read back on its o
 test = "selfcheck::test_pwm"
 scope = "series"
 any_of = ["TIM1", "TIM2", "TIM3", "TIM4", "TIM5"]
+
+[[item]]
+id = "selfbus-spi"          # SPI's SCK / MOSI route, modes and bit order read on its own pads; MISO's receive path
+test = ["selfbus::test_spi_out", "selfbus::test_spi_in"]
+scope = "series"
+any_of = ["SPI1", "SPI2", "SPI3"]
 
 [[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference

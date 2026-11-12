@@ -49,6 +49,7 @@ MODULES = {
     "system": TESTS / "instrumented/system/test_system_contract.py",
     "analog": TESTS / "instrumented/analog/test_analog_contract.py",
     "selfcheck": TESTS / "instrumented/selfcheck/test_selfcheck_contract.py",
+    "selfbus": TESTS / "instrumented/selfbus/test_selfbus_contract.py",
     "console-rtt": TESTS / "instrumented/console/test_console_contract.py",
     "console-dmdata": TESTS / "instrumented/console/test_console_contract.py",
     "console-sdi": TESTS / "instrumented/console/test_console_contract.py",
@@ -86,6 +87,7 @@ SKETCHES = {
     "system": TESTS / "sketch_support/system/system.ino",
     "analog": TESTS / "sketch_support/analog/analog.ino",
     "selfcheck": TESTS / "sketch_support/selfcheck/selfcheck.ino",
+    "selfbus": TESTS / "sketch_support/selfbus/selfbus.ino",
     "console-rtt": TESTS / "sketch_support/console/console.ino",
     "console-dmdata": TESTS / "sketch_support/console/console.ino",
     "console-sdi": TESTS / "sketch_support/console/console.ino",
@@ -335,7 +337,7 @@ def stage_case(work, name, case, target):
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
     if opts:
         (directory / "build_opt.h").write_text(opts)
-    if case == "selfcheck":
+    if case in ("selfcheck", "selfbus"):
         target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "eth":
         clocked = places.ethernet_clock(target["fqbn"])

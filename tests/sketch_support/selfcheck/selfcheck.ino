@@ -23,6 +23,7 @@
  *   pwm <pin> <duty> <hz>     analogWrite(pin, duty) at hz, the pad read for 50 ms:
  *                             PWM <pin> <timer> <channel> <rising edges> <samples at 1> <samples>,
  *                             PWM <pin> NONE (no timer channel, or a DAC pad) or PWM <pin> HELD (never driven)
+ *   time                      TIME <millis()> <micros()>, read together
  *   vref                      VREF <analogReadVref()> <full scale> <CH32RV.getVddMillivolts()>,
  *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
@@ -460,6 +461,12 @@ static void reply(char *command)
         pwm(atoi(argv[1]), atoi(argv[2]), strtoul(argv[3], nullptr, 10));
     } else if (!strcmp(argv[0], "gpio") && argc == 2) {
         gpio(atoi(argv[1]));
+    } else if (!strcmp(argv[0], "time")) {
+        noInterrupts();
+        const uint32_t ms = millis();
+        const uint32_t us = micros();
+        interrupts();
+        SerialDMSeq.printf("TIME %lu %lu\r\n", (unsigned long)ms, (unsigned long)us);
     } else if (!strcmp(argv[0], "vref")) {
 #if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS)
         analogReadResolution(CH32RV_ADC_BITS);

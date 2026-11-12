@@ -51,7 +51,7 @@ PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochro
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
-          "analog", "selfcheck")
+          "analog", "selfcheck", "selfbus")
 # A defect's `lose` names a feature; these are the cases that test it.
 # "gpio-drive": the board's pads must not be driven by a test at all (a motor stage's gate drivers on CH32M030's
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
@@ -172,6 +172,27 @@ def ethernet_clock(fqbn, path=REPO / "boards.txt"):
         return None
     hz = re.search(rf"^{re.escape(board)}\.menu\.clock\.{m.group(1)}\.build\.f_cpu=(\d+)L?$", text, re.M)
     return f"{fqbn},clock={m.group(1)}", int(hz.group(1))
+
+
+def with_options(fqbn, f_cpu, options, path=REPO / "boards.txt"):
+    """The fqbn with CH32_TEST_OPTIONS's menu values ("clock=48,opt=oslto") in place of the defaults, and the f_cpu
+    a chosen entry sets (CPU Clock, CPU Core). An option boards.txt does not have for the board is an error."""
+    if not options.strip():
+        return fqbn, f_cpu
+    text = path.read_text(encoding="utf-8")
+    board = fqbn.split(":")[2]
+    head, _, rest = fqbn.partition(f"{board}:")
+    pairs = dict(p.split("=", 1) for p in rest.split(",") if p) if rest else {}
+    for item in options.split(","):
+        menu, _, value = item.strip().partition("=")
+        if not re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}=", text, re.M):
+            raise PlaceError(f"CH32_TEST_OPTIONS: {board} has no {menu}={value} in boards.txt")
+        pairs[menu] = value
+        hz = re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}\.build\.f_cpu=(\d+)L?$",
+                       text, re.M)
+        if hz:
+            f_cpu = int(hz.group(1))
+    return f"{head}{board}:" + ",".join(f"{k}={v}" for k, v in pairs.items()), f_cpu
 
 
 def fqbn_of(part):
@@ -372,7 +393,7 @@ def resolve(address, tool, env, logs, *, chip=None):
                          "the port (correct the record with tests/bench_record.py, or the address)")
     if not expected and parsed["kind"] == "oep":
         place["warnings"].append(f"no target in {address} or its port record: the board is not checked against one")
-    place["fqbn"], place["f_cpu"] = fqbn_of(part)
+    place["fqbn"], place["f_cpu"] = with_options(*fqbn_of(part), os.environ.get("CH32_TEST_OPTIONS", ""))
     # Every USART's routes (TX, RX) from the variant: a test picks a pair among the labelled lines (periph's Serial1).
     from harness.series import serial_routes
     place["serial_routes"] = [[n, k, tx, rx] for n, routes in sorted(serial_routes(series_of(part, series_needs()[1]) or "").items())

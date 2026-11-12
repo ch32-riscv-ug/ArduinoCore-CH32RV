@@ -1,6 +1,11 @@
 """selfcheck (case selfcheck): what the DUT can tell about itself with nothing wired
 (tests/sketch_support/selfcheck/selfcheck.ino) - so it runs on every target, a WCH-LinkE's too.
 
+selfcheck.time_rate: millis() and micros() read twice, 5 s apart by the host's clock: millis() within 3 % (+0.1 s
+for the console's latency) of the host's clock - the internal oscillator's tolerance, wide enough for it and
+narrow enough to see a clock setting off by a step - and micros() within 0.2 % of millis(). With
+CH32_TEST_OPTIONS (run_hardware.py) the same at another CPU Clock entry.
+
 selfcheck.clocks: the bus clocks the build assumes (CH32RV_PCLK2_HZ, internal/ch32rv_bus_clock.h) are the ones
 RCC_CFGR0 is set to, where the family has the STM32F1-shaped PPRE2 field.
 
@@ -90,6 +95,27 @@ def ready(dut):
         dut, "clocks", rb"CLOCKS (\d+) (\d+) (\d+) (\d+) ([0-9a-f]+) (\d+)").groups()
     return dict(f_cpu=int(f_cpu), hclk=int(hclk), pclk1=int(pclk1), pclk2=int(pclk2), cfgr0=int(cfgr0, 16),
                 pclk2_register=int(from_reg))
+
+
+def test_time_rate(dut, ready, record_property):
+    """millis() and micros() against the host's clock over 5 s."""
+    import time as host_time
+
+    def stamp():
+        m = ask(dut, "time", rb"TIME (\d+) (\d+)")
+        return host_time.monotonic(), int(m.group(1)), int(m.group(2))
+    h0, ms0, us0 = stamp()
+    host_time.sleep(5)
+    h1, ms1, us1 = stamp()
+    host_ms = (h1 - h0) * 1000
+    dut_ms = (ms1 - ms0) & 0xFFFFFFFF
+    dut_us = (us1 - us0) & 0xFFFFFFFF
+    record_property("time", json.dumps(dict(host_ms=round(host_ms), millis=dut_ms, micros=dut_us,
+                                            f_cpu=ready["f_cpu"])))
+    assert abs(dut_ms - host_ms) <= 0.03 * host_ms + 100, \
+        f"millis() advanced {dut_ms} ms while the host's clock advanced {host_ms:.0f} ms (F_CPU {ready['f_cpu']})"
+    assert abs(dut_us / 1000 - dut_ms) <= 0.002 * dut_ms + 2, \
+        f"micros() advanced {dut_us} us while millis() advanced {dut_ms} ms"
 
 
 def test_clocks(ready, record_property):
