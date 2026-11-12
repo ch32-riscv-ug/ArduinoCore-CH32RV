@@ -11,6 +11,18 @@ using namespace arduino;
  * (internal/ch32rv_bus_clock.h). */
 static const uint32_t CH32RV_I2C_PCLK1 = CH32RV_PCLK1_HZ;
 
+/* FREQ's ceiling (the reference manuals: 4-60 MHz, 8-48 on V00x / M030). On
+ * X3x5, H41x and M030 I2C runs on HCLK with no bus to divide (240, 100,
+ * 72 MHz): FREQ is held at the ceiling there, as H417's EVT does
+ * (ch32h417_i2c.c: freqrange >= 60 -> 60), where a plain HCLK / 1 MHz left
+ * 240 & 0x3F = 48 or 100 & 0x3F = 36 in the six-bit field. CCR still comes
+ * from the real clock. */
+#if defined(CH32RV_SERIES_CH32M030)
+static const uint32_t CH32RV_I2C_FREQ_MAX_MHZ = 48;
+#else
+static const uint32_t CH32RV_I2C_FREQ_MAX_MHZ = 60;
+#endif
+
 namespace {
 
 /* Clearing ADDR and setting STOP have to happen without an interrupt in
@@ -377,7 +389,8 @@ __attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
     /* FREQ and CCR may only be written while the peripheral is disabled. */
     CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_PE;
 
-    const uint32_t mhz = CH32RV_I2C_PCLK1 / 1000000u;
+    const uint32_t pclk_mhz = CH32RV_I2C_PCLK1 / 1000000u;
+    const uint32_t mhz = pclk_mhz > CH32RV_I2C_FREQ_MAX_MHZ ? CH32RV_I2C_FREQ_MAX_MHZ : pclk_mhz;
     CH32RV_I2C_CTLR2(_base) = (uint16_t)(mhz & CH32RV_I2C_CTLR2_FREQ_MASK);
 
     uint32_t ccr;

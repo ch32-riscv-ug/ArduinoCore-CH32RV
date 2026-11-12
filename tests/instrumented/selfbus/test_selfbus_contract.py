@@ -21,9 +21,9 @@ selfbus.uart_transmit: every port sends 64 bytes at 115200 in each format: the t
 data, parity, stop) a byte within 4 %.
 
 selfbus.i2c_registers: every hardware TwoWire after setClock(100000) and setClock(400000): CTLR2's FREQ is PCLK1 in
-MHz, CKCFGR is PCLK1 / (2 x 100 kHz) in standard mode (4 at least) and FS with PCLK1 / (3 x 400 kHz) in fast mode -
-the clock Wire computes from, APB1 divided where HCLK passes FREQ's 60 MHz. Where PCLK1 is still above 60 MHz
-(X315, H417, M030 above 48: no bus to divide, TODO) FREQ is recorded, not judged.
+MHz, held at FREQ's ceiling (60, M030 48) where PCLK1 is above it - X315, H417 and M030 have no bus to divide, and
+H417's EVT holds it the same way; CKCFGR is PCLK1 / (2 x 100 kHz) in standard mode (4 at least) and FS with
+PCLK1 / (3 x 400 kHz) in fast mode - the clock Wire computes from.
 
 selfbus.i2c_nack: a write to 0x50 with nobody on the bus returns an error from endTransmission() within 200 ms -
 2 (address NACK) where the board pulls both lines up, any error where they float - and never hangs.
@@ -228,6 +228,11 @@ def wires(dut):
     return dict(usable=usable, left=left)
 
 
+def case_freq_max():
+    """FREQ's ceiling: 48 MHz on M030 (and V00x, which never pass it), 60 elsewhere."""
+    return 48 if settings(__file__)["target"].get("chip", "").startswith("CH32M030") else 60
+
+
 def test_i2c_registers(dut, wires, record_property):
     if not wires["usable"]:
         pytest.skip("no I2C's pads are free: " + ", ".join(wires["left"]))
@@ -237,8 +242,9 @@ def test_i2c_registers(dut, wires, record_property):
             pclk1, freq, ckcfgr = (int(x) for x in ask(dut, f"i2creg {w['k']} {hz}",
                                                        rb"I2CREG (\d+) (\d+) (\d+)").groups())
             results[f"I2C{w['n']}/{hz}"] = dict(pclk1=pclk1, freq=freq, ckcfgr=ckcfgr)
-            if pclk1 <= 60_000_000 and freq != pclk1 // 1_000_000:
-                wrong.append(f"I2C{w['n']}: FREQ {freq}, PCLK1 is {pclk1 // 1_000_000} MHz")
+            want_freq = min(pclk1 // 1_000_000, case_freq_max())
+            if freq != want_freq:
+                wrong.append(f"I2C{w['n']}: FREQ {freq}, want {want_freq} (PCLK1 {pclk1 // 1_000_000} MHz)")
             if hz == 100000:
                 want = max(4, pclk1 // (2 * hz))
                 if ckcfgr != want:
