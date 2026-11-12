@@ -50,6 +50,14 @@ picolibc が program に任せるもの（`stdin` / `stdout` / `stderr`、`sbrk`
 詳細な理由は [ADR-0002](adr/0002-toolchain-distribution.ja.md) と
 [ADR-0004](adr/0004-runtime-and-cxx.ja.md) を参照してください。
 
+## コアの外で使う
+
+ch32rv-toolchain は、Arduino コアに依存しないベアメタル用のツールチェーンです。単体での使い方
+（ライブラリの選ばれ方、リンクで挙げるライブラリ、picolibc がプログラムに任せるもの、printf の版、
+`WCH-Interrupt-fast`、GDB）は、[ch32rv-toolchain の README](https://github.com/ch32-riscv-ug/ch32rv-toolchain#readme)
+にあります。23.1.5-3 からは、XW 無しの `-march` 用のライブラリと、既定のリンカーの lld が入っています。
+コアが使うのは XW 付きの版（V103 だけ XW 無しの rv32imac）です。
+
 ## 更新規則
 
 toolchain を更新するときは、JSON、package index の依存、生成済み size 基準を同じ変更で更新します。
