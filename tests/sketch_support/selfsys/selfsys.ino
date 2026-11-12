@@ -3,7 +3,8 @@
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   id                        ID <UNIID1 UNIID2 as 16 hex digits, or -> <getFlashChipSize() or 0> <getChipModel()>
- *   temp                      TEMP <analogReadTemp() x 10, or -9999 where there is no sensor>
+ *   temp                      TEMP <analogReadTemp() x 10, or -9999 where there is no sensor> <the factory's
+ *                             calibration word in hex, or ->
  *   restart                   RESTARTING, then CH32RV.restart() (the next STARTUP line says why it booted)
  *   wdt <ms>                  wdtEnable(ms), fed every 50 ms for 300 ms: WDT FED; then not fed: WDT LET GO,
  *                             and the watchdog resets the chip (or WDT REFUSED)
@@ -145,7 +146,12 @@ static void reply(char *command)
 #endif
     } else if (!strcmp(argv[0], "temp")) {
         const float t = analogReadTemp();
-        SerialDMSeq.printf("TEMP %d\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
+#ifdef CH32RV_ADC_TEMP_CAL_ADDR
+        SerialDMSeq.printf("TEMP %d %08lx\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f),
+                           (unsigned long)*(const volatile uint32_t *)CH32RV_ADC_TEMP_CAL_ADDR);
+#else
+        SerialDMSeq.printf("TEMP %d -\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
+#endif
     } else if (!strcmp(argv[0], "restart")) {
         SerialDMSeq.printf("RESTARTING\r\n");
         delay(50);

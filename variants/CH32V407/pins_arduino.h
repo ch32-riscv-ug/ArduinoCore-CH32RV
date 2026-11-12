@@ -338,6 +338,8 @@
 #define CH32RV_ADC_TEMP_CHANNEL 16
 #define CH32RV_ADC_TEMP_V25_MV 1400
 #define CH32RV_ADC_TEMP_SLOPE_UV 4300
+#define CH32RV_ADC_TEMP_CAL_ADDR 0x1FFFF7D8u   /* factory word: mV | degrees C << 16 (EVT) */
+#define CH32RV_ADC_TEMP_RISES 0   /* the voltage goes up with temperature */
 #define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
 
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()

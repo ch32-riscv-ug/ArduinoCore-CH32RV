@@ -272,14 +272,31 @@ float analogReadTemp(void)
 #if defined(CH32RV_ADC_TEMP_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
     /* The sensor voltage against Vrefint rather than an assumed 3.3 V supply:
      * T = (V25 - Vsense) / slope + 25, the datasheet's typicals (+/- several
-     * degrees uncalibrated). */
+     * degrees uncalibrated), from the factory's point where there is one. */
     const uint32_t vref = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 1);
     const uint32_t sense = ch32rv_adc_read_internal(CH32RV_ADC_TEMP_CHANNEL, 1);
     if (vref == 0u) {
         return __builtin_nanf("");
     }
     const float mv = (float)sense * (float)CH32RV_ADC_VREFINT_MV / (float)vref;
-    return ((float)CH32RV_ADC_TEMP_V25_MV - mv) * 1000.0f / (float)CH32RV_ADC_TEMP_SLOPE_UV + 25.0f;
+    float ref_mv = (float)CH32RV_ADC_TEMP_V25_MV;
+    float ref_c = 25.0f;
+#ifdef CH32RV_ADC_TEMP_CAL_ADDR
+    /* The part's own point where the factory wrote one (EVT
+     * TempSensor_Volt_To_Temper): the sensor's mV at a temperature. A word
+     * outside the datasheet's V25 spread is not one (an erased 0xFFFF). */
+    const uint32_t cal = *(const volatile uint32_t *)CH32RV_ADC_TEMP_CAL_ADDR;
+    const uint32_t cal_mv = cal & 0xFFFFu, cal_c = cal >> 16;
+    if (cal_mv >= 800u && cal_mv <= 2000u && cal_c <= 100u) {
+        ref_mv = (float)cal_mv;
+        ref_c = (float)cal_c;
+    }
+#endif
+#if defined(CH32RV_ADC_TEMP_RISES) && CH32RV_ADC_TEMP_RISES
+    return (mv - ref_mv) * 1000.0f / (float)CH32RV_ADC_TEMP_SLOPE_UV + ref_c;
+#else
+    return (ref_mv - mv) * 1000.0f / (float)CH32RV_ADC_TEMP_SLOPE_UV + ref_c;
+#endif
 #else
     return __builtin_nanf("");
 #endif

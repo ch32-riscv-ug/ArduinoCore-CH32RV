@@ -5,7 +5,8 @@ selfsys.identity: CH32RV.getUniqueId() is the UID ch32rv read through the debugg
 ch32rv writes it), getChipModel() names the board's series, and getFlashChipSize() is not 0 where the family has an
 electronic signature.
 
-selfsys.temperature: analogReadTemp() reads 0-70 degrees C where the family has a sensor (the bench is indoors).
+selfsys.temperature: analogReadTemp() reads 0-70 degrees C where the family has a sensor (the bench is indoors); the
+factory's calibration word is recorded.
 
 selfsys.restart: CH32RV.restart() boots again with resetReasonName() "software".
 
@@ -81,10 +82,12 @@ def test_identity(dut, ready, record_property):
 
 
 def test_temperature(dut, ready, record_property):
-    t = int(ask(dut, "temp", rb"TEMP (-?\d+)").group(1))
+    m = ask(dut, "temp", rb"TEMP (-?\d+) (\S+)")
+    t = int(m.group(1))
     if t == -9999:
         pytest.skip("no temperature sensor on this family")
     record_property("temperature", t / 10)
+    record_property("temperature_cal", m.group(2).decode())
     assert 0 <= t / 10 <= 70, f"analogReadTemp() {t / 10} C"
 
 
@@ -99,7 +102,7 @@ def test_watchdog(dut, ready, record_property):
     dut.write("wdt 500\n")
     m = dut.expect(rb"WDT (FED|REFUSED)\r?\n", timeout=10)
     if m.group(1) == b"REFUSED":
-        pytest.skip("wdtEnable(500) refused")
+        pytest.skip("wdtEnable(500) refused (CH32M030 has no IWDG)")
     dut.expect(rb"WDT LET GO\r?\n", timeout=5)
     t0 = time.monotonic()
     m = dut.expect(rb"STARTUP (\S+) (\d+)\r?\n", timeout=15)

@@ -1363,6 +1363,13 @@ ADC_BUFFER_FAMILIES = {"CH32V006", "CH32V20x", "CH32V205", "CH32V307",
 # (ADC_Channel_CalInternal). Not in device-data.
 ADC_OFFSET_CAL_CHANNEL = {"CH32L103": 18}
 
+# The temperature sensor's factory calibration word (EVT TempSensor_Volt_To_Temper; device-data has no column
+# for it): low half the sensor's millivolts at the high half's degrees C, and which way the voltage goes. V103's
+# rises with temperature (Temper = Refer_Temper + ...), the others' falls - the datasheets give the slope unsigned.
+TEMP_CAL = {"CH32V103": (0x1FFFF898, +1), "CH32V20x": (0x1FFFF720, -1), "CH32V307": (0x1FFFF720, -1),
+            "CH32L103": (0x1FFFF720, -1), "CH32V205": (0x1FFFF720, -1), "CH32V407": (0x1FFFF7D8, -1),
+            "CH32H417": (0x1FFFF76C, -1)}
+
 
 def adc_internal_defines(info: dict, family: str = "") -> list:
     """The variant lines for analogReadVref() / analogReadTemp()."""
@@ -1387,6 +1394,10 @@ def adc_internal_defines(info: dict, family: str = "") -> list:
         out.append(f"#define CH32RV_ADC_TEMP_CHANNEL {int(temp['channel'])}")
         out.append(f"#define CH32RV_ADC_TEMP_V25_MV {int(float(temp['v25_mv']))}")
         out.append(f"#define CH32RV_ADC_TEMP_SLOPE_UV {int(float(temp['avg_slope_uv_c']))}")
+        if family in TEMP_CAL:
+            addr, sign = TEMP_CAL[family]
+            out.append(f"#define CH32RV_ADC_TEMP_CAL_ADDR 0x{addr:08X}u   /* factory word: mV | degrees C << 16 (EVT) */")
+            out.append(f"#define CH32RV_ADC_TEMP_RISES {1 if sign > 0 else 0}   /* the voltage goes up with temperature */")
     bit = (temp or vref).get("enable_bit") or vref.get("enable_bit")
     reg = (temp or vref).get("enable_register") or vref.get("enable_register")
     if bit and reg == "CTLR2":
