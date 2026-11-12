@@ -335,6 +335,8 @@ def stage_case(work, name, case, target):
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
     if opts:
         (directory / "build_opt.h").write_text(opts)
+    if case == "selfcheck":
+        target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "eth":
         clocked = places.ethernet_clock(target["fqbn"])
         if clocked:

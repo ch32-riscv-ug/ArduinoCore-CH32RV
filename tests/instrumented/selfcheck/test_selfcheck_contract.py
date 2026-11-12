@@ -10,7 +10,9 @@ byte at that baud within 4 % (the buffered write, the interrupt and flush() incl
 
 selfcheck.serial_receive: every HardwareSerial object at 9600 baud receives 16 bytes the sketch sends on the
 USART's own RX pad, made a GPIO output (the pad's input path, which the USART reads, stays on): all of them, in
-order, with no receive error. (Half duplex, the USART hearing its own TX line, received nothing on V203 / V208 /
+order, with no receive error. A 0xFF byte goes first and is dropped: the sketch's bit loop runs slow on its
+first pass, which garbled the first byte on V006 and X035 (a frame of ten 1 bits did not warm the LOW write). Not where the pad is kept off (below) or held by the board (a WCH-Link's TX on
+USART1's RX: the pulls do not move it, and driving it would fight that output). (Half duplex, the USART hearing its own TX line, received nothing on V203 / V208 /
 V307 with TX push-pull, and open drain needs an outside pull-up.) A port whose begin() refuses (no default
 route, or the baud out of reach) is reported and skipped.
 
@@ -18,15 +20,21 @@ selfcheck.spi: 128 bytes at 500 kHz on the default SPI: the BR field is the larg
 not exceed 500 kHz from the instance's bus clock, and the transfer took 8 bits a byte at that clock, the
 polling's gaps allowed (-2 % .. +25 %).
 
-selfcheck.gpio: on the pads the sketch may drive (each USART's default RX, the default SPI's SCK and MOSI):
-written HIGH and LOW as an output and read back; five pulses written raise 5 RISING, 5 FALLING and 10 CHANGE
-interrupts (attachInterrupt on the output itself: the EXTI line and the dispatch); INPUT_PULLUP reads 1 and
-INPUT_PULLDOWN 0. A pad that reads the same with both is held by something on the board and its pulls are not
-judged (recorded as `held`).
+selfcheck.gpio: on every pad the part bonds, but those kept off (device-data's pinout.csv: the debug pads, NRST
+and the BOOT straps, the crystals' pads, USB's D+ / D- and CC - harness/place.py gpio_keep_off): INPUT_PULLUP
+reads 1 and INPUT_PULLDOWN 0 - a pad that reads the same with both is held by something on the board, is never
+driven and is recorded as `held`; then written HIGH and LOW as an output and read back, and five pulses written
+raise 5 RISING, 5 FALLING and 10 CHANGE interrupts (attachInterrupt on the output itself: the EXTI line, its port
+select and the dispatch).
 
 selfcheck.vref: the supply worked out from the internal reference (CH32RV.getVddMillivolts(), with the family's
-offset correction) reads 3.0-3.6 V (the bench's DUTs run on 3.3 V); analogReadVref()'s raw value is recorded only:
+offset correction) reads 2.7-5.5 V, the parts' operating range (the bench's boards run on 3.3 V, the UIAPduino on
+5 V; it read 4432 mV); a family whose data gives no reference voltage (X035) records the raw value and skips.
+analogReadVref()'s raw value is recorded only:
 on CH32L103 it read 1545 in one run and 945 in the next (2026-11-12), the VDDA / 2 offset the correction takes out.
+
+A board whose record has a defect losing "gpio-drive" (CH32M030's motor board: its pads drive the inverter's
+gates) skips every check that drives a pad: serial_receive, spi and gpio.
 
 Started 2026-11-12 with the user's direction: as much as can be checked without wiring, the wiring kept to
 what only the outside can show (the pad, the level, the real speed against a partner)."""
@@ -39,6 +47,26 @@ import pytest
 
 def settings(test_file):
     return json.loads(pathlib.Path(test_file).with_name("case.json").read_text())
+
+
+def pad(pin):
+    """The pad name of a sketch pin number (the variants' CH32RV_PIN(port, bit): (port + 2) << 5 | bit)."""
+    return f"P{chr(ord('A') + (pin >> 5) - 2)}{pin & 31}"
+
+
+def no_drive():
+    """Skip a check that drives pads where the board's record forbids it (defects' lose: gpio-drive)."""
+    for defect in settings(__file__)["target"].get("record", {}).get("defects", []):
+        if "gpio-drive" in defect.get("lose", []):
+            pytest.skip(f"the board's pads are not driven: defect {defect.get('id')}")
+
+
+def keep_off():
+    """The pads the run says never to drive (harness/place.py gpio_keep_off: debug, reset, straps, crystals, USB)."""
+    pads = settings(__file__)["target"].get("gpio_keep_off")
+    if pads is None:
+        pytest.skip("ch32-device-data is not fetched: no list of the pads to keep off")
+    return set(pads)
 
 
 def ask(dut, line, reply, timeout=10):
@@ -98,29 +126,37 @@ def test_serial_transmit(dut, ready, baud, record_property):
 
 
 def test_serial_receive(dut, ready, record_property):
+    no_drive()
     count = int(ask(dut, "ports", rb"PORTS (\d+)").group(1))
     if not count:
         pytest.skip("no HardwareSerial on this board")
+    off = keep_off()
     n = 16
-    results, wrong, closed = {}, [], []
+    results, wrong, left = {}, [], []
     for k in range(count):
-        m = ask(dut, f"rx {k} {n}", rb"RX (\d+) (?:(CLOSED)|(\d+) (\d+) (\d+))", timeout=15)
-        number = int(m.group(1))
-        if m.group(2):
-            closed.append(f"port {k} (USART{number})")
+        number, pin = (int(x) for x in ask(dut, f"rxpin {k}", rb"RXPIN (\d+) (-?\d+)").groups())
+        if pin >= 0 and pad(pin) in off:
+            left.append(f"USART{number} ({pad(pin)}: kept off)")
             continue
-        received, matching, errors = (int(x) for x in m.groups()[2:])
-        results[f"USART{number}"] = dict(received=received, matching=matching, errors=errors)
+        m = ask(dut, f"rx {k} {n}", rb"RX (\d+) (?:(CLOSED|HELD)|(\d+) (\d+) (\d+) ([0-9a-f]{8}))", timeout=15)
+        if m.group(2):
+            left.append(f"USART{number} ({m.group(2).lower()})")
+            continue
+        received, matching, errors = (int(x) for x in m.groups()[2:5])
+        first = m.group(6).decode()
+        results[f"USART{number}"] = dict(received=received, matching=matching, errors=errors, first=first)
         if received != n or matching != n or errors:
-            wrong.append(f"USART{number}: received {received}, {matching} in order of {n}, errors {errors:#x}")
+            wrong.append(f"USART{number}: received {received}, {matching} in order of {n}, errors {errors:#x}, "
+                         f"first bytes {first} (sent 55 70 1f 3a)")
     record_property("ports", json.dumps(results))
-    if closed:
-        record_property("closed", ", ".join(closed))
-    assert results, "no port opened"
+    if left:
+        record_property("left", ", ".join(left))
+    assert results, "no port could be fed: " + ", ".join(left)
     assert not wrong, " | ".join(wrong)
 
 
 def test_spi(dut, ready, record_property):
+    no_drive()
     m = ask(dut, "spi 500000 128", rb"SPI (\d+) (?:(NONE)|(\d+) (\d+))")
     if m.group(2):
         pytest.skip("no hardware SPI with a default route")
@@ -135,25 +171,30 @@ def test_spi(dut, ready, record_property):
 
 
 def test_gpio(dut, ready, record_property):
-    pins = [int(p) for p in ask(dut, "pins", rb"PINS([ \d]*)").group(1).split()]
+    no_drive()
+    off = keep_off()
+    pins = [int(p) for p in ask(dut, "allpins", rb"ALLPINS([ \d]*)").group(1).split()]
+    pins = [p for p in pins if pad(p) not in off]
     if not pins:
         pytest.skip("no pad to drive")
-    results, wrong, driven = {}, [], []
-    for pin in dict.fromkeys(pins):
-        high, low, rise, fall, change, up, down = (int(x) for x in ask(
-            dut, f"gpio {pin}", rb"GPIO -?\d+ (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)").groups())
-        results[pin] = [high, low, rise, fall, change, up, down]
+    results, wrong, held = {}, [], {}
+    for pin in pins:
+        m = ask(dut, f"gpio {pin}", rb"GPIO -?\d+ (?:HELD (\d)|(\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+))")
+        if m.group(1) is not None:
+            held[pad(pin)] = int(m.group(1))     # something on the board holds it: never driven
+            continue
+        high, low, rise, fall, change, up, down = (int(x) for x in m.groups()[1:])
+        results[pad(pin)] = [high, low, rise, fall, change]
         if (high, low) != (1, 0):
-            wrong.append(f"pin {pin}: read {high} at HIGH, {low} at LOW")
+            wrong.append(f"{pad(pin)}: read {high} at HIGH, {low} at LOW")
         if (rise, fall, change) != (5, 5, 10):
-            wrong.append(f"pin {pin}: {rise} RISING, {fall} FALLING, {change} CHANGE of 5, 5, 10")
-        if up == down:
-            driven.append(pin)                  # something on the board holds the pad: no pull to see
-        elif (up, down) != (1, 0):
-            wrong.append(f"pin {pin}: read {up} with INPUT_PULLUP, {down} with INPUT_PULLDOWN")
+            wrong.append(f"{pad(pin)}: {rise} RISING, {fall} FALLING, {change} CHANGE of 5, 5, 10")
+        if (up, down) != (1, 0):
+            wrong.append(f"{pad(pin)}: read {up} with INPUT_PULLUP, {down} with INPUT_PULLDOWN")
     record_property("gpio", json.dumps(results))
-    if driven:
-        record_property("held", json.dumps(driven))
+    record_property("held", json.dumps(held))
+    record_property("kept_off", json.dumps(sorted(off)))
+    assert results, "every pad is held or kept off"
     assert not wrong, " | ".join(wrong)
 
 
@@ -164,5 +205,6 @@ def test_vref(dut, ready, record_property):
     if value == 0:
         pytest.skip("no internal reference in the data (CH32M030)")
     record_property("vref", json.dumps(dict(raw=value, full=full, vdd_mv=vdd)))
-    assert vdd, "getVddMillivolts() gave 0 on a part with the reference"
-    assert 3000 <= vdd <= 3600, f"VDD read as {vdd} mV from the internal reference (raw {value} of {full})"
+    if not vdd:
+        pytest.skip(f"no reference voltage in the data to work VDD out (raw {value} of {full} recorded)")
+    assert 2700 <= vdd <= 5500, f"VDD read as {vdd} mV from the internal reference (raw {value} of {full})"

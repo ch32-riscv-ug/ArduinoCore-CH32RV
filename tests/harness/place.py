@@ -53,8 +53,12 @@ ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softsp
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
           "analog", "selfcheck")
 # A defect's `lose` names a feature; these are the cases that test it.
+# "gpio-drive": the board's pads must not be driven by a test at all (a motor stage's gate drivers on CH32M030's
+# PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
+# reference checks and skips the ones that drive pads (it reads the record itself).
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
-                 "uart": ("uart",), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",)}
+                 "uart": ("uart",), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",),
+                 "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog")}
 
 
 class PlaceError(ValueError):
@@ -104,10 +108,13 @@ def tty_of(topology, interface=None, sysfs=SYSFS):
 
 
 def boards(path=REPO / "boards.txt"):
-    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus."""
+    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus. A board without a CPU Clock
+    menu (H41x, X305: one clock) gives its own build.f_cpu."""
     text = path.read_text(encoding="utf-8")
     first_clock = {}
     for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.[^.=\n]+\.build\.f_cpu=(\d+)L?$", text, re.M):
+        first_clock.setdefault(board, int(hz))
+    for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.build\.f_cpu=(\d+)L?$", text, re.M):
         first_clock.setdefault(board, int(hz))
     out = {}
     for board, part in re.findall(r"^([A-Za-z0-9_]+)\.menu\.pnum\.([A-Z0-9]+)=", text, re.M):
@@ -127,6 +134,27 @@ def bench_menus(board, path=REPO / "boards.txt"):
     text = path.read_text(encoding="utf-8")
     return [f"{menu}={value}" for menu, value in BENCH_MENUS
             if re.search(rf"^{re.escape(board)}\.menu\.{menu}\.{value}=", text, re.M)]
+
+
+# Pads selfcheck's gpio never drives: the debug pads (a driven SWDIO / SWIO ends the session), NRST and the BOOT
+# straps, the crystals' pads, and USB's D+ / D- and CC (a cable or a peer on them). From device-data's pinout.csv.
+GPIO_KEEP_OFF_PERIPHERALS = {"SDI", "SYS", "OSC", "OSC32"}
+GPIO_KEEP_OFF_ROLES = re.compile(r"(?:^|_)D[MP]$|^CC[12]$")   # DM, DP, FS_DM (V307's OTG), CC1 ...
+
+
+def gpio_keep_off(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
+    """Sorted pad names ("PA13") of `part` that selfcheck's gpio leaves alone; None without device-data."""
+    import csv
+    if not path.exists():
+        return None
+    out = set()
+    with path.open(encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["part_number"] != part or r["kind"] != "gpio" or not r["port"]:
+                continue
+            if r["peripheral"] in GPIO_KEEP_OFF_PERIPHERALS or GPIO_KEEP_OFF_ROLES.search(r["role"]):
+                out.add(f"P{r['port']}{r['gpio']}")
+    return sorted(out)
 
 
 def ethernet_clock(fqbn, path=REPO / "boards.txt"):

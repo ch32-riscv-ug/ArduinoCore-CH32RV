@@ -10,14 +10,16 @@
  *   ports                     PORTS <count>: the HardwareSerial objects (Serial, Serial1, ...)
  *   tx <k> <baud> <n>         port k sends n bytes: TX <USARTn> <sent> <microseconds to the last stop bit> <BRR>
  *   rx <k> <n>                port k at 9600 receives n bytes the sketch sends on its RX pad (made an output):
- *                             RX <USARTn> <received> <matching> <takeErrors()>
+ *                             RX <USARTn> <received> <matching> <takeErrors()>, or RX <USARTn> HELD
  *                             either: <USARTn or 0> CLOSED when begin() or the default route refused
  *   spi <hz> <n>              SPI (the library's default instance), n bytes at hz, MISO left as it is:
  *                             SPI <SPIn> <microseconds> <BR field>, or SPI 0 NONE
- *   pins                      PINS <pin> ...: the pads gpio may drive (USART RX defaults, SPI SCK / MOSI)
+ *   allpins                   ALLPINS <pin> ...: every pad the part bonds
+ *   rxpin <k>                 RXPIN <USARTn> <its default RX pin or -1>
  *   gpio <pin>                GPIO <pin> <read at HIGH> <read at LOW> <RISING count> <FALLING count>
  *                             <CHANGE count> <read with INPUT_PULLUP> <read with INPUT_PULLDOWN>
- *                             (five pulses written on the output for each interrupt mode)
+ *                             (five pulses written on the output for each interrupt mode), or
+ *                             GPIO <pin> HELD <level> when the pulls do not move it (never driven)
  *   vref                      VREF <analogReadVref()> <full scale> <CH32RV.getVddMillivolts()>,
  *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
@@ -25,8 +27,10 @@
 #include <SerialDMSeq.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(CH32RV_SPI1_SCK) || defined(CH32RV_SPI2_SCK) || defined(CH32RV_SPI3_SCK)
 #include <SPI.h>
+/* A hardware SPI as the bare name, as SPI.h declares it (none on CH32M030G8R7,
+ * a SoftSPI when the board menu says Software). */
+#if CH32RV_SPI_COUNT > 0 && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
 #define SELFCHECK_SPI 1
 #endif
 #include "internal/ch32rv_registers.h"
@@ -177,9 +181,35 @@ static void transmit(int k, unsigned long baud, int n)
     SerialDMSeq.printf("TX %u %d %lu %u\r\n", number, sent, (unsigned long)took, brr);
 }
 
+/* Whether something on the board holds the pad (a driver, a strong pull):
+ * then it reads the same with the pull-up and the pull-down, and driving it
+ * would fight that driver - such a pad is never made an output here. */
+static bool held(pin_size_t p, int *up, int *down)
+{
+    pinMode(p, INPUT_PULLUP);
+    delay(1);
+    *up = digitalRead(p);
+    pinMode(p, INPUT_PULLDOWN);
+    delay(1);
+    *down = digitalRead(p);
+    pinMode(p, INPUT);
+    return *up == *down;
+}
+
+/* Port k's USART and its default RX pin (begin() and end() to learn which). */
+static void rx_pin_of(int k)
+{
+    arduino::CH32RVHardwareSerial &port = *ports[k];
+    port.begin(9600);
+    const uint8_t number = port.peripheral();
+    port.end();
+    SerialDMSeq.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
+}
+
 /* The receiver: its RX pad made a GPIO output, which the USART still hears
  * (a pad's input path stays on in output mode), and n bytes sent on it from
- * here at 9600 baud, 8N1 - timed by micros() against the start of each byte. */
+ * here at 9600 baud, 8N1 - timed by micros() against the start of each byte.
+ * Not on a pad the board holds (a WCH-Link's TX on USART1's RX). */
 static void receive(int k, int n)
 {
     arduino::CH32RVHardwareSerial &port = *ports[k];
@@ -191,6 +221,14 @@ static void receive(int k, int n)
         SerialDMSeq.printf("RX %u CLOSED\r\n", number);
         return;
     }
+    int up, down;
+    if (held((pin_size_t)pin, &up, &down)) {
+        port.end();
+        SerialDMSeq.printf("RX %u HELD\r\n", number);
+        return;
+    }
+    port.begin(9600);                   /* held() left the pad an input */
+    digitalWrite((pin_size_t)pin, HIGH);    /* idle high from the first moment it drives */
     pinMode((pin_size_t)pin, OUTPUT);
     digitalWrite((pin_size_t)pin, HIGH);
     delay(5);
@@ -199,8 +237,16 @@ static void receive(int k, int n)
     }
     port.takeErrors();
     int received = 0, matching = 0;
-    for (int i = 0; i < n; i++) {
-        const uint16_t frame = (uint16_t)(0x200u | ((uint16_t)pattern(i) << 1));   /* start 0, data LSB first, stop 1 */
+    uint8_t first[4] = {0, 0, 0, 0};
+    /* i = -1: a 0xFF byte first, which warms both writes of this loop: its
+     * first pass runs slow (cold), and on V006 and X035 the first byte sent
+     * came in with a framing error while every later one was right - a frame
+     * of ten 1 bits did not help (it never wrote LOW), a 0xFF byte did. The
+     * receiver drops it before counting. */
+    bool synced = false;
+    for (int i = -1; i < n; i++) {
+        const uint16_t frame = i < 0 ? 0x3FEu
+                                     : (uint16_t)(0x200u | ((uint16_t)pattern(i) << 1));   /* start 0, data LSB first, stop 1 */
         noInterrupts();
         const uint32_t t0 = micros();
         for (int b = 0; b < 10; b++) {
@@ -211,29 +257,57 @@ static void receive(int k, int n)
         interrupts();
         delayMicroseconds(200);
         while (port.available()) {
-            matching += port.read() == (int)pattern(received);
+            const int c = port.read();
+            if (!synced && c == 0xFF) {
+                synced = true;
+                continue;
+            }
+            synced = true;
+            if (received < 4) {
+                first[received] = (uint8_t)c;
+            }
+            matching += c == (int)pattern(received);
             received++;
+        }
+        if (i < 0) {
+            port.takeErrors();          /* the warm-up byte's own (X035 USART2: a framing error) */
         }
     }
     delay(5);
     while (port.available()) {
-        matching += port.read() == (int)pattern(received);
+        const int c = port.read();
+        if (!synced && c == 0xFF) {
+            synced = true;
+            continue;
+        }
+        synced = true;
+        if (received < 4) {
+            first[received] = (uint8_t)c;
+        }
+        matching += c == (int)pattern(received);
         received++;
     }
     const unsigned errors = port.takeErrors();
     port.end();
-    SerialDMSeq.printf("RX %u %d %d %u\r\n", number, received, matching, errors);
+    SerialDMSeq.printf("RX %u %d %d %u %02x%02x%02x%02x\r\n", number, received, matching, errors,
+                       first[0], first[1], first[2], first[3]);
 }
 
 static volatile uint16_t edges;
 static void count_edge(void) { edges++; }
 
-/* One pad on its own: written as an output and read back, its pin interrupt
- * (the EXTI line, the dispatch) raised by writing it (the input path stays on
- * in output mode), then its pull-up and pull-down as an input. */
+/* One pad on its own: its pull-up and pull-down as an input first (a pad the
+ * board holds stops there), then written as an output and read back, and its
+ * pin interrupt (the EXTI line, the dispatch) raised by writing it (the input
+ * path stays on in output mode). */
 static void gpio(int pin)
 {
     const pin_size_t p = (pin_size_t)pin;
+    int up, down;
+    if (held(p, &up, &down)) {
+        SerialDMSeq.printf("GPIO %d HELD %d\r\n", pin, up);
+        return;
+    }
     pinMode(p, OUTPUT);
     digitalWrite(p, HIGH);
     delayMicroseconds(10);
@@ -257,34 +331,25 @@ static void gpio(int pin)
         detachInterrupt(digitalPinToInterrupt(p));
         counts[m] = edges;
     }
-    pinMode(p, INPUT_PULLUP);
-    delay(1);
-    const int up = digitalRead(p);
-    pinMode(p, INPUT_PULLDOWN);
-    delay(1);
-    const int down = digitalRead(p);
+    digitalWrite(p, LOW);
     pinMode(p, INPUT);
     SerialDMSeq.printf("GPIO %d %d %d %u %u %u %d %d\r\n", pin, high, low, counts[0], counts[1], counts[2], up, down);
 }
 
-/* The pads this check may drive: each USART's default RX (driven by the
- * receive check already) and the default SPI's SCK and MOSI - pads a board
- * leaves for its user. */
-static int gpio_pins[16];
-static int gpio_count;
-static void collect_pins(void)
+/* Every pad the part bonds (the variant's port masks); the test leaves out
+ * the debug, reset, strap, crystal and USB pads before asking for any. */
+static void all_pins(void)
 {
-    gpio_count = 0;
-    for (uint8_t n = 1; n <= 8 && gpio_count < 14; n++) {
-        const int pin = rx_pin(n);
-        if (pin >= 0) {
-            gpio_pins[gpio_count++] = pin;
+    SerialDMSeq.printf("ALLPINS");
+    for (uint8_t port = 0; port < CH32RV_PORT_COUNT; port++) {
+        const uint32_t mask = CH32RV_PORT_MASK(port);
+        for (uint8_t bit = 0; bit < 32; bit++) {
+            if (mask & (1ul << bit)) {
+                SerialDMSeq.printf(" %d", (int)CH32RV_PIN(port, bit));
+            }
         }
     }
-#if defined(PIN_SPI_SCK) && defined(PIN_SPI_MOSI)
-    gpio_pins[gpio_count++] = PIN_SPI_SCK;
-    gpio_pins[gpio_count++] = PIN_SPI_MOSI;
-#endif
+    SerialDMSeq.printf("\r\n");
 }
 
 static void reply(char *command)
@@ -336,13 +401,10 @@ static void reply(char *command)
 #else
         SerialDMSeq.printf("SPI 0 NONE\r\n");
 #endif
-    } else if (!strcmp(argv[0], "pins")) {
-        collect_pins();
-        SerialDMSeq.printf("PINS");
-        for (int i = 0; i < gpio_count; i++) {
-            SerialDMSeq.printf(" %d", gpio_pins[i]);
-        }
-        SerialDMSeq.printf("\r\n");
+    } else if (!strcmp(argv[0], "allpins")) {
+        all_pins();
+    } else if (!strcmp(argv[0], "rxpin") && argc == 2 && atoi(argv[1]) < PORT_COUNT) {
+        rx_pin_of(atoi(argv[1]));
     } else if (!strcmp(argv[0], "gpio") && argc == 2) {
         gpio(atoi(argv[1]));
     } else if (!strcmp(argv[0], "vref")) {
