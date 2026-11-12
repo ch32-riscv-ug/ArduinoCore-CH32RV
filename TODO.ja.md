@@ -68,9 +68,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [ ] printf-float.ja.md と README の大きさの表は GCC と newlib の頃のもの。測り直す。
 - [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ。時間に厳しいところ（printf の数の変換など）を洗い出す。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
-- [ ] V103 は ch32rv の修正版（e958bbe、console-rtt は 15d9a89）で動く。LinkE の uart が console-sdi のあとで古い SDI の行に
-  置き換わる件も ch32rv の main（b1148af）で直った（0.30.2 は SDI の転送を有効のまま残し、LinkE が溜めた行を UART の
-  受信の代わりに送る）。これらの入った ch32rv がリリースされたら同梱を上げる。
+- [x] 同梱の ch32rv を 0.30.4 に上げた（V103 の接続の修正 e958bbe と 15d9a89、LinkE の SDI が残る件の b1148af が入った版）。
+  リリースの版の実機の試験で確かめる。
 
 ## PIOC（CH32X035、CH32V205、CH32H41x）
 
