@@ -176,6 +176,9 @@ extern "C" CH32RV_INTERRUPT void ETH_IRQHandler(void)
     }
 }
 
+#if F_CPU != 120000000 && F_CPU != 60000000
+__attribute__((noinline))                /* see the #else below */
+#endif
 bool NetworkEthernet::begin(bool makeDefault)
 {
     if (_running) {
@@ -186,8 +189,13 @@ bool NetworkEthernet::begin(bool makeDefault)
 #elif F_CPU == 60000000
     RCC_CFGR0 &= ~CFGR0_ETHPRE;
 #else
+    /* The PHY needs exactly 60 MHz: HCLK 60 or 120 MHz. A call to begin() is
+     * a build error at this clock (NetworkEthernet.h); the empty asm keeps
+     * the call from being folded away under LTO, where the error is checked
+     * only on the calls that are left. */
     (void)makeDefault;
-    return false;                        /* the PHY needs exactly 60 MHz: HCLK 60 or 120 MHz */
+    __asm__ volatile("");
+    return false;
 #endif
 #if F_CPU == 120000000 || F_CPU == 60000000
     if (!_macSet) {

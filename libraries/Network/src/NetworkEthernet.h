@@ -40,6 +40,16 @@ public:
     /* Clocks (HSE, the Ethernet PLL), the MAC and the PHY, then the IP side.
      * With makeDefault (the default), it takes the default route even when
      * another interface (USB NCM) started first. */
+    /* The 10M MAC (V208, V203RB): the PHY needs exactly 60 MHz, HCLK / 1 or
+     * / 2, so begin() could only fail at any other CPU Clock - and a sketch
+     * built that way would drop the whole stack without a word. A call to it
+     * is a build error there instead (clang's error attribute: where the
+     * sketch calls it, and only then - a sketch with Network but no ETH
+     * still builds, with or without LTO). */
+#if NETWORK_ETHERNET_10M && F_CPU != 60000000 && F_CPU != 120000000
+    __attribute__((error("ETH (the 10M Ethernet) runs only at HCLK 60 or 120 MHz: "
+                         "select Tools > CPU Clock > 60MHz (Ethernet, no USB)")))
+#endif
     bool begin(bool makeDefault = true);
     void end();
     void poll() override;
