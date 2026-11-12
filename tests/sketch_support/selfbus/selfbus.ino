@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SPI.h>
+#include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 
 #ifndef BENCH_BUILD_ID
@@ -75,26 +76,30 @@ static void spi_out(int mode, int lsb, int value)
     while (CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_RXNE) {
         (void)CH32RV_SPI_DATAR(base);
     }
+    /* The input registers read straight: digitalRead() twice and micros() a
+     * turn missed edges at X035's 187 kHz and L103's 375 kHz. */
+    const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(PIN_SPI_SCK), sck_bit = (uint8_t)CH32RV_PIN_BIT(PIN_SPI_SCK);
+    const uint8_t mosi_port = (uint8_t)CH32RV_PIN_PORT(PIN_SPI_MOSI), mosi_bit = (uint8_t)CH32RV_PIN_BIT(PIN_SPI_MOSI);
+    volatile uint32_t *const sck_in = &CH32RV_GPIO_INDR(sck_port);
+    volatile uint32_t *const mosi_in = &CH32RV_GPIO_INDR(mosi_port);
     int edges = 0, bits = 0;
     uint32_t got = 0;
-    int prev = idle;
+    uint32_t prev = (uint32_t)idle;
     noInterrupts();
     CH32RV_SPI_DATAR(base) = (uint16_t)value;
-    const uint32_t t0 = micros();
-    while ((uint32_t)(micros() - t0) < 2000u) {
-        const int sck = digitalRead(PIN_SPI_SCK);
-        const int mosi = digitalRead(PIN_SPI_MOSI);
+    for (uint32_t n = 0; n < 2000000u && edges < 16; n++) {
+        const uint32_t sck = (*sck_in >> sck_bit) & 1u;
+        const uint32_t mosi = (*mosi_in >> mosi_bit) & 1u;
         if (sck != prev) {
             edges++;
-            if (sck == sample_level && bits < 16) {
-                got |= (uint32_t)mosi << bits;
+            if ((int)sck == sample_level && bits < 16) {
+                got |= mosi << bits;
                 bits++;
             }
             prev = sck;
         }
-        if (edges >= 16 && (CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_RXNE)) {
-            break;
-        }
+    }
+    while (!(CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_RXNE)) {
     }
     interrupts();
     (void)CH32RV_SPI_DATAR(base);
