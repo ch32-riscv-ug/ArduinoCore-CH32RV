@@ -12,7 +12,7 @@ Every two seconds one line appears, for example `Vref reading 381  VDD 3220 mV  
 
 - `analogReadVref()`: the internal reference as `analogRead()` would return it at the current resolution; 0 where the chip has none.
 - `CH32RV.getVddMillivolts()`: the supply in mV, from the reference's typical voltage - within a few percent. 0 when unknown, including a reference reading that would mean more than 6 V (a CH32X035C8T6 on the bench reads its ADC_IN15 as almost 0).
-- `analogReadTemp()`: degrees C from the datasheet's typical constants, NAN without a sensor. Each part is off by several degrees (a CH32V103 reads about 20 C high); use it for changes, not for absolute temperature, unless you calibrate it.
+- `analogReadTemp()`: degrees C from the factory's calibration point stored in the chip and the datasheet's typical slope, NAN without a sensor. It is the die temperature, a few degrees above the air, and the slope varies by part (about +-20 %); use it for changes rather than as a thermometer.
 
 The sketch averages 16 readings, because one reading is noisy. Do not call these while CH32RVAdcStream runs: they use the same ADC.
 
