@@ -58,8 +58,8 @@ The [ADRs](docs/adr/README.ja.md) record the rationale that is still needed to m
 | Erase Flash (`erase`) | `keep` | What an upload erases. Keep Store keeps the flash tail a sketch reserved with `CH32RV_FLASH_STORE` (ch32rv saves and writes it back: about 0.8 s more for 16 KB on V003, 1 s for 96 KB on V307). All Flash (`chip`) erases the whole chip. H41x's DFU route refuses All Flash. UIAPduino has no such menu (it uploads through HID alone) |
 
 The printf family (`Serial.printf`, `printf`, `sprintf`, `snprintf`), `Serial.print(float)` and `String(float)` use the core's formatter.
-The default (`fltf`) computes in float as AVR does and prints printf's `%f`: a few KB smaller than double without an FPU, over ten KB on V30x, X3x5 and H41x.
-Pick `dbl` / `dblf` for 15 digits (GPS coordinates and the like). A sketch that uses printf but no floats is about 0.9 KB smaller under `flt` (1.5 KB with an FPU), which prints `%f` as written. Without an FPU, printing a float takes no soft-float: the float steps are done on its bits.
+The default (`fltf`) computes in float as AVR does and prints printf's `%f`: a sketch that prints a float is about 2-2.5 KB smaller than under double (V003, X035, V307).
+Pick `dbl` / `dblf` for 15 digits (GPS coordinates and the like). A sketch that uses printf but no floats is about 1 KB smaller under `flt`, which prints `%f` as written. Without an FPU, printing a float takes no soft-float: the float steps are done on its bits.
 A sketch that uses neither floats nor printf is the same size under every entry.
 `strftime()`, `gmtime_r()`, `localtime_r()`, `mktime()` and `tzset()` are the core's too, with the same text as newlib 4.5's.
 The parseFloat menu has `Serial.parseFloat()` add its digits up in double (`double`: the nearest float), in integers (`int`: the nearest float to 11 digits, no double arithmetic) or in float (`float`: the smallest, sometimes off by the last bit).

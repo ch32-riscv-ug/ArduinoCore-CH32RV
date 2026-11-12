@@ -380,14 +380,14 @@ _LIBCS = "-DCH32RV_SCANF_LIBC=1"
 # snprintf("%f %e %g") sketch grows by over the Double entry (CH32X035,
 # 2026-11-12; V003 and V307 within 1 KB of it); 9 KB of them leave a 16 KB
 # part little room (V003: 16,328 B of 16,384 for dblfs, 16 B over for
-# libcfps). The default (first) is Float
-# with printf's %f on every board: a sketch that uses floats pays 0.6-0.8 KB for
-# %f (V003), and one that uses neither floats nor printf pays nothing under any
-# entry; only printf without floats pays for %f (+5.2 KB on V003, +1.5 KB on
+# libcfps). The default (first) is Float with printf's %f on every board: a
+# sketch that prints a float is 2.1-2.5 KB smaller than under Double, and one
+# that uses neither floats nor printf pays nothing under any entry; only
+# printf without floats pays for %f (+1.0 KB on V003, +0.9 KB on X035 and
 # V307), and printf is a luxury on a 16 KB part anyway
 # (docs/printf-float.ja.md). The rest go smallest first by what each links:
-# soft-float before soft-double, printf's %f after what it adds to (measured
-# on V003, X035 and V307, 2026-10-29), picolibc last.
+# soft-float before soft-double, printf's %f after what it adds to, picolibc
+# last.
 RTLIB_MENU = (
     ("fltf", "Float (32-bit) + printf %f (default)", f"{_F32} {_PF}", 0),
     ("flt", "Float (32-bit)", _F32, 0),

@@ -57,8 +57,8 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Erase Flash (`erase`) | `keep` | 書き込みで消す範囲。Keep Store は `CH32RV_FLASH_STORE` で確保した末尾を残す（ch32rv が退避して書き戻す。V003 の 16 KB で約 0.8 秒、V307 の 96 KB で約 1 秒増える）。All Flash（`chip`）はチップ全体を消す。H41x の DFU では All Flash を選ぶと書き込みが断られる。UIAPduino にはメニューが無い（HID だけで書く） |
 
 printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Serial.print(float)`、`String(float)` はコアの書式化で動きます。
-既定（`fltf`）は AVR と同じく float で計算し、printf の `%f` も出します。double で計算するより、FPU のない系列で数 KB、V30x・X3x5・H41x で十数 KB 小さくなります。
-15 桁の精度が要るとき（GPS の緯度経度など）は `dbl` / `dblf` を選びます。小数を使わずに printf を使うときは、`%f` なしの `flt` で約 0.9 KB（FPU のある系列で 1.5 KB）小さくなります。FPU のない系列では、小数の表示に soft-float を使いません（float の計算を値のビットに対して行います）。
+既定（`fltf`）は AVR と同じく float で計算し、printf の `%f` も出します。小数を表示するスケッチは、double で計算するより約 2〜2.5 KB 小さくなります（V003、X035、V307）。
+15 桁の精度が要るとき（GPS の緯度経度など）は `dbl` / `dblf` を選びます。小数を使わずに printf を使うときは、`%f` なしの `flt` で約 1 KB 小さくなります。FPU のない系列では、小数の表示に soft-float を使いません（float の計算を値のビットに対して行います）。
 小数も printf も使わなければ、どの選択肢でも大きさは同じです。
 `strftime()`、`gmtime_r()`、`localtime_r()`、`mktime()`、`tzset()` もコアのもので、出す文字は newlib 4.5 と同じです。
 `Serial.parseFloat()` の計算は、parseFloat のメニューで、double（`double`：いちばん近い float）、整数（`int`：11 桁までいちばん近い float、double の計算なし）、float（`float`：いちばん小さいが、最後の 1 ビットがずれることがある）から選べます。

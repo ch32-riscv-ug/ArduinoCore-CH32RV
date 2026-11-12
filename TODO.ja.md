@@ -68,7 +68,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [ ] リリースの版で、もう一度全部の系列を流す。
 - [ ] コアが持つ libc の代わり（strftime、mktime、tzset、gmtime、memcpy などと ch32rv_softfloat.c、ch32rv_div.S）を、picolibc と
   compiler-rt のものと測り直す。小さくならないものは外す（引き算は外した。割り算、変換、clz / ctz はコアの方が小さい）。
-- [ ] printf-float.ja.md と README の大きさの表は GCC と newlib の頃のもの。測り直す。
+- [x] printf-float.ja.md と README の大きさの表を clang で測り直した（2026-11-12）。parseFloat の整数の計算の費用だけ GCC の頃の値。
 - [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ。時間に厳しいところ（printf の数の変換など）を洗い出す。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
 - [x] 同梱の ch32rv を 0.30.4 に上げた（V103 の接続の修正 e958bbe と 15d9a89、LinkE の SDI が残る件の b1148af が入った版）。
