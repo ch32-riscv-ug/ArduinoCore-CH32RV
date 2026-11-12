@@ -294,6 +294,12 @@ test = ["selfbus::test_uart_formats", "selfbus::test_uart_errors", "selfbus::tes
 scope = "series"
 
 [[item]]
+id = "selfbus-i2c"          # Wire's FREQ / CKCFGR from PCLK1, and an error (not a hang) with nobody on the bus
+test = ["selfbus::test_i2c_registers", "selfbus::test_i2c_nack"]
+scope = "series"
+any_of = ["I2C1", "I2C2"]
+
+[[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
 test = "selfcheck::test_vref"
 scope = "series"

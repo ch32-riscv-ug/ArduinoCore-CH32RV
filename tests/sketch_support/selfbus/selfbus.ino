@@ -8,6 +8,10 @@
  *   spiout <mode> <lsb> <byte> one byte sent at the slowest clock while the sketch reads SCK and MOSI on their
  *                             own pads: SPIOUT <SCK idle level> <edges seen> <byte rebuilt from MOSI at the
  *                             mode's sampling edge>
+ *   wires                     WIRES <hardware TwoWire objects>
+ *   i2cinfo <k>               I2CINFO <I2Cn> <SCL> <SDA> <SCL with pull-up> <with pull-down> <SDA up> <down>
+ *   i2creg <k> <hz>           setClock(hz), then I2CREG <PCLK1> <CTLR2 FREQ> <CKCFGR>
+ *   i2cnack <k>               a write to 0x50 with nobody there: I2CNACK <endTransmission()> <microseconds>
  *   ports                     PORTS <HardwareSerial objects> <receive buffer size>
  *   rxpin <k>                 RXPIN <USARTn> <its default RX pin or -1>
  *   rxfmt <k> <fmt> <kind> <n> port k at 9600 in fmt (8N1 8E1 8O1 7E1 8N2), fed n frames on its RX pad (made an
@@ -23,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <SPI.h>
+#include <Wire.h>
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 
@@ -271,6 +276,97 @@ static void tx_format(int k, const Format &f, int n)
     SerialDMSeq.printf("TXFMT %u %lu\r\n", number, (unsigned long)took);
 }
 
+/* ---- I2C: the clock registers and a transfer with nobody there ---- */
+#if defined(CH32RV_WIRE_COUNT) && CH32RV_WIRE_COUNT > 0 && !CH32RV_WIRE0_SOFT
+#define SELFBUS_WIRES 1
+static arduino::CH32RVTwoWire *const wires[] = {
+    &Wire,
+#if CH32RV_WIRE_COUNT > 1 && !CH32RV_WIRE1_SOFT
+    &Wire1,
+#endif
+};
+static const int WIRE_COUNT = (int)(sizeof wires / sizeof wires[0]);
+
+static uint32_t i2c_base(unsigned n)
+{
+    switch (n) {
+    case 1: return CH32RV_I2C1_BASE;
+#ifdef CH32RV_I2C2_BASE
+    case 2: return CH32RV_I2C2_BASE;
+#endif
+    default: return 0;
+    }
+}
+
+static void i2c_pins(unsigned n, int *scl, int *sda)
+{
+    *scl = *sda = -1;
+    switch (n) {
+#ifdef CH32RV_I2C1_SCL
+    case 1: *scl = CH32RV_I2C1_SCL; *sda = CH32RV_I2C1_SDA; break;
+#endif
+#ifdef CH32RV_I2C2_SCL
+    case 2: *scl = CH32RV_I2C2_SCL; *sda = CH32RV_I2C2_SDA; break;
+#endif
+    default: break;
+    }
+}
+
+/* Which I2C wire k is and its pads, each read with the pull-up and the
+ * pull-down before anything drives it: I2CINFO <I2Cn> <SCL> <SDA> <SCL up> <SCL down> <SDA up> <SDA down> */
+static void i2c_info(int k)
+{
+    wires[k]->begin();
+    const unsigned n = wires[k]->peripheral();
+    wires[k]->end();
+    int scl, sda;
+    i2c_pins(n, &scl, &sda);
+    int pulls[4] = {-1, -1, -1, -1};
+    for (int i = 0; i < 2; i++) {
+        const int pin = i ? sda : scl;
+        if (pin < 0) {
+            continue;
+        }
+        pinMode((pin_size_t)pin, INPUT_PULLUP);
+        delay(1);
+        pulls[2 * i] = digitalRead((pin_size_t)pin);
+        pinMode((pin_size_t)pin, INPUT_PULLDOWN);
+        delay(1);
+        pulls[2 * i + 1] = digitalRead((pin_size_t)pin);
+        pinMode((pin_size_t)pin, INPUT);
+    }
+    SerialDMSeq.printf("I2CINFO %u %d %d %d %d %d %d\r\n", n, scl, sda, pulls[0], pulls[1], pulls[2], pulls[3]);
+}
+
+/* setClock(hz) and what it wrote: I2CREG <PCLK1> <CTLR2 FREQ> <CKCFGR> */
+static void i2c_reg(int k, unsigned long hz)
+{
+    wires[k]->begin();
+    wires[k]->setClock(hz);
+    const uint32_t base = i2c_base(wires[k]->peripheral());
+    const unsigned freq = base ? CH32RV_I2C_CTLR2(base) & CH32RV_I2C_CTLR2_FREQ_MASK : 0;
+    const unsigned ckcfgr = base ? CH32RV_I2C_CKCFGR(base) : 0;
+    wires[k]->end();
+    SerialDMSeq.printf("I2CREG %lu %u %u\r\n", (unsigned long)CH32RV_PCLK1_HZ, freq, ckcfgr);
+}
+
+/* A write to 0x50 with nobody on the bus: I2CNACK <endTransmission()> <microseconds> */
+static void i2c_nack(int k)
+{
+    wires[k]->begin();
+    wires[k]->setClock(100000);
+    const uint32_t t0 = micros();
+    wires[k]->beginTransmission(0x50);
+    wires[k]->write((uint8_t)0);
+    const uint8_t code = wires[k]->endTransmission();
+    const uint32_t took = micros() - t0;
+    wires[k]->end();
+    SerialDMSeq.printf("I2CNACK %u %lu\r\n", code, (unsigned long)took);
+}
+#else
+static const int WIRE_COUNT = 0;
+#endif
+
 #if SELFBUS_SPI
 static uint32_t spi_base(unsigned number)
 {
@@ -390,6 +486,16 @@ static void reply(char *command)
                            (int)PIN_SPI_MOSI, hs, hi, ho);
 #else
         SerialDMSeq.printf("SPIPINS 0 -1 -1 -1 0 0 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "wires")) {
+        SerialDMSeq.printf("WIRES %d\r\n", WIRE_COUNT);
+#if SELFBUS_WIRES
+    } else if (!strcmp(argv[0], "i2cinfo") && argc == 2 && atoi(argv[1]) < WIRE_COUNT) {
+        i2c_info(atoi(argv[1]));
+    } else if (!strcmp(argv[0], "i2creg") && argc == 3 && atoi(argv[1]) < WIRE_COUNT) {
+        i2c_reg(atoi(argv[1]), strtoul(argv[2], nullptr, 10));
+    } else if (!strcmp(argv[0], "i2cnack") && argc == 2 && atoi(argv[1]) < WIRE_COUNT) {
+        i2c_nack(atoi(argv[1]));
 #endif
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d %u\r\n", PORT_COUNT, (unsigned)CH32RV_SERIAL_RX_BUFFER_SIZE);

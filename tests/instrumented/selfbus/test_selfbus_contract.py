@@ -20,6 +20,14 @@ CH32RV_SERIAL_MARK_FULL and leave the buffer full.
 selfbus.uart_transmit: every port sends 64 bytes at 115200 in each format: the time is the frame's bits (start,
 data, parity, stop) a byte within 4 %.
 
+selfbus.i2c_registers: every hardware TwoWire after setClock(100000) and setClock(400000): CTLR2's FREQ is PCLK1 in
+MHz, CKCFGR is PCLK1 / (2 x 100 kHz) in standard mode (4 at least) and FS with PCLK1 / (3 x 400 kHz) in fast mode -
+the clock Wire computes from, APB1 divided where HCLK passes FREQ's 60 MHz. Where PCLK1 is still above 60 MHz
+(X315, H417, M030 above 48: no bus to divide, TODO) FREQ is recorded, not judged.
+
+selfbus.i2c_nack: a write to 0x50 with nobody on the bus returns an error from endTransmission() within 200 ms -
+2 (address NACK) where the board pulls both lines up, any error where they float - and never hangs.
+
 Pads kept off (harness/place.py gpio_keep_off) or held by the board are not driven: the test skips. A board whose
 record loses gpio-drive (CH32M030's motor board) skips both."""
 import json
@@ -190,4 +198,70 @@ def test_uart_transmit(dut, uart, record_property):
                 wrong.append(f"USART{number} {fmt}: 64 bytes took {took} us, {ideal:.0f} for {bits} bits a frame")
     record_property("transmit", json.dumps(results))
     assert results, "no port opened"
+    assert not wrong, " | ".join(wrong)
+
+
+@pytest.fixture
+def wires(dut):
+    no_drive()
+    case = settings(__file__)
+    nonce = secrets.token_hex(4)
+    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    count = int(ask(dut, "wires", rb"WIRES (\d+)").group(1))
+    if not count:
+        pytest.skip("no hardware TwoWire on this board")
+    off = set(case["target"].get("gpio_keep_off") or [])
+    usable, left = [], []
+    for k in range(count):
+        n, scl, sda, su, sd, du, dd = (int(x) for x in ask(
+            dut, f"i2cinfo {k}", rb"I2CINFO (\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)").groups())
+        if scl < 0:
+            left.append(f"I2C{n}: no default route")
+        elif pad(scl) in off or pad(sda) in off:
+            left.append(f"I2C{n}: {pad(scl)} / {pad(sda)} kept off")
+        elif (su, sd) == (0, 0) or (du, dd) == (0, 0):
+            left.append(f"I2C{n}: {pad(scl)} / {pad(sda)} held low by the board")
+        else:
+            pulled = (su, sd) == (1, 1) and (du, dd) == (1, 1)
+            usable.append(dict(k=k, n=n, scl=pad(scl), sda=pad(sda), pulled_up=pulled))
+    return dict(usable=usable, left=left)
+
+
+def test_i2c_registers(dut, wires, record_property):
+    if not wires["usable"]:
+        pytest.skip("no I2C's pads are free: " + ", ".join(wires["left"]))
+    results, wrong = {}, []
+    for w in wires["usable"]:
+        for hz in (100000, 400000):
+            pclk1, freq, ckcfgr = (int(x) for x in ask(dut, f"i2creg {w['k']} {hz}",
+                                                       rb"I2CREG (\d+) (\d+) (\d+)").groups())
+            results[f"I2C{w['n']}/{hz}"] = dict(pclk1=pclk1, freq=freq, ckcfgr=ckcfgr)
+            if pclk1 <= 60_000_000 and freq != pclk1 // 1_000_000:
+                wrong.append(f"I2C{w['n']}: FREQ {freq}, PCLK1 is {pclk1 // 1_000_000} MHz")
+            if hz == 100000:
+                want = max(4, pclk1 // (2 * hz))
+                if ckcfgr != want:
+                    wrong.append(f"I2C{w['n']} 100 kHz: CKCFGR {ckcfgr:#x}, want {want:#x}")
+            else:
+                want = 0x8000 | max(1, pclk1 // (3 * hz))
+                if ckcfgr & 0x8FFF != want:
+                    wrong.append(f"I2C{w['n']} 400 kHz: CKCFGR {ckcfgr:#x}, want FS | {want & 0xFFF:#x}")
+    record_property("i2c", json.dumps(results))
+    record_property("left", json.dumps(wires["left"]))
+    assert not wrong, " | ".join(wrong)
+
+
+def test_i2c_nack(dut, wires, record_property):
+    if not wires["usable"]:
+        pytest.skip("no I2C's pads are free: " + ", ".join(wires["left"]))
+    results, wrong = {}, []
+    for w in wires["usable"]:
+        code, took = (int(x) for x in ask(dut, f"i2cnack {w['k']}", rb"I2CNACK (\d+) (\d+)", timeout=15).groups())
+        results[f"I2C{w['n']}"] = dict(code=code, us=took, pulled_up=w["pulled_up"])
+        if code == 0 or took > 200000:
+            wrong.append(f"I2C{w['n']}: endTransmission() {code} after {took} us with nobody on the bus")
+        elif w["pulled_up"] and code != 2:
+            wrong.append(f"I2C{w['n']}: lines pulled up, endTransmission() {code} (2, an address NACK, expected)")
+    record_property("nack", json.dumps(results))
     assert not wrong, " | ".join(wrong)
