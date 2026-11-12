@@ -3,7 +3,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: ETH_MAC */
+/* requires: ETHERNET */
 
 #include <Network.h>
 

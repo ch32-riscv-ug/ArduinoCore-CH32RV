@@ -2,7 +2,7 @@
 // ja: 基本的なMIDIメッセージをUSBとMIDI用UARTの間で中継する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* requires: USB_DEVICE */
+/* requires: USB_DEVICE, SERIAL1 */
 
 #include <CH32RVUsbDevice.h>
 

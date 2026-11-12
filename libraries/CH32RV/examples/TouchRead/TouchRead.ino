@@ -3,6 +3,8 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
+/* requires: A0 */
+
 static const uint8_t PAD = A0;     // en: any analog pin / ja: アナログ端子ならどれでも
 
 /* en: How far from the untouched reading counts as a touch. The count moves with the pad's size and the

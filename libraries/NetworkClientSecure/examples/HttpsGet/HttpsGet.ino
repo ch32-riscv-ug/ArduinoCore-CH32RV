@@ -5,7 +5,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: ETH_MAC, RNG */
+/* requires: ETHERNET, RNG */
 
 #include <Network.h>
 #include <NetworkClientSecure.h>

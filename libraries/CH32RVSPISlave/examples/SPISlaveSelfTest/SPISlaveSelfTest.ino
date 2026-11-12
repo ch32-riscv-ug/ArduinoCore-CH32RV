@@ -3,7 +3,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: SPI1 */
+/* requires: SPI1, CH32RV_SPI1_SCK */
 
 #include <CH32RVSPISlave.h>
 
@@ -16,8 +16,6 @@ static const int MOSI_PIN = CH32RV_SPI1_MOSI;
     defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
     defined(CH32RV_SERIES_CH32M007)
 static const int CS_PIN = PC4;
-#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
-static const int CS_PIN = PF4;
 #else
 static const int CS_PIN = PA4;
 #endif

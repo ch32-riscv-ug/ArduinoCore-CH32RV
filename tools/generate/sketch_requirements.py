@@ -34,16 +34,44 @@ DERIVED = {"USB_DEVICE": frozenset({"USB", "USBFS", "USBHS", "USBHS1", "USBHS2"}
 
 
 @functools.lru_cache(maxsize=1)
+def ethernet_series() -> frozenset:
+    """The series the Network library has an ETH for: the CH32RV_SERIES_<X>
+    its NetworkEthernet.h names where it defines NETWORK_ETHERNET. A part-only
+    condition (CH32RV_PART_CH32V203RBT6) does not count: a profile builds the
+    series' ANY part."""
+    text = (REPO / "libraries/Network/src/NetworkEthernet.h").read_text(encoding="utf-8")
+    found = set()
+    for cond in re.findall(r"^#(?:el)?if\b(.*(?:\\\n.*)*)\n#define NETWORK_ETHERNET 1", text, re.M):
+        found |= set(re.findall(r"CH32RV_SERIES_(\w+)", cond))
+    return frozenset(found)
+
+
+@functools.lru_cache(maxsize=1)
 def series_capabilities() -> dict:
     """series -> the peripherals its variant header names a clock enable for,
-    plus the DERIVED names it has one of."""
+    plus the DERIVED names it has one of, SERIAL1 where it has a second USART
+    or UART (Serial1, CH32RV_SERIAL_COUNT >= 2), and ETHERNET where the
+    Network library has an ETH (ethernet_series())."""
     caps = {}
     for header in sorted((REPO / "variants").glob("*/pins_arduino.h")):
         found = frozenset(re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR",
                                      header.read_text(encoding="utf-8")))
-        caps[header.parent.name] = found | {name for name, any_of in DERIVED.items()
-                                            if found & any_of}
+        extra = {name for name, any_of in DERIVED.items() if found & any_of}
+        if len([c for c in found if re.fullmatch(r"U(S)?ART\d+", c)]) >= 2:
+            extra.add("SERIAL1")
+        if header.parent.name in ethernet_series():
+            extra.add("ETHERNET")
+        caps[header.parent.name] = found | extra
     return caps
+
+
+@functools.lru_cache(maxsize=1)
+def series_defines() -> dict:
+    """series -> the names its variant header #defines (pads such as PF4,
+    analog pins such as A0, default routes such as CH32RV_SPI1_SCK)."""
+    return {header.parent.name: frozenset(re.findall(r"^#define\s+(\w+)",
+                                                     header.read_text(encoding="utf-8"), re.M))
+            for header in sorted((REPO / "variants").glob("*/pins_arduino.h"))}
 
 
 @functools.lru_cache(maxsize=1)
@@ -74,25 +102,32 @@ def requirements(src: pathlib.Path) -> dict:
     """{"caps": [...], "flash": int, "ram": int} from the sketch's own .ino."""
     ino = src / f"{src.name}.ino"
     if not ino.exists():
-        return {"caps": [], "flash": 0, "ram": 0}
+        return {"caps": [], "defines": [], "flash": 0, "ram": 0}
     match = re.search(r"requires:\s*([^*\n]+)", ino.read_text(encoding="utf-8"))
-    need = {"caps": [], "flash": 0, "ram": 0}
+    need = {"caps": [], "defines": [], "flash": 0, "ram": 0}
     if not match:
         return need
     known = set().union(*series_capabilities().values())
+    defined = set().union(*series_defines().values())
     for item in match.group(1).replace(",", " ").split():
         key, sep, value = item.partition("=")
         if not sep:
+            # A capability (upper case, case-insensitive as before), or a name
+            # the variant must #define: a pad, an analog pin, a default route.
             cap = key.upper()
-            if cap not in known:
-                # A typo would otherwise read as "no series has this", which
-                # skips every board and passes with nothing built.
-                raise BadRequirement(
-                    f"{ino.name}: no series declares a capability {cap!r}. "
-                    f"Capabilities are the <X> of CH32RV_CLKEN_<X>_ADDR in "
-                    f"variants/*/pins_arduino.h, or {', '.join(DERIVED)}.")
-            need["caps"].append(cap)
-            continue
+            if cap in known:
+                need["caps"].append(cap)
+                continue
+            if key in defined:
+                need["defines"].append(key)
+                continue
+            # A typo would otherwise read as "no series has this", which
+            # skips every board and passes with nothing built.
+            raise BadRequirement(
+                f"{ino.name}: no series declares a capability {cap!r} and no "
+                f"variant defines {key!r}. Capabilities are the <X> of "
+                f"CH32RV_CLKEN_<X>_ADDR in variants/*/pins_arduino.h, or "
+                f"{', '.join([*DERIVED, 'SERIAL1', 'ETHERNET'])}.")
         if key not in ("flash", "ram"):
             raise BadRequirement(f"{ino.name}: unknown requires: key {key!r}")
         scale = SIZE_SUFFIX.get(value[-1].upper(), 1)
@@ -130,6 +165,7 @@ def unmet(need: dict, board: str):
     """Why `board` cannot run this sketch, in the sketch's own words, or None."""
     caps = series_capabilities().get(board, ())
     missing = [c for c in need["caps"] if c not in caps]
+    missing += [d for d in need.get("defines", ()) if d not in series_defines().get(board, ())]
     if missing:
         return f"requires {', '.join(missing)}, which {board} does not have"
     flash, ram = series_limits().get(board, (0, 0))

@@ -3,7 +3,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: ADC1 */
+/* requires: ADC1, A0 */
 
 static const uint8_t INPUT_PIN = A0;
 static const uint8_t PWM_PIN = PA1;

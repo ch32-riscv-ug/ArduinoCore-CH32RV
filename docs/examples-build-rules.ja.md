@@ -24,6 +24,16 @@ capability は生成 header の CH32RV_CLKEN_<name>_ADDR に対応します。
 USB デバイスの例は `USBFS` ではなくこれを宣言します（V00x・M007 にはどれも無い）。
 flash=/ram= は ANY menu entry に対する下限です。未知の capability/key はエラーにします。
 
+capability の代わりに、variant が `#define` する名前も書けます。pad（`PA4`）、アナログ端子（`A0`）、既定の route
+（`CH32RV_SPI1_SCK`）などです。その系列の `variants/<series>/pins_arduino.h` に定義が無ければ外します。
+M007 は ADC のチャンネル 0 が外に出ていないので `A0` がありません。
+
+次の capability は、clock enable ではなく次のものから作ります。
+
+- `SERIAL1`：USART / UART が 2 つ以上ある系列（`Serial1` がある）。
+- `ETHERNET`：Network ライブラリが `ETH` を持つ系列（`libraries/Network/src/NetworkEthernet.h` が
+  `NETWORK_ETHERNET` を定義する系列）。V303 / V305 は variant に ETH_MAC の clock enable がありますが、Ethernet を持ちません。
+
 製品ボードのテンプレートのように特定の板だけのための example は、板を宣言します。代表 board ごとの profile の代わりに、
 その fqbn（`ch32-riscv-ug:ch32rv:` より後ろ）の profile を1つだけ作ります。boards.txt に無い板や menu の値はエラーにします。
 

@@ -138,6 +138,19 @@ def test_example_requirements_parse(ino):
         pytest.fail(str(e))
 
 
+def test_derived_example_capabilities():
+    """ETHERNET follows the Network library's own series list (not ETH_MAC's
+    clock enable, which V303 / V305 have without an Ethernet), SERIAL1 a second
+    USART, and a #define requirement the variant's names (M007 has no A0)."""
+    caps = _requirements.series_capabilities()
+    eth = {s for s, c in caps.items() if "ETHERNET" in c}
+    assert eth == {"CH32V208", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H417"}
+    assert "SERIAL1" not in caps["CH32M030"] and "SERIAL1" in caps["CH32X035"]
+    unmet = _requirements.unmet
+    need = {"caps": [], "defines": ["A0"], "flash": 0, "ram": 0}
+    assert unmet(need, "CH32M007") and not unmet(need, "CH32V006")
+
+
 def test_ch32rv_h_brings_in_the_object_and_not_the_register_layer():
     """CH32RV.h is the CH32RV object's header. The register map, the GPIO helpers, the pin encoding and the
     route tables are the core's own and are included by name (docs/public-api.ja.md)."""
