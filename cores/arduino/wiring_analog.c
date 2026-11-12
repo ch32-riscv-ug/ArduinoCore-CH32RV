@@ -89,14 +89,14 @@ static void ch32rv_adc_begin(uint8_t index)
     /* CH32X035: the divider is in the ADC itself, /4 to /16 in steps of one,
      * and RCC_CFGR0 has no ADCPRE bits to write (ch32rv_registers.h). */
     uint32_t divider = 4;
-    while (divider < 16 && (CH32RV_HCLK_HZ / divider) > CH32RV_ADC_MAX_HZ) {
+    while (divider < 16 && (CH32RV_PCLK2_HZ / divider) > CH32RV_ADC_MAX_HZ) {
         divider += 1;
     }
     CH32RV_ADC_CTLR3_AT(base) = (CH32RV_ADC_CTLR3_AT(base) & ~CH32RV_ADC_CTLR3_CLK_DIV_MASK) |
                               CH32RV_ADC_CTLR3_CLK_DIV(divider);
 #else
     uint32_t divider = 2;
-    while (divider < 8 && (CH32RV_HCLK_HZ / divider) > CH32RV_ADC_MAX_HZ) {
+    while (divider < 8 && (CH32RV_PCLK2_HZ / divider) > CH32RV_ADC_MAX_HZ) {
         divider += 2;
     }
     CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_RCC_CFGR0_ADCPRE_MASK) |

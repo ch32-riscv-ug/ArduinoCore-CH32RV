@@ -48,7 +48,7 @@ public:
      * still builds, with or without LTO). */
 #if NETWORK_ETHERNET_10M && F_CPU != 60000000 && F_CPU != 120000000
     __attribute__((error("ETH (the 10M Ethernet) runs only at HCLK 60 or 120 MHz: "
-                         "select Tools > CPU Clock > 60MHz (Ethernet, no USB)")))
+                         "select Tools > CPU Clock > 120MHz or 60MHz (Ethernet, no USB)")))
 #endif
     bool begin(bool makeDefault = true);
     void end();

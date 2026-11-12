@@ -9,6 +9,7 @@
 #pragma once
 
 #include "api/HardwareSerial.h"
+#include "internal/ch32rv_bus_clock.h"
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_printf.h"
 #include "internal/ch32rv_ringbuffer.h"
@@ -168,8 +169,14 @@ private:
     uint8_t _tx_pin;
     uint8_t _rx_pin;
     uint16_t _config;
-    /* BRR, remembered so a pin change can reopen the port exactly as it was. */
+    /* BRR, remembered so a pin change can reopen the port exactly as it was.
+     * Where USART1's PCLK2 is not the others' PCLK1 (APB2 halved, Arduino.h)
+     * the baud is kept instead, and start() divides the instance's clock. */
+#if CH32RV_PCLK1_HZ == CH32RV_PCLK2_HZ
     uint16_t _brr;
+#else
+    uint32_t _baud;
+#endif
     /* What a received byte keeps: 7 data bits with parity are an 8-bit word
      * whose top bit is the parity, which read() must not return. */
     uint8_t _rx_mask = 0xFF;

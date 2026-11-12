@@ -161,9 +161,9 @@ def test_ethernet_part_profiles():
     need = {"caps": ["ETHERNET"], "defines": [], "flash": 0, "ram": 0}
     assert _requirements.unmet(need, "CH32V203")
     assert not _requirements.unmet(need, "CH32V203", "CH32V203RBT6")
-    assert _requirements.ethernet_clocks() == {"CH32V203": "60", "CH32V208": "60"}
+    assert _requirements.ethernet_clocks() == {"CH32V203": "120", "CH32V208": "120"}
     text = (REPO / "libraries/Network/examples/HttpGet/sketch.yaml").read_text(encoding="utf-8")
-    assert "CH32V203:pnum=CH32V203RBT6,clock=60" in text and "CH32V208:pnum=ANY,clock=60" in text
+    assert "CH32V203:pnum=CH32V203RBT6,clock=120" in text and "CH32V208:pnum=ANY,clock=120" in text
 
 
 def test_ch32rv_h_brings_in_the_object_and_not_the_register_layer():

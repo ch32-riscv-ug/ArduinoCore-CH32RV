@@ -640,14 +640,13 @@ OPT_MENU = (
 #     one ETHPRE takes.
 # The default is the fastest entry that has run on the part and, where the
 # series has USB, keeps it (2026-11-12). Entries run from the fastest down.
-# V20x / V30x stop at 96 MHz: at 120 or 144 MHz the ADC (PCLK2 / 8 at most)
-# would pass its 14 MHz unless APB2 ran at HCLK / 2, and this core takes
-# F_CPU as every bus clock. Where USB at a lower clock is not
+# V20x / V30x run APB2 at HCLK / 2 at 120 and 144 MHz, where the ADC (PCLK2 /
+# 8 at most) would pass its 14 MHz (clock_menu, internal/ch32rv_bus_clock.h). Where USB at a lower clock is not
 # known to work the label says so.
-_V20X_CLOCKS = [("96", 96, 96, "96MHz (USB)"),
+_V20X_CLOCKS = [("144", 144, 144, "144MHz (USB)"), ("96", 96, 96, "96MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
-_V30X_CLOCKS = [("96", 96, 96, "96MHz (USB)"),
+_V30X_CLOCKS = [("144", 144, 144, "144MHz (USB)"), ("96", 96, 96, "96MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB FS)"), ("48", 48, 48, "48MHz (USB)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
@@ -664,8 +663,10 @@ CLOCK_MENU = {
     **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
     "CH32V103": [("72", 72, 72, "72MHz (USB)"), ("48", 48, 48, "48MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
-    "CH32V203": _V20X_CLOCKS[:2] + [("60", 120, 60, "60MHz (Ethernet on V203RB, no USB)")] + _V20X_CLOCKS[2:],
-    "CH32V208": [("96", 96, 96, "96MHz (USB, no Ethernet)"), ("72", 72, 72, "72MHz (no USB, no Ethernet)"),
+    "CH32V203": _V20X_CLOCKS[:1] + [("120", 120, 120, "120MHz (Ethernet on V203RB, no USB)")]
+                + _V20X_CLOCKS[1:3] + [("60", 120, 60, "60MHz (Ethernet on V203RB, no USB)")] + _V20X_CLOCKS[3:],
+    "CH32V208": [("144", 144, 144, "144MHz (USB, no Ethernet)"), ("120", 120, 120, "120MHz (Ethernet, no USB)"),
+                 ("96", 96, 96, "96MHz (USB, no Ethernet)"), ("72", 72, 72, "72MHz (no USB, no Ethernet)"),
                  ("60", 120, 60, "60MHz (Ethernet, no USB)"), ("48", 48, 48, "48MHz (USB, no Ethernet)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
     **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
@@ -720,14 +721,21 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
         if rem or ratio not in steps:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: HCLK {hclk_mhz} MHz is not SYSCLK "
                              f"{sys_mhz} MHz over a prescaler step")
-        if hclk_mhz * 1000000 / max_div > fact["adc_max_hz"]:
+        # APB2 at /2 where HCLK would take the ADC past its ceiling even at
+        # the largest divider (V20x / V30x at 120 and 144 MHz): only on the
+        # families with RCC_CFGR0's PPRE2 field (internal/ch32rv_clock.h).
+        ppre2 = 1
+        if hclk_mhz * 1000000 / max_div > fact["adc_max_hz"] and not fact["hpre_linear"]:
+            ppre2 = 2
+        if hclk_mhz * 1000000 / ppre2 / max_div > fact["adc_max_hz"]:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the ADC would run above "
                              f"{fact['adc_max_hz']} Hz at /{max_div}")
         if latency & ~fact["latency_mask"]:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: flash latency {latency} does not fit")
         lines.append(f"{board}.menu.clock.{key}={label}")
         lines.append(f"{board}.menu.clock.{key}.build.f_cpu={hclk_mhz * 1000000}L")
-        lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}")
+        ppre2_define = f" -DCH32RV_CLOCK_PPRE2_DIV={ppre2}" if ppre2 != 1 else ""
+        lines.append(f"{board}.menu.clock.{key}.build.clock_defines={clock_defines(clk, latency)}{ppre2_define}")
         if series == "CH32V208":
             lines.append(f"{board}.menu.clock.{key}.build.clock_hse_defines={v208_hse_defines(clk)}")
         elif hse_series(series):

@@ -58,6 +58,21 @@ between them."
 
 #define CH32RV_AHB_DIV (CH32RV_CLOCK_SYSCLK_HZ / CH32RV_HCLK_HZ / CH32RV_CLOCK_FPRE_DIV)
 
+/* APB2's prescaler, RCC_CFGR0[13:11] (0xx /1, 100 /2): /1 unless the CPU
+ * Clock entry halves it to keep the ADC within its ceiling (V20x / V30x at
+ * 120 and 144 MHz; Arduino.h's CH32RV_PCLK2_HZ). Only the STM32F1-shaped
+ * families, whose field this is, are given anything else. */
+#ifndef CH32RV_CLOCK_PPRE2_DIV
+#define CH32RV_CLOCK_PPRE2_DIV 1
+#endif
+#if CH32RV_CLOCK_PPRE2_DIV == 1
+#define CH32RV_PPRE2_FIELD 0u
+#elif CH32RV_CLOCK_PPRE2_DIV == 2 && !CH32RV_HPRE_LINEAR
+#define CH32RV_PPRE2_FIELD (0x4u << 11)
+#else
+#error "CH32RV_CLOCK_PPRE2_DIV: only /1, or /2 on the families with RCC_CFGR0's PPRE2 field"
+#endif
+
 /* The AHB prescaler is four bits in RCC_CFGR0[7:4], and the CH32 line encodes
  * them two different ways. They agree only on /1, so choosing the wrong one is
  * not a near miss - 0x1 is /2 on one and /1 on the other, which would run the

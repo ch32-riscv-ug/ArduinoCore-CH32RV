@@ -7,21 +7,30 @@
 
 using namespace arduino;
 
-/* Both supported APB prescalers are /1, so either bus runs at F_CPU. A
- * non-unity setting must provide the clock of the instance's own bus here. */
-static const uint32_t CH32RV_SPI_PCLK = CH32RV_HCLK_HZ;
+/* SPI1 counts PCLK2 and the others PCLK1. They are the same clock except
+ * where the CPU Clock entry halves APB2 (Arduino.h's CH32RV_PCLK2_HZ); there
+ * the instance picks, elsewhere this is a constant. */
+static inline uint32_t spi_pclk(uint32_t base)
+{
+#if CH32RV_PCLK1_HZ == CH32RV_PCLK2_HZ
+    (void)base;
+    return CH32RV_PCLK1_HZ;
+#else
+    return base == CH32RV_SPI1_BASE ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
+#endif
+}
 
 /* BR selects a power-of-two divider from 2 to 256. Pick the first one that
  * does not exceed the requested clock, so asking for 1 MHz on a 48 MHz part
  * gives 750 kHz rather than 1.5 MHz - going over is what breaks a device with
  * a maximum rating. */
-static uint16_t br_for(uint32_t clock_hz)
+static uint16_t br_for(uint32_t pclk, uint32_t clock_hz)
 {
     if (clock_hz == 0) {
         return 7u;                                  /* slowest */
     }
     for (uint16_t br = 0; br < 7u; br++) {
-        if (CH32RV_SPI_PCLK >> (br + 1) <= clock_hz) {
+        if (pclk >> (br + 1) <= clock_hz) {
             return br;
         }
     }
@@ -362,7 +371,7 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
      * transfer silently never happens. */
     uint16_t ctlr1 = CH32RV_SPI_CTLR1_MSTR | CH32RV_SPI_CTLR1_SSM |
                      CH32RV_SPI_CTLR1_SSI |
-                     (uint16_t)(br_for(clock_hz) << CH32RV_SPI_CTLR1_BR_SHIFT);
+                     (uint16_t)(br_for(spi_pclk(_base), clock_hz) << CH32RV_SPI_CTLR1_BR_SHIFT);
     if (mode & 0x1u) {
         ctlr1 |= CH32RV_SPI_CTLR1_CPHA;
     }
@@ -413,7 +422,7 @@ void CH32RVSPIClass::setDataMode(uint8_t mode)
 
 void CH32RVSPIClass::setClockDivider(uint32_t divider)
 {
-    apply(divider ? CH32RV_SPI_PCLK / divider : CH32RV_SPI_PCLK / 256u,
+    apply(divider ? CH32RV_HCLK_HZ / divider : CH32RV_HCLK_HZ / 256u,
           _order, _mode);
 }
 

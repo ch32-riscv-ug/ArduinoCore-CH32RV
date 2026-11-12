@@ -616,11 +616,15 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
                          CH32RV_GPIO_CFG_IN_PULL);
     ch32rv_gpio_set(rx_port, (uint8_t)CH32RV_PIN_BIT(_rx_pin));
 
-    /* USART1 hangs off PCLK2 and the others off PCLK1; the core leaves both
-     * APB prescalers at /1, so either way the clock is HCLK, which SystemInit
-     * makes equal to F_CPU. BRR holds USARTDIV * 16, which is exactly the
-     * rounded fck/baud. */
+    /* BRR holds USARTDIV * 16, which is exactly the rounded fck / baud.
+     * USART1 hangs off PCLK2 and the others off PCLK1: the same clock unless
+     * the CPU Clock entry halves APB2 (Arduino.h). */
+#if CH32RV_PCLK1_HZ == CH32RV_PCLK2_HZ
     CH32RV_USART_BRR(d.base) = _brr;
+#else
+    const uint32_t fck = d.number == 1 ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
+    CH32RV_USART_BRR(d.base) = (uint16_t)((fck + _baud / 2) / _baud);
+#endif
 
     uint16_t ctlr1 = CH32RV_USART_CTLR1_TE | CH32RV_USART_CTLR1_RE |
                      CH32RV_USART_CTLR1_RXNEIE;
@@ -708,11 +712,21 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
      * the port would talk at a rate nobody asked for, so an unreachable baud
      * leaves it closed. The range is fck / 65535 .. fck / 16 (48 MHz: 733 baud
      * .. 3 Mbaud). */
-    const unsigned long brr = baudrate ? (CH32RV_HCLK_HZ + baudrate / 2) / baudrate : 0;
+#if CH32RV_PCLK1_HZ == CH32RV_PCLK2_HZ
+    const unsigned long brr = baudrate ? (CH32RV_PCLK1_HZ + baudrate / 2) / baudrate : 0;
     if (brr < 16 || brr > 0xFFFFul) {
         return;
     }
     _brr = (uint16_t)brr;
+#else
+    /* The instance is not known yet, so the baud must suit both clocks:
+     * PCLK2 (the lower) / 16 at most, PCLK1 / 65535 at least. */
+    if (!baudrate || (CH32RV_PCLK2_HZ + baudrate / 2) / baudrate < 16 ||
+        (CH32RV_PCLK1_HZ + baudrate / 2) / baudrate > 0xFFFFul) {
+        return;
+    }
+    _baud = baudrate;
+#endif
     _config = config;
     uint8_t index = _want_index;
     const ch32rv_route_t *route = _want;

@@ -96,14 +96,10 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
 #define CH32RV_RAMFUNC __attribute__((section(".highcode"), noinline))
 
 /* arduino-esp32's clock getters. The clock is the board menu's (CPU Clock) and
- * fixed for the build, so these are F_CPU; there is no setter. The buses run
- * at HCLK (both APB prescalers stay /1, wiring_time.c). */
+ * fixed for the build, so these are F_CPU; there is no setter. */
 static inline uint32_t getCpuFrequencyMhz(void) { return (uint32_t)(F_CPU / 1000000UL); }
-#ifndef CH32RV_HCLK_HZ
-/* HCLK: what the peripherals and timers count (internal/ch32rv_clock.h). */
-#define CH32RV_HCLK_HZ F_CPU
-#endif
-static inline uint32_t getApbFrequency(void) { return (uint32_t)CH32RV_HCLK_HZ; }
+#include "internal/ch32rv_bus_clock.h"   /* CH32RV_HCLK_HZ, CH32RV_PCLK1_HZ / 2_HZ */
+static inline uint32_t getApbFrequency(void) { return (uint32_t)CH32RV_PCLK1_HZ; }
 
 /* arduino-esp32's spelling of ArduinoCore-API's OUTPUT_OPENDRAIN. */
 #define OUTPUT_OPEN_DRAIN OUTPUT_OPENDRAIN

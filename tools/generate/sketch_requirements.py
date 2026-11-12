@@ -187,7 +187,10 @@ def ethernet_clocks() -> dict:
     at the default clock ETH.begin() returns false at compile time, so an
     example built there would drop the whole stack and test nothing of it."""
     text = (REPO / "boards.txt").read_text(encoding="utf-8")
-    return dict(re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.(\w+)=[^\n]*\(Ethernet", text, re.M))
+    out: dict = {}
+    for board, key in re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.(\w+)=[^\n]*Ethernet(?: on \w+)?, no USB", text, re.M):
+        out.setdefault(board, key)         # the first, the fastest
+    return out
 
 
 @functools.lru_cache(maxsize=None)
