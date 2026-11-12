@@ -62,31 +62,23 @@ SECTIONS
 
     /* Code the sketch asks to run from RAM (CH32RV_RAMFUNC, Arduino.h).
      * crt0_ch32.S copies it together with .data, so it must stay right before
-     * .data in both RAM and flash (asserted below). Empty unless used. */
-    .highcode :
+     * .data in both RAM and flash (asserted below). Empty unless used.
+     * Both start on 8 bytes in RAM and in flash: lld aligns an output
+     * section's load address as well as its address, so a .data holding an
+     * 8-byte object (a double, a uint64_t) moved 4 bytes in flash past the
+     * address the copy started from, and every initialised variable came out
+     * shifted (CH32V307, 2026-11-12: a delivery's function pointer read 0). */
+    .highcode : ALIGN(8)
     {
-        . = ALIGN(4);
         PROVIDE(_highcode_vma_start = .);
         *(.highcode)
         *(.highcode.*)
-        . = ALIGN(4);
+        . = ALIGN(8);
         PROVIDE(_highcode_vma_end = .);
     } >RAM AT>FLASH
     PROVIDE(_highcode_lma = LOADADDR(.highcode));
 
-    .dalign :
-    {
-        . = ALIGN(4);
-        PROVIDE(_data_vma = .);
-    } >RAM AT>FLASH
-
-    .dlalign :
-    {
-        . = ALIGN(4);
-        PROVIDE(_data_lma = .);
-    } >FLASH
-
-    .data :
+    .data : ALIGN(8)
     {
         *(.gnu.linkonce.r.*)
         *(.data*)
@@ -98,6 +90,8 @@ SECTIONS
         . = ALIGN(4);
         PROVIDE( _edata = . );
     } >RAM AT>FLASH
+    PROVIDE(_data_vma = ADDR(.data));
+    PROVIDE(_data_lma = LOADADDR(.data));
 
     /* Kept through a reset that leaves RAM powered - a software or watchdog
      * reset, the restart deepSleep() ends with: startup neither copies nor
