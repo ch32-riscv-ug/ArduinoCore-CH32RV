@@ -1,6 +1,6 @@
 # libc と実行時ライブラリの計画（2026-11-11）
 
-clang への移行の段 2（GCC を外す）に向けて、C ライブラリ、実行時ライブラリ（libgcc に当たるもの）、C++ のヘッダーをどうするかの下調べと計画です。コアが自前で持っている printf などの最適化も含めます。結論はまだ出しません。候補を同じ物差しで測ってから選びます。clang そのものの評価は docs/clang-evaluation.ja.md にあります。
+clang への移行の段 2（GCC を外す）に向けて、C ライブラリ、実行時ライブラリ（libgcc に当たるもの）、C++ のヘッダーをどうするかの下調べと計画の記録です。2026-11-12 に、picolibc、compiler-rt、libc++ を ch32rv-toolchain に入れて移しました。今の形は [toolchain.ja.md](toolchain.ja.md) と [ADR-0004](adr/0004-runtime-and-cxx.ja.md) にあります。中の「段 1」「今の形」などは当時のものです。clang そのものの評価は docs/clang-evaluation.ja.md にあります。
 
 ## 今の形（段 1）
 

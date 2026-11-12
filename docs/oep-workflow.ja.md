@@ -271,7 +271,7 @@ pytest の側:
 ### 7.3 ベンチの platform の入れ方
 
 ベンチ（`tests/run_hardware.py`）は作業ツリーを試験ごとの `user/hardware` に symlink し、`platform.local.txt` で固定した版の
-ch32rv と gcc を指す（`tools/index/fetch_tools.py` が取る）。利用者と同じ「index から入れる」形の検査は、リリースの前に
+ch32rv と ch32rv-toolchain を指す（`tools/index/fetch_tools.py` が取る。`CH32_TEST_CH32RV`、`CH32_TOOLCHAIN_BIN` で別の版に替えられる）。利用者と同じ「index から入れる」形の検査は、リリースの前に
 `tools/index/install_check.py`（archive と index を作って loopback で配り、まっさらな data ディレクトリに `core install`）で行う。
 
 ## 8. ch32rv の範囲

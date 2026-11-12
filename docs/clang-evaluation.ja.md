@@ -1,6 +1,8 @@
 # GCC から clang へ移せるか（調査）
 
-2026-11-11 の調査の記録です。移すかどうかは、まだ決めていません。
+2026-11-11〜12 の調査の記録です。2026-11-12 に clang だけへ移しました（GCC は外した）。今の形は
+[toolchain.ja.md](toolchain.ja.md) と [ADR-0002](adr/0002-toolchain-distribution.ja.md) にあります。この文書は当時の測定と判断の記録で、
+中の「Compiler メニュー」「newlib」「GCC を残す」などは当時の形です。
 
 ## 試したもの
 

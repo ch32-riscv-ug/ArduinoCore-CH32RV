@@ -65,7 +65,7 @@ MDNS.addServiceTxt("http", "tcp", "path", "/");
 
 - SNTP sets the core's clock (`settimeofday()`) and resyncs every hour; `time()`, `localtime_r()` and `strftime()` read it.
 - mDNS answers on every interface the library has started, including later ones. Up to 4 services, 96 bytes of TXT each. There are no queries (`queryHost()` ...).
-- Size (V208): using both adds about 26 KB of flash (lwIP's mDNS 12 KB, newlib's time and time-zone code ...). Sketches that do not use them carry neither.
+- Size (V208 at 60 MHz, 2026-11-12): using both adds about 23 KB of flash (lwIP's mDNS 12 KB, SNTP with the time and time-zone code 11 KB). Sketches that do not use them carry neither.
 
 ## Common libraries
 

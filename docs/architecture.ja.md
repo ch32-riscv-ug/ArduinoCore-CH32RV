@@ -32,7 +32,7 @@ CH32 固有 API は同梱ライブラリへ置きます。`api/` へのローカ
 - startup、CRT、vector table、linker の共通部分
 - GPIO、割り込み、時間、ADC、PWM、tone、UART の Arduino API 実装
 - clock、pin、route、timer、register access の内部実装
-- newlib syscall と C++ runtime の最小補助
+- C ライブラリ（picolibc）がプログラムに任せる部分（stdio、sbrk、system call）と C++ runtime の最小補助
 
 WCH EVT の source/header は取り込みません。必要な register 定義はこのプロジェクトが所有し、
 デバイスごとの事実は `ch32-device-data` から生成します。これにより、EVT の再配布条件や directory 構造を
@@ -63,7 +63,7 @@ core API の examples は `libraries/CH32RV/` に置きます。
 - `tools/generate/` は固定した `ch32-device-data` から `boards.txt` と `variants/` を生成する
 - `tools/index/` は release archive と package index を生成する
 - `ch32rv` は upload、port discovery、monitor を担当する
-- xPack GCC は compile/link を担当する
+- ch32rv-toolchain（clang、lld、picolibc、compiler-rt、libc++、GDB）が compile / link を担当する
 
 通常の sketch build は生成器やネットワークを必要としません。生成元の更新は保守作業であり、差分を review して
 生成物と lock file を同じ commit に入れます。

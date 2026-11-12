@@ -41,19 +41,33 @@ tool は Board Manager が導入した ch32rv-toolchain の `bin/`、または `
 
 ## Map file の読み方
 
-map 冒頭の `Archive member included to satisfy reference by file (symbol)` は、archive 内の object が
-どの参照によって取り込まれたかを示します。
+リンカーは lld です。map は 1 行 1 項目の表で、列は `VMA LMA Size Align Out In Symbol` です。
+section の行（`.text.<関数名>` など）に、置かれた番地、大きさ（16 進）、どの object から来たかが出ます。
 
 ```text
-libgcc.a(adddf3.o)
-      core.a(Print.cpp.o) (__adddf3)
+     718      718      42e     2         .../libclang_rt.builtins.a(adddf3.c.obj):(.text.__adddf3)
+     718      718      42e     1                 __adddf3
 ```
 
-この例では `Print.cpp` の double 加算が `libgcc` の software floating-point routine を取り込んでいます。
-後半の `.text.<symbol>` で配置 address と実 size を確認できます。
+この例（CH32V003、Floating Point が Double、`analogRead(A1) * 0.25 + 1.5` を `Serial.println`）では、double の足し算
+`__adddf3`（0x42e = 1,070 B）が compiler-rt の software floating-point routine から入っています。
 
-`Discarded input sections` にある section は `--gc-sections` が既に除去しています。そこに出る source を
-削っても最終 binary は小さくなりません。
+どの参照でライブラリの部品が入ったかは、lld の `--why-extract` で書き出せます。
+
+```sh
+arduino-cli compile ... --build-property "compiler.c.elf.extra_flags=-Wl,--why-extract=/tmp/why.txt" <sketch>
+```
+
+```text
+reference                       extracted                                         symbol
+.../<sketch>.ino.elf.lto.o      .../libclang_rt.builtins.a(adddf3.c.obj)          __adddf3
+.../libclang_rt.builtins.a(muldf3.c.obj)  .../libclang_rt.builtins.a(muldi3.c.obj)  __muldi3
+```
+
+1 行目は、LTO の後のスケッチ（`.lto.o`）が double の足し算を呼んだことを示します。2 行目のように、ライブラリの部品が
+別の部品を連れてくることもあります。
+
+`--gc-sections` で消えた section は map に出ません。map に無い source を削っても、最終の binary は小さくなりません。
 
 ## 削減の優先順位
 

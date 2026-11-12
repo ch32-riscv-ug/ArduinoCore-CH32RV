@@ -72,7 +72,7 @@ debug 終了後の board には最後に `load` した image が残ります。�
 |---|---|
 | `Debugging not supported for board` | 正しい platform / FQBN を使っているか |
 | `GDB server ... is not supported` | arduino-cli の server 名は `openocd` か |
-| toolchain path のエラー | xPack の `bin/` を `toolchain.path` に渡したか |
+| toolchain path のエラー | ch32rv-toolchain の `bin/`（`riscv32-unknown-elf-gdb` がある）を `toolchain.path` に渡したか |
 | `libjaylink.so.0` が無い | WCH OpenOCD と同じ配布物の library path を設定したか |
 | `WCH-Link not found` | 他 process が probe を保持していないか |
 | breakpoint 後に正常実行しない | session 開始後に `load` したか |
