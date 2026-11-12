@@ -38,7 +38,7 @@
   「起こして眠る」だけでもよい（利用者、2026-11-11）。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
 - [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
-  V5F で確かめる。
+  V5F で確かめる。2026-11-13: restart()・WDT・lightSleep()（selfsys）と CH32RV_FLASH_STORE（flash）は V5F で PASS。残りは deepSleep と DFU。
 - [ ] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
   0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
 - [ ] 利用者向けの文書: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
