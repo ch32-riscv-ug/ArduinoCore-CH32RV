@@ -66,8 +66,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   LinkE の uart の失敗は、console-sdi の SDI のデータが LinkE に残っていたため（ch32rv 0.30.2 の問題。b1148af で直った）。
   V003 の periph の NG は、GCC の版でも出る PC4 の刺激の飛び込み（環境）。
 - [ ] リリースの版で、もう一度全部の系列を流す。
-- [ ] コアが持つ libc の代わり（strftime、mktime、tzset、gmtime、memcpy などと ch32rv_softfloat.c、ch32rv_div.S）を、picolibc と
-  compiler-rt のものと測り直す。小さくならないものは外す（引き算は外した。割り算、変換、clz / ctz はコアの方が小さい）。
+- [x] コアが持つ libc の代わりを picolibc と compiler-rt と比べた（2026-11-12）。時刻の関数（picolibc より 1.3〜9.4 KB 小さい）、
+  割り算、変換、clz / ctz はコアの方が小さいので残す。引き算は外した。memcpy などは速さ、random() は名前の衝突のために残す。
 - [x] printf-float.ja.md と README の大きさの表を clang で測り直した（2026-11-12）。parseFloat の整数の計算の費用だけ GCC の頃の値。
 - [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ。時間に厳しいところ（printf の数の変換など）を洗い出す。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。

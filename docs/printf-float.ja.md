@@ -174,7 +174,19 @@ V003 と V307 もこれと 1 KB 以内の差で、V003（16 KB）では `dblfs` 
 
 `strftime()`、`gmtime_r()`、`gmtime()`、`localtime_r()`、`localtime()`、`tzset()` は、コアのものを使います（`cores/arduino/ch32rv_strftime.c`、`ch32rv_gmtime.c`、`ch32rv_localtime.c`、`ch32rv_tzset.c`）。`mktime()` もコアのものです（`ch32rv_mktime.c`）。出す文字と結果は newlib 4.5 と同じです。`time()`、`ctime()` などは picolibc のものです。
 
-C ライブラリが newlib だった頃は、そのままでは次のものが一緒に入っていました（picolibc と比べた大きさは、まだ測っていません）。
+picolibc のものと比べると、コアのものはどれも小さくなります（flash、ch32rv-toolchain 23.1.5-2、2026-11-12）。
+
+| スケッチ（Float + printf %f） | 系列 | picolibc | コア |
+|---|---|---|---|
+| `gmtime_r()` の結果を `Serial.print` | V003 | 5160 | 3876 |
+| | X035 | 4976 | 3684 |
+| `gmtime_r()` と `strftime("%F %T %s")` | V003 | 入らない（4.2 KB 超える） | 10684 |
+| | X035 | 19552 | 10176 |
+| `setenv("TZ")`、`tzset()`、`localtime_r()`、`strftime("%F %T %Z %z")` | V003 | 入らない（5.8 KB 超える） | 14672 |
+| | X035 | 21156 | 14120 |
+| `mktime()` | V003 | 9148 | 6516 |
+
+C ライブラリが newlib だった頃は、そのままでは次のものが一緒に入っていました。
 
 - `strftime()`：newlib の printf と、TZ を読むための sscanf と malloc
 - `gmtime_r()`：64 bit の割り算（RV32 で 1.9 KB）
