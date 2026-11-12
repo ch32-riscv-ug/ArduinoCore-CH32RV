@@ -51,7 +51,7 @@ PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochro
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
-          "analog", "selfcheck", "selfbus")
+          "analog", "selfcheck", "selfbus", "selfsys")
 # A defect's `lose` names a feature; these are the cases that test it.
 # "gpio-drive": the board's pads must not be driven by a test at all (a motor stage's gate drivers on CH32M030's
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
@@ -159,6 +159,20 @@ def gpio_keep_off(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
             if r["peripheral"] in GPIO_KEEP_OFF_PERIPHERALS or GPIO_KEEP_OFF_ROLES.search(r["role"]):
                 out.add(f"P{r['port']}{r['gpio']}")
     return sorted(out)
+
+
+def gpio_pads(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
+    """The part's GPIO pads ("PA0"), in port and bit order, but those gpio_keep_off names; [] without device-data."""
+    import csv
+    if not path.exists():
+        return []
+    off = set(gpio_keep_off(part) or [])
+    pads = set()
+    with path.open(encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["part_number"] == part and r["kind"] == "gpio" and r["port"]:
+                pads.add((r["port"], int(r["gpio"])))
+    return [f"P{p}{b}" for p, b in sorted(pads) if f"P{p}{b}" not in off]
 
 
 def ethernet_clock(fqbn, path=REPO / "boards.txt"):

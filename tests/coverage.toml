@@ -300,6 +300,11 @@ scope = "series"
 any_of = ["I2C1", "I2C2"]
 
 [[item]]
+id = "selfsys"              # UID / model / flash, temperature, restart and watchdog resets, lightSleep, tone, Servo + pulseIn
+test = "selfsys"
+scope = "series"
+
+[[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
 test = "selfcheck::test_vref"
 scope = "series"

@@ -55,6 +55,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] main の CI で例を全部ビルドした。例の profile を全系列（27）に広げ、合わなかった例は要件で外した（ETHERNET、SERIAL1、
   variant の `#define` の名前を要件に書けるようにした）。
 - [ ] I2C の FREQ の範囲は 4〜60 MHz（全系列のリファレンスマニュアル。V00x / M030 は 8〜48）。F1 型（V20x / V30x、L103 / M103、V103）と V205・V407 / V467 は、CPU Clock の項目ごとに APB1 を分周して 60 MHz 以下にした（2026-11-12）。タイマーは自分のバスのクロックで数える（`ch32rv_timer_clock_hz()`）。X315・H417・M030 はペリフェラルのバスを分周できない（I2C が HCLK で動く: 240 / 100 / 72 MHz）ので、H417 の EVT と同じく FREQ を上限（60、M030 は 48）で頭打ちにした。X315 / M030 の EVT は HCLK の MHz をそのまま書いて欄からはみ出させている。この 3 系列で I2C が実際に通信できるかは、相手をつないで確かめる。63 MHz を超える APB1 で I2C を実機で試したことはまだない。
+- [ ] L103 / M103・V205 の lightSleep() は停止モード 1（LPDS=0）で入る（2026-11-12）。LPDS=1 の停止モード 3 は FLASH_LP を先に決める必要があり、決めずに入ると戻らなかった。モード 3 の小さい電流を使うなら、FLASH_LP を設定して消費電流を測ってから。
+- [ ] selfsys で見えたこと（2026-11-12）: V103 の analogReadTemp() が 51 ℃（ほかの系列は 19〜27 ℃。換算の定数を確かめる）。M030 で wdtEnable(500) が拒否される（系列の制限か確かめる）。
 - [ ] H417 の V3F ビルド（CPU Core = V3F）で、SerialDMSeq に送った行がときどき崩れる（selfcheck の `ready <nonce>` が `UNKNOWN ready` になる。0.30.5 で 10 回中 2 回、0.30.6 で 4 回中 1 回）。ch32rv の記録では、ホストが送った 8 フレームはどれも DUT が受け取りを返している（2026-11-12、[ch32rv]）。V5F ビルドでは起きない。selfcheck / selfbus は UNKNOWN で行全体と語の数を返すようにした。次に起きたら、欠けたのか余計に来たのかを見る。
 - [x] X305 の SPI1 の既定を PA5 / PD3 / PA6 にした（X315 と同じ）。候補の端子を絞るとき、デバッグ・起動設定の端子を後回しにする。同じ規則で H415 / H416 の Wire は I2C1 の PB6 / PB7 になった（H417 は I2C2 のまま）。
 - [x] Network ライブラリの `ETH` を CH32V208CBU6 では定義しない（Ethernet が無い、device-data capabilities.csv）。ANY と他の V208 は今までどおり。
