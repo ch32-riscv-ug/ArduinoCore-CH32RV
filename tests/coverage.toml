@@ -251,6 +251,29 @@ scope = "series"
 not_on = ["CH32M030"]
 
 [[item]]
+id = "selfcheck-clocks"     # the bus clocks the build assumes are RCC's (no wiring)
+test = "selfcheck::test_clocks"
+scope = "series"
+
+[[item]]
+id = "selfcheck-serial"     # every Serial: BRR on its own bus and the real baud; its receiver fed from its own RX pad
+test = ["selfcheck::test_serial_transmit", "selfcheck::test_serial_receive"]
+scope = "series"
+
+[[item]]
+id = "selfcheck-spi"        # the default SPI's divider from its own bus clock and the real SCK rate
+test = "selfcheck::test_spi"
+scope = "series"
+any_of = ["SPI1", "SPI2", "SPI3"]
+
+[[item]]
+id = "selfcheck-vref"       # the ADC on its internal reference
+test = "selfcheck::test_vref"
+scope = "series"
+any_of = ["ADC1", "ADC"]
+not_on = ["CH32M030"]
+
+[[item]]
 id = "dac"                  # analogWrite to a DAC pin
 test = "analog::test_dac"
 scope = "series"

@@ -51,7 +51,7 @@ PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochro
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
-          "analog")
+          "analog", "selfcheck")
 # A defect's `lose` names a feature; these are the cases that test it.
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
                  "uart": ("uart",), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",)}
@@ -127,6 +127,19 @@ def bench_menus(board, path=REPO / "boards.txt"):
     text = path.read_text(encoding="utf-8")
     return [f"{menu}={value}" for menu, value in BENCH_MENUS
             if re.search(rf"^{re.escape(board)}\.menu\.{menu}\.{value}=", text, re.M)]
+
+
+def ethernet_clock(fqbn, path=REPO / "boards.txt"):
+    """(fqbn, f_cpu) for the eth case: the board's first CPU Clock entry labelled for Ethernet (V208 / V203RB's
+    10M MAC runs only at HCLK 60 or 120 MHz; at another clock ETH.begin() is a build error), or None where the
+    board has none (its Ethernet takes the default clock)."""
+    board = fqbn.split(":")[2]
+    text = path.read_text(encoding="utf-8")
+    m = re.search(rf"^{re.escape(board)}\.menu\.clock\.(\w+)=[^\n]*Ethernet(?: on \w+)?, no USB", text, re.M)
+    if not m:
+        return None
+    hz = re.search(rf"^{re.escape(board)}\.menu\.clock\.{m.group(1)}\.build\.f_cpu=(\d+)L?$", text, re.M)
+    return f"{fqbn},clock={m.group(1)}", int(hz.group(1))
 
 
 def fqbn_of(part):

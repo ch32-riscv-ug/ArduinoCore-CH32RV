@@ -48,6 +48,7 @@ MODULES = {
     "signals": TESTS / "instrumented/signals/test_signals_contract.py",
     "system": TESTS / "instrumented/system/test_system_contract.py",
     "analog": TESTS / "instrumented/analog/test_analog_contract.py",
+    "selfcheck": TESTS / "instrumented/selfcheck/test_selfcheck_contract.py",
     "console-rtt": TESTS / "instrumented/console/test_console_contract.py",
     "console-dmdata": TESTS / "instrumented/console/test_console_contract.py",
     "console-sdi": TESTS / "instrumented/console/test_console_contract.py",
@@ -84,6 +85,7 @@ SKETCHES = {
     "signals": TESTS / "sketch_support/signals/signals.ino",
     "system": TESTS / "sketch_support/system/system.ino",
     "analog": TESTS / "sketch_support/analog/analog.ino",
+    "selfcheck": TESTS / "sketch_support/selfcheck/selfcheck.ino",
     "console-rtt": TESTS / "sketch_support/console/console.ino",
     "console-dmdata": TESTS / "sketch_support/console/console.ino",
     "console-sdi": TESTS / "sketch_support/console/console.ino",
@@ -333,6 +335,10 @@ def stage_case(work, name, case, target):
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
     if opts:
         (directory / "build_opt.h").write_text(opts)
+    if case == "eth":
+        clocked = places.ethernet_clock(target["fqbn"])
+        if clocked:
+            target = dict(target, fqbn=clocked[0], f_cpu=clocked[1])
     build_id = uuid.uuid4().hex[:12]
     staged = {k: v for k, v in target.items() if k != "snapshot"}
     settings = dict(build_id=build_id, target=staged, f_cpu=target["f_cpu"], case=case)
