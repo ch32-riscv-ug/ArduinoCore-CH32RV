@@ -135,6 +135,12 @@ static void spi_in(int level)
 
 static void reply(char *command)
 {
+    /* The whole line, for UNKNOWN: on H417's V3F build a "ready <nonce>" came
+     * back as UNKNOWN ready now and then (2026-11-12), and argv[0] alone did
+     * not say whether a word was lost or one too many came. */
+    char whole[sizeof line];
+    strncpy(whole, command, sizeof whole - 1u);
+    whole[sizeof whole - 1u] = 0;
     char *argv[5];
     int argc = 0;
     for (char *t = strtok(command, " "); t && argc < 5; t = strtok(nullptr, " ")) {
@@ -164,7 +170,7 @@ static void reply(char *command)
         spi_in(atoi(argv[1]));
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        SerialDMSeq.printf("UNKNOWN %d [%s]\r\n", argc, whole);
     }
 }
 
