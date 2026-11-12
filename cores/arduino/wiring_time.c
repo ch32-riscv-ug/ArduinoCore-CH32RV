@@ -208,8 +208,15 @@ void SystemInit(void)
      * touched at all: EVT never writes ACTLR on CH32V20x/V307/V407, so what
      * the low bits mean there is not established. */
 #if CH32RV_FLASH_ACTLR_LATENCY_MASK
-    CH32RV_FLASH_ACTLR = (CH32RV_FLASH_ACTLR & ~(uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) |
-                       CH32RV_FLASH_LATENCY;
+    /* Only up here; down only once the prescaler below has slowed HCLK. A
+     * probe's attach or the previous image may leave HSI undivided: V006's
+     * 8 MHz entry (HSI 24 MHz / 3, no wait state) lowered the wait states
+     * first and ran 24 MHz on none - SysTick stopped or the part hung, now and
+     * then (2026-11-13). */
+    if ((CH32RV_FLASH_ACTLR & (uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) < (uint32_t)CH32RV_FLASH_LATENCY) {
+        CH32RV_FLASH_ACTLR = (CH32RV_FLASH_ACTLR & ~(uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) |
+                           CH32RV_FLASH_LATENCY;
+    }
 #endif
 #ifdef CH32RV_CLOCK_ACTLR_ADDR
     /* The flash clock divider: CH32H41x's SCK_CFG (HCLK / 2 as EVT sets it for
@@ -245,15 +252,19 @@ void SystemInit(void)
      * their own divisor - which is why this is worth settling before it
      * spreads. */
     /* CH32H41x: FPRE (this core and HCLK) before the PLL raises SYSCLK. */
-    CH32RV_RCC_CFGR0 &= ~(CH32RV_RCC_CFGR0_SW_MASK | CH32RV_RCC_CFGR0_HPRE_MASK |
-                        CH32RV_RCC_CFGR0_PPRE1_MASK | CH32RV_RCC_CFGR0_PPRE2_MASK |
-                        CH32RV_CLOCK_FPRE_MASK);
-    CH32RV_RCC_CFGR0 |= CH32RV_RCC_CFGR0_SW_HSI |
-                      CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) | CH32RV_CLOCK_FPRE_VALUE |
-                      CH32RV_PPRE1_FIELD | CH32RV_PPRE2_FIELD;
+    /* One store: clearing first would pass through HPRE = /1. */
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(CH32RV_RCC_CFGR0_SW_MASK | CH32RV_RCC_CFGR0_HPRE_MASK |
+                                             CH32RV_RCC_CFGR0_PPRE1_MASK | CH32RV_RCC_CFGR0_PPRE2_MASK |
+                                             CH32RV_CLOCK_FPRE_MASK)) |
+                       CH32RV_RCC_CFGR0_SW_HSI | CH32RV_RCC_CFGR0_HPRE(CH32RV_HPRE_FIELD) |
+                       CH32RV_CLOCK_FPRE_VALUE | CH32RV_PPRE1_FIELD | CH32RV_PPRE2_FIELD;
     while ((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) !=
            (CH32RV_RCC_CFGR0_SW_HSI << 2)) {
     }
+#if CH32RV_FLASH_ACTLR_LATENCY_MASK
+    CH32RV_FLASH_ACTLR = (CH32RV_FLASH_ACTLR & ~(uint32_t)CH32RV_FLASH_ACTLR_LATENCY_MASK) |
+                       CH32RV_FLASH_LATENCY;
+#endif
 
 /* The flag, not the value: CH32V30x_D8C encodes a x18 multiplier as field
  * 0 (RCC_PLLMULL18_EXTEN), so a zero PLL word is a real configuration. */
