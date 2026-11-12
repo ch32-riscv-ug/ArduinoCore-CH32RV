@@ -998,6 +998,117 @@
               "version": "0.30.4"
             }
           ]
+        },
+        {
+          "name": "CH32 RISC-V (ArduinoCore-CH32RV)",
+          "architecture": "ch32rv",
+          "version": "0.7.1",
+          "category": "Contributed",
+          "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/releases/download/v0.7.1/ArduinoCore-CH32RV-0.7.1.tar.bz2",
+          "archiveFileName": "ArduinoCore-CH32RV-0.7.1.tar.bz2",
+          "checksum": "SHA-256:1225cadf5873199980ff65db70562196838185b8d80de5fdfd8940acc05a9fa2",
+          "size": "2675392",
+          "help": {
+            "online": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/issues"
+          },
+          "boards": [
+            {
+              "name": "Generic CH32V002"
+            },
+            {
+              "name": "Generic CH32V003"
+            },
+            {
+              "name": "Generic CH32V004"
+            },
+            {
+              "name": "Generic CH32V005"
+            },
+            {
+              "name": "Generic CH32V006"
+            },
+            {
+              "name": "Generic CH32V007"
+            },
+            {
+              "name": "Generic CH32V103"
+            },
+            {
+              "name": "Generic CH32V203"
+            },
+            {
+              "name": "Generic CH32V205"
+            },
+            {
+              "name": "Generic CH32V208"
+            },
+            {
+              "name": "Generic CH32V303"
+            },
+            {
+              "name": "Generic CH32V305"
+            },
+            {
+              "name": "Generic CH32V307"
+            },
+            {
+              "name": "Generic CH32V317"
+            },
+            {
+              "name": "Generic CH32V407"
+            },
+            {
+              "name": "Generic CH32V467"
+            },
+            {
+              "name": "Generic CH32X033"
+            },
+            {
+              "name": "Generic CH32X035"
+            },
+            {
+              "name": "Generic CH32X305"
+            },
+            {
+              "name": "Generic CH32X315"
+            },
+            {
+              "name": "Generic CH32L103"
+            },
+            {
+              "name": "Generic CH32M007"
+            },
+            {
+              "name": "Generic CH32M030"
+            },
+            {
+              "name": "Generic CH32M103"
+            },
+            {
+              "name": "Generic CH32H415"
+            },
+            {
+              "name": "Generic CH32H416"
+            },
+            {
+              "name": "Generic CH32H417"
+            },
+            {
+              "name": "UIAPduino Pro Micro CH32V003 V1.4"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv-toolchain",
+              "version": "23.1.5-2"
+            },
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv",
+              "version": "0.30.4"
+            }
+          ]
         }
       ],
       "tools": [
