@@ -59,8 +59,9 @@ def render(source: pathlib.Path) -> str:
         ])
     if not kept:
         raise ValueError(f"{source}: no generic board satisfies requirements")
-    default = "ch32x035" if "ch32x035" in kept else kept[0]
-    lines.extend([f"default_profile: {default}", ""])
+    # No default_profile: no series is the example's own, and arduino-cli
+    # takes -b or --profile. A board-specific example (above) keeps its one.
+    lines.append("")
     return "\n".join(lines)
 
 

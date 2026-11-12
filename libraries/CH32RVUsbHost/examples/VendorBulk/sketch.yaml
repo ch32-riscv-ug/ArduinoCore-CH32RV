@@ -95,4 +95,3 @@ profiles:
   # CH32H415: omitted, requires USBFS, which CH32H415 does not have
   # CH32H416: omitted, requires USBFS, which CH32H416 does not have
   # CH32H417: omitted, requires USBFS, which CH32H417 does not have
-default_profile: ch32x035

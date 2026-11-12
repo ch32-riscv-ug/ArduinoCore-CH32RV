@@ -36,6 +36,8 @@ M007 は ADC のチャンネル 0 が外に出ていないので `A0` があり�
 
 製品ボードのテンプレートのように特定の板だけのための example は、板を宣言します。代表 board ごとの profile の代わりに、
 その fqbn（`ch32-riscv-ug:ch32rv:` より後ろ）の profile を1つだけ作ります。boards.txt に無い板や menu の値はエラーにします。
+`default_profile` は、この板を宣言した example にだけ付けます。汎用の example には、どの系列が既定という意味が無いので付けません
+（arduino-cli では `-b` か `--profile` で選びます）。
 
 ```c
 /* board: CH32X035:pnum=CH32X035F8U6 */
