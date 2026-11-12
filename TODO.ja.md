@@ -54,7 +54,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] ch32rv-toolchain v23.1.5-2（ライブラリ、gdb、割り込みのパッチ入り）を CI で作り、同梱を上げた（2026-11-12）。
 - [x] main の CI で例を全部ビルドした。例の profile を全系列（27）に広げ、合わなかった例は要件で外した（ETHERNET、SERIAL1、
   variant の `#define` の名前を要件に書けるようにした）。
-- [ ] X305 の variant に SPI1 の既定の route（`CH32RV_SPI1_SCK` など）が無い。SPI1 の clock enable はある。
+- [x] X305 の SPI1 の既定を PA5 / PD3 / PA6 にした（X315 と同じ）。候補の端子を絞るとき、デバッグ・起動設定の端子を後回しにする。同じ規則で H415 / H416 の Wire は I2C1 の PB6 / PB7 になった（H417 は I2C2 のまま）。
 - [x] Network ライブラリの `ETH` を CH32V208CBU6 では定義しない（Ethernet が無い、device-data capabilities.csv）。ANY と他の V208 は今までどおり。
 - [x] リポジトリの名前を ch32rv-toolchain に変えた（2026-11-12）。コアの tool 名、index、環境変数（`CH32_TOOLCHAIN_BIN`）も合わせた。
 - [x] 割り込みは `WCH-Interrupt-fast`（clang のパッチ）にした。naked 関数で HPE に任せる案は、FPU のあるコアで浮動小数点の

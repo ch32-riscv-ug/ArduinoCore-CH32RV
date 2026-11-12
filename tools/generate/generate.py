@@ -2423,7 +2423,7 @@ def usb_note(pads, parts) -> list:
     return lines
 
 
-def resolve_pin_candidates(by_board: dict, kinds: list):
+def resolve_pin_candidates(by_board: dict, kinds: list, forbidden: dict = {}):
     """Collapse each role's candidate list to one pad, per board.
 
     Where the tables offer several pads for one (instance, route, role) - 200
@@ -2442,6 +2442,11 @@ def resolve_pin_candidates(by_board: dict, kinds: list):
     applies only to what gets chosen as a *default* (choose_routes). The
     setRoute()/setPins() tables keep those routes, because selecting one
     explicitly is a legitimate act on a board that has disabled SWD or NRST.
+    It only orders the candidates: a pad that is no part's debug or strap pad
+    comes before one that is, so a forbidden tail does not cost the role its
+    default when another candidate is fine (CH32X305's SPI1 MOSI offers PA14,
+    PA6 and PD2, and PD2 is its strap pad: X305 had no SPI1 default, where
+    X315 - whose WCU6 has no PD2 - had PA5 / PD3 / PA6; 2026-11-12).
 
     Decided with the maintainer on 2026-08-25. Mutates the pin dicts in
     place so every consumer keeps seeing a single pad per role.
@@ -2463,7 +2468,10 @@ def resolve_pin_candidates(by_board: dict, kinds: list):
                                 merged.append(c)
                     uniform = [c for c in merged
                                if all(c in cands for cands in per_part.values())]
-                    chosen = (uniform or merged)[-1]
+                    pool = uniform or merged
+                    allowed = [c for c in pool
+                               if not any(c in forbidden.get(pn, ()) for pn in parts)]
+                    chosen = (allowed or pool)[-1]
                     for pn, cands in per_part.items():
                         pins[pn][key][role] = (chosen if chosen in cands
                                                else cands[-1])
@@ -4379,8 +4387,8 @@ def main() -> int:
         if board in SERIES_CONFIG:
             by_board.setdefault(board, []).append(r)
 
-    resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs])
     forbidden = load_forbidden_pads(args.tables)
+    resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

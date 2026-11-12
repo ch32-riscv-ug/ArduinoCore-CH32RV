@@ -552,27 +552,38 @@
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
  *      NSS is not listed: Arduino drives chip select as a GPIO. ---- */
-/* SPI1: no default route for the whole series (its pads
- * move between packages, or sit on debug / strap pads). With a
- * part number selected it may have one below; otherwise begin()
- * has to name the pins. */
+/* SPI1: route af-4, on every part */
+#define CH32RV_SPI1_SCK PA5
+#define CH32RV_SPI1_MISO PD3
+#define CH32RV_SPI1_MOSI PA6
 #define CH32RV_SPI1_CLKEN_ADDR 0x40021018u
 #define CH32RV_SPI1_CLKEN_MASK 0x00001000u
+/* device-data lists PA13, PA5 for SCK on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA15, PA7, PD3 for MISO on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PA14, PA6, PD2 for MOSI on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32RV_SPI1_REMAP_MASK 0x00000000u
-#if defined(CH32RV_PART_CH32X305RCT6)
-#define CH32RV_SPI1_REMAP_VAL  0x00000000u
+#define CH32RV_SPI1_REMAP_VAL  0x00000004u
 /* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
 #define CH32RV_SPI1_ROUTE_COUNT 18
 #define CH32RV_SPI1_ROUTES { \
-    { 4, { PA5, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA5, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
+    { 4, { PA5, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA13, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA13, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA13, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
@@ -583,31 +594,6 @@
     { 4, { PA13, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
     { 4, { PA13, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
 }
-#else   /* ANY, or a board that sets no part: the series union */
-#define CH32RV_SPI1_REMAP_VAL  0x00000000u
-/* SPI1 routes for setRoute()/setPins(): route number, then SCK, MISO, MOSI */
-#define CH32RV_SPI1_ROUTE_COUNT 18
-#define CH32RV_SPI1_ROUTES { \
-    { 4, { PA5, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA5, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA7, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA7, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA7, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA15, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA15, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PA15, PD2 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PD3, PA6 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PD3, PA14 }, 0x00000004u, 0x00000000u }, \
-    { 4, { PA13, PD3, PD2 }, 0x00000004u, 0x00000000u }, \
-}
-#endif
 /* SPI2: route af-4, on every part */
 #define CH32RV_SPI2_SCK PB5
 #define CH32RV_SPI2_MISO PB7
@@ -692,16 +678,16 @@
     { 4, { PD11, PD13, PC10 }, 0x00000004u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (SPI). These are
- * the pads of SPI2's default route above - a fact about
+ * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_SPI_SCK
-#define PIN_SPI_SCK CH32RV_SPI2_SCK
-#define PIN_SPI_MISO CH32RV_SPI2_MISO
-#define PIN_SPI_MOSI CH32RV_SPI2_MOSI
+#define PIN_SPI_SCK CH32RV_SPI1_SCK
+#define PIN_SPI_MISO CH32RV_SPI1_MISO
+#define PIN_SPI_MOSI CH32RV_SPI1_MOSI
 #define SCK PIN_SPI_SCK
 #define MISO PIN_SPI_MISO
 #define MOSI PIN_SPI_MOSI
-#define PIN_SPI_SS PB4
+#define PIN_SPI_SS PB0
 #define SS PIN_SPI_SS
 #endif
 

@@ -520,34 +520,29 @@
 
 /* ---- I2C pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_i2cs) ---- */
-/* I2C1: no default route for the whole series (its pads
- * move between packages, or sit on debug / strap pads). With a
- * part number selected it may have one below; otherwise begin()
- * has to name the pins. */
+/* I2C1: route af-4, on every part */
+#define CH32RV_I2C1_SCL PB6
+#define CH32RV_I2C1_SDA PB7
 #define CH32RV_I2C1_CLKEN_ADDR 0x40021020u
 #define CH32RV_I2C1_CLKEN_MASK 0x00200000u
+/* device-data lists PB6, PB8 for SCL on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
+/* device-data lists PB7, PB9 for SDA on this route;
+ * the selection rule picked the one above (never a debug
+ * or strap pad, prefer a pad on every part, else table
+ * order - see resolve_pin_candidates). */
 #define CH32RV_I2C1_REMAP_MASK 0x00000000u
-#if defined(CH32RV_PART_CH32H415REU6)
-#define CH32RV_I2C1_REMAP_VAL  0x00000000u
+#define CH32RV_I2C1_REMAP_VAL  0x00000004u
 /* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
 #define CH32RV_I2C1_ROUTE_COUNT 4
 #define CH32RV_I2C1_ROUTES { \
-    { 4, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
     { 4, { PB6, PB7, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
     { 4, { PB6, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
     { 4, { PB8, PB7, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
-}
-#else   /* ANY, or a board that sets no part: the series union */
-#define CH32RV_I2C1_REMAP_VAL  0x00000000u
-/* I2C1 routes for setRoute()/setPins(): route number, then SCL, SDA */
-#define CH32RV_I2C1_ROUTE_COUNT 4
-#define CH32RV_I2C1_ROUTES { \
     { 4, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
-    { 4, { PB6, PB7, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
-    { 4, { PB6, PB9, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
-    { 4, { PB8, PB7, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
 }
-#endif
 /* I2C2: route af-4, on every part */
 #define CH32RV_I2C2_SCL PB10
 #define CH32RV_I2C2_SDA PB11
@@ -562,11 +557,11 @@
     { 9, { PC0, PC1, CH32RV_ROUTE_NO_PIN }, 0x00000009u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first bus (Wire). These are
- * the pads of I2C2's default route above - a fact about
+ * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
 #ifndef PIN_WIRE_SCL
-#define PIN_WIRE_SCL CH32RV_I2C2_SCL
-#define PIN_WIRE_SDA CH32RV_I2C2_SDA
+#define PIN_WIRE_SCL CH32RV_I2C1_SCL
+#define PIN_WIRE_SDA CH32RV_I2C1_SDA
 #define SCL PIN_WIRE_SCL
 #define SDA PIN_WIRE_SDA
 #endif
