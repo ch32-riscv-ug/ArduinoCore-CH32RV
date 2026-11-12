@@ -60,7 +60,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   入れ子は、V4F の 4 段も HWSTKOVEN が 0 なので HPE の 3 段を超えない。
 - [x] 実機（手元で作ったパッチ入りの版、2026-11-12）: X035 は 22 件すべて、V003 / V006 / V307 / V203 / L103 / V103 / M030 も
   今回の変更による失敗は無し。L103 の synckit は `-Oz` のまま 47 µs（前は 55 µs で上限 50 µs を超えていた）。
-  LinkE の uart の失敗は、console-sdi の SDI のデータが LinkE に残っていたため（ハブの口の電源を入れ直すと通る。ch32rv に報告）。
+  LinkE の uart の失敗は、console-sdi の SDI のデータが LinkE に残っていたため（ch32rv 0.30.2 の問題。b1148af で直った）。
   V003 の periph の NG は、GCC の版でも出る PC4 の刺激の飛び込み（環境）。
 - [ ] リリースの版で、もう一度全部の系列を流す。
 - [ ] コアが持つ libc の代わり（strftime、mktime、tzset、gmtime、memcpy などと ch32rv_softfloat.c、ch32rv_div.S）を、picolibc と
@@ -68,7 +68,9 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [ ] printf-float.ja.md と README の大きさの表は GCC と newlib の頃のもの。測り直す。
 - [ ] clang は rv32ec で定数の掛け算に `__mulsi3` を呼ぶ。時間に厳しいところ（printf の数の変換など）を洗い出す。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
-- [ ] V103 は ch32rv の修正版（e958bbe、console-rtt は 15d9a89）で動く。修正の入った ch32rv がリリースされたら同梱を上げる。
+- [ ] V103 は ch32rv の修正版（e958bbe、console-rtt は 15d9a89）で動く。LinkE の uart が console-sdi のあとで古い SDI の行に
+  置き換わる件も ch32rv の main（b1148af）で直った（0.30.2 は SDI の転送を有効のまま残し、LinkE が溜めた行を UART の
+  受信の代わりに送る）。これらの入った ch32rv がリリースされたら同梱を上げる。
 
 ## PIOC（CH32X035、CH32V205、CH32H41x）
 
