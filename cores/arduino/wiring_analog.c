@@ -72,6 +72,25 @@ void analogReference(uint8_t mode)
 
 static uint32_t ch32rv_adc_convert_raw(uint32_t base, uint32_t channel);
 
+#if !CH32RV_ADC_CLOCK_OK
+/* The public calls carry an error attribute at this clock (Arduino.h): kept
+ * out of line, and their call sites alive under LTO, so it is checked. */
+#define CH32RV_ADC_ENTRY __attribute__((noinline))
+#define CH32RV_ADC_KEEP() __asm__ volatile("")
+#else
+#define CH32RV_ADC_ENTRY
+#define CH32RV_ADC_KEEP() ((void)0)
+#endif
+
+#if !CH32RV_ADC_CLOCK_OK
+/* Below the ADC's floor even at its smallest divider (CH32X035 at 8 MHz: 2
+ * MHz against 3): a conversion never ends. The sketch's calls are a build
+ * error (Arduino.h); what the core reaches on its own reads 0. */
+static void ch32rv_adc_begin(uint8_t index)
+{
+    (void)index;
+}
+#else
 static void ch32rv_adc_begin(uint8_t index)
 {
     if (CH32RV_ADC_IS_STARTED(index)) {
@@ -149,10 +168,16 @@ static void ch32rv_adc_begin(uint8_t index)
 #endif
     CH32RV_ADC_MARK_STARTED(index);
 }
+#endif
 
 /* One conversion of `channel` at the hardware's native width, uncorrected. */
 static uint32_t ch32rv_adc_convert_raw(uint32_t base, uint32_t channel)
 {
+#if !CH32RV_ADC_CLOCK_OK
+    (void)base;
+    (void)channel;
+    return 0;
+#endif
     CH32RV_ADC_RSQR1_AT(base) = 0;        /* one conversion in the sequence */
     CH32RV_ADC_RSQR3_AT(base) = channel;
     CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_CTLR2_SWSTART;
@@ -237,8 +262,9 @@ static uint32_t ch32rv_adc_read_internal(uint32_t channel, int calibrated)
 }
 #endif
 
-int analogReadVref(void)
+CH32RV_ADC_ENTRY int analogReadVref(void)
 {
+    CH32RV_ADC_KEEP();
 #ifdef CH32RV_ADC_VREFINT_CHANNEL
     return (int)ch32rv_adc_scale(ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 0));
 #else
@@ -246,8 +272,9 @@ int analogReadVref(void)
 #endif
 }
 
-uint32_t ch32rv_adc_vdd_millivolts(void)
+CH32RV_ADC_ENTRY uint32_t ch32rv_adc_vdd_millivolts(void)
 {
+    CH32RV_ADC_KEEP();
 #if defined(CH32RV_ADC_VREFINT_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
     const uint32_t raw = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 1);
     if (raw == 0u) {
@@ -267,8 +294,9 @@ uint32_t ch32rv_adc_vdd_millivolts(void)
 #endif
 }
 
-float analogReadTemp(void)
+CH32RV_ADC_ENTRY float analogReadTemp(void)
 {
+    CH32RV_ADC_KEEP();
 #if defined(CH32RV_ADC_TEMP_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
     /* The sensor voltage against Vrefint rather than an assumed 3.3 V supply:
      * T = (V25 - Vsense) / slope + 25, the datasheet's typicals (+/- several
@@ -340,8 +368,9 @@ void touchSetCycles(uint16_t measure, uint16_t sleep)
 #endif
 }
 
-uint16_t touchRead(uint8_t pin)
+CH32RV_ADC_ENTRY uint16_t touchRead(uint8_t pin)
 {
+    CH32RV_ADC_KEEP();
 #if defined(CH32RV_TKEY_CTLR1) && defined(NUM_ANALOG_INPUTS)
     uint8_t index = 0;
     const uint32_t channel = ch32rv_adc_prepare((pin_size_t)pin, &index);
@@ -372,8 +401,9 @@ uint16_t touchRead(uint8_t pin)
 #endif
 }
 
-int analogRead(pin_size_t pin)
+CH32RV_ADC_ENTRY int analogRead(pin_size_t pin)
 {
+    CH32RV_ADC_KEEP();
 #ifdef NUM_ANALOG_INPUTS
     uint8_t index = 0;
     const uint32_t channel = ch32rv_adc_prepare(pin, &index);
@@ -387,8 +417,9 @@ int analogRead(pin_size_t pin)
 #endif
 }
 
-int analogReadCalibrated(pin_size_t pin)
+CH32RV_ADC_ENTRY int analogReadCalibrated(pin_size_t pin)
 {
+    CH32RV_ADC_KEEP();
 #ifdef NUM_ANALOG_INPUTS
     uint8_t index = 0;
     const uint32_t channel = ch32rv_adc_prepare(pin, &index);

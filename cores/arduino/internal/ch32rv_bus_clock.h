@@ -25,3 +25,18 @@
 #define CH32RV_PCLK2_HZ (CH32RV_HCLK_HZ / CH32RV_CLOCK_PPRE2_DIV)
 #define CH32RV_TIMCLK1_HZ (CH32RV_CLOCK_PPRE1_DIV == 1 ? CH32RV_PCLK1_HZ : 2u * CH32RV_PCLK1_HZ)
 #define CH32RV_TIMCLK2_HZ (CH32RV_CLOCK_PPRE2_DIV == 1 ? CH32RV_PCLK2_HZ : 2u * CH32RV_PCLK2_HZ)
+
+/* Whether the ADC can run at all at this CPU Clock: its clock at the smallest
+ * divider (ADCPRE /2; CH32X035's CTLR3 /4) still reaches the datasheet's
+ * floor. 0 on CH32X035 at 8 MHz (2 MHz against 3), where the CPU Clock entry
+ * says "no ADC" and any ADC call is a build error (wiring_analog.c). */
+#if defined(CH32RV_ADC_CLK_CTLR3) && CH32RV_ADC_CLK_CTLR3
+#define CH32RV_ADC_MIN_DIV 4u
+#else
+#define CH32RV_ADC_MIN_DIV 2u
+#endif
+#if defined(CH32RV_ADC_MIN_HZ) && (CH32RV_PCLK2_HZ / CH32RV_ADC_MIN_DIV) < CH32RV_ADC_MIN_HZ
+#define CH32RV_ADC_CLOCK_OK 0
+#else
+#define CH32RV_ADC_CLOCK_OK 1
+#endif

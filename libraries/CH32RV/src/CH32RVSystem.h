@@ -58,7 +58,7 @@
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
 #include "internal/ch32rv_vio18.h"
 
-extern "C" uint32_t ch32rv_adc_vdd_millivolts(void);   /* wiring_analog.c */
+#include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
 typedef enum {

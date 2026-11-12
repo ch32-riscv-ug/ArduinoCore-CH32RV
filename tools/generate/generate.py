@@ -657,7 +657,7 @@ _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
 _L103_CLOCKS = [("96", 96, 96, "96MHz (USB, not checked)"), ("72", 72, 72, "72MHz (USB, not checked)"),
                 ("48", 48, 48, "48MHz (USB, not checked)"), ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
 _X035_CLOCKS = [("48", 48, 48, "48MHz (USB)"), ("24", 48, 24, "24MHz (USB not checked)"),
-                ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, USB not checked)")]
+                ("12", 48, 12, "12MHz (USB not checked)"), ("8", 48, 8, "8MHz (lowest power, no ADC, USB not checked)")]
 CLOCK_MENU = {
     "CH32V003": _V00X_CLOCKS,
     **{s: _V00X_CLOCKS for s in ("CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007")},
@@ -756,6 +756,12 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
         if hclk_mhz * 1000000 / ppre2 / max_div > fact["adc_max_hz"]:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the ADC would run above "
                              f"{fact['adc_max_hz']} Hz at /{max_div}")
+        # Below the ADC's floor even at the smallest divider: the label says "no ADC" and the core makes
+        # any use of the ADC a build error (wiring_analog.c).
+        min_div = 4 if fact["adc_clk_ctlr3"] else 2
+        if (hclk_mhz * 1000000 / ppre2 / min_div < fact["adc_min_hz"]) != ("no ADC" in label):
+            raise SystemExit(f"ERROR: {series}: CPU Clock {key}: the label must say \"no ADC\" exactly when "
+                             f"HCLK / {min_div} is below the ADC's {fact['adc_min_hz']} Hz")
         if latency & ~fact["latency_mask"]:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: flash latency {latency} does not fit")
         lines.append(f"{board}.menu.clock.{key}={label}")
@@ -1599,8 +1605,11 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # the core cannot know the board's VDD, so the lowest is taken. A slower
     # conversion is a cost; running the ADC out of spec is a wrong reading.
     adc_hz: dict = {}
+    # And its floor, the highest of the rows: CH32X035's ADC wants 3 MHz, which HCLK 8 MHz at its smallest
+    # divider (/4) cannot give - the conversion never ends (2026-11-13).
+    adc_min_hz: dict = {}
     for r in read_table(tables, "operating_conditions.csv",
-                        ("series", "symbol", "max", "unit")):
+                        ("series", "symbol", "min", "max", "unit")):
         if r["symbol"] != "f_ADC" or not r["max"] or r["unit"] != "MHz":
             continue
         for s in r["series"].split(";"):
@@ -1608,6 +1617,8 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             if f:
                 hz = int(float(r["max"]) * 1e6)
                 adc_hz[f] = min(adc_hz.get(f, hz), hz)
+                if r["min"]:
+                    adc_min_hz[f] = max(adc_min_hz.get(f, 0), int(float(r["min"]) * 1e6))
 
     # Where the debug module's data0/data1 sit in the hart's address space -
     # the two words the debug-output libraries write through (SerialSDI in
@@ -1654,6 +1665,7 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
             latency_mask=one(family, "the flash LATENCY mask", masks) if masks
             else 0,
             adc_max_hz=adc_hz.get(family, 0),
+            adc_min_hz=adc_min_hz.get(family, 0),
             adc_clk_ctlr3=(1 if family not in adcpre and family in adc_ctlr3
                            else 0),
             adc_clk_known=family in adcpre or family in adc_ctlr3,
@@ -4223,6 +4235,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         f"-DCH32RV_HPRE_LINEAR={fact['hpre_linear']} "
         f"-DCH32RV_FLASH_ACTLR_LATENCY_MASK={fact['latency_mask']:#x}u "
         f"-DCH32RV_ADC_MAX_HZ={fact['adc_max_hz']}u"
+        + (f" -DCH32RV_ADC_MIN_HZ={fact['adc_min_hz']}u" if fact['adc_min_hz'] else "")
         + (" -DCH32RV_ADC_CLK_CTLR3=1" if fact['adc_clk_ctlr3'] else "")
         + (f" -DCH32RV_LSI_HZ={fact['lsi_hz']}u" if fact['lsi_hz'] else "")
         + (" -DCH32RV_PFIC_RESET_SCTLR=1" if fact['pfic_reset_sctlr'] else "")

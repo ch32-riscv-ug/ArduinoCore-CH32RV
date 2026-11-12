@@ -9,6 +9,36 @@
 
 #include "internal/ch32rv_pins.h"
 #include "ch32rv_version.h"
+#include "internal/ch32rv_bus_clock.h"   /* CH32RV_HCLK_HZ, CH32RV_PCLK1_HZ / 2_HZ, CH32RV_ADC_CLOCK_OK */
+
+#if !CH32RV_ADC_CLOCK_OK
+/* The ADC cannot run at this CPU Clock (internal/ch32rv_bus_clock.h; the
+ * entry says "no ADC"): a call that survives the build is an error, rather
+ * than a sketch that waits for a conversion forever. The core's own paths
+ * read 0 (VDD unknown, analogReadTemp() NAN). Here, ahead of
+ * ArduinoCore-API's declaration of analogRead(): clang takes the attribute
+ * only on a function's first declaration. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+#define CH32RV_ADC_UNAVAILABLE \
+    __attribute__((error("the ADC does not run at this CPU Clock (its clock would be below the datasheet's " \
+                         "minimum): select a faster Tools > CPU Clock")))
+#ifdef EXTENDED_PIN_MODE
+int analogRead(uint32_t pinNumber) CH32RV_ADC_UNAVAILABLE;
+int analogReadCalibrated(uint32_t pin) CH32RV_ADC_UNAVAILABLE;
+#else
+int analogRead(uint8_t pinNumber) CH32RV_ADC_UNAVAILABLE;
+int analogReadCalibrated(uint8_t pin) CH32RV_ADC_UNAVAILABLE;
+#endif
+int analogReadVref(void) CH32RV_ADC_UNAVAILABLE;
+float analogReadTemp(void) CH32RV_ADC_UNAVAILABLE;
+uint16_t touchRead(uint8_t pin) CH32RV_ADC_UNAVAILABLE;
+uint32_t ch32rv_adc_vdd_millivolts(void) CH32RV_ADC_UNAVAILABLE;
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 #ifdef __cplusplus
 #include "api/ArduinoAPI.h"
@@ -98,7 +128,6 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
 /* arduino-esp32's clock getters. The clock is the board menu's (CPU Clock) and
  * fixed for the build, so these are F_CPU; there is no setter. */
 static inline uint32_t getCpuFrequencyMhz(void) { return (uint32_t)(F_CPU / 1000000UL); }
-#include "internal/ch32rv_bus_clock.h"   /* CH32RV_HCLK_HZ, CH32RV_PCLK1_HZ / 2_HZ */
 static inline uint32_t getApbFrequency(void) { return (uint32_t)CH32RV_PCLK1_HZ; }
 
 /* arduino-esp32's spelling of ArduinoCore-API's OUTPUT_OPENDRAIN. */
@@ -171,8 +200,8 @@ void analogWriteResolution(int bits);
 /* The ADC's internal channels (arduino-pico's names). analogReadVref(): the
  * internal reference as analogRead() would return it (uncorrected) - 0 where the family
  * has none in the data (CH32M030). analogReadTemp(): the die temperature in
- * degrees C from the datasheet's typical sensor constants, NAN where there is
- * no sensor (V00x, X033/X035, X305/X315, M030). */
+ * degrees C from the factory's calibration point and the datasheet's slope,
+ * NAN where there is no sensor (V00x, X033/X035, X305/X315, M030). */
 int analogReadVref(void);
 /* analogRead() is the converter's own value, as arduino-esp32's. This one
  * adds the correction the family's vendor code applies before using the ADC
