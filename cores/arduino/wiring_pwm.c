@@ -218,7 +218,14 @@ void analogWrite(pin_size_t pin, int value)
                          (CH32RV_TIM_OCMODE_PWM1 << shift));
     /* 100 % is a compare value past the counter's end: steps itself, which is
      * 65536 only when the counter has all 65536 steps - then one short. */
-    CH32RV_TIM_CHCVR(base, channel) = (uint16_t)(duty > 65535u ? 65535u : duty);
+    /* A 32-bit timer's compare register takes a 16-bit store in both halves
+     * (ch32rv_registers.h): the compare would land far past the period and
+     * the pad stay high - H417's TIM9 / TIM10 did, until 2026-11-12. */
+    if (cap->counter_bits == 32u) {
+        CH32RV_TIM_CHCVR32(base, channel) = duty > 65535u ? 65535u : duty;
+    } else {
+        CH32RV_TIM_CHCVR(base, channel) = (uint16_t)(duty > 65535u ? 65535u : duty);
+    }
     CH32RV_TIM_CCER(base) |= (uint16_t)(1u << ((channel - 1u) * 4u));
     if (cap->kind == CH32RV_TIMER_KIND_ADVANCED) {
         /* Advanced timers keep every channel output gated behind MOE. */
