@@ -27,6 +27,12 @@ driven and is recorded as `held`; then written HIGH and LOW as an output and rea
 raise 5 RISING, 5 FALLING and 10 CHANGE interrupts (attachInterrupt on the output itself: the EXTI line, its port
 select and the dispatch).
 
+selfcheck.pwm: on every PWM pad (a timer channel in the variant's table) but those kept off or held and the DAC
+pads (analogWrite() sets the DAC there, analog's subject), analogWrite()
+at 64 and 192 of 255, at 1 kHz and 10 kHz, read back on the pad's input path for 50 ms: the rising edges within 2 %
+of the periods (2 at least) and the share of samples at 1 within 4 % of the duty - every timer channel's route and
+its clock (the APB2 timers keep HCLK when APB2 is halved).
+
 selfcheck.vref: the supply worked out from the internal reference (CH32RV.getVddMillivolts(), with the family's
 offset correction) reads 2.7-5.5 V, the parts' operating range (the bench's boards run on 3.3 V, the UIAPduino on
 5 V; it read 4432 mV); a family whose data gives no reference voltage (X035) records the raw value and skips.
@@ -195,6 +201,39 @@ def test_gpio(dut, ready, record_property):
     record_property("held", json.dumps(held))
     record_property("kept_off", json.dumps(sorted(off)))
     assert results, "every pad is held or kept off"
+    assert not wrong, " | ".join(wrong)
+
+
+@pytest.mark.parametrize("hz", [1000, 10000])
+def test_pwm(dut, ready, hz, record_property):
+    no_drive()
+    off = keep_off()
+    pins = [int(p) for p in ask(dut, "allpins", rb"ALLPINS([ \d]*)").group(1).split()]
+    results, wrong, held = {}, [], []
+    for pin in (p for p in pins if pad(p) not in off):
+        for duty in (64, 192):
+            m = ask(dut, f"pwm {pin} {duty} {hz}", rb"PWM -?\d+ (?:(NONE|HELD)|(\d+) (\d+) (\d+) (\d+) (\d+))")
+            if m.group(1) == b"NONE":
+                break
+            if m.group(1) == b"HELD":
+                held.append(pad(pin))
+                break
+            timer, channel, edges, highs, samples = (int(x) for x in m.groups()[1:])
+            want_edges = hz * 0.05
+            share = highs / samples if samples else 0
+            results[f"{pad(pin)}/{duty}"] = dict(tim=f"{timer}.{channel}", edges=edges, duty=round(share, 3),
+                                                 samples=samples)
+            if abs(edges - want_edges) > max(2, 0.02 * want_edges):
+                wrong.append(f"{pad(pin)} (TIM{timer} CH{channel}) at {hz} Hz: {edges} periods in 50 ms, "
+                             f"{want_edges:.0f} expected")
+            if abs(share - duty / 255) > 0.04:
+                wrong.append(f"{pad(pin)} (TIM{timer} CH{channel}) duty {duty}/255 at {hz} Hz: read high "
+                             f"{share:.1%} of {samples} samples")
+    record_property("pwm", json.dumps(results))
+    if held:
+        record_property("held", json.dumps(held))
+    if not results:
+        pytest.skip("no PWM pad to drive")
     assert not wrong, " | ".join(wrong)
 
 

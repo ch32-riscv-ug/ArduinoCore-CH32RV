@@ -272,6 +272,12 @@ test = "selfcheck::test_gpio"
 scope = "series"
 
 [[item]]
+id = "selfcheck-pwm"        # every PWM pad's period and duty read back on its own input path
+test = "selfcheck::test_pwm"
+scope = "series"
+any_of = ["TIM1", "TIM2", "TIM3", "TIM4", "TIM5"]
+
+[[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
 test = "selfcheck::test_vref"
 scope = "series"

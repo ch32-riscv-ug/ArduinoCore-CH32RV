@@ -20,6 +20,9 @@
  *                             <CHANGE count> <read with INPUT_PULLUP> <read with INPUT_PULLDOWN>
  *                             (five pulses written on the output for each interrupt mode), or
  *                             GPIO <pin> HELD <level> when the pulls do not move it (never driven)
+ *   pwm <pin> <duty> <hz>     analogWrite(pin, duty) at hz, the pad read for 50 ms:
+ *                             PWM <pin> <timer> <channel> <rising edges> <samples at 1> <samples>,
+ *                             PWM <pin> NONE (no timer channel, or a DAC pad) or PWM <pin> HELD (never driven)
  *   vref                      VREF <analogReadVref()> <full scale> <CH32RV.getVddMillivolts()>,
  *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
@@ -352,6 +355,54 @@ static void all_pins(void)
     SerialDMSeq.printf("\r\n");
 }
 
+/* PWM on one pad (analogWrite at hz, 8-bit duty), read back on the pad's own
+ * input path for 50 ms: rising edges and the share of samples at 1. */
+static void pwm(int pin, int duty, unsigned long hz)
+{
+    const pin_size_t p = (pin_size_t)pin;
+#ifdef CH32RV_PWM_PIN_COUNT
+    const unsigned timer = (unsigned)CH32RV_PWM_PIN_TO_TIMER(p);
+    const unsigned channel = (unsigned)CH32RV_PWM_PIN_TO_CHANNEL(p);
+#else
+    const unsigned timer = 0, channel = 0;
+#endif
+    /* analogWrite() on a DAC pad sets the DAC, not a timer (V307's PA4 read a
+     * steady 0.8 V at 64 and stayed driven): no PWM to see there. */
+    bool dac = false;
+#ifdef CH32RV_DAC1_PIN
+    dac = dac || p == (pin_size_t)CH32RV_DAC1_PIN;
+#endif
+#ifdef CH32RV_DAC2_PIN
+    dac = dac || p == (pin_size_t)CH32RV_DAC2_PIN;
+#endif
+    if (!timer || dac) {
+        SerialDMSeq.printf("PWM %d NONE\r\n", pin);
+        return;
+    }
+    int up, down;
+    if (held(p, &up, &down)) {
+        SerialDMSeq.printf("PWM %d HELD\r\n", pin);
+        return;
+    }
+    analogWriteFrequency(p, hz);
+    analogWrite(p, duty);
+    delay(5);
+    uint32_t samples = 0, highs = 0, edges = 0;
+    int prev = digitalRead(p);
+    const uint32_t t0 = micros();
+    while ((uint32_t)(micros() - t0) < 50000u) {
+        const int v = digitalRead(p);
+        samples++;
+        highs += (uint32_t)v;
+        edges += (uint32_t)(v && !prev);
+        prev = v;
+    }
+    analogWrite(p, 0);
+    pinMode(p, INPUT);
+    SerialDMSeq.printf("PWM %d %u %u %lu %lu %lu\r\n", pin, timer, channel, (unsigned long)edges,
+                       (unsigned long)highs, (unsigned long)samples);
+}
+
 static void reply(char *command)
 {
     char *argv[5];
@@ -405,6 +456,8 @@ static void reply(char *command)
         all_pins();
     } else if (!strcmp(argv[0], "rxpin") && argc == 2 && atoi(argv[1]) < PORT_COUNT) {
         rx_pin_of(atoi(argv[1]));
+    } else if (!strcmp(argv[0], "pwm") && argc == 4) {
+        pwm(atoi(argv[1]), atoi(argv[2]), strtoul(argv[3], nullptr, 10));
     } else if (!strcmp(argv[0], "gpio") && argc == 2) {
         gpio(atoi(argv[1]));
     } else if (!strcmp(argv[0], "vref")) {
