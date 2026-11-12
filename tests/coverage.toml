@@ -289,6 +289,11 @@ scope = "series"
 any_of = ["SPI1", "SPI2", "SPI3"]
 
 [[item]]
+id = "selfbus-uart"         # frame formats, receive errors (PE, FE, break, overrun, full) and frame lengths
+test = ["selfbus::test_uart_formats", "selfbus::test_uart_errors", "selfbus::test_uart_transmit"]
+scope = "series"
+
+[[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
 test = "selfcheck::test_vref"
 scope = "series"

@@ -8,6 +8,13 @@
  *   spiout <mode> <lsb> <byte> one byte sent at the slowest clock while the sketch reads SCK and MOSI on their
  *                             own pads: SPIOUT <SCK idle level> <edges seen> <byte rebuilt from MOSI at the
  *                             mode's sampling edge>
+ *   ports                     PORTS <HardwareSerial objects> <receive buffer size>
+ *   rxpin <k>                 RXPIN <USARTn> <its default RX pin or -1>
+ *   rxfmt <k> <fmt> <kind> <n> port k at 9600 in fmt (8N1 8E1 8O1 7E1 8N2), fed n frames on its RX pad (made an
+ *                             output): kind g good, p bad parity, s 0 stop bit, b break, o interrupts off
+ *                             throughout (overrun), f never read (the buffer fills):
+ *                             RXFMT <USARTn> <received> <matching> <takeErrors()>, or RXFMT <n> HELD / CLOSED
+ *   txfmt <k> <fmt> <n>       port k sends n bytes at 115200 in fmt: TXFMT <USARTn> <microseconds>
  *   spiin <level>             MISO made a GPIO output at level (0 / 1), one byte exchanged:
  *                             SPIIN <byte received>, or SPIIN HELD when the pulls do not move MISO */
 #include <Arduino.h>
@@ -18,6 +25,14 @@
 #include <SPI.h>
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+
+/* Up here, before the prototypes the Arduino build puts in: a UART format.
+ * name -> config, data bits, parity (0 none, 1 even, 2 odd), stop bits */
+struct Format {
+    const char *name;
+    uint16_t config;
+    uint8_t data, parity, stop;
+};
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -41,6 +56,219 @@ static bool held(pin_size_t p)
     const int down = digitalRead(p);
     pinMode(p, INPUT);
     return up == down;
+}
+
+/* ---- UART: frame formats and receive errors ---- */
+static arduino::CH32RVHardwareSerial *const ports[] = {
+#if CH32RV_SERIAL_COUNT >= 1
+    &Serial,
+#endif
+#if CH32RV_SERIAL_COUNT >= 2
+    &Serial1,
+#endif
+#if CH32RV_SERIAL_COUNT >= 3
+    &Serial2,
+#endif
+#if CH32RV_SERIAL_COUNT >= 4
+    &Serial3,
+#endif
+#if CH32RV_SERIAL_COUNT >= 5
+    &Serial4,
+#endif
+#if CH32RV_SERIAL_COUNT >= 6
+    &Serial5,
+#endif
+#if CH32RV_SERIAL_COUNT >= 7
+    &Serial6,
+#endif
+#if CH32RV_SERIAL_COUNT >= 8
+    &Serial7,
+#endif
+#if CH32RV_SERIAL_COUNT >= 9
+    &Serial8,
+#endif
+#if CH32RV_SERIAL_COUNT >= 10
+    &Serial9,
+#endif
+    nullptr,
+};
+static const int PORT_COUNT = (int)(sizeof ports / sizeof ports[0]) - 1;
+
+static int rx_pin(uint8_t n)
+{
+    switch (n) {
+#ifdef CH32RV_SERIAL1_RX
+    case 1: return CH32RV_SERIAL1_RX;
+#endif
+#ifdef CH32RV_SERIAL2_RX
+    case 2: return CH32RV_SERIAL2_RX;
+#endif
+#ifdef CH32RV_SERIAL3_RX
+    case 3: return CH32RV_SERIAL3_RX;
+#endif
+#ifdef CH32RV_SERIAL4_RX
+    case 4: return CH32RV_SERIAL4_RX;
+#endif
+#ifdef CH32RV_SERIAL5_RX
+    case 5: return CH32RV_SERIAL5_RX;
+#endif
+#ifdef CH32RV_SERIAL6_RX
+    case 6: return CH32RV_SERIAL6_RX;
+#endif
+#ifdef CH32RV_SERIAL7_RX
+    case 7: return CH32RV_SERIAL7_RX;
+#endif
+#ifdef CH32RV_SERIAL8_RX
+    case 8: return CH32RV_SERIAL8_RX;
+#endif
+    default: return -1;
+    }
+}
+
+static const Format formats[] = {
+    {"8N1", SERIAL_8N1, 8, 0, 1}, {"8E1", SERIAL_8E1, 8, 1, 1}, {"8O1", SERIAL_8O1, 8, 2, 1},
+    {"7E1", SERIAL_7E1, 7, 1, 1}, {"8N2", SERIAL_8N2, 8, 0, 2},
+};
+
+static const Format *format_named(const char *name)
+{
+    for (const Format &f : formats) {
+        if (!strcmp(f.name, name)) {
+            return &f;
+        }
+    }
+    return nullptr;
+}
+
+static uint8_t pattern(int i) { return (uint8_t)(0x55u ^ (uint8_t)(i * 37u)); }
+
+/* One frame on the pad, LSB first, timed by micros() from its start bit:
+ * start, data, the parity bit (flipped when `bad` is 'p'), the stop bits
+ * (0 when `bad` is 's'); `bad` 'b' sends every bit 0 - a break. */
+static void frame(pin_size_t pin, const Format &f, uint8_t value, char bad, uint32_t bit_us)
+{
+    uint8_t bits[13];
+    uint8_t n = 0;
+    bits[n++] = 0;
+    uint8_t ones = 0;
+    for (uint8_t i = 0; i < f.data; i++) {
+        const uint8_t b = (value >> i) & 1u;
+        ones += b;
+        bits[n++] = b;
+    }
+    if (f.parity) {
+        uint8_t p = f.parity == 1 ? (ones & 1u) : !(ones & 1u);
+        bits[n++] = bad == 'p' ? !p : p;
+    }
+    for (uint8_t i = 0; i < f.stop; i++) {
+        bits[n++] = bad == 's' ? 0 : 1;
+    }
+    if (bad == 'b') {
+        for (uint8_t i = 0; i < n; i++) {
+            bits[i] = 0;
+        }
+    }
+    const uint32_t t0 = micros();
+    for (uint8_t i = 0; i < n; i++) {
+        digitalWrite(pin, bits[i] ? HIGH : LOW);
+        while ((uint32_t)(micros() - t0) < (uint32_t)(i + 1u) * bit_us) {
+        }
+    }
+    digitalWrite(pin, HIGH);
+    delayMicroseconds(bit_us * 2u);           /* idle between frames, and after a bad stop */
+}
+
+/* Port k at 9600 in format `fmt`, fed n frames on its own RX pad (made an
+ * output; the USART still hears it). kind: 'g' good frames, 'p' bad parity,
+ * 's' a 0 stop bit, 'b' breaks, 'o' n good frames with interrupts off
+ * throughout (an overrun), 'f' n good frames not read (the buffer fills).
+ *   RXFMT <USARTn> <received> <matching> <takeErrors()>, RXFMT <n> HELD / CLOSED */
+static void rx_format(int k, const Format &f, char kind, int n)
+{
+    arduino::CH32RVHardwareSerial &port = *ports[k];
+    port.begin(9600, f.config);
+    const uint8_t number = port.peripheral();
+    const int pin = number ? rx_pin(number) : -1;
+    if (!port || pin < 0) {
+        port.end();
+        SerialDMSeq.printf("RXFMT %u CLOSED\r\n", number);
+        return;
+    }
+    const pin_size_t p = (pin_size_t)pin;
+    if (held(p)) {
+        port.end();
+        SerialDMSeq.printf("RXFMT %u HELD\r\n", number);
+        return;
+    }
+    port.begin(9600, f.config);                   /* held() left the pad an input */
+    digitalWrite(p, HIGH);
+    pinMode(p, OUTPUT);
+    digitalWrite(p, HIGH);
+    delay(5);
+    const uint32_t bit_us = 1000000u / 9600u;
+    const uint8_t mask = f.data == 7 ? 0x7Fu : 0xFFu;
+    /* A warm-up frame (its first pass through the bit loop runs slow, see
+     * selfcheck), dropped with whatever it raised. */
+    noInterrupts();
+    frame(p, f, mask, 'g', bit_us);
+    interrupts();
+    delay(2);
+    while (port.available()) {
+        port.read();
+    }
+    port.takeErrors();
+    int received = 0, matching = 0;
+    if (kind == 'o') {
+        noInterrupts();
+    }
+    for (int i = 0; i < n; i++) {
+        if (kind != 'o') {
+            noInterrupts();
+        }
+        frame(p, f, (uint8_t)(pattern(i) & mask), kind == 'o' || kind == 'f' ? 'g' : kind, bit_us);
+        if (kind != 'o') {
+            interrupts();
+        }
+        if (kind != 'f') {
+            while (port.available()) {
+                matching += port.read() == (int)(pattern(received) & mask);
+                received++;
+            }
+        }
+    }
+    if (kind == 'o') {
+        interrupts();
+    }
+    delay(3);
+    while (port.available()) {
+        matching += port.read() == (int)(pattern(received) & mask);
+        received++;
+    }
+    const unsigned errors = port.takeErrors();
+    port.end();
+    pinMode(p, INPUT);
+    SerialDMSeq.printf("RXFMT %u %d %d %u\r\n", number, received, matching, errors);
+}
+
+/* Port k sends n bytes at 115200 in format `fmt`: TXFMT <USARTn> <microseconds to the last stop bit> */
+static void tx_format(int k, const Format &f, int n)
+{
+    arduino::CH32RVHardwareSerial &port = *ports[k];
+    port.begin(115200, f.config);
+    const uint8_t number = port.peripheral();
+    if (!port) {
+        port.end();
+        SerialDMSeq.printf("TXFMT %u CLOSED\r\n", number);
+        return;
+    }
+    const uint32_t t0 = micros();
+    for (int i = 0; i < n; i++) {
+        port.write(pattern(i));
+    }
+    port.flush();
+    const uint32_t took = micros() - t0;
+    port.end();
+    SerialDMSeq.printf("TXFMT %u %lu\r\n", number, (unsigned long)took);
 }
 
 #if SELFBUS_SPI
@@ -163,6 +391,18 @@ static void reply(char *command)
 #else
         SerialDMSeq.printf("SPIPINS 0 -1 -1 -1 0 0 0\r\n");
 #endif
+    } else if (!strcmp(argv[0], "ports")) {
+        SerialDMSeq.printf("PORTS %d %u\r\n", PORT_COUNT, (unsigned)CH32RV_SERIAL_RX_BUFFER_SIZE);
+    } else if (!strcmp(argv[0], "rxpin") && argc == 2 && atoi(argv[1]) < PORT_COUNT) {
+        arduino::CH32RVHardwareSerial &port = *ports[atoi(argv[1])];
+        port.begin(9600);
+        const uint8_t number = port.peripheral();
+        port.end();
+        SerialDMSeq.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
+    } else if (!strcmp(argv[0], "rxfmt") && argc == 5 && atoi(argv[1]) < PORT_COUNT && format_named(argv[2])) {
+        rx_format(atoi(argv[1]), *format_named(argv[2]), argv[3][0], atoi(argv[4]));
+    } else if (!strcmp(argv[0], "txfmt") && argc == 4 && atoi(argv[1]) < PORT_COUNT && format_named(argv[2])) {
+        tx_format(atoi(argv[1]), *format_named(argv[2]), atoi(argv[3]));
 #if SELFBUS_SPI
     } else if (!strcmp(argv[0], "spiout") && argc == 4) {
         spi_out(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
