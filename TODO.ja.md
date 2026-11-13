@@ -234,12 +234,19 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
   case はどの口で流すかを、その口の相手で決める。FS の Pico はまだつないでいない（nano の FS につないでもよい、とユーザー）。
 - [x] **6-2 の H417（公式 EVT）の selfcheck**: [oep] が PB8 / PA14 を素の pad にラベルし直し、`vio18=3v3` で 9 件通った
   （2026-11-13）。試験は石のデバッグの端子（pinout の SDI）を線として使わない（run_hardware の debug_pads）。
-- [ ] **H417 の EVT で、SWD を速く回すと SS の列挙が乱れる（2026-11-13）**: EVT は PB8 / PB9（SWD）が USB3-A の USB2 の線と
-  同じ端子。dmseq のモニターが読み続けている間に列挙させると、`--speed high` では 2 回のうち 1 回 'error -110' や
-  'unable to get BOS descriptor' が出て、モニターも止まる。`--speed low` では 2 回とも出ない。列挙が済んだあとなら high でも
-  乱れない。プローブの設定では SWD の速さを決められない（[oep]）ので、アップロードとモニターに速さを渡す道が要る。案:
-  ボードメニュー（英語で Debug Speed）にして、試験は記録（memo）から選ぶ。仕様を足すので、候補を試作してから決める。
-  6-2 の usb / usb-classes / usb-media はこれで落ちている（usb-media の DescriptorTooLarge は直した）。
+- [x] **H417 の SS の列挙が約半分で乱れる（'error -110' / 'unable to get BOS descriptor'）**: SWD のせいではなかった
+  （モニターなしでも 4 回中 2 回）。USBSS のドライバが、制御 IN の status の段でホストの status OUT の受け口を消していた。
+  直して 6 回中 0 回（2026-11-14）。
+- [ ] **Debug Speed のメニューを残すか**: 足した理由（SWD が SS の列挙を乱す）は実測で否定された。アップロードとモニターの
+  両方に効く一般の機能としては使えるが、根拠の無い仕様なので、残すか外すかをユーザーに確かめる。
+- [ ] **H417 の USBSS で、ドライバの読み込みの要求に答えないことがある（コードの並びで出たり消えたり）**: usb-contract の
+  スケッチで、列挙の直後の usbhid の読み込みが毎回 -110（20 秒）。usb-media では snd-usb-audio の SET_INTERFACE や UVC の
+  SET_CUR が -110 になり、ときにスケッチごと止まる。その間カーネルが機器の lock を握るので、USB を列挙する道具（ch32rv の
+  モニターの OPEN など）も止まる。RAM に記録を入れた版では、点の中身によらず、記録を足すだけで毎回通る（.bss もヒープの位置も
+  同じで、コードの位置だけが変わる）。割り込みと task の間の競合と見ている。次: usbmon（root）でホスト側の並びを取る、
+  ep0 の状態の受け渡し（status_done / status_waiting / ep0_arm_out の順）を時間の当たり方で洗う。記録の試作は git stash。
+- [ ] **H417 6-2 の usb-media**: 上の件のほか、begin() は成功するのに lastError が DescriptorTooLarge のまま残る（別の速さの
+  構成を作ったときの誤りが残っているとみる）。
 
 - [ ] **H417 の VIO18 を 3.3 V にすると止まる（2026-11-13）**: nanoCH32H417（wchlink://A94B8F062EE9）で、メニューの
   `vio18=3v3` で作ったスケッチは、コンソール（LinkE の dmseq）の READY を返さず、USBSS も列挙しない。V5F の hart は
