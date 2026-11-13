@@ -248,7 +248,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.ramsplit=Flash / RAM Split\n"
                + "menu.rstpin=Reset Pin\n"
                + "menu.iwdg=Watchdog\n"
-               + "menu.erase=Erase Flash\n")
+               + "menu.erase=Erase Flash\n"
+               + "menu.debugspeed=Debug Speed\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -538,6 +539,28 @@ def erase_menu(board: str) -> list[str]:
     for key, label, args in ERASE_MENU:
         lines.append(f"{board}.menu.erase.{key}={label}")
         lines.append(f"{board}.menu.erase.{key}.upload.erase_args={args}")
+    return lines
+
+
+# The SWD / SDI clock an upload over a debug probe runs at (platform.txt
+# upload.speed_args, ch32rv --speed). High is ch32rv's default and empty here.
+# Low is for a board whose debug pads share traces with something fast: the
+# H417 evaluation board's PB8 / PB9 are also its USB3-A connector's USB 2.0
+# pair, and SWD at high speed during SuperSpeed enumeration broke it (6-2,
+# 2026-11-13: error -110 / no BOS in 1 of 2 at high, 0 of 2 at low). An
+# upload.* property, so changing it rebuilds nothing.
+DEBUG_SPEED_MENU = (
+    ("high", "High (default)", ""),
+    ("medium", "Medium", "--speed medium"),
+    ("low", "Low", "--speed low"),
+)
+
+
+def debug_speed_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, args in DEBUG_SPEED_MENU:
+        lines.append(f"{board}.menu.debugspeed.{key}={label}")
+        lines.append(f"{board}.menu.debugspeed.{key}.upload.speed_args={args}")
     return lines
 
 
@@ -4407,6 +4430,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines += iwdg_menu(board)
         lines.append("")
     lines += erase_menu(board)
+    lines.append("")
+    lines += debug_speed_menu(board)
     lines.append("")
 
     return "\n".join(lines), ld_files
