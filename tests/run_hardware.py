@@ -291,6 +291,9 @@ def stage_case(work, name, case, target):
             +
             f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"
             f"      chip: {target['chip']}\n"
+            # The Debug Speed menu's value for the monitor too (boards.txt sets it as a default, written out here so
+            # the test does not depend on the monitor client reading board defaults).
+            + (f"      speed: {m.group(1)}\n" if (m := re.search(r"[:,]debugspeed=(\w+)", target["fqbn"])) else "")
         )
         flag = CONSOLE_FLAGS.get(case)
         (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n'
