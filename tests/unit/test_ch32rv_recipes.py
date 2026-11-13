@@ -17,9 +17,9 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 RECIPES = {
     'tools.ch32rv.upload.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} --probe "{upload.port.address}"',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} {upload.speed_args} --probe "{upload.port.address}"',
     'tools.ch32rv.program.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.probe_args}',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.speed_args} {upload.probe_args}',
     'tools.ch32rv_isp.upload.pattern':
         '"{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
     'tools.ch32rv_dfu.upload.pattern':
