@@ -1,6 +1,7 @@
 """sd.spi / sd.sdio (case sd): an SD card on the bench, through the SD library (SPI) and SD_MMC (SDIO), on the pads
-the probe labels (bench_lines.py: spisd_sck / _miso / _mosi / _cs; sdio_ck / _cmd / _d0, and _d1-_d3 for 4 lines).
-Each test skips when its labels are not there. The card must hold a FAT volume: the test identifies the card,
+the probe labels (bench_lines.py: spisd_sck / _miso / _mosi / _cs; sdio_ck / _cmd / _d0, and _d1-_d3 for 4 lines),
+else on the pads the core record's parts.sd names (a board with the slot and no probe lines, behind a WCH-Link:
+bus spi for sd.spi, sd1 / sd4 for sd.sdio). Each test skips when neither names its pads. The card must hold a FAT volume: the test identifies the card,
 mounts it, writes a 64 KB file, reads it back, lists the root and removes the file. The probe's channels on those
 lines stay as they are (inputs): they only name the wiring."""
 import json
@@ -12,7 +13,25 @@ import pytest
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
-from bench_lines import require
+from bench_lines import lines, pin_number
+
+# parts.sd's members (tests/RECORDS.ja.md §4.4) as the labels' roles.
+RECORD_ROLES = {"spisd": ({"spi"}, {"sck": "spisd_sck", "miso": "spisd_miso", "mosi": "spisd_mosi", "cs": "spisd_cs"}),
+                "sdio": ({"sd1", "sd4"}, {"clk": "sdio_ck", "cmd": "sdio_cmd", "dat0": "sdio_d0", "dat1": "sdio_d1",
+                                          "dat2": "sdio_d2", "dat3": "sdio_d3"})}
+
+
+def pads_of(request, target, feature):
+    """{role: {"pad", "pin"}}: the probe's labelled lines, else the record's parts.sd; skip when neither has them."""
+    found, missing = lines(host_of(request), target, feature)
+    if not missing:
+        return found
+    buses, roles = RECORD_ROLES[feature]
+    sd = (target.get("record") or {}).get("parts", {}).get("sd") or {}
+    if sd.get("bus") in buses:
+        return {roles[k]: dict(pad=v.upper(), pin=pin_number(v)) for k, v in sd.items() if k in roles}
+    pytest.skip(f"{feature}: the probe labels no " + ", ".join(missing)
+                + f" and the record's parts.sd is not on bus {' / '.join(sorted(buses))}")
 
 CARD_TYPES = {1: "MMC", 2: "SDSC", 3: "SDHC/SDXC"}
 
@@ -33,6 +52,11 @@ def ready(dut, case):
 
 
 def host_of(request):
+    """The OEP session, or None when the port is not an OEP probe's (--port is the plugin's monitor wrapping by now;
+    --flash-port keeps the address as given)."""
+    address = request.config.getoption("flash_port", None) or request.config.getoption("port", None) or ""
+    if "oep://" not in str(address):
+        return None
     try:
         return request.getfixturevalue("oep_host")
     except pytest.FixtureLookupError:
@@ -50,7 +74,7 @@ def files(dut, record_property, label):
 
 def test_sd_spi(dut, request, record_property):
     case = settings(__file__)
-    pads = require(host_of(request), case["target"], "spisd")
+    pads = pads_of(request, case["target"], "spisd")
     ready(dut, case)
     p = {role: line["pin"] for role, line in pads.items()}
     m = ask(dut, f"spi {p['spisd_sck']} {p['spisd_miso']} {p['spisd_mosi']} {p['spisd_cs']} 4000000",
@@ -63,7 +87,7 @@ def test_sd_spi(dut, request, record_property):
 
 def test_sd_sdio(dut, request, record_property):
     case = settings(__file__)
-    pads = require(host_of(request), case["target"], "sdio")
+    pads = pads_of(request, case["target"], "sdio")
     ready(dut, case)
     p = {role: line["pin"] for role, line in pads.items()}
     wide = all(f"sdio_d{i}" in p for i in (1, 2, 3))
