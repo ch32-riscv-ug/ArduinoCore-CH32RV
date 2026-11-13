@@ -12,7 +12,7 @@ def test_default_collection_is_board_free():
     config = tomllib.loads((TESTS / "pyproject.toml").read_text())
     pytest_config = config["tool"]["pytest"]["ini_options"]
     assert pytest_config["testpaths"] == ["unit", "platform"]
-    assert set(HARDWARE) <= set(pytest_config["norecursedirs"])
+    assert set(HARDWARE) | {"hw"} <= set(pytest_config["norecursedirs"])
     # The one pytest configuration is tests/pyproject.toml; from the repository root it is named with -c.
     assert not (REPO / "pytest.ini").exists()
 
@@ -29,9 +29,14 @@ def test_new_workspace_has_no_board_sketch_or_legacy_harness():
         p for p in TESTS.rglob("*")
         if p.is_file() and not ignored.intersection(p.relative_to(TESTS).parts)
     ]
-    assert all("sketch_support" in p.relative_to(TESTS).parts
-               for p in sources if p.suffix == ".ino")
-    assert not [p for p in sources if p.name == "conftest.py"]
+    # Sketches live in sketch_support, or beside their test in hw/<test>/ (pytest-embedded-arduino-cli's layout,
+    # outside the default collection); hw/conftest.py is the one conftest.
+    for p in sources:
+        if p.suffix == ".ino":
+            parts = p.relative_to(TESTS).parts
+            assert "sketch_support" in parts or parts[0] == "hw", str(p)
+    assert [p.relative_to(TESTS) for p in sources if p.name == "conftest.py"] in (
+        [], [pathlib.Path("hw/conftest.py")])
     config = tomllib.loads((TESTS / "pyproject.toml").read_text())
     assert config["project"]["dependencies"] == ["pytest>=8"]
     for path in sources:
