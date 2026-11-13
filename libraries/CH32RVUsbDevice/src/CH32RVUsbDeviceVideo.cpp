@@ -331,7 +331,9 @@ bool video_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWr
         w.u8(1);
     }
 
-    return w.length - start == v.descriptorLength(hs);
+    /* At SuperSpeed the writer follows the endpoint with its companion (6),
+     * which descriptorLength() does not count. */
+    return w.length - start == (uint32_t)v.descriptorLength(hs) + (w.companions ? 6u : 0u);
 }
 
 static const CH32RVUsbFunctionType video_type = {video_descriptor, 2, 2, nullptr, 0};
