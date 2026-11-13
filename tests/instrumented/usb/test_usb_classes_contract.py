@@ -126,9 +126,10 @@ def test_usb_classes_contract(dut, record_property):
     numbers = [i.bInterfaceNumber for i in dev.get_active_configuration()]
     usb.util.dispose_resources(dev)
     with host.claimed(numbers) as dev:
-        assert dev.bcdUSB == 0x0210
+        # CH32RVUsbDeviceCore: 0x0320 on a SuperSpeed link (H417's USBSS), 0x0210 with the BOS otherwise.
+        assert dev.bcdUSB == (0x0320 if dev.speed == usb.util.SPEED_SUPER else 0x0210), hex(dev.bcdUSB)
         itfs = {(i.bInterfaceClass, i.bInterfaceSubClass): i.bInterfaceNumber for i in dev.get_active_configuration()}
-        assert {(0xFF, 0), (0x08, 0x06), (0x0B, 0), (0xFE, 0x01)} <= set(itfs)
+        assert {(0xFF, 0x4F), (0x08, 0x06), (0x0B, 0), (0xFE, 0x01)} <= set(itfs)
         dfu_name = usb.util.get_string(dev, next(i for i in dev.get_active_configuration()
                                                  if i.bInterfaceClass == 0xFE).iInterface)
         assert dfu_name == "CH32RV"
@@ -150,12 +151,12 @@ def test_usb_classes_contract(dut, record_property):
         assert len(ms) == length == struct.unpack_from("<H", ms, 8)[0]
         subsets = [ms[o + 4] for o in range(10, len(ms) - 4)
                    if ms[o:o + 4] == bytes([8, 0, 2, 0])]
-        assert sorted(subsets) == sorted([itfs[(0xFF, 0)], itfs[(0xFE, 0x01)]]), subsets
+        assert sorted(subsets) == sorted([itfs[(0xFF, 0x4F)], itfs[(0xFE, 0x01)]]), subsets
         assert ms.count(b"WINUSB") == 2
         assert utf16(GUID) in ms and ms.count(utf16("DeviceInterfaceGUIDs")) == 1
 
         # usb.vendor-request and usb.vendor-round-trip.
-        assert bytes(dev.ctrl_transfer(0xC1, 0x10, 0, itfs[(0xFF, 0)], 4)) == b"CH32"
+        assert bytes(dev.ctrl_transfer(0xC1, 0x10, 0, itfs[(0xFF, 0x4F)], 4)) == b"CH32"
         v_in, v_out = endpoints(interface(dev, 0xFF))
         payload = secrets.token_bytes(200)
         v_out.write(payload, timeout=2000)

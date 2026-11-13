@@ -4,7 +4,9 @@
  * file (/CH32TEST.BIN).
  *
  *   ready <nonce>                      READY <nonce> <build id>
- *   spi <sck> <miso> <mosi> <cs> <hz>  SPI <ok> <card type> <sectors> <FAT type>
+ *   spi <sck> <miso> <mosi> <cs> <hz>  SPI <ok> <card type> <sectors> <FAT type> <hw|soft>
+ *                                      (SoftSPI when no SPI instance reaches those pads, as on an SDIO
+ *                                      slot: nanoCH32H417)
  *   sdio <ck> <cmd> <d0> [<d1> <d2> <d3>] <khz>
  *                                      SDIO <ok> <card type> <sectors> <FAT type> <clock kHz> <bits>
  *   files <kb>                         FILES <ok> <write ms> <read ms> <entries in />
@@ -15,6 +17,7 @@
 #include <SerialDMSeq.h>
 #include <SD.h>
 #include <SD_MMC.h>
+#include <SoftSPI.h>
 #include <string.h>
 
 #ifndef BENCH_BUILD_ID
@@ -22,6 +25,7 @@
 #endif
 
 static FatFS *mounted;
+static SoftSPI *soft;
 static char line[96];
 static uint8_t used;
 static uint8_t block[2048];
@@ -77,11 +81,19 @@ static void reply(char *command)
     if (!strcmp(argv[0], "ready") && argc == 2) {
         SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "spi") && argc == 6) {
-        SPI.begin(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
-        const bool ok = SD.begin((uint8_t)atoi(argv[4]), SPI, (uint32_t)atol(argv[5]));
+        const int sck = atoi(argv[1]), miso = atoi(argv[2]), mosi = atoi(argv[3]);
+        const bool hw = SPI.begin(sck, miso, mosi);
+        if (!hw && !soft) {
+            soft = new SoftSPI((uint8_t)sck, (uint8_t)miso, (uint8_t)mosi);
+        }
+        if (!hw) {
+            soft->begin(sck, miso, mosi);
+        }
+        SPIClass &bus = hw ? (SPIClass &)SPI : (SPIClass &)*soft;
+        const bool ok = SD.begin((uint8_t)atoi(argv[4]), bus, (uint32_t)atol(argv[5]));
         mounted = ok ? &SD : nullptr;
-        SerialDMSeq.printf("SPI %d %d %lu %d\r\n", ok ? 1 : 0, (int)SD.cardType(), (unsigned long)SD.numSectors(),
-                           (int)SD.fatType());
+        SerialDMSeq.printf("SPI %d %d %lu %d %s\r\n", ok ? 1 : 0, (int)SD.cardType(), (unsigned long)SD.numSectors(),
+                           (int)SD.fatType(), hw ? "hw" : "soft");
     } else if (!strcmp(argv[0], "sdio") && (argc == 5 || argc == 8)) {
         const bool pins = argc == 8 ? SD_MMC.setPins(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]),
                                                      atoi(argv[5]), atoi(argv[6]))

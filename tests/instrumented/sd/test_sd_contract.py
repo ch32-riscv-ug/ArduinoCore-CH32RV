@@ -28,6 +28,10 @@ def pads_of(request, target, feature):
         return found
     buses, roles = RECORD_ROLES[feature]
     sd = (target.get("record") or {}).get("parts", {}).get("sd") or {}
+    if feature == "spisd" and sd.get("bus") == "sd4":
+        # An SDIO slot in SPI mode: CLK is SCK, CMD MOSI, DAT0 MISO and DAT3 the chip select (the sketch falls back
+        # to SoftSPI where no SPI instance reaches the pads).
+        sd = dict(bus="spi", sck=sd["clk"], mosi=sd["cmd"], miso=sd["dat0"], cs=sd["dat3"])
     if sd.get("bus") in buses:
         return {roles[k]: dict(pad=v.upper(), pin=pin_number(v)) for k, v in sd.items() if k in roles}
     pytest.skip(f"{feature}: the probe labels no " + ", ".join(missing)
@@ -78,9 +82,10 @@ def test_sd_spi(dut, request, record_property):
     ready(dut, case)
     p = {role: line["pin"] for role, line in pads.items()}
     m = ask(dut, f"spi {p['spisd_sck']} {p['spisd_miso']} {p['spisd_mosi']} {p['spisd_cs']} 4000000",
-            rb"SPI (\d) (\d) (\d+) (\d)", timeout=20)
+            rb"SPI (\d) (\d) (\d+) (\d) (\w+)", timeout=20)
     assert m.group(1) == b"1", "no card answered, or it holds no FAT volume"
     record_property("spisd_card", CARD_TYPES.get(int(m.group(2)), m.group(2).decode()))
+    record_property("spisd_bus", m.group(5).decode())
     assert int(m.group(3)) > 0 and int(m.group(4)) > 0
     files(dut, record_property, "spisd")
 

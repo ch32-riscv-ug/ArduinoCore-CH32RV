@@ -23,14 +23,15 @@ from usb_host import APP, ISP, PcUsbHost, endpoints, interface
 def test_usb_contract(dut, record_property):
     settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
     build_id = settings["build_id"]
-    host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
-    # usb.enumerate: this build, at this topology, with every declared function.
+    # usb.enumerate: this build, at this topology, with every declared function. The sketch first (begin()'s error
+    # when it failed), then the host.
     nonce = secrets.token_hex(4)
     dut.write(f"ready {nonce}\n")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
+    host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
     assert host.wait_ids(APP, 10), "application device did not enumerate"
     deadline = time.monotonic() + 5
     while build_id not in host.product() and time.monotonic() < deadline:
