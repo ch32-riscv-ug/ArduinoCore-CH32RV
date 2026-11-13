@@ -56,7 +56,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 | `oep.probe.memo/port/<口>` | OEP（§4.3） | `target`（`<系統>-<UID>`、照合に使う）、`part`（チップ ID で決まらないときの型番）、`note` |
 | `io.github.ch32-riscv-ug.arduino/port/<口>` | このコア | `board`（`<作り手>:<型>`）、`supply`（`{from: probe \| usb \| other}`）、`usb`（`{to: host}`、`{to: esp32-s3 \| esp32-p4, serial と mac の一方または両方}`、`{to: rp2040, port}`）、`parts`（`{sd: {bus, <信号>: <端子>}, eth: {to: lan}}`）、`pd`（`{max_mv, vbus_pin, vbus_ratio}`）、`defects`（`[{id, lose: [機能], why}]`）、`note`、`updated` |
 
-名前、形、メンバーごとの決まり、読み方と書き方は [RECORDS.ja.md](RECORDS.ja.md) にあります（検査の実装は [harness/records.py](harness/records.py)）。書くときは `tests/bench_record.py set`（同じセッションの中で読んで書き、渡した項目だけを変え、ほかの道具の項目は残す）、見るときは `show` を使います。正しい中身はホストの側にも残してください。WCH-Link は記録を持てないので、記録の要る試験（sd、eth、usb の相手など）は流れません。ただし `CH32RV_PROBE` の WCH-Link には、対の `CH32RV_PROBE_RECORD` で同じ形の記録を渡せます（[RECORDS.ja.md](RECORDS.ja.md) §5）。プローブが運べない console（WCH-Link(CH549) の SDI など）は、`ch32rv capabilities` の答えで飛ばします。チップ ID で型番が決まらない Link の相手には、`CH32RV_CHIP` を書きます。
+名前、形、メンバーごとの決まり、読み方と書き方は [RECORDS.ja.md](RECORDS.ja.md) にあります（検査の実装は [harness/records.py](harness/records.py)）。書くときは `tests/bench_record.py set`（同じセッションの中で読んで書き、渡した項目だけを変え、ほかの道具の項目は残す）、見るときは `show` を使います。正しい中身はホストの側にも残してください。WCH-Link は記録を持てないので、記録の要る試験（sd、eth、usb の相手など）は流れません。ただし WCH-Link には、tests/.env の `CH32RV_PROBE_RECORD_<serial>`（`wchlink://<serial>` と同じ serial）で同じ形の記録を渡せます（[RECORDS.ja.md](RECORDS.ja.md) §5）。プローブが運べない console（WCH-Link(CH549) の SDI など）は、`ch32rv capabilities` の答えで飛ばします。チップ ID で型番が決まらない Link の相手には、`CH32RV_CHIP` を書きます。
 
 ```sh
 uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035s3 \

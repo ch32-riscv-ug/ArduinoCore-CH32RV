@@ -206,8 +206,10 @@ def tool_paths():
 
 def isolated_environment(work, tool, toolchain):
     env = dict(os.environ)
-    for key in ("CH32RV_PROBE", "CH32RV_PROBE_RECORD", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
+    for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
         env.pop(key, None)
+    for key in [k for k in env if k.startswith(places.LINK_RECORD_PREFIX)]:
+        env.pop(key)
     env["ARDUINO_DIRECTORIES_USER"] = str(work / "user")
     # Packages a profile installs (an ESP32 peer's pinned core and libraries)
     # live in a cache of the bench's own, kept between runs: a fresh one would
@@ -486,7 +488,7 @@ def main(argv=None):
     args, parser = parse_options(argv)
     chip = os.environ.get("CH32RV_CHIP")       # read before the isolated environment drops it (place.resolve)
     try:
-        link_records = places.link_record_from_env()
+        link_records = places.link_records_from_env()
     except places.PlaceError as error:
         parser.error(str(error))
     tool, toolchain, versions = tool_paths()

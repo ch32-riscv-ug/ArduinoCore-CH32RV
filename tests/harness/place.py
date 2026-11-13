@@ -386,12 +386,12 @@ def probe_capabilities(tool, address, part, log, env):
 def resolve(address, tool, env, logs, *, chip=None, link_record=None):
     """The place of `address`: the facts above, as one dict (run_hardware.py stages it as case.json's target).
     chip: the part when the chip ID leaves several and no record names it (CH32RV_CHIP, ch32rv's own variable).
-    link_record: a WCH-Link's core record, which it cannot keep itself (CH32RV_PROBE_RECORD, for the Link that
-    CH32RV_PROBE names); an OEP port's record is the one on its probe."""
+    link_record: a WCH-Link's core record, which it cannot keep itself (CH32RV_PROBE_RECORD_<serial>); an OEP
+    port's record is the one on its probe."""
     parsed = parse(address)
     if link_record is not None and parsed["kind"] == "oep":
         raise PlaceError(f"{address}: an OEP port keeps its record on the probe (tests/bench_record.py set); "
-                         "CH32RV_PROBE_RECORD is for a WCH-Link")
+                         "CH32RV_PROBE_RECORD_<serial> is for a WCH-Link")
     place = dict(address=address, kind=parsed["kind"], warnings=[])
     if parsed["kind"] == "oep":
         topology, vid, pid, serial = usb_device(parsed["unit"])
@@ -491,29 +491,32 @@ def canonical(address):
     return f"wchlink://{parsed['serial']}" if parsed["kind"] == "wchlink" else address
 
 
-def link_record_from_env(path=None):
-    """{CH32RV_PROBE's address: CH32RV_PROBE_RECORD} when both are set: the core record (RECORDS.ja.md §4, the
-    same members and checks) of the WCH-Link that CH32RV_PROBE names, which keeps no record of its own. The pair
-    goes together in tests/.env; another --probe does not get it. {} when CH32RV_PROBE_RECORD is not set."""
-    text = os.environ.get("CH32RV_PROBE_RECORD", "").strip()
-    if not text:
-        return {}
-    address = address_from_env(path)
-    if not address:
-        raise PlaceError("CH32RV_PROBE_RECORD is the record of the WCH-Link CH32RV_PROBE names; CH32RV_PROBE is not set")
-    if parse(address)["kind"] != "wchlink":
-        raise PlaceError(f"CH32RV_PROBE_RECORD: CH32RV_PROBE is {address}, an OEP port, which keeps its record on the "
-                         "probe (tests/bench_record.py set); the variable is for a WCH-Link")
-    try:
-        record = json.loads(text)
-    except json.JSONDecodeError as error:
-        raise PlaceError(f"CH32RV_PROBE_RECORD is not JSON: {error}")
-    if not isinstance(record, dict):
-        raise PlaceError("CH32RV_PROBE_RECORD is not a JSON object")
-    problems = records.check_core(record)
-    if problems:
-        raise PlaceError("CH32RV_PROBE_RECORD: " + "; ".join(problems))
-    return {canonical(address): record}
+LINK_RECORD_PREFIX = "CH32RV_PROBE_RECORD_"
+
+
+def link_records_from_env(environ=None):
+    """{wchlink://<serial>: record} from CH32RV_PROBE_RECORD_<serial> (tests/.env, single-quoted JSON): the core
+    record (RECORDS.ja.md §4, the same members and checks) of the WCH-Link wchlink://<serial>, which keeps no record
+    of its own. An OEP port's record is the one on its probe."""
+    environ = os.environ if environ is None else environ
+    out = {}
+    for key, text in environ.items():
+        if not key.startswith(LINK_RECORD_PREFIX):
+            continue
+        serial = key[len(LINK_RECORD_PREFIX):]
+        if not re.fullmatch(r"[0-9A-Za-z]{8,32}", serial):
+            raise PlaceError(f"{key}: the name ends in a WCH-Link's USB serial (wchlink://<serial>)")
+        try:
+            record = json.loads(text)
+        except json.JSONDecodeError as error:
+            raise PlaceError(f"{key} is not JSON ({error}); in tests/.env, put it in single quotes")
+        if not isinstance(record, dict):
+            raise PlaceError(f"{key} is not a JSON object")
+        problems = records.check_core(record)
+        if problems:
+            raise PlaceError(f"{key}: " + "; ".join(problems))
+        out[canonical(f"wchlink://{serial}")] = record
+    return out
 
 
 def address_from_env(path=None):

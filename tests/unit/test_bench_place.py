@@ -272,21 +272,15 @@ def test_a_wch_link_takes_its_record_from_the_environment(monkeypatch, tmp_path)
                      link_record={"usb": {"to": "esp32-s3"}})
 
 
-def test_the_link_record_pairs_with_ch32rv_probe(monkeypatch, tmp_path):
-    env = tmp_path / ".env"
-    env.write_text("CH32RV_PROBE=wchlink://bc5f4b9807f7\n")
-    monkeypatch.delenv("CH32RV_PROBE", raising=False)
-    monkeypatch.delenv("CH32RV_PROBE_RECORD", raising=False)
-    assert place.link_record_from_env(env) == {}
-    monkeypatch.setenv("CH32RV_PROBE_RECORD", '{"parts": {"eth": {"to": "lan"}}}')
-    got = place.link_record_from_env(env)
-    assert got == {"wchlink://BC5F4B9807F7": {"parts": {"eth": {"to": "lan"}}}}
-    assert got.get(place.canonical("wchlink://BC5F4B9807F7")) and not got.get(place.canonical("wchlink://FBC18F0680B0"))
-    monkeypatch.setenv("CH32RV_PROBE", "oep://30eda0e31108/x035")
-    with pytest.raises(place.PlaceError, match="an OEP port"):
-        place.link_record_from_env(env)
-    monkeypatch.setenv("CH32RV_PROBE", "wchlink://BC5F4B9807F7")
-    for bad, why in (("[1]", "not a JSON object"), ("{", "not JSON"), ('{"parts": {"eth": {}}}', "CH32RV_PROBE_RECORD: ")):
-        monkeypatch.setenv("CH32RV_PROBE_RECORD", bad)
+def test_a_link_record_is_named_by_the_links_serial():
+    eth = '{"parts": {"eth": {"to": "lan"}}}'
+    assert place.link_records_from_env({"CH32RV_PROBE": "wchlink://x"}) == {}
+    got = place.link_records_from_env({"CH32RV_PROBE_RECORD_bc5f4b9807f7": eth, "CH32RV_PROBE_RECORD_49808F06CE30": eth})
+    assert set(got) == {"wchlink://BC5F4B9807F7", "wchlink://49808F06CE30"}
+    assert got[place.canonical("wchlink://bc5f4b9807f7")] == {"parts": {"eth": {"to": "lan"}}}
+    for key, bad, why in (("CH32RV_PROBE_RECORD_BC5F4B9807F7", "[1]", "not a JSON object"),
+                          ("CH32RV_PROBE_RECORD_BC5F4B9807F7", '{"parts": {"eth": {"to": "lan"}}', "single quotes"),
+                          ("CH32RV_PROBE_RECORD_BC5F4B9807F7", '{"parts": {"eth": {}}}', "CH32RV_PROBE_RECORD_BC5F4B9807F7: "),
+                          ("CH32RV_PROBE_RECORD_x", eth, "USB serial")):
         with pytest.raises(place.PlaceError, match=why):
-            place.link_record_from_env(env)
+            place.link_records_from_env({key: bad})
