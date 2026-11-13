@@ -35,8 +35,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   M030（F90E8F067DFD）で DUT が 1 バイトも受けない。記録に「Link の UART がどの端子につながっているか」を書く欄が無い。
 - [ ] **プローブ（P4X）の I2C の相手が 1 ビット早く送る**: 5-1 / 5-2 の wire・softwire で、Sr のあとの読みの 3 バイト目などが
   左に 1 ビット寄る（[oep] の解析）。ファームの確かめはユーザーの確認待ち（[oep]）。
-- [ ] **ch32rv のモニターが、standby 中の書き込みで終わる**: DUT が standby にいる間にコンソールへ書くと 'transfer-failed
-  reason 0x0a' で終わり、つなぎ直さない。5-1 V203 の system（deepSleep）はこれで落ちる（V205 は起床が速く間に合う）。[ch32rv] に依頼。
+- [ ] **standby から起きた DUT のコンソールが届かない（OEP のプローブ側）**: 5-1 V203 の deepSleep のあと、プローブ
+  （e8f60ae84e28、0.0.55+20b7418）の console のストリームは開いたまま（is_open = true）で書き込みも受け付け、切れたことを
+  知らせないので、ch32rv がつなぎ直さず黙る（[ch32rv] の計装版の trace で確認、2026-11-13）。5-1 の system はこれで落ちる。
+  V205（30eda0e31108）では通る。[ch32rv] から [oep] に引き継ぎ済み。ch32rv 側は、書き込みが no_resource で断られたら
+  つなぎ直すよう直した（以前は 'transfer-failed 0x0a' で終わっていた）。
 - [ ] **ch32rv の次の版を同梱する**: 試作版で確かめた 3 件（OEP の flash の attached-under-reset、H417 の RTT を core 1 で読む、
   stub で書く前の reset-halt = 走っている Ethernet の DMA で書き込みが壊れる件）が出たら上げ、全台を流す。
 
