@@ -1,0 +1,2 @@
+[defines]
+CH32_TEST_BUILD_ID = "BENCH_BUILD_ID"

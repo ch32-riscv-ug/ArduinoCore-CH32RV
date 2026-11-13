@@ -17,6 +17,8 @@ Thumbs.db
 *.hex
 *.bin
 /work/
+# pytest-embedded-arduino-cli builds a sketch in <sketch>/build/<profile>
+/tests/hw/**/build/
 
 # pytest / uv test environment (tests/uv.lock IS tracked)
 .venv/

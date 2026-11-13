@@ -17,5 +17,12 @@ hardware = [
 [tool.pytest.ini_options]
 testpaths = ["unit", "platform"]
 norecursedirs = [".*", "__pycache__", "single", "loopback", "peer",
-                "instrumented", "manual", "fixtures", "diagnostics"]
+                "instrumented", "manual", "fixtures", "diagnostics", "hw"]
 addopts = "-ra --strict-markers --import-mode=importlib"
+pythonpath = ["."]
+# The bench's combinations (tests/hw; profiles in tests/hw/profiles.toml, ports in tests/.env). One per board with
+# its standard wiring - every case it can run - and one per configuration that differs (probe route, peer, clock).
+arduino_combos = [
+  "x035c8t6-s3: primary=x035c8t6-s3",
+  "x035f8u6-s3: primary=x035f8u6-s3",
+]

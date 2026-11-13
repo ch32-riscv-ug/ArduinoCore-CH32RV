@@ -257,6 +257,22 @@ def series_of(part, caps):
     return max(found, key=len) if found else None
 
 
+def static_reason(case, part, items=None, caps=None):
+    """Why `part` cannot run `case`, from the configuration alone (coverage.toml, the variants), or None: the
+    collection-time half of choose_cases (tests/hw, harness/pytest_bench.py)."""
+    if items is None:
+        items, caps = series_needs()
+    series = series_of(part, caps)
+    if series is None:
+        return f"{part}: no series in the variants"
+    from harness.series import part_capabilities
+    whole = caps
+    caps = dict(caps, **{series: part_capabilities(series, part, whole)})
+    if series_has(case, series, items, caps, part):
+        return None
+    return f"{part} has no {case}" if series_has(case, series, items, whole, part) else f"{series} has no {case}"
+
+
 def choose_cases(place, items=None, caps=None):
     """{case: 'run' | 'skip: <why>'} for the place."""
     if items is None:

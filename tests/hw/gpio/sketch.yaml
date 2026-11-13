@@ -1,0 +1,12 @@
+# Written by harness/profiles.py from tests/hw/profiles.toml - edit those, not this file.
+profiles:
+  x035c8t6-s3:
+    fqbn: ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6,rstpin=reset,iwdg=sw
+    port_config:
+      source: dmseq
+      chip: CH32X035C8T6
+  x035f8u6-s3:
+    fqbn: ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6,rstpin=reset,iwdg=sw
+    port_config:
+      source: dmseq
+      chip: CH32X035F8U6

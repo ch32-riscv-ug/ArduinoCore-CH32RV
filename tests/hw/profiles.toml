@@ -1,0 +1,13 @@
+# The bench's profiles: one per board (its name: the part number without CH32, lower case, then the marks the
+# naming rule adds - the board when the same part is on two, the USB peer it is wired to) and per configuration
+# that differs from the standard one (the probe route, a CPU Clock). harness/profiles.py writes them into every
+# tests/hw/*/sketch.yaml; the ports are the machine's (tests/.env: TEST_SERIAL_PORT_<PROFILE>).
+#
+# part:    the chip (fqbn pnum=, and the place's chip must be the same)
+# options: menu values beside the board's defaults ("clock=8")
+
+[x035c8t6-s3]
+part = "CH32X035C8T6"
+
+[x035f8u6-s3]
+part = "CH32X035F8U6"

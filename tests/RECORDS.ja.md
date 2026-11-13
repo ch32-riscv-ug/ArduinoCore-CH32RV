@@ -141,22 +141,22 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
 
 ```sh
 # 見る
-uv run --project tests --locked --extra hardware python tests/bench_record.py show oep://30eda0e31108/x035s3
+uv run --project tests --locked --extra hardware python tests/bench_record.py show oep://30eda0e31108/x035f8u6-s3
 
 # 書く（--target auto はチップを読んで target を入れる）
-uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035s3 \
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035f8u6-s3 \
   --target auto --board weact:CH32X035-CoreBoard-V1.0 --supply usb --usb esp32-s3,serial=58FA041040,mac=e4b063b49f2c
 
 # メンバーを消す
-uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035 --remove pd
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035c8t6-s3 --remove pd
 
 # その口で何が流れるか（流さずに見る）
-uv run --project tests --locked --extra hardware python tests/bench_record.py plan oep://30eda0e31108/x035
+uv run --project tests --locked --extra hardware python tests/bench_record.py plan oep://30eda0e31108/x035c8t6-s3
 ```
 
 ## 7. 例
 
-2026-11-05 のプローブ 30eda0e31108 の口 `x035s3` です。
+2026-11-05 のプローブ 30eda0e31108 の口 `x035s3`（2026-11-13 から `x035f8u6-s3`）です。
 
 `oep.probe.memo/port/x035s3`:
 
@@ -170,7 +170,7 @@ uv run --project tests --locked --extra hardware python tests/bench_record.py pl
 {"board":"weact:CH32X035-CoreBoard-V1.0","supply":{"from":"usb"},"usb":{"to":"esp32-s3","serial":"58FA041040","mac":"e4b063b49f2c"},"note":"powered from the ESP32-S3's USB host port","updated":"2026-11-05"}
 ```
 
-同じプローブの口 `x035` の、不具合の例です。
+同じプローブの口 `x035`（2026-11-13 から `x035c8t6-s3`）の、不具合の例です。
 
 ```json
 {"board":"wch:CH32X035C8T-R0","defects":[{"id":"x035-adc-ch-i2c-unavailable","lose":["i2c","adc:3","adc:7","adc:11","adc:15"],"why":"lot digit 5 from the end is 0 (errata); I2C1 drives SDA high, the ADC channels read the previous one; confirmed 2026-11-03"}],"updated":"2026-11-05"}

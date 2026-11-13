@@ -18,17 +18,17 @@ def runner(monkeypatch):
 
 
 def test_the_address_is_the_only_setting_and_env_does_not_enable_execution(runner, monkeypatch, tmp_path):
-    monkeypatch.setenv('CH32RV_PROBE', 'oep://30eda0e31108/x035')
+    monkeypatch.setenv('CH32RV_PROBE', 'oep://30eda0e31108/x035c8t6-s3')
     monkeypatch.setenv('OEP_HW_RESULTS', str(tmp_path / 'results'))
     a, _ = runner.parse_options([])
     b, _ = runner.parse_options([])
     assert not a.execute
-    assert a.probe == ['oep://30eda0e31108/x035']
+    assert a.probe == ['oep://30eda0e31108/x035c8t6-s3']
     assert a.out.parent == tmp_path / 'results' and a.out != b.out
     assert not a.out.exists()
-    explicit, _ = runner.parse_options(['--probe', 'wchlink://FB868F068059', '--probe', 'oep://30eda0e31108/x035s3',
+    explicit, _ = runner.parse_options(['--probe', 'wchlink://FB868F068059', '--probe', 'oep://30eda0e31108/x035f8u6-s3',
                                         '--out', 'run'])
-    assert explicit.probe == ['wchlink://FB868F068059', 'oep://30eda0e31108/x035s3'] and explicit.out == Path('run')
+    assert explicit.probe == ['wchlink://FB868F068059', 'oep://30eda0e31108/x035f8u6-s3'] and explicit.out == Path('run')
 
 
 def test_no_address_does_not_search_for_equipment(runner, monkeypatch, tmp_path):
@@ -41,7 +41,7 @@ def test_no_address_does_not_search_for_equipment(runner, monkeypatch, tmp_path)
 
 def test_duplicate_addresses_are_refused(runner):
     with pytest.raises(SystemExit):
-        runner.parse_options(['--probe', 'oep://30eda0e31108/x035', '--probe', 'OEP://30EDA0E31108/X035', '--out', 'r'])
+        runner.parse_options(['--probe', 'oep://30eda0e31108/x035c8t6-s3', '--probe', 'OEP://30EDA0E31108/X035C8T6-S3', '--out', 'r'])
 
 
 def test_restarts_are_startup_lines_after_the_first_line_of_a_test(runner, tmp_path):

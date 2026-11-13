@@ -42,7 +42,7 @@ uv run --project tests --locked --extra hardware --env-file tests/.env python te
 
 # 相手を並べる、case を選ぶ
 uv run --project tests --locked --extra hardware python tests/run_hardware.py --execute \
-  --probe oep://30eda0e31108/x035 --probe wchlink://FB868F068059 --case gpio --out work/run1
+  --probe oep://30eda0e31108/x035c8t6-s3 --probe wchlink://FB868F068059 --case gpio --out work/run1
 ```
 
 `--probe` と `--out` は環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ち、ベンチの共通ロックは取りません。`--case` で、その相手で流せない case を求めると、理由つきの SKIP になります。
@@ -59,7 +59,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 名前、形、メンバーごとの決まり、読み方と書き方は [RECORDS.ja.md](RECORDS.ja.md) にあります（検査の実装は [harness/records.py](harness/records.py)）。書くときは `tests/bench_record.py set`（同じセッションの中で読んで書き、渡した項目だけを変え、ほかの道具の項目は残す）、見るときは `show` を使います。正しい中身はホストの側にも残してください。WCH-Link は記録を持てないので、記録の要る試験（sd、eth、usb の相手など）は流れません。ただし WCH-Link には、tests/.env の `CH32RV_PROBE_RECORD_<serial>`（`wchlink://<serial>` と同じ serial）で同じ形の記録を渡せます（[RECORDS.ja.md](RECORDS.ja.md) §5）。プローブが運べない console（WCH-Link(CH549) の SDI など）は、`ch32rv capabilities` の答えで飛ばします。チップ ID で型番が決まらない Link の相手には、`CH32RV_CHIP` を書きます。
 
 ```sh
-uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035s3 \
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035f8u6-s3 \
   --target auto --board weact:CH32X035-CoreBoard-V1.0 --supply usb --usb esp32-s3,serial=58FA041040,mac=e4b063b49f2c
 ```
 

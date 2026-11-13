@@ -24,7 +24,7 @@ def sysfs(tmp_path, devices):
 
 def test_addresses():
     assert place.parse("oep://30EDA0E31108/x035") == dict(kind="oep", unit="30eda0e31108", port="x035", target=None)
-    assert place.parse("oep://30eda0e31108/x035/ch32x035-1FF9")["target"] == "ch32x035-1ff9"
+    assert place.parse("oep://30eda0e31108/x035c8t6-s3/ch32x035-1FF9")["target"] == "ch32x035-1ff9"
     assert place.parse("wchlink://fb868f068059") == dict(kind="wchlink", serial="FB868F068059")
     for bad in ("oep://30eda0e31108", "/dev/ttyACM0", "oep://x/x035", "usb", "wchlink://"):
         with pytest.raises(place.PlaceError):
@@ -49,7 +49,7 @@ def test_fqbn_and_clock_come_from_boards_txt():
         place.fqbn_of("CH32X999Z9")
 
 
-def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, address="oep://30eda0e31108/x035",
+def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, address="oep://30eda0e31108/x035c8t6-s3",
                  link_record=None, capabilities=None):
     root = sysfs(tmp_path, {"3-1.4.2": ("1209", "4f45", "30eda0e31108")})
     monkeypatch.setattr(place, "SYSFS", root)
@@ -88,7 +88,7 @@ def test_another_board_on_the_port_is_refused(monkeypatch, tmp_path):
     with pytest.raises(place.PlaceError, match="another board"):
         fake_resolve(monkeypatch, tmp_path, info=X035, port_record={"target": "ch32x035-0123456789abcdef"})
     with pytest.raises(place.PlaceError, match="the address names"):
-        fake_resolve(monkeypatch, tmp_path, info=X035, address="oep://30eda0e31108/x035/ch32x035-0123456789abcdef")
+        fake_resolve(monkeypatch, tmp_path, info=X035, address="oep://30eda0e31108/x035c8t6-s3/ch32x035-0123456789abcdef")
 
 
 def test_an_ambiguous_chip_takes_the_recorded_part_only_if_it_is_a_candidate(monkeypatch, tmp_path):

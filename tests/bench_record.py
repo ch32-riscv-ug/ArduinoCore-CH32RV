@@ -55,7 +55,7 @@ def show(address):
 
 def tool():
     sys.path.insert(0, str(place.REPO / "tests"))
-    from run_hardware import tool_paths
+    from harness.workspace import tool_paths
     return tool_paths()[0]
 
 
