@@ -562,9 +562,15 @@ void ch32rv_power_standby(void)
     ch32rv_rtc_raw(&s, &m);
     rtc_add(&s, &m, ch32rv_power_wake.timer_ms);
     ch32rv_rtc_alarm(s + (m ? 1u : 0u));       /* the alarm is whole seconds: round up */
-    CH32RV_EXTI_RTENR |= 1u << ALARM_LINE;     /* the alarm's rising edge ends standby */
-    CH32RV_EXTI_INTENR |= 1u << ALARM_LINE;
-    CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
+    /* Only the alarm: standby loses RAM and every peripheral anyway, and a
+     * line left on - a pin wakeup's falling edge (lightSleep() earlier) or an
+     * attachInterrupt() - ended standby without the wake flags, so the next
+     * boot read no cause (V203 2026-11-13, after a pin lightSleep). */
+    CH32RV_EXTI_INTENR = 1u << ALARM_LINE;
+    CH32RV_EXTI_EVENR = 0;
+    CH32RV_EXTI_FTENR = 0;
+    CH32RV_EXTI_RTENR = 1u << ALARM_LINE;     /* the alarm's rising edge ends standby */
+    CH32RV_EXTI_INTFR = 0xFFFFFFFFu;
     PWR_CTLR |= PWR_CTLR_CWUF;
 #if defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103)
     /* FLASH_LP [11:10] = 10 (flash low-power mode 1), as the EVT's
