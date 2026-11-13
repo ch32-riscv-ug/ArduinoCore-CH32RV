@@ -7,8 +7,9 @@ on a profile is decided in two steps:
 1. At collection, from the configuration only (no equipment): the profile's fqbn names the part, and the part's
    series has the case or not (coverage.toml, the variants) - pytest_arduino_cli_skip_reason.
 2. Before a test's fixtures, from the equipment: the port the profile resolves to (TEST_SERIAL_PORT_<PROFILE>) is
-   read once a session (harness/place.py: the probe's labels and records, a WCH-Link's CH32RV_PROBE_RECORD_<serial>,
-   ch32rv's capabilities, the chip), and the case runs there or is skipped with the reason.
+   read once a session (harness/place.py: the probe's labels, ch32rv's capabilities, the chip; the core record from
+   oep-client's pytest plugin, port_memo_of: OEP_PORT_MEMO_<id>[_<port>] in tests/.env, else the probe's memo), and
+   the case runs there or is skipped with the reason.
 
 The other conftest jobs the guide allows: the workspace (the work tree's core in an isolated Arduino user
 directory, the pinned ch32rv and toolchain - "prepare the environment before the run") and the build id, a define
@@ -26,6 +27,7 @@ import yaml
 from harness import place as places
 
 _STATE = pytest.StashKey[dict]()
+_COMBINATION = pytest.StashKey[object]()
 _BUILD_ID = pytest.StashKey[str]()
 _PROFILE = pytest.StashKey[str]()
 _PLACE = pytest.StashKey[dict]()
@@ -43,8 +45,9 @@ def case_of(item):
 
 
 def _combination(item):
-    from pytest_embedded_arduino_cli import combination as combinations
-    return item.stash.get(combinations.COMBINATION, None)
+    """The item's combination as pytest_arduino_cli_skip_reason was given it (None outside --combo); a fixture would
+    ask for arduino_combination, but the setup hook below runs before the fixtures."""
+    return item.stash.get(_COMBINATION, None)
 
 
 def profile_fqbn(test_path, profile):
@@ -61,6 +64,7 @@ def part_of(fqbn):
 # 1. collection: the configuration only ----------------------------------------------------------------------------
 
 def pytest_arduino_cli_skip_reason(item, combination):
+    item.stash[_COMBINATION] = combination
     case = case_of(item)
     if case is None or combination is None or combination.primary is None:
         return None
@@ -84,12 +88,10 @@ def workspace(config):
         work.mkdir(parents=True)
         env = isolated_environment(work, tool, toolchain)
         env.pop("PYTEST_DISABLE_PLUGIN_AUTOLOAD", None)
-        link_records = places.link_records_from_env()   # read before the environment drops them
         for key in set(os.environ) - set(env):
             del os.environ[key]
         os.environ.update(env)
-        state["workspace"] = dict(work=work, tool=tool, toolchain=toolchain, versions=versions, env=env,
-                                  link_records=link_records)
+        state["workspace"] = dict(work=work, tool=tool, toolchain=toolchain, versions=versions, env=env)
     return state["workspace"]
 
 
@@ -107,13 +109,13 @@ def port_of_profile(profile):
 
 def place_of(config, port, part):
     """The place behind `port`, read once a session: the probe, its records, the chip (harness/place.py)."""
+    from oep_client.pytest_plugin import port_memo_of
     state = config.stash[_STATE]
     key = places.canonical(port)
     if key not in state["places"]:
         ws = workspace(config)
         logs = ws["work"] / "preflight" / key.replace("://", "-").replace("/", "-")
-        found = places.resolve(port, ws["tool"], ws["env"], logs, chip=part,
-                               link_record=ws["link_records"].get(key))
+        found = places.resolve(port, ws["tool"], ws["env"], logs, chip=part, record=port_memo_of(config, port))
         if found["chip"] != part:
             raise places.PlaceError(f"{port}: the profile's part is {part}, the chip there is {found['chip']}")
         state["places"][key] = found

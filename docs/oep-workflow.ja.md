@@ -29,10 +29,10 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 | wch-protocols | [ch32-riscv-ug/wch-protocols](https://github.com/ch32-riscv-ug/wch-protocols) | 実測の台帳（読むだけ） |
 | OEP の仕様 | [Open-Embedded-Probe/oep-spec](https://github.com/Open-Embedded-Probe/oep-spec) | probe と host の間のプロトコル |
 | OEP の probe | [Open-Embedded-Probe/oep-probe-arduino](https://github.com/Open-Embedded-Probe/oep-probe-arduino) | ESP32-P4、classic ESP32、RP2350 の probe の実装 |
-| OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側（純粋なモジュール） |
+| OEP の client | [Open-Embedded-Probe/oep-client-python](https://github.com/Open-Embedded-Probe/oep-client-python) | Python の host 側。extra `[pytest]` の pytest プラグインが `oep_host`、`oep_uart`、口の記録（`port_memo`）、ロックの名前 `probe:<id>`、RP2040 の書き込みを持つ |
 | WireSkein | [Open-Embedded-Probe/wireskein](https://github.com/Open-Embedded-Probe/wireskein) | ロジックの記録の解析と照合（純粋なモジュール） |
 | pytest-embedded-arduino-cli | [tanakamasayuki/pytest-embedded-arduino-cli](https://github.com/tanakamasayuki/pytest-embedded-arduino-cli) | pytest から arduino-cli で upload / monitor |
-| pytest-embedded-arduino-cli-ch32rv | [ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv](https://github.com/ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv) | ch32rv の path、ブローカーの口、`oep_host` |
+| pytest-embedded-arduino-cli-ch32rv | [ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv](https://github.com/ch32-riscv-ug/pytest-embedded-arduino-cli-ch32rv) | ch32rv の path、WCH-Link のロックの名前、`ch32_uart`（WCH-Link の UART） |
 | pytest-embedded-wireskein | [Open-Embedded-Probe/pytest-embedded-wireskein](https://github.com/Open-Embedded-Probe/pytest-embedded-wireskein) | test ごとの記録と照合 |
 
 ## 2. 使う場面
@@ -223,7 +223,8 @@ baud は数字が渡るだけで問題にならない。
 ```text
 pytest-embedded
  ├─ pytest-embedded-arduino-cli            upload / monitor
- │   └─ pytest-embedded-arduino-cli-ch32rv  ch32rv の path、broker endpoint、oep_host（oep-client-python を import）
+ │   ├─ pytest-embedded-arduino-cli-ch32rv  ch32rv の path、WCH-Link のロックの名前（probe:<serial>）、ch32_uart
+ │   └─ oep-client-python[pytest]           oep_host、oep_uart、port_memo、ロックの名前 probe:<unit_id>、RP2040 の書き込みの hook
  └─ pytest-embedded-wireskein              test ごとの ws_run、記録先はログのディレクトリ、teardown で verify（wireskein を import）
 
 oep-client-python   純粋なモジュール（pip）。キャプチャを記録の受け口（callback）へ渡す口を持ち、wireskein に依存しない
@@ -261,10 +262,10 @@ reset）と pytest の `oep_host` は、どれもブローカーの **client**�
 pytest の側:
 
 1. upload / monitor: pytest-embedded-arduino-cli → arduino-cli → ch32rv（client）。
-2. fixture: `pytest-embedded-arduino-cli-ch32rv` が port を `arduino_cli_resolved_port` から、ch32rv の path を pytest-embedded-arduino-cli
-   が公開する展開済み properties の fixture の `runtime.tools.ch32rv.path` から取り、endpoint を聞いて（無ければブローカーを起動させて）
-   `oep_host` を作る。monitor が付いていない probe（LinkE が書き、OEP の probe は fixture だけ、など）でも同じ。probe の指定は
-   プラグインのオプション / ini。その probe の serial port をプラグインの peers として開かせてはいけない（pyserial が握る）。
+2. fixture: oep-client の pytest プラグインが `oep_host` を作る。ブローカーは OEP の標準（oep-spec の host ガイド §7.1 / §7.2:
+   `oep.probe.share`、利用者ごとの `oep/brokers/<unit_id>.json`）で見つけ、ch32rv の monitor がプローブを持つときは、そのブローカーが
+   出るのを ini の `oep_broker_wait` 秒まで待つ。ch32rv 0.31.0 から、ch32rv のブローカーもこの標準に替わった（古い ch32rv とは相乗りできない）。
+   その probe の serial port をプラグインの peers として開かせてはいけない（pyserial が握る）。
 
 仕様の変更は無い（probe から見える transport とセッションは 1 つのまま）。
 

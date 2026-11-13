@@ -133,7 +133,8 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
 - 壊れたオブジェクト（crc が合わない、oep-if-memo §3）と、JSON のオブジェクトでないものは、空として読み、警告を出します。書き直せば直ります。
 - 検査に通らない記録があれば、チップに触る前に止まります。
 - メモ欄を持たないプローブと WCH-Link は、記録を持てません。記録の要る case は流れません。
-- WCH-Link の記録は、tests/.env の `CH32RV_PROBE_RECORD_<serial>` に、§4 と同じ形の JSON で書けます。`<serial>` はアドレス `wchlink://<serial>` の serial で、その Link にだけ効き、同じ検査を通します（例: `CH32RV_PROBE_RECORD_BC5F4B9807F7='{"parts": {"eth": {"to": "lan"}}}'`。uv の env-file は一重引用符で囲まないと読めません）。OEP の口の記録はプローブにあります。
+- WCH-Link の記録は、tests/.env の `OEP_PORT_MEMO_<serial>` に、§4 と同じ形の JSON で書けます。`<serial>` はアドレス `wchlink://<serial>` の serial で、その Link にだけ効き、同じ検査を通します（例: `OEP_PORT_MEMO_BC5F4B9807F7='{"parts": {"eth": {"to": "lan"}}}'`。uv の env-file は一重引用符で囲まないと読めません）。名前は oep-client の pytest プラグインのもので、WCH-Link のロックの名前 `probe:<serial>` から決まります。
+- OEP の口の記録はプローブにあります。tests/hw の試験では、oep-client のプラグインが読み、tests/.env の `OEP_PORT_MEMO_<unit>_<口>`（大文字、`-` は `_`）があればそちらを丸ごと使います（両方あって違えば警告）。中身の検査はどちらもコアです。
 
 ## 6. 書き方と見方
 

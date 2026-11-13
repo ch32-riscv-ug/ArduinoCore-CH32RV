@@ -399,28 +399,28 @@ def probe_capabilities(tool, address, part, log, env):
             for c in info.get("result", {}).get("capabilities", [])}
 
 
-def resolve(address, tool, env, logs, *, chip=None, link_record=None):
+def resolve(address, tool, env, logs, *, chip=None, record=None):
     """The place of `address`: the facts above, as one dict (run_hardware.py stages it as case.json's target).
     chip: the part when the chip ID leaves several and no record names it (CH32RV_CHIP, ch32rv's own variable).
-    link_record: a WCH-Link's core record, which it cannot keep itself (CH32RV_PROBE_RECORD_<serial>); an OEP
-    port's record is the one on its probe."""
+    record: the core record as oep-client's pytest plugin gives it (port_memo: OEP_PORT_MEMO_<id>[_<port>] in
+    tests/.env, else the probe's memo); None reads an OEP port's from its probe, and leaves a WCH-Link's empty."""
     parsed = parse(address)
-    if link_record is not None and parsed["kind"] == "oep":
-        raise PlaceError(f"{address}: an OEP port keeps its record on the probe (tests/bench_record.py set); "
-                         "CH32RV_PROBE_RECORD_<serial> is for a WCH-Link")
     place = dict(address=address, kind=parsed["kind"], warnings=[])
     if parsed["kind"] == "oep":
         topology, vid, pid, serial = usb_device(parsed["unit"])
         facts = probe_facts(address, parsed)
         place.update(name=facts["port"].lower(), port_name=facts["port"], upload_port=address,
                      probe_unit_id=parsed["unit"], lines=facts["lines"], pads=facts["pads"],
-                     record=facts["record"], port_record=facts["port_record"], snapshot=facts["snapshot"])
+                     record=facts["record"] if record is None else dict(record), port_record=facts["port_record"], snapshot=facts["snapshot"])
         place["warnings"] += facts["warnings"]
+        if record is not None and dict(record) != facts["record"]:
+            place["warnings"].append(f"{address}: the core record used is oep-client's (tests/.env's OEP_PORT_MEMO_...), "
+                                     "not the one on the probe")
         place["port"] = address
         recorded_part = facts["port_record"].get("part")
     else:
         topology, vid, pid, serial = usb_device(parsed["serial"])
-        place.update(name="link-" + parsed["serial"].lower(), lines={}, pads={}, record=dict(link_record or {}), port_record={},
+        place.update(name="link-" + parsed["serial"].lower(), lines={}, pads={}, record=dict(record or {}), port_record={},
                      snapshot=None, port=tty_of(topology))
         recorded_part = None
     place.update(usb_topology=topology, usb_vid=vid, usb_pid=pid, usb_serial=serial,
@@ -507,17 +507,18 @@ def canonical(address):
     return f"wchlink://{parsed['serial']}" if parsed["kind"] == "wchlink" else address
 
 
-LINK_RECORD_PREFIX = "CH32RV_PROBE_RECORD_"
+LINK_RECORD_PREFIX = "OEP_PORT_MEMO_"
 
 
 def link_records_from_env(environ=None):
-    """{wchlink://<serial>: record} from CH32RV_PROBE_RECORD_<serial> (tests/.env, single-quoted JSON): the core
-    record (RECORDS.ja.md §4, the same members and checks) of the WCH-Link wchlink://<serial>, which keeps no record
-    of its own. An OEP port's record is the one on its probe."""
+    """{wchlink://<serial>: record} from OEP_PORT_MEMO_<serial> (tests/.env, single-quoted JSON; oep-client's name,
+    the WCH-Link's lock name being probe:<serial>): the core record (RECORDS.ja.md §4, the same members and checks)
+    of the WCH-Link wchlink://<serial>, which keeps no record of its own. OEP_PORT_MEMO_<unit>_<PORT>, an OEP port's,
+    is oep-client's to read (run_hardware.py reads the one on the probe)."""
     environ = os.environ if environ is None else environ
     out = {}
     for key, text in environ.items():
-        if not key.startswith(LINK_RECORD_PREFIX):
+        if not key.startswith(LINK_RECORD_PREFIX) or "_" in key[len(LINK_RECORD_PREFIX):]:
             continue
         serial = key[len(LINK_RECORD_PREFIX):]
         if not re.fullmatch(r"[0-9A-Za-z]{8,32}", serial):

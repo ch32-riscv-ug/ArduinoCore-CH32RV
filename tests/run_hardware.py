@@ -124,7 +124,7 @@ PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
 }
 # The same cases with an RP2040 (Raspberry Pi Pico) as the peer: on the DUT's own OEP probe, written over SWD and
-# talked to over SEGGER RTT (oep_client.pytest_rp2040_peer), staged as peer_pico/.
+# talked to over SEGGER RTT (oep-client's pytest plugin writes it through the upload hook), staged as peer_pico/.
 PICO_PEERS = {
     "usb-peer": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_pico",
@@ -169,7 +169,7 @@ HELPERS = {
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin",
-           "pytest_embedded_wireskein.plugin"]
+           "pytest_embedded_wireskein.plugin", "oep_client.pytest_plugin"]
 
 
 def invoke(command, log, *, env=None, timeout=180):
@@ -441,7 +441,7 @@ def main(argv=None):
         for address in args.probe:
             try:
                 target = places.resolve(address, tool, env, work / "preflight" / address.replace("://", "-").replace("/", "-"),
-                                        chip=chip, link_record=link_records.get(places.canonical(address)))
+                                        chip=chip, record=link_records.get(places.canonical(address)))
             except Exception as error:
                 name = address
                 report["cases"].extend(dict(target=name, address=address, case=case, status="ENVIRONMENT_ERROR",
@@ -487,7 +487,6 @@ def main(argv=None):
                                 "--device-lock", "required", "--root-logdir", str(module.parent / "logs"),
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]
                     if case in PEER_CASES and staged.get("usb_peer") == "pico":
-                        command += ["-p", "oep_client.pytest_rp2040_peer"]
                         case_env["TEST_SERIAL_PORT_PEER_PICO"] = staged["usb_peer_port"]
                     elif case in PEER_CASES:
                         command += ["--peer-port", "s3:" + staged["usb_peer_port"]]

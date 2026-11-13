@@ -44,8 +44,9 @@ DUT と同じ OEP プローブに Pico をつなぎ、記録に `usb: {to: rp204
 （`bench_record.py set <DUT の口> --usb rp2040,port=pico`）。
 
 - **書き込みとコンソール:** Pico への書き込みは SWD で、コンソールは SEGGER RTT（ライブラリ RTT Stream）です。
-  どちらも oep-client-python の pytest プラグイン `oep_client.pytest_rp2040_peer` が扱います。run_hardware が
-  `-p` で読み込み、`TEST_SERIAL_PORT_PEER_PICO` に Pico の口を渡します。
+  どちらも oep-client-python の pytest プラグイン（`oep_client.pytest_plugin`）が扱います。書き込みは
+  pytest-embedded-arduino-cli の書き込みの hook で、fqbn が `rp2040:` でポートが `oep://` のとき、ビルドの ELF を SWD で書きます。
+  run_hardware は `TEST_SERIAL_PORT_PEER_PICO` に Pico の口を渡します。
 - **ケースと行の頭:** Pico のスケッチは S3 と同じコマンドを持ち、試験は同じものを使います。答えの行の頭だけ違い、
   host 役は `P `、device 役は `PD ` です（S3 は `S3 ` / `S3D `）。試験は `device_peer.Peer` / `host_peer.Peer` で見分けます。
   - device 役の名前は、S3 と同じ形で別の名前にしています（`Pico peer hid` / `Pico peer classes`、製造元 `ch32rv-tests`）。

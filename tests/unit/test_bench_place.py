@@ -50,7 +50,7 @@ def test_fqbn_and_clock_come_from_boards_txt():
 
 
 def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, address="oep://30eda0e31108/x035c8t6-s3",
-                 link_record=None, capabilities=None):
+                 memo=None, capabilities=None):
     root = sysfs(tmp_path, {"3-1.4.2": ("1209", "4f45", "30eda0e31108")})
     monkeypatch.setattr(place, "SYSFS", root)
     monkeypatch.setattr(place, "usb_device", lambda serial, sysfs=root: ("3-1.4.2", "1209", "4f45", serial))
@@ -67,7 +67,7 @@ def fake_resolve(monkeypatch, tmp_path, *, info, record=None, port_record=None, 
     monkeypatch.setattr(place, "chip_info", chip)
     monkeypatch.setattr(place, "tty_of", lambda topology, interface=None, sysfs=None: "/dev/ttyACM0")
     monkeypatch.setattr(place, "probe_capabilities", lambda tool, a, part, log, env: dict(capabilities or {}))
-    return place.resolve(address, "ch32rv", None, tmp_path / "logs", link_record=link_record), calls
+    return place.resolve(address, "ch32rv", None, tmp_path / "logs", record=memo), calls
 
 
 X035 = dict(sku="CH32X035C8T6", family="CH32X035", uid="1ff9abcd880ebc48", chip_id="0x03510601")
@@ -262,26 +262,36 @@ def test_a_console_the_probe_cannot_carry_is_skipped(monkeypatch, tmp_path):
 
 def test_a_wch_link_takes_its_record_from_the_environment(monkeypatch, tmp_path):
     eth = {"parts": {"eth": {"to": "lan"}}}
-    p, _ = fake_resolve(monkeypatch, tmp_path, info=V203RB, address="wchlink://BC5F4B9807F7", link_record=eth)
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=V203RB, address="wchlink://BC5F4B9807F7", memo=eth)
     assert p["record"] == eth and p["cases"]["eth"] == "run"
     p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=V203RB, address="wchlink://BC5F4B9807F7")
     assert p["cases"]["eth"] == "skip: no eth in the record's parts"
-    with pytest.raises(place.PlaceError, match="OEP port keeps its record on the probe"):
-        fake_resolve(monkeypatch, tmp_path / "c", info=X035, link_record=eth)
     with pytest.raises(place.PlaceError, match="core record has errors"):
         fake_resolve(monkeypatch, tmp_path / "d", info=V203RB, address="wchlink://BC5F4B9807F7",
-                     link_record={"usb": {"to": "esp32-s3"}})
+                     memo={"usb": {"to": "esp32-s3"}})
+
+
+def test_an_oep_ports_record_from_oep_client_wins_with_a_warning(monkeypatch, tmp_path):
+    eth = {"parts": {"eth": {"to": "lan"}}}
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, memo=eth)
+    assert p["record"] == eth and any("OEP_PORT_MEMO" in w for w in p["warnings"])
+    p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=X035, record=eth, memo=eth)
+    assert p["record"] == eth and not any("OEP_PORT_MEMO" in w for w in p["warnings"])
+    p, _ = fake_resolve(monkeypatch, tmp_path / "c", info=X035, record=eth)
+    assert p["record"] == eth
 
 
 def test_a_link_record_is_named_by_the_links_serial():
     eth = '{"parts": {"eth": {"to": "lan"}}}'
     assert place.link_records_from_env({"CH32RV_PROBE": "wchlink://x"}) == {}
-    got = place.link_records_from_env({"CH32RV_PROBE_RECORD_bc5f4b9807f7": eth, "CH32RV_PROBE_RECORD_49808F06CE30": eth})
+    # An OEP port's (<unit>_<PORT>) is oep-client's.
+    assert place.link_records_from_env({"OEP_PORT_MEMO_30EDA0E31108_X035C8T6_S3": "[1]"}) == {}
+    got = place.link_records_from_env({"OEP_PORT_MEMO_bc5f4b9807f7": eth, "OEP_PORT_MEMO_49808F06CE30": eth})
     assert set(got) == {"wchlink://BC5F4B9807F7", "wchlink://49808F06CE30"}
     assert got[place.canonical("wchlink://bc5f4b9807f7")] == {"parts": {"eth": {"to": "lan"}}}
-    for key, bad, why in (("CH32RV_PROBE_RECORD_BC5F4B9807F7", "[1]", "not a JSON object"),
-                          ("CH32RV_PROBE_RECORD_BC5F4B9807F7", '{"parts": {"eth": {"to": "lan"}}', "single quotes"),
-                          ("CH32RV_PROBE_RECORD_BC5F4B9807F7", '{"parts": {"eth": {}}}', "CH32RV_PROBE_RECORD_BC5F4B9807F7: "),
-                          ("CH32RV_PROBE_RECORD_x", eth, "USB serial")):
+    for key, bad, why in (("OEP_PORT_MEMO_BC5F4B9807F7", "[1]", "not a JSON object"),
+                          ("OEP_PORT_MEMO_BC5F4B9807F7", '{"parts": {"eth": {"to": "lan"}}', "single quotes"),
+                          ("OEP_PORT_MEMO_BC5F4B9807F7", '{"parts": {"eth": {}}}', "OEP_PORT_MEMO_BC5F4B9807F7: "),
+                          ("OEP_PORT_MEMO_x", eth, "USB serial")):
         with pytest.raises(place.PlaceError, match=why):
             place.link_records_from_env({key: bad})

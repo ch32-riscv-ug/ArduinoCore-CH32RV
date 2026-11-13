@@ -39,3 +39,4 @@ tests/.env.*
 
 # Tools the tests need, fetched by tools/index/fetch_tools.py. Not source.
 .tools/
+/tests/work/

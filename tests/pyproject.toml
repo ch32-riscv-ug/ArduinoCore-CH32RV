@@ -7,9 +7,9 @@ dependencies = ["pytest>=8"]
 
 [project.optional-dependencies]
 hardware = [
-    "oep-client-python==0.0.54",
-    "pytest-embedded-arduino-cli==1.11.0",
-    "pytest-embedded-arduino-cli-ch32rv==0.0.8",
+    "oep-client-python[pytest]==0.0.55",
+    "pytest-embedded-arduino-cli==1.12.0",
+    "pytest-embedded-arduino-cli-ch32rv==0.0.10",
     "pytest-embedded-wireskein==0.0.7",
     "wireskein==0.0.27",
 ]
@@ -20,6 +20,8 @@ norecursedirs = [".*", "__pycache__", "single", "loopback", "peer",
                 "instrumented", "manual", "fixtures", "diagnostics", "hw"]
 addopts = "-ra --strict-markers --import-mode=importlib"
 pythonpath = ["."]
+# The records on the OEP probes (oep-client's pytest plugin: port_memo, OEP_PORT_MEMO_<id>[_<port>]; RECORDS.ja.md).
+oep_memo_owner = "io.github.ch32-riscv-ug.arduino"
 # The bench's combinations (tests/hw; profiles in tests/hw/profiles.toml, ports in tests/.env). One per board with
 # its standard wiring - every case it can run - and one per configuration that differs (probe route, peer, clock).
 arduino_combos = [

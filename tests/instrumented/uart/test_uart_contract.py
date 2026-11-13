@@ -14,8 +14,10 @@ Serial.onReceiveError() reports compared with the kind made (test_uart_receive_e
 import secrets
 
 
-def test_uart_contract(dut, ch32_uart):
-    uart = ch32_uart.open(115200)
+def test_uart_contract(dut, request):
+    # The probe's UART: oep-client's oep_uart on an OEP port, the ch32rv plugin's ch32_uart through a WCH-Link.
+    oep = str(request.config.getoption("port", "") or "").startswith("oep://")
+    uart = request.getfixturevalue("oep_uart" if oep else "ch32_uart").open(115200)
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(60)
     dut.write("uart\n")
     dut.expect_exact("UART READY", timeout=15)

@@ -40,8 +40,6 @@ def isolated_environment(work, tool, toolchain):
     env = dict(os.environ)
     for key in ("CH32RV_PROBE", "CH32RV_CHIP", "CH32RV_DB", "CH32RV_REPLAY", "CH32RV_CAPTURE", "ARDUINO_CONFIG_FILE"):
         env.pop(key, None)
-    for key in [k for k in env if k.startswith(places.LINK_RECORD_PREFIX)]:
-        env.pop(key)
     env["ARDUINO_DIRECTORIES_USER"] = str(work / "user")
     # Packages a profile installs (an ESP32 peer's pinned core and libraries)
     # live in a cache of the bench's own, kept between runs: a fresh one would
