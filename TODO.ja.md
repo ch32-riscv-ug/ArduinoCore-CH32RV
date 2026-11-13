@@ -17,6 +17,29 @@
   2026-10-29: test-coverage の「sleep/RTC API 未実装」「CDC/HID 等の sketch USB class 未実装」を直した。
 - [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）。
 
+### 常駐ベンチの全台試験（2026-11-13）で残ったもの
+
+全台を流して見つかったものの多くは直した（コア: H417 の Wire が I2C1 を取って動かなかった、SS の Video の記述子の長さ、
+V20x の standby が RTC で起きない、HardwareSerial の end() が端子を AF のまま残す。試験: WCH-Link の台の OEP の線の case、
+デバッグの端子、隣の線のプル、SoftSPI の速さ、logic の burst、standby の端子の幅、Pico の HID の待ち）。残りは次のとおり。
+
+- [ ] **H417 の I2C の送り手**: 相手の居ないアドレスで、DUT が ACK の位置（9 番目のクロックの前）で SDA を下げることがある
+  （6-2、PB11 / PB10、100 kHz）。I2C は HCLK（100 MHz）で動くのに FREQ は 60 で頭打ち（「I2C の FREQ の範囲は 4〜60 MHz」の項）。プローブの
+  相手での読みも失敗し、先読みがたまって preload_tx が断られる。受け手（wire_slave）は通る。
+- [ ] **H417 の CH32RVAdcStream で、2 本目が 1 本目につられる**: 6-2 の PC0（矩形波）と PA7（プローブが出力で保持）で、
+  PA7 の 1 が 2522〜4095、0 が 0〜1398 に振れる。取り込み時間は最長（step 7、1 回約 5 µs）。H417 の ADC の AUX（SMP_SEL）・
+  入力バッファー・PGA の既定を EVT と比べる。
+- [ ] **V205 EVT の PA10 と PB3 で受けられない**: periph の経路で、プローブが送ったバイトは線に見えるのに DUT が受けない。
+  PA10 は EVT の LINK の UART の線でもある。回路図で、PA10 / PB3 につながる部品を確かめる（基板の都合なら記録の defects へ）。
+- [ ] **WCH-Link の台の uart で、Link の UART が DUT の Serial につながっていない**: X315（49878F06CE37）、nano（A94B8F062EE9）、
+  M030（F90E8F067DFD）で DUT が 1 バイトも受けない。記録に「Link の UART がどの端子につながっているか」を書く欄が無い。
+- [ ] **プローブ（P4X）の I2C の相手が 1 ビット早く送る**: 5-1 / 5-2 の wire・softwire で、Sr のあとの読みの 3 バイト目などが
+  左に 1 ビット寄る（[oep] の解析）。ファームの確かめはユーザーの確認待ち（[oep]）。
+- [ ] **ch32rv のモニターが、standby 中の書き込みで終わる**: DUT が standby にいる間にコンソールへ書くと 'transfer-failed
+  reason 0x0a' で終わり、つなぎ直さない。5-1 V203 の system（deepSleep）はこれで落ちる（V205 は起床が速く間に合う）。[ch32rv] に依頼。
+- [ ] **ch32rv の次の版を同梱する**: 試作版で確かめた 3 件（OEP の flash の attached-under-reset、H417 の RTT を core 1 で読む、
+  stub で書く前の reset-halt = 走っている Ethernet の DMA で書き込みが壊れる件）が出たら上げ、全台を流す。
+
 ## 文書
 
 - [ ] **英訳の対をそろえる**（[oep] からの依頼、2026-11-13）: X.md / X.ja.md の対が 158 あり、中身がずれているものがある。
@@ -204,9 +227,14 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
   （6-2、oep://e8f60ae84dc2/h417qeu6-pico）は FS（PA11/PA12）に Pico、SS に PC の 2 つになる。V103 も FS が 2 系統あり、どちらに
   つないだかを書けるとよい。案: `usb` を口（コントローラ）ごとの対応にする（例 `{"fs": {"to": "rp2040", ...}, "ss": {"to": "host"}}`）。
   case はどの口で流すかを、その口の相手で決める。FS の Pico はまだつないでいない（nano の FS につないでもよい、とユーザー）。
-- [ ] **6-2 の H417（公式 EVT）の selfcheck**: `vio18=3v3` で流す予定が、ラベル（swio@pb9 と swclk@pb8 が両方ある）で ch32rv の
-  target info が組を決められず止まった。[oep] と [ch32rv] に相談中。スキャンで VIO18 の端子を 3.3 V で揺らしている
-  （数 ms ずつ）ので、selfcheck の GPIO / ADC で傷みがないかも見る。
+- [x] **6-2 の H417（公式 EVT）の selfcheck**: [oep] が PB8 / PA14 を素の pad にラベルし直し、`vio18=3v3` で 9 件通った
+  （2026-11-13）。試験は石のデバッグの端子（pinout の SDI）を線として使わない（run_hardware の debug_pads）。
+- [ ] **H417 の EVT で、SWD を速く回すと SS の列挙が乱れる（2026-11-13）**: EVT は PB8 / PB9（SWD）が USB3-A の USB2 の線と
+  同じ端子。dmseq のモニターが読み続けている間に列挙させると、`--speed high` では 2 回のうち 1 回 'error -110' や
+  'unable to get BOS descriptor' が出て、モニターも止まる。`--speed low` では 2 回とも出ない。列挙が済んだあとなら high でも
+  乱れない。プローブの設定では SWD の速さを決められない（[oep]）ので、アップロードとモニターに速さを渡す道が要る。案:
+  ボードメニュー（英語で Debug Speed）にして、試験は記録（memo）から選ぶ。仕様を足すので、候補を試作してから決める。
+  6-2 の usb / usb-classes / usb-media はこれで落ちている（usb-media の DescriptorTooLarge は直した）。
 
 - [ ] **H417 の VIO18 を 3.3 V にすると止まる（2026-11-13）**: nanoCH32H417（wchlink://A94B8F062EE9）で、メニューの
   `vio18=3v3` で作ったスケッチは、コンソール（LinkE の dmseq）の READY を返さず、USBSS も列挙しない。V5F の hart は
