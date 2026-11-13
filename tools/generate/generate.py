@@ -557,10 +557,15 @@ DEBUG_SPEED_MENU = (
 
 
 def debug_speed_menu(board: str) -> list[str]:
+    """The monitor gets the same speed (ch32rv's pluggable monitor `speed`, from
+    ch32rv 0.32): a debug-module console reads over the same pads all the time."""
     lines = []
     for key, label, args in DEBUG_SPEED_MENU:
         lines.append(f"{board}.menu.debugspeed.{key}={label}")
         lines.append(f"{board}.menu.debugspeed.{key}.upload.speed_args={args}")
+        if args:
+            for protocol in ("wchlink", "oep"):
+                lines.append(f"{board}.menu.debugspeed.{key}.monitor_port.{protocol}.speed={key}")
     return lines
 
 
