@@ -98,10 +98,10 @@ def fat12_add_file(disk, name, data):
 
 def ccid_exchange(ep_in, ep_out, seq, kind, data=b"", param=b"\0\0\0"):
     ep_out.write(struct.pack("<BIBB", kind, len(data), 0, seq) + param + data, timeout=2000)
-    reply = bytes(ep_in.read(64, timeout=2000))
+    reply = bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))
     length = struct.unpack_from("<I", reply, 1)[0]
     while len(reply) < 10 + length:
-        reply += bytes(ep_in.read(64, timeout=2000))
+        reply += bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))
     assert reply[6] == seq, reply
     return reply[0], reply[7], reply[8], reply[10:10 + length]
 
@@ -164,7 +164,7 @@ def test_usb_classes_contract(dut, record_property):
         deadline = time.monotonic() + 5
         while len(got) < len(payload) and time.monotonic() < deadline:
             try:
-                got += bytes(v_in.read(64, timeout=500))
+                got += bytes(v_in.read(v_in.wMaxPacketSize, timeout=500))
             except usb.core.USBTimeoutError:
                 pass
         assert got == payload

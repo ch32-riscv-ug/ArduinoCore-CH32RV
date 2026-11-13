@@ -62,10 +62,10 @@ def test_usb_contract(dut, record_property):
         assert ids == [1, 6], f"report IDs {ids}"
         ep_in, ep_out = endpoints(interface(dev, 0x03))
         ep_out.write(bytes([6, 0x41]) + b"vendor" + bytes(55))
-        report = bytes(ep_in.read(64, timeout=2000))
+        report = bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))
         assert report[:8] == bytes([6, 0x42]) + b"vendor"
         dut.write("keys\n")
-        keys = [bytes(ep_in.read(64, timeout=2000))[:4] for _ in range(4)]
+        keys = [bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))[:4] for _ in range(4)]
         dut.expect_exact("KEYS 1", timeout=5)
         assert keys == [bytes([1, 0, 0, 0x04]), bytes([1, 0, 0, 0]), bytes([1, 0, 0, 0x05]), bytes([1, 0, 0, 0])]
 
@@ -76,7 +76,7 @@ def test_usb_contract(dut, record_property):
     with host.claimed(numbers) as dev:
         ep_in, ep_out = endpoints(interface(dev, 0x01, 0x03))
         ep_out.write(bytes([0x09, 0x90, 0x40, 0x7F]))
-        assert bytes(ep_in.read(64, timeout=2000))[:4] == bytes([0x09, 0x90, 0x4C, 0x7F])
+        assert bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))[:4] == bytes([0x09, 0x90, 0x4C, 0x7F])
 
     # usb.net-frames: the host binds the NCM interface with the MAC the device names, frames flow
     # both ways (the host's own IPv6 traffic in; a broadcast frame out), without root.
