@@ -571,10 +571,27 @@ if ip_line:
     run("mdns_host", mdns_host, 30)
     run("mdns_service", mdns_service, 30)
 
+def mdns_shared_question():
+    """A multicast mDNS question from port 5353 for a shared record (the service's PTR): the sketch holds its answer
+    for MDNS_RESPONSE_DELAY (20 to 120 ms) on a timer whose argument is the netif."""
+    q = struct.pack(">HHHHHH", 0, 0, 1, 0, 0, 0)
+    q += b"".join(bytes([len(p)]) + p.encode() for p in "_http._tcp.local".split(".")) + b"\0" + struct.pack(">HH", 12, 1)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(("", 5353))
+    s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(HOST))
+    s.sendto(q, ("224.0.0.251", 5353))
+    s.close()
+
+
 if ip_line and MODE != "ncm":
     def relink():
+        # The interface stopped while an mDNS answer is held: its timer must not run on the deleted netif.
+        mdns_shared_question()
+        time.sleep(0.005)   # the question first (sent through the host's stack, it can come after the command)
         u, reply = command("R", 10, 3 if LOSSY else 1)
         u.close()
+        time.sleep(0.3)     # past MDNS_RESPONSE_DELAY's 120 ms: the held answer's timer has run by now
         after = udp_echo() if reply else {"ok": False}
         return {"ok": reply == "RELINK OK" and after.get("ok", False), "reply": reply, "udp_echo_after": after.get("ok")}
     run("relink", relink, 300)
@@ -589,5 +606,8 @@ except subprocess.TimeoutExpired:
     sketch.kill()
 time.sleep(0.2)
 # What the sketch printed besides its protocol lines: sanitizer reports, the watchdog.
-results["sketch_output"] = [l for l in log if not l.startswith(("IP ", "DISCARD "))][-40:]
+output = [l for l in log if not l.startswith(("IP ", "DISCARD "))]
+# A sanitizer's report whole (the access's stack comes first, and a long one fell out of the last 40 lines).
+report = next((i for i, l in enumerate(output) if "ERROR: AddressSanitizer" in l or "runtime error" in l), None)
+results["sketch_output"] = output[report:] if report is not None else output[-40:]
 print(json.dumps(results))

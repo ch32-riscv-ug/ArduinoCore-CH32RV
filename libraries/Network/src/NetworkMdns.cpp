@@ -4,7 +4,9 @@
 #include <string.h>
 
 #include "lwip/apps/mdns.h"
+#include "lwip/apps/mdns_out.h"
 #include "lwip/netif.h"
+#include "lwip/timeouts.h"
 
 NetworkMdns MDNS;
 
@@ -41,6 +43,27 @@ static void add_services(struct netif *n)
     }
 }
 
+/* mdns_resp_remove_netif() stops the probe timer only: the delayed answers and the multicast holds it set with
+ * mdns_set_timeout() (MDNS_RESPONSE_DELAY, 20 to 120 ms after a question) stay queued with the netif as their
+ * argument, and run on it after the interface is gone - a netif deleted by NetworkInterface::netifStop() (a driver's
+ * end()) was read again (heap-use-after-free in netif_mdns_data). Cancel them first. */
+static void remove_netif(struct netif *n)
+{
+    sys_untimeout(mdns_send_multicast_msg_delayed_ipv4, n);
+    sys_untimeout(mdns_send_unicast_msg_delayed_ipv4, n);
+    sys_untimeout(mdns_multicast_timeout_reset_ipv4, n);
+    sys_untimeout(mdns_multicast_probe_timeout_reset_ipv4, n);
+    sys_untimeout(mdns_multicast_timeout_25ttl_reset_ipv4, n);
+#if LWIP_IPV6
+    sys_untimeout(mdns_send_multicast_msg_delayed_ipv6, n);
+    sys_untimeout(mdns_send_unicast_msg_delayed_ipv6, n);
+    sys_untimeout(mdns_multicast_timeout_reset_ipv6, n);
+    sys_untimeout(mdns_multicast_probe_timeout_reset_ipv6, n);
+    sys_untimeout(mdns_multicast_timeout_25ttl_reset_ipv6, n);
+#endif
+    mdns_resp_remove_netif(n);
+}
+
 /* Interfaces starting and stopping, from the Network library. */
 static void netif_changed(struct netif *n, bool up)
 {
@@ -52,8 +75,8 @@ static void netif_changed(struct netif *n, bool up)
             add_services(n);
             mdns_resp_announce(n);
         }
-    } else {
-        mdns_resp_remove_netif(n);
+    } else if (mdns_resp_netif_active(n)) {
+        remove_netif(n);
     }
 }
 
@@ -92,7 +115,7 @@ void NetworkMdns::end()
     struct netif *n;
     NETIF_FOREACH(n) {
         if (mdns_resp_netif_active(n)) {
-            mdns_resp_remove_netif(n);
+            remove_netif(n);
         }
     }
 }
