@@ -443,6 +443,12 @@ void release_pin(uint8_t pin)
 {
     ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
                          CH32RV_GPIO_CFG_IN_FLOAT);
+    /* And its alternate function back to the reset value, where pads choose
+     * it one by one: a released RX left on the USART's function still fed
+     * the USART, and won over the new RX (V205 2026-11-13: Serial1 on PA6 /
+     * PA7, then PA6 / PA10, received nothing on PA10; USART5's PB5 then PB3
+     * the same). */
+    ch32rv_pin_set_af(pin, 0);
 }
 
 /* A free USART with a route on these pins: (index, row), or index -1. The
