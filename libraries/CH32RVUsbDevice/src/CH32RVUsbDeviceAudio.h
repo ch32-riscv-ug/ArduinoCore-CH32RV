@@ -18,7 +18,7 @@
  * takes 48 kHz stereo.
  *
  * Packets move in ch32rv_usb_task() (after loop(), inside delay()): a sketch
- * that blocks for longer than the FIFOs hold (4 packets) loses samples.
+ * that blocks for longer than the FIFOs hold (4 ms) loses samples.
  *
  * Several rates: addFormat() again with the same channels, bytes and bits
  * per sample and another rate (up to 8 per stream). The function has one
@@ -97,8 +97,9 @@ struct CH32RVUsbAudioVolumeRange {
     int16_t resolution = 0;
 };
 
-/* EspUsbAudioConfig's names. bufferFrames 0 keeps four nominal packets
- * (within the class's own ring, four of the largest packets); a count asks
+/* EspUsbAudioConfig's names. bufferFrames 0 keeps 4 ms of nominal packets
+ * (four at full speed, 32 at high and SuperSpeed; within the class's own
+ * ring, four of the largest packets); a count asks
  * for that many sample frames of the stream's format. A buffer is the
  * sketch's, used from begin() to end(), with its size in bytes; without one a
  * count must fit the class's ring (nothing is allocated). eventCapacity is
@@ -275,7 +276,7 @@ private:
     /* The host picked a rate: false when it is not one of the stream's. */
     bool setRate(uint32_t rate);
     /* The ring for a stream: the sketch's or the class's, and how deep. */
-    bool ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth) const;
+    bool ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth, bool highSpeed) const;
     /* A stream, and a format on each stream added (begin()). */
     bool describable() const;
     Stream *stream(CH32RVUsbAudioDirection direction);

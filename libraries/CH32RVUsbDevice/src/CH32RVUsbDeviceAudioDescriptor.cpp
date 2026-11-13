@@ -146,7 +146,7 @@ bool CH32RVUsbAudioFunction::writeDescriptor(CH32RVUsbDescriptorWriter &o, uint8
         if ((i == 0 ? _playbackEnabled : _captureEnabled) &&
             !ring(i, packetSize(widest(i), i == 0 ? CH32RVUsbAudioDirection::Playback
                                                   : CH32RVUsbAudioDirection::Capture, hs),
-                  buffer, depth)) {
+                  buffer, depth, hs)) {
             return refuseSettings();
         }
     }

@@ -243,7 +243,7 @@ bool CH32RVUsbAudioCaptureStream::currentFormat(CH32RVUsbAudioFormat &format) co
 /* Stream i's ring for a nominal packet of `packet` bytes: the configured
  * sample frames (or four packets), in the sketch's buffer or the class's,
  * whole sample frames. False when the frames asked for do not fit. */
-bool CH32RVUsbAudioFunction::ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth) const
+bool CH32RVUsbAudioFunction::ring(uint8_t i, uint16_t packet, uint8_t *&buffer, uint16_t &depth, bool highSpeed) const
 {
     const Stream &st = _streams[i];
     const size_t frame = (size_t)st.format.channels * st.format.bytesPerSample;
@@ -251,7 +251,10 @@ bool CH32RVUsbAudioFunction::ring(uint8_t i, uint16_t packet, uint8_t *&buffer, 
     uint8_t *const given = i == 0 ? _config.playbackBuffer : _config.captureBuffer;
     const size_t room = given ? (i == 0 ? _config.playbackBufferBytes : _config.captureBufferBytes) : FIFO_SIZE;
     buffer = given ? given : const_cast<uint8_t *>(i == 0 ? _rxStore : _txStore);
-    size_t want = frames ? frames * frame : (size_t)4 * packet;
+    /* 4 ms by default: four packets at full speed, 32 at high and SuperSpeed,
+     * whose packets are per 125 us microframe - four of those (0.5 ms) broke
+     * the H417's microphone ramp whenever loop() took longer (2026-11-14). */
+    size_t want = frames ? frames * frame : (size_t)4 * packet * (highSpeed ? 8u : 1u);
     if (frames && (want > room || want > 0xffffu)) {
         return false;
     }
@@ -641,7 +644,7 @@ void CH32RVUsbAudioFunction::usbReset()
     }
 }
 
-/* The FIFOs: four nominal packets of this speed's, within what fits. */
+/* The FIFOs: 4 ms of this speed's nominal packets, within what fits. */
 void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
 {
     _highSpeed = ch32rv_usb_series_can(CH32RVUsbSpeed::High) && speed != CH32RVUsbSpeed::Full;
@@ -652,10 +655,10 @@ void CH32RVUsbAudioFunction::usbConfigured(CH32RVUsbSpeed speed)
                         ? packetSize(widest(1), CH32RVUsbAudioDirection::Capture, _highSpeed)
                         : 0;
     _rxDepth = _txDepth = 0;
-    if (!_rxPacketSize || !ring(0, _rxPacketSize, _rxFifo, _rxDepth)) {
+    if (!_rxPacketSize || !ring(0, _rxPacketSize, _rxFifo, _rxDepth, _highSpeed)) {
         _rxDepth = 0;
     }
-    if (!_txPacketSize || !ring(1, _txPacketSize, _txFifo, _txDepth)) {
+    if (!_txPacketSize || !ring(1, _txPacketSize, _txFifo, _txDepth, _highSpeed)) {
         _txDepth = 0;
     }
     _rxHead = _rxCount = _txHead = _txCount = 0;
