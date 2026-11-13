@@ -74,6 +74,9 @@ def _parts(value, errors):
 def _usb(value, errors):
     to = value.get("to")
     if to == "host":
+        if "ss_only" in value and not isinstance(value["ss_only"], bool):
+            errors.append("usb.ss_only: true when the cable to the host carries only the SuperSpeed pairs (the USB 2.0 "
+                          "pair cut or absent): nothing the DUT shows over USB 2.0 - its ISP bootloader - reaches the host")
         return
     if to in ("esp32-s3", "esp32-p4"):
         # serial finds the port on any host; a bridge without one (a CH340) is found by mac alone, through the

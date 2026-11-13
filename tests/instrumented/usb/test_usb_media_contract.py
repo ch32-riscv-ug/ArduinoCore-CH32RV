@@ -46,10 +46,13 @@ def test_usb_media_contract(dut, record_property):
         mic = next(i for i in streams if i[0].bEndpointAddress & 0x80)
         speaker = next(i for i in streams if not i[0].bEndpointAddress & 0x80)
 
-        # usb.audio-capture: 200 ms of microphone, a continuous ramp, one 64-byte packet per frame.
+        # Isochronous packets are per 1 ms frame at full speed, per 125 us microframe at high and SuperSpeed.
+        per_ms = 8 if dev.speed in (usb.util.SPEED_HIGH, usb.util.SPEED_SUPER) else 1
+
+        # usb.audio-capture: 200 ms of microphone, a continuous ramp, one packet per (micro)frame.
         dev.set_interface_altsetting(interface=mic.bInterfaceNumber, alternate_setting=1)
         time.sleep(0.05)
-        packets = iso_transfer(dev, mic[0].bEndpointAddress, mic[0].wMaxPacketSize, 200)
+        packets = iso_transfer(dev, mic[0].bEndpointAddress, mic[0].wMaxPacketSize, 200 * per_ms)
         dev.set_interface_altsetting(interface=mic.bInterfaceNumber, alternate_setting=0)
         data = b"".join(packets)
         samples = struct.unpack(f"<{len(data) // 2}H", data[:len(data) // 2 * 2])
@@ -63,7 +66,7 @@ def test_usb_media_contract(dut, record_property):
         before = dut.expect(rb"AUDIO (\d+) (\d+) \d+\r?\n", timeout=5)
         payload = secrets.token_bytes(6400)
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=1)
-        sent = iso_transfer(dev, speaker[0].bEndpointAddress, 64, 100, data=payload)
+        sent = iso_transfer(dev, speaker[0].bEndpointAddress, 64 // per_ms, 100 * per_ms, data=payload)
         time.sleep(0.2)
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=0)
         assert sum(sent) == len(payload)

@@ -84,7 +84,10 @@ def set_records(address, args):
         usb = {"to": to}
         for item in rest:
             key, _, value = item.partition("=")
-            usb[key] = value.lower().replace(":", "") if key == "mac" else value
+            if key == "ss_only":
+                usb[key] = True              # a bare flag: host,ss_only
+            else:
+                usb[key] = value.lower().replace(":", "") if key == "mac" else value
         core_changes["usb"] = usb
     if args.sd or args.eth:
         parts = {}
@@ -141,7 +144,7 @@ def main(argv=None):
             s.add_argument("--port-note", help="oep.probe.memo/port's note")
             s.add_argument("--board", help="<maker>:<model>")
             s.add_argument("--supply", choices=("probe", "usb", "other"))
-            s.add_argument("--usb", help="host, esp32-s3 / esp32-p4,serial=<its port's USB serial>,mac=<mac> (either may be left out; mac alone for a bridge without a serial), or rp2040,port=<port>")
+            s.add_argument("--usb", help="host (host,ss_only for a SuperSpeed-only cable), esp32-s3 / esp32-p4,serial=<its port's USB serial>,mac=<mac> (either may be left out; mac alone for a bridge without a serial), or rp2040,port=<port>")
             s.add_argument("--sd", help="JSON: {bus, <signal>: <pad>}")
             s.add_argument("--eth", action="store_true", help="the Ethernet jack is on the host's network")
             s.add_argument("--pd", help="JSON: {max_mv, vbus_pin, vbus_ratio}")

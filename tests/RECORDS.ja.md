@@ -71,6 +71,7 @@ DUT 自身の USB 端子がどこへつながっているかです。
 | 形 | 意味 | 流す case |
 |---|---|---|
 | `{"to": "host"}` | 試験を流すホストにつながっている | usb、usb-classes、usb-media |
+| `{"to": "host", "ss_only": true}` | 同じく、ただしケーブルが SuperSpeed の線だけ（USB 2.0 の線を切ってある・無い） | 同じ。usb の ISP への切り替え（dfu-detach、1200 bps）は飛ばす（ISP のブートローダーは USB 2.0 なので見えない） |
 | `{"to": "esp32-s3", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-S3 につながっている（full speed） | usb-peer の各 case。USB host の case は、USB host を持つ型番だけ |
 | `{"to": "esp32-p4", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-P4 の OTG HS の口につながっている（high speed） | usb-peer のデバイス側の case と、usb-peer-host / usb-peer-host-classes（DUT は USBHS のホスト）。input と storage は P4 のスケッチが無いので飛ばす |
 | `{"to": "rp2040", "port": "<口>"}` | 同じ OEP プローブの口 `<口>` にいる RP2040（Pico）につながっている（full speed）。別のプローブの Pico は `"port": "oep://<unit_id>/<口>"`（WCH-Link の先の DUT など） | usb-peer の各 case（usb-peer-media を除く。RP2040 のホストは isochronous を持たない） |

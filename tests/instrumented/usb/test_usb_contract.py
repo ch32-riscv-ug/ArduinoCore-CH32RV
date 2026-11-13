@@ -122,6 +122,11 @@ def test_usb_contract(dut, record_property):
 
     # usb.isp-entry-*: both entries reach the factory ISP at the same topology; without an upload
     # it returns to this build by itself.
+    if settings["target"]["record"].get("usb", {}).get("ss_only"):
+        # The factory ISP bootloader is a USB 2.0 device: over a SuperSpeed-only cable (the record's usb.ss_only,
+        # the H417 EVT on 6-2) it never reaches the host.
+        record_property("isp_entry", "skipped: the record's usb.ss_only")
+        return
     for name, enter in (("dfu-detach", host.dfu_detach), ("touch", host.touch1200)):
         time.sleep(1)
         started = time.monotonic()
