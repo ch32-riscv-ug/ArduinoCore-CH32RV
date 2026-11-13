@@ -38,7 +38,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] **standby から起きた DUT のコンソールが届かない（OEP のプローブ側）**: 5-1 V203 の deepSleep のあと、プローブ
   （e8f60ae84e28、0.0.55+20b7418）の console のストリームは開いたまま（is_open = true）で書き込みも受け付け、切れたことを
   知らせないので、ch32rv がつなぎ直さず黙る（[ch32rv] の計装版の trace で確認、2026-11-13）。5-1 の system はこれで落ちる。
-  V205（30eda0e31108）では通る。[ch32rv] から [oep] に引き継ぎ済み。ch32rv 側は、書き込みが no_resource で断られたら
+  V205（30eda0e31108）では通る。起床のリセットで DM もリセットされ、DMCONTROL の dmactive が 0 のまま（モニターの接続を
+  借りて読んで確かめた: DMCONTROL 0x00000000、DMSTATUS 0x00000c82）、プローブはそれを見ずに DATA0 を読み続けている。
+  [oep] が「poll で dmactive = 0 を見たら立て直す」修正をユーザーの了承待ちで用意している。ch32rv 側は、書き込みが no_resource で断られたら
   つなぎ直すよう直した（以前は 'transfer-failed 0x0a' で終わっていた）。
 - [ ] **ch32rv の次の版を同梱する**: 試作版で確かめた 3 件（OEP の flash の attached-under-reset、H417 の RTT を core 1 で読む、
   stub で書く前の reset-halt = 走っている Ethernet の DMA で書き込みが壊れる件）が出たら上げ、全台を流す。
