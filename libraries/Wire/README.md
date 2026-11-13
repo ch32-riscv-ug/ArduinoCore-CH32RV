@@ -23,12 +23,14 @@ The bus takes whichever free I2C has the pins as a route. A name is not tied
 to an I2C number: `Wire` on I2C2's pins and `Wire1` on I2C1's is fine.
 `peripheral()` tells which I2C a bus landed on (0 while closed).
 
-`Wire.begin()` without pins is the fallback: the board's enabled I2Cs in
-number order, `Wire` the first and `Wire1` the second, on their default pins -
-the board menu's FIX pins, or the variant's default route under AUTO.
+`Wire.begin()` without pins is the fallback: `Wire` is the first enabled I2C
+that has pins of its own - the board menu's FIX pins, or the variant's default
+route under AUTO - and `Wire1` the other one. That is number order on every
+series but H417, whose I2C1 has no default route for the whole series (PB8 /
+PB9 are SWD, PB6 / PB7 are missing on some packages): there `Wire` is I2C2 and
+`Wire1` I2C1, which needs `begin(sda, scl)`.
 
-`SDA` and `SCL` name the first I2C's default route, as the datasheet defines
-it. Print them if you are unsure - they differ per series:
+`SDA` and `SCL` name `Wire`'s default route, as the datasheet defines it. Print them if you are unsure - they differ per series:
 
 ```cpp
 Serial.print(SCL); Serial.print(' '); Serial.println(SDA);

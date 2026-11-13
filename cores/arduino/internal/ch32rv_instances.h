@@ -149,14 +149,40 @@
 /* In the hardware driver's table: on, and not Software. */
 #define CH32RV_I2C_HW_1 (CH32RV_I2C_ON_1 && CH32RV_I2C1_MODE != CH32RV_PERIPH_SOFT)
 #define CH32RV_I2C_HW_2 (CH32RV_I2C_ON_2 && CH32RV_I2C2_MODE != CH32RV_PERIPH_SOFT)
-/* Wire, Wire1. Wire is the first instance that is on, Wire1 the second; a
- * Software one is bit-banged, a hardware one is its row of the driver's table. */
+/* Whether the instance has pins without begin(sda, scl) naming them: a
+ * default route (CH32RV_I2Cn_SCL) or a fixed one (the I2Cn menu). */
+#if defined(CH32RV_I2C1_SCL) || CH32RV_I2C1_MODE == CH32RV_PERIPH_FIX
+#define CH32RV_I2C_DEF_1 1
+#else
+#define CH32RV_I2C_DEF_1 0
+#endif
+#if defined(CH32RV_I2C2_SCL) || CH32RV_I2C2_MODE == CH32RV_PERIPH_FIX
+#define CH32RV_I2C_DEF_2 1
+#else
+#define CH32RV_I2C_DEF_2 0
+#endif
+/* Wire, Wire1. Wire is the first instance that is on and has pins of its own
+ * - the bus PIN_WIRE_SDA / PIN_WIRE_SCL name (generate.py) - or, when none
+ * has, the first that is on; Wire1 is the other one. H417's I2C1 has no
+ * default route for the series (PB8 / PB9 are SWD, PB6 / PB7 not on every
+ * package), so there Wire is I2C2 and Wire1 I2C1. A Software one is
+ * bit-banged, a hardware one is its row of the driver's table (I2C1's row is
+ * 0 when I2C1 is in the table, I2C2's comes after it). */
 #define CH32RV_WIRE_COUNT (CH32RV_I2C_ON_1 + CH32RV_I2C_ON_2)
-#define CH32RV_WIRE0_INSTANCE (CH32RV_I2C_ON_1 ? 1 : 2)
-#define CH32RV_WIRE0_SOFT (CH32RV_I2C_ON_1 ? CH32RV_I2C1_MODE == CH32RV_PERIPH_SOFT \
-                                           : CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
-#define CH32RV_WIRE1_SOFT (CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
-#define CH32RV_WIRE1_ROW CH32RV_I2C_HW_1
+#if CH32RV_I2C_ON_1 && (CH32RV_I2C_DEF_1 || !(CH32RV_I2C_ON_2 && CH32RV_I2C_DEF_2))
+#define CH32RV_WIRE0_INSTANCE 1
+#else
+#define CH32RV_WIRE0_INSTANCE 2
+#endif
+#define CH32RV_WIRE1_INSTANCE (CH32RV_WIRE0_INSTANCE == 1 ? 2 : 1)
+#define CH32RV_I2C_ROW_1 0
+#define CH32RV_I2C_ROW_2 CH32RV_I2C_HW_1
+#define CH32RV_WIRE0_SOFT (CH32RV_WIRE0_INSTANCE == 1 ? CH32RV_I2C1_MODE == CH32RV_PERIPH_SOFT \
+                                                      : CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
+#define CH32RV_WIRE0_ROW (CH32RV_WIRE0_INSTANCE == 1 ? CH32RV_I2C_ROW_1 : CH32RV_I2C_ROW_2)
+#define CH32RV_WIRE1_SOFT (CH32RV_WIRE1_INSTANCE == 1 ? CH32RV_I2C1_MODE == CH32RV_PERIPH_SOFT \
+                                                      : CH32RV_I2C2_MODE == CH32RV_PERIPH_SOFT)
+#define CH32RV_WIRE1_ROW (CH32RV_WIRE1_INSTANCE == 1 ? CH32RV_I2C_ROW_1 : CH32RV_I2C_ROW_2)
 
 /* -------------------------------------------------------------------- SPI */
 #ifndef CH32RV_SPI1_MODE

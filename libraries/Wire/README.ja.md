@@ -23,11 +23,14 @@ void setup() {
 結び付いていません(`Wire`にI2C2のpin、`Wire1`にI2C1のpinを渡してもかまいません)。
 `peripheral()`で、実際に使っているI2Cの番号が分かります(開いていなければ0)。
 
-`Wire.begin()`のようにpinを省略した場合は救済として、ボードで有効なI2Cの
-何番目かに当たるもの(`Wire`は1つ目、`Wire1`は2つ目)を既定のpinで開きます。
-ボードメニューでFIXにしたI2Cはそのpin、AUTOはvariantの既定routeです。
+`Wire.begin()`のようにpinを省略した場合は救済として、既定のpinで開きます。
+`Wire`は、ボードで有効なI2Cのうち自分のpinを持つ最初のもの(ボードメニューで
+FIXにしたI2Cはそのpin、AUTOはvariantの既定route)、`Wire1`はもう1つです。
+H417以外の系列では番号順と同じです。H417はI2C1に系列全体の既定routeが無い
+(PB8 / PB9はSWD、PB6 / PB7は無いパッケージがある)ので、`Wire`がI2C2、
+`Wire1`がI2C1になり、`Wire1`は`begin(sda, scl)`でpinを指定します。
 
-`SDA`と`SCL`が1本目のI2Cの既定route(データシートどおり)を指します。
+`SDA`と`SCL`は`Wire`の既定route(データシートどおり)を指します。
 seriesごとに違うので、分からなければ表示させてください。
 
 ```cpp

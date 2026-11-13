@@ -1,12 +1,12 @@
 /* Wire on its own: the linker takes this file only when a sketch names it.
- * It is the first I2C that is on (ch32rv_instances.h): row 0 of the hardware
- * driver's table, or with that I2C set to Software, a SoftWire on its default
- * pins. */
+ * It is the I2C ch32rv_instances.h names for it (CH32RV_WIRE0_INSTANCE: the
+ * first that is on and has pins of its own): its row of the hardware driver's
+ * table, or with that I2C set to Software, a SoftWire on its default pins. */
 #include "Wire.h"
 
 #if CH32RV_WIRE_COUNT > 0
 #if !CH32RV_WIRE0_SOFT
-arduino::CH32RVTwoWire Wire(0);
+arduino::CH32RVTwoWire Wire(CH32RV_WIRE0_ROW);
 #elif CH32RV_WIRE0_INSTANCE == 1 && defined(CH32RV_I2C1_SDA)
 arduino::SoftWire Wire(CH32RV_I2C1_SDA, CH32RV_I2C1_SCL);
 #elif CH32RV_WIRE0_INSTANCE == 2 && defined(CH32RV_I2C2_SDA)
