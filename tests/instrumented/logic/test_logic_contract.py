@@ -44,6 +44,11 @@ def test_logic_contract(dut, record_property):
     # the buffer holds several periods; they only need to be steady (the DMA's own pace)
     m = ask(dut, "burst 100000", rb"BURST (\d+) (\d+) (\d+) (\d+)", timeout=10)
     burst, count, lo, hi = (int(g) for g in m.groups())
+    if count < 3 and burst:
+        # A fast part's DMA (X315 at 240 MHz: 480 samples a period) fits fewer: a PWM that puts 8 periods in the
+        # buffer at the rate just measured.
+        m = ask(dut, f"burst {burst * 8 // samples}", rb"BURST (\d+) (\d+) (\d+) (\d+)", timeout=10)
+        burst, count, lo, hi = (int(g) for g in m.groups())
     record_property("burst_rate", burst)
     assert burst > rate
     assert count >= 3 and hi - lo <= 4, f"burst periods {lo}..{hi} over {count}"

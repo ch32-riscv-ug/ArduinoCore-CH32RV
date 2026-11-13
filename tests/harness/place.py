@@ -161,6 +161,18 @@ def gpio_keep_off(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
     return sorted(out)
 
 
+def debug_pads(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
+    """Sorted pad names ("PA14") of `part`'s debug interface (SWIO / SWDIO / SWCLK): the core leaves them to the
+    debugger (it never turns SWD off), so a pin there is no GPIO even when the probe writes over one wire and
+    labels the other pad plain. [] without device-data."""
+    import csv
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8") as f:
+        return sorted({f"P{r['port']}{r['gpio']}" for r in csv.DictReader(f)
+                       if r["part_number"] == part and r["kind"] == "gpio" and r["port"] and r["peripheral"] == "SDI"})
+
+
 def gpio_pads(part, path=REPO / ".tools/ch32-device-data/index/pinout.csv"):
     """The part's GPIO pads ("PA0"), in port and bit order, but those gpio_keep_off names; [] without device-data."""
     import csv
@@ -273,6 +285,9 @@ def static_reason(case, part, items=None, caps=None):
     return f"{part} has no {case}" if series_has(case, series, items, whole, part) else f"{series} has no {case}"
 
 
+LINE_CASES = ("gpio", "spi", "softspi", "wire", "softwire", "periph", "signals", "system")
+
+
 def choose_cases(place, items=None, caps=None):
     """{case: 'run' | 'skip: <why>'} for the place."""
     if items is None:
@@ -287,8 +302,10 @@ def choose_cases(place, items=None, caps=None):
         out[case] = ("run" if series_has(case, series, items, caps) else
                      f"skip: {part} has no {case}" if series_has(case, series, items, whole) else
                      f"skip: {series} has no {case}")
-    if not oep and out.get("gpio") == "run":
-        out["gpio"] = "skip: the gpio case drives and reads the pads from an OEP probe's GPIO fixture"
+    # The cases that drive and read the pads take oep_host: an OEP probe's lines, which a WCH-Link has none of.
+    for case in LINE_CASES:
+        if not oep and out.get(case) == "run":
+            out[case] = f"skip: the {case} case drives and reads the pads from an OEP probe's lines"
     if oep and out.get("uart") == "run":
         lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
         if lacking:

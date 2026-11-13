@@ -266,6 +266,8 @@ def stage_case(work, name, case, target):
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
     if opts:
         (directory / "build_opt.h").write_text(opts)
+    # The probe's lines on the chip's debug pads are never test lines (bench_lines.gpio_lines).
+    target = dict(target, debug_pads=places.debug_pads(target["chip"]))
     if case in ("selfcheck", "selfbus", "selfsys"):
         target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "selfsys":

@@ -68,7 +68,10 @@ static bool report(uint8_t id, const void *data, uint16_t length)
       UsbLock lock;
       if (hid.ready()) return hid.sendReport(id, data, length);
     }
-    if (millis() - t0 > 500) return false;
+    /* The DUT's host stack runs between its sketch's prints: over a slow
+     * console (a CH549 WCH-Link) it can leave the endpoint unpolled for a few
+     * hundred ms (V203RB 2026-11-13: TYPED 0 after the first key). */
+    if (millis() - t0 > 2000) return false;
     delay(1);
   }
 }

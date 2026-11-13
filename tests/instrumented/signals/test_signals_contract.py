@@ -118,7 +118,24 @@ def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000):
                         ws_run.reply(m.group(0).decode())
                         replies.append(m)
                     wait(hold)
-    ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps)
+    # The neighbours are only watched (only_moving): the probe's pull-ups hold them, or an undriven pad floats and
+    # its drift reads as movement (V203 PA3 next to PA1's PWM, 2026-11-13).
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    host = oep_host.host
+    gpio = Gpio(host)
+    others = [line["channel"] for line in lines[1:]]
+    if others:
+        core.plan_apply(host, [(gpio.fn, 1, ch) for ch in others])
+    try:
+        for ch in others:
+            gpio.configure(ch, Gpio.INPUT_PULLUP)
+        ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps)
+    finally:
+        for ch in others:
+            gpio.configure(ch, Gpio.INPUT)
+        if others:
+            core.plan_release(host, [gpio.fn])
     return replies
 
 

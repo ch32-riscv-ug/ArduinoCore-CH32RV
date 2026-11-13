@@ -16,7 +16,8 @@
   - sleep: lightSleep() woken by the timer after 200 ms (CH32RV_SLEEP_OK, CH32RV_WAKEUP_TIMER, millis() across it
     within 20 % of the high time, the high time within 50 % of 200 ms); lightSleep() woken by the wake line going
     low 200 ms after the sketch says it sleeps (CH32RV_WAKEUP_PIN, the high time 0.15 .. 2 s); deepSleep() woken by
-    the timer after 200 ms (the next boot says CH32RV_WAKEUP_TIMER). A family that cannot sleep answers
+    the timer after 200 ms (the next boot says CH32RV_WAKEUP_TIMER; the pin's high time is judged only where deepSleep()
+    is a light sleep and a restart - a real standby lets the pads go and its RTC alarm counts whole seconds). A family that cannot sleep answers
     CH32RV_SLEEP_UNSUPPORTED, and its sleep conditions are skipped (recorded)."""
 import json
 import pathlib
@@ -32,7 +33,7 @@ from bench_lines import gpio_lines
 import ws_capture
 
 # CH32RVResetReason, CH32RVWakeupCause, CH32RVSleepResult (CH32RVSystem.h)
-RESET_EXTERNAL, RESET_SOFTWARE, RESET_WATCHDOG = 2, 3, 4
+RESET_POWERON, RESET_EXTERNAL, RESET_SOFTWARE, RESET_WATCHDOG = 1, 2, 3, 4
 WAKEUP_TIMER, WAKEUP_PIN = 1, 2
 SLEEP_OK, SLEEP_UNSUPPORTED = 0, 2
 
@@ -185,7 +186,10 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
                 facts[name] = [reason, cause]
                 if cause != WAKEUP_TIMER:
                     wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
-                expect_high(name, 0.1, 0.3)
+                if reason != RESET_POWERON:
+                    expect_high(name, 0.1, 0.3)
+                # else real standby (the RTC families): the pads are let go as it starts, so the pin is high only
+                # until then, and the RTC alarm counts whole seconds - no width to judge (V205 2026-11-13: 0.4 ms).
                 wait(0.05)
 
     try:

@@ -52,10 +52,11 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
     lines = {line["pad"]: line for line in gpio_lines(oep_host, target)}
     console = {line["pad"] for line in port_lines(oep_host, target) if line["role"] in ("rx", "tx")}
     routes = target.get("serial_routes", [])
-    console_usarts = {n for n, _, tx, rx in routes if {tx, rx} & console}
+    # A route on the console's pads is left out, not its USART: the sketch's console is SerialDMSeq, so the
+    # USART whose other route reaches those pads is free, and begin(rx, tx) may take it (V205: USART1 on PA6 / PA7).
     pairs = {}                      # (tx, rx): [(usart, route), ...] - one section per pad pair
     for n, k, tx, rx in routes:
-        if n not in console_usarts and tx in lines and rx in lines:
+        if not {tx, rx} & console and tx in lines and rx in lines:
             pairs.setdefault((tx, rx), []).append((n, k))
     if not pairs:
         pytest.skip("no USART route besides the console's has both pads labelled <port>@<pad>")

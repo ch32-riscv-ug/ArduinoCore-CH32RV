@@ -113,7 +113,7 @@ static bool report(Adafruit_USBD_HID &h, uint8_t id, const void *data, uint16_t 
       UsbLock lock;
       if (h.ready()) return h.sendReport(id, data, length);
     }
-    if (millis() - t0 > 500) return false;
+    if (millis() - t0 > 2000) return false;   /* see host_hid: a slow console leaves the endpoint unpolled */
     delay(1);
   }
 }

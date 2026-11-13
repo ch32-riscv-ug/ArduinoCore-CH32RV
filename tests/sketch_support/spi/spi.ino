@@ -63,6 +63,12 @@ static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char 
 {
     uint8_t out[16];
     const size_t n = unhex(bytes, out, sizeof out);
+    if (bus == &soft) {
+        /* SoftSPI does not read the clock from SPISettings (SoftSPI.h): without
+         * a half period it runs as fast as the CPU toggles - 3.5 MHz on H417,
+         * where the probe's 10 MHz samples cannot tell the edges apart. */
+        soft.setHalfPeriodUs((uint16_t)(hz ? (500000u + hz - 1u) / hz : 0u));
+    }
     bus->beginTransaction(SPISettings(hz, lsb ? LSBFIRST : MSBFIRST, mode));
     digitalWrite(cs, LOW);
     delayMicroseconds(50);             /* the probe's CS set-up */
