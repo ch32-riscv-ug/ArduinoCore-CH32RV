@@ -326,13 +326,17 @@ private:
 
     /* The streams' data: a ring each way between the endpoint and read() /
      * write(), four packets deep, and the packet in flight. Transfers
-     * finish in ch32rv_usb_task(), the sketch's own thread. */
+     * finish in ch32rv_usb_task(), the sketch's own thread. The capture
+     * packet alternates between two buffers: a controller may report an
+     * isochronous IN done before its DMA has read the data (H417 USBSS:
+     * the next packet's samples went out in its place, 2026-11-14). */
     static constexpr uint16_t FIFO_SIZE = 4 * CH32RV_USB_MAX_PACKET;
     uint8_t _rxStore[FIFO_SIZE];
     uint8_t _txStore[FIFO_SIZE];
     uint8_t *_rxFifo = _rxStore, *_txFifo = _txStore;
     uint8_t _rxPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
-    uint8_t _txPacket[CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
+    uint8_t _txPacket[2][CH32RV_USB_MAX_PACKET] __attribute__((aligned(4)));
+    uint8_t _txSlot = 0;
     uint8_t _feedback[4] __attribute__((aligned(4)));
     /* A UAC2 RANGE answer is the longest: 2 + 12 bytes a rate. */
     uint8_t _ctl[2 + 12 * RATES_MAX] __attribute__((aligned(4)));

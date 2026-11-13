@@ -690,12 +690,14 @@ void CH32RVUsbAudioFunction::sendPacket()
         want = _txPacketSize;
     }
     uint16_t n = (uint16_t)(_txCount < want ? _txCount - _txCount % frameBytes : want);
-    n = fifo_get(_txFifo, _txDepth, _txHead, _txCount, _txPacket, n);
+    uint8_t *const packet = _txPacket[_txSlot];
+    _txSlot ^= 1u;
+    n = fifo_get(_txFifo, _txDepth, _txHead, _txCount, packet, n);
     if (n < want) {
         _capture._underrunCount = _capture._underrunCount + 1;
         _capture._underrunBytes = _capture._underrunBytes + (uint32_t)(want - n);
     }
-    device().transfer(_streams[1].dataEndpoint, _txPacket, n);
+    device().transfer(_streams[1].dataEndpoint, packet, n);
 }
 
 /* UAC2 playback is asynchronous: the feedback endpoint steers the host by

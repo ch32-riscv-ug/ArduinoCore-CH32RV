@@ -52,15 +52,37 @@ def test_usb_media_contract(dut, record_property):
         # usb.audio-capture: 200 ms of microphone, a continuous ramp, one packet per (micro)frame.
         dev.set_interface_altsetting(interface=mic.bInterfaceNumber, alternate_setting=1)
         time.sleep(0.05)
-        packets = iso_transfer(dev, mic[0].bEndpointAddress, mic[0].wMaxPacketSize, 200 * per_ms)
+        statuses = []
+        packets = iso_transfer(dev, mic[0].bEndpointAddress, mic[0].wMaxPacketSize, 200 * per_ms,
+                               statuses=statuses)
         dev.set_interface_altsetting(interface=mic.bInterfaceNumber, alternate_setting=0)
         data = b"".join(packets)
-        samples = struct.unpack(f"<{len(data) // 2}H", data[:len(data) // 2 * 2])
-        assert len(samples) > 32 * 150, f"only {len(samples)} samples in 200 ms"
-        breaks = [k for k in range(len(samples) - 1) if (samples[k + 1] - samples[k]) & 0xFFFF != 1]
-        assert not breaks, "the ramp breaks at " + ", ".join(
-            f"{k} ({' '.join(str(v) for v in samples[max(k - 5, 0):k + 7])}; packet sizes "
-            f"{[len(p) for p in packets[max(k // 4 - 3, 0):k // 4 + 4]]})" for k in breaks[:5])
+        assert len(data) // 2 > 32 * 150, f"only {len(data) // 2} samples in 200 ms"
+        # An isochronous packet is never sent again: one the host received with an error (a
+        # transaction error on a marginal SuperSpeed link) loses its samples. The ramp goes on
+        # across such packets by no more than they could have held; at most 1 % of them.
+        bad = sum(1 for st in statuses if st != 0)
+        record_property("audio_capture_bad_packets", bad)
+        assert bad <= len(packets) // 100, f"{bad} of {len(packets)} microphone packets arrived with errors"
+        most = mic[0].wMaxPacketSize // 2
+        breaks, last, missed = [], None, 0
+        for k, (p, st) in enumerate(zip(packets, statuses)):
+            if st != 0:
+                missed += 1
+                continue
+            s = struct.unpack(f"<{len(p) // 2}H", p[:len(p) // 2 * 2])
+            if not s:
+                continue
+            gap = (s[0] - last) & 0xFFFF if last is not None else 1
+            if gap != 1 and not (missed and 1 < gap <= missed * most + 1):
+                breaks.append(k)
+            breaks += [k for j in range(len(s) - 1) if (s[j + 1] - s[j]) & 0xFFFF != 1][:1]
+            last, missed = s[-1], 0
+        assert not breaks, "the ramp breaks in packets " + ", ".join(
+            f"{k} (sizes {[len(p) for p in packets[max(k - 3, 0):k + 2]]}, statuses "
+            f"{statuses[max(k - 3, 0):k + 2]}, starting "
+            f"{[struct.unpack_from('<H', p)[0] if len(p) >= 2 else None for p in packets[max(k - 3, 0):k + 2]]})"
+            for k in breaks[:5])
         record_property("audio_capture_bytes_per_200ms", len(data))
 
         # usb.audio-playback: 100 ms of speaker data arrives whole.

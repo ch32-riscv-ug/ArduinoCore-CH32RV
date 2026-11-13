@@ -25,10 +25,12 @@ class _Timeval(ctypes.Structure):
 _LIBUSB_TRANSFER_TYPE_ISOCHRONOUS = 1
 
 
-def iso_transfer(dev, endpoint, packet_size, packets, data=None, timeout_ms=3000):
+def iso_transfer(dev, endpoint, packet_size, packets, data=None, timeout_ms=3000, statuses=None):
     """Run one isochronous transfer on `dev` (a pyusb device with the interface claimed and the
     alternate setting selected). IN: returns the list of packet payloads. OUT: `data` is cut into
-    `packets` packets of `packet_size`; returns the bytes sent per packet."""
+    `packets` packets of `packet_size`; returns the bytes sent per packet. A list passed as
+    `statuses` gets each packet's libusb status (0: arrived whole; an IN packet the host received
+    with an error comes back empty and non-zero)."""
     dev._ctx.managed_open()
     backend = dev._ctx.backend
     lib, handle = backend.lib, dev._ctx.handle.handle
@@ -70,6 +72,8 @@ def iso_transfer(dev, endpoint, packet_size, packets, data=None, timeout_ms=3000
         for i in range(packets):
             n = t.iso[i].actual_length
             out.append(buffer.raw[i * packet_size:i * packet_size + n] if data is None else n)
+            if statuses is not None:
+                statuses.append(t.iso[i].status)
         return out
     finally:
         lib.libusb_free_transfer(raw)

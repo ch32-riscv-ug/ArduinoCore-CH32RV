@@ -198,7 +198,13 @@
 #define RCC_CTLR_USBSS_PLLRDY (1u << 23)
 #define PIPE_REG              CH32RV_RCC_CFGR0
 #define PIPE_BITS             ((1u << 22) | (1u << 23))   /* PIPE, UTMI */
-#define LINK_DEEMPH           LINK_TX_DEEMPH_MASK
+/* 3.5 dB, the USB 3 Gen 1 value. The EVT writes the whole field (0x300, not
+ * a value the RM lists); with it some trainings came up with tens of link
+ * errors a second at the hub's port, and the microphone lost a packet to a
+ * transaction error every few hundred milliseconds. At 3.5 dB none of 30
+ * trainings did; 6 dB enumerated late twice in 10 (bench, 6-2 behind a
+ * Realtek hub, 2026-11-14). */
+#define LINK_DEEMPH           0x00000100u
 #define LINK_CTRL_EXTRA       0u
 #endif
 
@@ -539,7 +545,13 @@ static bool dcd_ep_open(uint8_t address, uint8_t type, uint16_t mps)
     x.iso = type == CH32RV_USB_XFER_ISOCHRONOUS;
     if (in) {
         const uint32_t b = EP_TX(ep);
-        EP_CFG(b) = EP_CHAIN_AUTO | EP_ERDY_AUTO | EP_SEQ_AUTO | EP_EOB_MODE | (x.iso ? EP_ISO_MODE : 0);
+        /* Isochronous: no ERDY (the RM advises clearing ERDY_AUTO there) and
+         * the EVT's EOB_MODE 0, so a short packet carries LPF. With both as
+         * bulk has them, 1 in 300 microphone packets reached the host as a
+         * transaction error with its samples gone; about a fifth of that
+         * since (bench, 6-2, 2026-11-14). */
+        EP_CFG(b) = x.iso ? (EP_CHAIN_AUTO | EP_SEQ_AUTO | EP_ISO_MODE)
+                          : (EP_CHAIN_AUTO | EP_ERDY_AUTO | EP_SEQ_AUTO | EP_EOB_MODE);
         EP_CR(b) = EP_CLR | EP_CHAIN_CLR;
         EP_CR(b) = CHAIN_MAX;
         UEP_TX_EN |= (uint16_t)(1u << ep);
