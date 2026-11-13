@@ -58,7 +58,9 @@ def test_usb_media_contract(dut, record_property):
         samples = struct.unpack(f"<{len(data) // 2}H", data[:len(data) // 2 * 2])
         assert len(samples) > 32 * 150, f"only {len(samples)} samples in 200 ms"
         breaks = [k for k in range(len(samples) - 1) if (samples[k + 1] - samples[k]) & 0xFFFF != 1]
-        assert not breaks, f"the ramp breaks at {breaks[:5]}"
+        assert not breaks, "the ramp breaks at " + ", ".join(
+            f"{k} ({' '.join(str(v) for v in samples[max(k - 5, 0):k + 7])}; packet sizes "
+            f"{[len(p) for p in packets[max(k // 4 - 3, 0):k // 4 + 4]]})" for k in breaks[:5])
         record_property("audio_capture_bytes_per_200ms", len(data))
 
         # usb.audio-playback: 100 ms of speaker data arrives whole.

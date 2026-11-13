@@ -241,6 +241,17 @@ static bool low_power;           /* PHY reconfigured for U1/U2/U3 */
 static bool suspended;           /* U3 */
 static uint8_t retrain_fail;
 static volatile uint32_t release_at;   /* millis() to let a held link retrain; 0 = not held */
+static volatile bool attaching;  /* terminations held off after a (re)connect, until release_at */
+
+/* A connect starts with the far end gone for longer than a host port's
+ * periodic receiver detection in U2 / U3 (100 ms, USB 3.2 7.5.9 / 7.5.10).
+ * Linux suspends an idle device to U3; this controller's link survives a
+ * debugger's halt and a system reset with its terminations on, and the new
+ * firmware trained again within that period, so the host never saw the
+ * device go: it kept the old one and enumerated the new one only after
+ * a timeout and a reset of its own hub, 10 s to 30 s later (bench, 6-2,
+ * 2026-11-14: 1 in 8 resets after 12 s idle). */
+#define ATTACH_HOLD_MS 250u
 
 /* ------------------------------------------------------------ helpers */
 static void phy_cfg(uint8_t addr, uint16_t data)
@@ -395,10 +406,9 @@ static void link_start(void)
     LINK_CTRL = LINK_P2_MODE | LINK_GO_DISABLED;
     LINK_CFG = LINK_RX_EQ_EN | LINK_DEEMPH | LINK_LTSSM_MODE | LINK_TOUT_MODE;
     LINK_LPM_CR |= LINK_LPM_EN;
-    LINK_CFG |= LINK_RX_TERM_EN;
     LINK_INT_CTRL = LINK_IF_TX_LMP | LINK_IF_RX_LMP | LINK_IF_RX_LMP_TOUT | LINK_IF_STATE_CHG |
                     LINK_IF_WARM_RST | LINK_IF_TERM_PRES;
-    LINK_CTRL = LINK_P2_MODE | LINK_CTRL_EXTRA;
+    LINK_CTRL = LINK_P2_MODE | LINK_GO_DISABLED | LINK_CTRL_EXTRA;
     LINK_U1_WKUP_TMR = 120;
     LINK_U1_WKUP_FILTER = 50;
     LINK_U2_WKUP_FILTER = 0;
@@ -422,7 +432,8 @@ static void link_start(void)
     engine_reset();
     link_up = low_power = suspended = false;
     retrain_fail = 0;
-    release_at = 0;
+    attaching = true;
+    release_at = (millis() + ATTACH_HOLD_MS) | 1u;   /* dcd_poll() lets it go */
 }
 
 static void link_stop(void)
@@ -478,6 +489,8 @@ static void dcd_connect(bool on)
         ch32rv_irq_disable(CH32RV_IRQN_USBSS);
         link_stop();                                     /* terminations off: the host sees it go */
         link_up = false;
+        attaching = false;
+        release_at = 0;
     }
 }
 
@@ -736,6 +749,10 @@ static void dcd_poll(void)
     const uint32_t at = release_at;
     if (at && (int32_t)(millis() - at) >= 0) {
         release_at = 0;
+        if (attaching) {
+            attaching = false;
+            LINK_CFG |= LINK_RX_TERM_EN;
+        }
         LINK_CTRL &= ~LINK_GO_DISABLED;
     }
 }
@@ -749,6 +766,9 @@ static void link_isr(void)
         LINK_INT_FLAG = LINK_IF_STATE_CHG;
         switch (state) {
         case LINK_STATE_DISABLE:
+            if (attaching) {
+                break;                                   /* held: dcd_poll() releases it */
+            }
             if (retrain_fail < 0xFF) {
                 retrain_fail++;
             }
