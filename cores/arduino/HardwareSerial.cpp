@@ -773,6 +773,12 @@ void CH32RVHardwareSerial::end(void)
     _slot = 0;
     _rx.clear();
     _tx.clear();
+    /* The pads go back to inputs, as AVR's and ESP32's end() leave them: an
+     * alternate-function TX left behind keeps sending whatever the USART does
+     * next, from another begin() on other pads included (V205 2026-11-13:
+     * Serial1 ended on PA6 / PA10, begun on PA9 / PA7, sent on PA6 too). */
+    release_pin(_tx_pin);
+    release_pin(_rx_pin);
 }
 
 bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
@@ -791,10 +797,7 @@ bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
     _want = f.row;
     _want_index = (uint8_t)f.index;
     if (_slot) {
-        const uint8_t old_tx = _tx_pin, old_rx = _rx_pin;
-        end();
-        release_pin(old_tx);
-        release_pin(old_rx);
+        end();                         /* hands the old pads back */
         bind(_want_index, *_want);
     }
     return true;
