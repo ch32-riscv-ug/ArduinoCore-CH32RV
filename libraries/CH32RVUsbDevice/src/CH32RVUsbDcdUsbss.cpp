@@ -276,7 +276,7 @@ static void ep0_arm_out(void)
 
 /* The stack's view of a finished status stage, plus what this driver keeps
  * for that moment: the address and the U1/U2 permission. */
-static void status_finished(void)
+static void status_finished(bool keep_rx = false)
 {
     if (pending_addr_valid) {
         set_address(pending_addr);
@@ -285,7 +285,9 @@ static void status_finished(void)
     LINK_CFG = (LINK_CFG | pending_allow) & ~pending_deny;
     pending_allow = pending_deny = 0;
     UEP0_TX_CTRL = 0;
-    UEP0_RX_CTRL = 0;
+    if (!keep_rx) {
+        UEP0_RX_CTRL = 0;
+    }
 }
 
 static void ep0_send_next(void)
@@ -589,10 +591,15 @@ static void ep0_xfer(bool in, uint8_t *buffer, uint16_t length)
                 ep0_arm_out();
             }
         } else {
-            /* Control IN: armed when the data stage ended; the controller
-             * takes the host's status without an interrupt. */
+            /* Control IN: the status OUT was armed when the data stage
+             * ended (ep0_in_isr), and the stack can get here before the host
+             * sends it - clearing RX_CTRL now took the armed status away, the
+             * host's status DP got an NRDY no ERDY followed and the request
+             * timed out (Linux 'error -110' / 'unable to get BOS descriptor',
+             * H417 2026-11-14, about half the enumerations). ep0_out_isr
+             * clears it once the ZLP is in. */
             status_done = false;
-            status_finished();
+            status_finished(true);
             ch32rv_usbd_isr_xfer(0x00, 0);
         }
         return;
