@@ -66,6 +66,9 @@ struct CH32RVUsbDeviceCore {
     static void set_configuration(bool on);
     static CH32RVUsbDeviceFunction *interface_owner(uint8_t itf);
     static void ep0_done(bool in, uint16_t length);
+    static void ep0_superseded(bool in, uint16_t length);
+    static bool ep0_xfer(uint8_t address, uint8_t *buffer, uint16_t length);
+    static void ep0_stall();
     static void task();
 
     /* onBusEvent(): the bus events wait here, in order, for deliverEvents().
@@ -654,7 +657,7 @@ void Core::handle_setup()
         observe(CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP, ok, 0);
     }
     if (!ok) {
-        dcd->ep0Stall();
+        ep0_stall();
         ep0 = IDLE;
     }
 }
@@ -667,7 +670,7 @@ void Core::ep0_done(bool in, uint16_t length)
             const uint16_t left = (uint16_t)(in_length - gen_offset);
             gen_chunk = left < ep0_mps ? left : ep0_mps;
             gen_fill(gen_context, gen_offset, ep0_packet, gen_chunk);
-            dcd->xfer(0x80, ep0_packet, gen_chunk);
+            ep0_xfer(0x80, ep0_packet, gen_chunk);
             return;
         }
         gen_fill = nullptr;
@@ -676,11 +679,11 @@ void Core::ep0_done(bool in, uint16_t length)
         ep0_actual = in_length;
         if (zlp) {                                       /* a full last packet shorter than asked */
             zlp = false;
-            dcd->xfer(0x80, nullptr, 0);
+            ep0_xfer(0x80, nullptr, 0);
             return;
         }
         ep0 = STATUS_OUT;
-        dcd->xfer(0x00, nullptr, 0);
+        ep0_xfer(0x00, nullptr, 0);
     } else if (!in && ep0 == DATA_OUT) {
         ep0_actual = length;
         bool ok = true;
@@ -690,12 +693,12 @@ void Core::ep0_done(bool in, uint16_t length)
             ok = ch32rv_usb_platform.request(CH32RVUsbControlStage::Data, req);
         }
         if (!ok) {
-            dcd->ep0Stall();
+            ep0_stall();
             ep0 = IDLE;
             return;
         }
         ep0 = STATUS_IN;
-        dcd->xfer(0x80, nullptr, 0);
+        ep0_xfer(0x80, nullptr, 0);
     } else if ((in && ep0 == STATUS_IN) || (!in && ep0 == STATUS_OUT)) {
         ep0 = IDLE;
         if (pending_address) {
@@ -713,6 +716,57 @@ void Core::ep0_done(bool in, uint16_t length)
     }
 }
 
+/* EP0 to the controller, unless a newer SETUP is already in (task() has not
+ * taken it yet): what is being answered is then over on the bus, and the
+ * controller's EP0 belongs to the new request - an old status sent now was
+ * taken as the new data stage (see task()). Interrupts stay off from the
+ * check to the controller's own masked section, so no SETUP gets between. */
+bool Core::ep0_xfer(uint8_t address, uint8_t *buffer, uint16_t length)
+{
+    noInterrupts();
+    if (events & EV_SETUP) {
+        interrupts();
+        return true;
+    }
+    const bool ok = dcd->xfer(address, buffer, length);
+    interrupts();
+    return ok;
+}
+
+void Core::ep0_stall()
+{
+    noInterrupts();
+    if (!(events & EV_SETUP)) {
+        dcd->ep0Stall();
+    }
+    interrupts();
+}
+
+/* The previous request's EP0 completion, the host already past it (see
+ * task()): an OUT data stage still reaches its owner, the request then ends
+ * as its status would end it - nothing is sent. */
+void Core::ep0_superseded(bool in, uint16_t length)
+{
+    gen_fill = nullptr;
+    zlp = false;
+    if (!in && ep0 == DATA_OUT) {
+        ep0_actual = length;
+        if (owner) {
+            owner->usbControl(CH32RVUsbControlStage::Data, req);
+        } else if (ch32rv_usb_platform.request) {
+            ch32rv_usb_platform.request(CH32RVUsbControlStage::Data, req);
+        }
+        ep0 = STATUS_IN;
+    } else if (in && ep0 == DATA_IN) {
+        ep0_actual = in_length;
+        ep0 = STATUS_OUT;
+    }
+    if (ep0 == STATUS_IN || ep0 == STATUS_OUT) {
+        ep0_done(ep0 == STATUS_IN, 0);                   /* the status branch: no controller call */
+    }
+    ep0 = IDLE;
+}
+
 /* ------------------------------------------------------------ the task */
 void Core::task()
 {
@@ -721,7 +775,7 @@ void Core::task()
     }
     noInterrupts();
     const uint8_t e = events;
-    const uint16_t din = done_in, dout = done_out;
+    uint16_t din = done_in, dout = done_out;
     uint8_t s[8];
     memcpy(s, setup_raw, 8);
     events = 0;
@@ -743,6 +797,23 @@ void Core::task()
         note(CH32RVUsbBusEvent::Resumed);
     }
     if (e & EV_SETUP) {
+        /* An EP0 completion taken with a SETUP is the request before it: the
+         * host sent the new SETUP, so on the bus that one is over (a status
+         * the controller answered on its own). It is finished here, before
+         * the new request takes req / owner / ep0, and nothing more goes to
+         * the controller for it. Done after handle_setup() it was read as the
+         * new request's stage: H417 SS, a SET_LINE_CODING's status complete
+         * with the next GET_DESCRIPTOR's SETUP made that one's data stage end
+         * early, its status never came and EP0 stopped answering (usbhid
+         * -110, 2026-11-14). */
+        if (dout & 1u) {
+            ep0_superseded(false, len_out[0]);
+        }
+        if (din & 1u) {
+            ep0_superseded(true, len_in[0]);
+        }
+        dout &= (uint16_t)~1u;
+        din &= (uint16_t)~1u;
         memcpy(setup_raw, s, 8);
         if (!speed_settled) {
             take_speed();
@@ -1061,7 +1132,7 @@ bool CH32RVUsbDevice::controlIn(const void *data, uint16_t length)
     Core::in_length = n;
     Core::zlp = n < Core::req.wLength && n && (n % Core::ep0_mps) == 0;
     Core::ep0 = Core::DATA_IN;
-    return Core::dcd->xfer(0x80, (uint8_t *)data, n);
+    return Core::ep0_xfer(0x80, (uint8_t *)data, n);
 }
 
 bool CH32RVUsbDevice::controlInGenerated(uint16_t length,
@@ -1077,14 +1148,14 @@ bool CH32RVUsbDevice::controlInGenerated(uint16_t length,
     Core::zlp = n < Core::req.wLength && n && (n % Core::ep0_mps) == 0;
     Core::ep0 = Core::DATA_IN;
     if (!n) {
-        return Core::dcd->xfer(0x80, nullptr, 0);
+        return Core::ep0_xfer(0x80, nullptr, 0);
     }
     Core::gen_fill = fill;
     Core::gen_context = context;
     Core::gen_offset = 0;
     Core::gen_chunk = n < Core::ep0_mps ? n : Core::ep0_mps;
     fill(context, 0, ep0_packet, Core::gen_chunk);
-    return Core::dcd->xfer(0x80, ep0_packet, Core::gen_chunk);
+    return Core::ep0_xfer(0x80, ep0_packet, Core::gen_chunk);
 }
 
 uint16_t CH32RVUsbDevice::controlActualBytes() const
@@ -1101,10 +1172,10 @@ bool CH32RVUsbDevice::controlOut(void *buffer, uint16_t length)
     const uint16_t n = length < Core::req.wLength ? length : Core::req.wLength;
     if (n == 0) {
         Core::ep0 = Core::STATUS_IN;
-        return Core::dcd->xfer(0x80, nullptr, 0);
+        return Core::ep0_xfer(0x80, nullptr, 0);
     }
     Core::ep0 = Core::DATA_OUT;
-    return Core::dcd->xfer(0x00, (uint8_t *)buffer, n);
+    return Core::ep0_xfer(0x00, (uint8_t *)buffer, n);
 }
 
 bool CH32RVUsbDevice::controlStatus()
@@ -1114,7 +1185,7 @@ bool CH32RVUsbDevice::controlStatus()
     }
     Core::answered = true;
     Core::ep0 = Core::STATUS_IN;
-    return Core::dcd->xfer(0x80, nullptr, 0);
+    return Core::ep0_xfer(0x80, nullptr, 0);
 }
 
 /* Leave the bus first so the host sees the device go away now, not at the
