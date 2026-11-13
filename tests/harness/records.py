@@ -124,6 +124,13 @@ def _supply(value, errors):
         errors.append("supply.from: probe (the probe's USB port powers the board), usb (its own USB) or other")
 
 
+def _options(value, errors):
+    if not isinstance(value, dict) or not all(
+            isinstance(k, str) and re.fullmatch(r"[a-z0-9]+", k) and isinstance(v, str) and re.fullmatch(r"[A-Za-z0-9_]+", v)
+            for k, v in value.items()):
+        errors.append("options: {<menu>: <value>} of boards.txt (e.g. {vio18: 3v3, debugspeed: low})")
+
+
 # member: (checker, what it is)
 CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
@@ -132,6 +139,7 @@ CORE_MEMBERS = {
     "parts": (_parts, "external parts: {sd: {bus: spi | sd1 | sd4, <signal>: <pad>, ...}, eth: {to: lan}}"),
     "pd": (_pd, "a USB PD sink on the board: {max_mv, vbus_pin, vbus_ratio}"),
     "defects": (_defects, "this board's own faults: [{id, lose: [feature, ...], why}]"),
+    "options": (_options, "board menu values this board needs (boards.txt), under CH32_TEST_OPTIONS: {vio18: 3v3, debugspeed: low}"),
     "note": (lambda v, e: None, "for people"),
     "updated": (lambda v, e: None if re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(v)) else e.append("updated: YYYY-MM-DD"),
                 "the day it was last written"),

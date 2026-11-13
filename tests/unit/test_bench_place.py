@@ -307,3 +307,16 @@ def test_a_link_record_is_named_by_the_links_serial():
                           ("OEP_PORT_MEMO_x", eth, "USB serial")):
         with pytest.raises(place.PlaceError, match=why):
             place.link_records_from_env({key: bad})
+
+
+def test_the_records_options_go_into_the_fqbn_under_ch32_test_options(monkeypatch, tmp_path):
+    monkeypatch.delenv("CH32_TEST_OPTIONS", raising=False)
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, record={"options": {"debugspeed": "low", "opt": "oslto"}})
+    assert p["fqbn"].endswith(",debugspeed=low,opt=oslto")
+    monkeypatch.setenv("CH32_TEST_OPTIONS", "debugspeed=medium")
+    p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"options": {"debugspeed": "low"}})
+    assert p["fqbn"].endswith(",debugspeed=medium"), "CH32_TEST_OPTIONS wins"
+    with pytest.raises(place.PlaceError, match="has no debugspeed=slow"):
+        fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"options": {"debugspeed": "slow"}})
+    assert records.check_core({"options": {"vio18": "3v3", "debugspeed": "low"}}) == []
+    assert any(e.startswith("options:") for e in records.check_core({"options": {"vio18": 3}}))

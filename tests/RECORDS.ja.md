@@ -122,7 +122,18 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
   ほかの名前も書けます。今は飛ばす case が無いだけで、細かいものは `<機能>:<番号>` の形で書きます（例 `adc:3` は ADC のチャネル 3）。
 - `why`: 何を見てそう判断したかです。日付も書きます。
 
-### 4.7 `note`・`updated`
+### 4.7 `options`
+
+その台で試験を流すときに要る、ボードメニューの値です。`{"<メニュー>": "<値>", ...}` の形で、名前と値は boards.txt の
+`<board>.menu.<メニュー>.<値>` のものを書きます（例 `{"vio18": "3v3", "debugspeed": "low"}`）。
+
+- 試験は、これを fqbn に入れてからビルド・書き込みします。`CH32_TEST_OPTIONS` で同じメニューを指定したときは、そちらが勝ちます。
+- boards.txt に無い値は、チップに触る前に止まります。
+- 例: H417 の公式 EVT（6-2）は、VIO18 の端子をプローブで駆動するので `vio18: 3v3` が要ります。PB8 / PB9（SWD）が USB3-A の
+  USB 2.0 の線と同じ端子なので、SS の列挙を乱さないように `debugspeed: low` も要ります。
+- `bench_record.py set <アドレス> --option vio18=3v3 --option debugspeed=low` で書けます。
+
+### 4.8 `note`・`updated`
 
 - `note`: 人のためのメモです。試験は読みません。
 - `updated`: 最後に書いた日です（`YYYY-MM-DD`）。`bench_record.py set` が書くたびに入れます。

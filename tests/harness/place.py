@@ -212,7 +212,7 @@ def with_options(fqbn, f_cpu, options, path=REPO / "boards.txt"):
     for item in options.split(","):
         menu, _, value = item.strip().partition("=")
         if not re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}=", text, re.M):
-            raise PlaceError(f"CH32_TEST_OPTIONS: {board} has no {menu}={value} in boards.txt")
+            raise PlaceError(f"options (the record's or CH32_TEST_OPTIONS): {board} has no {menu}={value} in boards.txt")
         pairs[menu] = value
         hz = re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}\.build\.f_cpu=(\d+)L?$",
                        text, re.M)
@@ -470,7 +470,10 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
                          "the port (correct the record with tests/bench_record.py, or the address)")
     if not expected and parsed["kind"] == "oep":
         place["warnings"].append(f"no target in {address} or its port record: the board is not checked against one")
-    place["fqbn"], place["f_cpu"] = with_options(*fqbn_of(part), os.environ.get("CH32_TEST_OPTIONS", ""))
+    # The record's options (what the board needs: 6-2's VIO18 and debug speed) first, CH32_TEST_OPTIONS over them.
+    recorded = ",".join(f"{k}={v}" for k, v in (place["record"].get("options") or {}).items())
+    asked = os.environ.get("CH32_TEST_OPTIONS", "")
+    place["fqbn"], place["f_cpu"] = with_options(*fqbn_of(part), ",".join(o for o in (recorded, asked) if o.strip()))
     # Every USART's routes (TX, RX) from the variant: a test picks a pair among the labelled lines (periph's Serial1).
     from harness.series import serial_routes
     place["serial_routes"] = [[n, k, tx, rx] for n, routes in sorted(serial_routes(series_of(part, series_needs()[1]) or "").items())

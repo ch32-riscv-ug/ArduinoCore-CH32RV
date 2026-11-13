@@ -97,6 +97,8 @@ def set_records(address, args):
         core_changes["pd"] = json.loads(args.pd)
     if args.defect:
         core_changes["defects"] = [json.loads(d) for d in args.defect]
+    if args.option:
+        core_changes["options"] = dict(o.split("=", 1) for o in args.option)
     if args.note:
         core_changes["note"] = args.note
     if core_changes or args.remove:
@@ -144,6 +146,8 @@ def main(argv=None):
             s.add_argument("--eth", action="store_true", help="the Ethernet jack is on the host's network")
             s.add_argument("--pd", help="JSON: {max_mv, vbus_pin, vbus_ratio}")
             s.add_argument("--defect", action="append", help="JSON: {id, lose: [...], why}; repeat for each")
+            s.add_argument("--option", action="append",
+                           help="<menu>=<value> of boards.txt the board needs (vio18=3v3, debugspeed=low); repeat for each")
             s.add_argument("--note")
             s.add_argument("--remove", action="append", help="a core record member to drop")
     args = ap.parse_args(argv)
