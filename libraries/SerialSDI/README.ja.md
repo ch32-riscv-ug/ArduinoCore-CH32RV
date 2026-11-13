@@ -31,6 +31,9 @@ void setup() {
 - **WCH-LinkEであること。** 初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません
 - **chipが対応していること。** V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103
 
+**OEPのprobeでも読めます。** 同梱のch32rvの`monitor --source sdi`が、
+portに`oep://<unit>/<口>`を選ぶだけで同じ出力を受け取ります(有効化もch32rvが行います)。
+
 有効にすると、probeは受け取った文字を**自分のUSB CDC portへ流します**。
 つまり**普通のSerial Monitorがそのまま監視先**になります(専用のmonitorは要りません)。
 

@@ -5,8 +5,9 @@ port_config, run_hardware.py).
 - console-rtt and console-dmdata, both ways: the sketch answers a nonce with its build id; 20 lines of random text
   come back as sent (echo, up to 80 characters); a burst of 200 numbered lines with a hash each arrives whole and
   in order.
-- console-sdi, send only (a WCH-LinkE forwards it, docs in libraries/SerialSDI): a line every 100 ms with the build
-  id and a count; 20 of them arrive with no count skipped. Through anything but a WCH-Link the test skips."""
+- console-sdi, send only (docs in libraries/SerialSDI): a line every 100 ms with the build id and a count; 20 of them
+  arrive with no count skipped. Which probes carry it is ch32rv's capabilities' answer (`monitor sdi`: a WCH-LinkE and
+  an OEP probe do, a WCH-Link(CH549) does not); harness/place.py skips the case where it is not supported."""
 import json
 import pathlib
 import secrets
@@ -63,9 +64,6 @@ def test_console_sdi(dut, record_property):
     case = settings(__file__)
     if case.get("case") != "console-sdi":
         pytest.skip("the two-way consoles are test_console_two_way's")
-    port = case["target"].get("upload_port") or case["target"].get("address", "")
-    if not port.startswith("wchlink://"):
-        pytest.skip("SerialSDI is forwarded by a WCH-LinkE only")
     counts = []
     while len(counts) < 21:
         m = dut.expect(rb"SDI (\S+) (\d+)\r?\n", timeout=5)

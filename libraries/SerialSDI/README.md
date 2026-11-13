@@ -32,6 +32,9 @@ not a fault, it is the probe not forwarding yet. Two conditions:
 - **A WCH-LinkE.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it
 - **A chip the probe supports**: V003, V00x, V103, V20x, V30x, V317, X035, L103
 
+**An OEP probe carries it too.** The bundled ch32rv's `monitor --source sdi`
+receives the same output with the port `oep://<unit>/<port>` (ch32rv switches it on as well).
+
 Once it is on, the probe forwards what it collects to **its own USB CDC port**,
 so the ordinary serial monitor is where to read it - no special monitor needed.
 
