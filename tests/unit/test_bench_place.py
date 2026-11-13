@@ -175,6 +175,7 @@ def test_record_checks():
                                "parts": {"sd": {"bus": "sd1", "clk": "pa5", "cmd": "pa7", "dat0": "pa6"},
                                          "eth": {"to": "lan"}},
                                "someone.else": {"kept": True}}) == []
+    assert records.check_core({"board": "wch:CH32F&V208W-R0"}) == []   # WCH's own name, & and all
     errors = records.check_core({"board": "CH32X035", "parts": {"sd": {"bus": "spi", "sck": "PA5"}},
                                  "pd": {"vbus_pin": "pa1"}})
     assert any(e.startswith("board") for e in errors)

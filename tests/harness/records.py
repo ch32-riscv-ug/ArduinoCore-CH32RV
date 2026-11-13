@@ -112,7 +112,7 @@ def _defects(value, errors):
 
 
 def _board(value, errors):
-    if not isinstance(value, str) or not re.fullmatch(r"[a-z0-9-]+:[A-Za-z0-9._-]+", value):
+    if not isinstance(value, str) or not re.fullmatch(r"[a-z0-9-]+:[A-Za-z0-9._&-]+", value):
         errors.append(f"board: <maker>:<model> (wch:CH32X035C8T-R0), not {value!r}")
 
 
