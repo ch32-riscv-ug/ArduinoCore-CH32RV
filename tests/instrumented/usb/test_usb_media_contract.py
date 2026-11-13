@@ -63,7 +63,7 @@ def test_usb_media_contract(dut, record_property):
 
         # usb.audio-playback: 100 ms of speaker data arrives whole.
         dut.write("audio\n")
-        before = dut.expect(rb"AUDIO (\d+) (\d+) \d+\r?\n", timeout=5)
+        before = dut.expect(rb"AUDIO (\d+) (\d+) \d+[^\r\n]*\r?\n", timeout=5)
         payload = secrets.token_bytes(6400)
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=1)
         sent = iso_transfer(dev, speaker[0].bEndpointAddress, 64 // per_ms, 100 * per_ms, data=payload)
@@ -71,7 +71,7 @@ def test_usb_media_contract(dut, record_property):
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=0)
         assert sum(sent) == len(payload)
         dut.write("audio\n")
-        after = dut.expect(rb"AUDIO (\d+) (\d+) \d+\r?\n", timeout=5)
+        after = dut.expect(rb"AUDIO (\d+) (\d+) \d+[^\r\n]*\r?\n", timeout=5)
         assert int(after.group(1)) - int(before.group(1)) == len(payload)
         assert (int(after.group(2)) - int(before.group(2))) & 0xFFFFFFFF == sum(payload)
 
