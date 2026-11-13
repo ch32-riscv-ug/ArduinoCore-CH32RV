@@ -138,6 +138,17 @@ def test_an_rp2040_peer_on_the_same_probe(monkeypatch, tmp_path):
     assert p["cases"]["usb-peer-media"].startswith("skip: the RP2040's USB host has no isochronous")
     with pytest.raises(place.PlaceError, match="usb.port"):
         fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"usb": {"to": "rp2040"}})
+
+
+def test_an_rp2040_peer_on_another_probe(monkeypatch, tmp_path):
+    # A WCH-Link's DUT (V203RB) with a Pico whose SWD is on an OEP probe elsewhere.
+    pico = {"usb": {"to": "rp2040", "port": "oep://80f1b2d835d6/rp2040-v203rb"}}
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=V203RB, address="wchlink://BC5F4B9807F7", memo=pico)
+    assert p["usb_peer"] == "pico" and p["usb_peer_address"] == "oep://80f1b2d835d6/rp2040-v203rb"
+    assert p["cases"]["usb-peer"] == "run"
+    with pytest.raises(place.PlaceError, match="not one; write oep://"):
+        fake_resolve(monkeypatch, tmp_path / "b", info=V203RB, address="wchlink://BC5F4B9807F7",
+                     memo={"usb": {"to": "rp2040", "port": "rp2040-v203rb"}})
     s3, _ = fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"usb": {"to": "esp32-s3", "serial": "x"}})
     assert s3["usb_peer"] == "s3" and s3["cases"]["usb-peer-media"] == "run"
 

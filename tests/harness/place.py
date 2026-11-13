@@ -466,9 +466,14 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
         place["usb_peer_serial"] = core["usb"].get("serial")
         place["usb_peer_mac"] = core["usb"].get("mac")
     if core.get("usb", {}).get("to") == "rp2040":
-        if parsed["kind"] != "oep":
-            raise PlaceError(f"{address}: an rp2040 USB peer is on the DUT's OEP probe; this is not an OEP port")
-        place["usb_peer_address"] = f"oep://{parsed['unit']}/{core['usb']['port']}"
+        port = core["usb"]["port"]
+        if port.startswith("oep://"):
+            place["usb_peer_address"] = port            # on another probe (a WCH-Link's DUT has none of its own)
+        elif parsed["kind"] != "oep":
+            raise PlaceError(f"{address}: usb.port {port!r} names a port on the DUT's own OEP probe, and this is not "
+                             "one; write oep://<unit_id>/<port>")
+        else:
+            place["usb_peer_address"] = f"oep://{parsed['unit']}/{port}"
     if "pd" in core:
         place.update({f"pd_{k}": v for k, v in core["pd"].items()})
         if "vbus_pin" in core["pd"]:

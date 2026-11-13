@@ -87,8 +87,11 @@ def _usb(value, errors):
             errors.append(f"usb.mac: the {to.upper()}'s MAC, 12 lower-case hex digits")
         return
     if to == "rp2040":
-        if not isinstance(value.get("port"), str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9-]{0,15}", value["port"]):
-            errors.append("usb.port: the RP2040's port on the same OEP probe (its SWD and RTT console), e.g. pico")
+        port = value.get("port")
+        if not isinstance(port, str) or not re.fullmatch(
+                r"(?:oep://[0-9a-f]{12}/)?[A-Za-z][A-Za-z0-9-]{0,15}", port):
+            errors.append("usb.port: the RP2040's OEP port (its SWD and RTT console): <port> on the DUT's own probe, "
+                          "e.g. rp2040-x035, or oep://<unit_id>/<port> on another (a WCH-Link's DUT)")
         return
     errors.append(f"usb.to: host, esp32-s3, esp32-p4 or rp2040, not {to!r}")
 
