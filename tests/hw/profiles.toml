@@ -9,5 +9,5 @@
 [x035c8t6-s3]
 part = "CH32X035C8T6"
 
-[x035f8u6-s3]
-part = "CH32X035F8U6"
+[x035c8t6-pico]
+part = "CH32X035C8T6"

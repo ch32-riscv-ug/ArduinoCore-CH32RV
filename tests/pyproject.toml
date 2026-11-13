@@ -26,5 +26,5 @@ oep_memo_owner = "io.github.ch32-riscv-ug.arduino"
 # its standard wiring - every case it can run - and one per configuration that differs (probe route, peer, clock).
 arduino_combos = [
   "x035c8t6-s3: primary=x035c8t6-s3",
-  "x035f8u6-s3: primary=x035f8u6-s3",
+  "x035c8t6-pico: primary=x035c8t6-pico",
 ]
