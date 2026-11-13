@@ -200,6 +200,14 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
 
 ## USB
 
+- [ ] **H417 の VIO18 を 3.3 V にすると止まる（2026-11-13）**: nanoCH32H417（wchlink://A94B8F062EE9）で、メニューの
+  `vio18=3v3` で作ったスケッチは、コンソール（LinkE の dmseq）の READY を返さず、USBSS も列挙しない。V5F の hart は
+  loop() を回している（USB の deliver の中）。USB を使わない sd のスケッチでも同じ。SD の端子（PB10 / PB11 / PE8〜PE11）は
+  VIO18 の領域で、既定の 1.2 V ではカードが答えない（SDIO も SoftSPI の SPI モードも）。見立て（未確認）: メニューの既定が
+  「XO strap」なので、VIO18 を動作中に変えると 25 MHz の水晶と、それを元にした PLL が乱れる。WCH の SDIO のデモ
+  （nanoCH32H417 の demo/SDIO_SD.Bin）が VIO18 をいつ設定するかと比べ、必要ならクロックを立てる前に設定する。
+  ベンチの構成を固めてから調べる（ユーザー）。
+
 CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0012-usb-stack.ja.md)）。全系列のドライバはあり、実機で確かめたのは X035、H417、V407（HS）。
 
 - [x] **USBHS で、リセットの後の速さを読む時期**（PR #1、ladyada。PR は取り込まず、実験してから独自に直した。2026-11-11）。
