@@ -59,6 +59,7 @@ static volatile struct {
 #define PWR_CTLR_LPDS  (1u << 0)
 #define PWR_CTLR_CWUF  (1u << 2)
 #define PWR_CTLR_CSBF  (1u << 3)
+#define PWR_CSR_WUF    (1u << 0)
 #define PWR_CSR_SBF    (1u << 1)
 #endif
 
@@ -532,7 +533,9 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
      * out of standby once), so only with the reset flags a wake leaves: the
      * power-on flag alone (V307 2026-10-28). */
     const uint32_t flags = CH32RV_RCC_RSTSCKR & 0xFE000000u;
-    if ((PWR_CSR & PWR_CSR_SBF) && flags == CH32RV_RST_POR) {
+    /* SBF on V307; a V203 wakes with only WUF (2026-11-13), which is also
+     * what its EVT's Standby_Mode checks. A real power-on clears both. */
+    if ((PWR_CSR & (PWR_CSR_SBF | PWR_CSR_WUF)) && flags == CH32RV_RST_POR) {
         ch32rv_wake_cause = CH32RV_POWER_WOKE_TIMER;
         PWR_CTLR |= PWR_CTLR_CSBF | PWR_CTLR_CWUF;
     }
@@ -563,7 +566,16 @@ void ch32rv_power_standby(void)
     CH32RV_EXTI_INTENR |= 1u << ALARM_LINE;
     CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
     PWR_CTLR |= PWR_CTLR_CWUF;
-    PWR_CTLR |= PWR_CTLR_PDDS | PWR_CTLR_LPDS;
+#if defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103)
+    /* FLASH_LP [11:10] = 10 (flash low-power mode 1), as the EVT's
+     * PWR_EnterSTANDBYMode() writes it. Left at its reset value 01 the RTC
+     * alarm never ends standby: V205RCT6 2026-11-13, 1 s alarm, stuck until
+     * NRST with 01 (with or without LPDS), woke with 10 (with or without). */
+    PWR_CTLR = (PWR_CTLR & ~(3u << 10)) | (2u << 10);
+#endif
+    /* PDDS alone, as every EVT's PWR_EnterSTANDBYMode(): with LPDS set too a
+     * V203C8T6 never woke on the alarm (2026-11-13; without it, 2 s later). */
+    PWR_CTLR = (PWR_CTLR & ~PWR_CTLR_LPDS) | PWR_CTLR_PDDS;
     PFIC_SCTLR |= SCTLR_SLEEPDEEP;
     for (;;) {
         __asm__ volatile ("wfi");              /* wakes through a reset */
