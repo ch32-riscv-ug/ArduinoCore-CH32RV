@@ -39,7 +39,8 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 |---|---|---|---|
 | USBFS（X035 型） | X035 / X033 | `CH32RVUsbDcdUsbfsX03x.cpp` | 実機（X035） |
 | USBFS（USBOTG_FS 型） | H417 / H416 / H415 | `CH32RVUsbDcdUsbfsOtg.cpp` | 実機（H417） |
-| 〃 | V203 / V208（PB6 / PB7）、V303 / V305 / V307 / V317、V205、L103 / M103、M030 | 〃 | ビルドのみ |
+| 〃 | V203 / V208（PB6 / PB7） | 〃 | 実機（V203RBT6。RP2040 の相手で、usb-peer のデバイス側とホスト側の 9 件が通る） |
+| 〃 | V303 / V305 / V307 / V317、V205、L103 / M103、M030 | 〃 | ビルドのみ |
 | USB（旧 IP） | V103 | `CH32RVUsbDcdUsbV103.cpp` | ビルドのみ |
 | USBD（fsdev 型、CAN と共用） | V203 / V208 | `CH32RVUsbDcdUsbd.cpp`（`Usbd` を指定） | ビルドのみ |
 | USBHS 第 1 世代 | V305 / V307 / V317 | `CH32RVUsbDcdUsbhs1.cpp`（`HighSpeed`、HSE が要る） | ビルドのみ |
@@ -333,7 +334,7 @@ void loop() {
 |---|---|---|
 | CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | C8T6 で ESP32-S3（EspUsbDevice）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X035 F8U6 / F7P6 / D8U6、X033 | シリコンにホストが無い（データシートの型番表）。`begin()` が `Unsupported` | F8U6 で実機確認 |
-| CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
+| CH32V203 / V208 | USBFS（PB6 / PB7） | V203RBT6 で RP2040（Pico）相手に実機確認（HID、classes、input、storage） |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
 | CH32V407 / V467 | USBHS1（既定）、USBHS2（`CH32RV_USB_HOST_PORT_HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（HS）相手に実機確認 |
 | CH32X305 / X315 | USBHS（既定） | ビルドのみ |
