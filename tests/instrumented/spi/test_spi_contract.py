@@ -51,6 +51,23 @@ def pad(number):
     return f"P{'ABCDEFGHIJK'[(number >> 5) - 2]}{number & 31}"
 
 
+def far_from(candidates, lines, ref):
+    """The candidate whose probe channel is furthest from ref's: CS next to SCK picked up its edges on 6-2's harness
+    (a short high in the middle of CS split a frame, 2026-11-14), and the channels run along the probe's header."""
+    return max(candidates, key=lambda p: abs(lines[p]["channel"] - lines[ref]["channel"]))
+
+
+def spread(lines):
+    """SoftSPI's four lines, as far apart on the probe as the labels allow (sck, miso, mosi, cs): side by side on
+    6-2's harness, CS and MISO picked up the edges of the lines next to them."""
+    pads = sorted(lines, key=lambda p: lines[p]["channel"])
+    if len(pads) <= 4:
+        return tuple(pads[:4])
+    step = (len(pads) - 1) / 3
+    picked = [pads[round(i * step)] for i in range(4)]
+    return picked[0], picked[2], picked[1], picked[3]
+
+
 def open_bus(dut, oep_host, case, record_property):
     """Start the case's bus on the DUT and pick its lines: (lines by pad, sck, miso, mosi, cs, soft)."""
     nonce = secrets.token_hex(4)
@@ -61,7 +78,7 @@ def open_bus(dut, oep_host, case, record_property):
     if soft:
         if len(lines) < 4:
             pytest.skip(f"SoftSPI wants four <port>@<pad> lines, the probe labels {len(lines)}")
-        sck, miso, mosi, cs = list(lines)[:4]
+        sck, miso, mosi, cs = spread(lines)
         assert ask(dut, f"pins {lines[sck]['pin']} {lines[miso]['pin']} {lines[mosi]['pin']} {lines[cs]['pin']}",
                    rb"PINS (\d)").group(1) == b"1", "SoftSPI refused the pins"
         record_property("bus", "SoftSPI")
@@ -77,7 +94,7 @@ def open_bus(dut, oep_host, case, record_property):
         others = [p for p in lines if p not in (sck, miso, mosi)]
         if not others:
             pytest.skip("no other <port>@<pad> line for CS")
-        cs = others[0]
+        cs = far_from(others, lines, sck)
         ask(dut, f"hw {lines[cs]['pin']}", rb"HW (\d+) (\d+) (\d+)")
         record_property("bus", "SPI")
     record_property("pins", json.dumps({"sck": sck, "miso": miso, "mosi": mosi, "cs": cs}))
