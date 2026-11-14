@@ -20,3 +20,11 @@ def test_the_host_cases_open_the_controller_to_the_host(tmp_path):
     assert "CH32RVUsbController::SuperSpeed" in staged_opts(tmp_path, "usb", usb_host_controller="super_speed")
     assert "USB_TEST_CONTROLLER" not in staged_opts(tmp_path / "b", "usb", usb_host_controller="auto")
     assert "USB_TEST_CONTROLLER" not in staged_opts(tmp_path / "c", "usb")
+
+
+def test_the_peer_host_ports_name_the_library_ports():
+    """USB_HOST_PORTS builds CH32RV_USB_HOST_PORT_<KEY>; every key must be a port CH32RVUsbHost.h declares."""
+    header = (pathlib.Path(__file__).resolve().parents[2] / "libraries/CH32RVUsbHost/src/CH32RVUsbHost.h").read_text()
+    for name in run_hardware.USB_HOST_PORTS.values():
+        assert f"    {name}," in header or f"    {name} =" in header, name
+    assert run_hardware.USB_HOST_PORTS["super_speed"] == "CH32RV_USB_HOST_PORT_SUPER_SPEED"

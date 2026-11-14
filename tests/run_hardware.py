@@ -109,7 +109,8 @@ SKETCHES = {
 # (USB_PEER_HOST_PORT).
 USB_CONTROLLERS = {"full_speed": "FullSpeed", "high_speed": "HighSpeed", "super_speed": "SuperSpeed", "usbd": "Usbd",
                    "high_speed_2": "HighSpeed2"}
-USB_HOST_PORTS = {p: "CH32RV_USB_HOST_PORT_" + p.upper() for p in ("full_speed", "high_speed", "high_speed_2")}
+USB_HOST_PORTS = {p: "CH32RV_USB_HOST_PORT_" + p.upper()
+                  for p in ("full_speed", "high_speed", "high_speed_2", "super_speed")}
 # build_opt.h lines staged beside a case's DUT sketch.
 BUILD_OPTS = {
     # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.

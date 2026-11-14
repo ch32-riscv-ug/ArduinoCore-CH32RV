@@ -526,8 +526,11 @@ static void hcd_device_close(uint8_t daddr)
     unlock(was);
 }
 
-static bool hcd_ep_open(uint8_t daddr, uint8_t address, uint8_t type, uint16_t mps, uint8_t interval, uint8_t speed)
+static bool hcd_ep_open(uint8_t daddr, const CH32RVUsbHcdEp &e)
 {
+    const uint8_t address = e.address, type = e.type, speed = e.speed;
+    const uint16_t mps = e.mps;
+    uint8_t interval = e.interval;
     if (mps > PACKET_MAX) {
         return false;
     }
@@ -703,7 +706,7 @@ const CH32RVUsbHcd ch32rv_usb_hcd_usbfs = {
     "USBFS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    nullptr,
+    nullptr, nullptr, nullptr, nullptr,
 };
 
 #endif

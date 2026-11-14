@@ -18,6 +18,14 @@
 #define CH32RV_USB_HOST_STACK 0
 #endif
 
+/* A SuperSpeed host (CH32RVUsbHcdUsbss.cpp): the stack's SuperSpeed
+ * enumeration, hub and route code is built only where one exists. */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+#define CH32RV_USB_HOST_SUPERSPEED 1
+#else
+#define CH32RV_USB_HOST_SUPERSPEED 0
+#endif
+
 /* Device addresses 1..CH32RV_USB_HOST_DEVICES: a hub and the devices behind it. */
 #define CH32RV_USB_HOST_DEVICES 5
 /* The configuration descriptor buffer (enumeration and the descriptor walks). */
@@ -95,6 +103,9 @@ void ch32rv_usb_host_abort(uint8_t daddr, uint8_t address);
 bool ch32rv_usb_host_clear_halt(uint8_t daddr, uint8_t address);
 /* Enumerate the device on the root port again (a stuck device's way back). */
 void ch32rv_usb_host_reenumerate(uint8_t daddr);
+/* Suspend (true) or resume the root port's link: U3 on SuperSpeed. false
+ * where the controller cannot (no public API yet). */
+bool ch32rv_usb_host_suspend(bool suspend);
 
 /* Map a transfer result to the library's error. */
 CH32RVUsbHostError ch32rv_usb_host_result_error(uint8_t result);

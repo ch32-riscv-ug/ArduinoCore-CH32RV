@@ -59,7 +59,7 @@ struct Port {
     CH32RVUsbHostSerialConfig config;
     bool dtr, rts;
     volatile bool inBusy;
-    volatile uint8_t pendingLength;          /* a received packet the task has not handed on */
+    volatile uint16_t pendingLength;         /* a received packet the task has not handed on */
     uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t ctl[8] __attribute__((aligned(4)));
 };
@@ -553,7 +553,7 @@ void in_done(void *user, uint8_t result, uint16_t length)
         arm_in(p);
         return;
     }
-    p.pendingLength = (uint8_t)length;   /* the task hands it on, then the endpoint is armed again */
+    p.pendingLength = length;     /* the task hands it on, then the endpoint is armed again */
 }
 
 /* The interfaces taken: CDC-ACM (control, and the data interface after it),
@@ -692,7 +692,7 @@ size_t hand_on()
     for (uint8_t i = 0; i < CDC_PORTS; i++) {
         Port &p = ports[i];
         Rx &r = rx[i];
-        const uint8_t n = p.pendingLength;
+        const uint16_t n = p.pendingLength;
         if (!p.mounted || !n) {
             continue;
         }
@@ -703,7 +703,7 @@ size_t hand_on()
             continue;              /* the Stream is full: wait for its reader */
         }
         if (r.owner) {
-            for (uint8_t k = 0; k < n; k++) {
+            for (uint16_t k = 0; k < n; k++) {
                 r.buf[r.head] = p.in[k];
                 r.head = (uint16_t)((r.head + 1u) % r.size);
             }

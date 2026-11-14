@@ -339,6 +339,7 @@ void loop() {
 | CH32V407 / V467 | USBHS1（既定）、USBHS2（`CH32RV_USB_HOST_PORT_HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（HS）相手に実機確認 |
 | CH32X305 / X315 | USBHS（既定） | ビルドのみ |
 | CH32V205、H41x | USBFS（既定）、USBHS（`CH32RV_USB_HOST_PORT_HIGH_SPEED`） | ビルドのみ |
+| CH32H416 / H417 | 上に加えて USBSS（`CH32RV_USB_HOST_PORT_SUPER_SPEED`、SuperSpeed だけ、`CH32RVUsbHcdUsbss.cpp`） | 実装済み、実機では未確認 |
 
 - ポートは `CH32RVUsbHostConfig.port` で選びます（EspUsbHost の `EspUsbHostConfig.port` と同じ形）。第 2 世代の USBHS の
   ホスト（`CH32RVUsbHcdUsbhs2.cpp`）は HS の機器を HS で扱います。HS のハブの先の FS・LS の機器（split）はまだ扱えません

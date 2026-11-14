@@ -478,8 +478,10 @@ struct Hcd {
         unlock(was);
     }
 
-    static bool ep_open(uint8_t daddr, uint8_t address, uint8_t type, uint16_t mps, uint8_t interval, uint8_t speed)
+    static bool ep_open(uint8_t daddr, const CH32RVUsbHcdEp &e)
     {
+        const uint8_t address = e.address, type = e.type, interval = e.interval, speed = e.speed;
+        const uint16_t mps = e.mps;
         if (mps > PACKET_MAX) {
             return false;
         }
@@ -603,7 +605,8 @@ struct Hcd {
     static constexpr CH32RVUsbHcd table(const char *name)
     {
         return {name, PACKET_MAX, open, close, connected, port_reset, port_reset_end, port_disable,
-                ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll};
+                ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll,
+                nullptr, nullptr, nullptr};
     }
 };
 

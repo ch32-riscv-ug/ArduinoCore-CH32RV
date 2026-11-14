@@ -21,6 +21,12 @@ namespace {
 
 const CH32RVUsbHcd *hcd;
 
+/* A SuperSpeed device; false at compile time where no SuperSpeed host is. */
+inline bool is_super(uint8_t speed)
+{
+    return CH32RV_USB_HOST_SUPERSPEED && speed == CH32RV_USBH_SUPER;
+}
+
 /* ------------------------------------------------------------- events */
 struct Event {
     uint8_t daddr, address, result;
@@ -46,7 +52,18 @@ enum : uint8_t { DEV_FREE, DEV_ENUM, DEV_MOUNTED };
 struct Device {
     uint8_t state;
     uint8_t parent, port, speed;   /* parent 0: the root port */
-    uint8_t mps0;
+    uint16_t mps0;
+#if CH32RV_USB_HOST_SUPERSPEED
+    /* SuperSpeed: the route string (USB 3.2 8.9), the hub tier (0 for a
+     * device on the root port; a hub's SET_HUB_DEPTH value), the hub delay
+     * to this device (ns, for SET_ISOCH_DELAY) and the device's U1 / U2 exit
+     * latencies from its BOS (us). */
+    uint32_t route;
+    uint8_t tier;
+    uint16_t hubDelay;
+    uint8_t u1Latency;
+    uint16_t u2Latency;
+#endif
     uint8_t desc[18];
     uint8_t configValue, configAttributes, configPower, configInterfaces;
     uint16_t configLength;
@@ -302,8 +319,33 @@ bool ch32rv_usb_host_ep_open(uint8_t daddr, const uint8_t *d)
     if (!hcd || daddr > CH32RV_USB_HOST_DEVICES || devs[daddr].state == DEV_FREE || d[0] < 7 || d[1] != 5) {
         return false;
     }
-    const uint16_t mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
-    return hcd->epOpen(daddr, d[2], (uint8_t)(d[3] & 3), mps, d[6], devs[daddr].speed);
+    CH32RVUsbHcdEp e = {};
+    e.address = d[2];
+    e.type = (uint8_t)(d[3] & 3);
+    e.mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
+    e.interval = d[6];
+    e.speed = devs[daddr].speed;
+    /* SuperSpeed: the endpoint companion follows (USB 3.2 9.6.7). The
+     * callers hand an endpoint descriptor inside a configuration they have
+     * bounds-checked; the companion is mandatory there, so it is read
+     * without a length of its own. */
+    const uint8_t *c = d + d[0];
+    if (is_super(e.speed) && c[0] >= 6 && c[1] == 0x30) {
+        e.maxBurst = c[2];
+        e.attributes = c[3];
+        e.bytesPerInterval = (uint16_t)(c[4] | c[5] << 8);
+    }
+    return hcd->epOpen(daddr, e);
+}
+
+/* EP0 of `daddr` at `mps`. */
+static bool ep0_open(uint8_t daddr, uint16_t mps, uint8_t speed)
+{
+    CH32RVUsbHcdEp e = {};
+    e.type = CH32RV_USBH_CONTROL;
+    e.mps = mps;
+    e.speed = speed;
+    return hcd->epOpen(daddr, e);
 }
 
 void ch32rv_usb_host_ep_close(uint8_t daddr, uint8_t address)
@@ -547,8 +589,16 @@ namespace {
  * pump(): it never blocks, so the classes' transfers go on meanwhile. */
 enum : uint8_t {
     E_IDLE, E_DEBOUNCE, E_ROOT_RESET, E_HUB_RESET, E_HUB_POLL_WAIT, E_HUB_POLL, E_HUB_CLEAR, E_RECOVER,
-    E_DEV8, E_ADDRESS, E_ADDRESS_WAIT, E_DEV18, E_CFG9, E_CFG, E_SET_CFG,
+    E_DEV8, E_ADDRESS, E_ADDRESS_WAIT, E_DEV18, E_BOS5, E_BOS, E_ISOCH_DELAY, E_CFG9, E_CFG, E_SET_CFG, E_LPM, E_MOUNT,
 };
+
+/* SuperSpeed link power management after SET_CONFIGURATION (USB 3.2
+ * 9.4.12, 9.4.9, 10.16.2.10): SET_SEL, U1_ENABLE, U2_ENABLE, and behind a
+ * hub the port's U1 / U2 timeout. 1 sends them, 0 leaves every link in U0
+ * (what the EVT does). */
+#ifndef CH32RV_USB_HOST_SS_LINK_PM
+#define CH32RV_USB_HOST_SS_LINK_PM 1
+#endif
 
 struct Request {
     uint8_t hub, port;             /* hub 0: the root port */
@@ -561,6 +611,14 @@ struct Enumeration {
     Request queue[REQUESTS];
     uint8_t queued;
     uint8_t speed, address, tries, polls;
+#if CH32RV_USB_HOST_SUPERSPEED
+    uint8_t lpm;                   /* the next E_LPM request */
+    bool warmed;                   /* a SuperSpeed hub port's warm reset was asked for */
+    uint32_t route;                /* SuperSpeed: the device's route string, tier and hub delay */
+    uint8_t tier;
+    uint16_t hubDelay;
+    uint8_t sel[6] __attribute__((aligned(4)));
+#endif
     uint16_t configLength;         /* what GET_DESCRIPTOR(configuration) brought */
     uint32_t t;
     bool again;                    /* the root port's device gave up on: try it again at `againAt` */
@@ -736,6 +794,15 @@ void en_step(void)
             hcd->portReset();
             en.t = now;
             en.state = E_ROOT_RESET;
+#if CH32RV_USB_HOST_SUPERSPEED
+        } else if (devs[en.now.hub].speed == CH32RV_USBH_SUPER) {
+            /* A SuperSpeed hub's port trains by itself and is Enabled once
+             * the link is in U0: no PORT_RESET (USB 3.2 10.3.1.2), wait for it. */
+            en.polls = 0;
+            en.warmed = false;
+            en.t = now;
+            en.state = E_HUB_POLL_WAIT;
+#endif
         } else if (en_control(en.now.hub, 0x23, 3, 4, en.now.port, nullptr, 0)) {   /* SET_FEATURE(PORT_RESET) */
             en.state = E_HUB_RESET;
         }
@@ -745,6 +812,9 @@ void en_step(void)
             return;
         }
         en.speed = hcd->portResetEnd();
+        if (en.speed == CH32RV_USBH_RESET_PENDING) {
+            return;                    /* a warm reset still running: ask again */
+        }
         en.t = now;
         en.state = E_RECOVER;
         return;
@@ -772,6 +842,30 @@ void en_step(void)
             en.state = E_IDLE;         /* gone, or the hub does not answer */
             return;
         }
+#if CH32RV_USB_HOST_SUPERSPEED
+        if (devs[en.now.hub].speed == CH32RV_USBH_SUPER) {
+            /* SuperSpeed port status (USB 3.2 10.16.2.6): bit 1 enabled,
+             * bits 8:5 the link state, 0 U0, 6 SS.Inactive - which only a
+             * warm reset (BH_PORT_RESET) leaves. */
+            const uint8_t link = (uint8_t)((status >> 5) & 0x0F);
+            if ((status & 0x02) && link == 0) {
+                en.speed = CH32RV_USBH_SUPER;
+                en.t = now;
+                en.state = E_RECOVER;
+                return;
+            }
+            if (++en.polls > 50) {
+                en.state = E_IDLE;
+                return;
+            }
+            en.t = now;
+            en.state = E_HUB_POLL_WAIT;
+            if (link == 6 && !en.warmed && en_control(en.now.hub, 0x23, 3, 28, en.now.port, nullptr, 0)) {
+                en.warmed = true;      /* SET_FEATURE(BH_PORT_RESET); E_HUB_POLL_WAIT ignores its result */
+            }
+            return;
+        }
+#endif
         if (!(change & 0x10) || (status & 0x10)) {   /* C_PORT_RESET not yet, or still resetting */
             if (++en.polls > 50) {
                 en.state = E_IDLE;
@@ -797,7 +891,25 @@ void en_step(void)
         }
         devs[0].speed = en.speed;
         devs[0].state = DEV_ENUM;
-        if (!hcd->epOpen(0, 0, CH32RV_USBH_CONTROL, 8, 0, en.speed)) {
+#if CH32RV_USB_HOST_SUPERSPEED
+        /* Where it sits: on the root port the route is 0; behind a hub of
+         * tier t its port goes in bits 4t+3:4t (USB 3.2 8.9), and each hub
+         * adds its delay (wHubDelay) to the isochronous delay. */
+        en.route = 0;
+        en.tier = 0;
+        en.hubDelay = 0;
+        if (en.now.hub) {
+            const Device &h = devs[en.now.hub];
+            en.route = h.tier < 5 ? h.route | ((uint32_t)(en.now.port > 15 ? 15 : en.now.port) << (4u * h.tier)) : h.route;
+            en.tier = (uint8_t)(h.tier + 1u);
+            en.hubDelay = h.hubDelay;
+        }
+        if (hcd->deviceAt) {
+            hcd->deviceAt(0, en.route);
+        }
+#endif
+        /* SuperSpeed EP0 is 512 (bMaxPacketSize0 9); USB 2.0 starts at 8. */
+        if (!ep0_open(0, is_super(en.speed) ? 512 : 8, en.speed)) {
             en_retry();
             return;
         }
@@ -822,7 +934,18 @@ void en_step(void)
         d.parent = en.now.hub;
         d.port = en.now.port;
         d.speed = en.speed;
-        d.mps0 = en.buf[7] >= 8 && en.buf[7] <= 64 ? en.buf[7] : 8;
+#if CH32RV_USB_HOST_SUPERSPEED
+        d.route = en.route;
+        d.tier = en.tier;
+        d.hubDelay = en.hubDelay;
+#endif
+        /* USB 3.x (bcdUSB 0x0300 on): bMaxPacketSize0 is an exponent, 9 for
+         * 512 at SuperSpeed (USB 3.2 9.6.1). */
+        if ((uint16_t)(en.buf[2] | en.buf[3] << 8) >= 0x0300 && en.buf[7] >= 3 && en.buf[7] <= 9) {
+            d.mps0 = (uint16_t)(1u << en.buf[7]);
+        } else {
+            d.mps0 = en.buf[7] >= 8 && en.buf[7] <= 64 ? en.buf[7] : 8;
+        }
         en.address = a;
         if (en_control(0, 0x00, 5, a, 0, nullptr, 0)) {   /* SET_ADDRESS */
             en.state = E_ADDRESS;
@@ -842,7 +965,12 @@ void en_step(void)
         if ((uint32_t)(now - en.t) < 2) {
             return;
         }
-        if (!hcd->epOpen(en.address, 0, CH32RV_USBH_CONTROL, devs[en.address].mps0, 0, en.speed)) {
+#if CH32RV_USB_HOST_SUPERSPEED
+        if (hcd->deviceAt) {
+            hcd->deviceAt(en.address, en.route);
+        }
+#endif
+        if (!ep0_open(en.address, devs[en.address].mps0, en.speed)) {
             en_retry();
             return;
         }
@@ -855,10 +983,63 @@ void en_step(void)
             en_retry();
             return;
         }
+#if CH32RV_USB_HOST_SUPERSPEED
+        if (en.speed == CH32RV_USBH_SUPER) {
+            if (en_control(en.address, 0x80, 6, 0x0F00, 0, en.buf, 5)) {   /* the BOS header */
+                en.state = E_BOS5;
+            }
+            return;
+        }
+#endif
         if (en_control(en.address, 0x80, 6, 0x0200, 0, en.buf, 9)) {
             en.state = E_CFG9;
         }
         return;
+#if CH32RV_USB_HOST_SUPERSPEED
+    case E_BOS5: {                     /* SuperSpeed: the BOS (required, USB 3.2 9.6.2) */
+        uint16_t total = (uint16_t)(en.buf[2] | en.buf[3] << 8);
+        if (en.result != CH32RV_USBH_OK || en.actual < 5 || total < 5) {
+            total = 0;                 /* go on without the latencies */
+        }
+        if (total > sizeof en.buf) {
+            total = sizeof en.buf;
+        }
+        if (!total) {
+            en.actual = 0;
+            en.result = CH32RV_USBH_OK;
+            en.state = E_BOS;
+        } else if (en_control(en.address, 0x80, 6, 0x0F00, 0, en.buf, total)) {
+            en.state = E_BOS;
+        }
+        return;
+    }
+    case E_BOS: {
+        Device &d = devs[en.address];
+        if (en.result == CH32RV_USBH_OK) {
+            /* The SuperSpeed USB Device Capability (type 3): U1 and U2 exit
+             * latencies at 7 and 8-9. */
+            for (uint16_t at = 5; at + 3 <= en.actual && en.buf[at] >= 3; at = (uint16_t)(at + en.buf[at])) {
+                if (en.buf[at + 1] == 0x10 && en.buf[at + 2] == 3 && en.buf[at] >= 10 && at + 10 <= en.actual) {
+                    d.u1Latency = en.buf[at + 7];
+                    d.u2Latency = (uint16_t)(en.buf[at + 8] | en.buf[at + 9] << 8);
+                }
+            }
+        }
+        /* SET_ISOCH_DELAY (USB 3.2 9.4.11): 40 ns of the root port (a guess
+         * for this host; the EVT sends 0xFF, enum.c:422) plus the hubs'
+         * delays. Some devices stall it (the EVT's note, enum.c:920): the
+         * result is not looked at. */
+        if (en_control(en.address, 0x00, 0x31, (uint16_t)(40u + d.hubDelay), 0, nullptr, 0)) {
+            en.state = E_ISOCH_DELAY;
+        }
+        return;
+    }
+    case E_ISOCH_DELAY:
+        if (en_control(en.address, 0x80, 6, 0x0200, 0, en.buf, 9)) {
+            en.state = E_CFG9;
+        }
+        return;
+#endif
     case E_CFG9: {
         if (en.result != CH32RV_USBH_OK || en.actual < 9) {
             en_retry();
@@ -889,11 +1070,69 @@ void en_step(void)
             en.state = E_SET_CFG;
         }
         return;
-    case E_SET_CFG: {
+    case E_SET_CFG:
         if (en.result != CH32RV_USBH_OK) {
             en_retry();
             return;
         }
+#if CH32RV_USB_HOST_SUPERSPEED
+        if (en.speed == CH32RV_USBH_SUPER && CH32RV_USB_HOST_SS_LINK_PM) {
+            en.lpm = 0;
+            en.state = E_LPM;
+            return;
+        }
+#endif
+        en.state = E_MOUNT;
+        return;
+#if CH32RV_USB_HOST_SUPERSPEED
+    case E_LPM: {                      /* one request per step; their results are not looked at */
+        const Device &d = devs[en.address];
+        while (en.lpm < 5) {
+            const uint8_t step = en.lpm;
+            if (step >= 3 && !d.parent) {
+                en.lpm++;
+                continue;
+            }
+            bool sent;
+            if (step == 0) {
+                /* SET_SEL: U1SEL, U1PEL, U2SEL, U2PEL (us). PEL is the
+                 * device's own exit latency; SEL adds 1 us per hub tier and
+                 * 1 us for this host's link. Guess: the host's own exit
+                 * latency is not documented; measure: U1 / U2 exits the
+                 * device times out on. */
+                const uint16_t u1 = d.u1Latency, u2 = d.u2Latency;
+                const uint16_t extra = (uint16_t)(1u + d.tier);
+                const uint16_t u1sel = (uint16_t)(u1 + extra), u2sel = (uint16_t)(u2 + extra);
+                en.sel[0] = (uint8_t)(u1sel > 0xFF ? 0xFF : u1sel);
+                en.sel[1] = (uint8_t)(u1 > 0xFF ? 0xFF : u1);
+                en.sel[2] = (uint8_t)u2sel;
+                en.sel[3] = (uint8_t)(u2sel >> 8);
+                en.sel[4] = (uint8_t)u2;
+                en.sel[5] = (uint8_t)(u2 >> 8);
+                sent = en_control(en.address, 0x00, 0x30, 0, 0, en.sel, 6);
+            } else if (step == 1) {
+                sent = en_control(en.address, 0x00, 3, 48, 0, nullptr, 0);   /* SET_FEATURE(U1_ENABLE) */
+            } else if (step == 2) {
+                sent = en_control(en.address, 0x00, 3, 49, 0, nullptr, 0);   /* SET_FEATURE(U2_ENABLE) */
+            } else {
+                /* The hub's port accepts the device's U1 / U2 but does not
+                 * start them itself (timeout 0xFF, USB 3.2 10.16.2.10). */
+                const uint16_t feature = step == 3 ? 23 : 24;   /* PORT_U1_TIMEOUT / PORT_U2_TIMEOUT */
+                sent = en_control(d.parent, 0x23, 3, feature, (uint16_t)(d.port | 0xFF00u), nullptr, 0);
+            }
+            if (sent) {
+                en.lpm++;
+            }
+            return;                    /* sent: wait for it; not: the engine is busy, again later */
+        }
+        if (d.parent == 0 && hcd->linkAllow) {
+            hcd->linkAllow(true, true);
+        }
+        en.state = E_MOUNT;
+        return;
+    }
+#endif
+    case E_MOUNT: {
         Device &d = devs[en.address];
         d.state = DEV_MOUNTED;
         en_claim(en.address, en.buf, en.configLength);
@@ -943,7 +1182,11 @@ uint16_t hub_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
             memset(&h, 0, sizeof h);
             h.daddr = daddr;
             h.ep = ep[2];
-            return (uint16_t)(itf[0] + ep[0]);
+            uint16_t used = (uint16_t)(itf[0] + ep[0]);
+            if (used + 2 <= length && itf[used] >= 6 && itf[used + 1] == 0x30) {
+                used = (uint16_t)(used + itf[used]);   /* SuperSpeed: the endpoint companion */
+            }
+            return used;
         }
     }
     return 0;
@@ -965,7 +1208,9 @@ void hub_arm(Hub &h)
     }
 }
 
-/* Power the ports, then listen for changes. */
+/* Power the ports, then listen for changes. A SuperSpeed hub (USB 3.2
+ * 10.15.2): its descriptor is type 0x2A, 12 bytes with wHubDelay at 10, and
+ * it is told its tier (SET_HUB_DEPTH) before its ports are looked at. */
 void hub_configured(uint8_t daddr, uint8_t itf)
 {
     (void)itf;
@@ -973,12 +1218,23 @@ void hub_configured(uint8_t daddr, uint8_t itf)
     if (!h) {
         return;
     }
-    uint8_t desc[9] = {};
+    Device &d = devs[daddr];
+    const bool super = is_super(d.speed);
+    uint8_t desc[12] = {};
     uint16_t got = 0;
-    if (ch32rv_usb_host_control_sync(daddr, 0xA0, 6, 0x2900, 0, desc, sizeof desc, &got, 1000) != CH32RV_USBH_OK ||
+    if (ch32rv_usb_host_control_sync(daddr, 0xA0, 6, super ? 0x2A00 : 0x2900, 0, desc, super ? 12 : 9, &got, 1000) !=
+            CH32RV_USBH_OK ||
         got < 7) {
         return;
     }
+#if CH32RV_USB_HOST_SUPERSPEED
+    if (super) {
+        if (got >= 12) {
+            d.hubDelay = (uint16_t)(d.hubDelay + (desc[10] | desc[11] << 8));
+        }
+        ch32rv_usb_host_control_sync(daddr, 0x20, 12, d.tier, 0, nullptr, 0, nullptr, 1000);   /* SET_HUB_DEPTH */
+    }
+#endif
     h->ports = desc[2] > 15 ? 15 : desc[2];
     for (uint8_t p = 1; p <= h->ports; p++) {
         ch32rv_usb_host_control_sync(daddr, 0x23, 3, 8, p, nullptr, 0, nullptr, 1000);   /* SET_FEATURE(PORT_POWER) */
@@ -1011,9 +1267,16 @@ void hub_poll(CH32RVUsbHost &host)
             }
             const uint16_t status = (uint16_t)(st[0] | st[1] << 8);
             const uint16_t change = (uint16_t)(st[2] | st[3] << 8);
-            for (uint8_t b = 0; b < 5; b++) {
-                if (change & (1u << b)) {
-                    ch32rv_usb_host_control_sync(h.daddr, 0x23, 1, (uint16_t)(16 + b), p, nullptr, 0, nullptr, 1000);
+            /* The change bits and their CLEAR_FEATURE selectors: USB 2.0
+             * 11.24.2.7.2 (C_PORT_* = 16 + bit), a SuperSpeed hub's USB 3.2
+             * 10.16.2.6 (connection 16, over-current 19, reset 20, warm
+             * reset 29, link state 25, config error 26). */
+            static const uint8_t hs_clear[] = {16, 17, 18, 19, 20, 0, 0, 0};
+            static const uint8_t ss_clear[] = {16, 0, 0, 19, 20, 29, 25, 26};
+            const uint8_t *clear = is_super(devs[h.daddr].speed) ? ss_clear : hs_clear;
+            for (uint8_t b = 0; b < 8; b++) {
+                if ((change & (1u << b)) && clear[b]) {
+                    ch32rv_usb_host_control_sync(h.daddr, 0x23, 1, clear[b], p, nullptr, 0, nullptr, 1000);
                 }
             }
             if (!(change & 1) && changed != (uint16_t)(((1u << (h.ports + 1)) - 1u) & ~1u)) {
@@ -1187,9 +1450,10 @@ void complete_mount(CH32RVUsbHost &host, uint8_t daddr)
     d.isHub = dev[4] == 9;
     d.parentAddress = s.parent;
     d.portId = s.parent ? (uint8_t)((s.parent << 4) | (s.port & 0x0F)) : 0x01;
-    d.speed = s.speed == CH32RV_USBH_LOW    ? CH32RV_USB_HOST_SPEED_LOW
-              : s.speed == CH32RV_USBH_HIGH ? CH32RV_USB_HOST_SPEED_HIGH
-                                            : CH32RV_USB_HOST_SPEED_FULL;
+    d.speed = s.speed == CH32RV_USBH_LOW     ? CH32RV_USB_HOST_SPEED_LOW
+              : s.speed == CH32RV_USBH_HIGH  ? CH32RV_USB_HOST_SPEED_HIGH
+              : is_super(s.speed)            ? CH32RV_USB_HOST_SPEED_SUPER
+                                             : CH32RV_USB_HOST_SPEED_FULL;
     d.configurationValue = s.configValue;
     d.configurationAttributes = s.configAttributes;
     d.configurationMaxPower = s.configPower;
@@ -1223,6 +1487,11 @@ void ch32rv_usb_host_reenumerate(uint8_t daddr)
         hcd->portDisable();
     }
     en_queue(parent, port);
+}
+
+bool ch32rv_usb_host_suspend(bool suspend)
+{
+    return hcd && hcd->portSuspend && hcd->portSuspend(suspend);
 }
 
 /* ------------------------------------------------------------- the task */
@@ -1518,7 +1787,11 @@ bool CH32RVUsbHost::getHubInfo(uint8_t hubAddress, CH32RVUsbHostHubInfo &hub)
 {
     uint8_t desc[9] = {};
     size_t got = 0;
-    if (!ch32rv_usb_host_control(*this, hubAddress, 0xA0, 6, 0x2900, 0, desc, sizeof desc, &got, 1000)) {
+    /* A SuperSpeed hub's descriptor is type 0x2A; the fields read here sit
+     * at the same places. */
+    const bool super = hubAddress && hubAddress <= CH32RV_USB_HOST_DEVICES && is_super(devs[hubAddress].speed);
+    if (!ch32rv_usb_host_control(*this, hubAddress, 0xA0, 6, super ? 0x2A00 : 0x2900, 0, desc, sizeof desc, &got,
+                                 1000)) {
         return false;
     }
     if (got < 7) {
@@ -1674,7 +1947,10 @@ void ch32rvUsbHostPrint(const CH32RVUsbHostDeviceInfo &d, Print &out)
     print_hex16(out, d.pid);
     out.print(" class=");
     out.print(d.deviceClass, HEX);
-    out.print(d.speed == CH32RV_USB_HOST_SPEED_LOW ? " speed=low" : d.speed == CH32RV_USB_HOST_SPEED_HIGH ? " speed=high" : " speed=full");
+    out.print(d.speed == CH32RV_USB_HOST_SPEED_LOW     ? " speed=low"
+              : d.speed == CH32RV_USB_HOST_SPEED_HIGH  ? " speed=high"
+              : CH32RV_USB_HOST_SUPERSPEED && d.speed == CH32RV_USB_HOST_SPEED_SUPER ? " speed=super"
+                                                       : " speed=full");
     out.print(" manufacturer=\"");
     out.print(d.manufacturer);
     out.print("\" product=\"");

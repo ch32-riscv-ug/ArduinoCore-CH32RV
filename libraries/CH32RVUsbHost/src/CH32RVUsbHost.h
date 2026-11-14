@@ -52,7 +52,8 @@
  * F7P6, D8U6 and the X033 have no host in silicon), CH32V203/V208 (USBFS,
  * PB6/PB7), and CH32V303/V305/V307/V317, V205, L103/M103, M030 and H41x
  * (USBFS, PA11/PA12), and on the second-generation USBHS at high speed (CH32V407/V467: USBHS1 by default,
- * USBHS2 as HIGH_SPEED_2; X305/X315 by default; V205 and H41x as HIGH_SPEED - CH32RVUsbHostConfig::port);
+ * USBHS2 as HIGH_SPEED_2; X305/X315 by default; V205 and H41x as HIGH_SPEED - CH32RVUsbHostConfig::port),
+ * and on the USBSS of H417/H416 at SuperSpeed (SUPER_SPEED; implemented, not yet tested on hardware);
  * begin() reports Unsupported elsewhere. The board supplies VBUS to the device - the chip cannot switch it.
  */
 #pragma once
@@ -69,16 +70,20 @@
 #define CH32RV_USB_HOST_SPEED_LOW   0
 #define CH32RV_USB_HOST_SPEED_FULL  1
 #define CH32RV_USB_HOST_SPEED_HIGH  2
+#define CH32RV_USB_HOST_SPEED_SUPER 3
 
 /* Which controller the host runs on (EspUsbHostPort). DEFAULT is the series'
  * usual one: USBFS where the part has it, else its USBHS. HIGH_SPEED_2 is the
- * second USBHS of CH32V407 / V467. A port the part does not have makes begin()
- * fail with Unsupported. */
+ * second USBHS of CH32V407 / V467. SUPER_SPEED is the USBSS of CH32H417 /
+ * H416 (USB 3 at 5 Gbit/s only; a USB 2.0 device on that connector is
+ * HIGH_SPEED's) - implemented, not yet tested on hardware. A port the part
+ * does not have makes begin() fail with Unsupported. */
 enum CH32RVUsbHostPort : uint8_t {
     CH32RV_USB_HOST_PORT_DEFAULT = 0,
     CH32RV_USB_HOST_PORT_HIGH_SPEED,
     CH32RV_USB_HOST_PORT_FULL_SPEED,
     CH32RV_USB_HOST_PORT_HIGH_SPEED_2,
+    CH32RV_USB_HOST_PORT_SUPER_SPEED,
 };
 
 /* begin()'s settings (EspUsbHostConfig, less what a task-less stack has no
@@ -117,19 +122,21 @@ struct CH32RVUsbHostConfig {
  * setCcidBuffers()). */
 #define CH32RV_USB_HOST_STRING_MAX 32               /* per string, with the terminator */
 /* The largest bulk or interrupt packet a class takes in one piece: 512 on the
- * series with a high-speed host, where the receive buffers below grow to hold
- * at least one such packet (an IN is armed only with room for a whole one). */
-#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
-    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || \
-    defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+ * series with a high-speed host, 1024 with a SuperSpeed one (H417 / H416),
+ * where the receive buffers below grow to hold more than one such packet (an
+ * IN is armed only with room for a whole one). */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+#define CH32RV_USB_HOST_MAX_PACKET 1024
+#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || \
+    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
 #define CH32RV_USB_HOST_MAX_PACKET 512
 #else
 #define CH32RV_USB_HOST_MAX_PACKET 64
 #endif
-#define CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 128)
-#define CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 256)
+#define CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 2 * CH32RV_USB_HOST_MAX_PACKET : 128)
+#define CH32RV_USB_HOST_VENDOR_RX_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 2 * CH32RV_USB_HOST_MAX_PACKET : 256)
 /* 10-byte header + a short APDU response; on a high-speed host also more than a packet (the ring) */
-#define CH32RV_USB_HOST_CCID_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 1024 : 272)
+#define CH32RV_USB_HOST_CCID_BUFFER_SIZE (CH32RV_USB_HOST_MAX_PACKET > 64 ? 2 * CH32RV_USB_HOST_MAX_PACKET : 272)
 #define CH32RV_USB_HOST_HID_REPORTS 8               /* report IDs remembered per HID interface */
 
 enum class CH32RVUsbHostError : uint8_t {

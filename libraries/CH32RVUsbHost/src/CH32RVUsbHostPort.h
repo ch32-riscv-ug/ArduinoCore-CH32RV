@@ -17,6 +17,8 @@
  *   V30x                                   DEFAULT = FULL_SPEED: USBFS (its USBHS host is not here yet)
  *   V205, H41x                             DEFAULT = FULL_SPEED: USBFS; HIGH_SPEED: USBHS (H41x: PB8 / PB9,
  *                                          the SWD pins - only when asked)
+ *   H417 / H416                            also SUPER_SPEED: USBSS, SuperSpeed only (not yet tested on
+ *                                          hardware)
  *   X305 / X315                            DEFAULT = HIGH_SPEED: USBHS
  *   V407 / V467                            DEFAULT = HIGH_SPEED: USBHS1; HIGH_SPEED_2: USBHS2 */
 #pragma once
@@ -139,6 +141,11 @@ static const CH32RVUsbHcd *port_hcd(uint8_t port)
 #ifdef CH32RV_USBHS2_UNITS
     if (port == CH32RV_USB_HOST_PORT_HIGH_SPEED) {
         return &ch32rv_usb_hcd_usbhs2;
+    }
+#endif
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
+    if (port == CH32RV_USB_HOST_PORT_SUPER_SPEED) {
+        return &ch32rv_usb_hcd_usbss;
     }
 #endif
     return nullptr;

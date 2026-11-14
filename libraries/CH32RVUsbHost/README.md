@@ -34,6 +34,7 @@ void loop() { deliverEvents(); }   // the callbacks run here; the stack runs aft
 | CH32V203 / V208 | USBFS (PB6 / PB7) | built only |
 | CH32V303 / V305 / V307 / V317 | USBFS (PA11 / PA12) | built only |
 | CH32V205, CH32M030, CH32H415 / H416 / H417 | USBFS (PA11 / PA12). V205 and H41x: USBHS with `CH32RV_USB_HOST_PORT_HIGH_SPEED` (H41x: PB8 / PB9, shared with SWD) | built only. 48 MHz is made as for the device (V205 and H41x from the USBHS PLL, M030 from the 144 MHz PLL) |
+| CH32H416 / H417 (also) | USBSS with `CH32RV_USB_HOST_PORT_SUPER_SPEED`: USB 3 at 5 Gbit/s only | implemented, not yet tested on hardware |
 | CH32V407 / V467 | USBHS1 (default, `HIGH_SPEED`), USBHS2 (`HIGH_SPEED_2`) | on a V407's USBHS1 against an ESP32-P4 (EspUsbDevice, high speed): HID, CDC, MSC, MIDI, vendor, CCID |
 | CH32X305 / X315 | USBHS (default) | built only |
 | CH32L103 / M103 | USBFS (PA11 / PA12) | built only. The 8 MHz CPU Clock cannot make 48 MHz and `begin()` fails (choose 48 / 72 / 96 MHz; not checked) |
@@ -58,6 +59,7 @@ another (EspUsbHost's `EspUsbHostConfig.port`):
 ```cpp
 CH32RVUsbHostConfig config;
 config.port = CH32RV_USB_HOST_PORT_HIGH_SPEED;   // DEFAULT / HIGH_SPEED / FULL_SPEED / HIGH_SPEED_2 (V407 / V467's USBHS2)
+                                                 // / SUPER_SPEED (H416 / H417's USBSS)
 usb.begin(config);                               // a port the part lacks: Unsupported
 ```
 
@@ -76,6 +78,21 @@ theirs when attached directly; `CH32RVUsbHostDeviceInfo::speed` is
   needs HSE.
 - NYET after an OUT counts as accepted, and no PING is sent (the device NAKs
   until it has room).
+
+On H416 / H417, `SUPER_SPEED` runs the USBSS controller as a SuperSpeed
+(USB 3, 5 Gbit/s) host. **Implemented, not yet tested on hardware.** It
+takes SuperSpeed only: a USB 2.0 device, or the USB 2.0 half of a USB 3 hub,
+on the same connector belongs to the USBHS controller (`HIGH_SPEED`), a host
+of its own; the two do not run together yet. `speed` is
+`CH32RV_USB_HOST_SPEED_SUPER` (3), and the receive buffers hold a 1024-byte
+packet (`CH32RV_USB_HOST_MAX_PACKET` is 1024 on H416 / H417, with any port).
+
+- Control, bulk, interrupt and isochronous (Mult included) endpoints, one
+  packet per transaction for now; SuperSpeed hubs (route strings, hub depth);
+  U1 / U2 accepted from the device after SET_SEL (build with
+  `-DCH32RV_USB_HOST_SS_LINK_PM=0` to keep every link in U0).
+- No streams: the controller has no Stream ID field, so a UAS interface does
+  not work (a mass-storage device's BOT interface does).
 
 `Serial` in the examples is the board's hardware UART (115200 baud), not the
 hosted USB port.

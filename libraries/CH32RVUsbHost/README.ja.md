@@ -33,6 +33,7 @@ void loop() { deliverEvents(); }   // callback はここで動く。スタック
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
 | CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
 | CH32V205、CH32M030、CH32H415 / H416 / H417 | USBFS（PA11 / PA12）。V205 と H41x は `CH32RV_USB_HOST_PORT_HIGH_SPEED` で USBHS（H41x は PB8 / PB9 で SWD と兼用） | ビルドのみ。48 MHz の作り方はデバイスと同じ（V205 と H41x は USBHS PLL、M030 は 144 MHz の PLL） |
+| CH32H416 / H417（追加） | `CH32RV_USB_HOST_PORT_SUPER_SPEED` で USBSS。USB 3（5 Gbps）だけ | 実装済み、実機では未確認 |
 | CH32V407 / V467 | USBHS1（既定、`HIGH_SPEED`）、USBHS2（`HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（EspUsbDevice、HS）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X305 / X315 | USBHS（既定） | ビルドのみ |
 | CH32L103 / M103 | USBFS（PA11 / PA12） | ビルドのみ。CPU Clock の 8 MHz では 48 MHz が作れず `begin()` が失敗する（48 / 72 / 96 MHz を選ぶ。未確認） |
@@ -55,6 +56,7 @@ USBHS のホストのドライバは、まだありません）。
 ```cpp
 CH32RVUsbHostConfig config;
 config.port = CH32RV_USB_HOST_PORT_HIGH_SPEED;   // DEFAULT / HIGH_SPEED / FULL_SPEED / HIGH_SPEED_2（V407 / V467 の USBHS2）
+                                                 // / SUPER_SPEED（H416 / H417 の USBSS）
 usb.begin(config);                               // 無いポートは Unsupported
 ```
 
@@ -67,6 +69,18 @@ usb.begin(config);                               // 無いポートは Unsupport
   扱う作りですが、実機では確かめていません。
 - X305 / X315 は、HSE が無いと HSI をホストの SOF で合わせる仕組みしか無いので、ホストには HSE が要ります。
 - OUT の後の NYET は受け付けとして扱い、PING は送りません（機器は空くまで NAK します）。
+
+H416 / H417 の `SUPER_SPEED` は、USBSS を SuperSpeed（USB 3、5 Gbps）のホストとして動かします。**実装済みで、実機では
+まだ確かめていません。** SuperSpeed だけを扱います。同じコネクターの USB 2.0 の機器や USB 3 のハブの USB 2.0 側は
+USBHS（`HIGH_SPEED`）の担当で、別のホストです（両方を同時に動かすことは、まだできません）。`speed` は
+`CH32RV_USB_HOST_SPEED_SUPER`（3）になり、受信の受け皿は 1024 バイトのパケットが入る大きさになります
+（H416 / H417 では、どのポートでも `CH32RV_USB_HOST_MAX_PACKET` が 1024）。
+
+- 制御・バルク・インタラプト・アイソクロナス（Mult を含む）。今は 1 トランザクションに 1 パケットです。SuperSpeed の
+  ハブ（ルート文字列、ハブの段）。SET_SEL のあと、機器からの U1 / U2 を受け付けます（`-DCH32RV_USB_HOST_SS_LINK_PM=0`
+  でビルドすると、リンクは U0 のままです）。
+- ストリームはありません。コントローラーに Stream ID の欄が無いので、UAS のインターフェースは動きません（マスストレージの
+  BOT のインターフェースは動きます）。
 
 例の `Serial` はボードのハードの UART（115200 baud）で、ホストにつないだ USB の口ではありません。
 

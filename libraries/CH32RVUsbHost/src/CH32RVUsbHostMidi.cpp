@@ -8,7 +8,8 @@
 
 namespace {
 
-/* Room for a whole packet of event packets (mps / 4) and some: 32 at full speed, 160 at high. */
+/* Room for a whole packet of event packets (mps / 4) and some: 32 at full speed, 160 at high, 288 at
+ * SuperSpeed (so the ring's indices are 16 bits). */
 #define RX_PACKETS (CH32RV_USB_HOST_MAX_PACKET > 64 ? CH32RV_USB_HOST_MAX_PACKET / 4 + 32 : 32)
 
 struct Port {
@@ -18,7 +19,7 @@ struct Port {
     uint16_t mpsIn, mpsOut;
     volatile bool inBusy, outDone;
     volatile uint8_t outResult;
-    volatile uint8_t head, tail;               /* rx ring of packets */
+    volatile uint16_t head, tail;              /* rx ring of packets */
     uint8_t rx[RX_PACKETS][4];
     uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
 };
@@ -36,9 +37,9 @@ struct Join {
     Join() { ch32rv_usb_host_join(midi_group); }
 } join;
 
-uint8_t rx_free(const Port &p)
+uint16_t rx_free(const Port &p)
 {
-    return (uint8_t)(RX_PACKETS - 1 - (uint8_t)((p.head + RX_PACKETS - p.tail) % RX_PACKETS));
+    return (uint16_t)(RX_PACKETS - 1 - (uint16_t)((p.head + RX_PACKETS - p.tail) % RX_PACKETS));
 }
 
 void in_done(void *user, uint8_t result, uint16_t length);
@@ -65,7 +66,7 @@ void in_done(void *user, uint8_t result, uint16_t length)
             if (p.in[at] == 0 && p.in[at + 1] == 0) {
                 continue;              /* padding */
             }
-            const uint8_t next = (uint8_t)((p.head + 1) % RX_PACKETS);
+            const uint16_t next = (uint16_t)((p.head + 1) % RX_PACKETS);
             if (next == p.tail) {
                 break;
             }
@@ -166,7 +167,7 @@ size_t deliver(CH32RVUsbHost &host)
     while (p.mounted && p.tail != p.head) {
         uint8_t pk[4];
         memcpy(pk, p.rx[p.tail], 4);
-        p.tail = (uint8_t)((p.tail + 1) % RX_PACKETS);
+        p.tail = (uint16_t)((p.tail + 1) % RX_PACKETS);
         CH32RVUsbHostMidiMessage m;
         m.address = p.daddr;
         m.interfaceNumber = p.itf;
