@@ -117,6 +117,28 @@ static inline uint8_t ch32rv_gpio_read(uint8_t port, uint8_t bit)
     return (uint8_t)((CH32RV_GPIO_INDR(port) >> bit) & 1u);
 }
 
+/* An open-drain line, low or let go: a pad set to OUTPUT_OPENDRAIN, written
+ * without digitalWrite()'s look-ups (SoftWire's clock). Where the pads have no
+ * open drain (X035 / X033) low is a push-pull 0 and high an input, as
+ * digitalWrite() does there. */
+static inline void ch32rv_gpio_od_write(uint8_t port, uint8_t bit, int high)
+{
+#if CH32RV_GPIO_NO_OPEN_DRAIN
+    if (high) {
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
+    } else {
+        ch32rv_gpio_clear(port, bit);
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
+    }
+#else
+    if (high) {
+        ch32rv_gpio_set(port, bit);
+    } else {
+        ch32rv_gpio_clear(port, bit);
+    }
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif

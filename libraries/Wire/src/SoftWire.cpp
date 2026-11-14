@@ -7,27 +7,12 @@ namespace arduino {
 
 /* The pins' registers directly: digitalWrite() / digitalRead() looked the pin
  * up on every call, and on an X035 (48 MHz) that capped SoftWire near 37 kHz.
- * The pins are open-drain outputs from begin() on, so a write is all it takes. */
+ * The pins are open-drain outputs from begin() on: the core's open-drain write
+ * (ch32rv_gpio.h) is all it takes, the pads without open drain included. */
 static inline void line_write(uint8_t pin, bool high)
 {
     const pin_size_t pad = CH32RV_PIN_RESOLVE(pin);
-    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pad), bit = (uint8_t)CH32RV_PIN_BIT(pad);
-#if CH32RV_GPIO_NO_OPEN_DRAIN
-    /* No open-drain pads (X035): low is a push-pull 0, high an input let go,
-     * as digitalWrite() does for OUTPUT_OPENDRAIN there. */
-    if (high) {
-        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
-    } else {
-        ch32rv_gpio_clear(port, bit);
-        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
-    }
-#else
-    if (high) {
-        ch32rv_gpio_set(port, bit);
-    } else {
-        ch32rv_gpio_clear(port, bit);
-    }
-#endif
+    ch32rv_gpio_od_write((uint8_t)CH32RV_PIN_PORT(pad), (uint8_t)CH32RV_PIN_BIT(pad), high);
 }
 
 static inline bool line_high(uint8_t pin)

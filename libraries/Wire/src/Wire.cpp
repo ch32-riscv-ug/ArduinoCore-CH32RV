@@ -411,7 +411,9 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
     if (_clock_hz <= 100000u) {
         /* Standard mode: the low and high halves of SCL are equal, so one
          * period is 2 x CCR peripheral clocks. */
-        ccr = CH32RV_I2C_PCLK1 / (2u * _clock_hz);
+        /* Rounded up: the clock asked is a limit, and a CCR rounded down runs
+         * faster than it. */
+        ccr = (CH32RV_I2C_PCLK1 + 2u * _clock_hz - 1u) / (2u * _clock_hz);
         if (ccr < 4u) {
             ccr = 4u;
         }
@@ -428,7 +430,7 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
 #endif
     } else {
         /* Fast mode with the 2:1 duty cycle: 3 x CCR per period. */
-        ccr = CH32RV_I2C_PCLK1 / (3u * _clock_hz);
+        ccr = (CH32RV_I2C_PCLK1 + 3u * _clock_hz - 1u) / (3u * _clock_hz);   /* rounded up, as above */
         if (ccr < 1u) {
             ccr = 1u;
         }

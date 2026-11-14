@@ -108,12 +108,7 @@ void digitalWrite(pin_size_t pin, PinStatus val)
     }
 #if CH32RV_GPIO_NO_OPEN_DRAIN
     if (ch32rv_od_emulated[port] & (1u << bit)) {
-        if (val == LOW) {
-            ch32rv_gpio_clear(port, bit);
-            ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
-        } else {
-            ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
-        }
+        ch32rv_gpio_od_write(port, bit, val != LOW);
         return;
     }
 #endif
