@@ -87,10 +87,13 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
 - [ ] H417 の HSADC（高速 ADC）を常駐ベンチで試す配線を足す（2026-11-14 ユーザー、あとで）。試験は periph の hs-adc（VDDIO の
   PF8〜PF10 に、プローブのラベル付きの線が要る。PC0〜PC3 は VIO18 なので使わない）。
-- [ ] USB PD を CH32RV のボード同士で確かめる（2026-11-14 ユーザー: ボード同士がいちばん良い）。片方を USBPDSource（VBUS の
-  切り替えは何もしない形でよい）、もう片方をシンクにして、CC の線と GND をつなぎ、交渉を両側から見る pd-peer の case と、
-  相手の口を書く記録の欄を足す。組み合わせ（確認の薄い V205 / H417 / L103 など）とつなぎ方はユーザーと決める。今は pd の
-  記録を持つ台が無く、シンクを実機で確かめたのは X035（充電器）だけ。
+- [ ] 常駐ベンチに USB PD の配線を足す（2026-11-14 ユーザー）。CH32RV のボード 2 台の CC の線どうしと GND をつなぐ（または両方の
+  USB-C を C-to-C でつなぐ。そのときは VBUS もつながるので、ソース側が 5 V を出さない作りにする）。組み合わせは確認の薄い系列から
+  （V205 PA0 / PA1、H417 PB3 / PB4、L103 PB6 / PB7、X035 PC14 / PC15 など）、ユーザーと決める。今は pd の記録を持つ台が無く、
+  シンクを実機で確かめたのは X035（充電器）だけ。
+- [ ] 上の配線ができたら、USB PD を CH32RV のボード同士で確かめる試験（ユーザー: ボード同士がいちばん良い）。片方を
+  USBPDSource（VBUS の切り替えは何もしない形でよい）、もう片方をシンクにして、交渉（Source_Capabilities → Request →
+  Accept → PS_RDY）を両側から見る pd-peer の case と、相手の口を書く記録の欄を足す。
 - [ ] （優先度低、2026-11-14 ユーザー）UHSIF のスレーブのモード（外のマスターがクロックを出す形。WCH の FPGA 型・SoC 型）。
   レジスタは非公開だが、`libUHSIF.a` の中身は大部分が表（`UhsifTransition_Slave_FPGA` / `_Slave_SOC`、`UhsifWavedata_Slave_*`、
   `UhsifRegValue`）なので、取り出して docs/h417-uhsif.ja.md の読み方で解読できる見込み。未確認は外部クロックの設定（w1 の
