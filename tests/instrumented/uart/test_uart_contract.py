@@ -59,6 +59,9 @@ def test_uart_contract(dut, request):
     assert b"DISCARDED" not in m.group(1), m.group(1)
 
 
+# tests/README.ja.md 取り込みの速さ: T = 1 us, the bit at the fastest baud (1 Mbaud), 20 / T.
+UART_RATE = 20_000_000
+
 # ---- uart.formats: every baud and format the condition list names, both directions, judged by WireSkein ----------
 import json
 import pathlib
@@ -125,7 +128,7 @@ def test_uart_output_only(dut, ws_run, request, record_property):
                         wait(0.02 + 12 * COUNT / baud)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [dut_tx], rate=5_000_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [dut_tx], rate=UART_RATE, steps=steps)
     finally:
         dut.write("ucfg 115200 0\n")
         dut.expect(rb"UCFG \d\r?\n", timeout=5)
@@ -227,7 +230,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
                         wait(0.02)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=5_000_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=UART_RATE, steps=steps)
     finally:
         core.plan_release(host, [used])
         dut.write("ucfg 115200 0\n")
@@ -324,7 +327,7 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
                     got[name] = (kept, {kind for kind in range(8) if mask >> kind & 1})
 
     try:
-        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=5_000_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=UART_RATE, steps=steps)
     finally:
         core.plan_release(host, [used])
         dut.write("ucfg 115200 0\n")

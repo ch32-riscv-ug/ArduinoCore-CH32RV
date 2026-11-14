@@ -351,7 +351,8 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
                     wait(0.02)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [line], rate=10_000_000, steps=steps)
+        # tests/README.ja.md 取り込みの速さ: T = 250 ns, the 1 MHz / 0.25 wave's high, 20 / T.
+        ws_capture.stream(ws_run, oep_host, [line], rate=80_000_000, steps=steps)
     finally:
         pwm.stop(0)
         core.plan_release(host, [pwm.fn])

@@ -36,7 +36,7 @@ from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
 
 ADDRESS = 0x42
-RATE = 40_000_000         # 25 ns: the 50 ns spikes the i2c check rejects show; 2 MS/s could not (and slow rises read either way)
+RATE = 100_000_000        # tests/README.ja.md 取り込みの速さ: T = the i2c check's 50 ns spike_max_s, 5 / T (the decode's 4 us SCL high gets 400)
 
 
 def settings(test_file):
