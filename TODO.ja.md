@@ -469,7 +469,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   V006 の 8 MHz は、SystemInit() が flash の待ちを先に 0 へ下げてから HPRE /3 を書いていたので、リセットの直後の HSI 24 MHz を
   待ち 0 で走り、SysTick が止まったり起動しなかったりした（待ちは上げるときだけ先に、下げるのは分周のあと。CFGR0 も 1 回で書く）。
   X035 の 8 MHz は ADC のクロックが下限（3 MHz）に届かず変換が終わらない。項目を「no ADC」にし、ADC の呼び出しをビルドエラーにした。
-- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、USB を各項目で確かめること。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
+- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、USB を各項目で確かめること。→ 2026-11-14: H41x（CPU Clock のメニューは無く、CPU Core × Clock Source）は nano で V5F / V3F × HSE / HSI の 4 つとも selfcheck・selfsys が PASS。USB は nano に相手が無いので未確認。X305 はベンチに無い。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
 - PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。
