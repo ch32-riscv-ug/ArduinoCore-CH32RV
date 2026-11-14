@@ -401,6 +401,13 @@ __attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
         if (ccr < 4u) {
             ccr = 4u;
         }
+        /* The slowest the field holds (a 12-bit CCR: 12.2 kHz on a 100 MHz
+         * H417, 7.3 kHz at 60 MHz): slower asks get that, where the masked
+         * value used to wrap round to a faster clock (10 kHz ran at 55 kHz
+         * on the H417, 2026-11-14). */
+        if (ccr > CH32RV_I2C_CKCFGR_CCR_MASK) {
+            ccr = CH32RV_I2C_CKCFGR_CCR_MASK;
+        }
         CH32RV_I2C_CKCFGR(_base) = (uint16_t)(ccr & CH32RV_I2C_CKCFGR_CCR_MASK);
 #if CH32RV_I2C_HAS_RTR
         CH32RV_I2C_RTR(_base) = (uint16_t)(mhz + 1u);
@@ -410,6 +417,9 @@ __attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
         ccr = CH32RV_I2C_PCLK1 / (3u * _clock_hz);
         if (ccr < 1u) {
             ccr = 1u;
+        }
+        if (ccr > CH32RV_I2C_CKCFGR_CCR_MASK) {
+            ccr = CH32RV_I2C_CKCFGR_CCR_MASK;
         }
         CH32RV_I2C_CKCFGR(_base) = (uint16_t)(CH32RV_I2C_CKCFGR_FS |
                                             (ccr & CH32RV_I2C_CKCFGR_CCR_MASK));
