@@ -206,6 +206,10 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
     core.plan_apply(host, pwm.assignments(wave["channel"]))
     if rest:
         core.plan_apply(host, [(gpio.fn, 1, rest[0][0]["channel"])])
+        # Driven from here on: after plan_apply the probe's pin is a floating input and the DUT's an analog one,
+        # so until the first condition set it the line picked up the PWM beside it and the ADC's sampling - tens
+        # of pulses of neither level before its change (5-1 and 5-2, 2026-11-14).
+        gpio.configure(rest[0][0]["channel"], Gpio.OUTPUT_LOW)
     # (wave Hz, duty, the second pin's level or None for one pin)
     conditions = [(1000, 0.5, None)]
     if rest:
