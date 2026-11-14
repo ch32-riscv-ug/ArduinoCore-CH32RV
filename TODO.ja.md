@@ -139,7 +139,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   再起動することを確かめた。残りは端子での起床（system の case、6-2）と DFU。
 - [ ] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
   0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
-- [ ] 利用者向けの文書: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
+- [x] 利用者向けの文書（2026-11-14: README の CPU Core の行に全部あり、V3F を 2 つ目のコアとして使う案内も足した）: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
   `--core 1` と `dbg resume --all`。
 - [ ] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
   優先して置くか（今はリンクの順）。
@@ -292,7 +292,8 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
 ## USB
 
 - [x] **記録の usb を、口ごとに書ける形にする（2026-11-13、ユーザー）** → 2026-11-14: `{"full_speed": {...}, "super_speed": {...}}` の形（RECORDS 4.3。キーはコアで口を選ぶときの名前）、case は相手の口で流れ、run_hardware がスケッチに `USB_TEST_CONTROLLER` / `USB_PEER_HOST_PORT` を渡す。bench_record.py `--usb-port`。6-2 の FS の Pico はまだつないでいない。元の記述:: 今の `usb` は相手を 1 つしか書けない。H417 の公式 EVT
-  （6-2、oep://e8f60ae84dc2/h417qeu6-pico）は FS（PA11/PA12）に Pico、SS に PC の 2 つになる。V103 も FS が 2 系統あり、どちらに
+  （6-2、oep://e8f60ae84dc2/h417qeu6-pico）は FS（PA11/PA12）に Pico、SS に PC の 2 つになる。V103 も FS が 2 系統あり（→ 誤り: device-data で V103 の USB は
+  USBHD の 1 つ。2 つの Full Speed は V20x の USBFS と USBD）、どちらに
   つないだかを書けるとよい。案: `usb` を口（コントローラ）ごとの対応にする（例 `{"fs": {"to": "rp2040", ...}, "ss": {"to": "host"}}`）。
   case はどの口で流すかを、その口の相手で決める。FS の Pico はまだつないでいない（nano の FS につないでもよい、とユーザー）。
 - [x] **6-2 の H417（公式 EVT）の selfcheck**: [oep] が PB8 / PA14 を素の pad にラベルし直し、`vio18=3v3` で 9 件通った
