@@ -31,7 +31,7 @@ import ws_capture
 from oep_client import core
 from oep_client.fixture import SpiTarget
 
-RATE = 10_000_000          # 20 samples a half period at 250 kHz, 5 at 1 MHz
+RATE = 40_000_000          # 25 ns: glitches on CS / SCK show (6-2: under 12.5 ns ones split frames)
 # The slave's MISO changes some 25 ns after the sampling edge at each byte boundary (CH32V103, 2026-11-07): at
 # 10 MS/s that falls in the edge's own sample and WireSkein reads it as changing at the edge (no mode reads it).
 SLAVE_RATE = 40_000_000

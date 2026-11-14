@@ -36,7 +36,7 @@ from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
 
 ADDRESS = 0x42
-RATE = 2_000_000          # 20 samples a bit at 100 kHz
+RATE = 40_000_000         # 25 ns: the 50 ns spikes the i2c check rejects show; 2 MS/s could not (and slow rises read either way)
 
 
 def settings(test_file):
