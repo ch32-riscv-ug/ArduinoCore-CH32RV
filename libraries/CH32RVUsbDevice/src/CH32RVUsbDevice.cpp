@@ -203,7 +203,18 @@ uint16_t CH32RVUsbDevice::buildConfiguration(CH32RVUsbDescriptorWriter &w, CH32R
             f->_interface = itf;
             const CH32RVUsbDeviceError before = _error;
             _error = CH32RVUsbDeviceError::None;
-            if (!f->_type.descriptor(*f, to, itf, &ep, (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed)) {
+            const bool described =
+                f->_type.descriptor(*f, to, itf, &ep, (uint8_t)(CH32RV_USB_FIRST_FUNCTION_STRING + i), speed);
+            if (to.done) {
+                /* A visitor that has what it wanted (Core::open_interface
+                 * stops past its interface): the rest is not written, and a
+                 * function that checks its own length (Video) would read
+                 * that as a failure - lastError() was left at
+                 * DescriptorTooLarge after a successful begin(). */
+                _error = before;
+                return {itf, true};
+            }
+            if (!described) {
                 if (_error == CH32RVUsbDeviceError::None) {
                     _error = CH32RVUsbDeviceError::DescriptorTooLarge;
                 }
