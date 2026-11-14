@@ -19,7 +19,14 @@ def test_uart_contract(dut, request):
     # --port is the plugin's monitor wrapping by now; --flash-port keeps the address as given.
     address = request.config.getoption("flash_port", None) or request.config.getoption("port", None) or ""
     oep = "oep://" in str(address)
-    uart = request.getfixturevalue("oep_uart" if oep else "ch32_uart").open(115200)
+    if oep:
+        uart = request.getfixturevalue("oep_uart").open(115200)
+    else:
+        # Opened at another rate first: the line coding's change makes the WCH-Link rebuild its UART bridge. The
+        # CH549 Links (3-1, 4-3) had got into handing the DUT's bytes to USB 79 bytes late, always - what came was
+        # the bytes of an earlier run, and the echo never arrived (2026-11-14); a change of rate cleared it.
+        request.getfixturevalue("ch32_uart").open(9600)
+        uart = request.getfixturevalue("ch32_uart").open(115200)
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(60)
     dut.write("uart\n")
     dut.expect_exact("UART READY", timeout=15)
