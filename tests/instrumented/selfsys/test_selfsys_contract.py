@@ -91,11 +91,20 @@ def test_temperature(dut, ready, record_property):
     assert 0 <= t / 10 <= 70, f"analogReadTemp() {t / 10} C"
 
 
+def after_reset(dut, timeout=15):
+    """The reset reason once the sketch is back: the STARTUP line's arrival (its first bytes may be lost while the
+    probe's console comes back after the reset - "watchdog 0" was all of it once on the V103 EVT), then `why`."""
+    dut.expect(rb"(?:STARTUP )?\S* ?\d+\r?\n", timeout=timeout)
+    t = time.monotonic()
+    dut.write("why\n")
+    return t, dut.expect(rb"WHY (\S+) (\d+)\r?\n", timeout=5).group(1).decode()
+
+
 def test_restart(dut, ready):
     dut.write("restart\n")
     dut.expect(rb"RESTARTING\r?\n", timeout=10)
-    m = dut.expect(rb"STARTUP (\S+) (\d+)\r?\n", timeout=15)
-    assert m.group(1).decode() == "software", f"restart() booted with {m.group(1).decode()}"
+    _, why = after_reset(dut)
+    assert why == "software", f"restart() booted with {why}"
 
 
 def test_watchdog(dut, ready, record_property):
@@ -105,10 +114,10 @@ def test_watchdog(dut, ready, record_property):
         pytest.skip("wdtEnable(500) refused (CH32M030 has no IWDG)")
     dut.expect(rb"WDT LET GO\r?\n", timeout=5)
     t0 = time.monotonic()
-    m = dut.expect(rb"STARTUP (\S+) (\d+)\r?\n", timeout=15)
-    took = time.monotonic() - t0
+    t1, why = after_reset(dut)
+    took = t1 - t0
     record_property("watchdog_s", round(took, 3))
-    assert m.group(1).decode() == "watchdog", f"booted with {m.group(1).decode()} after the watchdog ran out"
+    assert why == "watchdog", f"booted with {why} after the watchdog ran out"
     assert 0.15 <= took <= 1.5, f"the reset came {took:.2f} s after the last feed, 500 ms asked"
 
 

@@ -18,7 +18,9 @@
  *   tone <pin> <hz>           tone(pin, hz), the pad read for 100 ms: TONE <rising edges> <samples>
  *   servo <pin> <us>          a Servo on pin at us, pulseIn() three times: SERVO <width> <width> <width>
  *
- * STARTUP <resetReasonName()> <wakeupCause()> comes first after every boot. */
+ * STARTUP <resetReasonName()> <wakeupCause()> comes first after every boot;
+ * `why` asks for the same again (WHY ...): the probe's console may miss the
+ * first bytes after a reset. */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -156,6 +158,8 @@ static void reply(char *command)
 #else
         SerialDMSeq.printf("TEMP %d -\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
 #endif
+    } else if (!strcmp(argv[0], "why")) {
+        SerialDMSeq.printf("WHY %s %d\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause());
     } else if (!strcmp(argv[0], "restart")) {
         SerialDMSeq.printf("RESTARTING\r\n");
         delay(50);
