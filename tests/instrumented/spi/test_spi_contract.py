@@ -51,10 +51,16 @@ def pad(number):
     return f"P{'ABCDEFGHIJK'[(number >> 5) - 2]}{number & 31}"
 
 
-def far_from(candidates, lines, ref):
-    """The candidate whose probe channel is furthest from ref's: CS next to SCK picked up its edges on 6-2's harness
-    (a short high in the middle of CS split a frame, 2026-11-14), and the channels run along the probe's header."""
-    return max(candidates, key=lambda p: abs(lines[p]["channel"] - lines[ref]["channel"]))
+def far_from(candidates, lines, refs):
+    """The candidate whose probe channel is furthest from the nearest of refs' (the bus's other lines): CS beside
+    SCK, then beside MOSI, picked up their edges on 6-2's harness - a high of 12.5 ns or less in the middle of CS,
+    which the probe's SPI target took for the end of the frame ([oep], 2026-11-14) - and the channels run along the
+    probe's header. The probe's channel numbers do not tell what runs beside what (PD6 is channel 54, PD7 4), so first
+    the DUT's pads: another port is furthest, on the same port the bits apart; then the channels."""
+    def pad_gap(a, b):
+        return 99 if a[:2].upper() != b[:2].upper() else abs(int(a[2:]) - int(b[2:]))
+    return max(candidates, key=lambda p: (min(pad_gap(p, r) for r in refs),
+                                          min(abs(lines[p]["channel"] - lines[r]["channel"]) for r in refs)))
 
 
 def spread(lines):
@@ -94,7 +100,10 @@ def open_bus(dut, oep_host, case, record_property):
         others = [p for p in lines if p not in (sck, miso, mosi)]
         if not others:
             pytest.skip("no other <port>@<pad> line for CS")
-        cs = far_from(others, lines, sck)
+        named = ((case["target"].get("record") or {}).get("spi") or {}).get("cs", "").upper()
+        if named and named not in lines:
+            pytest.fail(f"the record's spi.cs {named} is not a labelled line of the port")
+        cs = named or far_from(others, lines, (sck, miso, mosi))
         ask(dut, f"hw {lines[cs]['pin']}", rb"HW (\d+) (\d+) (\d+)")
         record_property("bus", "SPI")
     record_property("pins", json.dumps({"sck": sck, "miso": miso, "mosi": mosi, "cs": cs}))

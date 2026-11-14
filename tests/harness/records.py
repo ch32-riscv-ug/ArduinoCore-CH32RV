@@ -142,6 +142,13 @@ def _link_uart(value, errors):
     _pads(value, "link_uart", errors)
 
 
+def _spi(value, errors):
+    if not isinstance(value, dict) or any(k != "cs" for k in value) or "cs" not in value:
+        errors.append("spi: {cs: <pad>} - the line the spi tests use as the SPI's chip select")
+        return
+    _pads(value, "spi", errors)
+
+
 # member: (checker, what it is)
 CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
@@ -152,6 +159,8 @@ CORE_MEMBERS = {
     "defects": (_defects, "this board's own faults: [{id, lose: [feature, ...], why}]"),
     "link_uart": (_link_uart, "a WCH-Link port: the DUT pads its UART bridge reaches, {tx: <pad>, rx: <pad>} "
                               "(tx: the DUT's TX into the Link; a direction not wired is left out, {} for none)"),
+    "spi": (_spi, "an OEP port: the labelled line the spi tests use as CS, {cs: <pad>} - one the harness keeps away "
+                  "from the SPI's lines (the test picks one by itself otherwise)"),
     "options": (_options, "board menu values this board needs (boards.txt), under CH32_TEST_OPTIONS: {vio18: 3v3, debugspeed: low}"),
     "note": (lambda v, e: None, "for people"),
     "updated": (lambda v, e: None if re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(v)) else e.append("updated: YYYY-MM-DD"),

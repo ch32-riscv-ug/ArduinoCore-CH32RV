@@ -100,6 +100,8 @@ def set_records(address, args):
         core_changes["pd"] = json.loads(args.pd)
     if args.defect:
         core_changes["defects"] = [json.loads(d) for d in args.defect]
+    if args.spi_cs:
+        core_changes["spi"] = {"cs": args.spi_cs.lower()}
     if args.option:
         core_changes["options"] = dict(o.split("=", 1) for o in args.option)
     if args.note:
@@ -149,6 +151,7 @@ def main(argv=None):
             s.add_argument("--eth", action="store_true", help="the Ethernet jack is on the host's network")
             s.add_argument("--pd", help="JSON: {max_mv, vbus_pin, vbus_ratio}")
             s.add_argument("--defect", action="append", help="JSON: {id, lose: [...], why}; repeat for each")
+            s.add_argument("--spi-cs", help="<pad>: the labelled line the spi tests use as CS (away from the SPI's lines in the harness)")
             s.add_argument("--option", action="append",
                            help="<menu>=<value> of boards.txt the board needs (vio18=3v3, debugspeed=low); repeat for each")
             s.add_argument("--note")

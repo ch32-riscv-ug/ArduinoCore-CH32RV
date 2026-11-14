@@ -322,6 +322,13 @@ def test_the_records_options_go_into_the_fqbn_under_ch32_test_options(monkeypatc
     assert any(e.startswith("options:") for e in records.check_core({"options": {"vio18": 3}}))
 
 
+def test_the_records_spi_names_its_cs():
+    assert records.check_core({"spi": {"cs": "pa0"}}) == []
+    assert records.check_core({"spi": {}})                            # cs is the member's point
+    assert records.check_core({"spi": {"cs": "PA0"}})                 # a pad in lower case
+    assert records.check_core({"spi": {"cs": "pa0", "sck": "pa5"}})   # only cs
+
+
 def test_the_records_link_uart_names_dut_pads():
     assert records.check_core({"link_uart": {"tx": "pa9", "rx": "pa10"}}) == []
     assert records.check_core({"link_uart": {"tx": "pb6"}}) == []      # the DUT's TX alone (M030's motor board)
