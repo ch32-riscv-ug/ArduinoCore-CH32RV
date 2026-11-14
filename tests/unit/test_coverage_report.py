@@ -50,7 +50,7 @@ def test_every_item_names_a_case_run_hardware_knows():
     from harness.bench import CASES
     for item in coverage.load_items():
         assert item["scope"] in ("series", "once"), item
-        assert set(item) <= {"id", "test", "scope", "needs", "any_of", "also", "not_on", "kind"}, item
+        assert set(item) <= {"id", "test", "scope", "needs", "any_of", "also", "not_on", "kind", "missing"}, item
         for test in coverage.tests_of(item):   # none: not covered yet, shown as "no test"
             assert test.partition("::")[0] in CASES, item
 
@@ -68,7 +68,7 @@ def test_a_list_of_tests_not_on_and_no_test(tmp_path):
     x035 = row("CH32X035")
     assert x035["usb-device"] == "✓"              # the S3 as the host counts for the device driver
     assert x035["wire-slave"] == "" and x035["interrupt"] == "" and x035["dac"] == "n/a"
-    assert row("CH32V103")["usb-peer-host"] == "n/a" and row("CH32V307")["usb-peer-host"] == ""
+    assert row("CH32V103")["usb-peer-host"] == "未実装" and row("CH32V307")["usb-peer-host"] == ""
     assert row("CH32M030")["watchdog"] == "n/a"
     assert "| console-sdi | not run |  |" in text and "| taskkit | not run |  |" in text and "| servo | not run |  |" in text
 

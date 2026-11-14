@@ -14,6 +14,8 @@ outcome comes from its junit file; the target's series from its chip (places.jso
 - scope "once": the same over every series, and where the shown outcome came from.
 - a test that skips with a reason starting "n/a:" says the chip has no such thing (the DUT answered so): n/a, not
   counted as wanted. A case that failed before pytest (build, upload) counts as a failure of each of its items.
+- `missing`: series (or parts) whose silicon has the item but the core does not implement it yet: "未実装" there,
+  counted in the wanted numbers - a feature not built is a gap, never n/a (only BLE is left out, the user).
 - an item with no `test` is a feature the tests do not cover yet: "no test" in each cell it applies to, counted in the
   wanted numbers, so the gap shows.
 
@@ -31,7 +33,8 @@ sys.path.insert(0, str(HERE))
 from harness.series import series_capabilities  # noqa: E402
 
 RANK = {"PASS": 4, "FAIL": 3, "SKIP": 2, "NA": 1}
-MARK = {"PASS": "✓", "FAIL": "✗", "SKIP": "skip", "NA": "n/a", None: "", "n/a": "n/a", "no test": "no test"}
+MARK = {"PASS": "✓", "FAIL": "✗", "SKIP": "skip", "NA": "n/a", None: "", "n/a": "n/a", "no test": "no test",
+        "missing": "未実装"}
 
 
 def load_items():
@@ -164,6 +167,10 @@ def report(rows, items, caps):
             for item in per_series:
                 if not applies(item, caps[s], s):
                     cells.append(MARK["n/a"])
+                    continue
+                if s in item.get("missing", []):
+                    wanted[item["id"]] += 1
+                    cells.append(MARK["missing"])
                     continue
                 if not tests_of(item):
                     wanted[item["id"]] += 1

@@ -254,8 +254,8 @@ def series_has(case, series, items=None, caps=None, part=None):
     have = caps.get(series, set())
     for item in mine:
         names = {series, (part or "").upper()} - {""}
-        if names & set(item.get("not_on", [])):
-            continue
+        if names & set(item.get("not_on", [])) or names & set(item.get("missing", [])):
+            continue                   # missing: the core has no driver to run yet
         if names & set(item.get("also", [])):
             return True
         need, any_of = set(item.get("needs", [])), set(item.get("any_of", []))

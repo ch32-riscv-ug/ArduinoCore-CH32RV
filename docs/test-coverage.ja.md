@@ -6,7 +6,7 @@
 
 ## 読み方
 
-実装は「あり」「一部」「未実装」「対象外」を区別します。
+実装は「あり」「一部」「未実装」を区別します。機能は基本すべて作ります（作らないのは特殊なもの、今は BLE だけ。2026-11-14 ユーザー）。実装が無いことを「対象外」とは書きません。
 「あり」でも silicon/part/route による条件があります。全系列で動くという意味ではありません。
 テスト定義は「あり・限定」「間接利用」「ビルドのみ」「なし」を区別します。
 「なし」は専用の動作検証を確認できないものです。examples のコンパイルは動作検証に含めません。
@@ -84,10 +84,10 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | Wire master NACK/timeout/recovery | あり | 現行: アドレスの NACK のみ（wire::test_wire_output_only、selfbus::test_i2c_nack） | データの NACK、timeout、バスの回復、clock stretch。SDA を握る・NACK を返す peer |
 | Wire slave 受信・応答 | あり | 現行: wire::test_wire_slave（プローブの i2c-controller が独立 master、100 kHz。onReceive / onRequest の順と中身、repeated START の register read、0xFF の埋め、32 バイトの頭、別の番地） | callback 文脈、復旧 |
 | SoftWire master | あり | 現行: softwire::test_wire_output_only・test_wire_repeated_start（wire と同じ問いを任意の 2 本で） | stretch、NACK、timeout/recovery |
-| SoftWire slave | 対象外 | なし | controller 専用設計。begin(address) は controller のままで callback は no-op。hardware Wire slave と区別 |
+| SoftWire slave | 未実装（今は controller だけ。begin(address) は controller のままで callback は no-op） | なし | 実装と、独立 master（プローブの i2c-controller）での wire.slave と同じ試験 |
 | SPI master | あり | 現行: spi::test_spi_output_only・test_spi_contract（mode/order、CS、プローブを相手に往復）、selfbus::test_spi_out / test_spi_in（自己検査） | data/buffer 境界、clock ごとの実観測 |
 | SoftSPI master | あり | 現行: softspi（spi と同じ問いを任意の端子で） | 8/16/32-bit/block、MISO 無し、clock floor |
-| SPI slave（CH32RVSPISlave）、SoftSPI slave | ハードウェアの SPI のみ（CH32RVSPISlave）。SoftSPI slave は対象外 | 現行: spi::test_spi_slave（プローブが master） | SPI slave の DMA 境界、復旧 |
+| SPI slave（CH32RVSPISlave）、SoftSPI slave | ハードウェアの SPI（CH32RVSPISlave）。SoftSPI slave は未実装 | 現行: spi::test_spi_slave（プローブが master） | SPI slave の DMA 境界、復旧。SoftSPI slave の実装と同じ試験 |
 | SerialDMSeq | あり | 間接利用: 多くの sketch の Console | 損失、buffer、host 不在、再接続、reset の独立契約。対応 probe と別観測経路 |
 | SerialSDI | あり | 現行: console-sdi::test_console_sdi | buffer、host 不在、reset。RX を想定しない |
 | SerialDMDATA / SerialRTT | あり | 現行: console-dmdata / console-rtt::test_console_two_way | 容量・host 不在・再接続 |
@@ -172,8 +172,8 @@ USB データを通した結果は、PD の交渉・電圧や bootloader HID の
 | probe protocol / TCP 内部 | 外部実装 | trace/tcp_link に混在 | このコアは DUT E2E のみ保持。内部検証は ch32rv/probe 側へ分離 |
 
 Ethernet（Network の NetworkEthernet、現行: eth）と SD（SD の SPI と SD_MMC の SDIO、現行: sd::test_sd_spi・test_sd_sdio）は公開 API があり、試験もあります。
-CAN/I2S 等は silicon に存在しても、この表では公開 Arduino API があるとは扱いません（coverage.toml では予定の項目）。
-この計画は公開する API と採用する拡張を対象とし、silicon の全機能を分母にしません。
+CAN・I2S など silicon にあってコアに無いものは未実装で、作る対象です（coverage.toml では予定の項目。未実装の一覧は TODO）。
+分母は silicon の機能です（BLE を除く）。
 
 ## 契約 matrix の作り方
 
@@ -184,6 +184,6 @@ observation method、期待値を結び付けます。
 
 共通契約を系列代表で確認したうえで、instance/route/ABI/製品 pin などの差分契約を追加します。
 P4/LinkE/Link/HID は API の分母を増やさず、経路別 integration の軸にします。
-未実装、対象外、テスト未定義、設備不足、未実行、実行失敗を区別して集計します。
+未実装、テスト未定義、設備不足、未実行、実行失敗を区別して集計します。
 具体的な target/配線 matrix はローカル設備 schema と contract 定義を接続して作成し、
 この棚卸しの表を実機 PASS 表として使いません。
