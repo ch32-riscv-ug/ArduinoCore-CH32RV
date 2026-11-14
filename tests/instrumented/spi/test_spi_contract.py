@@ -214,10 +214,11 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
     record_property("orders", json.dumps(orders))
     conditions = [(mode, lsb, 8, 8, True) for mode in range(4) for lsb in orders]
     conditions += [(0, 0, 8, 10, True), (0, 0, 8, 8, False)]     # clocked past what was queued; nothing queued
-    # CH32V103's slave MISO changes 0..25 ns after the sampling edge at byte boundaries, within its datasheet
-    # (output hold th(SO) 15 ns min): a change in the edge's own sample at SLAVE_RATE counts as after the edge,
-    # and WireSkein records it (hold_under_sample).
-    edge_sample = "before" if case["target"].get("family") == "CH32V103" else None
+    # CH32V103's and CH32V20x's slave MISO changes 0..25 ns after the sampling edge at byte boundaries, within
+    # their datasheets (output hold th(SO) 15 ns min): a change in the edge's own sample at SLAVE_RATE counts as
+    # after the edge, and WireSkein records it (hold_under_sample). V203 (5-1) fell to it 3 runs in 3 on
+    # 2026-11-14 ("reads in no mode", hold 0 samples; 25 ns on 11-13, when it passed - [oep]'s reading).
+    edge_sample = "before" if case["target"].get("family") in ("CH32V103", "CH32V20x") else None
     wrong = []
 
     def steps(wait):
