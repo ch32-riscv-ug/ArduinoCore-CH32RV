@@ -110,6 +110,12 @@ void CH32RVSPISlave::end()
     }
     detachInterrupt(_cs);
     ch32rv_irq_disable((uint32_t)irqn_of(_spi.number));
+    /* Given back as from reset: restart() leaves the next byte in the transmit
+     * buffer, and SPI.begin() as master would clock it out first, every
+     * transfer() then returning the byte before (seen on H417 after the
+     * slave test, 2026-11-14). */
+    SPI_RSTR(_spi) |= _spi.clken_mask;
+    SPI_RSTR(_spi) &= ~_spi.clken_mask;
     ch32rv_spi_release(this, &_spi);
     by_number[_spi.number] = nullptr;
     pinMode(_cs, INPUT);
