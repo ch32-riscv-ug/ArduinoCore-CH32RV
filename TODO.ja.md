@@ -51,10 +51,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   借りて読んで確かめた: DMCONTROL 0x00000000、DMSTATUS 0x00000c82）、プローブはそれを見ずに DATA0 を読み続けている。
   [oep] が「poll で dmactive = 0 を見たら立て直す」修正をユーザーの了承待ちで用意している。ch32rv 側は、書き込みが no_resource で断られたら
   つなぎ直すよう直した（以前は 'transfer-failed 0x0a' で終わっていた）。
-- [ ] **ch32rv の次の版を同梱する**: 試作版で確かめた 3 件（OEP の flash の attached-under-reset、H417 の RTT を core 1 で読む、
+- [x] **ch32rv の次の版を同梱する**: 試作版で確かめた 3 件（OEP の flash の attached-under-reset、H417 の RTT を core 1 で読む、
   stub で書く前の reset-halt = 走っている Ethernet の DMA で書き込みが壊れる件）が出たら上げ、全台を流す。
   → 2026-11-14: 同梱は 0.31.3。H417 の RTT を core 1 で読む件（3f3d0af）と stub の前の reset-halt（5ae82c1）は入っている。
-  OEP の flash の attached-under-reset が入っているかを [ch32rv] に問い合わせ中。
+  OEP の flash の attached-under-reset も同じ 3f3d0af で入っている（[ch32rv]: 普通の attach に答えないと port の NRST を
+  握ったまま attach し直し、warning attached-under-reset。`--connect-under-reset` も OEP の flash で使える）。
 
 ## 文書
 
