@@ -775,6 +775,11 @@ void CH32RVHardwareSerial::end(void)
     const UsartDesc &d = usarts[index_of(_slot)];
     ch32rv_irq_disable(d.irqn);
     CH32RV_USART_CTLR1(d.base) = 0;
+    /* Its clock too: a disabled USART still drove its TX low into the pad,
+     * and where pads have no alternate-function select (V103, V20x, V30x)
+     * that outweighed the other peripheral on it - TIM1 CH2's PWM on PA9
+     * stayed low after Serial.end() (V103 EVT, 2026-11-14). */
+    ch32rv_clock_disable_at(d.clken_addr, d.clken_mask);
     owner[index_of(_slot)] = nullptr;
     _slot = 0;
     _rx.clear();
