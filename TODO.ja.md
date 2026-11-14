@@ -372,11 +372,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - 確かめ方（2026-10-28 に決定）: 作る間は市販の USB 3.0 のメモリで手作業の試験（host の MSC クラスで読む。EVT と同じ形）。
     安定したら、H417 どうしのピア試験にする（H417 は 2 台を追加で確保中）。H417 の HS の線を切り離す部品も確保中で、
     切り離せば SWD で書き換えられる（SS の口を挿したままでも DFU に頼らない）。
-- [ ] ファイルシステム（docs/filesystem.ja.md）の残り: SD での実測（ベンチに SD が要る）、FAT を NOR に載せる摩耗分散の層、
+- [ ] ファイルシステム（docs/filesystem.ja.md）の残り: FAT を NOR に載せる摩耗分散の層、
   littlefs の設定（block_cycles、媒体の大きさ）を変えたときの値。
 - [ ] IP（docs/network-stack.ja.md）の残り: V317 の実機。V203RB は WCH-Link 一体型のボード（wchlink://BC5F4B9807F7）で eth が通った（2026-11-13、tests/.env の記録、今の `OEP_PORT_MEMO_<serial>`）。V208 の USB(ベンチの暫定配線では PC につながっていない)。
   V307 のチップのリビジョン 0x20 の回避策。対象の系列の USB デバイスのドライバで NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント（FEATURE_CANDIDATES の NET-03）。
-- [ ] スタックの予約（`sections.ld` の 512 B）より深く使うコードは、ヒープを黙って上書きする。TLS は、セッションの間 `_sbrk` に sp から 6 KB の余白を求めさせて直した（2026-11-03。V307 の 224k_96k の MAC エラーは、きれいなメモリー不足に変わった。H417 の HTTPS はそのまま通る）。ほかに深いスタックを使うライブラリが出たら、同じ `ch32rv_heap_stack_margin` を使う。
+- [ ] スタックの予約（Stack Size メニュー、既定は RAM の 16 分の 1、2026-11-14）より深く使うコードは、ヒープを黙って上書きする（Stack Check メニューを On にすると、はみ出しでリセットし、次の起動の resetReason() が panic になる）。TLS は、セッションの間 `_sbrk` に sp から 6 KB の余白を求めさせて直した（2026-11-03。V307 の 224k_96k の MAC エラーは、きれいなメモリー不足に変わった。H417 の HTTPS はそのまま通る）。ほかに深いスタックを使うライブラリが出たら、同じ `ch32rv_heap_stack_margin` を使う。
   V307 の eth の試験の HTTPS は、224k_96k でも 192k_128k でもメモリーが足りない（ヒープは 192k_128k で約 45 KB）。収める工夫（lwIP の大きさ、`MBEDTLS_SSL_IN_CONTENT_LEN` の縮小と max_fragment_length）は、必要になったら。
 
 - [ ] EspUsbDevice との差の残り: Info の例 3 本の移植、ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
