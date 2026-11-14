@@ -135,15 +135,17 @@ def test_usb_per_controller():
     """usb per controller (a part wired on several): host cases on the one to the host, peer cases on the peer's."""
     items, caps = place.series_needs()
     h417 = dict(chip="CH32H417QEU6", kind="oep", lines={},
-                record={"usb": {"fs": {"to": "rp2040", "port": "rp2040-h417"}, "ss": {"to": "host", "ss_only": True}}})
+                record={"usb": {"full_speed": {"to": "rp2040", "port": "rp2040-h417"},
+                                "super_speed": {"to": "host", "ss_only": True}}})
     cases = place.choose_cases(h417, items, caps)
     assert cases["usb"] == "run" and cases["usb-peer"] == "run"
     assert cases["usb-peer-media"].startswith("skip: the RP2040")
     assert records.check_core(h417["record"]) == []
     assert records.check_core({"usb": {"qq": {"to": "host"}}})          # an unknown controller
-    assert records.check_core({"usb": {"fs": {"to": "nope"}}})           # each entry is checked as the single form
+    assert records.check_core({"usb": {"full_speed": {"to": "nope"}}})
+    assert records.check_core({"usb": {"fs": {"to": "host"}}})           # the core's names, not short ones           # each entry is checked as the single form
     assert records.usb_ports({"to": "host"}) == {"auto": {"to": "host"}}
-    assert records.usb_ports(h417["record"]["usb"])["ss"] == {"to": "host", "ss_only": True}
+    assert records.usb_ports(h417["record"]["usb"])["super_speed"] == {"to": "host", "ss_only": True}
 
 
 def test_an_rp2040_peer_on_the_same_probe(monkeypatch, tmp_path):

@@ -89,7 +89,7 @@ def set_records(address, args):
             else:
                 usb[key] = value.lower().replace(":", "") if key == "mac" else value
         if args.usb_port:
-            # One controller's entry, the others kept: {fs: {...}, ss: {...}}. A single-form usb named no controller,
+            # One controller's entry, the others kept: {full_speed: {...}, super_speed: {...}}. A single-form usb named no controller,
             # so it gives way to the per-port form.
             port_name = args.usb_port.lower()
             core_changes["usb"] = lambda old: {**({} if not old or "to" in old else old), port_name: usb}

@@ -17,6 +17,6 @@ def staged_opts(tmp_path, case, **target):
 
 
 def test_the_host_cases_open_the_controller_to_the_host(tmp_path):
-    assert "CH32RVUsbController::SuperSpeed" in staged_opts(tmp_path, "usb", usb_host_controller="ss")
+    assert "CH32RVUsbController::SuperSpeed" in staged_opts(tmp_path, "usb", usb_host_controller="super_speed")
     assert "USB_TEST_CONTROLLER" not in staged_opts(tmp_path / "b", "usb", usb_host_controller="auto")
     assert "USB_TEST_CONTROLLER" not in staged_opts(tmp_path / "c", "usb")

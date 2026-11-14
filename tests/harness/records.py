@@ -71,9 +71,10 @@ def _parts(value, errors):
                 PART_CHECKS[kind](part, errors)
 
 
-# A DUT's USB controllers, as the per-port form of usb names them (the test sketches open that one:
-# CH32RVUsbController for a device, CH32RVUsbHostPort for a host).
-USB_PORTS = ("fs", "hs", "ss", "usbd", "hs2")
+# A DUT's USB controllers, as the per-port form of usb names them: the core's own names for choosing one
+# (CH32RVUsbController FullSpeed / HighSpeed / SuperSpeed / Usbd / HighSpeed2, CH32RV_USB_HOST_PORT_FULL_SPEED / ...),
+# in lower case.
+USB_PORTS = ("full_speed", "high_speed", "super_speed", "usbd", "high_speed_2")
 
 
 def usb_ports(value):
@@ -85,7 +86,7 @@ def usb_ports(value):
 
 def _usb(value, errors):
     if isinstance(value, dict) and value and "to" not in value:
-        # Per port: {"fs": {to: rp2040, ...}, "ss": {to: host}} - a part with several controllers wired apart.
+        # Per port: {"full_speed": {to: rp2040, ...}, "super_speed": {to: host}} - a part with several controllers wired apart.
         unknown = [k for k in value if k not in USB_PORTS]
         if unknown:
             errors.append(f"usb: {{to: ...}}, or per port {{{' / '.join(USB_PORTS)}: {{to: ...}}}}, not {', '.join(unknown)}")
@@ -184,7 +185,7 @@ CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
     "supply": (_supply, "where the board's power comes from: {from: probe | usb | other}"),
     "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial and / or mac} or {to: rp2040, port}; "
-                  "per controller {fs / hs / ss / usbd / hs2: {to: ...}} on a part wired on several"),
+                  "per controller {full_speed / high_speed / super_speed / usbd / high_speed_2: {to: ...}} on a part wired on several"),
     "parts": (_parts, "external parts: {sd: {bus: spi | sd1 | sd4, <signal>: <pad>, ...}, eth: {to: lan}}"),
     "pd": (_pd, "a USB PD sink on the board: {max_mv, vbus_pin, vbus_ratio}"),
     "defects": (_defects, "this board's own faults: [{id, lose: [feature, ...], why}]"),

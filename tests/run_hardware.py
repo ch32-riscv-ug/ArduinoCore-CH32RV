@@ -107,9 +107,9 @@ SKETCHES = {
 }
 # The record's usb ports (harness.records.USB_PORTS) as the test sketches' controller (USB_TEST_CONTROLLER) and host port
 # (USB_PEER_HOST_PORT).
-USB_CONTROLLERS = {"fs": "FullSpeed", "hs": "HighSpeed", "ss": "SuperSpeed", "usbd": "Usbd", "hs2": "HighSpeed2"}
-USB_HOST_PORTS = {"fs": "CH32RV_USB_HOST_PORT_FULL_SPEED", "hs": "CH32RV_USB_HOST_PORT_HIGH_SPEED",
-                  "hs2": "CH32RV_USB_HOST_PORT_HIGH_SPEED_2"}
+USB_CONTROLLERS = {"full_speed": "FullSpeed", "high_speed": "HighSpeed", "super_speed": "SuperSpeed", "usbd": "Usbd",
+                   "high_speed_2": "HighSpeed2"}
+USB_HOST_PORTS = {p: "CH32RV_USB_HOST_PORT_" + p.upper() for p in ("full_speed", "high_speed", "high_speed_2")}
 # build_opt.h lines staged beside a case's DUT sketch.
 BUILD_OPTS = {
     # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.
@@ -267,7 +267,7 @@ def stage_case(work, name, case, target):
             sketch.write_text(text.replace(m.group(0), f"default_profile: p4_{m.group(1)}\n"))
         target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"], mac=target.get("usb_peer_mac")))
     opts = BUILD_OPTS.get(case, "")
-    # The DUT's controller the record's usb names for this kind of case (per controller: {fs: {...}, ss: {...}}); the
+    # The DUT's controller the record's usb names for this kind of case (per controller: {full_speed: {...}, ...}); the
     # single form leaves the series' usual one (Auto), as before.
     controller = (target.get("usb_host_controller") if case in places.USB_CASES else
                   target.get("usb_peer_controller") if case in places.PEER_DEVICE_CASES + places.PEER_HOST_CASES else None)
