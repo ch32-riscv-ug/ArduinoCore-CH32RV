@@ -4,7 +4,7 @@
  * sketch's pin numbers.
  *
  *   ready <nonce>             READY <nonce> <build id>
- *   uart2 <rx> <tx> <baud>    UART2 <ok> <USART>: Serial1 on those pads (the
+ *   uart2 <rx> <tx> <baud>    UART2 <ok> <USART>: Serial1 (Serial on a one-USART part) on those pads (the
  *                             USART it took, 0 if none), then every byte it
  *                             receives goes back out (until `stop`)
  *   stop                      STOP <bytes echoed>
@@ -38,6 +38,13 @@
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 #define PERIPH_HSADC 1
 #include <CH32RVHsAdc.h>
+#endif
+/* The USART uart2 moves around: Serial1, or Serial where the part has one
+ * USART (V003's Serial is USART1; this sketch's console is SerialDMSeq). */
+#if defined(SERIAL_PORT_HARDWARE1)
+#define ROUTED Serial1
+#elif defined(SERIAL_PORT_HARDWARE)
+#define ROUTED Serial
 #endif
 
 #ifndef BENCH_BUILD_ID
@@ -187,19 +194,19 @@ static void reply(char *command)
     if (!strcmp(argv[0], "ready") && argc == 2) {
         SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "uart2") && argc == 4) {
-#if defined(SERIAL_PORT_HARDWARE1)
-        Serial1.begin((unsigned long)atol(argv[3]), SERIAL_8N1, atoi(argv[1]), atoi(argv[2]));
-        echoing = (bool)Serial1;
+#if defined(ROUTED)
+        ROUTED.begin((unsigned long)atol(argv[3]), SERIAL_8N1, atoi(argv[1]), atoi(argv[2]));
+        echoing = (bool)ROUTED;
         echoed = 0;
 #endif
-#if defined(SERIAL_PORT_HARDWARE1)
-        SerialDMSeq.printf("UART2 %d %d\r\n", echoing ? 1 : 0, (int)Serial1.peripheral());
+#if defined(ROUTED)
+        SerialDMSeq.printf("UART2 %d %d\r\n", echoing ? 1 : 0, (int)ROUTED.peripheral());
 #else
         SerialDMSeq.printf("UART2 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "stop")) {
-#if defined(SERIAL_PORT_HARDWARE1)
-        Serial1.end();
+#if defined(ROUTED)
+        ROUTED.end();
 #endif
         echoing = false;
         SerialDMSeq.printf("STOP %lu\r\n", (unsigned long)echoed);
@@ -253,9 +260,9 @@ void setup()
 
 void loop()
 {
-#if defined(SERIAL_PORT_HARDWARE1)
-    while (echoing && Serial1.available()) {
-        Serial1.write((uint8_t)Serial1.read());
+#if defined(ROUTED)
+    while (echoing && ROUTED.available()) {
+        ROUTED.write((uint8_t)ROUTED.read());
         echoed++;
     }
 #endif
