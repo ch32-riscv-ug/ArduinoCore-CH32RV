@@ -91,6 +91,9 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
   小文字にしたものです: `full_speed`（USBFS / OTG_FS）、`high_speed`（USBHS）、`super_speed`（USBSS）、`usbd`（V20x の USBD。
   デバイスのドライバはまだ無い）、`high_speed_2`（V407 / V467 の 2 つ目の USBHS）。V20x の 2 つの Full Speed は
   `full_speed` と `usbd` で分けます。
+- キーは「どのコントローラーか」だけを表します。そこで流せる case（デバイスだけか、ホストもか）は、試験が系列のデータと
+  実装の状況から決めます（place.py の choose_cases）。X315 の `super_speed` はデバイスだけ、H417 の `super_speed` はハードでは
+  両対応でも今の実装はデバイスだけ、のように、同じキーでも石と実装で範囲が変わります。
 - usb・usb-classes・usb-media は `{"to": "host"}` の口で、usb-peer の各 case はプローブなどの相手（esp32-s3 / esp32-p4 /
   rp2040）の口で流れます。run_hardware.py が、その口をスケッチに渡します（デバイスは `USB_TEST_CONTROLLER`、ホストは
   `USB_PEER_HOST_PORT`）。1 つの形は、系列の既定のコントローラー（`Auto`）のままです。
