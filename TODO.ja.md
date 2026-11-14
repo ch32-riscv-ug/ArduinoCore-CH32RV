@@ -286,13 +286,16 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
   USART が PA9 に Low を出し続け TIM1 CH2 を押さえていた。end() で USART のクロックも止める）、selfsys（リセット直後の
   STARTUP の行の頭をコンソールが取りこぼす。`why` で問い合わせる）。V006 の signals の PC0 は 1 回だけで、2 回とも PASS。
 - [ ] **X035 の USB ホストで、Pico の HID の 2 つ目のレポートを 2 秒読みに来ないことがある**（usb-peer-host、4 回中 1 回）。
-- [ ] **H417 の VIO18 を 3.3 V にすると止まる（2026-11-13）**: nanoCH32H417（wchlink://A94B8F062EE9）で、メニューの
-  `vio18=3v3` で作ったスケッチは、コンソール（LinkE の dmseq）の READY を返さず、USBSS も列挙しない。V5F の hart は
-  loop() を回している（USB の deliver の中）。USB を使わない sd のスケッチでも同じ。SD の端子（PB10 / PB11 / PE8〜PE11）は
-  VIO18 の領域で、既定の 1.2 V ではカードが答えない（SDIO も SoftSPI の SPI モードも）。見立て（未確認）: メニューの既定が
-  「XO strap」なので、VIO18 を動作中に変えると 25 MHz の水晶と、それを元にした PLL が乱れる。WCH の SDIO のデモ
-  （nanoCH32H417 の demo/SDIO_SD.Bin）が VIO18 をいつ設定するかと比べ、必要ならクロックを立てる前に設定する。
-  ベンチの構成を固めてから調べる（ユーザー）。
+- [x] **nanoCH32H417 の SD（2026-11-14）**: `vio18=3v3` のスケッチは今は止まらない（2026-11-13 に見た止まりは、
+  H41x の HSE とスタックの修正のあとは出ていない）。そのうえで 3 つ直して、sd の case が 2 回続けて通る（SDIO 4 線 20 MHz、
+  SoftSPI）。
+  - FatFs が、`mkfs.fat -F 32` で作った小さい FAT32（480 MB、32 KB のクラスタ、15330 個）を、クラスタの数で FAT16 と数えて
+    断っていた（FR_NO_FILESYSTEM）。BPB が FAT32（FATSz16 が 0、ルートディレクトリの欄が 0）なら数によらず FAT32 にした
+    （Linux・Windows と同じ。ff.c の手元の変更）。
+  - カードは、答えたバスのモードを電源が切れるまで続ける。SPI の後は SDIO に答えず、SDIO の後は CS Low の CMD0 にも
+    答えない（両方を実機で確認）。カードの電源は基板のものなので、WCH-Link の後ろの SDIO スロットでは、試験ごとに Link の
+    USB の口を切り入れする（test_sd_contract の fresh_card）。
+  - SDIO のドライバ（SD_MMC）は直す所がなかった。実機で動かしたのはこれが初めて。
 
 CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0012-usb-stack.ja.md)）。全系列のドライバはあり、実機で確かめたのは X035、H417、V407（HS）。
 

@@ -9,6 +9,7 @@
  *                                      slot: nanoCH32H417)
  *   sdio <ck> <cmd> <d0> [<d1> <d2> <d3>] <khz>
  *                                      SDIO <ok> <card type> <sectors> <FAT type> <clock kHz> <bits>
+ *   raw <sector>                       RAW <ok> <bytes 0..15> | <bytes 0x1BE..0x1FF> (after spi)
  *   files <kb>                         FILES <ok> <write ms> <read ms> <entries in />
  *   end                                END
  * Pins are the sketch's pin numbers. */
@@ -94,6 +95,16 @@ static void reply(char *command)
         mounted = ok ? &SD : nullptr;
         SerialDMSeq.printf("SPI %d %d %lu %d %s\r\n", ok ? 1 : 0, (int)SD.cardType(), (unsigned long)SD.numSectors(),
                            (int)SD.fatType(), hw ? "hw" : "soft");
+    } else if (!strcmp(argv[0], "raw") && argc == 2) {
+        /* raw <sector>: after an spi that found the card, its bytes 0x1BE..0x1FF (the MBR's partition table and
+         * signature) and 0x00..0x0F, to see why no FAT volume mounted. */
+        static uint8_t sector[512] __attribute__((aligned(4)));
+        const bool got = SD.readRAW(sector, (uint32_t)atol(argv[1]));
+        SerialDMSeq.printf("RAW %d", got ? 1 : 0);
+        for (int i = 0; i < 16; i++) SerialDMSeq.printf(" %02x", sector[i]);
+        SerialDMSeq.printf(" |");
+        for (int i = 0x1BE; i < 0x200; i++) SerialDMSeq.printf(" %02x", sector[i]);
+        SerialDMSeq.printf("\r\n");
     } else if (!strcmp(argv[0], "sdio") && (argc == 5 || argc == 8)) {
         const bool pins = argc == 8 ? SD_MMC.setPins(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]),
                                                      atoi(argv[5]), atoi(argv[6]))

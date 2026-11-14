@@ -5,7 +5,9 @@
 `FatFS` は、ブロックデバイスの上の FAT12/16/32・exFAT のボリュームをマウントし、ESP32 の `FS` / `File` の
 API で使えるようにします。`open()`、`exists()`、`remove()`、`rename()`、`mkdir()`、`rmdir()`、`File` の
 `Stream`、`seek()`、`openNextFile()` です。ファイルシステムは FatFs R0.16 に作者の patch 1・2
-（CVE-2026-6682・-6683・-6687 の修正）を当てたものです。
+（CVE-2026-6682・-6683・-6687 の修正）を当てたものです。手元の変更が 1 つあり、BPB が FAT32 を示すボリュームは、
+クラスタが 65525 個より少なくても FAT32 としてマウントします（Linux・Windows と同じ読み方。`mkfs.fat -F 32` は
+2 GB ほどより小さいカードでこれを作ります）。
 
 ```cpp
 #include <FatFS.h>

@@ -6,7 +6,10 @@
 ESP32's `FS` / `File` API on it: `open()`, `exists()`, `remove()`,
 `rename()`, `mkdir()`, `rmdir()`, and `File`'s `Stream`, `seek()`,
 `openNextFile()`. The file system is FatFs R0.16 with its author's patches 1
-and 2 (CVE-2026-6682, -6683 and -6687).
+and 2 (CVE-2026-6682, -6683 and -6687), and one local change: a volume whose
+BPB says FAT32 mounts as FAT32 even with fewer than 65525 clusters, as
+Linux and Windows read it (`mkfs.fat -F 32` makes these on cards under
+about 2 GB).
 
 ```cpp
 #include <FatFS.h>

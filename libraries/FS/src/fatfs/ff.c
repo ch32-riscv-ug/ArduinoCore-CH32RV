@@ -3622,6 +3622,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (nclst <= MAX_FAT16) fmt = FS_FAT16;
 		if (nclst <= MAX_FAT12) fmt = FS_FAT12;
 		if (nclst <= MIN_FAT12) fmt = 0;
+		/* ArduinoCore-CH32RV: a FAT32 BPB (BPB_FATSz16 0, no fixed root directory) is FAT32 whatever the
+		   cluster count, as Linux and Windows read it. mkfs.fat -F 32 makes such volumes on small cards
+		   (480 MB with 32 KB clusters: 15330 clusters), which FatFs counted as FAT16 and refused. */
+		if (fmt != 0 && ld_16(fs->win + BPB_FATSz16) == 0 && fs->n_rootdir == 0) fmt = FS_FAT32;
 		if (fmt == 0) return FR_NO_FILESYSTEM;
 
 		/* Boundaries and Limits */
