@@ -64,3 +64,22 @@ protected:
     BitOrder _order = MSBFIRST;
     bool _started = false;
 };
+
+namespace arduino {
+class CH32RVSPIClass;
+class SoftSPI;
+}  // namespace arduino
+
+/* Peripheral mode's code (SPI_HAS_PERIPHERAL_MODE, <SPI.h>), behind a pointer
+ * the buses call through: SPIPeripheral.cpp sets it from
+ * ch32rv_spi_peripheral_linked(), which only an SPISettings built with a bus
+ * mode other than SPI_CONTROLLER calls (the ArduinoCore-API patch in
+ * HardwareSPI.h). So a sketch that never asks for a peripheral links none of
+ * it; nullptr until one does. */
+struct CH32RVSPIPeripheralOps {
+    void (*hw_mode)(arduino::CH32RVSPIClass &bus, bool on);
+    uint8_t (*hw_transfer)(arduino::CH32RVSPIClass &bus, uint8_t data);
+    void (*soft_mode)(arduino::SoftSPI &bus, bool on);
+    uint8_t (*soft_transfer)(arduino::SoftSPI &bus, uint8_t data);
+};
+extern const CH32RVSPIPeripheralOps *ch32rv_spi_peripheral;

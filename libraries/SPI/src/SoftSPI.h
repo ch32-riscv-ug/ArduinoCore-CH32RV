@@ -21,6 +21,14 @@
  * accepted and ignored - see setHalfPeriodUs() below for the one knob that
  * does change the speed. Nothing breaks: SPI is clocked by the controller, so
  * a slow clock only means a slow transfer.
+ *
+ * A peripheral too, as <SPI.h>'s buses are (SPI_HAS_PERIPHERAL_MODE): a
+ * transaction begun with SPISettings(..., SPI_PERIPHERAL) makes SCK and MOSI
+ * inputs and MISO an output, and each transfer() then follows the
+ * controller's clock by polling SCK, as long as that takes, until
+ * endTransaction(). Interrupts are left on, so an interrupt longer than half a
+ * clock period loses a bit; SoftSPISlave (<SoftSPISlave.h>) is the slave framed
+ * by a chip select and moved by interrupts.
  */
 #pragma once
 
@@ -64,6 +72,7 @@ public:
     uint8_t transfer(uint8_t data) override;
     using ::SPIClass::transfer;
 
+    /* SPI_PERIPHERAL in the settings: a peripheral until endTransaction(). */
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
 
@@ -86,16 +95,26 @@ public:
     void setDataMode(uint8_t mode);
     void setClockDivider(uint32_t divider) { (void)divider; }
 
+    /* Peripheral mode's two halves, called through ch32rv_spi_peripheral
+     * (SPIClass.h); not part of the sketch-facing API. */
+    void peripheral_mode(bool on);
+    uint8_t follow(uint8_t data);
+
 private:
+    bool cpol(void) const { return (_mode & 2u) != 0; }
+    bool cpha(void) const { return (_mode & 1u) != 0; }
     void idle_clock(void);
+    void controller_pads(void);
 
     uint8_t _sck;
     uint8_t _mosi;
     uint8_t _miso;
 
-    /* CPOL: clock idles high. CPHA: sample on the trailing edge. */
-    bool _cpol = false;
-    bool _cpha = false;
+    /* SPI mode: bit 1 CPOL (clock idles high), bit 0 CPHA (sample on the
+     * trailing edge). One byte with the flag below, so the object stays 16. */
+    uint8_t _mode = 0;
+    /* A peripheral (SPI_PERIPHERAL) until endTransaction(). */
+    bool _periph = false;
     uint16_t _half_us = 0;
 };
 

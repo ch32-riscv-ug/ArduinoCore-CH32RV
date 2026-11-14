@@ -315,26 +315,63 @@ void CH32RVSPIClass::begin()
     ch32rv_pin_set_af(_miso_pin, route->value);
     ch32rv_pin_set_af(_mosi_pin, route->value);
 
-    const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(_sck_pin);
-    const uint8_t miso_port = (uint8_t)CH32RV_PIN_PORT(_miso_pin);
-    const uint8_t mosi_port = (uint8_t)CH32RV_PIN_PORT(_mosi_pin);
-    ch32rv_gpio_clock_enable(sck_port);
-    ch32rv_gpio_clock_enable(miso_port);
-    ch32rv_gpio_clock_enable(mosi_port);
-    ch32rv_gpio_set_config(sck_port, (uint8_t)CH32RV_PIN_BIT(_sck_pin),
-                         CH32RV_GPIO_CFG_AF_PP_50M);
-    ch32rv_gpio_set_config(mosi_port, (uint8_t)CH32RV_PIN_BIT(_mosi_pin),
-                         CH32RV_GPIO_CFG_AF_PP_50M);
-    /* MISO is driven by the device, so it stays an input. Pulled up rather
-     * than floating: with nothing connected a floating input picks up noise
-     * and reads back as random bytes instead of a steady 0xFF, which makes
-     * "no device" look like "flaky device". */
-    ch32rv_gpio_set_config(miso_port, (uint8_t)CH32RV_PIN_BIT(_miso_pin),
-                         CH32RV_GPIO_CFG_IN_PULL);
-    ch32rv_gpio_set(miso_port, (uint8_t)CH32RV_PIN_BIT(_miso_pin));
+    ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(_sck_pin));
+    ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(_miso_pin));
+    ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(_mosi_pin));
+    pads(false);
 
+    _periph = 0;
     _started = true;
     apply(_clock_hz, _order, _mode);
+}
+
+/* The pads as a controller drives them, or as a peripheral: SCK and MOSI
+ * come from the other end, MISO is this one's. */
+void CH32RVSPIClass::pads(bool peripheral)
+{
+    const uint32_t out = peripheral ? CH32RV_GPIO_CFG_IN_FLOAT : CH32RV_GPIO_CFG_AF_PP_50M;
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(_sck_pin), (uint8_t)CH32RV_PIN_BIT(_sck_pin), out);
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(_mosi_pin), (uint8_t)CH32RV_PIN_BIT(_mosi_pin), out);
+    /* A controller's MISO is the device's, so an input. Pulled up rather than
+     * floating: with nothing connected a floating input picks up noise and
+     * reads back as random bytes instead of a steady 0xFF, which makes "no
+     * device" look like "flaky device". */
+    const uint8_t miso_port = (uint8_t)CH32RV_PIN_PORT(_miso_pin);
+    const uint8_t miso_bit = (uint8_t)CH32RV_PIN_BIT(_miso_pin);
+    ch32rv_gpio_set_config(miso_port, miso_bit,
+                           peripheral ? CH32RV_GPIO_CFG_AF_PP_50M : CH32RV_GPIO_CFG_IN_PULL);
+    if (!peripheral) {
+        ch32rv_gpio_set(miso_port, miso_bit);
+    }
+}
+
+/* Into or out of peripheral mode, the SPI reset through RCC on the way (PRSTR,
+ * 0x0C below the clock enable register, every SPI of every family - as
+ * CH32RVSPISlave does): a slave's transmit side may hold a byte the controller
+ * never clocked, which a controller would send first. */
+void CH32RVSPIClass::peripheral_mode(bool on)
+{
+    const SpiDesc &d = spis[index_of(_slot)];
+    CH32RV_SPI_CTLR1(_base) = 0;
+    CH32RV_REG32(d.clken_addr - 0x0Cu) |= d.clken_mask;
+    CH32RV_REG32(d.clken_addr - 0x0Cu) &= ~d.clken_mask;
+    pads(on);
+    if (!on) {
+        _periph = 0;
+        apply(_clock_hz, _order, _mode);
+        return;
+    }
+    /* Slave, NSS from SSM with SSI 0: selected until endTransaction(). */
+    uint16_t ctlr1 = CH32RV_SPI_CTLR1_SSM;
+    if (_mode & 0x1u) {
+        ctlr1 |= CH32RV_SPI_CTLR1_CPHA;
+    }
+    if (_mode & 0x2u) {
+        ctlr1 |= CH32RV_SPI_CTLR1_CPOL;
+    }
+    CH32RV_SPI_CTLR1(_base) = ctlr1;
+    CH32RV_SPI_CTLR1(_base) = (uint16_t)(ctlr1 | CH32RV_SPI_CTLR1_SPE);
+    _periph = _order == LSBFIRST ? 2 : 1;
 }
 
 
@@ -364,6 +401,10 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
     _mode = mode;
     if (!_started) {
         return;                       /* begin() applies it */
+    }
+    if (_periph == 3) {               /* let go by a peripheral transaction: the pads back */
+        pads(false);
+        _periph = 0;
     }
 
     /* SSM/SSI keep the peripheral in master mode without owning an NSS pin:
@@ -399,15 +440,35 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
 
 void CH32RVSPIClass::beginTransaction(SPISettings settings)
 {
+    if (settings.getBusMode() != SPI_CONTROLLER) {
+        if (_started && ch32rv_spi_peripheral) {
+            _order = settings.getBitOrder();
+            _mode = (uint8_t)settings.getDataMode();
+            ch32rv_spi_peripheral->hw_mode(*this, true);
+        }
+        return;
+    }
+    if (_periph) {
+        ch32rv_spi_peripheral->hw_mode(*this, false);
+    }
     apply(settings.getClockFreq(), settings.getBitOrder(),
           (uint8_t)settings.getDataMode());
 }
 
 void CH32RVSPIClass::endTransaction(void)
 {
-    /* The bus is left configured and enabled. Arduino's contract is only that
-     * another device may now claim it, and re-applying settings is what
-     * beginTransaction does. */
+    /* A controller's bus is left configured and enabled. Arduino's contract
+     * is only that another device may now claim it, and re-applying settings
+     * is what beginTransaction does. A peripheral lets the bus go: the SPI
+     * off and its pads left as inputs, so it never drives SCK / MOSI against
+     * the controller that clocked it (it did, at its last mode's CPOL, as soon
+     * as it became a controller again - the controller's next mode met it:
+     * 25 ns SCK pulses and a 33rd clock, V006 / V203, 2026-11-15). The next
+     * controller transfer or beginTransaction() takes the pads back. */
+    if (_periph == 1 || _periph == 2) {
+        CH32RV_SPI_CTLR1(_base) = 0;
+        _periph = 3;
+    }
 }
 
 void CH32RVSPIClass::setBitOrder(BitOrder order)
@@ -431,6 +492,11 @@ uint8_t CH32RVSPIClass::transfer(uint8_t data)
     if (!_started) {
         return 0;
     }
+    if (_periph == 3) {
+        apply(_clock_hz, _order, _mode);   /* let go after a peripheral transaction: a controller again */
+    } else if (_periph) {
+        return ch32rv_spi_peripheral->hw_transfer(*this, data);
+    }
     /* Full duplex: one byte out is one byte in, and the wait for RXNE is what
      * makes the call synchronous. No timeout, because unlike I2C there is no
      * other party that can stall the clock - the master generates it. */
@@ -440,6 +506,34 @@ uint8_t CH32RVSPIClass::transfer(uint8_t data)
     while ((CH32RV_SPI_STATR(_base) & CH32RV_SPI_STATR_RXNE) == 0u) {
     }
     return (uint8_t)CH32RV_SPI_DATAR(_base);
+}
+
+static uint8_t reverse(uint8_t b)
+{
+    b = (uint8_t)((b & 0xF0u) >> 4 | (b & 0x0Fu) << 4);
+    b = (uint8_t)((b & 0xCCu) >> 2 | (b & 0x33u) << 2);
+    return (uint8_t)((b & 0xAAu) >> 1 | (b & 0x55u) << 1);
+}
+
+/* A peripheral's byte: the same exchange, the clock the controller's. It waits
+ * as long as the controller takes (ArduinoCore-API's peripheral mode has no
+ * timeout), and the byte has to be in before the controller clocks it: between
+ * bytes the controller leaves the time from one transfer() to the next. LSB
+ * first is reversed here, not by the SPI, whose LSB-first slave sends the
+ * wrong bits on some parts (CH32RVSPISlave.cpp). */
+uint8_t CH32RVSPIClass::peripheral_transfer(uint8_t data)
+{
+    const bool lsb = _periph == 2;
+    if (lsb) {
+        data = reverse(data);
+    }
+    while ((CH32RV_SPI_STATR(_base) & CH32RV_SPI_STATR_TXE) == 0u) {
+    }
+    CH32RV_SPI_DATAR(_base) = data;
+    while ((CH32RV_SPI_STATR(_base) & CH32RV_SPI_STATR_RXNE) == 0u) {
+    }
+    const uint8_t in = (uint8_t)CH32RV_SPI_DATAR(_base);
+    return lsb ? reverse(in) : in;
 }
 
 

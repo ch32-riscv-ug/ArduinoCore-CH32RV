@@ -1,6 +1,7 @@
 # SPI
 
-Controller-mode SPI on the CH32's own peripheral, polled. Name the pins with
+SPI on the CH32's own peripheral, polled: a controller, or a peripheral (slave)
+in a transaction that asks for one (below). Name the pins with
 `SPI.begin(sck, miso, mosi, ss)`; chip select is an ordinary GPIO, as on every
 Arduino core.
 
@@ -65,8 +66,47 @@ Adafruit_Something device(&bus);
   one knob is `setHalfPeriodUs()`, a **floor** on the half period.
 - All four modes, `MSBFIRST` and `LSBFIRST`. `transfer16()` / `transfer32()`
   send the low byte first under `LSBFIRST`, as `SPI` does.
-- No CS and no target mode (CS is an ordinary GPIO, as on `SPI`). There is no
-  `setRoute()`; `peripheral()` returns 0.
+- No CS (an ordinary GPIO, as on `SPI`). A peripheral in a transaction that
+  asks for one, as `SPI` (below): SCK is polled, so an interrupt longer than
+  half the controller's clock period loses a bit. There is no `setRoute()`;
+  `peripheral()` returns 0.
+
+### SoftSPISlave (a slave framed by chip select, any pads)
+
+`SoftSPISlave` is [CH32RVSPISlave](../CH32RVSPISlave/README.md)'s API on any
+four pads: `begin(sck, miso, mosi, cs, mode, order)`, `queue()`, `poll()` /
+`onTransfer()`, `transfer()`, `setFill()`, `missed()`, `overruns()`.
+
+```cpp
+#include <SPI.h>                  // or <SoftSPISlave.h>
+
+SoftSPISlave slave;
+static uint8_t tx[4] = {0xA5, 1, 2, 3}, rx[4];
+
+void setup() {
+  slave.begin(PC5, PC7, PC6, PC4);      // SCK, MISO, MOSI, CS
+  slave.queue(tx, rx, sizeof rx);       // ready for the next chip select
+}
+
+void loop() {
+  SoftSPISlave::Result r;
+  if (slave.poll(r)) {                  // r.length whole bytes were clocked
+    slave.queue(tx, rx, sizeof rx);
+  }
+}
+```
+
+- **Every bit is one interrupt.** CS takes a pin-change interrupt on both edges,
+  SCK on the edge the mode samples on, where MOSI is read and MISO's next bit
+  goes up. Each has to run within half a clock period of its edge, and the
+  controller has to leave that much after CS falls and after the last clock
+  before CS rises. A missed edge shows as a chip select whose clocks are not
+  whole bytes, counted in `overruns()`. Not measured on hardware yet
+  (2026-11-15); the bench test runs it at 50 kHz.
+- **SCK and CS need different EXTI lines** (pin bits: PA1 and PB1 share line 1;
+  `begin()` returns `false`), and those lines are the slave's. MISO may be -1
+  (receive only), MOSI -1 (send only).
+- MISO is driven only while CS is low, so other devices can share the bus.
 
 ### Making SPI software from the board menu
 
@@ -97,9 +137,28 @@ ESP32's `SPIClass spi(bus)` do not compile.
 - **`usingInterrupt()` does nothing.** This driver never touches the bus from
   an interrupt, so there is no shared state to protect. A sketch that uses SPI
   *from* its own ISR still has to arrange that itself.
-- **Peripheral (slave) mode is not implemented**, and
-  `SPI_HAS_PERIPHERAL_MODE` is deliberately left undefined so a library can
-  test for it.
+- **Peripheral (slave) mode as ArduinoCore-API defines it** (`SPIBusMode`;
+  ArduinoCore-zephyr's SPI is the reference), on `SPI` and `SoftSPI`, and
+  `SPI_HAS_PERIPHERAL_MODE` says so:
+
+  ```cpp
+  SPI.beginTransaction(SPISettings(0, MSBFIRST, SPI_MODE0, SPI_PERIPHERAL));
+  uint8_t in = SPI.transfer(out);       // waits for the controller's clock
+  SPI.endTransaction();                 // a controller again
+  ```
+
+  The clock is the controller's (the settings' frequency is not used), and
+  `transfer()` waits for it with no timeout, as there. That API has no chip
+  select: the bus is selected from `beginTransaction()` to `endTransaction()`
+  and drives MISO all along, the bytes are framed by the `transfer()` calls,
+  and the controller has to leave the time from one `transfer()` to the next
+  between bytes (the hardware SPI takes each byte as `transfer()` gives it).
+  For transfers framed by CS, queued ahead and moved by interrupts, use
+  [CH32RVSPISlave](../CH32RVSPISlave/README.md) (the hardware SPI) or
+  `SoftSPISlave` (any pads). Only a sketch that builds an `SPI_PERIPHERAL`
+  `SPISettings` links the peripheral code (a patch to ArduinoCore-API's
+  `SPISettings`, `tools/vendor/check_api_sync.py`); the buses keep only the
+  test of a flag. Not measured on hardware yet (2026-11-15).
 - **Names are `SPI`, `SPI1`, `SPI2`**, one per SPI the board enables. Using a
   name the board does not have fails to compile.
 - The legacy `setBitOrder()` / `setDataMode()` / `setClockDivider()` are

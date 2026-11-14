@@ -14,7 +14,11 @@ condition, judged there (spi): the mode on the lines, 40 clocks while CS is low,
 hardware SPI and AVR send it), MISO = the armed bytes; CS high at the condition's start and end. What the sketch
 read back (its XFER reply) is compared here: the armed bytes, and the word assembled the same way. SCK moves
 while CS is high only once when the mode's idle level (CPOL) changes: beginTransaction() sets it before CS falls,
-as Arduino's SPI does (WireSkein's sck_outside_cs notice: one allowed then, ng otherwise)."""
+as Arduino's SPI does (WireSkein's sck_outside_cs notice: one allowed then, ng otherwise).
+
+The DUT as the peripheral of the probe's spi-controller: spi.slave / softspi.slave (CH32RVSPISlave / SoftSPISlave,
+transfers framed by CS) and spi.peripheral / softspi.peripheral (the bus itself, SPI_HAS_PERIPHERAL_MODE) - see
+their tests."""
 import json
 import pathlib
 import secrets
@@ -213,13 +217,17 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
 
 
 SLAVE_HZ = 100_000                 # within what CH32RVSPISlave's README measured (100-200 kHz, one interrupt a byte)
+SOFT_SLAVE_HZ = 50_000             # SoftSPISlave: one interrupt a bit, each within half a period (10 us here)
 SLAVE_SETUP_NS = 20_000            # CS falling to the first clock: the CS interrupt selects the slave
 SLAVE_FILL = 0xA5
+PERIPH_BYTES = 4                   # spi.peripheral: the bytes of each transfer
 
 
 def test_spi_slave(dut, oep_host, ws_run, record_property):
-    """spi.slave (case spi only): CH32RVSPISlave on the SPI's default pins, CS the first other labelled line, the
-    probe's spi-controller the master at 100 kHz with 20 us from CS to the first clock. One capture of the four lines
+    """spi.slave: CH32RVSPISlave on the SPI's default pins, CS the first other labelled line; softspi.slave:
+    SoftSPISlave (the same API, every bit one pin-change interrupt) on SoftSPI's four lines, SCK and CS on different
+    pin bits (EXTI lines). The probe's spi-controller is the master at 100 kHz (SoftSPISlave 50 kHz, SOFT_SLAVE_HZ)
+    with 20 us from CS to the first clock and from the last clock to CS. One capture of the four lines
     at 40 MS/s (SLAVE_RATE),
     a WireSkein section per condition judging the bus (spi: the mode, the clocks, MOSI = what the probe sent, MISO =
     what the slave queued, then its fill byte); what the slave kept (its Result: length and bytes) and what the
@@ -230,9 +238,10 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
     from oep_client.fixture import SpiController, SpiItem
     from wireskein.runlog import ends, spi, starts
     case = settings(__file__)
-    if case.get("case") != "spi":
-        pytest.skip("the slave is the hardware SPI's")
-    lines, sck, miso, mosi, cs, _ = open_bus(dut, oep_host, case, record_property)
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    if soft and int(sck[2:]) == int(cs[2:]):
+        pytest.skip(f"n/a: SoftSPISlave wants SCK and CS on different EXTI lines, {sck} / {cs} share one")
+    hz = SOFT_SLAVE_HZ if soft else SLAVE_HZ
     host = oep_host.host
     ctrl = SpiController(host)
     core.plan_apply(host, ctrl.assignments(lines[sck]["channel"], lines[mosi]["channel"], lines[miso]["channel"],
@@ -245,13 +254,14 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
     # their datasheets (output hold th(SO) 15 ns min): a change in the edge's own sample at SLAVE_RATE counts as
     # after the edge, and WireSkein records it (hold_under_sample). V203 (5-1) fell to it 3 runs in 3 on
     # 2026-11-14 ("reads in no mode", hold 0 samples; 25 ns on 11-13, when it passed - [oep]'s reading).
-    edge_sample = "before" if case["target"].get("family") in ("CH32V103", "CH32V20x") else None
+    # SoftSPISlave puts MISO up an interrupt's latency after the edge, well clear of it.
+    edge_sample = "before" if not soft and case["target"].get("family") in ("CH32V103", "CH32V20x") else None
     wrong = []
 
     def steps(wait):
         idle = {cs: 1}
         cpol = None
-        with ws_run.section(1, f"spi slave {sck} {miso} {mosi} {cs}"):
+        with ws_run.section(1, f"{'softspi' if soft else 'spi'} slave {sck} {miso} {mosi} {cs}, {hz // 1000} kHz"):
             for mode, lsb, size, clocked, queued in conditions:
                 name = (f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST {size} queued {clocked} clocked"
                         if queued else f"mode {mode} nothing queued")
@@ -265,8 +275,9 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
                             miso_bytes=back.hex(), bits=8 * clocked,
                             notices={"sck_outside_cs": "ng" if same_idle else 1}, edge_sample=edge_sample),
                         starts(idle), ends(idle)]
+                ctrl.configure(mode=mode, bit_order=lsb, clock_hz=hz)   # outside the section, as in test_spi_peripheral
+                wait(0.002)
                 with ws_run.section(2, name, expect=want):
-                    ctrl.configure(mode=mode, bit_order=lsb, clock_hz=SLAVE_HZ)
                     for command, reply in ((f"slave {lines[cs]['pin']} {mode} {lsb} {SLAVE_FILL:02x}", rb"SLAVE (\d)"),
                                            *(((f"sq {size} {armed.hex()}", rb"SQ (\d)"),) if queued else ())):
                         ws_run.command(command)
@@ -298,5 +309,74 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
     finally:
         core.plan_release(host, [ctrl.fn])
         dut.write("send\n")
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
+def test_spi_peripheral(dut, oep_host, ws_run, record_property):
+    """spi.peripheral, softspi.peripheral: the bus itself as a peripheral, as ArduinoCore-API defines it
+    (SPI_HAS_PERIPHERAL_MODE): beginTransaction(SPISettings(..., SPI_PERIPHERAL)), then transfer() of each byte as the
+    master clocks it, endTransaction() - the hardware SPI on its default pins, or SoftSPI on its four lines. There is
+    no chip select in that API: the probe's spi-controller drives CS (the DUT's CS pin an input) and the DUT does not
+    look at it; the bytes are framed by the transfer() calls, which wait for the clock. The master runs at 100 kHz
+    (SoftSPI, which polls SCK: 50 kHz) with 20 us from CS to the first clock, PERIPH_BYTES bytes, the DUT
+    already waiting in transfer(). In each of the four modes and both bit orders (as the probe offers): WireSkein's
+    spi on the four lines at 40 MS/s (the mode, the clocks, MOSI = what the probe sent, MISO = what the DUT was given);
+    what the DUT read and what the probe read are compared here."""
+    from oep_client.fixture import SpiController, SpiItem
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    hz = SOFT_SLAVE_HZ if soft else SLAVE_HZ
+    host = oep_host.host
+    ctrl = SpiController(host)
+    core.plan_apply(host, ctrl.assignments(lines[sck]["channel"], lines[mosi]["channel"], lines[miso]["channel"],
+                                           lines[cs]["channel"]))
+    orders = [0, 1] if ctrl.features & SpiController.FEATURE_LSB_FIRST else [0]
+    record_property("orders", json.dumps(orders))
+    # The hardware SPI's slave MISO hold at byte boundaries, as in test_spi_slave.
+    edge_sample = "before" if not soft and case["target"].get("family") in ("CH32V103", "CH32V20x") else None
+    wrong = []
+
+    def steps(wait):
+        idle = {cs: 1}
+        cpol = None
+        with ws_run.section(1, f"{'softspi' if soft else 'spi'} peripheral {sck} {miso} {mosi} {cs}, {hz // 1000} kHz"):
+            for mode in range(4):
+                for lsb in orders:
+                    name = f"mode {mode} {'LSB' if lsb else 'MSB'}FIRST"
+                    same_idle = cpol is not None and (mode >> 1) == cpol
+                    cpol = mode >> 1
+                    sent = secrets.token_bytes(PERIPH_BYTES)
+                    given = secrets.token_bytes(PERIPH_BYTES)
+                    want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=mode, bit_order="lsb" if lsb else "msb",
+                                mosi_bytes=sent.hex(), miso_bytes=given.hex(), bits=8 * PERIPH_BYTES,
+                                notices={"sck_outside_cs": "ng" if same_idle else 1}, edge_sample=edge_sample),
+                            starts(idle), ends(idle)]
+                    # The probe set up outside the condition's section: reconfiguring its SPI moved SCK with CS
+                    # high (2 edges, 2026-11-15; fixed in the probe after 0.0.56+7bb1a76). Where CPOL changes, the
+                    # probe may still move SCK to the new idle level as the transfer starts: one edge allowed.
+                    ctrl.configure(mode=mode, bit_order=lsb, clock_hz=hz)
+                    wait(0.002)
+                    with ws_run.section(2, name, expect=want):
+                        command = f"periph {mode} {lsb} {PERIPH_BYTES} {given.hex()}"
+                        ws_run.command(command)
+                        dut.write(command + "\n")
+                        ws_run.reply(wait_reply(dut, wait, rb"PERIPH READY").group(0).decode())
+                        wait(0.01)
+                        got = ctrl.transfer([SpiItem(sent, 0, SLAVE_SETUP_NS, SLAVE_SETUP_NS)])[0].rx
+                        m = wait_reply(dut, wait, rb"PERIPH ([0-9a-f]+|-)")
+                        ws_run.reply(m.group(0).decode())
+                        read = m.group(1).decode()
+                        if read != sent.hex():
+                            wrong.append(f"{name}: the DUT read {read}, the probe sent {sent.hex()}")
+                        if got != given:
+                            wrong.append(f"{name}: the probe read {got.hex()}, the DUT was given {given.hex()}")
+                        wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=SLAVE_RATE, steps=steps)
+    finally:
+        core.plan_release(host, [ctrl.fn])
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)

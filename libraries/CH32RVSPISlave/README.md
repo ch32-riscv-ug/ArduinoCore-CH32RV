@@ -59,6 +59,11 @@ Measured 2026-10-28 with [SPISlaveSelfTest](examples/SPISlaveSelfTest/README.md)
 
 An SPI used by `SPI` (the bus object) cannot be a slave at the same time. On a board with only one SPI, do not open both.
 
+The same API on any four pads, bit by bit from pin-change interrupts (slower):
+`SoftSPISlave` in the [SPI library](../SPI/README.md). The SPI library's own
+peripheral mode (`SPI_HAS_PERIPHERAL_MODE`) is the ArduinoCore-API form: no
+chip select, a blocking `transfer()`.
+
 ## Families
 
 Every family with an SPI. Bit order is reversed in software for LSB first: on CH32V003 and CH32X035 a slave with the SPI's own LSB-first setting transmits the first bit of each byte eight times.

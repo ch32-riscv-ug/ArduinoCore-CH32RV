@@ -1,6 +1,6 @@
 # SPI
 
-CH32のSPIペリフェラルを使うcontroller専用の実装(polling)です。
+CH32のSPIペリフェラルを使う実装(polling)です。controllerのほか、そう頼んだtransactionではperipheral(slave)になります(下)。
 pinは`SPI.begin(sck, miso, mosi, ss)`で指定します。
 チップセレクトは他のArduinoコアと同じく**ただのGPIO**です。
 
@@ -63,7 +63,43 @@ Adafruit_Something device(&bus);
   `setHalfPeriodUs()`(半周期の**下限**)だけです。
 - 4つのモードと`MSBFIRST` / `LSBFIRST`に対応します。`transfer16()` / `transfer32()`は
   `SPI`と同じく、`LSBFIRST`では下位バイトから送ります。
-- CSもslaveモードもありません(CSは`SPI`と同じく普通のGPIOです)。`setRoute()`はありません。`peripheral()`は0を返します。
+- CSはありません(`SPI`と同じく普通のGPIOです)。`SPI`と同じく、そう頼んだtransactionではperipheralになります(下)。
+  SCKをpollingで追うので、controllerのクロックの半周期より長い割り込みが入るとビットを落とします。
+  `setRoute()`はありません。`peripheral()`は0を返します。
+
+### SoftSPISlave(チップセレクトで区切るslave、任意のpad)
+
+`SoftSPISlave`は[CH32RVSPISlave](../CH32RVSPISlave/README.ja.md)と同じAPIを任意の4 padで動かします:
+`begin(sck, miso, mosi, cs, mode, order)`、`queue()`、`poll()` / `onTransfer()`、`transfer()`、`setFill()`、
+`missed()`、`overruns()`。
+
+```cpp
+#include <SPI.h>                  // または <SoftSPISlave.h>
+
+SoftSPISlave slave;
+static uint8_t tx[4] = {0xA5, 1, 2, 3}, rx[4];
+
+void setup() {
+  slave.begin(PC5, PC7, PC6, PC4);      // SCK, MISO, MOSI, CS
+  slave.queue(tx, rx, sizeof rx);       // 次のチップセレクトに備える
+}
+
+void loop() {
+  SoftSPISlave::Result r;
+  if (slave.poll(r)) {                  // r.length バイト(整数バイト)がクロックされた
+    slave.queue(tx, rx, sizeof rx);
+  }
+}
+```
+
+- **1ビットが1回の割り込みです。** CSは両方の縁、SCKはそのモードがサンプルする縁で端子変化の割り込みを取り、
+  MOSIを読んでMISOに次のビットを出します。どれも縁からクロックの半周期のうちに走る必要があり、controllerは
+  CSが下がってから最初のクロックまでと、最後のクロックからCSが上がるまでに同じだけ空ける必要があります。
+  縁を落とすと、クロックが整数バイトにならないチップセレクトとして`overruns()`に数えます。
+  実機ではまだ測っていません(2026-11-15)。ベンチの試験は50 kHzで動かします。
+- **SCKとCSは別のEXTIの線に**(端子のビット番号。PA1とPB1は同じ線1。`begin()`は`false`)。
+  その線はslaveが使います。MISOは-1(受信だけ)、MOSIは-1(送信だけ)にできます。
+- MISOはCSがLowの間だけ駆動するので、ほかの機器とバスを共有できます。
 
 ### ボードメニューでSPIをソフトにする
 
@@ -91,8 +127,24 @@ Adafruit_Something device(&bus);
 - **`usingInterrupt()`は何もしません。** この実装は割込みからバスを触らないので
   守るべき共有状態がありません。sketchが自分のISRからSPIを使う場合は、
   sketch側で面倒を見る必要があります。
-- **peripheral(slave)モードは未実装**で、`SPI_HAS_PERIPHERAL_MODE`は
-  意図的に未定義にしてあります(ライブラリが判定できるように)。
+- **ArduinoCore-APIの決めたperipheral(slave)モード**(`SPIBusMode`。ArduinoCore-zephyrのSPIが手本)を
+  `SPI`と`SoftSPI`の両方で持ち、`SPI_HAS_PERIPHERAL_MODE`を定義しています:
+
+  ```cpp
+  SPI.beginTransaction(SPISettings(0, MSBFIRST, SPI_MODE0, SPI_PERIPHERAL));
+  uint8_t in = SPI.transfer(out);       // controllerのクロックを待つ
+  SPI.endTransaction();                 // controllerに戻る
+  ```
+
+  クロックはcontrollerのもので(設定の周波数は使いません)、`transfer()`は手本と同じく時間切れなしで待ちます。
+  このAPIにはチップセレクトがありません: `beginTransaction()`から`endTransaction()`まで選ばれたままで
+  MISOを駆動し続け、バイトの区切りは`transfer()`の呼び出しだけで決まり、controllerはバイトの間に
+  `transfer()`から次の`transfer()`までの時間を空ける必要があります(ハードウェアのSPIは`transfer()`が
+  渡したときにそのバイトを入れます)。CSで区切り、先に用意して割り込みで動かす転送は
+  [CH32RVSPISlave](../CH32RVSPISlave/README.ja.md)(ハードウェアのSPI)か`SoftSPISlave`(任意のpad)を使います。
+  peripheralのコードは`SPI_PERIPHERAL`の`SPISettings`を作るスケッチだけにリンクされます(ArduinoCore-APIの
+  `SPISettings`への変更。`tools/vendor/check_api_sync.py`)。バスに残るのはフラグの判定だけです。
+  実機ではまだ測っていません(2026-11-15)。
 - **名前は`SPI`、`SPI1`、`SPI2`の順**で、ボードで有効なSPIの数だけあります。
   無い名前を使うとコンパイルエラーになります。
 - 旧APIの`setBitOrder()` / `setDataMode()` / `setClockDivider()`も用意しています。

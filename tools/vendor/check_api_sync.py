@@ -86,6 +86,14 @@ PATCHES = (
         "why": ("SPIClass a class of its own, like TwoWire: the common base of the hardware SPI and "
                 "SoftSPI, which a forward declaration `class SPIClass;` can name"),
     },
+    {
+        "path": "HardwareSPI.h",
+        "before": '    this->busMode = busMode;\n  }\n',
+        "after": "    this->busMode = busMode;\n    /* ch32rv patch: a peripheral's settings link the SPI library's peripheral\n     * mode (libraries/SPI/src/SPIPeripheral.cpp); a controller's fold this\n     * away, so a sketch that never asks for one carries none of it\n     * (tools/vendor/check_api_sync.py). */\n    if (busMode != SPI_CONTROLLER) {\n      extern void ch32rv_spi_peripheral_linked(void);\n      ch32rv_spi_peripheral_linked();\n    }\n  }\n",
+        "why": ("SPISettings with SPI_PERIPHERAL links the SPI library's peripheral mode, and only then: "
+                "a controller's constant bus mode folds the call away, so SPI_HAS_PERIPHERAL_MODE costs "
+                "nothing to a sketch that never asks for a peripheral"),
+    },
 )
 
 

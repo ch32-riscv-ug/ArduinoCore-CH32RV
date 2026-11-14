@@ -14,15 +14,25 @@
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex>
  *
- * CH32RVSPISlave on the SPI's default pins (the probe's spi-controller is the master):
+ * A slave (the probe's spi-controller is the master): CH32RVSPISlave on the SPI's
+ * default pins, or - once `pins` named SoftSPI's pins - SoftSPISlave on those:
  *
- *   slave <cs> <mode> <lsb> <fill>     the SPI given back (SPI.end()), the slave begun with CS
- *                                      on <cs> and <fill> (hex) once tx runs out: SLAVE <1 / 0>
+ *   slave <cs> <mode> <lsb> <fill>     the bus given back (SPI.end() / soft.end()), the slave
+ *                                      begun with CS on <cs> and <fill> (hex) once tx runs
+ *                                      out: SLAVE <1 / 0>
  *   sq <size> <tx bytes, hex>          queue(tx, rx, size): SQ <1 / 0>
  *   sres                               the oldest result, and the counters:
  *                                      SRES <length> <rx bytes kept, hex> <missed> <overruns>
  *                                      (SRES NONE - <missed> <overruns> when none)
- *   send                               slave.end(): SEND */
+ *   send                               slave.end(): SEND
+ *
+ * The bus itself as a peripheral (SPI_HAS_PERIPHERAL_MODE): SPI after `hw`, SoftSPI after
+ * `pins`, CS left to the master (the DUT's CS pin an input):
+ *
+ *   periph <mode> <lsb> <n> <tx hex>   beginTransaction(SPISettings(1000000, order, mode,
+ *                                      SPI_PERIPHERAL)), PERIPH READY, then transfer() n bytes
+ *                                      as the master clocks them, endTransaction():
+ *                                      PERIPH <bytes read, hex> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -40,6 +50,8 @@
 static SoftSPI soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
 static SPIClass *bus = &soft;
 static int cs = -1;
+/* SoftSPI's pins, once `pins` named them: the slave is then a SoftSPISlave on them. */
+static int softPins[3] = {-1, -1, -1};
 
 static void hex(uint32_t v, uint8_t digits)
 {
@@ -90,10 +102,84 @@ static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char 
 
 #if defined(SPI_INTERFACES_COUNT)
 static CH32RVSPISlave slave;
-/* One tx and one rx buffer per queue slot, used round the ring as queue() takes them. */
-static uint8_t slave_tx[CH32RVSPISlave::QUEUE_DEPTH][16], slave_rx[CH32RVSPISlave::QUEUE_DEPTH][16];
-static uint8_t slave_next;
 #endif
+static SoftSPISlave softSlave;
+static_assert(SoftSPISlave::QUEUE_DEPTH == 4, "one ring for both slaves");
+/* One tx and one rx buffer per queue slot, used round the ring as queue() takes them. */
+static uint8_t slave_tx[SoftSPISlave::QUEUE_DEPTH][16], slave_rx[SoftSPISlave::QUEUE_DEPTH][16];
+static uint8_t slave_next;
+
+/* The same commands on either slave: both have CH32RVSPISlave's API. Members
+ * of a struct, so the .ino's generated prototypes leave the templates alone. */
+struct SlaveCommands {
+template <typename Slave> static void queue(Slave &s, char *p)
+{
+    size_t size = strtoul(p, &p, 10);
+    while (*p == ' ') {
+        p++;
+    }
+    if (size > sizeof slave_rx[0]) {
+        size = sizeof slave_rx[0];
+    }
+    uint8_t *tx = slave_tx[slave_next], *rx = slave_rx[slave_next];
+    memset(tx, 0, sizeof slave_tx[0]);
+    memset(rx, 0, sizeof slave_rx[0]);
+    unhex(p, tx, size);
+    const bool ok = s.queue(tx, rx, size);
+    if (ok) {
+        slave_next = (uint8_t)((slave_next + 1) % SoftSPISlave::QUEUE_DEPTH);
+    }
+    SerialDMSeq.print("SQ ");
+    SerialDMSeq.println(ok ? 1 : 0);
+}
+
+template <typename Slave> static void result(Slave &s)
+{
+    typename Slave::Result r;
+    SerialDMSeq.print("SRES ");
+    if (s.poll(r)) {
+        SerialDMSeq.print((unsigned long)r.length);
+        SerialDMSeq.print(' ');
+        for (size_t i = 0; i < r.length && i < r.size; i++) {
+            hex(r.rx[i], 2);
+        }
+        if (!r.length) {
+            SerialDMSeq.print('-');
+        }
+    } else {
+        SerialDMSeq.print("NONE -");
+    }
+    SerialDMSeq.print(' ');
+    SerialDMSeq.print((unsigned long)s.missed());
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println((unsigned long)s.overruns());
+}
+};
+
+static void peripheral(uint8_t mode, bool lsb, size_t n, const char *bytes)
+{
+    uint8_t data[16];
+    if (n > sizeof data) {
+        n = sizeof data;
+    }
+    memset(data, 0, sizeof data);
+    unhex(bytes, data, n);
+    if (cs >= 0) {
+        pinMode(cs, INPUT);            /* the master's CS: not driven here */
+    }
+    bus->beginTransaction(SPISettings(1000000, lsb ? LSBFIRST : MSBFIRST, mode, SPI_PERIPHERAL));
+    SerialDMSeq.println("PERIPH READY");
+    SerialDMSeq.flush();
+    for (size_t i = 0; i < n; i++) {
+        data[i] = bus->transfer(data[i]);
+    }
+    bus->endTransaction();
+    SerialDMSeq.print("PERIPH ");
+    for (size_t i = 0; i < n; i++) {
+        hex(data[i], 2);
+    }
+    SerialDMSeq.println(n ? "" : "-");
+}
 
 static char line[64];
 static uint8_t used;
@@ -131,6 +217,9 @@ void loop()
             cs = (int)strtol(p, &p, 10);
             pinMode(cs, OUTPUT);
             digitalWrite(cs, HIGH);
+            softPins[0] = (int)sck;
+            softPins[1] = (int)miso;
+            softPins[2] = (int)mosi;
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
         } else if (strcmp(line, "spipins") == 0) {
@@ -161,63 +250,62 @@ void loop()
 #else
             SerialDMSeq.println("HW NONE");   /* the part has no SPI (CH32RV_SPI1_ABSENT); SoftSPI still runs */
 #endif
-#if defined(SPI_INTERFACES_COUNT)
         } else if (strncmp(line, "slave ", 6) == 0) {
             p += 6;
             const int scs = (int)strtol(p, &p, 10);
             const unsigned long mode = strtoul(p, &p, 10);
             const unsigned long lsb = strtoul(p, &p, 10);
             const unsigned long fill = strtoul(p, &p, 16);
-            SPI.end();
-            bus = &soft;
-            slave.end();
+            const BitOrder order = lsb ? LSBFIRST : MSBFIRST;
+            bool ok = false;
             slave_next = 0;
-            const bool ok = slave.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, scs, (uint8_t)mode, lsb ? LSBFIRST : MSBFIRST);
-            slave.setFill((uint8_t)fill);
+            if (softPins[0] >= 0) {
+                soft.end();
+                softSlave.end();
+                ok = softSlave.begin(softPins[0], softPins[1], softPins[2], scs, (uint8_t)mode, order);
+                softSlave.setFill((uint8_t)fill);
+            } else {
+#if defined(SPI_INTERFACES_COUNT)
+                SPI.end();
+                slave.end();
+                ok = slave.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, scs, (uint8_t)mode, order);
+                slave.setFill((uint8_t)fill);
+#endif
+            }
+            bus = &soft;
             SerialDMSeq.print("SLAVE ");
             SerialDMSeq.println(ok ? 1 : 0);
         } else if (strncmp(line, "sq ", 3) == 0) {
-            p += 3;
-            size_t size = strtoul(p, &p, 10);
+            if (softPins[0] >= 0) {
+                SlaveCommands::queue(softSlave, p + 3);
+            } else {
+#if defined(SPI_INTERFACES_COUNT)
+                SlaveCommands::queue(slave, p + 3);
+#endif
+            }
+        } else if (strcmp(line, "sres") == 0) {
+            if (softPins[0] >= 0) {
+                SlaveCommands::result(softSlave);
+            } else {
+#if defined(SPI_INTERFACES_COUNT)
+                SlaveCommands::result(slave);
+#endif
+            }
+        } else if (strcmp(line, "send") == 0) {
+            softSlave.end();
+#if defined(SPI_INTERFACES_COUNT)
+            slave.end();
+#endif
+            SerialDMSeq.println("SEND");
+        } else if (strncmp(line, "periph ", 7) == 0) {
+            p += 7;
+            const unsigned long mode = strtoul(p, &p, 10);
+            const unsigned long lsb = strtoul(p, &p, 10);
+            const unsigned long n = strtoul(p, &p, 10);
             while (*p == ' ') {
                 p++;
             }
-            if (size > sizeof slave_rx[0]) {
-                size = sizeof slave_rx[0];
-            }
-            uint8_t *tx = slave_tx[slave_next], *rx = slave_rx[slave_next];
-            memset(tx, 0, sizeof slave_tx[0]);
-            memset(rx, 0, sizeof slave_rx[0]);
-            unhex(p, tx, size);
-            const bool ok = slave.queue(tx, rx, size);
-            if (ok) {
-                slave_next = (uint8_t)((slave_next + 1) % CH32RVSPISlave::QUEUE_DEPTH);
-            }
-            SerialDMSeq.print("SQ ");
-            SerialDMSeq.println(ok ? 1 : 0);
-        } else if (strcmp(line, "sres") == 0) {
-            CH32RVSPISlave::Result r;
-            SerialDMSeq.print("SRES ");
-            if (slave.poll(r)) {
-                SerialDMSeq.print((unsigned long)r.length);
-                SerialDMSeq.print(' ');
-                for (size_t i = 0; i < r.length && i < r.size; i++) {
-                    hex(r.rx[i], 2);
-                }
-                if (!r.length) {
-                    SerialDMSeq.print('-');
-                }
-            } else {
-                SerialDMSeq.print("NONE -");
-            }
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print((unsigned long)slave.missed());
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println((unsigned long)slave.overruns());
-        } else if (strcmp(line, "send") == 0) {
-            slave.end();
-            SerialDMSeq.println("SEND");
-#endif
+            peripheral((uint8_t)mode, lsb != 0, n, p);
         } else if (strncmp(line, "xfer ", 5) == 0) {
             p += 5;
             const unsigned long mode = strtoul(p, &p, 10);

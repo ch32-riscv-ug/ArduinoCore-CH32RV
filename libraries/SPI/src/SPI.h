@@ -6,19 +6,32 @@
  * not among the bus pins because Arduino drives it as an ordinary GPIO, which
  * is also what lets one bus carry several devices.
  *
- * Peripheral (slave) mode is a library of its own, CH32RVSPISlave, so
- * SPI_HAS_PERIPHERAL_MODE is deliberately not defined here.
+ * Peripheral (slave) mode, as ArduinoCore-API defines it (SPIBusMode in
+ * HardwareSPI.h; ArduinoCore-zephyr's SPI is the reference): a transaction
+ * begun with SPISettings(..., SPI_PERIPHERAL) makes the bus a peripheral, and
+ * transfer() then waits for the controller to clock each byte, sending the
+ * byte it was given; endTransaction() makes it a controller again. There is
+ * no chip select in that API: the bus is selected from beginTransaction() to
+ * endTransaction(), MISO driven all along, and the bytes are framed by the
+ * transfer() calls alone. Transfers framed by a chip select, queued ahead and
+ * moved by interrupts, are CH32RVSPISlave (the hardware SPI) and
+ * SoftSPISlave (any pads).
  */
 #pragma once
 
 #include "SPIClass.h"
 #include "SoftSPI.h"
+#include "SoftSPISlave.h"
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_route.h"
 #include "pins_arduino.h"
 #include "internal/ch32rv_instances.h"
 
 #include <stdint.h>
+
+/* beginTransaction(SPISettings(clock, order, mode, SPI_PERIPHERAL)) works on
+ * every bus here, hardware SPI and SoftSPI alike (above). */
+#define SPI_HAS_PERIPHERAL_MODE 1
 
 /* Legacy divider names. AVR's SPI.setClockDivider() took these, and enough
  * libraries still call it that leaving them out breaks compilation for no
@@ -69,6 +82,9 @@ public:
     uint8_t transfer(uint8_t data) override;
     using ::SPIClass::transfer;
 
+    /* A settings' SPI_PERIPHERAL makes the bus a peripheral until
+     * endTransaction() (above); its clock is the controller's, so the
+     * settings' frequency is not used then. */
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;
 
@@ -88,8 +104,15 @@ public:
     void setDataMode(uint8_t mode);
     void setClockDivider(uint32_t divider);
 
+    /* Peripheral mode's two halves, called through ch32rv_spi_peripheral
+     * (SPIClass.h). Public for the reason ev_irq() is on Wire; not part of
+     * the sketch-facing API. */
+    void peripheral_mode(bool on);
+    uint8_t peripheral_transfer(uint8_t data);
+
 private:
     void apply(uint32_t clock_hz, BitOrder order, uint8_t mode);
+    void pads(bool peripheral);
 
     const uint8_t _number;
     /* The fields below start at zero because a bus is a global object, in
@@ -108,6 +131,10 @@ private:
 
     uint32_t _clock_hz = 4000000;
     uint8_t _mode = 0;
+    /* A peripheral (SPI_PERIPHERAL) until endTransaction(): 0 no, 1 MSB
+     * first, 2 LSB first; 3 after it, the SPI off and the pads inputs until
+     * the next controller use. */
+    uint8_t _periph = 0;
 };
 
 }  // namespace arduino

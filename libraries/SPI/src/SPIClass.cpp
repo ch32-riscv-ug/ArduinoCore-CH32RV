@@ -1,6 +1,8 @@
 /* What the hardware and the software SPI share. */
 #include "SPIClass.h"
 
+const CH32RVSPIPeripheralOps *ch32rv_spi_peripheral;
+
 uint16_t SPIClass::transfer16(uint16_t data)
 {
     if (_order == LSBFIRST) {

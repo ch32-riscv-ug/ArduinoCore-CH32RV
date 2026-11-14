@@ -104,6 +104,14 @@ class SPISettings {
     this->dataMode = dataMode;
     this->bitOrder = bitOrder;
     this->busMode = busMode;
+    /* ch32rv patch: a peripheral's settings link the SPI library's peripheral
+     * mode (libraries/SPI/src/SPIPeripheral.cpp); a controller's fold this
+     * away, so a sketch that never asks for one carries none of it
+     * (tools/vendor/check_api_sync.py). */
+    if (busMode != SPI_CONTROLLER) {
+      extern void ch32rv_spi_peripheral_linked(void);
+      ch32rv_spi_peripheral_linked();
+    }
   }
 
   uint32_t clockFreq;

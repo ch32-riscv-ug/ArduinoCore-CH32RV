@@ -1,6 +1,7 @@
 #include "SoftSPI.h"
 
 #include "Arduino.h"
+#include "internal/ch32rv_gpio.h"
 
 namespace arduino {
 
@@ -8,7 +9,7 @@ namespace arduino {
  * again, so back-to-back transfer() calls need no fixing up in between. */
 void SoftSPI::idle_clock(void)
 {
-    digitalWrite(_sck, _cpol ? HIGH : LOW);
+    digitalWrite(_sck, cpol() ? HIGH : LOW);
 }
 
 void SoftSPI::begin()
@@ -18,6 +19,12 @@ void SoftSPI::begin()
     if (_sck == CH32RV_ROUTE_NO_PIN) {
         return;
     }
+    controller_pads();
+    _started = true;
+}
+
+void SoftSPI::controller_pads(void)
+{
     pinMode(_sck, OUTPUT);
     idle_clock();
     pinMode(_mosi, OUTPUT);
@@ -28,7 +35,6 @@ void SoftSPI::begin()
          * same reason. */
         pinMode(_miso, INPUT);
     }
-    _started = true;
 }
 
 bool SoftSPI::setPins(int sck, int miso, int mosi)
@@ -64,6 +70,9 @@ void SoftSPI::end()
     }
     /* Hand the pads back as inputs, so the next owner of the pin - another
      * bus, or a sketch driving it itself - starts from a known state. */
+    if (_periph) {
+        ch32rv_spi_peripheral->soft_mode(*this, false);   /* MISO back to an input */
+    }
     pinMode(_sck, INPUT);
     pinMode(_mosi, INPUT);
     _started = false;
@@ -71,9 +80,8 @@ void SoftSPI::end()
 
 void SoftSPI::setDataMode(uint8_t mode)
 {
-    _cpol = (mode & 0x02) != 0;
-    _cpha = (mode & 0x01) != 0;
-    if (_started) {
+    _mode = (uint8_t)(mode & 0x03u);
+    if (_started && !_periph) {
         idle_clock();
     }
 }
@@ -88,17 +96,95 @@ void SoftSPI::beginTransaction(SPISettings settings)
     if (!_started) {
         begin();
     }
+    if (!_started) {
+        return;
+    }
+    if (settings.getBusMode() != SPI_CONTROLLER) {
+        if (ch32rv_spi_peripheral) {
+            ch32rv_spi_peripheral->soft_mode(*this, true);
+        }
+    } else if (_periph) {
+        ch32rv_spi_peripheral->soft_mode(*this, false);
+    }
 }
 
 void SoftSPI::endTransaction(void)
 {
+    if (_periph) {
+        ch32rv_spi_peripheral->soft_mode(*this, false);
+    }
     idle_clock();
+}
+
+void SoftSPI::peripheral_mode(bool on)
+{
+    if (!on) {
+        controller_pads();
+        _periph = false;
+        return;
+    }
+    /* The controller's clock and data in, this end's data out. */
+    pinMode(_sck, INPUT);
+    pinMode(_mosi, INPUT);
+    if (_miso != NOT_A_PIN) {
+        pinMode(_miso, OUTPUT);
+    }
+    _periph = true;
+}
+
+/* A peripheral's byte: SCK polled for the controller's edges. CPHA 0: the bit
+ * is up before the leading edge, both ends sample on it, the next goes up
+ * after the trailing one. CPHA 1: up on the leading edge, sampled on the
+ * trailing one. */
+uint8_t SoftSPI::follow(uint8_t data)
+{
+    const pin_size_t sck = CH32RV_PIN_RESOLVE(_sck), mosi = CH32RV_PIN_RESOLVE(_mosi);
+    const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(sck), sck_bit = (uint8_t)CH32RV_PIN_BIT(sck);
+    const uint8_t mosi_port = (uint8_t)CH32RV_PIN_PORT(mosi), mosi_bit = (uint8_t)CH32RV_PIN_BIT(mosi);
+    const bool drive = _miso != NOT_A_PIN;
+    const pin_size_t miso = drive ? CH32RV_PIN_RESOLVE(_miso) : 0;
+    const uint8_t miso_port = (uint8_t)CH32RV_PIN_PORT(miso), miso_bit = (uint8_t)CH32RV_PIN_BIT(miso);
+    const uint8_t idle = cpol() ? 1u : 0u;
+    const bool msb = (_order == MSBFIRST);
+    uint8_t mask = msb ? 0x80u : 0x01u;
+    uint8_t in = 0;
+
+    for (uint8_t i = 0; i < 8; i++) {
+        if (cpha()) {
+            while (ch32rv_gpio_read(sck_port, sck_bit) == idle) {
+            }
+        }
+        if (drive) {
+            if (data & mask) {
+                ch32rv_gpio_set(miso_port, miso_bit);
+            } else {
+                ch32rv_gpio_clear(miso_port, miso_bit);
+            }
+        }
+        if (!cpha()) {
+            while (ch32rv_gpio_read(sck_port, sck_bit) == idle) {
+            }
+            if (ch32rv_gpio_read(mosi_port, mosi_bit)) {
+                in |= mask;
+            }
+        }
+        while (ch32rv_gpio_read(sck_port, sck_bit) != idle) {
+        }
+        if (cpha() && ch32rv_gpio_read(mosi_port, mosi_bit)) {
+            in |= mask;
+        }
+        mask = msb ? (uint8_t)(mask >> 1) : (uint8_t)(mask << 1);
+    }
+    return in;
 }
 
 uint8_t SoftSPI::transfer(uint8_t data)
 {
-    const uint8_t active = _cpol ? LOW : HIGH;
-    const uint8_t idle = _cpol ? HIGH : LOW;
+    if (_periph) {
+        return ch32rv_spi_peripheral->soft_transfer(*this, data);
+    }
+    const uint8_t active = cpol() ? LOW : HIGH;
+    const uint8_t idle = cpol() ? HIGH : LOW;
     const bool msb = (_order == MSBFIRST);
     const uint16_t half = _half_us;
     const bool read_back = (_miso != NOT_A_PIN);
@@ -106,7 +192,7 @@ uint8_t SoftSPI::transfer(uint8_t data)
     uint8_t in = 0;
 
     for (uint8_t i = 0; i < 8; i++) {
-        if (!_cpha) {
+        if (!cpha()) {
             /* Mode 0/2: the data is put up first and both ends sample on the
              * leading edge. */
             digitalWrite(_mosi, (data & mask) ? HIGH : LOW);
