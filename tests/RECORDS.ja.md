@@ -134,7 +134,20 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
   USB 2.0 の線と同じ端子なので、SS の列挙を乱さないように `debugspeed: low` も要ります。
 - `bench_record.py set <アドレス> --option vio18=3v3 --option debugspeed=low` で書けます。
 
-### 4.8 `note`・`updated`
+### 4.8 `link_uart`
+
+WCH-Link の口だけの欄です。Link の UART の橋渡しが DUT のどの端子につながっているかを書きます。
+`{"tx": "<端子>", "rx": "<端子>"}` の形で、`tx` は DUT の TX（Link が受ける）、`rx` は DUT の RX（Link が送る）です。
+
+- つながっていない向きは書きません。どちらもつながっていないときは `{}` です。
+- 試験（uart）は、両方あれば往復を、`tx` だけなら DUT が送る向きだけを確かめます。`{}` なら skip します。端子が Serial の
+  既定と違えば、その端子で Serial を開きます。
+- この欄が無い口は、今までどおり Serial の既定の端子で往復を確かめます。
+- WCH-Link の口の記録は tests/.env の `OEP_PORT_MEMO_<シリアル>` に書きます（bench_record.py は OEP の口だけ）。
+- 例: nanoCH32H417 v1.0（内蔵の LinkE。回路図で、Link の UART3 が SB3 / SB4 を通って PA10 / PA9）は
+  `{"tx": "pa9", "rx": "pa10"}`。M030 のモーター基板は TX だけ。
+
+### 4.9 `note`・`updated`
 
 - `note`: 人のためのメモです。試験は読みません。
 - `updated`: 最後に書いた日です（`YYYY-MM-DD`）。`bench_record.py set` が書くたびに入れます。

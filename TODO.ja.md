@@ -31,8 +31,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   入力バッファー・PGA の既定を EVT と比べる。
 - [ ] **V205 EVT の PA10 と PB3 で受けられない**: periph の経路で、プローブが送ったバイトは線に見えるのに DUT が受けない。
   PA10 は EVT の LINK の UART の線でもある。回路図で、PA10 / PB3 につながる部品を確かめる（基板の都合なら記録の defects へ）。
-- [ ] **WCH-Link の台の uart で、Link の UART が DUT の Serial につながっていない**: X315（49878F06CE37）、nano（A94B8F062EE9）、
-  M030（F90E8F067DFD）で DUT が 1 バイトも受けない。記録に「Link の UART がどの端子につながっているか」を書く欄が無い。
+- [x] **WCH-Link の台の uart で、Link の UART が DUT の Serial につながっていない**: 記録に `link_uart` を足した（RECORDS 4.8）。
+  nano は回路図で LinkE の UART3 が SB3 / SB4 から PA10 / PA9 なので `{tx: pa9, rx: pa10}`（試験が Serial をその端子で開く）、
+  M030 は TX だけ（ユーザー）で `{tx: pb6}`（DUT が送る向きだけ）、X315 は DUT の PD4 から何も届かず `{}`（skip）。nano と M030 は
+  PASS（2026-11-14）。
 - [ ] **プローブ（P4X）の I2C の相手が 1 ビット早く送る**: 5-1 / 5-2 の wire・softwire で、Sr のあとの読みの 3 バイト目などが
   左に 1 ビット寄る（[oep] の解析）。ファームの確かめはユーザーの確認待ち（[oep]）。
 - [ ] **standby から起きた DUT のコンソールが届かない（OEP のプローブ側）**: 5-1 V203 の deepSleep のあと、プローブ

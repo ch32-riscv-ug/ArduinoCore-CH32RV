@@ -95,6 +95,16 @@ void reply(const char *command) {
     }
     SerialDMSeq.print("UCFG ");
     SerialDMSeq.println(ok && Serial ? 1 : 0);
+  } else if (strncmp(command, "upins ", 6) == 0) {
+    // upins <rx> <tx>: Serial again on those pads (a WCH-Link whose UART reaches other pads than the default).
+    char *end;
+    const int rx = (int)strtol(command + 6, &end, 10);
+    const int tx = (int)strtol(end, nullptr, 10);
+    Serial.end();
+    const bool ok = Serial.setPins(rx, tx);
+    Serial.begin(115200);
+    SerialDMSeq.print("UPINS ");
+    SerialDMSeq.println(ok && Serial ? 1 : 0);
   } else if (strncmp(command, "usend ", 6) == 0) {
     // usend <n>: n bytes on Serial, byte i = (i * 37 + 11) & 0xFF (the host masks 7-bit formats itself).
     const unsigned long n = strtoul(command + 6, nullptr, 10);

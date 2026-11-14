@@ -320,3 +320,11 @@ def test_the_records_options_go_into_the_fqbn_under_ch32_test_options(monkeypatc
         fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"options": {"debugspeed": "slow"}})
     assert records.check_core({"options": {"vio18": "3v3", "debugspeed": "low"}}) == []
     assert any(e.startswith("options:") for e in records.check_core({"options": {"vio18": 3}}))
+
+
+def test_the_records_link_uart_names_dut_pads():
+    assert records.check_core({"link_uart": {"tx": "pa9", "rx": "pa10"}}) == []
+    assert records.check_core({"link_uart": {"tx": "pb6"}}) == []      # the DUT's TX alone (M030's motor board)
+    assert records.check_core({"link_uart": {}}) == []                 # none (X315)
+    assert records.check_core({"link_uart": {"tx": "PA9"}})            # a pad in lower case
+    assert records.check_core({"link_uart": {"cts": "pa11"}})          # tx and rx only

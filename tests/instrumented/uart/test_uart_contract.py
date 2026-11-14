@@ -19,6 +19,20 @@ def test_uart_contract(dut, request):
     # --port is the plugin's monitor wrapping by now; --flash-port keeps the address as given.
     address = request.config.getoption("flash_port", None) or request.config.getoption("port", None) or ""
     oep = "oep://" in str(address)
+    link = None
+    if not oep:
+        # A WCH-Link port's record says which pads its UART reaches (tests/RECORDS.ja.md link_uart): none, the
+        # DUT's TX alone, or pads other than Serial's default (nanoCH32H417's LinkE: PA9 / PA10).
+        target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+        link = target.get("record", {}).get("link_uart")
+        if link == {}:
+            pytest.skip("the record says the WCH-Link's UART reaches no DUT pad (link_uart {})")
+        if link and "tx" in link and "rx" in link:
+            pin = lambda p: ((ord(p[1].upper()) - ord("A") + 2) << 5) | int(p[2:])   # noqa: E731 - "pa9" -> PA9
+            rx, tx = pin(link["rx"]), pin(link["tx"])
+            dut.write(f"upins {rx} {tx}\n")
+            assert dut.expect(rb"UPINS (\d)\r?\n", timeout=10).group(1) == b"1", \
+                f"Serial refused {link['tx']} / {link['rx']} (the record's link_uart)"
     if oep:
         uart = request.getfixturevalue("oep_uart").open(115200)
     else:
@@ -27,6 +41,12 @@ def test_uart_contract(dut, request):
         # the bytes of an earlier run, and the echo never arrived (2026-11-14); a change of rate cleared it.
         request.getfixturevalue("ch32_uart").open(9600)
         uart = request.getfixturevalue("ch32_uart").open(115200)
+    if link is not None and "rx" not in link:
+        # The DUT's TX alone reaches the Link (M030's motor board): what the DUT sends arrives whole.
+        dut.write("usend 64\n")
+        uart.expect_exact(bytes((i * 37 + 11) & 0xFF for i in range(64)), timeout=10)
+        dut.expect_exact("USEND 64", timeout=10)
+        return
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(60)
     dut.write("uart\n")
     dut.expect_exact("UART READY", timeout=15)
