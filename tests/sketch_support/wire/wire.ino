@@ -12,6 +12,7 @@
  *                         SEQ <first result> <got> <hex bytes or -> <last result>
  *   nack <addr>           with no target: write 0x10 to addr, endTransmission(true):
  *                         NACK <result> (2: the address was not acknowledged)
+ *   clock <hz>            the bus's setClock(hz) (100 kHz from start-up): CLOCK <hz>
  *
  * Wire as a target of the probe's i2c-controller (begin(address)):
  *
@@ -160,6 +161,11 @@ void loop()
             bus->write(0x10);
             SerialDMSeq.print("NACK ");
             SerialDMSeq.println(bus->endTransmission(true));
+        } else if (strncmp(line, "clock ", 6) == 0) {
+            const unsigned long hz = strtoul(line + 6, nullptr, 0);
+            bus->setClock((uint32_t)hz);
+            SerialDMSeq.print("CLOCK ");
+            SerialDMSeq.println(hz);
         } else if (strncmp(line, "slave ", 6) == 0) {
             const unsigned long address = strtoul(line + 6, nullptr, 0);
             Wire.end();

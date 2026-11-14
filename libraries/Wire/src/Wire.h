@@ -130,6 +130,7 @@ private:
     bool bus_stale(void) const;
     void stop(void);
     void recover(void);
+    void apply_clock(void);
 
     const uint8_t _number;
     /* The fields below start at zero because a bus is a global object, in

@@ -325,7 +325,7 @@ void CH32RVTwoWire::begin()
     _needs_recovery = false;
     _held = false;
     _restart_armed = false;
-    setClock(_clock_hz);
+    apply_clock();
 }
 
 /* begin(address)'s second half, after the controller's bring-up (pins,
@@ -386,6 +386,20 @@ __attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
     if (!_started) {
         return;                        /* begin() applies it */
     }
+    if (CH32RV_I2C_CTLR2(_base) & CH32RV_I2C_CTLR2_ITEVTEN) {
+        apply_clock();                 /* a target: it only times its own stretching */
+        return;
+    }
+    /* A controller takes the new clock at its next transfer, from a reset
+     * peripheral (recover()). Switching PE off and on in place left the next
+     * START unanswered - endTransmission() 5 once, then recover() and right
+     * again (X035 / V205 / V203 at 100 -> 20 kHz, 2026-11-14). A bus held
+     * for a repeated START is let go: that transfer starts afresh. */
+    _needs_recovery = true;
+}
+
+__attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
+{
     /* FREQ and CCR may only be written while the peripheral is disabled. */
     CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_PE;
 
@@ -440,7 +454,7 @@ void CH32RVTwoWire::recover(void)
     CH32RV_I2C_CTLR1(_base) = 0;
     _needs_recovery = false;
     _restart_armed = false;            /* the reset dropped an armed START */
-    setClock(_clock_hz);
+    apply_clock();
 }
 
 /* BUSY latched with the bus free: a falling SDA while SCL was high - the

@@ -1,5 +1,12 @@
 """wire (case wire): Wire, the board's I2C (a hardware one, or a SoftWire when the fqbn sets it to Software); softwire
-(case softwire): a SoftWire. tests/sketch_support/wire/wire.ino, at 100 kHz.
+(case softwire): a SoftWire. tests/sketch_support/wire/wire.ino.
+
+Two questions, kept apart (2026-11-14, the user): the speed - the DUT's own 100 kHz on the wire, judged where nothing
+but the DUT drives - and the transactions - repeated START, reads and writes against a target - run at 20 kHz, where
+the bench's slow lines settle. The resident bench pulls the lines up with the probe's pads alone (P4, about 45 kOhm):
+their rises take microseconds, beyond I2C's 1 us, and the probe's input reads high only from 0.75 VDD, above the
+DUT's Schmitt inputs, so at 100 kHz a released SDA reads low at the probe while the DUT reads it high
+(tests/README.ja.md 取り込みの速さ, TODO).
 
 The lines are `<port>@<pad>` ones the probe labels (bench_lines.py gpio_lines): for Wire the two the DUT names as its
 default SDA / SCL, which must be labelled; for SoftWire the first two lines that are not Wire's pins (Wire is begun on
@@ -7,10 +14,10 @@ those at start-up). Without them the test skips, naming what is missing.
 
 wire.output-only runs first with no target: the probe only pulls the two lines up (its pads' input pull-ups) and
 captures them, so what is seen is the DUT's own. For two addresses the sketch writes one byte with
-endTransmission(true): on the wire S, the address with no acknowledge, P (WireSkein's i2c), and endTransmission()
-returns 2 (compared here).
+endTransmission(true) at 100 kHz: on the wire S, the address with no acknowledge, P, SCL at 100 kHz (WireSkein's
+i2c), and endTransmission() returns 2 (compared here).
 
-wire.repeated-start then makes the OEP probe's i2c-target (its own pull-ups) the target at 0x42: the sketch writes
+wire.repeated-start then makes the OEP probe's i2c-target (its own pull-ups) the target at 0x42, at 20 kHz: the sketch writes
 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n, stop) and writes 0x20 with
 endTransmission(true), back to back, for n = 1, 2 and 3 (the driver's three read paths) and stop 0 / 1. Arduino's
 sendStop false keeps the bus, so on the wire it is S W Sr R Sr W P with stop 0 and S W Sr R P S W P with stop 1,
@@ -36,7 +43,12 @@ from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
 
 ADDRESS = 0x42
-RATE = 100_000_000        # tests/README.ja.md 取り込みの速さ: T = the i2c check's 50 ns spike_max_s, 5 / T (the decode's 4 us SCL high gets 400)
+SPEED_HZ = 100_000        # wire.output-only: the clock the speed is judged at
+PROTOCOL_HZ = 20_000      # wire.repeated-start: the transactions, where the bench's slow lines settle
+# tests/README.ja.md 取り込みの速さ: T = the decode's shortest SCL half period (about 5 us at 100 kHz), 25 / T. The i2c
+# check's 50 ns spikes are below 5 / T here: unchecked until WireSkein drops pulses under spike_max_s before decoding -
+# at 100 MS/s the bench's slow rises bounce (10-190 ns) and its decode counts them as clocks (2026-11-14, asked of it).
+RATE = 5_000_000
 
 
 def settings(test_file):
@@ -101,6 +113,7 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
     try:
         for ch in channels:
             gpio.configure(ch, Gpio.INPUT_PULLUP)     # the bus's pull-ups, with no target on it
+        ask(dut, f"clock {SPEED_HZ}", rb"CLOCK (\d+)")
 
         def steps(wait):
             idle = {sda: 1, scl: 1}
@@ -109,7 +122,8 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                     wait(0.02)
                 for address in (ADDRESS, 0x13):
                     want = [i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
-                                                         "start": "S", "end": "P"}]),
+                                                         "start": "S", "end": "P"}],
+                                freq_hz=None if soft else SPEED_HZ),       # SoftWire's clock is the CPU's
                             starts(idle), ends(idle)]
                     with ws_run.section(2, f"address 0x{address:02x}, no target", expect=want):
                         ws_run.command(f"nack 0x{address:02x}")
@@ -139,6 +153,7 @@ def test_wire_contract(dut, oep_host, ws_run, record_property):
     wrong = []
     try:
         target.configure(ADDRESS)
+        ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
 
         def steps(wait):
             idle = {sda: 1, scl: 1}
