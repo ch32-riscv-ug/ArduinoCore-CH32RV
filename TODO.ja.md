@@ -85,6 +85,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
+- [ ] H417 の HSADC（高速 ADC）を常駐ベンチで試す配線を足す（2026-11-14 ユーザー、あとで）。試験は periph の hs-adc（VDDIO の
+  PF8〜PF10 に、プローブのラベル付きの線が要る。PC0〜PC3 は VIO18 なので使わない）。
+- [ ] USB PD を CH32RV のボード同士で確かめる（2026-11-14 ユーザー: ボード同士がいちばん良い）。片方を USBPDSource（VBUS の
+  切り替えは何もしない形でよい）、もう片方をシンクにして、CC の線と GND をつなぎ、交渉を両側から見る pd-peer の case と、
+  相手の口を書く記録の欄を足す。組み合わせ（確認の薄い V205 / H417 / L103 など）とつなぎ方はユーザーと決める。今は pd の
+  記録を持つ台が無く、シンクを実機で確かめたのは X035（充電器）だけ。
 - [ ] （優先度低、2026-11-14 ユーザー）UHSIF のスレーブのモード（外のマスターがクロックを出す形。WCH の FPGA 型・SoC 型）。
   レジスタは非公開だが、`libUHSIF.a` の中身は大部分が表（`UhsifTransition_Slave_FPGA` / `_Slave_SOC`、`UhsifWavedata_Slave_*`、
   `UhsifRegValue`）なので、取り出して docs/h417-uhsif.ja.md の読み方で解読できる見込み。未確認は外部クロックの設定（w1 の
