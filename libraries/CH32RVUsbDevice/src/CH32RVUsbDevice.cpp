@@ -65,6 +65,41 @@ bool CH32RVUsbDevice::attach(CH32RVUsbDeviceFunction &f)
     return true;
 }
 
+bool CH32RVUsbDevice::detach(CH32RVUsbDeviceFunction &f)
+{
+    if (_started) {
+        _error = CH32RVUsbDeviceError::AlreadyStarted;
+        return false;
+    }
+    for (CH32RVUsbDeviceFunction **at = &_first; *at; at = &(*at)->_next) {
+        if (*at == &f) {
+            *at = f._next;
+            f._next = nullptr;
+            f._attached = false;
+            _count--;
+            /* The ones of its class after it move up a number. */
+            uint8_t same = 0;
+            for (CH32RVUsbDeviceFunction *g = _first; g; g = g->_next) {
+                if (&g->_type == &f._type) {
+                    g->_instance = same++;
+                }
+            }
+            return true;
+        }
+    }
+    return true;
+}
+
+bool CH32RVUsbDeviceFunction::leaveDevice()
+{
+    return _device.detach(*this);
+}
+
+bool CH32RVUsbDeviceFunction::joinDevice()
+{
+    return _device.attach(*this);
+}
+
 CH32RVUsbDeviceFunction *CH32RVUsbDevice::function(uint8_t i) const
 {
     CH32RVUsbDeviceFunction *f = _first;

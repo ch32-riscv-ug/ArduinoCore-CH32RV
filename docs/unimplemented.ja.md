@@ -121,10 +121,10 @@
 | I2C の 10 bit アドレス・General Call | 全系列 | 1 | 自動 | プローブ（i2c-target / controller が 10 bit を扱えるかは [oep] に確認） | FC:49, libraries/Wire/src/Wire.h:22-23 |
 | I2C の PEC（SMBus）・DMA | 全系列 | 2 | 自動 | プローブ | TODO:307, EVT I2C/I2C_PEC・I2C_DMA |
 | Wire の NACK・timeout・回復・clock stretch の試験 | 全系列 | 1 | 自動 | プローブ（SDA を握る相手） | TODO:27, TC:81 |
-| SoftWire のスレーブ | 全系列 | 1 | 自動 | プローブ（i2c-controller） | libraries/Wire/README.ja.md:77, TC:87 |
-| SPI ライブラリのスレーブ（`SPI_HAS_PERIPHERAL_MODE`） | 全系列 | 1 | 自動 | プローブ（spi-controller） | libraries/SPI/README.ja.md:94 |
+| SoftWire のスレーブ | 全系列 | 実装済み（2026-11-15、実機未確認） | 自動 | プローブ（i2c-controller）。softwire::test_wire_slave | libraries/Wire/README.ja.md, TC:87 |
+| SPI ライブラリのスレーブ（`SPI_HAS_PERIPHERAL_MODE`） | 全系列 | 実装済み（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。spi・softspi::test_spi_peripheral | libraries/SPI/README.ja.md |
 | CH32RVSPISlave の残り（DMA、ハードの NSS、上限クロック、V407・H417） | 全系列 | 2 | 自動 | プローブ（速いマスター） | PS:45, libraries/CH32RVSPISlave/README.ja.md:38,48 |
-| SoftSPI のスレーブ | 全系列 | 1 | 自動 | プローブ（spi-controller） | libraries/SPI/README.ja.md:66, TC:90 |
+| SoftSPI のスレーブ | 全系列 | 実装済み（2026-11-15、SoftSPISlave。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。softspi::test_spi_slave | libraries/SPI/README.ja.md, TC:90 |
 | SPI のハードウェア CS（NSS） | 全系列 | 2 | 自動 | プローブ | FC:45, EVT SPI/FullDuplex_HardNSS |
 | SPI の半二重・片方向（3 線） | 全系列 | 2 | 自動 | プローブ | FC:46, EVT SPI/1Lines_half-duplex |
 | SPI の非同期・DMA 転送 | 全系列 | 2 | 自動 | プローブ | FC:44, EVT SPI/SPI_DMA・SPI_DMA_EXT |
@@ -157,8 +157,6 @@
 | EspUsbDevice との差（複数リスナー、キュー、64 bit LBA、CCID の追加 API、Info の例、例 30 本ほど） | 全 USB 系列 | 2 | 自動 | PC、ESP32-S3 | TODO:468 |
 | USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md:94 |
 | suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 1 | 自動 | PC（suspend を起こす） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125, TC:139 |
-| MSC の複数の論理ユニットと、失敗した読み出しの sense の指定 | 全 USB 系列 | 1 | 自動 | Pico・CH32RV のホスト（usb-peer-host-storage） | CH32RV の相手の試作で判明（2026-11-15） |
-| 1 つのデバイスに HID のインタフェースを複数（CH32RVUsbDevice は 1 つまで） | 全 USB 系列 | 1 | 自動 | PC、Pico | 同上 |
 
 ## USB ホスト
 
@@ -172,7 +170,6 @@
 | ホストのアイソクロナス（オーディオ・ビデオ） | 全ホスト | 1 | 自動 | ESP32-S3 / P4 の UAC・UVC デバイス | libraries/CH32RVUsbHost/README.ja.md:99, libraries/CH32RVUsbHost/src/CH32RVUsbHost.h:31 |
 | ホストの USB ネットワーク（NCM / ECM） | 全ホスト | 1 | 自動 | ESP32-S3 の NCM か USB の LAN アダプタ | FC:113, TODO:472 |
 | ホストの MSC のファイルシステム（マウント） | 全ホスト | 1 | 自動 | libraries/CH32RVUsbHost/README.ja.md:100、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 | まだ無い』 |
-| ホストの文字列 32 文字以上・構成記述子 256 バイト超（CH32RV_USB_HOST_STRING_MAX、構成の保持） | 全ホスト | 1 | 自動 | CH32RV どうし（usb_contracts の 302 バイトの構成）、PC の機器 | CH32RV の相手の試作で判明（2026-11-15） |
 | ホストの USB シリアルの `setRxBufferSize()` | 全ホスト | 2 | 自動 | Pico | libraries/CH32RVUsbHost/README.ja.md:102 |
 | H41x の USBHS ホスト（SWD と兼用、口の 2.0 側） | H41x | 1 | 自動 | ESP32-P4、SWD を外す部品 | docs/usb.ja.md:341, TODO:457 |
 | ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 2 | 自動 | ESP32-S3 / P4 | TODO:468 |

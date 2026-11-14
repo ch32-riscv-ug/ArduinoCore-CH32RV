@@ -3,6 +3,7 @@
  * report layouts, same behaviour). */
 #include "internal/CH32RVUsbDeviceInternal.h"
 
+#include <new>
 #include <string.h>
 
 
@@ -130,22 +131,34 @@ static bool declares_report_id(const uint8_t *desc, uint16_t length)
  * report (the host waits). A count rather than asking every class. */
 static uint8_t hid_held;
 
-class HidInterface;
+class CH32RVUsbDeviceHidInterface;
 static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
                            uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed);
-static const CH32RVUsbFunctionType hid_type = {hid_descriptor, 1, 1, &CH32RVUsbDeviceConfig::hidInterfaceName, 0};
+static const CH32RVUsbFunctionType hid_type = {hid_descriptor, 1, CH32RV_USB_DEVICE_HID_INTERFACES,
+                                               &CH32RVUsbDeviceConfig::hidInterfaceName, 0};
 
-class HidInterface : public CH32RVUsbDeviceFunction {
+/* Control transfers come one at a time: the interfaces share their buffer. */
+static uint8_t hid_ctrl[HID_EP_SIZE];
+
+/* The device's HID interfaces: the shared one first, then those made for a
+ * class of its own (hidReportDescriptor(instance) looks them up here). */
+static CH32RVUsbDeviceHidInterface *hid_itfs[CH32RV_USB_DEVICE_HID_INTERFACES];
+
+class CH32RVUsbDeviceHidInterface : public CH32RVUsbDeviceFunction {
 public:
-    explicit HidInterface(CH32RVUsbDevice &device) : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME)
+    explicit CH32RVUsbDeviceHidInterface(CH32RVUsbDevice &device)
+        : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME)
     {
         deliverWith(deliverThis);
     }
-    static size_t deliverThis(CH32RVUsbDeviceFunction &f) { return static_cast<HidInterface &>(f).usbDeliver(); }
+    static size_t deliverThis(CH32RVUsbDeviceFunction &f)
+    {
+        return static_cast<CH32RVUsbDeviceHidInterface &>(f).usbDeliver();
+    }
 
     bool add(CH32RVUsbDeviceHidClass *c)
     {
-        if (!attached() || device().started()) {
+        if (device().started() || (!attached() && !joinDevice())) {
             return false;
         }
         CH32RVUsbDeviceHidClass **p = &first;
@@ -153,8 +166,27 @@ public:
             p = &(*p)->_hidNext;
         }
         *p = c;
+        c->_hidNext = nullptr;
+        c->_hidItf = this;
         count++;
         return true;
+    }
+
+    /* Take a class off; an interface left empty leaves the device (it has
+     * nothing to describe). */
+    void remove(CH32RVUsbDeviceHidClass *c)
+    {
+        for (CH32RVUsbDeviceHidClass **p = &first; *p; p = &(*p)->_hidNext) {
+            if (*p == c) {
+                *p = c->_hidNext;
+                c->_hidNext = nullptr;
+                count--;
+                break;
+            }
+        }
+        if (!count) {
+            leaveDevice();
+        }
     }
     bool composite() const { return count > 1; }
 
@@ -432,7 +464,7 @@ public:
                     w.out = buffer;
                     w.skip = offset;
                     w.room = n;
-                    static_cast<HidInterface *>(context)->merge(w);
+                    static_cast<CH32RVUsbDeviceHidInterface *>(context)->merge(w);
                 }, this);
             }
             if ((s.wValue >> 8) == 0x21) {
@@ -448,11 +480,11 @@ public:
         switch (s.bRequest) {
         case HID_SET_REPORT:
             if (stage == CH32RVUsbControlStage::Setup) {
-                return s.wLength <= sizeof ctrl && device().controlOut(ctrl, s.wLength);
+                return s.wLength <= sizeof hid_ctrl && device().controlOut(hid_ctrl, s.wLength);
             }
             if (stage == CH32RVUsbControlStage::Data) {
                 const uint8_t id = (uint8_t)s.wValue;
-                const uint8_t *buf = ctrl;
+                const uint8_t *buf = hid_ctrl;
                 uint16_t len = s.wLength;
                 if (id && len > 1 && buf[0] == id) {
                     buf++;
@@ -476,15 +508,15 @@ public:
                 return false;
             }
             const uint8_t prefix = target->classReportId() ? 1 : 0;
-            const uint16_t n = target->hidGetReport((uint8_t)(s.wValue >> 8), ctrl + prefix,
-                                                    (uint16_t)(sizeof ctrl - prefix));
+            const uint16_t n = target->hidGetReport((uint8_t)(s.wValue >> 8), hid_ctrl + prefix,
+                                                    (uint16_t)(sizeof hid_ctrl - prefix));
             if (!n) {
                 return false;
             }
             if (prefix) {
-                ctrl[0] = target->classReportId();
+                hid_ctrl[0] = target->classReportId();
             }
-            return device().controlIn(ctrl, (uint16_t)(n + prefix));
+            return device().controlIn(hid_ctrl, (uint16_t)(n + prefix));
         }
         case HID_SET_IDLE:
             /* Duration in the high byte, the report ID (0: all) in the low. */
@@ -501,8 +533,8 @@ public:
             if (!c && (uint8_t)s.wValue) {
                 return false;
             }
-            ctrl[0] = c ? c->_idle : first ? first->_idle : 0;
-            return stage != CH32RVUsbControlStage::Setup || device().controlIn(ctrl, 1);
+            hid_ctrl[0] = c ? c->_idle : first ? first->_idle : 0;
+            return stage != CH32RVUsbControlStage::Setup || device().controlIn(hid_ctrl, 1);
         }
         case HID_SET_PROTOCOL:
             if (stage == CH32RVUsbControlStage::Setup) {
@@ -529,41 +561,77 @@ public:
     CH32RVUsbDeviceHidClass *inClass = nullptr;  /* whose report the IN transfer in flight is */
     uint16_t outLength = 64;
     bool outHeld = false;                        /* OUT not re-armed: a class holds a report */
-    uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE], ctrl[HID_EP_SIZE];
+    uint8_t in[HID_EP_SIZE], out[HID_EP_SIZE];
 };
 
-static HidInterface *hid;
-
-/* hidReportDescriptor(): the merged or single report descriptor, written to
- * `w` (nullptr: only its length). */
-static uint16_t hid_report(CH32RVUsbDescriptorWriter *w)
+/* HID interface `instance` (in the device's order), or nullptr. */
+static CH32RVUsbDeviceHidInterface *hid_instance(uint8_t instance)
 {
-    if (!hid || hid->count == 0) {
+    for (CH32RVUsbDeviceHidInterface *h : hid_itfs) {
+        if (h && h->attached() && h->count && h->instance() == instance) {
+            return h;
+        }
+    }
+    return nullptr;
+}
+
+/* hidReportDescriptor(instance): that interface's merged or single report
+ * descriptor, written to `w` (nullptr: only its length). */
+static uint16_t hid_report(uint8_t instance, CH32RVUsbDescriptorWriter *w)
+{
+    CH32RVUsbDeviceHidInterface *h = hid_instance(instance);
+    if (!h) {
         return 0;
     }
-    const uint16_t n = hid->reportLength();
+    const uint16_t n = h->reportLength();
     if (w && n) {
-        if (hid->composite()) {
-            hid->merge(*w);
+        if (h->composite()) {
+            h->merge(*w);
         } else {
-            w->put(hid->first->hidReportDescriptor(), n);
+            w->put(h->first->hidReportDescriptor(), n);
         }
     }
     return n;
 }
 
-static HidInterface &interface_for(CH32RVUsbDevice &device)
+static CH32RVUsbDeviceHidInterface &interface_for(CH32RVUsbDevice &device)
 {
-    static HidInterface shared(device);             /* one device per sketch */
-    hid = &shared;
+    static CH32RVUsbDeviceHidInterface shared(device);             /* one device per sketch */
+    hid_itfs[0] = &shared;
     ch32rv_usb_hid_report = hid_report;
     return shared;
+}
+
+/* An interface for a class of its own, attached to the device: one left
+ * empty again, or a new one. Its storage is linked only with
+ * enableOwnInterface(). nullptr when the device has no more. */
+static CH32RVUsbDeviceHidInterface *own_interface(CH32RVUsbDevice &device)
+{
+    alignas(CH32RVUsbDeviceHidInterface) static uint8_t pool[CH32RV_USB_DEVICE_HID_INTERFACES - 1]
+                                                             [sizeof(CH32RVUsbDeviceHidInterface)];
+    for (uint8_t i = 1; i < CH32RV_USB_DEVICE_HID_INTERFACES; i++) {
+        CH32RVUsbDeviceHidInterface *h = hid_itfs[i];
+        if (!h) {
+            h = new (pool[i - 1]) CH32RVUsbDeviceHidInterface(device);
+            if (!h->attached()) {
+                h->~CH32RVUsbDeviceHidInterface();
+                return nullptr;            /* the device took no more (begun, or out of HID instances) */
+            }
+            hid_itfs[i] = h;
+            return h;
+        }
+        if (!h->count) {
+            return h;                      /* add() joins it to the device again */
+        }
+    }
+    return nullptr;
 }
 
 static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescriptorWriter &w, uint8_t itf,
                            uint8_t *ep, uint8_t str, CH32RVUsbSpeed speed)
 {
-    HidInterface &h = const_cast<HidInterface &>(static_cast<const HidInterface &>(self));
+    CH32RVUsbDeviceHidInterface &h =
+        const_cast<CH32RVUsbDeviceHidInterface &>(static_cast<const CH32RVUsbDeviceHidInterface &>(self));
     if (h.count == 0) {
         return false;
     }
@@ -613,28 +681,55 @@ CH32RVUsbDeviceHidClass::CH32RVUsbDeviceHidClass(CH32RVUsbDevice &device) : _dev
     _attached = interface_for(device).add(this);
 }
 
+bool CH32RVUsbDeviceHidClass::enableOwnInterface(bool enable)
+{
+    if (!_attached || _device.started()) {
+        return false;
+    }
+    if (enable == _ownInterface) {
+        return true;
+    }
+    CH32RVUsbDeviceHidInterface *from = _hidItf;
+    CH32RVUsbDeviceHidInterface *to = enable ? own_interface(_device) : hid_itfs[0];
+    if (!to) {
+        return false;
+    }
+    from->remove(this);
+    if (!to->add(this)) {
+        from->add(this);                   /* cannot happen before begin(); left as it was */
+        return false;
+    }
+    _ownInterface = enable;
+    return true;
+}
+
 uint8_t CH32RVUsbDeviceHidClass::classReportId() const
 {
-    if (hid && hid->composite()) {
-        for (uint8_t i = 0; i < hid->count; i++) {
-            if (hid->at(i) == this) {
-                return hid->idOf(i);
+    if (_hidItf && _hidItf->composite()) {
+        for (uint8_t i = 0; i < _hidItf->count; i++) {
+            if (_hidItf->at(i) == this) {
+                return _hidItf->idOf(i);
             }
         }
     }
     return declares_report_id(hidReportDescriptor(), hidReportDescriptorLength()) ? hidReportId() : 0;
 }
 
+bool CH32RVUsbDeviceHidClass::bootProtocol() const
+{
+    return _hidItf && !_hidItf->composite() && _hidItf->protocol == 0;
+}
+
 bool CH32RVUsbDeviceHidClass::sendHidReport(uint8_t reportId, const void *data, size_t length,
                                             uint32_t timeoutMs)
 {
-    if (!_attached || !data || length == 0) {
+    if (!_attached || !_hidItf || !data || length == 0) {
         return false;
     }
-    return _device.sendHidReport(0, reportId, data, length, timeoutMs);
+    return _device.sendHidReport(_hidItf->instance(), reportId, data, length, timeoutMs);
 }
 
-/* EspUsbDevice's low-level path: an input report on the (one) HID interface. */
+/* EspUsbDevice's low-level path: an input report on HID interface `instance`. */
 bool CH32RVUsbDevice::sendHidReport(uint8_t instance, uint8_t reportId, const void *data, size_t length,
                                     uint32_t timeoutMs)
 {
@@ -642,7 +737,8 @@ bool CH32RVUsbDevice::sendHidReport(uint8_t instance, uint8_t reportId, const vo
         _error = CH32RVUsbDeviceError::NotStarted;
         return false;
     }
-    if (instance != 0 || !hid || !hid->send(reportId, data, length, timeoutMs)) {
+    CH32RVUsbDeviceHidInterface *h = hid_instance(instance);
+    if (!h || !h->send(reportId, data, length, timeoutMs)) {
         _error = CH32RVUsbDeviceError::NotReady;
         return false;
     }
@@ -952,7 +1048,7 @@ uint16_t CH32RVUsbDeviceHidMouse::hidReportDescriptorLength() const
 bool CH32RVUsbDeviceHidMouse::sendReport(const CH32RVUsbDeviceBootMouseReport &report, uint32_t timeoutMs)
 {
     /* Under the boot protocol a host reads buttons, x and y: no wheel. */
-    const bool boot = hid && !hid->composite() && hid->protocol == 0;
+    const bool boot = bootProtocol();
     return sendHidReport(classReportId(), &report, boot ? 3 : sizeof report, timeoutMs);
 }
 

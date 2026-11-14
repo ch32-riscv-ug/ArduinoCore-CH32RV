@@ -186,13 +186,23 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   - 記録の usb に CH32RV の相手（`{to: ch32rv, port: <相手のアドレス>}`）。run_hardware が両方のスケッチを作り、相手を
     その台のプローブで書く（Pico の相手と同じ形）。2026-11-15: 記録（`controller` も）・place・run_hardware・相手の
     スケッチ 5 つ（usb_peer/*/peer_ch32rv）を入れた。ビルド（H417 の SS / FS、X035）と単体試験だけで、実機は配線待ち。
-    相手のライブラリに無いもの（ホストの isochronous と NCM、デバイスの MSC の 2 つ目の LUN）の case は飛ばす
-    （tests/peer/usb/README.ja.md）。同じ OEP プローブの 2 つの口に DUT と相手を置いたときのモニター 2 つは未確認。
+    相手のライブラリに無いもの（ホストの isochronous と NCM）の case は飛ばす（tests/peer/usb/README.ja.md）。
+    同じ OEP プローブの 2 つの口に DUT と相手を置いたときのモニター 2 つは未確認。
+    2026-11-15: 相手の試作で見つかった穴を実装した。Pico・P4・PC が相手の回帰は V205・V407・H417 で 20 件通った（CH32RV どうしは配線待ち）。ホストの長い構成記述子（窓で読み直す）と
+    切らない文字列、デバイスの MSC の複数 LUN と `setSense()`、HID の `enableOwnInterface()`。usb-peer-host-storage は
+    CH32RV の相手でも流す。実機で最初に見るもの: 窓の読み直し（制御転送の途中のパケットを捨てる。USBFS・USBHS・USBSS の
+    HCD で）、usb_contracts の 302 バイトの構成のインタフェースが全部クラスに付くこと、2 LUN の GET_MAX_LUN と
+    lba 13 の 02/3A/00、host_input の 2 つ目の HID（ライブラリのキーボード）。
   - junit に controller・相手・ハブを残し、coverage の USB の項目をその軸で分ける（TST-01 の残りと同じ）。
   - PC の libusb のベンダーの試験（Python、pyusb）: ストリーム、等時の Mult・任意のパケット数、burst、0 長、STALL と
     CLEAR_FEATURE、サスペンドとリモートウェイクアップ、LPM / U1 / U2（sysfs）。B（6-2 の SS）で今すぐ流せる分から。
   - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
   - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
+- [ ] **H417 の SPI（マスター）が CPHA 0 で最初のビットを遅れて出す（2026-11-15、[oep] の解析）**: 6-2 の spi.output-only と
+  spi.contract で、線の上の MOSI（契約では MISO も CPHA 1 で）が期待値を 1 ビット右にずらしたもの。モード 0 / 2 では MOSI が
+  後ろの縁でしか変わらず、最初のサンプルの縁では前の値（前のバイトの最後のビット）が出ている。午前は通ったり落ちたりしたので、
+  前の状態にもよる。他の 6 台は通る。RM 23 章に手がかり無し。6-2 で試す: SPE の入れ方と DR を書く順、CS を下げてから最初の
+  DR までの間、HSRXEN、BR、1 バイト目の前のダミー。H417 だけの性質なら、コアの部品で吸収する（ライブラリで石を分けない）。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、

@@ -1359,7 +1359,7 @@ const uint16_t *CH32RVUsbDevice::stringDescriptor(uint8_t index, uint16_t langid
 
 uint16_t CH32RVUsbDevice::hidReportDescriptorLength(uint8_t instance)
 {
-    return instance == 0 && ch32rv_usb_hid_report ? ch32rv_usb_hid_report(nullptr) : 0;
+    return ch32rv_usb_hid_report ? ch32rv_usb_hid_report(instance, nullptr) : 0;
 }
 
 const uint8_t *CH32RVUsbDevice::hidReportDescriptor(uint8_t instance)
@@ -1372,11 +1372,11 @@ const uint8_t *CH32RVUsbDevice::hidReportDescriptor(uint8_t instance)
     CH32RVUsbDescriptorWriter w;
     w.out = p;
     w.room = n;
-    ch32rv_usb_hid_report(&w);
+    ch32rv_usb_hid_report(instance, &w);
     return p;
 }
 
-uint16_t (*ch32rv_usb_hid_report)(CH32RVUsbDescriptorWriter *w);
+uint16_t (*ch32rv_usb_hid_report)(uint8_t instance, CH32RVUsbDescriptorWriter *w);
 
 void CH32RVUsbDevice::onBusEvent(BusEventCallback callback)
 {

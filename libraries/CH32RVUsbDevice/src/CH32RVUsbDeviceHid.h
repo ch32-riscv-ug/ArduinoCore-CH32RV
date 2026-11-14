@@ -6,11 +6,20 @@
  * single class is the interface as it stands (a keyboard or mouse alone is a
  * boot device, usable in a PC's BIOS); two or more are merged into one report
  * descriptor, each class under its own report ID (CH32RV_USB_DEVICE_HID_REPORT_ID_*).
- * The device therefore has one HID interface whatever the sketch declares.
+ * A class can instead have an interface of its own (enableOwnInterface(), as
+ * EspUsbDevice's): its own report descriptor without a report ID and its own
+ * endpoints - a boot keyboard beside a merged gamepad and media keys. A device
+ * has up to CH32RV_USB_DEVICE_HID_INTERFACES HID interfaces.
  *
  * The callbacks are notifications: they run from deliverEvents(), never
  * inside the USB stack (ch32rv_deliver.h). */
 #pragma once
+
+/* HID interfaces one device takes: the shared one and those of classes with
+ * an interface of their own. */
+#define CH32RV_USB_DEVICE_HID_INTERFACES 4
+
+class CH32RVUsbDeviceHidInterface;
 
 /* Base of the HID classes: what the shared interface asks each of them. */
 class CH32RVUsbDeviceHidClass {
@@ -20,6 +29,18 @@ public:
     CH32RVUsbDevice &device() const { return _device; }
     /* False when the device refused it (declared after begin()). */
     bool attached() const { return _attached; }
+
+    /* Give this class an interface of its own (EspUsbDevice's
+     * enableOwnInterface()): its report descriptor as it is, without a
+     * report ID, on a separate HID interface with its own endpoints - a
+     * keyboard or mouse there is a boot device (subclass 1). The other
+     * classes keep sharing the merged interface. Before the device begins;
+     * false after, or when the device has CH32RV_USB_DEVICE_HID_INTERFACES
+     * already. The interface comes after the functions declared so far
+     * (globals: after all of them). false gives the class back to the
+     * shared interface. */
+    bool enableOwnInterface(bool enable = true);
+    bool ownInterfaceEnabled() const { return _ownInterface; }
 
     /* For the shared interface. */
     virtual uint8_t hidReportId() const { return 0; }
@@ -59,10 +80,15 @@ protected:
 
     CH32RVUsbDevice &_device;
     bool _attached = false;
+    /* The host chose the boot protocol on this class's interface (only a
+     * class alone on its interface has it). */
+    bool bootProtocol() const;
 
 private:
-    friend class HidInterface;
-    CH32RVUsbDeviceHidClass *_hidNext = nullptr;   /* the shared interface's next class */
+    friend class CH32RVUsbDeviceHidInterface;
+    CH32RVUsbDeviceHidInterface *_hidItf = nullptr;   /* the interface it is on */
+    CH32RVUsbDeviceHidClass *_hidNext = nullptr;   /* that interface's next class */
+    bool _ownInterface = false;
     uint8_t _idle = 0;               /* SET_IDLE for its report, in 4 ms; 0: none */
     uint32_t _idleFrom = 0;          /* its last input report went out */
 };

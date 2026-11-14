@@ -39,9 +39,9 @@
  * <ascii> / C HIDVIN <hex> / C MIDI <cin> <status> <d1> <d2> / C NOTE <text> / C HIDIN <interface> <report hex, ID
  * first> (every HID input report as it came; 00 in front for an interface without report IDs, as peer_pico).
  *
- * The descriptors are read again here, whole: CH32RVUsbHost keeps 31 characters of a string and the first 256
- * bytes of a configuration (CH32RV_USB_HOST_SCRATCH), and usb_contracts' product name and configuration are
- * longer. Not here: the speaker, microphone and camera (no isochronous transfers in CH32RVUsbHost) and the
+ * The strings and interfaces are the library's (CH32RVUsbHostDeviceInfo, getInterfaces()): it keeps strings whole
+ * and reads a configuration of any length, as usb_contracts' 32-character product name and 302-byte
+ * configuration need. Not here: the speaker, microphone and camera (no isochronous transfers in CH32RVUsbHost) and the
  * network adapter (no CDC-NCM): place.py skips usb-peer-media and usb-peer-net for this peer. */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
@@ -65,7 +65,7 @@ CH32RVUsbHostCdcSerial cdc(usb);
 /* printf to the console, lower-case hex as the other peers. */
 static void say(const char *format, ...)
 {
-    char text[200];
+    char text[448];   /* a DEV line carries three strings of up to 126 characters */
     va_list ap;
     va_start(ap, format);
     vsnprintf(text, sizeof text, format, ap);
@@ -116,31 +116,25 @@ static void pause(uint32_t ms)
 /* ------------------------------------------------------------ the device */
 static Device dev;
 static volatile uint8_t connectedAddress;   /* set by onDeviceConnected, announced from loop() */
-static uint8_t config[512];
-static uint16_t configLength;
 static bool hidHasId[16];                   /* per interface: its report descriptor declares report IDs */
 static volatile uint32_t hidVendorInputs;
+
+/* The device's interfaces, every alternate setting (the library's walk of its configuration). */
+static CH32RVUsbHostInterfaceInfo itfs[32];
+
+static size_t interfaces()
+{
+    return usb.getInterfaces(dev.address, itfs, sizeof itfs / sizeof itfs[0]);
+}
 
 /* The interface (alternate 0) of class / subclass, or -1. */
 static int findInterface(uint8_t cls, int sub)
 {
-    int found = -1;
-    walkConfig(config, configLength, [&](const uint8_t *d) {
-        if (d[1] == 4 && d[3] == 0 && d[5] == cls && (sub < 0 || d[6] == sub)) {
-            found = d[2];
-            return false;
-        }
-        return true;
-    });
-    return found;
-}
-
-/* A standard GET_DESCRIPTOR (the library's control transfer takes any request type). */
-static bool descriptor(uint8_t type, uint8_t index, uint16_t language, uint8_t *buffer, uint16_t length,
-                       size_t *got = nullptr)
-{
-    return usb.vendorControlTransfer(0x80, 6, (uint16_t)(type << 8 | index), language, buffer, length, got,
-                                     dev.address, 2000);
+    const size_t n = interfaces();
+    for (size_t i = 0; i < n; i++)
+        if (itfs[i].alternate == 0 && itfs[i].interfaceClass == cls && (sub < 0 || itfs[i].interfaceSubClass == sub))
+            return itfs[i].number;
+    return -1;
 }
 
 static void announce()
@@ -157,30 +151,11 @@ static void announce()
     dev.usb = info.usbVersion;
     dev.deviceClass = info.deviceClass;
     dev.speed = info.speed;
-    uint8_t d[18] = {};
-    if (descriptor(1, 0, 0, d, sizeof d)) {
-        usb.getStringDescriptor(dev.address, d[14], dev.manufacturer, sizeof dev.manufacturer);
-        usb.getStringDescriptor(dev.address, d[15], dev.product, sizeof dev.product);
-        usb.getStringDescriptor(dev.address, d[16], dev.serial, sizeof dev.serial);
-    }
-    configLength = 0;
-    if (descriptor(2, 0, 0, config, 9)) {
-        uint16_t total = (uint16_t)(config[2] | config[3] << 8);
-        if (total > sizeof config) total = sizeof config;
-        size_t got = 0;
-        if (descriptor(2, 0, 0, config, total, &got)) configLength = (uint16_t)got;
-    }
+    strncpy(dev.manufacturer, info.manufacturer, sizeof dev.manufacturer - 1);
+    strncpy(dev.product, info.product, sizeof dev.product - 1);
+    strncpy(dev.serial, info.serial, sizeof dev.serial - 1);
     dev.announced = true;
     say("C CONNECTED %u %04x %04x %s\n", dev.address, dev.vid, dev.pid, dev.product);
-}
-
-static bool claimed(uint8_t number, uint8_t alternate)
-{
-    CH32RVUsbHostInterfaceInfo itfs[16];
-    const size_t n = usb.getInterfaces(dev.address, itfs, 16);
-    for (size_t i = 0; i < n; i++)
-        if (itfs[i].number == number && itfs[i].alternate == alternate) return itfs[i].claimed;
-    return false;
 }
 
 static void cmdDev()
@@ -190,12 +165,10 @@ static void cmdDev()
         n = 1;
         say("C DEV %u %04x %04x %u %04x %02x %s|%s|%s\n", dev.address, dev.vid, dev.pid, dev.speed, dev.usb,
             dev.deviceClass, dev.manufacturer, dev.product, dev.serial);
-        walkConfig(config, configLength, [&](const uint8_t *d) {
-            if (d[1] == 4)
-                say("C ITF %u %u %u %02x %02x %02x %u\n", dev.address, d[2], d[3], d[5], d[6], d[7],
-                    claimed(d[2], d[3]) ? 1 : 0);
-            return true;
-        });
+        const size_t k = interfaces();
+        for (size_t i = 0; i < k; i++)
+            say("C ITF %u %u %u %02x %02x %02x %u\n", dev.address, itfs[i].number, itfs[i].alternate,
+                itfs[i].interfaceClass, itfs[i].interfaceSubClass, itfs[i].interfaceProtocol, itfs[i].claimed ? 1 : 0);
     }
     say("C DEVEND %u\n", n);
 }
@@ -543,7 +516,6 @@ void setup()
         say("C DISCONNECTED %u %04x %04x\n", d.address, d.vid, d.pid);
         connectedAddress = 0;
         dev = Device{};
-        configLength = 0;
         memset(hidHasId, 0, sizeof hidHasId);
     });
     usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) {

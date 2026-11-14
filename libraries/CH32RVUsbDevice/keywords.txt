@@ -59,10 +59,14 @@ detach	KEYWORD2
 device	KEYWORD2
 dtr	KEYWORD2
 enableNkro	KEYWORD2
+enableOwnInterface	KEYWORD2
 end	KEYWORD2
 flush	KEYWORD2
 function	KEYWORD2
 functionCount	KEYWORD2
+lun	KEYWORD2
+ownInterfaceEnabled	KEYWORD2
+setSense	KEYWORD2
 handleLineCoding	KEYWORD2
 handleLineState	KEYWORD2
 handleRx	KEYWORD2

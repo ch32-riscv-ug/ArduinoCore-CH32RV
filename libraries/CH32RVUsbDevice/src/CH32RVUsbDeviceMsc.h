@@ -1,5 +1,8 @@
-/* USB mass storage (EspUsbDeviceMsc): one logical unit whose blocks the
- * sketch supplies - from onRead()/onWrite(), or from a RAM disk below.
+/* USB mass storage (EspUsbDeviceMsc): logical units whose blocks the sketch
+ * supplies - from onRead()/onWrite(), or from a RAM disk below. Each
+ * CH32RVUsbDeviceMsc object is one logical unit, as each USBMSC is in
+ * arduino-esp32: the first declared is LUN 0 and carries the interface, the
+ * others (up to 8 in all) are LUN 1, 2 ... of the same interface.
  * Included by CH32RVUsbDevice.h. */
 #pragma once
 
@@ -60,8 +63,19 @@ public:
     /* Serve the blocks from a disk object (the RAM disks do this in attach()). */
     void setStorage(CH32RVUsbDeviceMscStorage *storage) { _storage = storage; deliverWith(deliverThis); }
 
+    /* From inside onRead() / onWrite() (or a storage's read() / write())
+     * that fails: the sense data the host gets for it (REQUEST SENSE) -
+     * sense key, additional sense code and qualifier - instead of the
+     * default, MEDIUM ERROR with unrecovered read error (03/11/00) or write
+     * error (03/0C/00). Not ready, medium not present is 02/3A/00. Set when
+     * the call succeeds, it is ignored. */
+    void setSense(uint8_t senseKey, uint8_t asc, uint8_t ascq);
+    /* This unit's logical unit number: the order the MSC objects were
+     * declared in (0 for the first). */
+    uint8_t lun() const { return _lun; }
+
     /* For the USB stack's callbacks. */
-    uint8_t maxLun() const { return 0; }
+    uint8_t maxLun() const;          /* the units on the interface, less one */
     void inquiry(uint8_t vendor[8], uint8_t product[16], uint8_t revision[4]) const;
     bool testUnitReady() const { return _mediaPresent; }
     void capacity(uint32_t *blockCount, uint16_t *blockSize) const;
@@ -70,7 +84,7 @@ public:
     int32_t write10(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size);
     bool writable() const { return _writable && (_storage || _onWrite); }
 
-    /* The endpoint pair, set while the descriptors are laid out. */
+    /* The endpoint pair, set while the descriptors are laid out (LUN 0's). */
     uint8_t _ep = 0;
 
 protected:
@@ -87,24 +101,23 @@ protected:
     }
 
 private:
-    /* Bulk-only transport: a command block, its data, a status. */
-    enum class Stage : uint8_t { Command, DataIn, DataOut, Status, Stalled, Reset };
+    /* The bulk-only transport (a command block, its data, a status) is the
+     * interface's, kept once in CH32RVUsbDeviceMsc.cpp; these run it for
+     * the unit a command addresses (`this`). */
     void receiveCommand();
     void command();
     void sendData(uint16_t length);
     void readNext();
     void writeNext();
     void fail(uint8_t key, uint8_t asc, uint8_t ascq);
+    /* A read or write that failed: the sense setSense() gave, or `key/asc/ascq`. */
+    void failIo(uint8_t key, uint8_t asc, uint8_t ascq);
     void status();
-    Stage _stage = Stage::Command;
-    /* One block, or a command and its answer; a whole packet at any speed. */
-    uint8_t _buffer[CH32RV_USB_MAX_PACKET > 512 ? CH32RV_USB_MAX_PACKET : 512] __attribute__((aligned(4)));
-    uint8_t _csw[13];
-    uint8_t _cmd[16];
-    uint32_t _tag = 0, _expected = 0, _residue = 0, _lba = 0, _total = 0, _done = 0;
-    uint16_t _packet = 64, _chunk = 0;
-    bool _in = false, _failed = false;
     uint8_t _senseKey = 0, _asc = 0, _ascq = 0;
+    uint8_t _ioKey = 0, _ioAsc = 0, _ioAscq = 0;
+    bool _ioSense = false;           /* setSense() during the provider's call */
+    uint8_t _lun = 0;
+    CH32RVUsbDeviceMsc *_nextLun = nullptr;
     char _vendor[9] = CH32RV_USB_MSC_VENDOR;
     char _product[17] = CH32RV_USB_MSC_PRODUCT;
     char _revision[5] = CH32RV_USB_MSC_REVISION;

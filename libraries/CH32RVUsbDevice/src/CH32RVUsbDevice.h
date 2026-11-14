@@ -279,6 +279,12 @@ public:
 protected:
     CH32RVUsbDeviceFunction(CH32RVUsbDevice &device, const CH32RVUsbFunctionType &type,
                             const char *name);
+    /* Leave the device's functions, or join them again at the end, before
+     * the device begins: a function left with nothing to describe (the
+     * shared HID interface once its classes all have interfaces of their
+     * own). False once the device has begun. */
+    bool leaveDevice();
+    bool joinDevice();
 
     /* The device stack (CH32RVUsbDeviceCore.cpp) calls these in normal context
      * - from loop() / delay() through ch32rv_usb_task(), never from the
@@ -399,9 +405,10 @@ public:
     uint8_t functionCount() const { return _count; }
     CH32RVUsbDeviceFunction *function(uint8_t i) const;
 
-    /* Send an input report on HID interface `instance` (0: this library has
-     * one), waiting up to timeoutMs for the endpoint. EspUsbDevice's
-     * low-level path; the HID classes use it. */
+    /* Send an input report on HID interface `instance` (0: the first; see
+     * CH32RVUsbDeviceHidClass::enableOwnInterface()), waiting up to
+     * timeoutMs for the endpoint. EspUsbDevice's low-level path; the HID
+     * classes use it. */
     bool sendHidReport(uint8_t instance, uint8_t reportId, const void *data, size_t length,
                        uint32_t timeoutMs = 100);
 
@@ -476,8 +483,8 @@ public:
      * is not looked at: there is one language (0x0409). Valid until the next
      * stringDescriptor() call. */
     const uint16_t *stringDescriptor(uint8_t index, uint16_t langid = 0x0409);
-    /* The HID interface's report descriptor (merged when several classes
-     * share it); instance 0 - there is one HID interface. */
+    /* HID interface `instance`'s report descriptor (merged when several
+     * classes share it): the interfaces in the device's order, 0 the first. */
     const uint8_t *hidReportDescriptor(uint8_t instance = 0);
     uint16_t hidReportDescriptorLength(uint8_t instance = 0);
 
@@ -501,6 +508,8 @@ public:
 private:
     /* The class objects attach themselves (CH32RVUsbDeviceFunction's constructor). */
     bool attach(CH32RVUsbDeviceFunction &f);
+    /* Take a function out again, before begin() (CH32RVUsbDeviceFunction::leaveDevice()). */
+    bool detach(CH32RVUsbDeviceFunction &f);
     CH32RVUsbDeviceFunction *_first = nullptr;   /* the functions, in declaration order */
     CH32RVUsbDeviceConfig _config;
     uint8_t _count = 0;

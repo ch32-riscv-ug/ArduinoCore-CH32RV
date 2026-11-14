@@ -129,6 +129,11 @@ test = "softwire::test_wire_repeated_start"
 scope = "once"
 
 [[item]]
+id = "softwire-slave"       # SoftWire as an I2C target (onReceive / onRequest)
+test = "softwire::test_wire_slave"
+scope = "once"
+
+[[item]]
 id = "sd-spi"
 test = "sd::test_sd_spi"
 scope = "once"
@@ -415,6 +420,12 @@ needs = ["I2C1"]
 [[item]]
 id = "spi-slave"            # CH32RVSPISlave
 test = "spi::test_spi_slave"
+scope = "series"
+needs = ["SPI1"]
+
+[[item]]
+id = "spi-peripheral"       # the SPI library's peripheral mode (SPI_HAS_PERIPHERAL_MODE)
+test = "spi::test_spi_peripheral"
 scope = "series"
 needs = ["SPI1"]
 

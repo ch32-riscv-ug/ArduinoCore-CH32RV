@@ -28,8 +28,16 @@
 
 /* Device addresses 1..CH32RV_USB_HOST_DEVICES: a hub and the devices behind it. */
 #define CH32RV_USB_HOST_DEVICES 5
-/* The configuration descriptor buffer (enumeration and the descriptor walks). */
+/* A window of a configuration descriptor (the enumeration's and the walks'
+ * below), and the scratch buffer the walks share. A configuration may be up
+ * to 64 KB; it is read a window at a time, the window starting on a packet of
+ * EP0, so it must hold more than one: 256 bytes (EP0 is 64 at most) where
+ * SuperSpeed is not, 1024 with SuperSpeed's 512-byte EP0. */
+#if CH32RV_USB_HOST_SUPERSPEED
+#define CH32RV_USB_HOST_SCRATCH 1024
+#else
 #define CH32RV_USB_HOST_SCRATCH 256
+#endif
 
 /* A transfer finished: result CH32RV_USBH_*, length what moved. Runs in
  * normal context, from the stack; it may start the next transfer. */
@@ -66,10 +74,30 @@ void ch32rv_usb_host_pump(void);
 /* Run the stack's events until *done, or false (a timeout) after timeoutMs. */
 bool ch32rv_usb_host_wait(volatile bool &done, uint32_t timeoutMs);
 
-/* The active configuration descriptor of `daddr` into the shared scratch
- * buffer; its length, 0 on failure. One user at a time, from task context. */
+/* The shared scratch buffer (a configuration's window, a string or report
+ * descriptor). One user at a time, from task context. */
 extern uint8_t ch32rv_usb_host_scratch[CH32RV_USB_HOST_SCRATCH];
-uint16_t ch32rv_usb_host_config_descriptor(uint8_t daddr);
+
+/* Walk the active configuration descriptor of `daddr` a descriptor at a time,
+ * however long it is: the scratch buffer holds a window of it, read again
+ * further on when the next descriptor is not whole in it. Each descriptor
+ * returned is whole, and so is the one after it unless the two do not fit
+ * a window (an endpoint's SuperSpeed companion is there). A pointer is good
+ * until the next call. nullptr at the end, on a malformed descriptor or a
+ * failed transfer.
+ *
+ *     CH32RVUsbHostConfigWalk w;
+ *     for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d; d = ch32rv_usb_host_config_next(w)) ... */
+struct CH32RVUsbHostConfigWalk {
+    uint8_t daddr;
+    uint16_t total;                /* wTotalLength */
+    uint16_t base, length;         /* the window: from `base` in the configuration, `length` bytes */
+    uint16_t at;                   /* the current descriptor's offset in the configuration */
+};
+const uint8_t *ch32rv_usb_host_config_first(CH32RVUsbHostConfigWalk &w, uint8_t daddr);
+const uint8_t *ch32rv_usb_host_config_next(CH32RVUsbHostConfigWalk &w);
+/* Bytes from the current descriptor to the end of the window. */
+uint16_t ch32rv_usb_host_config_room(const CH32RVUsbHostConfigWalk &w);
 
 /* The device record, or nullptr if `daddr` is not a known device. */
 const CH32RVUsbHostDeviceInfo *ch32rv_usb_host_device(uint8_t daddr);

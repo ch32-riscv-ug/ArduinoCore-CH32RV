@@ -120,7 +120,10 @@ struct CH32RVUsbHostConfig {
 /* Fixed sizes; the receive buffers' defaults, which the sketch can replace
  * with its own (CH32RVUsbHostCdcSerial::setBuffer(), setVendorBuffer(),
  * setCcidBuffers()). */
-#define CH32RV_USB_HOST_STRING_MAX 32               /* per string, with the terminator */
+/* The longest string a string descriptor carries (126 characters), with the
+ * terminator: CH32RVUsbHostDeviceInfo keeps the strings whole, and a buffer
+ * this long takes any getStringDescriptor(). */
+#define CH32RV_USB_HOST_STRING_MAX 127
 /* The largest bulk or interrupt packet a class takes in one piece: 512 on the
  * series with a high-speed host, 1024 with a SuperSpeed one (H417 / H416),
  * where the receive buffers below grow to hold more than one such packet (an

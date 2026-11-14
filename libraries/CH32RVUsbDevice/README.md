@@ -72,8 +72,8 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
   class's buffer or the host. Providers the host waits on (`onRead()` /
   `onWrite()` of MSC, `onApdu()`, `onControlRequest()`, `onFillPayload()`)
   are called inside the stack.
-- **Each class has a count limit** (CDC and MIDI 4, vendor and video 2,
-  others 1); within it, declaring is enough. CDC and vendor buffers are set
+- **Each class has a count limit** (CDC and MIDI 4, vendor and video 2, MSC
+  8 logical units, HID 4 interfaces, others 1); within it, declaring is enough. CDC and vendor buffers are set
   with `configure(CH32RVUsbBulkStreamConfig)` (EspUsbDevice v3's field names):
   the class's own by default, the sketch's array when given; nothing is
   allocated. CCID (`CH32RVUsbCcidConfig`) and video (`CH32RVUsbVideoConfig`)
@@ -131,7 +131,7 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 | `CH32RVUsbDeviceHidCustom` | A HID with your own report descriptor |
 | `CH32RVUsbDeviceMidi` | USB MIDI (up to 16 cables). `noteOn(channel, note, velocity, cable)`, `readPacket()`, `configure(CH32RVUsbMidiConfig)` (queue sizes, how events are taken and sent), `onPacket()` |
 | `CH32RVUsbDeviceVendor` | Vendor-defined bulk transfers (`Print`). `read()`, `peek()` (this core's own), `write()`, `flush()`, `configure()`, `waitWritable()`, `onRx()`, `onControlRequest()`, `writeDirect()`, `onDirectTxComplete()`, `readDirect()`, `onDirectRxComplete()`, `cancelDirectTx()`, `cancelDirectRx()`, `onTxComplete()`, `onRxData()`, `setInterfaceProtocol()`. WebUSB and Windows' WinUSB are on while this class is there |
-| `CH32RVUsbDeviceMsc` | A USB drive. `begin(blocks, size)`, `onRead()` / `onWrite()`, `mediaPresent()` (a medium put in while running is reported to the host as changed), `isWritable()`, `vendorID()` and so on |
+| `CH32RVUsbDeviceMsc` | A USB drive. `begin(blocks, size)`, `onRead()` / `onWrite()`, `mediaPresent()` (a medium put in while running is reported to the host as changed), `isWritable()`, `vendorID()` and so on. Each object is one logical unit (as arduino-esp32's USBMSC): declare two for LUN 0 and 1 on one interface (`lun()`; 8 at most). `setSense(key, asc, ascq)` inside a failing `onRead()` / `onWrite()` sets the sense the host reads for it (default 03/11/00, 03/0C/00) |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | Blocks in RAM / a FAT12 volume in RAM. `attach(msc)`, `addTextFile()`, `readFile()`, `onEject()` |
 | `CH32RVUsbDeviceCcid` | A smart card reader. `insertCard(atr)`, `removeCard()`, `onApdu()`, `onEscape()`, `onPower()`. `messageBytes` 0, the default, is 271 bytes or the chosen controller's bulk OUT packet (512 on USBHS, 1024 on USBSS), whichever is larger |
 | `CH32RVUsbDeviceMscSdCard` | An SPI SD card as the MSC's medium. `begin(cs, SPI)`, `attach(msc)` (`#include <CH32RVUsbDeviceMscSdCard.h>`) |
@@ -147,7 +147,13 @@ at build time either: descriptors are produced as the host reads them.
 
 All HID classes of a device share one HID interface, as in EspUsbDevice: one
 class alone stays as it is (a keyboard or mouse alone is a boot device), two or
-more are told apart by report ID.
+more are told apart by report ID. A class given `enableOwnInterface()` before
+`begin()` (EspUsbDevice's name) has a HID interface of its own instead: its own
+report descriptor without a report ID and its own endpoints (a keyboard or
+mouse there is a boot device beside the merged ones). Up to 4 HID interfaces;
+an own interface comes after the functions declared before it, and
+`sendHidReport(instance, ...)` / `hidReportDescriptor(instance)` take the HID
+interfaces in the device's order.
 
 ## Examples
 
@@ -176,7 +182,9 @@ sample rates, video without a frame buffer.
 
 Declare functions on the same device and call begin once after configuring
 them. Declaration order affects interface/endpoint allocation. Multiple HID
-functions share one HID interface with report IDs. Default DFU uses no endpoint.
+functions share one HID interface with report IDs, except those given
+`enableOwnInterface()`. Several MSC objects are the logical units of one MSC
+interface. Default DFU uses no endpoint.
 
 | Configuration | Endpoint-number usage |
 |---|---|

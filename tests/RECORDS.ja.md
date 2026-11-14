@@ -91,8 +91,7 @@ DUT 側の口がキーで決まっているとき、試験はつながる速さ�
 相手の基板の記録の `usb` は、逆向きに DUT を指してかまいません（たどりません）。
 
 今の CH32RV のライブラリで相手になれない case は、理由を付けて飛ばします（place.py の `CH32RV_PEER_LACKS`）:
-usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH32RVUsbHost に CDC-NCM が無い）、
-usb-peer-host-storage（CH32RVUsbDeviceMsc は論理ユニットが 1 つで、読み出しの失敗の sense も自前）。
+usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH32RVUsbHost に CDC-NCM が無い）。
 
 ```json
 {"usb": {"super_speed": {"to": "ch32rv", "port": "oep://30eda0e31108/h417-c", "controller": "super_speed"},

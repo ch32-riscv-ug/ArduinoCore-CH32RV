@@ -42,14 +42,14 @@ bool ch32rv_usb_host_pipe_open(CH32RVUsbHostPipe &p, uint8_t daddr, uint8_t itf,
                                uint16_t ringSize)
 {
     ch32rv_usb_host_pipe_close(p);
-    const uint16_t len = ch32rv_usb_host_config_descriptor(daddr);
-    const uint8_t *cfg = ch32rv_usb_host_scratch;
+    CH32RVUsbHostConfigWalk w;
     bool in_itf = false;
     uint8_t found = 0xFF;
-    const uint8_t *eps[3];
+    /* The endpoint descriptors, each with what follows it (a SuperSpeed
+     * companion): the walk's window moves on. */
+    uint8_t keep[3][13];
     uint8_t neps = 0;
-    for (uint16_t at = 0; at + 2 <= len && cfg[at] >= 2; at = (uint16_t)(at + cfg[at])) {
-        const uint8_t *d = cfg + at;
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d; d = ch32rv_usb_host_config_next(w)) {
         if (d[1] == 4 && d[0] >= 9) {
             if (found != 0xFF) {
                 break;              /* past the interface we took */
@@ -59,16 +59,18 @@ bool ch32rv_usb_host_pipe_open(CH32RVUsbHostPipe &p, uint8_t daddr, uint8_t itf,
                 found = d[2];
             }
         } else if (in_itf && d[1] == 5 && d[0] >= 7 && neps < 3) {
-            eps[neps++] = d;
+            const uint16_t room = ch32rv_usb_host_config_room(w);
+            memset(keep[neps], 0, sizeof keep[neps]);
+            memcpy(keep[neps], d, 7);
+            keep[neps][0] = 7;      /* its companion, if any, right after */
+            if (room >= d[0] + 6u && d[d[0]] >= 6 && d[d[0] + 1] == 0x30) {
+                memcpy(keep[neps] + 7, d + d[0], 6);
+            }
+            neps++;
         }
     }
     if (found == 0xFF) {
         return false;
-    }
-    /* The endpoint descriptors stay in the scratch buffer until opened. */
-    uint8_t keep[3][7];
-    for (uint8_t i = 0; i < neps; i++) {
-        memcpy(keep[i], eps[i], 7);
     }
     memset(&p, 0, sizeof p);
     p.daddr = daddr;

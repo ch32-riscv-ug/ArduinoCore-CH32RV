@@ -62,7 +62,7 @@ void loop() {
   など）。スケッチが `loop()` で呼び、`delay()` の中では呼ばれません。それまでデータはクラスの buffer かホスト側で
   待ちます。ホストが答えを待つ provider（MSC の `onRead()` / `onWrite()`、`onApdu()`、`onControlRequest()`、
   `onFillPayload()`）はスタックの中から呼ばれます。
-- **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、ほかは1）。上限の中なら
+- **同じクラスの数には上限があります**（CDC・MIDI は4、ベンダーとビデオは2、MSC は論理ユニットとして 8、HID はインタフェースが 4、ほかは1）。上限の中なら
   宣言するだけで使えます。CDC とベンダーのバッファは `configure(CH32RVUsbBulkStreamConfig)` で決めます
   （EspUsbDevice v3 と同じ項目名）。既定はクラスの中の配列で、スケッチの配列を渡せばそれを使います。ヒープからは取りません。
   CCID（`CH32RVUsbCcidConfig`）とビデオ（`CH32RVUsbVideoConfig`）も `configure()` で設定します。クラスの総数や記述子の大きさには、ビルド時の上限がありません。
@@ -108,7 +108,7 @@ void loop() {
 | `CH32RVUsbDeviceHidCustom` | 自分のレポートディスクリプタの HID |
 | `CH32RVUsbDeviceMidi` | USB MIDI（最大 16 ケーブル）。`noteOn(channel, note, velocity, cable)`、`readPacket()`、`configure(CH32RVUsbMidiConfig)`（キューの大きさ、受け方、送り方）、`onPacket()` |
 | `CH32RVUsbDeviceVendor` | ベンダー定義のバルク転送（`Print`）。`read()`、`peek()`（このコアの独自）、`write()`、`flush()`、`configure()`、`waitWritable()`、`onRx()`、`onControlRequest()`、`writeDirect()`、`onDirectTxComplete()`、`readDirect()`、`onDirectRxComplete()`、`cancelDirectTx()`、`cancelDirectRx()`、`onTxComplete()`、`onRxData()`、`setInterfaceProtocol()`。WebUSB と Windows の WinUSB はこのクラスがあると有効 |
-| `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`（稼働中に挿すとホストに媒体の交換を知らせる）、`isWritable()`、`vendorID()` など |
+| `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`（稼働中に挿すとホストに媒体の交換を知らせる）、`isWritable()`、`vendorID()` など。1 つのオブジェクトが 1 つの論理ユニット（arduino-esp32 の USBMSC と同じ）で、2 つ宣言すると 1 つのインタフェースの LUN 0 と 1 になる（`lun()`。8 まで）。失敗を返す `onRead()` / `onWrite()` の中で `setSense(key, asc, ascq)` を呼ぶと、ホストが読む sense をそれにする（既定は 03/11/00、03/0C/00） |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()`。メッセージの大きさ（`messageBytes`）の既定 0 は自動で、271 バイトか、選んだ controller の Bulk-OUT のパケット（USBHS 512、USBSS 1024）の大きい方 |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
@@ -119,6 +119,11 @@ void loop() {
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります（EspUsbDevice と同じ）。1つだけなら
 そのまま（キーボードとマウスは BIOS でも使えるブートデバイス）、2つ以上ならレポート ID で区別します。
+`begin()` の前に `enableOwnInterface()`（EspUsbDevice と同じ名前）を呼んだクラスは、自分だけの HID インターフェースに
+なります。レポート記述子はそのまま（レポート ID なし）で、エンドポイントも別です（キーボードやマウスなら、まとめた
+インターフェースの横のブートデバイス）。HID のインターフェースは 4 つまでです。自分のインターフェースは、それより前に
+宣言した機能の後ろに付きます。`sendHidReport(instance, ...)` と `hidReportDescriptor(instance)` の instance は、
+デバイスの中の HID インターフェースの順番です。
 
 ## 例
 
@@ -145,7 +150,8 @@ EspUsbDevice からの移植例も、CH32 の RAM に合わせた disk、音声�
 
 同じ `device` を各 function の constructor に渡し、設定を済ませてから `device.begin(config)` を呼びます。
 追加する順序は interface/endpoint の割当てにも影響します。default DFU は endpoint を使いません。
-HID の複数機能は report ID で一つの interface を共有します。
+HID の複数機能は report ID で一つの interface を共有します（`enableOwnInterface()` を呼んだものを除く）。MSC を複数宣言すると、
+1 つの MSC の interface の論理ユニットになります。
 
 | 構成 | endpoint 番号の消費例 |
 |---|---|

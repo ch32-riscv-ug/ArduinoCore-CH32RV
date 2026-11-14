@@ -3,7 +3,7 @@
  * (build_opt.h: PEER_USB_CONTROLLER, written by run_hardware.py).
  *   HID 0  gamepad (report ID 1), system control (ID 2) and a vendor collection (ID 3) with 8-byte input, output
  *          and feature reports (peer_ch32rv.h: one custom report descriptor)
- *   HID 1  a keyboard with the boot protocol (subclass 1), no report ID (peer_ch32rv.h: a function of its own)
+ *   HID 1  a keyboard with the boot protocol (subclass 1), no report ID (the library's, on an interface of its own)
  *   CDC 0  echoes every byte;  CDC 1  echoes every byte plus one
  *
  * Commands, one per line on the debug probe's console (SerialDMSeq); answers start "CD " (peer_pico's "PD "):
@@ -35,7 +35,7 @@
 /* In this order: the host numbers the CDC ports by their interfaces (SerialUSB is not used - its place among the
  * functions would follow the order the global constructors happen to run in). */
 PeerHid0 hid0;
-PeerBootKeyboard keyboard;
+CH32RVUsbDeviceHidKeyboard keyboard;
 CH32RVUsbDeviceCdcSerial port0(USBDevice, "Port A");
 CH32RVUsbDeviceCdcSerial port1(USBDevice, "Port B");
 static CH32RVUsbDeviceConfig config;
@@ -87,8 +87,9 @@ static bool gamepad(int x, int y, uint32_t buttons)
 
 static bool key(uint8_t keycode)
 {
-    const uint8_t r[8] = {0, 0, keycode}, none[8] = {};
-    return keyboard.send(r, REPORT_MS) && keyboard.send(none, REPORT_MS);
+    CH32RVUsbDeviceBootKeyboardReport r;
+    r.keys[0] = keycode;
+    return keyboard.sendReport(r, REPORT_MS) && keyboard.sendReport(CH32RVUsbDeviceBootKeyboardReport(), REPORT_MS);
 }
 
 static CH32RVUsbDeviceCdcSerial &port(uint8_t n) { return n ? port1 : port0; }
@@ -126,8 +127,8 @@ static void run(char *cmd)
         say(" ");
         printHex(hid0.lastFeature, 8);
         say("\n");
-    } else if (!strcmp(cmd, "proto")) say("CD PROTO %u\n", keyboard.protocol);
-    else if (!strcmp(cmd, "leds")) say("CD LEDS %u\n", keyboard.leds);
+    } else if (!strcmp(cmd, "proto")) say("CD PROTO %u\n", keyboard.protocol());
+    else if (!strcmp(cmd, "leds")) say("CD LEDS %u\n", keyboard.ledState().leds);
     else if (!strcmp(cmd, "line")) {
         const uint8_t n = (uint8_t)strtoul(arg, nullptr, 10) & 1;
         const CH32RVUsbDeviceCdcLineCoding c = port(n).lineCoding();
@@ -142,7 +143,8 @@ static void run(char *cmd)
         const bool ok = port(n).write(d, k) == k;
         port(n).flush();
         say("CD SENT %u\n", ok ? 1 : 0);
-    } else if (!strcmp(cmd, "desclen")) say("CD DESCLEN %u %u\n", (unsigned)sizeof descriptor0, (unsigned)sizeof descriptor1);
+    } else if (!strcmp(cmd, "desclen"))
+        say("CD DESCLEN %u %u\n", (unsigned)sizeof descriptor0, (unsigned)keyboard.hidReportDescriptorLength());
     else if (!strcmp(cmd, "replug")) {
         const uint32_t ms = strtoul(arg, nullptr, 10);
         USBDevice.end();
@@ -160,6 +162,7 @@ void setup()
     config.serialNumber = "CH32RVPEERINPUT";
     config.dfuRuntime = false;
     config.controller = PEER_USB_CONTROLLER;
+    keyboard.enableOwnInterface();
     const bool began = USBDevice.begin(config);
     say("CD BOOTED %u %s\n", began ? 1 : 0, USBDevice.lastErrorName());
 }

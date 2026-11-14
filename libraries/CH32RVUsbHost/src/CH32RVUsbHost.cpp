@@ -73,11 +73,70 @@ struct Device {
     bool infoPending;              /* the strings and onDeviceConnected() still due */
     bool known;                    /* info filled, onDeviceConnected() called */
     CH32RVUsbHostDeviceInfo info;
-    char manufacturer[CH32RV_USB_HOST_STRING_MAX];
-    char product[CH32RV_USB_HOST_STRING_MAX];
-    char serial[CH32RV_USB_HOST_STRING_MAX];
+    /* Manufacturer, product and serial number in the string pool: offset
+     * and bytes with the terminator (0: none). */
+    uint16_t stringAt[3];
+    uint8_t stringBytes[3];
 };
 Device devs[CH32RV_USB_HOST_DEVICES + 1];   /* by address; 0 is the one being enumerated */
+
+/* ------------------------------------------------------------- strings
+ * The devices' strings, kept whole (a descriptor carries up to 126
+ * characters) in one pool: each takes the bytes it needs, first fit, freed
+ * with its device. The pool holds one device's three longest possible
+ * strings and the usual short ones of the others; when it is full a string
+ * is cut to the room left. */
+#if CH32RV_USB_HOST_MAX_PACKET > 64
+#define STRING_POOL 1024
+#else
+#define STRING_POOL 512
+#endif
+char string_pool[STRING_POOL];
+
+/* The lowest offset with `bytes` free, or the start of the largest gap
+ * (*bytes cut to it); false when the pool is full. */
+bool string_alloc(uint16_t *at, uint16_t *bytes)
+{
+    uint16_t best = 0, bestRoom = 0;
+    uint16_t from = 0;
+    for (;;) {
+        /* The first string at or after `from`, and the gap before it. */
+        uint16_t next = STRING_POOL, end = from;
+        for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
+            for (uint8_t k = 0; k < 3; k++) {
+                const uint16_t s = devs[a].stringAt[k], n = devs[a].stringBytes[k];
+                if (n && s + n > from && s < next) {
+                    next = s < from ? from : s;
+                    end = (uint16_t)(s + n);
+                }
+            }
+        }
+        const uint16_t room = (uint16_t)(next - from);
+        if (room >= *bytes) {
+            *at = from;
+            return true;
+        }
+        if (room > bestRoom) {
+            best = from;
+            bestRoom = room;
+        }
+        if (next >= STRING_POOL) {
+            break;
+        }
+        from = end;
+    }
+    if (bestRoom < 2) {
+        return false;
+    }
+    *at = best;
+    *bytes = bestRoom;
+    return true;
+}
+
+const char *string_of(const Device &d, uint8_t k)
+{
+    return d.stringBytes[k] ? string_pool + d.stringAt[k] : "";
+}
 
 CH32RVUsbHostGroup *groups;
 
@@ -109,13 +168,18 @@ void device_event(bool connected, const CH32RVUsbHostDeviceInfo &info)
 }
 
 /* ------------------------------------------------------------- control */
-enum : uint8_t { CTL_IDLE, CTL_SETUP, CTL_DATA, CTL_STATUS };
+enum : uint8_t { CTL_IDLE, CTL_SETUP, CTL_SKIP, CTL_DATA, CTL_STATUS };
 struct Control {
     uint8_t stage;
     uint8_t daddr;
     uint8_t setup[8];
     uint8_t *buf;
     uint16_t len, actual;
+    /* An IN data stage read from `skip` on: the bytes before it are taken
+     * into `buf` and dropped, whole packets at a time (skip is a multiple of
+     * EP0's packet), so a descriptor longer than the buffer can be read a
+     * window at a time. */
+    uint16_t skip, skipped, piece;
     CH32RVUsbHostXferDone done;
     void *user;
 } ctl;
@@ -141,6 +205,28 @@ void control_status(void)
     }
 }
 
+/* After the setup stage, or a piece dropped: the next piece to drop, the
+ * data stage, or the status stage. */
+void control_data(void)
+{
+    if (ctl.skipped < ctl.skip) {
+        ctl.stage = CTL_SKIP;
+        const uint16_t mps = devs[ctl.daddr].mps0;
+        const uint16_t most = (uint16_t)(ctl.len / mps * mps), left = (uint16_t)(ctl.skip - ctl.skipped);
+        ctl.piece = left < most ? left : most;
+        if (!hcd->xfer(ctl.daddr, 0x80, ctl.buf, ctl.piece)) {
+            control_finish(CH32RV_USBH_FAILED);
+        }
+    } else if (ctl.len) {
+        ctl.stage = CTL_DATA;
+        if (!hcd->xfer(ctl.daddr, (ctl.setup[0] & 0x80) ? 0x80 : 0x00, ctl.buf, ctl.len)) {
+            control_finish(CH32RV_USBH_FAILED);
+        }
+    } else {
+        control_status();
+    }
+}
+
 void control_event(uint8_t result, uint16_t length)
 {
     if (result != CH32RV_USBH_OK) {
@@ -148,15 +234,17 @@ void control_event(uint8_t result, uint16_t length)
         return;
     }
     switch (ctl.stage) {
-    case CTL_SETUP:
-        if (ctl.len) {
-            ctl.stage = CTL_DATA;
-            if (!hcd->xfer(ctl.daddr, (ctl.setup[0] & 0x80) ? 0x80 : 0x00, ctl.buf, ctl.len)) {
-                control_finish(CH32RV_USBH_FAILED);
-            }
-        } else {
+    case CTL_SKIP:
+        if (length < ctl.piece) {
+            ctl.actual = 0;            /* it ended before the window */
             control_status();
+            break;
         }
+        ctl.skipped = (uint16_t)(ctl.skipped + length);
+        control_data();
+        break;
+    case CTL_SETUP:
+        control_data();
         break;
     case CTL_DATA:
         ctl.actual = length;
@@ -171,19 +259,31 @@ void control_event(uint8_t result, uint16_t length)
     }
 }
 
+/* `skip` (IN only): the data stage's first bytes to drop, a multiple of
+ * EP0's packet and of no more than `length` bytes a piece; wLength asks for
+ * them as well as `length`. */
 bool control_start(uint8_t daddr, uint8_t requestType, uint8_t request, uint16_t value, uint16_t index,
-                   uint8_t *data, uint16_t length, CH32RVUsbHostXferDone done, void *user)
+                   uint8_t *data, uint16_t length, CH32RVUsbHostXferDone done, void *user, uint16_t skip = 0)
 {
     if (ctl.stage != CTL_IDLE) {
         return false;
     }
+    if (skip) {
+        const uint16_t mps = devs[daddr].mps0;
+        if (!(requestType & 0x80) || !mps || length < mps || skip % mps || (uint32_t)skip + length > 0xFFFFu) {
+            return false;
+        }
+    }
+    const uint16_t total = (uint16_t)(skip + length);
     const uint8_t s[8] = {requestType, request, (uint8_t)value, (uint8_t)(value >> 8),
-                          (uint8_t)index, (uint8_t)(index >> 8), (uint8_t)length, (uint8_t)(length >> 8)};
+                          (uint8_t)index, (uint8_t)(index >> 8), (uint8_t)total, (uint8_t)(total >> 8)};
     memcpy(ctl.setup, s, 8);
     ctl.daddr = daddr;
     ctl.buf = data;
     ctl.len = length;
     ctl.actual = 0;
+    ctl.skip = skip;
+    ctl.skipped = 0;
     ctl.done = done;
     ctl.user = user;
     ctl.stage = CTL_SETUP;
@@ -490,9 +590,21 @@ void sync_done(void *user, uint8_t result, uint16_t actual)
 
 }  // namespace
 
+/* ch32rv_usb_host_control_sync() with control_start()'s `skip`. */
+static uint8_t control_sync_skip(uint8_t daddr, uint8_t requestType, uint8_t request, uint16_t value,
+                                 uint16_t index, uint8_t *data, uint16_t length, uint16_t *actualLength,
+                                 uint32_t timeoutMs, uint16_t skip);
+
 uint8_t ch32rv_usb_host_control_sync(uint8_t daddr, uint8_t requestType, uint8_t request, uint16_t value,
                                      uint16_t index, uint8_t *data, uint16_t length, uint16_t *actualLength,
                                      uint32_t timeoutMs)
+{
+    return control_sync_skip(daddr, requestType, request, value, index, data, length, actualLength, timeoutMs, 0);
+}
+
+static uint8_t control_sync_skip(uint8_t daddr, uint8_t requestType, uint8_t request, uint16_t value,
+                                 uint16_t index, uint8_t *data, uint16_t length, uint16_t *actualLength,
+                                 uint32_t timeoutMs, uint16_t skip)
 {
     if (actualLength) {
         *actualLength = 0;
@@ -512,7 +624,7 @@ uint8_t ch32rv_usb_host_control_sync(uint8_t daddr, uint8_t requestType, uint8_t
     sync_wait.generation++;
     sync_wait.done = false;
     if (!control_start(daddr, requestType, request, value, index, data, length, sync_done,
-                       (void *)(uintptr_t)sync_wait.generation)) {
+                       (void *)(uintptr_t)sync_wait.generation, skip)) {
         return CH32RV_USBH_FAILED;
     }
     const uint32_t spent = (uint32_t)(millis() - t0);
@@ -565,21 +677,117 @@ bool ch32rv_usb_host_clear_halt(uint8_t daddr, uint8_t address)
     return r == CH32RV_USBH_OK;
 }
 
-uint16_t ch32rv_usb_host_config_descriptor(uint8_t daddr)
+/* ------------------------------------------------------------- configuration windows
+ * A configuration descriptor may be up to 64 KB long; the stack reads it a
+ * window (CH32RV_USB_HOST_SCRATCH bytes) at a time - GET_DESCRIPTOR from
+ * the start, the bytes before the window dropped (control_start's skip). */
+namespace {
+
+/* The window that holds the configuration from `at` on: it starts at `at`
+ * rounded down to EP0's packet (what can be dropped), and holds at least a
+ * whole packet. */
+void window_for(uint8_t daddr, uint16_t total, uint16_t at, uint16_t *base, uint16_t *length)
 {
-    uint8_t *buf = ch32rv_usb_host_scratch;
-    uint16_t got = 0;
-    if (ch32rv_usb_host_control_sync(daddr, 0x80, 6, 0x0200, 0, buf, 9, &got, 1000) != CH32RV_USBH_OK || got < 9) {
-        return 0;
+    const uint16_t mps = devs[daddr].mps0 ? devs[daddr].mps0 : 8;
+    uint16_t b = (uint16_t)(at / mps * mps);
+    if (b && total - b < mps) {
+        b = (uint16_t)(b - mps);       /* the last short packet alone cannot be read past the others */
     }
-    uint16_t total = (uint16_t)(buf[2] | buf[3] << 8);
-    if (total > sizeof ch32rv_usb_host_scratch) {
-        total = sizeof ch32rv_usb_host_scratch;
+    const uint16_t left = (uint16_t)(total - b);
+    *base = b;
+    *length = left < CH32RV_USB_HOST_SCRATCH ? left : (uint16_t)CH32RV_USB_HOST_SCRATCH;
+}
+
+/* Whether the window (`buf`, from `base`, `length` bytes) of a configuration
+ * of `total` bytes holds the descriptor at `at` whole, and the one after it
+ * too unless it is the last (an endpoint's SuperSpeed companion, the next
+ * header). A malformed length (under 2) counts as held: the walk stops on it. */
+bool window_holds(const uint8_t *buf, uint16_t base, uint16_t length, uint16_t total, uint16_t at)
+{
+    if (at < base || at - base + 2u > length) {
+        return false;
     }
-    if (ch32rv_usb_host_control_sync(daddr, 0x80, 6, 0x0200, 0, buf, total, &got, 1000) != CH32RV_USBH_OK) {
-        return 0;
+    const uint16_t rel = (uint16_t)(at - base);
+    if (buf[rel] < 2) {
+        return true;
     }
-    return got;
+    const uint32_t end = (uint32_t)rel + buf[rel];
+    if (end > length) {
+        return false;
+    }
+    if (base + end + 2u > total) {
+        return true;                   /* the last one */
+    }
+    return end + 2u <= length && (buf[end] < 2 || end + buf[end] <= length);
+}
+
+bool window_whole(const uint8_t *buf, uint16_t base, uint16_t length, uint16_t at)
+{
+    return at >= base && at - base + 2u <= length && at - base + (uint32_t)buf[at - base] <= length;
+}
+
+}  // namespace
+
+static bool config_read(CH32RVUsbHostConfigWalk &w, uint16_t at)
+{
+    uint16_t base, length, got = 0;
+    window_for(w.daddr, w.total, at, &base, &length);
+    if (control_sync_skip(w.daddr, 0x80, 6, 0x0200, 0, ch32rv_usb_host_scratch, length, &got, 1000, base) !=
+        CH32RV_USBH_OK) {
+        return false;
+    }
+    w.base = base;
+    w.length = got;
+    return got != 0;
+}
+
+/* The descriptor at w.at, the window moved to hold it (and the next); one too
+ * long for any window is stepped over. nullptr at the end or on a failure. */
+static const uint8_t *config_here(CH32RVUsbHostConfigWalk &w)
+{
+    for (;;) {
+        if (w.at + 2u > w.total) {
+            return nullptr;
+        }
+        const uint8_t *buf = ch32rv_usb_host_scratch;
+        if (!window_holds(buf, w.base, w.length, w.total, w.at) && !config_read(w, w.at)) {
+            return nullptr;
+        }
+        if (!window_whole(buf, w.base, w.length, w.at)) {
+            if (w.at - w.base + 2u > w.length) {
+                return nullptr;        /* the device sent less than it said */
+            }
+            w.at = (uint16_t)(w.at + buf[w.at - w.base]);
+            continue;
+        }
+        const uint8_t *d = buf + (w.at - w.base);
+        return d[0] < 2 ? nullptr : d;
+    }
+}
+
+const uint8_t *ch32rv_usb_host_config_first(CH32RVUsbHostConfigWalk &w, uint8_t daddr)
+{
+    w.daddr = daddr;
+    w.base = w.length = w.at = 0;
+    w.total = daddr && daddr <= CH32RV_USB_HOST_DEVICES ? devs[daddr].configLength : 0;
+    if (w.total < 9) {
+        return nullptr;
+    }
+    return config_here(w);
+}
+
+const uint8_t *ch32rv_usb_host_config_next(CH32RVUsbHostConfigWalk &w)
+{
+    if (w.at < w.base || w.at - w.base >= w.length) {
+        return nullptr;
+    }
+    w.at = (uint16_t)(w.at + ch32rv_usb_host_scratch[w.at - w.base]);
+    return config_here(w);
+}
+
+uint16_t ch32rv_usb_host_config_room(const CH32RVUsbHostConfigWalk &w)
+{
+    return w.at >= w.base && w.at - w.base < w.length ? (uint16_t)(w.length - (w.at - w.base)) : 0;
 }
 
 namespace {
@@ -590,6 +798,7 @@ namespace {
 enum : uint8_t {
     E_IDLE, E_DEBOUNCE, E_ROOT_RESET, E_HUB_RESET, E_HUB_POLL_WAIT, E_HUB_POLL, E_HUB_CLEAR, E_RECOVER,
     E_DEV8, E_ADDRESS, E_ADDRESS_WAIT, E_DEV18, E_BOS5, E_BOS, E_ISOCH_DELAY, E_CFG9, E_CFG, E_SET_CFG, E_LPM, E_MOUNT,
+    E_CLAIM, E_CLAIM_READ,
 };
 
 /* SuperSpeed link power management after SET_CONFIGURATION (USB 3.2
@@ -619,7 +828,11 @@ struct Enumeration {
     uint16_t hubDelay;
     uint8_t sel[6] __attribute__((aligned(4)));
 #endif
-    uint16_t configLength;         /* what GET_DESCRIPTOR(configuration) brought */
+    /* The window of the configuration in `buf` (from winBase, winLength
+     * bytes) and the next descriptor the claim looks at; `moved`: the window
+     * was just read for it. */
+    uint16_t winBase, winLength, claimAt;
+    bool moved;
     uint32_t t;
     bool again;                    /* the root port's device gave up on: try it again at `againAt` */
     uint32_t againAt;
@@ -641,9 +854,9 @@ void en_done(void *user, uint8_t result, uint16_t actual)
 /* A control transfer for the enumeration; false (try again later) while the
  * engine serves someone else. */
 bool en_control(uint8_t daddr, uint8_t requestType, uint8_t request, uint16_t value, uint16_t index,
-                uint8_t *data, uint16_t length)
+                uint8_t *data, uint16_t length, uint16_t skip = 0)
 {
-    if (!control_start(daddr, requestType, request, value, index, data, length, en_done, nullptr)) {
+    if (!control_start(daddr, requestType, request, value, index, data, length, en_done, nullptr, skip)) {
         return false;
     }
     en.waiting = true;
@@ -679,12 +892,12 @@ void en_unqueue(uint8_t hub, uint8_t port)
         }
         en.waiting = false;
         hcd->deviceClose(0);
-        if (en.address) {
-            hcd->deviceClose(en.address);
-            memset(&devs[en.address], 0, sizeof devs[en.address]);
-        }
+        const uint8_t a = en.address;
         en.address = 0;
         en.state = E_IDLE;
+        if (a) {
+            remove_device(a);          /* the groups that took interfaces in the claim let go too */
+        }
     }
 }
 
@@ -723,22 +936,72 @@ void en_retry(void)
     }
 }
 
-/* Offer the interfaces of the new configuration to the groups. */
-void en_claim(uint8_t daddr, const uint8_t *cfg, uint16_t total)
+/* The claim is over: the device is the sketch's. */
+void en_mounted(void)
 {
-    Device &d = devs[daddr];
-    uint16_t at = cfg[0];
-    while (at + 2 <= total && cfg[at] >= 2 && at + cfg[at] <= total) {
-        const uint8_t *p = cfg + at;
+    Device &d = devs[en.address];
+    d.info.supported = d.claimed != 0;
+    d.state = DEV_MOUNTED;
+    d.configurePending = true;
+    d.infoPending = true;
+    en.address = 0;
+    en.state = E_IDLE;
+}
+
+/* Offer the interfaces of the new configuration to the groups, a window of
+ * it at a time: an interface is offered with the window starting at (or
+ * just before) it whenever the configuration goes on past the window, so its
+ * class sees as much of what follows as a window holds. */
+void en_claim(void)
+{
+    Device &d = devs[en.address];
+    const uint16_t total = d.configLength;
+    for (;;) {
+        const uint16_t at = en.claimAt;
+        if (at + 2u > total) {
+            en_mounted();
+            return;
+        }
+        const uint16_t mps = d.mps0 ? d.mps0 : 8;
+        const bool more = en.winBase + (uint32_t)en.winLength < total;
+        bool read = !window_holds(en.buf, en.winBase, en.winLength, total, at);
+        if (!read && more && at - en.winBase >= mps) {
+            const uint8_t *p = en.buf + (at - en.winBase);
+            read = p[0] >= 9 && p[1] == 4;   /* an interface: give its class a window from here */
+        }
+        if (read && !en.moved) {
+            uint16_t base, length;
+            window_for(en.address, total, at, &base, &length);
+            if (en_control(en.address, 0x80, 6, 0x0200, 0, en.buf, length, base)) {
+                en.winBase = base;
+                en.state = E_CLAIM_READ;
+            }
+            return;                    /* sent: wait for it; not: the engine is busy, again later */
+        }
+        en.moved = false;
+        if (!window_whole(en.buf, en.winBase, en.winLength, at)) {
+            if (at - en.winBase + 2u > en.winLength) {
+                en_mounted();          /* the device sent less than it said */
+                return;
+            }
+            en.claimAt = (uint16_t)(at + en.buf[at - en.winBase]);   /* too long for a window: stepped over */
+            continue;
+        }
+        const uint8_t *p = en.buf + (at - en.winBase);
+        if (p[0] < 2) {
+            en_mounted();
+            return;
+        }
+        const uint16_t room = (uint16_t)(en.winLength - (at - en.winBase));
         if (p[1] != 4 || p[0] < 9 || p[3] != 0 || p[2] >= 16 || (d.claimed & (1u << p[2]))) {
-            at = (uint16_t)(at + p[0]);
+            en.claimAt = (uint16_t)(at + p[0]);
             continue;
         }
         uint16_t used = 0;
         for (CH32RVUsbHostGroup *g = groups; g && !used; g = g->next) {
-            if (g->open && (used = g->open(daddr, p, (uint16_t)(total - at))) != 0) {
+            if (g->open && (used = g->open(en.address, p, room)) != 0) {
                 /* Every interface the group's span covers is its. */
-                for (uint16_t k = 0; k < used && at + k + 2 <= total; k = (uint16_t)(k + p[k])) {
+                for (uint16_t k = 0; k < used && k + 2u <= room; k = (uint16_t)(k + p[k])) {
                     if (p[k] < 2) {
                         break;
                     }
@@ -749,9 +1012,8 @@ void en_claim(uint8_t daddr, const uint8_t *cfg, uint16_t total)
                 }
             }
         }
-        at = (uint16_t)(at + (used ? used : p[0]));
+        en.claimAt = (uint16_t)(at + (used ? used : p[0]));
     }
-    d.info.supported = d.claimed != 0;
 }
 
 void en_step(void)
@@ -1052,20 +1314,23 @@ void en_step(void)
         d.configValue = en.buf[5];
         d.configAttributes = en.buf[7];
         d.configPower = en.buf[8];
-        if (total > sizeof en.buf) {
-            total = sizeof en.buf;     /* the interfaces past it are not offered */
+        if (total < 9) {
+            en_retry();
+            return;
         }
-        if (en_control(en.address, 0x80, 6, 0x0200, 0, en.buf, total)) {
+        /* The first window; the claim reads further ones as it goes. */
+        window_for(en.address, total, 0, &en.winBase, &en.winLength);
+        if (en_control(en.address, 0x80, 6, 0x0200, 0, en.buf, en.winLength)) {
             en.state = E_CFG;
         }
         return;
     }
     case E_CFG:
-        if (en.result != CH32RV_USBH_OK) {
+        if (en.result != CH32RV_USBH_OK || en.actual < 9) {
             en_retry();
             return;
         }
-        en.configLength = en.actual;
+        en.winLength = en.actual;
         if (en_control(en.address, 0x00, 9, devs[en.address].configValue, 0, nullptr, 0)) {   /* SET_CONFIGURATION */
             en.state = E_SET_CFG;
         }
@@ -1132,16 +1397,25 @@ void en_step(void)
         return;
     }
 #endif
-    case E_MOUNT: {
-        Device &d = devs[en.address];
-        d.state = DEV_MOUNTED;
-        en_claim(en.address, en.buf, en.configLength);
-        d.configurePending = true;
-        d.infoPending = true;
-        en.address = 0;
-        en.state = E_IDLE;
+    case E_MOUNT:
+        en.claimAt = en.buf[0] >= 9 ? en.buf[0] : 9;
+        en.moved = false;
+        en.state = E_CLAIM;
+        en_claim();
         return;
-    }
+    case E_CLAIM:
+        en_claim();
+        return;
+    case E_CLAIM_READ:
+        if (en.result != CH32RV_USBH_OK || !en.actual) {
+            en_mounted();              /* what is claimed so far stays */
+            return;
+        }
+        en.winLength = en.actual;
+        en.moved = true;
+        en.state = E_CLAIM;
+        en_claim();
+        return;
     }
 }
 
@@ -1350,6 +1624,13 @@ void remove_device(uint8_t daddr)
     events_void(daddr, 0xFF);
     CH32RVUsbHost *host = ch32rv_usb_host_active;
     const CH32RVUsbHostDeviceInfo info = d.info;
+    /* Its strings are freed: a connection of it not yet delivered loses them. */
+    for (uint8_t i = 0; i < device_count; i++) {
+        DeviceEvent &e = device_events[(uint8_t)(device_first + i) % DEVICE_EVENTS];
+        if (e.connected && e.info.address == daddr) {
+            e.info.manufacturer = e.info.product = e.info.serial = "";
+        }
+    }
     memset(&d, 0, sizeof d);
     if (was_known && host && host->_disconnected) {
         device_event(false, info);
@@ -1399,12 +1680,14 @@ void pump(void)
     en_step();
 }
 
-/* UTF-16LE string descriptor -> ASCII. */
+/* UTF-16LE string descriptor -> ASCII. `out` may be `desc` itself: each
+ * character is written before the bytes it came from. */
 void ascii_from_utf16(const uint8_t *desc, uint16_t got, char *out, size_t capacity)
 {
     size_t n = 0;
     if (got >= 2 && desc[0] >= 2 && desc[1] == 3) {
-        for (size_t i = 2; i + 1 < desc[0] && i + 1 < got && n + 1 < capacity; i += 2) {
+        const size_t length = desc[0] < got ? desc[0] : got;
+        for (size_t i = 2; i + 1 < length && n + 1 < capacity; i += 2) {
             const uint16_t c = (uint16_t)(desc[i] | (desc[i + 1] << 8));
             out[n++] = (c >= 0x20 && c < 0x7F) ? (char)c : '?';
         }
@@ -1412,20 +1695,34 @@ void ascii_from_utf16(const uint8_t *desc, uint16_t got, char *out, size_t capac
     out[n] = '\0';
 }
 
-uint8_t read_string(uint8_t daddr, uint8_t index, char *out, size_t capacity)
+/* String `index` of the device (k: 0 manufacturer, 1 product, 2 serial)
+ * into the pool, whole. */
+void read_string(uint8_t daddr, uint8_t k, uint8_t index)
 {
-    out[0] = '\0';
+    Device &d = devs[daddr];
+    d.stringBytes[k] = 0;
     if (!index) {
-        return CH32RV_USBH_OK;
+        return;
     }
-    uint8_t buf[2 * CH32RV_USB_HOST_STRING_MAX + 2];
+    /* Read into the scratch buffer and made ASCII in place (each character
+     * lands before the two bytes it came from). */
+    uint8_t *buf = ch32rv_usb_host_scratch;
     uint16_t got = 0;
-    const uint8_t r = ch32rv_usb_host_control_sync(daddr, 0x80, 6, (uint16_t)(0x0300 | index), 0x0409, buf,
-                                                   sizeof buf, &got, 1000);
-    if (r == CH32RV_USBH_OK) {
-        ascii_from_utf16(buf, got, out, capacity);
+    if (ch32rv_usb_host_control_sync(daddr, 0x80, 6, (uint16_t)(0x0300 | index), 0x0409, buf, 255, &got, 1000) !=
+            CH32RV_USBH_OK ||
+        d.state != DEV_MOUNTED) {
+        return;                    /* failed, or gone while we asked */
     }
-    return r;
+    char *text = (char *)buf;
+    ascii_from_utf16(buf, got, text, 255);
+    uint16_t bytes = (uint16_t)(strlen(text) + 1), at = 0;
+    if (bytes < 2 || !string_alloc(&at, &bytes)) {
+        return;
+    }
+    memcpy(string_pool + at, text, bytes - 1u);
+    string_pool[at + bytes - 1u] = '\0';
+    d.stringAt[k] = at;
+    d.stringBytes[k] = (uint8_t)bytes;
 }
 
 /* Fill in a newly mounted device and tell the sketch. From the task. */
@@ -1459,15 +1756,15 @@ void complete_mount(CH32RVUsbHost &host, uint8_t daddr)
     d.configurationMaxPower = s.configPower;
     d.configurationInterfaceCount = s.configInterfaces;
     d.configurationTotalLength = s.configLength;
-    read_string(daddr, dev[14], s.manufacturer, sizeof s.manufacturer);
-    read_string(daddr, dev[15], s.product, sizeof s.product);
-    read_string(daddr, dev[16], s.serial, sizeof s.serial);
-    d.manufacturer = s.manufacturer;
-    d.product = s.product;
-    d.serial = s.serial;
+    for (uint8_t k = 0; k < 3 && s.state == DEV_MOUNTED; k++) {
+        read_string(daddr, k, dev[14 + k]);
+    }
     if (s.state != DEV_MOUNTED) {
         return;                    /* gone while we asked */
     }
+    d.manufacturer = string_of(s, 0);
+    d.product = string_of(s, 1);
+    d.serial = string_of(s, 2);
     s.known = true;
     if (host._connected) {
         device_event(true, d);
@@ -1730,13 +2027,10 @@ size_t CH32RVUsbHost::getInterfaces(uint8_t address, CH32RVUsbHostInterfaceInfo 
         fail(CH32RVUsbHostError::NotConnected);
         return 0;
     }
-    const uint16_t len = ch32rv_usb_host_config_descriptor(daddr);
+    CH32RVUsbHostConfigWalk w;
     size_t n = 0;
-    for (uint16_t at = 0; at + 2 <= len && n < maxInterfaces; at = (uint16_t)(at + ch32rv_usb_host_scratch[at])) {
-        const uint8_t *d = &ch32rv_usb_host_scratch[at];
-        if (d[0] < 2 || at + d[0] > len) {
-            break;
-        }
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d && n < maxInterfaces;
+         d = ch32rv_usb_host_config_next(w)) {
         if (d[1] == 4 && d[0] >= 9) {
             CH32RVUsbHostInterfaceInfo &i = interfaces[n++];
             i = CH32RVUsbHostInterfaceInfo();
@@ -1760,14 +2054,11 @@ size_t CH32RVUsbHost::getEndpoints(uint8_t address, CH32RVUsbHostEndpointInfo *e
         fail(CH32RVUsbHostError::NotConnected);
         return 0;
     }
-    const uint16_t len = ch32rv_usb_host_config_descriptor(daddr);
+    CH32RVUsbHostConfigWalk w;
     size_t n = 0;
     uint8_t itf = 0;
-    for (uint16_t at = 0; at + 2 <= len && n < maxEndpoints; at = (uint16_t)(at + ch32rv_usb_host_scratch[at])) {
-        const uint8_t *d = &ch32rv_usb_host_scratch[at];
-        if (d[0] < 2 || at + d[0] > len) {
-            break;
-        }
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d && n < maxEndpoints;
+         d = ch32rv_usb_host_config_next(w)) {
         if (d[1] == 4 && d[0] >= 9) {
             itf = d[2];
         } else if (d[1] == 5 && d[0] >= 7) {

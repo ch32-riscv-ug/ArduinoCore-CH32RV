@@ -1,24 +1,22 @@
-/* Another CH32RV board as the USB device for tests/peer/usb/host/storage: mass storage, MIDI, a vendor interface
- * with requests both ways, and a smart card reader (CCID) whose card comes and goes. The DUT (CH32RVUsbHost) is
- * the host; this board runs CH32RVUsbDevice on the controller the bench record names (build_opt.h:
- * PEER_USB_CONTROLLER, written by run_hardware.py).
- *
- * What peer_pico has and this cannot yet: a second logical unit (CH32RVUsbDeviceMsc has one: maxLun() is 0), and
- * the sense of a failed read (TinyUSB's device reports 02/3A/00 for any; CH32RVUsbDeviceMsc reports its own). So
- * place.py skips usb-peer-host-storage with this peer (CH32RV_PEER_LACKS); the rest is here for when it can run.
+/* Another CH32RV board as the USB device for tests/peer/usb/host/storage: mass storage with two logical units,
+ * MIDI, a vendor interface with requests both ways, and a smart card reader (CCID) whose card comes and goes. The
+ * DUT (CH32RVUsbHost) is the host; this board runs CH32RVUsbDevice on the controller the bench record names
+ * (build_opt.h: PEER_USB_CONTROLLER, written by run_hardware.py).
  *
  * Commands, one per line on the debug probe's console (SerialDMSeq); answers start "CD " (peer_pico's "PD "):
  *   ?                     CD READY <configured 0/1>
- *   media <lun> <0|1>     CD MEDIA <lun> <0|1>  (unit 0 ready or not: 02/3A/00 while not; there is no unit 1)
+ *   media <lun> <0|1>     CD MEDIA <lun> <0|1>  (the unit ready or not: 02/3A/00 while not)
  *   midiraw <hex>         CD MIDIRAW <ok>       (USB-MIDI event packets, 4 bytes each, sent as they are)
  *   midilast              CD MIDILAST <hex>     (the packets received since the last midilast)
  *   vlast                 CD VLAST <wValue> <wIndex> <hex>  (the last vendor request 0x11 OUT)
  *   card <0|1>            CD CARD <0|1>         (the card taken out or put in: NotifySlotChange)
  *
- * Without a command: logical unit 0 is 64 blocks of (LBA ^ offset) - its block 13 fails to read - kept as
- * written in a few blocks of RAM (the smaller parts have no room for all 64); a note-on comes back with its note
- * raised by 12 (other MIDI packets are only recorded); vendor request 0x10 (IN) answers "CH32RV"; the card answers
- * an APDU reversed then 90 00, and an Escape with its bytes. */
+ * Without a command: logical unit 0 is 64 blocks of (LBA ^ offset) - its block 13 fails to read, with the sense
+ * peer_pico's TinyUSB reports for any failed read (02/3A/00, set here with setSense()) - and unit 1 is 16 blocks
+ * of 0xA5 (each a CH32RVUsbDeviceMsc, as peer_pico's units); both keep what is written in a few blocks of RAM (the
+ * smaller parts have no room for all 80); a note-on comes back with its note raised by 12 (other MIDI packets are
+ * only recorded); vendor request 0x10 (IN) answers "CH32RV"; the card answers an APDU reversed then 90 00, and an
+ * Escape with its bytes. */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
@@ -30,7 +28,8 @@
 #define PEER_USB_CONTROLLER CH32RVUsbController::Auto
 #endif
 
-CH32RVUsbDeviceMsc msc;
+CH32RVUsbDeviceMsc msc;    /* LUN 0 */
+CH32RVUsbDeviceMsc msc1;   /* LUN 1 */
 CH32RVUsbDeviceMidi midi;
 CH32RVUsbDeviceVendor vendor;
 CH32RVUsbDeviceCcid ccid;
@@ -47,44 +46,72 @@ static void say(const char *format, ...)
     SerialDMSeq.print(text);
 }
 
-/* ------------------------------------------------------------ mass storage: unit 0 */
-static const uint32_t BLOCKS = 64;
+/* ------------------------------------------------------------ mass storage: units 0 and 1 */
+static const uint32_t BLOCKS[2] = {64, 16};
 static const uint8_t SLOTS = 4;
 static uint8_t slotData[SLOTS][512];
 static uint32_t slotLba[SLOTS];
+static uint8_t slotLun[SLOTS];
 static bool slotUsed[SLOTS];
 
-static int slotOf(uint32_t lba, bool make)
+/* A block as it is until written: unit 0 (LBA ^ offset), unit 1 0xA5. */
+static uint8_t initial(uint8_t lun, uint32_t lba, uint32_t k) { return lun ? 0xA5 : (uint8_t)(lba ^ k); }
+
+static int slotOf(uint8_t lun, uint32_t lba, bool make)
 {
     for (uint8_t i = 0; i < SLOTS; i++)
-        if (slotUsed[i] && slotLba[i] == lba) return i;
+        if (slotUsed[i] && slotLun[i] == lun && slotLba[i] == lba) return i;
     if (!make) return -1;
     for (uint8_t i = 0; i < SLOTS; i++)
         if (!slotUsed[i]) {
             slotUsed[i] = true;
+            slotLun[i] = lun;
             slotLba[i] = lba;
-            for (uint32_t k = 0; k < 512; k++) slotData[i][k] = (uint8_t)(lba ^ k);
+            for (uint32_t k = 0; k < 512; k++) slotData[i][k] = initial(lun, lba, k);
             return i;
         }
     return -1;
 }
 
-static int32_t read0(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+static int32_t readUnit(uint8_t lun, uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
 {
-    if (lba == 13 || lba >= BLOCKS || offset + size > 512) return -1;   /* 13: the data stage stalls */
-    const int s = slotOf(lba, false);
+    if (lba >= BLOCKS[lun] || offset + size > 512) return -1;
+    const int s = slotOf(lun, lba, false);
     uint8_t *out = (uint8_t *)buffer;
-    for (uint32_t k = 0; k < size; k++) out[k] = s < 0 ? (uint8_t)(lba ^ (offset + k)) : slotData[s][offset + k];
+    for (uint32_t k = 0; k < size; k++) out[k] = s < 0 ? initial(lun, lba, offset + k) : slotData[s][offset + k];
     return (int32_t)size;
 }
 
-static int32_t write0(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size)
+static int32_t writeUnit(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size)
 {
-    if (lba >= BLOCKS || offset + size > 512) return -1;
-    const int s = slotOf(lba, true);
+    if (lba >= BLOCKS[lun] || offset + size > 512) return -1;
+    const int s = slotOf(lun, lba, true);
     if (s < 0) return -1;
     memcpy(slotData[s] + offset, buffer, size);
     return (int32_t)size;
+}
+
+static int32_t read0(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+{
+    if (lba == 13) {   /* the data stage stalls; the sense is the one peer_pico's TinyUSB gives any failed read */
+        msc.setSense(0x02, 0x3A, 0x00);
+        return -1;
+    }
+    return readUnit(0, lba, offset, buffer, size);
+}
+static int32_t write0(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size)
+{
+    return writeUnit(0, lba, offset, buffer, size);
+}
+
+static int32_t read1(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
+{
+    return readUnit(1, lba, offset, buffer, size);
+}
+
+static int32_t write1(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size)
+{
+    return writeUnit(1, lba, offset, buffer, size);
 }
 
 /* ------------------------------------------------------------ MIDI received */
@@ -172,7 +199,7 @@ static void run(char *cmd)
         const uint8_t lun = (uint8_t)strtoul(arg, &end, 10);
         const bool ready = strtoul(end, nullptr, 10) != 0;
         if (lun == 0) msc.mediaPresent(ready);
-        else say("CD NOTE CH32RVUsbDeviceMsc has one logical unit\n");
+        else if (lun == 1) msc1.mediaPresent(ready);
         say("CD MEDIA %u %u\n", lun, ready ? 1 : 0);
     } else if (!strcmp(cmd, "midiraw")) {
         uint8_t d[48];
@@ -212,8 +239,15 @@ void setup()
     msc.productRevision("1.0");
     msc.onRead(read0);
     msc.onWrite(write0);
-    msc.begin(BLOCKS, 512);
+    msc.begin(BLOCKS[0], 512);
     msc.mediaPresent(true);
+    msc1.vendorID("ch32rv");
+    msc1.productID("CH32RV LUN 1");
+    msc1.productRevision("1.0");
+    msc1.onRead(read1);
+    msc1.onWrite(write1);
+    msc1.begin(BLOCKS[1], 512);
+    msc1.mediaPresent(true);
     vendor.onControlRequest(vendorRequest);
     ccid.onApdu(apdu);
     ccid.onEscape(escape);

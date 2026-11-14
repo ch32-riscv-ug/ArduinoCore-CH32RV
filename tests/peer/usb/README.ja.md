@@ -114,10 +114,7 @@ DUT の USB の口を別の CH32RV の基板の口につなぎ、記録に `usb:
 |---|---|---|
 | isochronous（スピーカー・マイク・カメラ） | CH32RVUsbHost | usb-peer-media を飛ばす |
 | USB のネットワーク（CDC-NCM） | CH32RVUsbHost | usb-peer-net を飛ばす（`net` などは 0 を返す） |
-| 2 つ目の論理ユニット、失敗した読み出しの sense を 02/3A/00 にすること | CH32RVUsbDeviceMsc | usb-peer-host-storage を飛ばす（スケッチは LUN 0 だけで用意） |
-| 文字列は 31 文字、構成記述子は 256 バイトまで（CH32RV_USB_HOST_SCRATCH） | CH32RVUsbHost | usb_contracts の製品名（32 文字）と構成記述子（302 バイト）がはみ出す。相手のスケッチが記述子を読み直して `dev` に出す。256 バイトより後ろのインタフェースにはクラスドライバが付かない見込み（usb_contracts でどれが外れるかは実機で確かめる。DFU_DETACH は相手のスケッチが自分の読んだ記述子から送る） |
-| HID のインタフェースは 1 つだけ、レポート ID はライブラリのもの | CH32RVUsbDevice | host_input の 2 つ目（ブートキーボード）はスケッチ自身の CH32RVUsbDeviceFunction、1 つ目は Pico と同じレポート記述子の CH32RVUsbDeviceHidCustom |
-| RAM（X035 は 20 KB） | 相手の石 | MSC の RAM ディスクは書いたブロックだけを持つ（4 ブロックまで） |
+| RAM（X035 は 20 KB） | 相手の石 | MSC の RAM ディスクは書いたブロックだけを持つ（2 つの LUN で 4 ブロックまで） |
 
 ## 配線と設定
 

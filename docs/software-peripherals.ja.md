@@ -14,8 +14,9 @@ hardware peripheral の代わりを GPIO で実装する library は、次を満
 
 | library | 実装 | 制約 |
 |---|---|---|
-| `SoftSPI` | controller | polling 方式。hardware SPI より CPU を占有する |
-| `SoftWire` | controller | open-drain GPIO を使用。clock stretching と timeout を扱う |
+| `SoftSPI` | controller、peripheral（`SPI_PERIPHERAL`） | polling 方式。hardware SPI より CPU を占有する。peripheral は SCK を polling で追う |
+| `SoftSPISlave` | slave（CS で区切る） | 端子変化の割込み。1 ビット 1 回、縁から半周期のうちに処理する必要がある。SCK と CS は別の EXTI の線 |
+| `SoftWire` | controller、target | open-drain GPIO を使用。clock stretching と timeout を扱う。target は端子変化の割込みで追い、処理の間 SCL を握る。SDA と SCL は別の EXTI の線 |
 | SoftSerial | 未実装 | RX の timing、割り込み競合、error reporting の共通仕様がない |
 | SoftPWM | 未実装 | timer resource manager と hardware PWM の競合を増やすため独立 API にしない |
 

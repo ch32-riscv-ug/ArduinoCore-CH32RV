@@ -119,11 +119,9 @@ uint32_t le32(const uint8_t *p)
 /* Read the reader's class descriptor (0x21 inside the interface). */
 void read_class_descriptor(uint8_t daddr, uint8_t itf)
 {
-    const uint16_t len = ch32rv_usb_host_config_descriptor(daddr);
-    const uint8_t *cfg = ch32rv_usb_host_scratch;
+    CH32RVUsbHostConfigWalk w;
     bool here = false;
-    for (uint16_t at = 0; at + 2 <= len && cfg[at] >= 2; at = (uint16_t)(at + cfg[at])) {
-        const uint8_t *d = cfg + at;
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d; d = ch32rv_usb_host_config_next(w)) {
         if (d[1] == 4) {
             here = d[2] == itf;
         } else if (here && d[1] == 0x21 && d[0] >= 0x36) {
@@ -241,11 +239,10 @@ bool CH32RVUsbHost::ccidOpen(uint8_t address, uint8_t interfaceNumber)
         read_class_descriptor(a, pipe.itf);
         if (pipe.epInt) {
             /* The interrupt endpoint was skipped by the pipe: open it here. */
-            const uint16_t len = ch32rv_usb_host_config_descriptor(a);
-            const uint8_t *cfg = ch32rv_usb_host_scratch;
-            for (uint16_t at = 0; at + 7 <= len && cfg[at] >= 2; at = (uint16_t)(at + cfg[at])) {
-                if (cfg[at + 1] == 5 && cfg[at + 2] == pipe.epInt) {
-                    if (!ch32rv_usb_host_ep_open(a, cfg + at)) {
+            CH32RVUsbHostConfigWalk w;
+            for (const uint8_t *d = ch32rv_usb_host_config_first(w, a); d; d = ch32rv_usb_host_config_next(w)) {
+                if (d[1] == 5 && d[0] >= 7 && d[2] == pipe.epInt) {
+                    if (!ch32rv_usb_host_ep_open(a, d)) {
                         pipe.epInt = 0;
                     }
                     break;

@@ -257,8 +257,14 @@ command (`SW=9000`) are different things.
 ## Sizes and errors
 
 The counts are fixed: 5 devices (a hub and what is behind it), 2 hubs, 4 HID
-interfaces, 2 USB serial ports, 1 MSC, 1 MIDI. Configuration descriptors are
-read up to 256 bytes (interfaces beyond that are not assigned).
+interfaces, 2 USB serial ports, 1 MSC, 1 MIDI. A configuration descriptor of
+any length (up to the 65535 bytes USB allows) is read a window at a time - 256
+bytes, 1024 on H416 / H417 where SuperSpeed's EP0 packet is 512 - fetched
+again from the start with the bytes before the window dropped: no RAM grows
+with the device. A class driver sees a window from its interface on, so one
+function's descriptors (interface, class and endpoint descriptors together)
+are read up to about 190 bytes (510 on H416 / H417); longer configurations
+cost a few more control transfers at enumeration.
 
 The receive buffers have default sizes and take the sketch's own arrays
 instead (there are no build-time settings).
@@ -269,8 +275,12 @@ instead (there are no build-time settings).
 | 256 | the vendor receive ring | `setVendorBuffer()` (before `vendorOpen()`) |
 | 272 | the CCID receive ring and response | `setCcidBuffers()` (before `ccidOpen()`) |
 
-Each HID interface remembers 8 report IDs; a string descriptor is up to 32
-characters, the terminator included.
+Each HID interface remembers 8 report IDs. The manufacturer, product and
+serial strings are kept whole (up to the 126 characters a descriptor carries;
+`CH32RV_USB_HOST_STRING_MAX` 127 with the terminator) in one pool shared by
+the devices - 512 bytes, 1024 on the series with a high-speed host: one
+device's three longest possible strings and the others' usual short ones.
+Only a pool already full cuts a string.
 
 | Error | Meaning |
 |---|---|
