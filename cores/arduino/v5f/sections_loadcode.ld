@@ -12,7 +12,9 @@
  * crt0 copies the ITCM part before it leaves flash. The variant's MEMORY
  * names ITCM.
  */
-__stack_size = DEFINED(__stack_size) ? __stack_size : 2048;
+/* 16 KiB, as the V3F layout (../sections_loadcode.ld has why: 2 KiB let the
+ * OEP probe firmware's stack run over its heap). */
+__stack_size = DEFINED(__stack_size) ? __stack_size : 16384;
 PROVIDE( _stack_size = __stack_size );
 
 PROVIDE( _ch32rv_flash_origin = ORIGIN(FLASH) );
