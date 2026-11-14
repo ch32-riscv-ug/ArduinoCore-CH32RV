@@ -89,7 +89,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   「起こして眠る」だけでもよい（利用者、2026-11-11）。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
 - [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
-  V5F で確かめる。2026-11-13: restart()・WDT・lightSleep()（selfsys）と CH32RV_FLASH_STORE（flash）は V5F で PASS。残りは deepSleep と DFU。
+  V5F で確かめる。2026-11-13: restart()・WDT と CH32RV_FLASH_STORE（flash）は V5F で PASS。2026-11-14: lightSleep()・deepSleep() は
+  それまで H41x では未対応を返していた（selfsys は skip）。RTC（F1 型。BDCTLR は 0x24 でビットの位置が違い、BKP のデータ
+  レジスタが無いので RAM に置く）とストップ（V3F も待機中はストップ）を入れ、nano で V5F・V3F とも selfsys（RTC、200 ms の
+  lightSleep）が通り、2.5 秒の lightSleep で石がストップに入ってクロックを立て直すこと、deepSleep のあとタイマーの起床で
+  再起動することを確かめた。残りは端子での起床（system の case、6-2）と DFU。
 - [ ] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
   0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
 - [ ] 利用者向けの文書: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは

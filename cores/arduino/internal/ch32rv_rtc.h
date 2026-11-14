@@ -1,5 +1,5 @@
 /* The RTC as the wall clock, on the families with the F1-style RTC (V20x,
- * V205, V30x, L103 / M103): time() / gettimeofday() / settimeofday()
+ * V205, V30x, L103 / M103, H41x): time() / gettimeofday() / settimeofday()
  * read and write it (syscalls.c), so the time survives a reset and standby
  * while the chip keeps power, and the low-power code wakes on its alarm.
  *
@@ -10,7 +10,10 @@
  *     divider, plus an offset settimeofday() keeps (the divider cannot be
  *     written), so gettimeofday() resolves milliseconds.
  *   - BKP DR1-DR4 are the core's: a marker, the prescaler (two words) and the
- *     offset. DR5 and up are free for sketches.
+ *     offset. DR5 and up are free for sketches. CH32H41x has the same RTC
+ *     but no BKP data registers: the three are a .noinit record there, kept
+ *     through every reset that leaves RAM powered (a power cycle with VBAT
+ *     keeps the RTC running but loses the record, and the RTC starts over).
  *   - Once started the RTC keeps counting through every reset that leaves
  *     power on; a power cycle (with no VBAT) starts it again at 1970. */
 #pragma once
@@ -23,7 +26,8 @@
 #if defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || \
     defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || \
     defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || defined(CH32RV_SERIES_CH32L103) || \
-    defined(CH32RV_SERIES_CH32M103)
+    defined(CH32RV_SERIES_CH32M103) || defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || \
+    defined(CH32RV_SERIES_CH32H417)
 #define CH32RV_HAS_RTC 1
 #endif
 

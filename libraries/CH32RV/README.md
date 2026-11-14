@@ -77,12 +77,12 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 
 - **Supported families.**
   - V003, V00x and X033/X035, woken by the AWU.
-  - V20x, V205, V30x and L103/M103, woken by the RTC alarm; they sleep in stop.
+  - V20x, V205, V30x, L103/M103 and H41x, woken by the RTC alarm; they sleep in stop. H41x's stop takes both cores: the V3F waits in it while the V5F runs the sketch (and with the V3F build, the V5F is never started); its regulator stays in normal mode. Its pin wakeup is not yet checked on a board.
   - Elsewhere the calls return `CH32RV_SLEEP_UNSUPPORTED`.
 - **On the RTC families `time()` is the RTC.**
   - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.
   - `settimeofday()` sets it, including through SNTP's `configTime()`.
-  - BKP DR1-DR4 are the core's.
+  - BKP DR1-DR4 are the core's. H41x has no BKP data registers: the core keeps them in RAM, which a reset keeps, so after a power cut with a VBAT battery its RTC starts again too.
 - **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.
 - **`millis()` counts the sleep.** The AWU measures the time asleep, and the core adds it.
   - On the AWU families a pin wake part-way through cannot be measured. It adds nothing and moves `timeDomain()` on instead. The RTC families measure it with the RTC.
@@ -91,7 +91,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - just before sleeping it stretches the IWDG to its longest;
   - it wakes every half of that to feed it, and nothing else runs;
   - on waking it puts back the `wdtEnable()` setting.
-- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families when only the timer wakes it and the watchdog is off. Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
+- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x (which has no standby) when only the timer wakes it and the watchdog is off. Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
 - **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
 
 The design and the measurements are in sections 4.3 and 5.1 of

@@ -100,10 +100,14 @@ _start:
  * its own CSR values; when the function returns it waits again. */
 /* wfi as wait-for-event (PFIC_SCTLR.WFITOWFE): the V5F's SETEVENT wakes it.
  * A plain wfi never woke (its interrupts are off), and polling the mailbox
- * without a pause stalls the V5F on the shared SRAM. */
+ * without a pause stalls the V5F on the shared SRAM. SLEEPDEEP too: the
+ * chip stops only when both cores are in stop, so a V5F's lightSleep()
+ * (ch32rv_power.c) stops it while the V3F waits here, as the EVT's V3F
+ * waits in PWR_EnterSTOPMode(WFE). While the V5F runs, the V3F's stop is
+ * only a wait like before. */
     li      t1, 0xE000ED10
     lw      t2, 0(t1)
-    ori     t2, t2, 0x08
+    ori     t2, t2, 0x0C
     sw      t2, 0(t1)
 1:
     wfi

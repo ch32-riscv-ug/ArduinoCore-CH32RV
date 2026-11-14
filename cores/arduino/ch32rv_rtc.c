@@ -6,10 +6,20 @@
 
 #ifdef CH32RV_HAS_RTC
 
+#if defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
+/* H41x: one register more before it in RCC, and its fields lower (RTCEN 8,
+ * RTCSEL 7:6; the reference manual's 3.4.10). */
+#define RCC_BDCTLR      CH32RV_REG32(0x40021024u)
+#define BDCTLR_RTCSEL   (3u << 6)
+#define BDCTLR_LSI      (2u << 6)
+#define BDCTLR_RTCEN    (1u << 8)
+#define RTC_STORE_RAM   1
+#else
 #define RCC_BDCTLR      CH32RV_REG32(0x40021020u)
 #define BDCTLR_RTCSEL   (3u << 8)
 #define BDCTLR_LSI      (2u << 8)
 #define BDCTLR_RTCEN    (1u << 15)
+#endif
 #define BDCTLR_BDRST    (1u << 16)
 #define PWR_CTLR        CH32RV_REG32(0x40007000u)
 #define PWR_CTLR_DBP    (1u << 8)
@@ -19,8 +29,27 @@
 #define RTC_CTLRL_CNF   (1u << 4)
 #define RTC_CTLRL_RTOFF (1u << 5)
 #define RTC_CTLRH_ALRIE (1u << 1)
-#define BKP_DR(n)       CH32RV_REG16(0x40006C00u + 4u * (n))
 #define BKP_MARKER      0xC32Bu
+#ifdef RTC_STORE_RAM
+/* No BKP data registers (CH32H41x): the core's four words in RAM that no
+ * startup touches, with a check word so that RAM's power-on contents never
+ * pass for them. */
+static volatile struct {
+    uint16_t dr[5];
+    uint16_t check;
+} rtc_store __attribute__((section(".noinit")));
+static uint16_t store_sum(void)
+{
+    return (uint16_t)(rtc_store.dr[1] ^ rtc_store.dr[2] ^ rtc_store.dr[3] ^ rtc_store.dr[4] ^ 0x5A3Cu);
+}
+#define BKP_DR(n)       (rtc_store.dr[(n)])
+#define BKP_SEAL()      (rtc_store.check = store_sum())
+#define BKP_VALID()     (rtc_store.check == store_sum())
+#else
+#define BKP_DR(n)       CH32RV_REG16(0x40006C00u + 4u * (n))
+#define BKP_SEAL()      ((void)0)
+#define BKP_VALID()     1
+#endif
 
 static uint8_t rtc_up;
 static uint32_t rtc_psc;        /* prescaler: RTCCLK ticks per second - 1 */
@@ -84,7 +113,7 @@ int ch32rv_rtc_begin(void)
     for (uint32_t spin = 0; !(CH32RV_RCC_RSTSCKR & 2u) && spin < 1000000u; spin++) {
     }
     if ((RCC_BDCTLR & (BDCTLR_RTCSEL | BDCTLR_RTCEN)) == (BDCTLR_LSI | BDCTLR_RTCEN) &&
-        BKP_DR(1) == BKP_MARKER) {
+        BKP_DR(1) == BKP_MARKER && BKP_VALID()) {
         /* Running since an earlier boot: leave it counting. */
         rtc_psc = BKP_DR(2) | ((uint32_t)BKP_DR(3) << 16);
         ch32rv_rtc_resync();
@@ -93,8 +122,16 @@ int ch32rv_rtc_begin(void)
     }
     RCC_BDCTLR |= BDCTLR_BDRST;
     RCC_BDCTLR &= ~BDCTLR_BDRST;
-    RCC_BDCTLR = BDCTLR_LSI;
+    /* Each field read back before the next write: on CH32H417 RTCSEL written
+     * right after the reset was lost (RTCEN alone stuck, the RTC had no clock;
+     * its EVT waits ten NOPs between the two, 2026-11-14). */
+    for (uint32_t spin = 0; (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI && spin < 1000u; spin++) {
+        RCC_BDCTLR = BDCTLR_LSI;
+    }
     RCC_BDCTLR |= BDCTLR_RTCEN;                /* a write of its own, or it does not stick */
+    for (uint32_t spin = 0; !(RCC_BDCTLR & BDCTLR_RTCEN) && spin < 1000u; spin++) {
+        RCC_BDCTLR |= BDCTLR_RTCEN;
+    }
     ch32rv_rtc_resync();
     const uint32_t lsi = measure_lsi();
     rtc_psc = (lsi ? lsi : 40000u) - 1u;
@@ -108,6 +145,7 @@ int ch32rv_rtc_begin(void)
     BKP_DR(3) = (uint16_t)(rtc_psc >> 16);
     BKP_DR(4) = 0;
     BKP_DR(1) = BKP_MARKER;
+    BKP_SEAL();
     rtc_up = 1;
     return 1;
 }
@@ -154,6 +192,7 @@ void ch32rv_rtc_set(uint32_t sec, uint32_t ms)
     RTC(0x1C) = (uint16_t)cnt;
     config_end();
     BKP_DR(4) = (uint16_t)off;
+    BKP_SEAL();
 }
 
 void ch32rv_rtc_alarm(uint32_t sec)

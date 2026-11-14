@@ -49,6 +49,12 @@ static volatile struct {
 #define AWU_NOMINAL_HZ (48000000u / 1024u)
 #endif
 
+#if defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
+#define POWER_H41X 1          /* stop and sleep only: no standby, a PWR_CSR of its own */
+#else
+#define POWER_H41X 0
+#endif
+
 #if !defined(POWER_AWU) && defined(CH32RV_HAS_RTC)
 /* Stop (RAM kept, resumes) woken by the RTC alarm on EXTI line 17; standby
  * (RAM lost, wakes through a reset) for deepSleep(). V307 2026-10-28: the
@@ -220,6 +226,12 @@ static void deep_wfi(void)
      * stop in mode 1 (LPDS clear) - mode 3's lower current is a TODO. */
 #if defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || defined(CH32RV_SERIES_CH32V205)
     PWR_CTLR &= ~(PWR_CTLR_PDDS | PWR_CTLR_LPDS);
+#elif POWER_H41X
+    /* H41x: no PDDS (its bit is reserved) and the regulator kept in normal
+     * mode: LPDS wants SYSCLK on HSI and VDDK lowered first (the EVT's
+     * Stop_Mode_RTC_WakeUp). Stop takes effect only with both cores in it:
+     * the V3F waits for work in it (crt0_ch32.S). */
+    PWR_CTLR &= ~PWR_CTLR_LPDS;
 #else
     PWR_CTLR = (PWR_CTLR & ~PWR_CTLR_PDDS) | PWR_CTLR_LPDS;
 #endif
@@ -524,7 +536,7 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
         ch32rv_wake_cause = (uint8_t)wake_record.cause;
     }
     wake_record.magic = 0;
-#if POWER_RTC
+#if POWER_RTC && !POWER_H41X
     /* Out of standby (RAM was lost, so this is the only trace): it was
      * entered for a timer only (ch32rv_power_standby()). The PWR clock
      * first, or the flags read 0. */
@@ -544,7 +556,7 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
 
 int ch32rv_power_can_standby(void)
 {
-#if POWER_RTC
+#if POWER_RTC && !POWER_H41X
     return ch32rv_power_wake.timer_ms && !ch32rv_power_wake.pins;
 #else
     return 0;
@@ -553,7 +565,7 @@ int ch32rv_power_can_standby(void)
 
 void ch32rv_power_standby(void)
 {
-#if POWER_RTC
+#if POWER_RTC && !POWER_H41X
     ch32rv_rtc_begin();
     if (ch32rv_serial_sleep_prepare) {
         ch32rv_serial_sleep_prepare();
