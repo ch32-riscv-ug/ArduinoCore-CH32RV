@@ -80,7 +80,7 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | 契約 | 実装 | 現行の試験 / 旧検証の参考 | 不足する保証 / 必要設備 |
 |---|---|---|---|
 | UART TX/RX、設定、buffer | あり | 現行: uart::test_uart_contract（独立 UART と往復）・test_uart_output_only・test_uart_formats（9600〜1 Mbaud、8E1・8O1・8N2・7E1・7O1、WireSkein で線の上）・test_uart_receive_errors（parity・frame・break・buffer full・overrun）、periph::test_serial_routes（Serial の route ごと）、selfbus（自己検査） | 全 instance、reset の対象整理 |
-| Wire master 正常通信 | あり | 現行: wire::test_wire_output_only（クロックの問い: 20〜400 kHz の SCL）、wire::test_wire_repeated_start（取引の問い: プローブの i2c-target と repeated START・読み書き、20 kHz） | instance/route、buffer 境界、別実装 driver 互換、400 kHz を超えるクロック |
+| Wire master 正常通信 | あり | 現行: wire::test_wire_output_only（クロックの問い: 20 kHz〜3.4 MHz の SCL、頼んだより速くないこと）、wire::test_wire_repeated_start（取引の問い: プローブの i2c-target と repeated START・読み書き、20 kHz） | instance/route、buffer 境界、別実装 driver 互換 |
 | Wire master NACK/timeout/recovery | あり | 現行: アドレスの NACK のみ（wire::test_wire_output_only、selfbus::test_i2c_nack） | データの NACK、timeout、バスの回復、clock stretch。SDA を握る・NACK を返す peer |
 | Wire slave 受信・応答 | あり | 現行: wire::test_wire_slave（プローブの i2c-controller が独立 master、100 kHz。onReceive / onRequest の順と中身、repeated START の register read、0xFF の埋め、32 バイトの頭、別の番地） | callback 文脈、復旧 |
 | SoftWire master | あり | 現行: softwire::test_wire_output_only・test_wire_repeated_start（wire と同じ問いを任意の 2 本で） | stretch、NACK、timeout/recovery |

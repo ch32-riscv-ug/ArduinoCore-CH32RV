@@ -1,9 +1,11 @@
 """wire (case wire): Wire, the board's I2C (a hardware one, or a SoftWire when the fqbn sets it to Software); softwire
 (case softwire): a SoftWire. tests/sketch_support/wire/wire.ino.
 
-Two questions, kept apart (2026-11-14, the user): the clock - for each of 20, 50, 100 and 400 kHz, whether the SCL
-on the wire is what setClock() asked, for the hardware Wire and for SoftWire alike, judged where nothing but the DUT
-drives - and the transactions - repeated START, reads and writes against a target - run at 20 kHz, where the bench's
+Two questions, kept apart (2026-11-14, the user): the clock - setClock() of 20 kHz to 3.4 MHz, the SCL on the wire
+measured for the hardware Wire and for SoftWire alike where nothing but the DUT drives, and judged from what was
+measured, no I2C mode chosen: never faster than asked (what the core promises), and within 10 % of it for clocks of at
+most a fifth of the fastest SCL of the run (this part's and these lines' ceiling, measured here), which shows the
+setting is right; how much the lines slow the rest is physics, not promised - and the transactions - repeated START, reads and writes against a target - run at 20 kHz, where the bench's
 slow lines settle. The resident bench pulls the lines up with the probe's pads alone (P4, about 45 kOhm):
 their rises take microseconds, beyond I2C's 1 us, and the probe's input reads high only from 0.75 VDD, above the
 DUT's Schmitt inputs, so at 100 kHz a released SDA reads low at the probe while the DUT reads it high
@@ -15,8 +17,8 @@ those at start-up). Without them the test skips, naming what is missing.
 
 wire.output-only runs first with no target: the probe only pulls the two lines up (its pads' input pull-ups) and
 captures them, so what is seen is the DUT's own. At each clock, for two addresses the sketch writes
-one byte with endTransmission(true): on the wire S, the address with no acknowledge, P, SCL within 10 % of the clock
-asked (WireSkein's i2c), and endTransmission() returns 2 (compared here).
+one byte with endTransmission(true): on the wire S, the address with no acknowledge, P (WireSkein's i2c), and
+endTransmission() returns 2 (compared here); the SCL WireSkein measured is judged as above and recorded with the run.
 
 wire.repeated-start then makes the OEP probe's i2c-target (its own pull-ups) the target at 0x42, at 20 kHz: the sketch writes
 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n, stop) and writes 0x20 with
@@ -44,23 +46,20 @@ from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
 
 ADDRESS = 0x42
-SPEEDS_HZ = (20_000, 50_000, 100_000, 400_000)   # wire.output-only: the clocks whose SCL is measured
+# wire.output-only: the clocks asked, up to High-speed mode's 3.4 MHz. What a part and the bench's lines reach is
+# measured, not assumed: the fastest SCL any of them gave is the ceiling the others are judged against.
+SPEEDS_HZ = (20_000, 50_000, 100_000, 400_000, 1_000_000, 3_400_000)
+FASTER_REL = 0.03         # never faster than asked (the core's promise): the measurement's and the oscillator's error
+NEAR_SHARE = 0.2          # clocks at most this share of the ceiling: the lines' rise is small against the period there,
+NEAR_REL = 0.1            # so the clock comes out within this of what was asked - the setting is right
 PROTOCOL_HZ = 20_000      # wire.repeated-start: the transactions, where the bench's slow lines settle
-# tests/README.ja.md 取り込みの速さ: T = the shortest SCL half period measured, 1.25 us at 400 kHz, 16 / T. The i2c
-# check's 50 ns spikes are below 5 / T here: unchecked until WireSkein drops pulses under spike_max_s before decoding -
-# at 100 MS/s the bench's slow rises bounce (10-190 ns) and its decode counts them as clocks (2026-11-14, asked of it).
-RATE = 20_000_000
-
-
-def clock_expectation(hz, soft):
-    """What the SCL frequency is held to (WireSkein's i2c freq_hz / freq_rel; scl_hz is measured either way).
-    Hardware: 10 % up to 100 kHz; 25 % at 400 kHz, where the resident bench's slow rises (the probe's 45 k pull-ups
-    alone) stretch each high - a controller counts the high from when it sees SCL high - so a sound part reads
-    322-394 kHz there (2026-11-14). SoftWire: 10 % at 20 kHz; above it the CPU and the line set the ceiling (V003
-    about 60 kHz, X035 about 41 kHz, V205 about 245 kHz), so the speed is measured, not judged."""
-    if soft:
-        return {"freq_hz": hz, "freq_rel": 0.1} if hz <= 20_000 else {}
-    return {"freq_hz": hz, "freq_rel": 0.1 if hz <= 100_000 else 0.25}
+# tests/README.ja.md 取り込みの速さ: T = the shortest SCL half period asked, 147 ns at 3.4 MHz: 100 MS/s is 14.7 / T
+# (the slower clocks get more; two lines stream up to 160 MS/s, oep-probe-arduino docs/guide/capture.ja.md). The i2c
+# check's 50 ns spikes are 5 / T at this rate. WireSkein 0.0.28 reads I2C as a spec input (it drops pulses under
+# 50 ns, reads a slow edge's many crossings as one, restores a clock the lines hid: notices slow_edge,
+# clock_restored), so the bench's 10-190 ns bounces are no longer counted as clocks; captured without a glitch
+# filter or hysteresis, as its docs/capturing section 2 advises for slow I2C.
+RATE = 100_000_000
 
 
 def settings(test_file):
@@ -135,8 +134,7 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                     ask(dut, f"clock {hz}", rb"CLOCK (\d+)")
                     for address in (ADDRESS, 0x13):
                         want = [i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
-                                                             "start": "S", "end": "P"}],
-                                    **clock_expectation(hz, soft)),
+                                                             "start": "S", "end": "P"}]),
                                 starts(idle), ends(idle)]
                         name = f"{hz // 1000} kHz, address 0x{address:02x}, no target"
                         with ws_run.section(2, name, expect=want):
@@ -153,7 +151,49 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
             gpio.configure(ch, Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
     record_property("results", json.dumps(results))
-    assert all(r == 2 for r in results.values()), f"endTransmission() gave {results}, not 2 (address NACK)"
+    wrong = [f"endTransmission() gave {results}, not 2 (address NACK)"] if any(r != 2 for r in results.values()) else []
+    wrong += judge_clocks(ws_run, record_property)
+    assert not wrong, " | ".join(wrong)
+
+
+def judge_clocks(ws_run, record_property):
+    """The SCL WireSkein measured in each section (its i2c decode's scl_hz), judged here and recorded with the run
+    (ws_run.result). What the core promises: never faster than asked - a hardware CCR rounded up, every SoftWire half
+    at least the half asked - so no SCL above the clock asked. What it does not: how much the lines slow it (their
+    rise, the bench's 45 k pull-ups) and SoftWire's ceiling (the CPU's). The fastest SCL of the run is taken as this
+    part's and these lines' ceiling, measured here rather than known; clocks of at most a fifth of it must come out
+    within 10 % of what was asked, which shows the setting is right."""
+    from wireskein.verify import check_i2c
+    got, where = {}, {}                             # hz -> [measured scl_hz], [section paths]
+    for seg in ws_run.sections():
+        name = seg["path"].rsplit("/", 1)[-1]
+        if " kHz, address" not in name or seg["capture"] is None:
+            continue
+        hz = int(name.split(" kHz")[0]) * 1000
+        pins = seg["path"].split("/")[0].split()[-2:]          # "... output only <sda> <scl>"
+        _ok, measured, _why = check_i2c(seg["capture"], {"scl": pins[1], "sda": pins[0]})
+        if measured.get("scl_hz"):
+            got.setdefault(hz, []).append(measured["scl_hz"])
+            where.setdefault(hz, []).append(seg["path"])
+    if not got:
+        return ["no SCL measured in any section"]
+    ceiling = max(max(v) for v in got.values())
+    record_property("scl_hz", json.dumps({str(hz): [round(x) for x in v] for hz, v in sorted(got.items())}))
+    record_property("scl_ceiling_hz", round(ceiling))
+    wrong = []
+    for hz in sorted(got):
+        for value, path in zip(got[hz], where[hz]):
+            why = []
+            if value > hz * (1 + FASTER_REL):
+                why.append(f"{value:.0f} Hz is faster than the {hz} Hz asked")
+            if hz <= ceiling * NEAR_SHARE and value < hz * (1 - NEAR_REL):
+                why.append(f"{value:.0f} Hz is more than {NEAR_REL:.0%} under the {hz} Hz asked, at under "
+                           f"{NEAR_SHARE:.0%} of the ceiling {ceiling:.0f} Hz")
+            ws_run.result(path, "clock", "ng" if why else "ok",
+                          measured={"scl_hz": round(value), "asked_hz": hz, "ceiling_hz": round(ceiling)},
+                          reason="; ".join(why))
+            wrong += [f"{hz // 1000} kHz: " + w for w in why]
+    return wrong
 
 
 def test_wire_repeated_start(dut, oep_host, ws_run, record_property):
