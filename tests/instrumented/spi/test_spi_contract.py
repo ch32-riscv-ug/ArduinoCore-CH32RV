@@ -181,6 +181,10 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
                 with ws_run.section(2, name, expect=want):
                     target.configure(mode=mode, bit_order=lsb)
                     target.arm(5, armed)
+                    # The probe's spi-target is not always ready when arm() returns: on 6-2 (H417, which clocks
+                    # within a few ms of the command) one transfer in 4-9 sent wrong MISO bits from the 4th byte on,
+                    # the wire itself wrong (WireSkein), in any mode; 50 ms after arm, 4 runs of 9 transfers pass.
+                    wait(0.05)
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
                     ws_run.command(command)
                     dut.write(command + "\n")
