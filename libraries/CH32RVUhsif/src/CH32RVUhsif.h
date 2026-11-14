@@ -4,11 +4,14 @@
  * publishes no registers, only a binary library, so this one is our own,
  * built from measurements on CH32H417 (2026-11-11).
  *
- * Covered (and measured): the data lines as inputs, the internal clock
- * (SYSCLK or the 480 MHz USBHS PLL, divided by 1-64), the state machine, the data counter,
- * up to four threads each writing a ring of buffers, and an interrupt raised
- * by the state machine. Not covered: driving the bus (output), an external
- * clock, the control lines as outputs, 8- and 32-bit widths.
+ * Covered (and measured): the data lines as inputs (8, 16 or 32 of them),
+ * the internal clock (SYSCLK or the 480 MHz USBHS PLL, divided by 1-64), the
+ * state machine, the data counter, the data and control comparators (a
+ * pattern or edge trigger, keep only the changes), up to four threads each
+ * writing a ring of buffers, and an interrupt raised by the state machine.
+ * Not covered: driving the bus (output), an external clock, the control
+ * lines as outputs, a 24-bit bus (docs/h417-uhsif.ja.md has what else the
+ * block does and does not have).
  *
  *     CH32RVUhsif uhsif;
  *     uhsif.begin(1);                          // SYSCLK / 2 = 200 MHz
@@ -18,9 +21,17 @@
  *     uhsif.onInterrupt([] { ... });
  *     uhsif.start();
  *
- * The data lines: DATA0-15 = PD10-PD15, PF0-PF2, PC6-PC9, PA13-PA15 (UHSIF
- * PORT16-31). They are read whatever their pin mode (input, an alternate
- * function or GPIO output); begin() leaves them alone.
+ * The data lines: DATA0-15 = PD10-PD15, PF0-PF2, PC6-PC9, PA13-PA15, and
+ * on a 32-bit bus DATA16-31 = PC10-PC12, PD0-PD7, PF3-PF5, PE0, PE1 (UHSIF
+ * PORT16-47; an 8-bit bus is DATA0-7 = PD10-PD15, PF0, PF1). They always
+ * start at PORT16, in this order: the block cannot take other pins or another
+ * order. They are read whatever their pin mode (input, an alternate function
+ * or GPIO output); begin() leaves them alone.
+ *
+ * The control lines CTRL0-15 are UHSIF PORT15 down to PORT0: CTRL0 = PB14,
+ * CTRL1-4 = PB13-PB10, CTRL5-12 = PE15-PE8, CTRL13 = PE7, CTRL14 = PF13,
+ * CTRL15 = PF12 (with AFIO's UHSIF_PORT_RM = 0). A state can look at them
+ * (Ctrl0 + n) and at the control comparator over them.
  *
  * States and transitions: each clock, the machine leaves its state by its
  * right transition when `goRight` (a truth table over the state's four
@@ -40,6 +51,8 @@
 enum class CH32RVUhsifInput : uint8_t {
     Ctrl0 = 0,             /* CTRL0..CTRL15: Ctrl0 + n */
     DataCountHit = 20,     /* the data counter is at its limit */
+    ControlMatch = 21,     /* the control comparator (setControlMatch()) */
+    DataMatch = 23,        /* the data comparator (setDataMatch() / setDataChange()) */
     DmaReady = 26,         /* the current thread's socket can take data */
     One = 28,              /* always 1 */
 };
@@ -98,6 +111,30 @@ public:
     /* Program the state machine (before start()). */
     bool setStates(const CH32RVUhsifState *states, uint8_t count, const CH32RVUhsifTransition &start);
 
+    /* The data bus width, 8, 16 or 32 bits (16 after begin()): a sample is
+     * that many data lines from DATA0 up, and takes 1, 2 or 4 bytes in the
+     * buffers (8-bit samples four to a word, DATA0 in the low byte). The data
+     * counter counts samples whatever the width. Measured at 100, 200 and
+     * 400 MS/s for one buffer at a time; streaming needs the bytes per
+     * second the width makes (200 MS/s: 200, 400 or 800 MB/s). Before
+     * start(). */
+    bool setBusWidth(uint8_t bits);
+    uint8_t busWidth() const { return _busBits; }
+
+    /* The data comparator, read by a state as DataMatch. setDataMatch(): true
+     * while the data lines under `mask` equal `value` (a pattern; wait for
+     * not-match then match to trigger on an edge). setDataChange(): true when
+     * a line in `watch` changed since the clock before (push only then to
+     * keep the changes alone: their times are not kept). Both compare the
+     * pins as they are, not the latched sample, and need no running
+     * machine. Before start(); setDataMatch(0, 0) is always true. */
+    bool setDataMatch(uint32_t value, uint32_t mask);
+    bool setDataChange(uint32_t watch);
+    /* The control comparator over CTRL0-15, read as ControlMatch: true while
+     * the control lines under `mask` equal `value`. A trigger from pins that
+     * are not on the data bus. */
+    bool setControlMatch(uint16_t value, uint16_t mask);
+
     /* The data counter: +1 on CountData, 0 on ResetDataCount; DataCountHit
      * reads 1 once it reaches `limit` (it stays there until ResetDataCount).
      * With the alternating machines of the examples, a thread pushes limit +
@@ -145,6 +182,7 @@ private:
 
     CH32RVCallback<void()> _onInterrupt;
     uint8_t _divider = 0;
+    uint8_t _busBits = 16;
     CH32RVUhsifClock _source = CH32RVUhsifClock::Sysclk;
     bool _begun = false, _running = false;
     uint8_t _threads = 0;                 /* bit n: setRing(n) done */

@@ -65,6 +65,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   （uart は `usart1=fix_pb6_pb7`）。見つかったもの: V5F で flash に書いたページが消えたままだった（V5F が書き込みを溜めていた。
   データを書くたびと PG_STRT の前に fence）。synckit のスケッチはタイマーの分周を F_CPU で計算していた（V5F では HCLK の 4 倍）。
   LinkE の台でも gpio の case を選んでいた（OEP の治具が要る）。peer の case はまだ（H417 の USB の相手がベンチに無い）。
+- [x] UHSIF の FX3 由来の機能を確かめた（2026-11-14、docs/h417-uhsif.ja.md の「FX3 由来の機能の確認」）。幅 8 / 16 / 32、データと
+  制御線の比較器（トリガー、変化だけ積む）は動く。端子とビットの自由な対応、直列の入出力、CRC、繰り返し回数、DDR は無いか効かない。
+  CH32RVUhsif に `setBusWidth()`、`setDataMatch()`、`setDataChange()`、`setControlMatch()` と例 UhsifTrigger を入れた。
+- [x] H41x の Clock Source（25 MHz の水晶、既定）。HSI の約 1% のずれが UHSIF や HSADC の速さに出ていた（[oep] の依頼、2026-11-14）。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。

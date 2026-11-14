@@ -29,7 +29,7 @@
 | 高速 ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.ja.md) | HsAdcRead → HsAdcStream |
 | タイマーの入力（周期・パルス幅、エンコーダ） | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.ja.md) | PulseMeasure / RotaryEncoder |
 | GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicPulseDecode(全系列)/ LogicBurst → LogicStream(H41x) / LogicUhsif(H41x、UHSIF で 200 MS/s) |
-| UHSIF の状態機械 | [CH32RVUhsif](../libraries/CH32RVUhsif/README.ja.md) | UhsifStates(H41x) |
+| UHSIF の状態機械 | [CH32RVUhsif](../libraries/CH32RVUhsif/README.ja.md) | UhsifStates、UhsifTrigger(H41x) |
 | デバッグ接続の文字出力 | [SerialSDI](../libraries/SerialSDI/README.ja.md) | HelloSDI / PrintfToSDI |
 | デバッグ接続の双方向端末 | [SerialDMDATA](../libraries/SerialDMDATA/README.ja.md) | HelloDMDATA |
 | デバッグ接続の双方向端末 | [SerialDMSeq](../libraries/SerialDMSeq/README.ja.md) | HelloDMSeq |

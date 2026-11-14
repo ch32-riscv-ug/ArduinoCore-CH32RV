@@ -16,6 +16,10 @@
 #define GPIF_BUS_CONFIG           GPIF_REG(0x004)
 #define GPIF_AD_CONFIG            GPIF_REG(0x00C)
 #define GPIF_INTR                 GPIF_REG(0x014)
+#define GPIF_CTRL_COMP_VALUE      GPIF_REG(0x0A0)
+#define GPIF_CTRL_COMP_MASK       GPIF_REG(0x0A4)
+#define GPIF_DATA_COMP_VALUE      GPIF_REG(0x0A8)
+#define GPIF_DATA_COMP_MASK       GPIF_REG(0x0AC)
 #define GPIF_INTR_MASK            GPIF_REG(0x018)
 #define GPIF_DATA_COUNT_CONFIG    GPIF_REG(0x094)
 #define GPIF_DATA_COUNT_RESET     GPIF_REG(0x098)
@@ -46,6 +50,10 @@
 #define CONFIG_THREAD_IN_STATE (1u << 15)       /* the thread comes from beta, not THREAD_CONFIG */
 #define CONFIG_SYNC            (1u << 8)
 #define CONFIG_CLK_INTERNAL    (1u << 4)
+#define CONFIG_CTRL_COMP       (1u << 0)
+#define CONFIG_DATA_COMP       (1u << 2)
+#define CONFIG_DATA_COMP_TOGGLE (1u << 13)      /* compare with the clock before, not with a value */
+#define BUS_WIDTH_MASK         (3u << 2)         /* FX3's BUS_WIDTH: 0 8-bit, 1 16, 2 24, 3 32 */
 #define BUS_16BIT              (1u << 2)
 #define AD_DATA_ALWAYS_IN      1u
 #define INTR_CPU               (1u << 1)         /* beta INTR_CPU */
@@ -172,6 +180,7 @@ bool CH32RVUhsif::begin(uint8_t divider, CH32RVUhsifClock source)
     GPIF_AD_CONFIG = AD_DATA_ALWAYS_IN;
     GPIF_BETA_DEASSERT = 0xFFFFFFC1u;                 /* FX3's default, as the vendor sets it */
     _divider = divider;
+    _busBits = 16;
     _source = source;
     _threads = 0;
     _begun = true;
@@ -252,6 +261,72 @@ bool CH32RVUhsif::setStates(const CH32RVUhsifState *states, uint8_t count, const
         entry(WAVE_LEFT, s + 1u, states[s].left);
         entry(WAVE_RIGHT, s + 1u, states[s].right);
     }
+    _error = CH32RVUhsifError::None;
+    return true;
+}
+
+bool CH32RVUhsif::setBusWidth(uint8_t bits)
+{
+    if (!_begun) {
+        return fail(CH32RVUhsifError::NotBegun);
+    }
+    if (_running) {
+        return fail(CH32RVUhsifError::Running);
+    }
+    if (bits != 8 && bits != 16 && bits != 32) {
+        return fail(CH32RVUhsifError::InvalidArgument);
+    }
+    /* BUS_WIDTH 0 / 1 / 3. 24 bits (2) packs three bytes a sample across the
+     * words, which nothing here reads. */
+    GPIF_BUS_CONFIG = (GPIF_BUS_CONFIG & ~BUS_WIDTH_MASK) | ((uint32_t)(bits == 8 ? 0 : bits == 16 ? 1 : 3) << 2);
+    _busBits = bits;
+    _error = CH32RVUhsifError::None;
+    return true;
+}
+
+bool CH32RVUhsif::setDataMatch(uint32_t value, uint32_t mask)
+{
+    if (!_begun) {
+        return fail(CH32RVUhsifError::NotBegun);
+    }
+    if (_running) {
+        return fail(CH32RVUhsifError::Running);
+    }
+    GPIF_DATA_COMP_VALUE = value;
+    GPIF_DATA_COMP_MASK = mask;
+    GPIF_CONFIG = (GPIF_CONFIG & ~CONFIG_DATA_COMP_TOGGLE) | CONFIG_DATA_COMP;
+    _error = CH32RVUhsifError::None;
+    return true;
+}
+
+bool CH32RVUhsif::setDataChange(uint32_t watch)
+{
+    if (!_begun) {
+        return fail(CH32RVUhsifError::NotBegun);
+    }
+    if (_running) {
+        return fail(CH32RVUhsifError::Running);
+    }
+    /* In this mode the mask's ones are the lines left out (FX3 documents the
+     * opposite; measured: mask 1 never saw DATA0 change, ~1 saw only it). */
+    GPIF_DATA_COMP_VALUE = 0;
+    GPIF_DATA_COMP_MASK = ~watch;
+    GPIF_CONFIG |= CONFIG_DATA_COMP | CONFIG_DATA_COMP_TOGGLE;
+    _error = CH32RVUhsifError::None;
+    return true;
+}
+
+bool CH32RVUhsif::setControlMatch(uint16_t value, uint16_t mask)
+{
+    if (!_begun) {
+        return fail(CH32RVUhsifError::NotBegun);
+    }
+    if (_running) {
+        return fail(CH32RVUhsifError::Running);
+    }
+    GPIF_CTRL_COMP_VALUE = value;
+    GPIF_CTRL_COMP_MASK = mask;
+    GPIF_CONFIG |= CONFIG_CTRL_COMP;
     _error = CH32RVUhsifError::None;
     return true;
 }

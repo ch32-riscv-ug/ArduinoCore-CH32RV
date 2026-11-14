@@ -3,7 +3,7 @@
 [日本語](README.ja.md)
 
 The UHSIF (universal high-speed interface) of the CH32H415 / H416 / H417: a
-clocked state machine on a 16-bit data bus that writes RAM through socket
+clocked state machine on an 8-, 16- or 32-bit data bus that writes RAM through socket
 DMA. WCH publishes no registers, only a binary library (`libUHSIF.a`); this
 library does not use it and is built from measurements on the chip (the
 notes, in Japanese: [docs/h417-uhsif.ja.md](../../docs/h417-uhsif.ja.md)).
@@ -20,18 +20,44 @@ To capture like a logic analyzer, [CH32RVLogicCapture](../CH32RVLogicCapture/REA
 - A data counter.
 - Four threads, each writing a ring of buffers without the CPU.
 - An interrupt raised by the state machine.
+- Data bus widths of 8, 16 and 32 bits (2026-11-14, one buffer at a time at
+  100, 200 and 400 MS/s).
+- The data comparator (equal to a value, or changed) and the control
+  comparator (2026-11-14): pattern and edge triggers, and a capture that
+  keeps only the changes.
 
 Not yet: driving the bus, an external clock, the control lines as outputs,
-8- and 32-bit widths.
+a 24-bit bus. What the block does not have (serial in / out, CRC, any pin
+on any bit) is in "FX3 由来の機能" of
+[docs/h417-uhsif.ja.md](../../docs/h417-uhsif.ja.md) (Japanese).
 
 ## Pins
 
-| Data line | Pin |
+| Data line | Pin | Widths |
+|---|---|---|
+| DATA0-5 | PD10-PD15 | 8 / 16 / 32 |
+| DATA6-7 | PF0, PF1 | 8 / 16 / 32 |
+| DATA8 | PF2 | 16 / 32 |
+| DATA9-12 | PC6-PC9 | 16 / 32 |
+| DATA13-15 | PA13-PA15 | 16 / 32 |
+| DATA16-18 | PC10-PC12 | 32 |
+| DATA19-26 | PD0-PD7 | 32 |
+| DATA27-29 | PF3-PF5 | 32 |
+| DATA30-31 | PE0, PE1 | 32 |
+
+The data lines always start at DATA0, in this order (the UHSIF's PORT16
+up): other pins or another order cannot be chosen (measured).
+
+| Control line | Pin |
 |---|---|
-| DATA0-5 | PD10-PD15 |
-| DATA6-8 | PF0-PF2 |
-| DATA9-12 | PC6-PC9 |
-| DATA13-15 | PA13-PA15 |
+| CTRL0-4 | PB14-PB10 |
+| CTRL5-12 | PE15-PE8 |
+| CTRL13 | PE7 |
+| CTRL14, 15 | PF13, PF12 |
+
+The control lines are the machine's inputs `Ctrl0` + n and what the control
+comparator looks at (with AFIO's UHSIF_PORT_RM at 0); their pins are fixed
+too.
 
 They are read whatever their pin mode (input, an alternate function or GPIO
 output); `begin()` leaves them alone. Inputs go up to the pin's own supply.
@@ -54,6 +80,33 @@ uhsif.start();
 
 The whole sketch is the [UhsifStates](examples/UhsifStates/README.md) example.
 
+### Width
+
+Call `setBusWidth(8 / 16 / 32)` after `begin()` and before `start()`
+(`begin()` sets 16). A sample takes 1, 2 or 4 bytes; at 8 bits a word holds
+four samples, DATA0 in the low byte. The data counter counts samples
+whatever the width. The bandwidth grows with the width (at 200 MS/s: 200,
+400 or 800 MB/s).
+
+### Comparators (triggers)
+
+| Function | Machine input | True when |
+|---|---|---|
+| `setDataMatch(value, mask)` | `DataMatch` | the data lines under `mask` equal `value` |
+| `setDataChange(watch)` | `DataMatch` | a data line in `watch` changed since the clock before |
+| `setControlMatch(value, mask)` | `ControlMatch` | the control lines under `mask` equal `value` |
+
+- The comparators look at the pins as they are, not at the latched sample.
+- Waiting for no match and then for a match makes an edge trigger; waiting
+  for a match alone goes on at once when it already matches at the start.
+  The [UhsifTrigger](examples/UhsifTrigger/README.md) example triggers on an
+  edge.
+- Waiting takes two states in turn as well (a transition into the state it
+  leaves does not decide again).
+- With `setDataChange()` and `Push` only when it is true, the buffer holds
+  the changed values alone; their times are not kept. Floating pins change
+  too: put only the lines in use in `watch`.
+
 ### States and transitions
 
 - Each clock, a state leaves by its right transition when `goRight` is true,
@@ -74,8 +127,10 @@ The whole sketch is the [UhsifStates](examples/UhsifStates/README.md) example.
 
 | Input | Meaning |
 |---|---|
-| `Ctrl0` + n | control line CTRLn (not measured) |
+| `Ctrl0` + n | control line CTRLn (pins above) |
 | `DataCountHit` | the data counter is at its limit |
+| `ControlMatch` | the control comparator (`setControlMatch()`) |
+| `DataMatch` | the data comparator (`setDataMatch()` / `setDataChange()`) |
 | `DmaReady` | the current thread's socket can take data |
 | `One` | always 1 |
 
@@ -103,6 +158,11 @@ Rules of the hardware (measured):
 - Two threads in turn lose none: one writes while the other waits to be
   sent on. That is what CH32RVLogicCapture's UHSIF capture does. Make a
   buffer last 20 us or more.
+- When one capture ends (the machine stops pushing), the part of the last
+  64-byte burst stays in the block and is never written: push 64 bytes
+  more than you need (the UhsifTrigger example does).
+- A ring of one buffer captured continuously is written over and over: what
+  it holds when stopped is new data spliced onto old.
 - A socket left running through its ring (no transfer size) works too, but
   it moved on 16 bytes before the end of every buffer and those 8 samples
   were lost; the library does not use that.
@@ -140,3 +200,4 @@ Operations return `bool`; `lastError()` and `lastErrorName()` say why.
 
 - [UhsifStates](examples/UhsifStates/README.md): program the state machine,
   sample the data lines every clock and count the buffers.
+- [UhsifTrigger](examples/UhsifTrigger/README.md): waits for a rising edge with the data comparator, then captures once, 8 bits wide at 200 MS/s.
