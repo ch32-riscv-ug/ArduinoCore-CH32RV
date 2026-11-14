@@ -5,11 +5,16 @@
  * with FAT12_SUPPORT, and the DUT's RAM disks are FAT12.
  *
  * The volume starts at sector 0 or at the first partition of an MBR. The FAT
- * is held in RAM while a file is written (up to 64 sectors), then written to
- * every copy. */
+ * is held in RAM while a file is written (up to PEER_FAT_SECTORS sectors, 64
+ * unless the sketch defines fewer: peer_ch32rv, whose RAM is smaller, reads the
+ * DUT's small disks with a few), then written to every copy. */
 #pragma once
 #include <stdint.h>
 #include <string.h>
+
+#ifndef PEER_FAT_SECTORS
+#define PEER_FAT_SECTORS 64
+#endif
 
 class PeerFat
 {
@@ -148,7 +153,7 @@ private:
   uint16_t _fatSectors = 0, _rootSectors = 0;
   uint32_t _fatStart = 0, _rootStart = 0, _dataStart = 0, _clusters = 0;
   uint8_t _sector[512], _data[512];
-  uint8_t _fat[64 * 512];
+  uint8_t _fat[PEER_FAT_SECTORS * 512];
 
   static uint16_t le16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
   static uint32_t le32(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }

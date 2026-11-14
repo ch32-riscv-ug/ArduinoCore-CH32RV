@@ -184,12 +184,17 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     常駐しない。
 - [ ] USB の試験の仕組み（配線の前にできる）:
   - 記録の usb に CH32RV の相手（`{to: ch32rv, port: <相手のアドレス>}`）。run_hardware が両方のスケッチを作り、相手を
-    その台のプローブで書く（Pico の相手と同じ形）。
+    その台のプローブで書く（Pico の相手と同じ形）。2026-11-15: 記録（`controller` も）・place・run_hardware・相手の
+    スケッチ 5 つ（usb_peer/*/peer_ch32rv）を入れた。ビルド（H417 の SS / FS、X035）と単体試験だけで、実機は配線待ち。
+    相手のライブラリに無いもの（ホストの isochronous と NCM、デバイスの MSC の 2 つ目の LUN）の case は飛ばす
+    （tests/peer/usb/README.ja.md）。同じ OEP プローブの 2 つの口に DUT と相手を置いたときのモニター 2 つは未確認。
   - junit に controller・相手・ハブを残し、coverage の USB の項目をその軸で分ける（TST-01 の残りと同じ）。
   - PC の libusb のベンダーの試験（Python、pyusb）: ストリーム、等時の Mult・任意のパケット数、burst、0 長、STALL と
     CLEAR_FEATURE、サスペンドとリモートウェイクアップ、LPM / U1 / U2（sysfs）。B（6-2 の SS）で今すぐ流せる分から。
   - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
   - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
+- [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
+  流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、
   USBSS デバイスのストリームと Mult>0、LPM（L1）、V103 と第 1 世代 USBHS のホスト、HS ハブの先の split。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で

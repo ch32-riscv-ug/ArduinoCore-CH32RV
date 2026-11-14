@@ -88,6 +88,37 @@ DUT の不具合と見分けるために残します。Adafruit TinyUSB を上�
   列挙をあきらめていました。デバイス役のスケッチは、TinyUSB を呼ぶ所を `UsbLock` で囲み、`loop()` の終わりで
   `TinyUSB_Device_Task()` を呼びます。
 
+## 別の CH32RV の基板を相手にする
+
+DUT の USB の口を別の CH32RV の基板の口につなぎ、記録に `usb: {to: ch32rv, port: <相手のアドレス>, controller: <相手の口>}`
+と書きます（tests/RECORDS.ja.md §4.3）。自作どうしの組で、両側から全部の機能を動かすためのものです（TEST_PLAN の
+「相手の役割」）。2026-11-15 の時点ではまだ配線が無く、ビルドと単体試験（tests/unit/test_usb_peer_ch32rv.py）だけです。
+
+- **書き込みとコンソール:** 相手も DUT と同じ扱いです。run_hardware が `peer_ch32rv/` に、相手の基板の fqbn と石の
+  sketch.yaml（port_config の source は dmseq）と、相手の口を決める build_opt.h（`PEER_USB_HOST_PORT` か
+  `PEER_USB_CONTROLLER`）を置き、`TEST_SERIAL_PORT_PEER_CH32RV` に相手のアドレスを渡します。pytest-embedded-arduino-cli は
+  相手のポートもプラットフォームのモニター（ch32rv）に通し、書き込みは arduino-cli upload です。oep-client のプラグインに
+  足すものはありません。DUT と相手が同じ OEP プローブの別の口のときは、2 つのモニターが 1 つのプローブを使います。
+  これは実機ではまだ確かめていません。
+- **行の頭:** host 役（デバイスの case）は `C `、device 役（ホストの case）は `CD `。コマンドは Pico と同じで、試験は
+  同じものを使います（`device_peer.Peer` / `host_peer.IDENTITY` の `ch32rv`）。device 役の VID は CH32RVUsbDevice の既定の
+  1209、名前は `CH32RV peer hid` などです。
+- **スケッチ:** device/peer_ch32rv（CH32RVUsbHost）、host_hid・host_classes・host_input・host_storage の peer_ch32rv
+  （CH32RVUsbDevice）。device/peer_ch32rv の FAT は Pico の `peer_fat.h` を run_hardware が横に置きます（FAT を RAM に
+  持つのは 4 セクタまで: `PEER_FAT_SECTORS`）。
+- **速さ:** 記録の両側の口が決まっていれば、試験は遅い方の速さ（`usb_link_speed`。SS どうしは 3、bcdUSB 3.20）を期待します。
+
+ライブラリにまだ無いため、流さない・回避しているもの:
+
+| 何が | どこで | 扱い |
+|---|---|---|
+| isochronous（スピーカー・マイク・カメラ） | CH32RVUsbHost | usb-peer-media を飛ばす |
+| USB のネットワーク（CDC-NCM） | CH32RVUsbHost | usb-peer-net を飛ばす（`net` などは 0 を返す） |
+| 2 つ目の論理ユニット、失敗した読み出しの sense を 02/3A/00 にすること | CH32RVUsbDeviceMsc | usb-peer-host-storage を飛ばす（スケッチは LUN 0 だけで用意） |
+| 文字列は 31 文字、構成記述子は 256 バイトまで（CH32RV_USB_HOST_SCRATCH） | CH32RVUsbHost | usb_contracts の製品名（32 文字）と構成記述子（302 バイト）がはみ出す。相手のスケッチが記述子を読み直して `dev` に出す。256 バイトより後ろのインタフェースにはクラスドライバが付かない見込み（usb_contracts でどれが外れるかは実機で確かめる。DFU_DETACH は相手のスケッチが自分の読んだ記述子から送る） |
+| HID のインタフェースは 1 つだけ、レポート ID はライブラリのもの | CH32RVUsbDevice | host_input の 2 つ目（ブートキーボード）はスケッチ自身の CH32RVUsbDeviceFunction、1 つ目は Pico と同じレポート記述子の CH32RVUsbDeviceHidCustom |
+| RAM（X035 は 20 KB） | 相手の石 | MSC の RAM ディスクは書いたブロックだけを持つ（4 ブロックまで） |
+
 ## 配線と設定
 
 - DUT の USB（D+ / D- / GND）を S3 の USB OTG ポートへ。VBUS は使いません（DUT と S3 はそれぞれ給電）。

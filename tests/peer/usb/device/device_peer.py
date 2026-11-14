@@ -1,8 +1,9 @@
 """Talking to the USB host peer and to the DUT console, for the tests where the DUT is the device.
 
-The peer is an ESP32-S3 (tests/sketch_support/usb_peer/device/peer_s3, EspUsbHost) or an RP2040
-(device/peer_pico, TinyUSB's host); the bench record's usb.to says which, and the runner stages one of them.
-Both take the same commands and answer each with one line, "S3 ..." or "P ..."; events (connect, disconnect,
+The peer is an ESP32-S3 (tests/sketch_support/usb_peer/device/peer_s3, EspUsbHost), an RP2040
+(device/peer_pico, TinyUSB's host) or another CH32RV board (device/peer_ch32rv, CH32RVUsbHost); the bench record's
+usb.to says which, and the runner stages one of them. All take the same commands and answer each with one line,
+"S3 ...", "P ..." or "C ..."; events (connect, disconnect,
 keys, HID / MIDI input) arrive the same way, so a reply is matched by its own keyword, never as "the next
 line". The runner stages this module beside the test.
 """
@@ -20,7 +21,7 @@ ISP_ID_PATTERN = rb"(?:1a86|4348) 55e0"
 
 class Peer:
     """The one peer of the test (pytest-embedded's `peers`), its lines' tag put in front of what is expected."""
-    TAGS = {"s3": b"S3 ", "pico": b"P "}
+    TAGS = {"s3": b"S3 ", "pico": b"P ", "ch32rv": b"C "}
 
     def __init__(self, peers):
         ((self.kind, self.serial),) = peers.items()
@@ -36,6 +37,13 @@ class Peer:
 
 def settings(test_file):
     return json.loads(pathlib.Path(test_file).with_name("case.json").read_text())
+
+
+def link_speed(test_file):
+    """The speed the DUT and the peer meet at (1 full, 2 high, 3 SuperSpeed): the runner's (place.py: the slower of
+    the two controllers a CH32RV peer's record names), else high speed with the ESP32-P4 on the DUT's USBHS, else full."""
+    target = settings(test_file)["target"]
+    return target.get("usb_link_speed") or (2 if target.get("usb_peer") == "p4" else 1)
 
 
 def command(peer, line, reply, timeout=10):

@@ -142,6 +142,22 @@ PICO_PEERS = {
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_pico",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_pico",
 }
+# The same cases with another CH32RV board as the peer (the record's usb {to: ch32rv, port, controller}): written and
+# talked to through its own address like a DUT (arduino-cli upload, the platform's monitor over SerialDMSeq), staged
+# as peer_ch32rv/ with a sketch.yaml for its board. The device cases need it as the host (CH32RVUsbHost), the host
+# cases as the device (CH32RVUsbDevice); place.CH32RV_PEER_LACKS says which cases its libraries cannot serve yet.
+CH32RV_PEERS = {
+    "usb-peer": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
+    "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_ch32rv",
+    "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_ch32rv",
+    "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_ch32rv",
+}
+# The host peer's FAT (its own, apart from the DUT's FatFS) is the Pico's: staged beside the CH32RV peer's sketch.
+PEER_FAT = TESTS / "sketch_support/usb_peer/device/peer_pico/peer_fat.h"
 # The Pico peers' TinyUSB: Adafruit TinyUSB Library 3.7.7 (arduino-pico 6.3.x's) with
 # sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch (its RP2040 host sends an OUT data stage as DATA0).
 PICO_TINYUSB = dict(version="3.7.7",
@@ -240,6 +256,36 @@ def pico_tinyusb():
     return library
 
 
+def monitor_speed(fqbn):
+    """The port_config speed line for the Debug Speed menu's value in the fqbn (written out so the test does not depend
+    on the monitor client reading board defaults), else nothing."""
+    m = re.search(r"[:,]debugspeed=(\w+)", fqbn)
+    return f"      speed: {m.group(1)}\n" if m else ""
+
+
+def stage_ch32rv_peer(directory, case, target):
+    """peer_ch32rv/ beside the case: the peer's sketch, a sketch.yaml for the peer's board (its fqbn and chip, as
+    place.peer_place resolved them) and a build_opt.h naming the controller of it the cable reaches - the host port
+    for the device cases (the peer is the host), the device controller for the host cases."""
+    peer = directory / "peer_ch32rv"
+    shutil.copytree(CH32RV_PEERS[case], peer)
+    if case in places.PEER_DEVICE_CASES:
+        shutil.copyfile(PEER_FAT, peer / PEER_FAT.name)
+    fqbn, controller = target["usb_peer_fqbn"], target["usb_peer_ch32rv_controller"]
+    (peer / "sketch.yaml").write_text(
+        f"profiles:\n  ch32rv:\n    fqbn: {json.dumps(fqbn)}\n"
+        f"    port_config:\n      source: dmseq\n      chip: {target['usb_peer_chip']}\n" + monitor_speed(fqbn)
+        + "default_profile: ch32rv\n")
+    if case in places.PEER_DEVICE_CASES:
+        if controller not in USB_HOST_PORTS:
+            raise RuntimeError(f"{case}: the CH32RV peer's {controller} has no USB host the peer can run")
+        opt = f"-DPEER_USB_HOST_PORT={USB_HOST_PORTS[controller]}\n"
+    else:
+        opt = f"-DPEER_USB_CONTROLLER=CH32RVUsbController::{USB_CONTROLLERS[controller]}\n"
+    (peer / "build_opt.h").write_text(opt)
+    return dict(target, usb_peer_port=target["usb_peer_address"])
+
+
 def stage_case(work, name, case, target):
     directory = work / "cases" / name / case
     directory.mkdir(parents=True)
@@ -256,7 +302,9 @@ def stage_case(work, name, case, target):
             raise RuntimeError(f"{PICO_PEERS[case]}/sketch.yaml: no '- TINYUSB' line in its libraries")
         sketch.write_text(text.replace("      - TINYUSB\n", f"      - dir: {json.dumps(str(pico_tinyusb()))}\n"))
         target = dict(target, usb_peer_port=target["usb_peer_address"])
-    elif case in PEERS:
+    elif case in CH32RV_PEERS and target.get("usb_peer") == "ch32rv":
+        target = stage_ch32rv_peer(directory, case, target)
+    elif case in PEERS and target.get("usb_peer") != "ch32rv":
         shutil.copytree(PEERS[case], directory / "peer_s3")
         if target.get("usb_peer") == "p4":
             # The same sketch on the ESP32-P4: its sketch.yaml's p4 profile (the OTG HS port).
@@ -308,9 +356,8 @@ def stage_case(work, name, case, target):
             +
             f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"
             f"      chip: {target['chip']}\n"
-            # The Debug Speed menu's value for the monitor too (boards.txt sets it as a default, written out here so
-            # the test does not depend on the monitor client reading board defaults).
-            + (f"      speed: {m.group(1)}\n" if (m := re.search(r"[:,]debugspeed=(\w+)", target["fqbn"])) else "")
+            # The Debug Speed menu's value for the monitor too.
+            + monitor_speed(target["fqbn"])
         )
         flag = CONSOLE_FLAGS.get(case)
         (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n'
@@ -510,6 +557,8 @@ def main(argv=None):
                                 "--junitxml", str(module.parent / "junit.xml"), "-o", "junit_family=xunit1", "-s", "-q"]
                     if case in PEER_CASES and staged.get("usb_peer") == "pico":
                         case_env["TEST_SERIAL_PORT_PEER_PICO"] = staged["usb_peer_port"]
+                    elif case in PEER_CASES and staged.get("usb_peer") == "ch32rv":
+                        case_env["TEST_SERIAL_PORT_PEER_CH32RV"] = staged["usb_peer_port"]
                     elif case in PEER_CASES:
                         command += ["--peer-port", "s3:" + staged["usb_peer_port"]]
                     if case == "hid":

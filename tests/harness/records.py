@@ -77,6 +77,11 @@ def _parts(value, errors):
 USB_PORTS = ("full_speed", "high_speed", "super_speed", "usbd", "high_speed_2")
 
 
+# A CH32RV peer's address (harness/place.py's parse() takes the same; the target is optional).
+CH32RV_PEER_ADDRESS_RE = re.compile(r"oep://[0-9A-Fa-f]{12,32}/[A-Za-z][A-Za-z0-9-]{0,15}(?:/[A-Za-z0-9.-]+)?"
+                                    r"|wchlink://[0-9A-Za-z]{8,32}")
+
+
 def usb_ports(value):
     """{port: entry}: the per-port form as it is, the single form as {"auto": entry} (the series' usual controller)."""
     if not isinstance(value, dict) or not value:
@@ -127,7 +132,16 @@ def _usb_one(value, errors):
             errors.append("usb.port: the RP2040's OEP port (its SWD and RTT console): <port> on the DUT's own probe, "
                           "e.g. rp2040-x035, or oep://<unit_id>/<port> on another (a WCH-Link's DUT)")
         return
-    errors.append(f"usb.to: host, esp32-s3, esp32-p4 or rp2040, not {to!r}")
+    if to == "ch32rv":
+        # Another CH32RV board: its own address (what ch32rv and CH32RV_PROBE take) and which of its controllers the
+        # cable reaches (the same names as the per-port keys).
+        port = value.get("port")
+        if not isinstance(port, str) or not CH32RV_PEER_ADDRESS_RE.fullmatch(port):
+            errors.append("usb.port: the CH32RV peer's own address, oep://<unit_id>/<port> or wchlink://<serial>")
+        if value.get("controller") not in USB_PORTS:
+            errors.append(f"usb.controller: the CH32RV peer's controller the cable reaches, {' / '.join(USB_PORTS)}")
+        return
+    errors.append(f"usb.to: host, esp32-s3, esp32-p4, rp2040 or ch32rv, not {to!r}")
 
 
 def _pd(value, errors):
@@ -184,7 +198,8 @@ def _spi(value, errors):
 CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
     "supply": (_supply, "where the board's power comes from: {from: probe | usb | other}"),
-    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial and / or mac} or {to: rp2040, port}; "
+    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial and / or mac}, {to: rp2040, port} "
+                  "or {to: ch32rv, port: <its address>, controller}; "
                   "per controller {full_speed / high_speed / super_speed / usbd / high_speed_2: {to: ...}} on a part wired on several"),
     "parts": (_parts, "external parts: {sd: {bus: spi | sd1 | sd4, <signal>: <pad>, ...}, eth: {to: lan}}"),
     "pd": (_pd, "a USB PD sink on the board: {max_mv, vbus_pin, vbus_ratio}"),

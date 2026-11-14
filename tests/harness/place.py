@@ -12,7 +12,7 @@ Every fact comes from where it is true:
 - this repository: fqbn and clock from boards.txt, which series have which peripherals (coverage.toml's needs),
   which parts have a USB host (CH32RVUsbHost);
 - the bench at run time: the DUT's own USB device by its serial (CH32RVUsbDevice's default is the UID), the ESP32-S3
-  peer by its port's USB serial (the record's).
+  peer by its port's USB serial (the record's), a CH32RV peer by its own address, chip and records (peer_place).
 Nothing is assumed: a fact that is not there leaves its cases out, with the reason."""
 import json
 import os
@@ -36,9 +36,10 @@ USB_CASES = ("usb", "usb-classes", "usb-media")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
-# own port to this host, or an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT. The P4 runs the S3's
-# sketches (EspUsbHost / EspUsbDevice) under their p4 profile.
-PEER_KINDS = {"esp32-s3": "s3", "esp32-p4": "p4", "rp2040": "pico"}
+# own port to this host, an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT, or another CH32RV board
+# (its own address, the controller of it the cable reaches). The P4 runs the S3's sketches (EspUsbHost / EspUsbDevice)
+# under their p4 profile.
+PEER_KINDS = {"esp32-s3": "s3", "esp32-p4": "p4", "rp2040": "pico", "ch32rv": "ch32rv"}
 ESP_PEERS = ("esp32-s3", "esp32-p4")
 # Cases written for the RP2040 first (TEST_PLAN.ja.md, the USB peer split); the S3's sketches follow.
 S3_LACKS = {case: "skip: the ESP32-S3 peer has no sketch for this case (the RP2040 peer covers it)"
@@ -48,6 +49,20 @@ P4_LACKS = {case: "skip: the ESP32-P4 peer has no sketch for this case (the RP20
 # Device cases the RP2040 cannot be the host for: its host controller driver has no isochronous transfers.
 PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochronous transfers (the speaker, "
                                      "microphone and camera streams)"}
+# What a CH32RV peer cannot be the other side of yet (its sketches, tests/sketch_support/usb_peer/*/peer_ch32rv): the
+# libraries' gaps, not the bench's. Device cases need it as the host (CH32RVUsbHost), host cases as the device
+# (CH32RVUsbDevice).
+CH32RV_PEER_LACKS = {
+    "usb-peer-media": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no isochronous transfers (the speaker, "
+                      "microphone and camera streams)",
+    "usb-peer-net": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no USB networking (CDC-NCM)",
+    "usb-peer-host-storage": "skip: a CH32RV peer's USB device (CH32RVUsbDeviceMsc) has one logical unit and fails a "
+                             "read with its own sense; the case needs two units and 02/3A/00",
+}
+# The speed a controller of the record's usb runs at (USB 2.0: 1 full, 2 high; 3 SuperSpeed), as CH32RVUsbHost numbers it.
+USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 2, "super_speed": 3}
+# The record's usb ports a CH32RV peer can be the host on (CH32RVUsbHost's CH32RV_USB_HOST_PORT_*).
+USB_HOST_CONTROLLERS = ("full_speed", "high_speed", "high_speed_2", "super_speed")
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
@@ -339,14 +354,27 @@ def choose_cases(place, items=None, caps=None):
                      f"skip: {part} has no USB controller" if not device else
                      "skip: no port of the record's usb is {to: host}")
     peer = bool(peer_usb)
-    not_peer = "skip: no port of the record's usb is {to: esp32-s3}, {to: esp32-p4} or {to: rp2040}"
+    not_peer = "skip: no port of the record's usb is {to: esp32-s3}, {to: esp32-p4}, {to: rp2040} or {to: ch32rv}"
+    ch32rv = peer_usb.get("to") == "ch32rv"
+    # A CH32RV peer is the host of the device cases: its part and the controller the cable reaches must have one
+    # (place["usb_peer_chip"], resolved from its own address; left out, as in choose_cases' own tests, it is not asked).
+    peer_host = None
+    if ch32rv:
+        peer_part = place.get("usb_peer_chip")
+        if peer_usb.get("controller") not in USB_HOST_CONTROLLERS:
+            peer_host = f"skip: the CH32RV peer's {peer_usb.get('controller')} is no USB host"
+        elif peer_part and (peer_part in USB_HOST_NO_PARTS or
+                            not series_has("usb-peer-host", series_of(peer_part, whole), items, whole)):
+            peer_host = f"skip: the CH32RV peer {peer_part} has no USB host CH32RVUsbHost drives"
     for case in PEER_DEVICE_CASES:
-        lacks = PICO_HOST_LACKS.get(case) if peer_usb.get("to") == "rp2040" else None
+        lacks = (PICO_HOST_LACKS.get(case) if peer_usb.get("to") == "rp2040" else
+                 peer_host or CH32RV_PEER_LACKS.get(case) if ch32rv else None)
         out[case] = ("run" if peer and device and not lacks else
                      f"skip: {part} has no USB controller" if not device else
                      lacks if peer else not_peer)
     for case in PEER_HOST_CASES:
-        lacks = {"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(peer_usb.get("to"), {}).get(case)
+        lacks = ({"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(peer_usb.get("to"), {}).get(case) or
+                 (CH32RV_PEER_LACKS.get(case) if ch32rv else None))
         out[case] = ("run" if peer and host and not lacks else
                      f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else
                      lacks if lacks else not_peer)
@@ -513,6 +541,17 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
                              "one; write oep://<unit_id>/<port>")
         else:
             place["usb_peer_address"] = f"oep://{parsed['unit']}/{port}"
+    if peer_usb.get("to") == "ch32rv":
+        peer = peer_place(peer_usb["port"], tool, env, logs / "peer")
+        if canonical(peer["address"]) == canonical(address) or peer["target_name"] == place["target_name"]:
+            raise PlaceError(f"{address}: usb.port {peer_usb['port']!r} is the DUT itself; name the other board")
+        place.update(usb_peer_address=peer["address"], usb_peer_ch32rv_controller=peer_usb["controller"],
+                     usb_peer_chip=peer["chip"], usb_peer_fqbn=peer["fqbn"], usb_peer_board=peer["board"],
+                     usb_peer_target_name=peer["target_name"])
+        place["warnings"] += [f"the CH32RV peer: {w}" for w in peer["warnings"]]
+        speeds = [USB_PORT_SPEEDS.get(peer_port), USB_PORT_SPEEDS.get(peer_usb["controller"])]
+        if None not in speeds:
+            place["usb_link_speed"] = min(speeds)   # the cable runs at the slower side's speed
     if "pd" in core:
         place.update({f"pd_{k}": v for k, v in core["pd"].items()})
         if "vbus_pin" in core["pd"]:
@@ -522,6 +561,45 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
     place["probe_capabilities"] = probe_capabilities(tool, address, part, logs / "capabilities.log", env)
     place["cases"] = choose_cases(place)
     return place
+
+
+def peer_place(address, tool, env, logs, *, environ=None):
+    """A CH32RV peer board from its address (usb {to: ch32rv, port}), as resolve() finds a DUT, but only what the
+    peer's sketch needs: its part (ch32rv target info; the port record's part when the chip ID leaves several - a
+    WCH-Link has none, so such a chip cannot be a peer there), the board its record names, and the fqbn with its record's options. Its own record's
+    usb is not followed (it names the DUT back)."""
+    parsed = parse(address)
+    if parsed["kind"] == "oep":
+        facts = probe_facts(address, parsed)
+        port_record, record, warnings = facts["port_record"], facts["record"], list(facts["warnings"])
+        recorded_part = port_record.get("part")
+    else:
+        port_record, warnings = {}, []
+        record = link_records_from_env(environ).get(canonical(address), {})
+        recorded_part = None
+    problems = records.check_core(record)
+    if problems:
+        raise PlaceError(f"{address} (the CH32RV peer): its core record has errors: " + "; ".join(problems))
+    info = chip_info(tool, address, None, logs / "info.log", env)
+    part = info.get("sku")
+    if not part:
+        names = [c if isinstance(c, str) else c.get("sku") for c in info.get("candidates") or []]
+        wanted = recorded_part
+        if not wanted or (names and wanted not in names):
+            raise PlaceError(f"{address} (the CH32RV peer): the chip ID leaves {', '.join(names) or info.get('family')}; "
+                             "write the part in its port record (tests/bench_record.py --part)")
+        info = chip_info(tool, address, wanted, logs / "info-part.log", env)
+        part = info.get("sku") or wanted
+    family, uid = info.get("family") or part[:8], info.get("uid", "")
+    target_name = f"{family.lower()}-{uid.lower()}"
+    expected = parsed.get("target") or port_record.get("target")
+    if expected and expected != target_name:
+        raise PlaceError(f"{address} (the CH32RV peer): {expected} is recorded, the chip is {target_name}: another "
+                         "board is on the port")
+    options = ",".join(f"{k}={v}" for k, v in (record.get("options") or {}).items())
+    fqbn, _f_cpu = with_options(*fqbn_of(part), options)
+    return dict(address=address, chip=part, target_name=target_name, fqbn=fqbn, board=record.get("board"),
+                warnings=warnings)
 
 
 def pin_number(pad):

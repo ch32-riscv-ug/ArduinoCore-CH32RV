@@ -75,10 +75,29 @@ DUT 自身の USB 端子がどこへつながっているかです。
 | `{"to": "esp32-s3", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-S3 につながっている（full speed） | usb-peer の各 case。USB host の case は、USB host を持つ型番だけ |
 | `{"to": "esp32-p4", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-P4 の OTG HS の口につながっている（high speed） | usb-peer のデバイス側の case と、usb-peer-host / usb-peer-host-classes（DUT は USBHS のホスト）。input と storage は P4 のスケッチが無いので飛ばす |
 | `{"to": "rp2040", "port": "<口>"}` | 同じ OEP プローブの口 `<口>` にいる RP2040（Pico）につながっている（full speed）。別のプローブの Pico は `"port": "oep://<unit_id>/<口>"`（WCH-Link の先の DUT など） | usb-peer の各 case（usb-peer-media を除く。RP2040 のホストは isochronous を持たない） |
+| `{"to": "ch32rv", "port": "<アドレス>", "controller": "<口>"}` | 別の CH32RV の基板の `controller` の口につながっている。`port` はその基板のアドレス（`oep://<unit_id>/<口>[/<target>]` か `wchlink://<serial>`）、`controller` は下の「口ごとの形」のキーと同じ名前 | usb-peer の各 case。デバイスの case では相手がホスト、ホストの case では相手がデバイス。相手のライブラリにまだ無いものは飛ばす（下） |
 
 `serial` には、ESP32 からこのホストへつながる口の USB serial（USB-UART ブリッジのもの、または USB-Serial/JTAG のもの）を書きます。どのホストでも、これで ESP32 を見つけます。`mac` には ESP32 の MAC を 16 進の小文字 12 桁で書きます（区切りなし）。どちらか一方は必ず書きます。CH340 のように USB serial を持たないブリッジでは `serial` を省き、`mac` だけを書きます。このときは board-identify の名前（`/run/board-identify/by-id/<チップ>-<mac>`）で口を探すので、board-identify が動いているホストでだけ見つかります。
 
 ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/peer_s3`）を、sketch.yaml の `p4_host` の設定で動かします。答えの行の頭は、どちらも `S3 ` です。
+
+**CH32RV の相手。** 相手の基板は、DUT と同じように自分のアドレスで見つけます。run_hardware.py は `port` の基板の石を
+ch32rv で読み（石の ID で型番が決まらないときは、その口の記録の `part`）、その口の記録の `board` と `options` を使って、
+相手のスケッチ（`tests/sketch_support/usb_peer/*/peer_ch32rv`）をその基板の fqbn でビルドし、arduino-cli でそのアドレスへ
+書き、SerialDMSeq で話します（`TEST_SERIAL_PORT_PEER_CH32RV`）。相手の口の記録の `target` が石と違えば止めます。
+`controller` は相手のスケッチの build_opt.h に入ります（デバイスの case は `PEER_USB_HOST_PORT`、ホストの case は
+`PEER_USB_CONTROLLER`）。デバイスの case では相手がホストなので、`usbd` やホストの無い型番（X035F8U6 など）では飛ばします。
+DUT 側の口がキーで決まっているとき、試験はつながる速さを遅い方の口から決めます（SS どうしなら 3、片方が FS なら 1）。
+相手の基板の記録の `usb` は、逆向きに DUT を指してかまいません（たどりません）。
+
+今の CH32RV のライブラリで相手になれない case は、理由を付けて飛ばします（place.py の `CH32RV_PEER_LACKS`）:
+usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH32RVUsbHost に CDC-NCM が無い）、
+usb-peer-host-storage（CH32RVUsbDeviceMsc は論理ユニットが 1 つで、読み出しの失敗の sense も自前）。
+
+```json
+{"usb": {"super_speed": {"to": "ch32rv", "port": "oep://30eda0e31108/h417-c", "controller": "super_speed"},
+         "full_speed": {"to": "host"}}}
+```
 
 **口ごとの形。** USB のコントローラーを複数持つ石で、口ごとに相手が違うとき（H417 の公式 EVT: FS に Pico、SS に PC）は、
 コントローラーの名前をキーにして、それぞれに上の表の形を書きます。
@@ -95,9 +114,10 @@ ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/p
   実装の状況から決めます（place.py の choose_cases）。X315 の `super_speed` はデバイスだけ、H417 の `super_speed` はハードでは
   両対応でも今の実装はデバイスだけ、のように、同じキーでも石と実装で範囲が変わります。
 - usb・usb-classes・usb-media は `{"to": "host"}` の口で、usb-peer の各 case はプローブなどの相手（esp32-s3 / esp32-p4 /
-  rp2040）の口で流れます。run_hardware.py が、その口をスケッチに渡します（デバイスは `USB_TEST_CONTROLLER`、ホストは
+  rp2040 / ch32rv）の口で流れます。run_hardware.py が、その口をスケッチに渡します（デバイスは `USB_TEST_CONTROLLER`、ホストは
   `USB_PEER_HOST_PORT`）。1 つの形は、系列の既定のコントローラー（`Auto`）のままです。
-- 書き方: `tests/bench_record.py set <アドレス> --usb rp2040,port=rp2040-h417 --usb-port full_speed`。`--usb-port` の口だけを書き換え、
+- 書き方: `tests/bench_record.py set <アドレス> --usb rp2040,port=rp2040-h417 --usb-port full_speed`（CH32RV の相手は
+  `--usb ch32rv,port=oep://<unit_id>/<口>,controller=super_speed --usb-port super_speed`）。`--usb-port` の口だけを書き換え、
   ほかの口の記録は残ります（1 つの形の記録は、口ごとの形に置き換わります）。
 
 ### 4.4 `parts`

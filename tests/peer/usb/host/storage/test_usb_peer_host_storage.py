@@ -23,7 +23,7 @@ def test_usb_peer_host_storage(dut, peers):
 
     # Mass storage: two units of different sizes, each read where it differs.
     assert host(dut, "mscmaxlun", rb"MSCMAXLUN (\d) (\d+)").group(1, 2) == (b"1", b"1")
-    for lun, blocks, product in ((0, 64, b"Pico LUN 0"), (1, 16, b"Pico LUN 1")):
+    for lun, blocks, product in zip((0, 1), (64, 16), (name.encode() for name in peer.id["luns"])):
         assert host(dut, f"msclun {lun}", rb"MSCLUN (\d)").group(1) == b"1"
         m = host(dut, "msc", rb"MSC (\d) (\S+) (.+) (\d+) (\d+)", timeout=20)
         assert m.group(1) == b"1" and m.group(3) == product

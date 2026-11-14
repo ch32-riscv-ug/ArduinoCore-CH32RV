@@ -8,7 +8,7 @@ import pytest
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from device_peer import Peer, ISP_ID_PATTERN, command, dut_ready, settings, wait_enumerated
+from device_peer import Peer, ISP_ID_PATTERN, command, dut_ready, link_speed, settings, wait_enumerated
 
 
 def test_usb_peer_classes(dut, peers):
@@ -93,12 +93,13 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
-    # messageBytes 0 (automatic): 271 at full speed, the 512-byte bulk OUT packet at high speed (the ESP32-P4 on
-    # the DUT's USBHS), told the host as dwMaxCCIDMessageLength - at least that packet (CCID 1.1 section 5.1).
+    # messageBytes 0 (automatic): 271 at full speed, the bulk OUT packet at high speed (512: the ESP32-P4 on the
+    # DUT's USBHS) and SuperSpeed (1024), told the host as dwMaxCCIDMessageLength - at least that packet (CCID 1.1
+    # section 5.1).
     dut.write("ccidsize\n")
     m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+)\r?\n", timeout=5)
-    high = settings(__file__)["target"].get("usb_peer") == "p4"
-    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == ((512, 512, 512) if high else (271, 271, 64))
+    expected = {1: (271, 271, 64), 2: (512, 512, 512), 3: (1024, 1024, 1024)}[link_speed(__file__)]
+    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == expected
 
     # Taken out after the first block of a two-block READ(10): the rest fails
     # and the second block is never asked of the backend. Its sense (02/3A/00)

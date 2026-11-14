@@ -11,7 +11,7 @@ import secrets
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from device_peer import Peer, DEVICE_VID_PID, ISP_ID_PATTERN, command, dut_ready, settings, wait_enumerated
+from device_peer import Peer, DEVICE_VID_PID, ISP_ID_PATTERN, command, dut_ready, link_speed, settings, wait_enumerated
 
 
 def test_usb_peer_device(dut, peers, record_property):
@@ -20,12 +20,12 @@ def test_usb_peer_device(dut, peers, record_property):
     dut_ready(dut, build_id)
     command(peer, "ping", rb"PONG")
 
-    # Enumeration: this build, at the link's speed (1 full, 2 high: the ESP32-P4 is on the DUT's USBHS), every
-    # declared function.
+    # Enumeration: this build, at the link's speed (1 full, 2 high: the ESP32-P4 on the DUT's USBHS, or a CH32RV
+    # peer's controllers; 3 SuperSpeed, bcdUSB 3.20), every declared function.
     dev = wait_enumerated(peer, build_id)
     assert (dev["vid"], dev["pid"]) == DEVICE_VID_PID
-    speed = 2 if settings(__file__)["target"].get("usb_peer") == "p4" else 1
-    assert dev["speed"] == speed and dev["usb"] == "0210"
+    speed = link_speed(__file__)
+    assert dev["speed"] == speed and dev["usb"] == ("0320" if speed == 3 else "0210")
     if peer.kind == "s3":
         # The descriptors are this speed's: bulk endpoints 512 bytes at high speed, 64 at full speed (PR #1: the
         # USBHS bus reset can come before the high-speed handshake ends, and the speed read then is full).

@@ -157,6 +157,8 @@
 | EspUsbDevice との差（複数リスナー、キュー、64 bit LBA、CCID の追加 API、Info の例、例 30 本ほど） | 全 USB 系列 | 2 | 自動 | PC、ESP32-S3 | TODO:468 |
 | USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md:94 |
 | suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 1 | 自動 | PC（suspend を起こす） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125, TC:139 |
+| MSC の複数の論理ユニットと、失敗した読み出しの sense の指定 | 全 USB 系列 | 1 | 自動 | Pico・CH32RV のホスト（usb-peer-host-storage） | CH32RV の相手の試作で判明（2026-11-15） |
+| 1 つのデバイスに HID のインタフェースを複数（CH32RVUsbDevice は 1 つまで） | 全 USB 系列 | 1 | 自動 | PC、Pico | 同上 |
 
 ## USB ホスト
 
@@ -170,6 +172,7 @@
 | ホストのアイソクロナス（オーディオ・ビデオ） | 全ホスト | 1 | 自動 | ESP32-S3 / P4 の UAC・UVC デバイス | libraries/CH32RVUsbHost/README.ja.md:99, libraries/CH32RVUsbHost/src/CH32RVUsbHost.h:31 |
 | ホストの USB ネットワーク（NCM / ECM） | 全ホスト | 1 | 自動 | ESP32-S3 の NCM か USB の LAN アダプタ | FC:113, TODO:472 |
 | ホストの MSC のファイルシステム（マウント） | 全ホスト | 1 | 自動 | libraries/CH32RVUsbHost/README.ja.md:100、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 | まだ無い』 |
+| ホストの文字列 32 文字以上・構成記述子 256 バイト超（CH32RV_USB_HOST_STRING_MAX、構成の保持） | 全ホスト | 1 | 自動 | CH32RV どうし（usb_contracts の 302 バイトの構成）、PC の機器 | CH32RV の相手の試作で判明（2026-11-15） |
 | ホストの USB シリアルの `setRxBufferSize()` | 全ホスト | 2 | 自動 | Pico | libraries/CH32RVUsbHost/README.ja.md:102 |
 | H41x の USBHS ホスト（SWD と兼用、口の 2.0 側） | H41x | 1 | 自動 | ESP32-P4、SWD を外す部品 | docs/usb.ja.md:341, TODO:457 |
 | ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 2 | 自動 | ESP32-S3 / P4 | TODO:468 |

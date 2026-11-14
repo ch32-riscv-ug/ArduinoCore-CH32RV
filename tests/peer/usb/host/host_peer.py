@@ -1,6 +1,6 @@
 """The DUT as USB host (usb_peer_host.ino, CH32RVUsbHost) and the peer as the device: an ESP32-S3 (peer_s3/,
-EspUsbDevice, lines "S3D ...") or an RP2040 (peer_pico/, TinyUSB's device stack, lines "PD ..."); the bench
-record's usb.to says which. Helpers shared by the host-role tests. The runner stages this module beside the
+EspUsbDevice, lines "S3D ..."), an RP2040 (peer_pico/, TinyUSB's device stack, lines "PD ...") or another CH32RV
+board (peer_ch32rv/, CH32RVUsbDevice, lines "CD ..."); the bench record's usb.to says which. Helpers shared by the host-role tests. The runner stages this module beside the
 test."""
 import json
 import pathlib
@@ -14,7 +14,12 @@ IDENTITY = {
     "s3": dict(tag=b"S3D ", vid="303a", manufacturer="EspUsbDevice", hid="S3 peer hid", hid_serial="S3PEERHID",
                classes="S3 peer classes", vreq="ESP32S3"),
     "pico": dict(tag=b"PD ", vid="239a", manufacturer="ch32rv-tests", hid="Pico peer hid", hid_serial="PICOPEERHID",
-                 classes="Pico peer classes", vreq="RP2040", input="Pico peer input", storage="Pico peer storage"),
+                 classes="Pico peer classes", vreq="RP2040", input="Pico peer input", storage="Pico peer storage",
+                 luns=("Pico LUN 0", "Pico LUN 1")),
+    # CH32RVUsbDevice's default VID (pid.codes' test VID).
+    "ch32rv": dict(tag=b"CD ", vid="1209", manufacturer="ch32rv-tests", hid="CH32RV peer hid",
+                   hid_serial="CH32RVPEERHID", classes="CH32RV peer classes", vreq="CH32RV", input="CH32RV peer input",
+                   storage="CH32RV peer storage", luns=("CH32RV LUN 0", "CH32RV LUN 1")),
 }
 
 
@@ -35,6 +40,13 @@ class Peer:
 
 def settings(test_file):
     return json.loads(pathlib.Path(test_file).with_name("case.json").read_text())
+
+
+def link_speed(test_file):
+    """The speed the DUT and the peer meet at (1 full, 2 high, 3 SuperSpeed): the runner's (place.py: the slower of
+    the two controllers a CH32RV peer's record names), else high speed with the ESP32-P4 on the DUT's USBHS, else full."""
+    target = settings(test_file)["target"]
+    return target.get("usb_link_speed") or (2 if target.get("usb_peer") == "p4" else 1)
 
 
 def host(dut, line, reply, timeout=10):
