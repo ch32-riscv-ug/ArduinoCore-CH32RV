@@ -18,7 +18,9 @@ those at start-up). Without them the test skips, naming what is missing.
 wire.output-only runs first with no target: the probe only pulls the two lines up (its pads' input pull-ups) and
 captures them, so what is seen is the DUT's own. At each clock, for two addresses the sketch writes
 one byte with endTransmission(true): on the wire S, the address with no acknowledge, P (WireSkein's i2c), and
-endTransmission() returns 2 (compared here); the SCL WireSkein measured is judged as above and recorded with the run.
+endTransmission() returns 2 (compared here) at 400 kHz and below - the I2C modes the reference manuals give;
+above that the results are recorded (beyond_400k), not required. The SCL WireSkein measured is judged as above and
+recorded with the run.
 
 wire.repeated-start then makes the OEP probe's i2c-target (its own pull-ups) the target at 0x42, at 20 kHz: the sketch writes
 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n, stop) and writes 0x20 with
@@ -49,6 +51,11 @@ ADDRESS = 0x42
 # wire.output-only: the clocks asked, up to High-speed mode's 3.4 MHz. What a part and the bench's lines reach is
 # measured, not assumed: the fastest SCL any of them gave is the ceiling the others are judged against.
 SPEEDS_HZ = (20_000, 50_000, 100_000, 400_000, 1_000_000, 3_400_000)
+# The reference manuals' I2C runs standard (100 kHz) and fast (400 kHz) mode: up to here every transfer must work.
+# Above it a clock can be set (CCR down to 1) but whether a part and its lines run it is not known - the core takes it
+# as asked (the user, 2026-11-15: an error only for what the hardware can never do) - so the results there are
+# recorded, and only "never faster than asked" is judged on the clock that comes out.
+PROMISED_HZ = 400_000
 FASTER_REL = 0.03         # never faster than asked (the core's promise): the measurement's and the oscillator's error
 NEAR_SHARE = 0.2          # clocks at most this share of the ceiling: the lines' rise is small against the period there,
 NEAR_REL = 0.1            # so the clock comes out within this of what was asked - the setting is right
@@ -151,7 +158,10 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
             gpio.configure(ch, Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
     record_property("results", json.dumps(results))
-    wrong = [f"endTransmission() gave {results}, not 2 (address NACK)"] if any(r != 2 for r in results.values()) else []
+    record_property("beyond_400k", json.dumps({k: v for k, v in results.items()
+                                               if int(k.split(" kHz")[0]) * 1000 > PROMISED_HZ}))
+    bad = {k: v for k, v in results.items() if v != 2 and int(k.split(" kHz")[0]) * 1000 <= PROMISED_HZ}
+    wrong = [f"endTransmission() gave {bad}, not 2 (address NACK)"] if bad else []
     wrong += judge_clocks(ws_run, record_property)
     assert not wrong, " | ".join(wrong)
 

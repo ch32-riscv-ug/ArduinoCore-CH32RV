@@ -77,9 +77,10 @@ Adafruit_Something device(&bus);
   API are Wire's.
 - `setClock()` is the clock it keeps, up to what the CPU and the line allow:
   each half period waits for a deadline, so the pin writes and SCL's rise come
-  out of the wait. Measured on the bench (2026-11-14, the probe's weak pull-ups):
-  20 / 50 / 100 kHz within 1 % on a V205; the ceiling is about 60 kHz on a
-  V003, 41 kHz on an X035 (its open drain is emulated) and 245 kHz on a V205.
+  out of the wait. Measured on the bench (2026-11-15, the probe's weak pull-ups):
+  20 / 50 kHz within 1 % everywhere; the ceiling is about 67 kHz on an X035
+  (its open drain is emulated), 78 kHz on a V006, 102 kHz on a V003, 210 kHz on
+  a V103, 373 kHz on a V205, 526 kHz on a V203 and 862 kHz on an H417.
   Above the ceiling it runs at the ceiling, never faster than asked.
   `getClock()` returns what was asked.
 - **No target mode.** `begin(address)` opens a controller, and `onReceive()` /
@@ -156,7 +157,13 @@ compile.
   The bus never runs faster than the clock set.
   A controller takes a new clock at its next transfer. A controller counts SCL's
   high from when it sees it high, so slow rises (weak pull-ups) lengthen the
-  period: 322-394 kHz for 400 kHz on the bench's probe pull-ups alone. The peripheral clock is assumed to be `F_CPU`.
+  period: 330-394 kHz for 400 kHz on the bench's probe pull-ups alone.
+  The reference manuals give standard (100 kHz) and fast (400 kHz) mode. A
+  faster clock is taken as asked - it can be set - but whether a part and its
+  lines run it is not promised: on the bench (2026-11-15) 1 MHz asked ran at
+  0.55-0.96 MHz on every part, and 3.4 MHz asked made every transfer time out
+  (5) on V006, V103, V203, V205, X035 and H417 (V003 ran at 2 MHz). The
+  peripheral clock is assumed to be `F_CPU`.
   Changes to system or APB clock settings must preserve or update this assumption.
 
 ## Examples
