@@ -309,6 +309,9 @@ SDKの初期化をそのまま貼り付けて、コアの管理する周辺回�
   spi-target の既知の問題（[oep]、2026-11-14）: DMA を使わない形で、送りと受けが同じバッファ W0〜W15 を使う競合が一番の候補。
   DMA の形は configure で panic して、まだ試せていない。arm のあとの待ちは効かない（[oep] の数え直しで 0 ms と 50 ms が同じ程度）
   ので外した。SCK のグリッチフィルタも効果なし。
+  → 2026-11-14 夕: 原因は CS の 12.5 ns 以下のひげ（[oep]）。spi-target の CS のフィルタ（25 ns）は oep-probe の main に入った
+  （次のリリースから）。その版で DUT の読みは 2 回とも正しく、残りは取り込みの解析だけ。oep-client-python に取り込みの
+  glitch_filter_ns が入った（3dc4a51、未リリース）ので、リリースされたら ws_capture.stream に 50 ns を渡し、6-2 と他の台で確かめる。
 - [x] **入れ替えで加わった口（2026-11-14）**: V208・V003・V407・V006・V103 の EVT を足して全台に加えた。直したもの: V003 の
   periph（Serial1 の無い系列で uart2 が何もしなかった。試験のスケッチ）、V103 の EVT の selfcheck の PWM（Serial.end() のあと
   USART が PA9 に Low を出し続け TIM1 CH2 を押さえていた。end() で USART のクロックも止める）、selfsys（リセット直後の
