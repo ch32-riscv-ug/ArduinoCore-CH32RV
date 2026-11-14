@@ -105,6 +105,11 @@ SKETCHES = {
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
+# The record's usb ports (harness.records.USB_PORTS) as the test sketches' controller (USB_TEST_CONTROLLER) and host port
+# (USB_PEER_HOST_PORT).
+USB_CONTROLLERS = {"fs": "FullSpeed", "hs": "HighSpeed", "ss": "SuperSpeed", "usbd": "Usbd", "hs2": "HighSpeed2"}
+USB_HOST_PORTS = {"fs": "CH32RV_USB_HOST_PORT_FULL_SPEED", "hs": "CH32RV_USB_HOST_PORT_HIGH_SPEED",
+                  "hs2": "CH32RV_USB_HOST_PORT_HIGH_SPEED_2"}
 # build_opt.h lines staged beside a case's DUT sketch.
 BUILD_OPTS = {
     # EspUsbHost 2.10.0 starts a bulk UVC stream but never reads it.
@@ -262,7 +267,18 @@ def stage_case(work, name, case, target):
             sketch.write_text(text.replace(m.group(0), f"default_profile: p4_{m.group(1)}\n"))
         target = dict(target, usb_peer_port=places.peer_tty(target["usb_peer_serial"], mac=target.get("usb_peer_mac")))
     opts = BUILD_OPTS.get(case, "")
-    if case in places.PEER_HOST_CASES and target.get("usb_peer") == "p4":
+    # The DUT's controller the record's usb names for this kind of case (per controller: {fs: {...}, ss: {...}}); the
+    # single form leaves the series' usual one (Auto), as before.
+    controller = (target.get("usb_host_controller") if case in places.USB_CASES else
+                  target.get("usb_peer_controller") if case in places.PEER_DEVICE_CASES + places.PEER_HOST_CASES else None)
+    if controller and controller != "auto":
+        if case in places.PEER_HOST_CASES:
+            if controller not in USB_HOST_PORTS:
+                raise RuntimeError(f"{case}: the record's usb.{controller} has no USB host the DUT can run")
+            opts += f"-DUSB_PEER_HOST_PORT={USB_HOST_PORTS[controller]}\n"
+        else:
+            opts += f"-DUSB_TEST_CONTROLLER=CH32RVUsbController::{USB_CONTROLLERS[controller]}\n"
+    elif case in places.PEER_HOST_CASES and target.get("usb_peer") == "p4":
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
     if opts:
         (directory / "build_opt.h").write_text(opts)

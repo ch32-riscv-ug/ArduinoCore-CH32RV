@@ -88,7 +88,13 @@ def set_records(address, args):
                 usb[key] = True              # a bare flag: host,ss_only
             else:
                 usb[key] = value.lower().replace(":", "") if key == "mac" else value
-        core_changes["usb"] = usb
+        if args.usb_port:
+            # One controller's entry, the others kept: {fs: {...}, ss: {...}}. A single-form usb named no controller,
+            # so it gives way to the per-port form.
+            port_name = args.usb_port.lower()
+            core_changes["usb"] = lambda old: {**({} if not old or "to" in old else old), port_name: usb}
+        else:
+            core_changes["usb"] = usb
     if args.sd or args.eth:
         parts = {}
         if args.sd:
@@ -147,6 +153,8 @@ def main(argv=None):
             s.add_argument("--board", help="<maker>:<model>")
             s.add_argument("--supply", choices=("probe", "usb", "other"))
             s.add_argument("--usb", help="host (host,ss_only for a SuperSpeed-only cable), esp32-s3 / esp32-p4,serial=<its port's USB serial>,mac=<mac> (either may be left out; mac alone for a bridge without a serial), or rp2040,port=<port>")
+            s.add_argument("--usb-port", help="with --usb: the DUT's controller it is about (" + " / ".join(records.USB_PORTS)
+                           + "), on a part wired on several; the others' entries are kept")
             s.add_argument("--sd", help="JSON: {bus, <signal>: <pad>}")
             s.add_argument("--eth", action="store_true", help="the Ethernet jack is on the host's network")
             s.add_argument("--pd", help="JSON: {max_mv, vbus_pin, vbus_ratio}")

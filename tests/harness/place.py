@@ -321,23 +321,26 @@ def choose_cases(place, items=None, caps=None):
                   else "skip: no eth in the record's parts" if "eth" not in parts else f"skip: {series} has no Ethernet")
     out["pd"] = ("run" if "pd" in core and series_has("pd", series, items, caps)
                  else "skip: no pd in the record" if "pd" not in core else f"skip: {series} has no USB PD")
-    usb = core.get("usb", {})
+    # The record's usb, single or per controller: the port each kind of case runs on (records.usb_ports).
+    ports = records.usb_ports(core.get("usb"))
+    usb = next((e for e in ports.values() if e.get("to") == "host"), {})
+    peer_usb = next((e for e in ports.values() if e.get("to") in PEER_KINDS), {})
     device = series_has("usb", series, items, caps)
     host = series_has("usb-peer-host", series, items, caps) and part not in USB_HOST_NO_PARTS
     for case in USB_CASES:
         out[case] = ("run" if usb.get("to") == "host" and device else
                      f"skip: {part} has no USB controller" if not device else
                      "skip: the record's usb is not {to: host}")
-    peer = usb.get("to") in PEER_KINDS
+    peer = bool(peer_usb)
     not_peer = "skip: the record's usb is not {to: esp32-s3}, {to: esp32-p4} or {to: rp2040}"
     for case in PEER_DEVICE_CASES:
-        lacks = (PICO_HOST_LACKS.get(case) if usb.get("to") == "rp2040" else
-                 S3_LACKS.get(case) if usb.get("to") == "esp32-s3" else None)
+        lacks = (PICO_HOST_LACKS.get(case) if peer_usb.get("to") == "rp2040" else
+                 S3_LACKS.get(case) if peer_usb.get("to") == "esp32-s3" else None)
         out[case] = ("run" if peer and device and not lacks else
                      f"skip: {part} has no USB controller" if not device else
                      lacks if peer else not_peer)
     for case in PEER_HOST_CASES:
-        lacks = {"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(usb.get("to"), {}).get(case)
+        lacks = {"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(peer_usb.get("to"), {}).get(case)
         out[case] = ("run" if peer and host and not lacks else
                      f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else
                      lacks if lacks else not_peer)
@@ -480,13 +483,23 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
                               for k, tx, rx in routes]
     place["dut_usb_serial"] = uid.upper()
     core = place["record"]
-    if core.get("usb", {}).get("to") in PEER_KINDS:
-        place["usb_peer"] = PEER_KINDS[core["usb"]["to"]]
-    if core.get("usb", {}).get("to") in ESP_PEERS:
-        place["usb_peer_serial"] = core["usb"].get("serial")
-        place["usb_peer_mac"] = core["usb"].get("mac")
-    if core.get("usb", {}).get("to") == "rp2040":
-        port = core["usb"]["port"]
+    # Which controller each kind of USB case opens: "auto" (the series' usual one) for the single form of usb, else
+    # the port the record names for it (run_hardware passes it to the sketch).
+    ports = records.usb_ports(core.get("usb"))
+    host_port = next((p for p, e in ports.items() if e.get("to") == "host"), None)
+    peer_port = next((p for p, e in ports.items() if e.get("to") in PEER_KINDS), None)
+    if host_port:
+        place["usb_host_controller"] = host_port
+        place["usb_ss_only"] = bool(ports[host_port].get("ss_only"))
+    peer_usb = ports.get(peer_port, {})
+    if peer_port:
+        place["usb_peer_controller"] = peer_port
+        place["usb_peer"] = PEER_KINDS[peer_usb["to"]]
+    if peer_usb.get("to") in ESP_PEERS:
+        place["usb_peer_serial"] = peer_usb.get("serial")
+        place["usb_peer_mac"] = peer_usb.get("mac")
+    if peer_usb.get("to") == "rp2040":
+        port = peer_usb["port"]
         if port.startswith("oep://"):
             place["usb_peer_address"] = port            # on another probe (a WCH-Link's DUT has none of its own)
         elif parsed["kind"] != "oep":

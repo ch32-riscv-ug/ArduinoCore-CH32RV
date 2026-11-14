@@ -210,6 +210,9 @@ void setup()
     msc.mediaPresent(false);
     config.product = "CH32RV usb-fs " BENCH_BUILD_ID;
     config.selfPowered = true;
+#ifdef USB_TEST_CONTROLLER
+    config.controller = USB_TEST_CONTROLLER;   /* run_hardware.py: the controller the record's usb names */
+#endif
     USBDevice.begin(config);
 }
 

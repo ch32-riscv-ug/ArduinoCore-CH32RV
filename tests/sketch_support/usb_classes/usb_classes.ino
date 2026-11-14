@@ -297,6 +297,9 @@ void setup()
     vendor.setInterfaceProtocol(0x4F, 0x45);
     config.product = "CH32RV usb-classes " BENCH_BUILD_ID;
     config.selfPowered = true;
+#ifdef USB_TEST_CONTROLLER
+    config.controller = USB_TEST_CONTROLLER;   /* run_hardware.py: the controller the record's usb names */
+#endif
     config.webusbEnabled = true;
     config.webusbUrl = "https://example.com/ch32rv";
     config.deviceInterfaceGuid = "{0B1C2D3E-4F50-6172-8394-A5B6C7D8E9F0}";

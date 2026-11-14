@@ -140,6 +140,9 @@ void setup()
     net.onFrame([](const uint8_t *, size_t) { netFrames++; });
     config.product = "CH32RV usb-contract " BENCH_BUILD_ID;
     config.selfPowered = true;       /* the bench powers the DUT; VBUS is not used */
+#ifdef USB_TEST_CONTROLLER
+    config.controller = USB_TEST_CONTROLLER;   /* run_hardware.py: the controller the record's usb names */
+#endif
     USBDevice.begin(config);
 }
 

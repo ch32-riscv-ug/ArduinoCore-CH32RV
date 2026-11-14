@@ -71,7 +71,37 @@ def _parts(value, errors):
                 PART_CHECKS[kind](part, errors)
 
 
+# A DUT's USB controllers, as the per-port form of usb names them (the test sketches open that one:
+# CH32RVUsbController for a device, CH32RVUsbHostPort for a host).
+USB_PORTS = ("fs", "hs", "ss", "usbd", "hs2")
+
+
+def usb_ports(value):
+    """{port: entry}: the per-port form as it is, the single form as {"auto": entry} (the series' usual controller)."""
+    if not isinstance(value, dict) or not value:
+        return {}
+    return {"auto": value} if "to" in value else dict(value)
+
+
 def _usb(value, errors):
+    if isinstance(value, dict) and value and "to" not in value:
+        # Per port: {"fs": {to: rp2040, ...}, "ss": {to: host}} - a part with several controllers wired apart.
+        unknown = [k for k in value if k not in USB_PORTS]
+        if unknown:
+            errors.append(f"usb: {{to: ...}}, or per port {{{' / '.join(USB_PORTS)}: {{to: ...}}}}, not {', '.join(unknown)}")
+            return
+        for port, entry in value.items():
+            if not isinstance(entry, dict):
+                errors.append(f"usb.{port}: {{to: ...}}")
+                continue
+            sub = []
+            _usb_one(entry, sub)
+            errors += [e.replace("usb", f"usb.{port}", 1) for e in sub]
+        return
+    _usb_one(value, errors)
+
+
+def _usb_one(value, errors):
     to = value.get("to")
     if to == "host":
         if "ss_only" in value and not isinstance(value["ss_only"], bool):
@@ -153,7 +183,8 @@ def _spi(value, errors):
 CORE_MEMBERS = {
     "board": (_board, "the board model, <maker>:<model>; the tests know each model's onboard parts"),
     "supply": (_supply, "where the board's power comes from: {from: probe | usb | other}"),
-    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial and / or mac} or {to: rp2040, port}"),
+    "usb": (_usb, "where the DUT's own USB goes: {to: host}, {to: esp32-s3 / esp32-p4, serial and / or mac} or {to: rp2040, port}; "
+                  "per controller {fs / hs / ss / usbd / hs2: {to: ...}} on a part wired on several"),
     "parts": (_parts, "external parts: {sd: {bus: spi | sd1 | sd4, <signal>: <pad>, ...}, eth: {to: lan}}"),
     "pd": (_pd, "a USB PD sink on the board: {max_mv, vbus_pin, vbus_ratio}"),
     "defects": (_defects, "this board's own faults: [{id, lose: [feature, ...], why}]"),
@@ -249,7 +280,8 @@ def encode(record):
 
 
 def update(host, port, *, port_changes=None, core_changes=None, remove=()):
-    """Merge changes into the port's records inside the session the caller holds (the memo write needs the lock, so
+    """Merge changes into the port's records inside the session the caller holds (a change may be a function of the
+    member's present value, None when absent, returning the new one) (the memo write needs the lock, so
     no other host writes between this read and write, oep-if-memo §4.2): read, set the given members (None removes
     one), keep the rest, write only what changed, and never empty a record (refused). Returns {name: (before, after)} of
     what was written."""
@@ -267,6 +299,8 @@ def update(host, port, *, port_changes=None, core_changes=None, remove=()):
         before = (_decode(data) or {}) if data is not None else {}
         after = dict(before)
         for key, value in (changes or {}).items():
+            if callable(value):
+                value = value(after.get(key))       # a change worked out from what is there (usb per port)
             if value is None:
                 after.pop(key, None)
             else:

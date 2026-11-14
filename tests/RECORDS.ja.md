@@ -80,6 +80,20 @@ DUT 自身の USB 端子がどこへつながっているかです。
 
 ESP32-P4 は ESP32-S3 と同じスケッチ（`tests/sketch_support/usb_peer/*/peer_s3`）を、sketch.yaml の `p4_host` の設定で動かします。答えの行の頭は、どちらも `S3 ` です。
 
+**口ごとの形。** USB のコントローラーを複数持つ石で、口ごとに相手が違うとき（H417 の公式 EVT: FS に Pico、SS に PC）は、
+コントローラーの名前をキーにして、それぞれに上の表の形を書きます。
+
+```json
+{"usb": {"fs": {"to": "rp2040", "port": "rp2040-h417"}, "ss": {"to": "host", "ss_only": true}}}
+```
+
+- キーは `fs`（USBFS / OTG_FS）、`hs`（USBHS）、`ss`（USBSS）、`usbd`（V20x の USBD）、`hs2`（V407 / V467 の 2 つ目の USBHS）。
+- usb・usb-classes・usb-media は `{"to": "host"}` の口で、usb-peer の各 case はプローブなどの相手（esp32-s3 / esp32-p4 /
+  rp2040）の口で流れます。run_hardware.py が、その口をスケッチに渡します（デバイスは `USB_TEST_CONTROLLER`、ホストは
+  `USB_PEER_HOST_PORT`）。1 つの形は、系列の既定のコントローラー（`Auto`）のままです。
+- 書き方: `tests/bench_record.py set <アドレス> --usb rp2040,port=rp2040-h417 --usb-port fs`。`--usb-port` の口だけを書き換え、
+  ほかの口の記録は残ります（1 つの形の記録は、口ごとの形に置き換わります）。
+
 ### 4.4 `parts`
 
 基板の外に足した部品です。`{"<部品>": {...}}` の形で書きます。知らない部品は読み飛ばします。
