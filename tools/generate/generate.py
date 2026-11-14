@@ -162,6 +162,11 @@ FAMILY = {
                              "-DCH32RV_LOADCODE=1",
                      systick64=0, flash_latency=0, adc_bits=12, i2c_has_rtr=1,
                      sysclk=400000000,
+                     # The 25 MHz crystal every H41x board carries: USBSS and
+                     # USBHS run their PLLs from it. The crystal comes first in
+                     # Clock Source (hse_first): HSI is about 1 % off, and the
+                     # UHSIF and HSADC rates derived from SYSCLK were off with it.
+                     hse_hz=25000000, hse_first=True,
                      h41x_clock=dict(fpre_mask="RCC_FPRE",
                                      syspll_sel="RCC_SYSPLL_SEL", syspll_gate="RCC_SYSPLL_GATE",
                                      actlr_mask="FLASH_ACTLR_SCK_CFG",
@@ -860,10 +865,12 @@ def clock_hse_defines(series: str, key: str, hsi: dict, hse: dict, latency: int,
 def clocksrc_menu(board: str, series: str) -> list[str]:
     """Clock Source: the internal oscillator, or the crystal EVT assumes. The
     choice only switches the CPU Clock entry's HSE defines on."""
-    if series == "CH32V208":
+    if series == "CH32V208" or FAMILY[SERIES_CONFIG[series]["family"]].get("hse_first"):
         # The crystal first: Ethernet's +-100 ppm (and the radio) want it, and
-        # every V208 board carries one.
-        return [f"{board}.menu.clocksrc.hse=External crystal 32 MHz (HSE; HSI if it does not start)",
+        # every V208 board carries one. CH32H41x: see FAMILY's hse_first.
+        mhz = V208_HSE_HZ // 1000000 if series == "CH32V208" else \
+            FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
+        return [f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
                 f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}",
                 f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
                 f"{board}.menu.clocksrc.hsi.build.clock_src_defines="]
@@ -4303,9 +4310,10 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     elif hse_series(series):
         # The first CPU Clock entry's, as build.clock_defines is: what a build
         # without the menu (a bare FQBN) gets with clocksrc=hse.
-        hse = clock_for(None, menu[0][1] * 1000000, menu[0][2] * 1000000, "HSE")
+        # Without a CPU Clock menu (CH32H41x), the one fixed setting's.
+        hse = clock_for(None, menu[0][1] * 1000000 if menu else None, menu[0][2] * 1000000 if menu else None, "HSE")
         lines.append(f"{board}.build.clock_hse_defines="
-                     f"{clock_hse_defines(series, menu[0][0], clk, hse, latency, fam)}")
+                     f"{clock_hse_defines(series, menu[0][0] if menu else 'fixed', clk, hse, latency, fam)}")
     lines.append("")
 
     ld_files = {}
@@ -4413,6 +4421,9 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines += clock_menu(board, series, menu, fam, fact, clock_for)
         if hse_series(series):
             lines += clocksrc_menu(board, series)
+        lines.append("")
+    elif hse_series(series):
+        lines += clocksrc_menu(board, series)
         lines.append("")
     lines += opt_menu(board)
     lines.append("")
