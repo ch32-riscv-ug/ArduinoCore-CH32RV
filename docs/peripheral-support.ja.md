@@ -17,7 +17,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ● | 使える |
 | ◐ | 一部だけ使える(備考に記載) |
 | ○ | siliconにあるが未実装 |
-| − | siliconにあるがcoreでは提供しない |
+| − | 作らないと決めたもの(ユーザーの判断。今はBLEだけ) |
 | 空欄 | EVTに例が無く、レジスタのブロックも無い |
 
 **空欄は「siliconに無い」とは限りません**。EVTに例が置かれていないだけのこともあります。実装する前にreference manualか`ch32-device-data`で裏を取ってください。
@@ -27,7 +27,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | 実装済 | 公開APIと実装がある |
 | 一部実装 | 備考に記載した範囲だけ実装がある |
 | 未実装 | siliconに機能はあるがcoreの公開API/実装がない |
-| 対象外 | coreの公開APIとして提供しない |
+| 除外 | 作らないと決めたもの(ユーザーの判断。今はBLEだけ)。ほかはすべて作る。未実装の一覧と順番は[unimplemented.ja.md](unimplemented.ja.md) |
 
 ## 基本ペリフェラル
 
@@ -46,13 +46,13 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | ADC | 実装済 | analogRead | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | X305/X315はADC1〜4がpadを分け合うため`CH32RV_PIN_TO_ADC_INSTANCE`で切替。内部チャネルは`analogReadVref()`・`analogReadTemp()`・`CH32RV.getVddMillivolts()`(M030はシリコンに無い(RMに記載なし)、温度センサはV103/V20x/V205/V30x/V4x7/L103/M103/H41xのみ、工場の校正値の1点から換算)。`analogRead()`は変換器の値そのまま(arduino-esp32と同じ)。L103/M103のEVTと同じVDDA/2のオフセット補正は`analogReadCalibrated()`でかける(ほかの系列では`analogRead()`と同じ)。mVを返す関数は無い(基準はVDDで、コアはVDDを知らない)。基準電圧は選べない(`analogReference()`は何もしない)。V003は10 bit |
 | DAC | 実装済 | analogWrite(CH32RV_DACn_PIN) |  |  |  |  |  | ● | ● |  |  |  |  | ● | V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来 |
 | TIM (PWM/tone) | 実装済 | analogWrite/tone | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5とTIM8〜10(V30x・V4x7・H41x。TIM1〜5の端子は奪わない、ビルドのみ)の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(V205のPA0・X315のPA4でTIM2のPWMを確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダはCH32RVTimerInput(library)。ETR・DMAバーストは未実装。CH32RVLogicCapture(TIM+DMAでポートを取り込む)は全系列、実機はH415/H416/H417・V205・X315 |
-| LPTIM | 対象外 | - |  |  |  |  |  |  |  | − |  |  |  | − | L103のみ |
-| DMA | 対象外 | - | − | − | − | − | − | − | − | − | − | − | − | − | Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う |
+| LPTIM | 未実装 | - |  |  |  |  |  |  |  | ○ |  |  |  | ○ | L103・H41x |
+| DMA | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う |
 | IWDG | 実装済 | `CH32RV.wdtEnable/wdtFeed` | ● | ● | ● | ● | ● | ● | ● | ● |  | ● | ● | ● | X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い |
 | WWDG | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
 | RTC | 一部実装 | time() / settimeofday() |  |  | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |  |  | ◐ | ◐ | V20x・V205・V30x・L103/M103: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。休止のアラームにも使う。V20x・V205・V307・L103で実機確認(2026-10-28)。V103は同じRTCだが休止から起きなかったので外している。LSEは未対応。H41x・V4x7・X315は未実装 |
 | BKP (バックアップレジスタ) | 一部実装 | - |  |  | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |  |  |  |  | RTCの系列でDR1〜DR4をコアが使う(RTCの印、分周、settimeofday()のずれ)。DR5以降はスケッチが直接使える(APIは無い) |
-| CRC | 対象外 | - |  |  | − | − | − | − | − | − |  |  | − | − |  |
+| CRC | 未実装 | - |  |  | ○ | ○ | ○ | ○ | ○ | ○ |  |  | ○ | ○ |  |
 | ECDC (AES/SM4) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している |
 | TIM 入力捕捉 | 実装済 | CH32RVTimerInput(library) | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | `CH32RVPulseCapture`: PWM入力モードで周期とHighの時間(割込みなし、`read()`で最新の1周期)。端子はtimerのCH1/CH2(既定の経路)。エッジごとの時刻・通知は未実装。実機はV003/V006/V103/V203/V205/V307/L103/X035/X315/H417(同じ端子をGPIO・tone()・Servoで動かす自己試験)。`pulseIn()`はsoftwareのまま |
 | TIM エンコーダ | 実装済 | CH32RVTimerInput(library) | ● | ● | ● | ● |  | ● | ● | ● | ● | ● | ● | ● | `CH32RVEncoder`: エンコーダモードでx4/x2/x1、64ビットの数(桁あふれは更新割込みで数える)。名前はESP32Encoderに合わせた。timerのCH1/CH2の端子だけ。実機は入力捕捉と同じ10系列(V205はEVTに例が無く欄は空だが、実機で動いた) |
@@ -63,7 +63,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | PMP (メモリ保護) | 未実装 | - |  |  |  | ○ |  | ○ | ○ | ○ |  | ○ |  | ○ |  |
 | FPU | 実装済 | float/double |  |  |  |  |  | ● |  |  |  |  | ● | ● | 単精度のFPU。`-march`のfでコンパイラが使う |
 | ICache | 実装済 | - |  |  |  |  |  |  |  |  |  |  |  | ● | 起動時にEVTと同じCORECFGRを書く |
-| V5F (2つ目のコア)/HSEM/IPC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。起動、共有メモリ、HSEM、原子操作、GPIOの読み取りを実機で測った(docs/h417-multicore.ja.md)。設計は未 |
+| V5F (2つ目のコア)/HSEM/IPC | 一部実装 | CPU Core menu, setup1()/loop1(), CH32RV.startV3F() |  |  |  |  |  |  |  |  |  |  |  | ◐ | H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F)。HSEM・IPCの公開APIは未実装(docs/h417-multicore.ja.md) |
 | RAM実行 | 実装済 | CH32RV_RAMFUNC | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 関数に付けるとRAMに置く(.highcode、起動時に.dataと一緒に写す)。その大きさ分のRAMを使う。H41xは全部RAMで動く |
 | AWU (自動起床) | 実装済 | CH32RV.enableTimerWakeup |  |  |  |  |  |  |  |  |  | ● |  |  | 休止からのタイマー起床に使う(V00xはPWRの中、X035は別のブロック)。V00xのAWUはLSIで、起動後最初の休止で速さを測る |
 | オプションバイト | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 読み出し保護、NRSTの端子をGPIOにする設定など。書き込みツール(ch32rv)の範囲とも重なる |
@@ -72,11 +72,11 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| OPA/コンパレータ | 対象外 | - | − | − |  | − | − | − | − | − | − | − |  | − | CH32固有 |
+| OPA/コンパレータ | 未実装 | - | ○ | ○ |  | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  | ○ | CH32固有 |
 | TouchKey | 一部実装 | touchRead / touchSetCycles |  | ◐ | ◐ | ◐ | ◐ | ◐ |  | ◐ |  | ◐ |  | ◐ | arduino-esp32と同じ名前で生の数値。ADC1のTKey(CTLR1 bit24)、最短のサンプル時間とEXTTRIG切りで測る(EVTの長い設定のままでは4095か0)。何もつながない端子で範囲の半分前後になる充電時間を既定にした。V005〜V007/M007・X033/X035・V20x・V30x(X035・V006・V203・V307で値を確認、指で触った向きは未確認)。L103は同じ手順で読めず、V205・H41xは別のTKEYブロックで未実装、V103は未確認 |
 | HSADC (高速ADC) | 一部実装 | CH32RVHsAdc(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | H415/H416/H417。DMAで連続取り込み、USBで流す(HsAdcStream) |
 | DFSDM (ΣΔフィルタ) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | PDMマイク、ΣΔ変調器の入力。H417 |
-| PIOC (プログラマブルIO) | 対象外 | - |  |  |  |  | − |  |  |  |  | − |  | − | X035/V205固有 |
+| PIOC (プログラマブルIO) | 未実装 | - |  |  |  |  | ○ |  |  |  |  | ○ |  | ○ | X035/V205固有 |
 | ADC 連続・DMA・トリガ | 一部実装 | CH32RVAdcStream(library) | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | 自走の連続変換をDMAの2面バッファで受ける(1〜6本、全系列)。タイマー・外部のトリガ、注入変換は未実装 |
 | ADC アナログウォッチドッグ | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ |  |
 | ADC デュアル | 未実装 | - |  |  |  | ○ |  | ○ | ○ |  |  |  | ○ | ○ | ADC1とADC2の同時・交互変換 |
@@ -95,25 +95,25 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| CAN | 対象外 | - |  |  |  | − | − | − | − | − |  |  |  | − |  |
+| CAN | 未実装 | - |  |  |  | ○ | ○ | ○ | ○ | ○ |  |  |  | ○ |  |
 | Ethernet | 一部実装 | `ETH`(Network library) |  |  |  | ◐ |  | ◐ | ◐ |  |  |  |  | ◐ | H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認(TCP 20/24 Mbit/s、docs/network-stack.ja.md)。H415/H416はETHが無い。V307・V407・V208も実機で通る(V208は2026-11-03、TCP 9.3/8.1 Mbit/s、TLSは無し)。V467・V317・V203RBはEVTから移してビルドのみ(V208/V203RBはHCLK 60/120 MHzが要り、CPU Clock `60MHz`を選ぶ。既定の96 MHzでは`begin()`がfalse) |
-| I2S | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − |  |
-| SDIO | 対象外 | - |  |  |  |  |  | − | − |  |  |  |  | − | `SD`libraryの下地にはなる |
-| FSMC/FMC | 対象外 | - |  |  |  |  | − | − | − |  |  |  |  | − | H417のFMCはSDRAMも扱う |
-| SDMMC | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | H417。host(HS200/HS400)とSDIO slave |
-| SAI (音声) | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | TDM、SPDIF出力 |
-| SWPMI | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | NFC/UICCのSWP master |
+| I2S | 未実装 | - |  |  |  |  |  | ○ | ○ |  |  |  |  | ○ |  |
+| SDIO | 一部実装 | SD_MMC |  |  |  |  |  | ◐ | ◐ |  |  |  |  | ◐ | SD_MMC library(4 bit、20 MHz、H417で実機確認)。DMA・high speed・MMCの4/8 bit・V4x7のremapは未実装 |
+| FSMC/FMC | 未実装 | - |  |  |  |  | ○ | ○ | ○ |  |  |  |  | ○ | H417のFMCはSDRAMも扱う |
+| SDMMC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。host(HS200/HS400)とSDIO slave |
+| SAI (音声) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | TDM、SPDIF出力 |
+| SWPMI | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | NFC/UICCのSWP master |
 | UHSIF (高速パラレル) | 一部実装 | CH32RVUhsif(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | 8/16/32 bitの入力・内部クロックだけ(スレーブのモード、出力、外部クロックは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)が使う |
-| SerDes | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − | 1.5 Gbpsの差動リンク |
-| QSPI | 対象外 | - |  |  |  |  | − |  |  |  |  |  |  | − |  |
-| PSRAM | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  |  |  |
-| I3C | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  | − |  |
+| SerDes | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | 1.5 Gbpsの差動リンク |
+| QSPI | 未実装 | - |  |  |  |  | ○ |  |  |  |  |  |  | ○ |  |
+| PSRAM | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  |  |  |
+| I3C | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  | ○ |  |
 | DVP (カメラ) | 未実装 | - |  |  |  |  |  | ○ | ○ |  |  |  |  | ○ | パラレル入力(8〜12 bit、外部PCLK)の候補。docs/unused-peripherals.ja.md |
-| LTDC (LCD) | 対象外 | - |  |  |  |  |  |  | − |  |  |  |  | − |  |
-| GPHA (2D DMA) | 対象外 | - |  |  |  |  |  |  |  |  |  |  |  | − |  |
-| ARGB (LEDドライバ) | 対象外 | - |  |  |  |  |  |  | − |  |  |  | − |  |  |
+| LTDC (LCD) | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  | ○ |  |
+| GPHA (2D DMA) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ |  |
+| ARGB (LEDドライバ) | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  | ○ |  |  |
 | RNG | 一部実装 | - |  |  |  |  |  | ◐ | ◐ |  |  |  |  | ◐ | TLS(mbedTLS)とTCPの乱数にコア内部で使う(`ch32rv_rng_read`)。公開APIは無い。`random()`はsoftware実装 |
-| BLE | 対象外 | - |  |  |  | − |  |  |  |  |  |  |  |  | V208のみ。専用stackが要る |
+| BLE | 除外 | - |  |  |  | − |  |  |  |  |  |  |  |  | V208のみ。ユーザーの判断で作らない(2026-11-14) |
 | LVDS | 未実装 | - |  |  |  |  | ○ |  |  |  |  |  |  |  | V205。用途は未確認(ch32-device-dataに問い合わせ中) |
 
 ## デバッグ出力
@@ -129,10 +129,10 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 
 | ペリフェラル | 状態 | Arduino API | V003 | V00x/M007 | V103 | V203/V208 | V205 | V303/305/307/317 | V407/V467 | L103/M103 | M030 | X033/X035 | X305/X315 | H415/H416/H417 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| FreeRTOS | 対象外 | - |  |  | − | − | − | − |  | − | − | − |  |  | coreはbare metal。ADR-0006 |
-| RT-Thread | 対象外 | - |  |  | − | − | − | − |  | − | − | − |  |  | coreはbare metal。ADR-0006 |
-| HarmonyOS | 対象外 | - |  |  | − | − | − | − |  | − | − | − |  |  | coreはbare metal。ADR-0006 |
-| TencentOS | 対象外 | - |  |  | − | − | − | − |  | − | − | − |  |  | coreはbare metal。ADR-0006 |
+| FreeRTOS | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  | coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る |
+| RT-Thread | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  | coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る |
+| HarmonyOS | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  | coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る |
+| TencentOS | 未実装 | - |  |  | ○ | ○ | ○ | ○ |  | ○ | ○ | ○ |  |  | coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る |
 
 ## この表の使いかた
 

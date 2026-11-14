@@ -165,8 +165,9 @@ EVT_FAMILY = [
 #
 #   実装済     公開APIと実装がある
 #   一部実装   備考に記載した範囲だけ実装がある
-#   未実装     siliconに機能はあるがcoreの公開API/実装がない
-#   対象外     coreの公開APIとして提供しない
+#   未実装     siliconに機能はあるがcoreの公開API/実装がない(作る。docs/unimplemented.ja.md)
+#   除外       作らないと決めたもの(ユーザーの判断。2026-11-14時点でBLEだけ)
+# Everything is to be built (the user, 2026-11-14): only the user excludes a feature, never "not provided".
 STATUS = {
     "GPIO": ("実装済", "pinMode/digitalWrite/digitalRead", ""),
     "EXTI (外部割込み)": ("実装済", "attachInterrupt",
@@ -197,8 +198,8 @@ STATUS = {
             "V303/V305/V307/V317/V407/V467のみ。padはdevice-data由来"),
     "TIM (PWM/tone)": ("実装済", "analogWrite/tone",
         "`tone()`はtimer割込みでpinをtoggle。使うtimerはvariantが選ぶ(`CH32RV_TONE_TIMER`)。V00x/X035/M030は空きが無く**PWMと共有**。PWMはTIM1〜5とTIM8〜10(V30x・V4x7・H41x。TIM1〜5の端子は奪わない、ビルドのみ)の既定ピン(tone/Servoが使うtimerは除く。remap先とCHxNは未対応)、V205・X305/X315は端子ごとのAF番号で出す(V205のPA0・X315のPA4でTIM2のPWMを確認)。timer管理はTIM1〜10(V30xのTIM8〜10、V4x7のTIM8)。入力捕捉・エンコーダはCH32RVTimerInput(library)。ETR・DMAバーストは未実装。CH32RVLogicCapture(TIM+DMAでポートを取り込む)は全系列、実機はH415/H416/H417・V205・X315"),
-    "LPTIM": ("対象外", "-", "L103のみ"),
-    "DMA": ("対象外", "-",
+    "LPTIM": ("未実装", "-", "L103・H41x"),
+    "DMA": ("未実装", "-",
         "Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う"),
     "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`",
              "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
@@ -207,12 +208,12 @@ STATUS = {
         "V20x・V205・V30x・L103/M103: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。休止のアラームにも使う。V20x・V205・V307・L103で実機確認(2026-10-28)。V103は同じRTCだが休止から起きなかったので外している。LSEは未対応。H41x・V4x7・X315は未実装"),
     "BKP (バックアップレジスタ)": ("一部実装", "-",
         "RTCの系列でDR1〜DR4をコアが使う(RTCの印、分周、settimeofday()のずれ)。DR5以降はスケッチが直接使える(APIは無い)"),
-    "CRC": ("対象外", "-", ""),
+    "CRC": ("未実装", "-", ""),
     "ECDC (AES/SM4)": ("未実装", "-", "AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している"),
-    "OPA/コンパレータ": ("対象外", "-", "CH32固有"),
+    "OPA/コンパレータ": ("未実装", "-", "CH32固有"),
     "TouchKey": ("一部実装", "touchRead / touchSetCycles",
         "arduino-esp32と同じ名前で生の数値。ADC1のTKey(CTLR1 bit24)、最短のサンプル時間とEXTTRIG切りで測る(EVTの長い設定のままでは4095か0)。何もつながない端子で範囲の半分前後になる充電時間を既定にした。V005〜V007/M007・X033/X035・V20x・V30x(X035・V006・V203・V307で値を確認、指で触った向きは未確認)。L103は同じ手順で読めず、V205・H41xは別のTKEYブロックで未実装、V103は未確認"),
-    "PIOC (プログラマブルIO)": ("対象外", "-", "X035/V205固有"),
+    "PIOC (プログラマブルIO)": ("未実装", "-", "X035/V205固有"),
     "HSADC (高速ADC)": ("一部実装", "CH32RVHsAdc(library)",
                         "H415/H416/H417。DMAで連続取り込み、USBで流す(HsAdcStream)"),
     "DFSDM (ΣΔフィルタ)": ("未実装", "-", "PDMマイク、ΣΔ変調器の入力。H417"),
@@ -233,46 +234,47 @@ STATUS = {
                "sinkとsource。X035のsinkは実機確認、L103/M103・V205・X305/X315・H41x・M030はビルドのみ"
                "(CCの端子と設定はlibraries/CH32RVUsbPd/README.ja.md)。X033はCCの端子が無い。"
                "M030はUSBPD0(PA0/PA1)だけ(比較器のビットが別。USBPD1は未対応)"),
-    "CAN": ("対象外", "-", ""),
+    "CAN": ("未実装", "-", ""),
     "Ethernet": ("一部実装", "`ETH`(Network library)",
                  "H417の内蔵MAC+10/100 PHY(`NetworkEthernet.h`)。DHCP〜HTTPSまで実機確認"
                  "(TCP 20/24 Mbit/s、docs/network-stack.ja.md)。H415/H416はETHが無い。"
                  "V307・V407・V208も実機で通る(V208は2026-11-03、TCP 9.3/8.1 Mbit/s、TLSは無し)。"
                  "V467・V317・V203RBはEVTから移してビルドのみ(V208/V203RBはHCLK 60/120 MHzが要り、"
                  "CPU Clock `60MHz`を選ぶ。既定の96 MHzでは`begin()`がfalse)"),
-    "I2S": ("対象外", "-", ""),
-    "SDIO": ("対象外", "-", "`SD`libraryの下地にはなる"),
-    "FSMC/FMC": ("対象外", "-", "H417のFMCはSDRAMも扱う"),
-    "SDMMC": ("対象外", "-", "H417。host(HS200/HS400)とSDIO slave"),
-    "SAI (音声)": ("対象外", "-", "TDM、SPDIF出力"),
-    "SWPMI": ("対象外", "-", "NFC/UICCのSWP master"),
+    "I2S": ("未実装", "-", ""),
+    "SDIO": ("一部実装", "SD_MMC",
+             "SD_MMC library(4 bit、20 MHz、H417で実機確認)。DMA・high speed・MMCの4/8 bit・V4x7のremapは未実装"),
+    "FSMC/FMC": ("未実装", "-", "H417のFMCはSDRAMも扱う"),
+    "SDMMC": ("未実装", "-", "H417。host(HS200/HS400)とSDIO slave"),
+    "SAI (音声)": ("未実装", "-", "TDM、SPDIF出力"),
+    "SWPMI": ("未実装", "-", "NFC/UICCのSWP master"),
     "UHSIF (高速パラレル)": ("一部実装", "CH32RVUhsif(library)",
                              "16 bitの入力・内部クロックだけ(出力、外部クロック、8/32 bitは未対応)。レジスタは非公開で、"
                              "実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)が使う"),
-    "SerDes": ("対象外", "-", "1.5 Gbpsの差動リンク"),
-    "QSPI": ("対象外", "-", ""),
-    "PSRAM": ("対象外", "-", ""),
-    "I3C": ("対象外", "-", ""),
+    "SerDes": ("未実装", "-", "1.5 Gbpsの差動リンク"),
+    "QSPI": ("未実装", "-", ""),
+    "PSRAM": ("未実装", "-", ""),
+    "I3C": ("未実装", "-", ""),
     "DVP (カメラ)": ("未実装", "-", "パラレル入力(8〜12 bit、外部PCLK)の候補。docs/unused-peripherals.ja.md"),
-    "LTDC (LCD)": ("対象外", "-", ""),
-    "GPHA (2D DMA)": ("対象外", "-", ""),
-    "ARGB (LEDドライバ)": ("対象外", "-", ""),
+    "LTDC (LCD)": ("未実装", "-", ""),
+    "GPHA (2D DMA)": ("未実装", "-", ""),
+    "ARGB (LEDドライバ)": ("未実装", "-", ""),
     "RNG": ("一部実装", "-", "TLS(mbedTLS)とTCPの乱数にコア内部で使う(`ch32rv_rng_read`)。公開APIは無い。"
                      "`random()`はsoftware実装"),
-    "BLE": ("対象外", "-", "V208のみ。専用stackが要る"),
+    "BLE": ("除外", "-", "V208のみ。ユーザーの判断で作らない(2026-11-14)"),
     "SDI print (debug出力)": ("実装済", "SerialSDI(library)", "送信のみ"),
     "RTT (debug出力)": ("実装済", "SerialRTT(library)", "双方向。RAM ring bufferを使用"),
     "DMDATA mailbox (debug出力)": ("実装済", "SerialDMDATA(library)",
                                       "双方向。SerialSDIと同時使用不可"),
     "DMSEQ console (debug出力)": ("実装済", "SerialDMSeq(library)",
                                     "双方向。通し番号とCRC-8を使用"),
-    "V5F (2つ目のコア)/HSEM/IPC": ("未実装", "-",
-                                  "H417。起動、共有メモリ、HSEM、原子操作、GPIOの読み取りを実機で測った"
-                                  "(docs/h417-multicore.ja.md)。設計は未"),
-    "FreeRTOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
-    "RT-Thread": ("対象外", "-", "coreはbare metal。ADR-0006"),
-    "HarmonyOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
-    "TencentOS": ("対象外", "-", "coreはbare metal。ADR-0006"),
+    "V5F (2つ目のコア)/HSEM/IPC": ("一部実装", "CPU Core menu, setup1()/loop1(), CH32RV.startV3F()",
+                                  "H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F)。"
+                                  "HSEM・IPCの公開APIは未実装(docs/h417-multicore.ja.md)"),
+    "FreeRTOS": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
+    "RT-Thread": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
+    "HarmonyOS": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
+    "TencentOS": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
     "TIM 入力捕捉": ("実装済", "CH32RVTimerInput(library)",
         "`CH32RVPulseCapture`: PWM入力モードで周期とHighの時間(割込みなし、`read()`で最新の1周期)。端子はtimerのCH1/CH2(既定の経路)。エッジごとの時刻・通知は未実装。実機はV003/V006/V103/V203/V205/V307/L103/X035/X315/H417(同じ端子をGPIO・tone()・Servoで動かす自己試験)。`pulseIn()`はsoftwareのまま"),
     "TIM エンコーダ": ("実装済", "CH32RVTimerInput(library)",
@@ -319,7 +321,7 @@ STATUS = {
 #   ●  使える                 ◐  一部だけ(備考)
 #   ○  siliconにあるが未実装  −  coreでは提供しない
 #   空欄  EVTに例が無い(siliconに無いとは限らない)
-MARK = {"実装済": "●", "一部実装": "◐", "未実装": "○", "対象外": "−"}
+MARK = {"実装済": "●", "一部実装": "◐", "未実装": "○", "除外": "−"}
 
 ALL = "*"
 CELLS = {
@@ -339,7 +341,7 @@ CELLS = {
     "RAM実行": {ALL: "●"},
     "RNG": {"V303/305/307/317": "◐", "V407/V467": "◐", "H415/H416/H417": "◐"},
     "HSADC (高速ADC)": {"H415/H416/H417": "◐"},
-    "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "○"},
+    "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "◐"},
     "ADC 連続・DMA・トリガ": {ALL: "◐"},
     # ch32-device-data lists a DAC block for V103, but no V103 part has one (parts.csv; asked upstream).
     "DAC": {"V103": ""},
@@ -446,7 +448,7 @@ def render(present: dict) -> str:
            "| ● | 使える |",
            "| ◐ | 一部だけ使える(備考に記載) |",
            "| ○ | siliconにあるが未実装 |",
-           "| − | siliconにあるがcoreでは提供しない |",
+           "| − | 作らないと決めたもの(ユーザーの判断。今はBLEだけ) |",
            "| 空欄 | EVTに例が無く、レジスタのブロックも無い |", "",
            "**空欄は「siliconに無い」とは限りません**。EVTに例が置かれていないだけの"
            "こともあります。実装する前に"
@@ -455,7 +457,8 @@ def render(present: dict) -> str:
            "| 実装済 | 公開APIと実装がある |",
            "| 一部実装 | 備考に記載した範囲だけ実装がある |",
            "| 未実装 | siliconに機能はあるがcoreの公開API/実装がない |",
-           "| 対象外 | coreの公開APIとして提供しない |", ""]
+           "| 除外 | 作らないと決めたもの(ユーザーの判断。今はBLEだけ)。ほかはすべて作る。"
+           "未実装の一覧と順番は[unimplemented.ja.md](unimplemented.ja.md) |", ""]
 
     for group, title in GROUPS:
         names = order.get(group, [])

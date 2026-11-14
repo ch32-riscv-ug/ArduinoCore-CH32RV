@@ -8,6 +8,21 @@
 [追加機能の採否検討](FEATURE_CANDIDATES.ja.md) にまとめます。
 
 
+## 未実装の機能（一番先にやる。2026-11-14 ユーザー）
+
+機能は基本すべて作る。作らないのは特殊なもの（今は BLE だけ）で、ユーザーが決める。実装が無い・実機が無いを理由に外さない。
+一覧と優先の案・試験の種類は [docs/unimplemented.ja.md](docs/unimplemented.ja.md)（184 行: 優先 1 が 47、2 が 126、範囲の判断が
+10、除外 1）。確かめる機材が無いものも先に実装し、試験と配線の案を用意して「配線待ち」にする。
+
+- [ ] 優先の案をユーザーと決める。範囲の判断が要るもの（RTOS の port、EVT / SPL 互換、ベンダ IDE 互換、CH32F、無線 SoC
+  を BLE の除外に含めるか、汎用ドライバの同梱、EVT のバイナリのライブラリ相当）はユーザーに聞く。
+- [ ] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（peripheral-plan の C、software-peripherals、
+  network-stack、filesystem、FEATURE_CANDIDATES、ADR-0017、upload-routes、usb.ja.md、CH32RVUsbHost の README など。
+  docs/unimplemented.ja.md の元の棚卸しの 15 章）。peripheral-support の表は直した（2026-11-14）。
+- [ ] tools/generate/peripheral_matrix.py の STATUS が文書の手直しより古い（RCC・PWR・ADC・UHSIF の備考、H41x の HSE の欄）。
+  文書から STATUS に戻してから、生成で作り直せるようにする。
+- [ ] coverage.toml に未実装の機能の項目を足す（`missing` の系列で「未実装」と出す）。
+
 ## テスト計画
 
 計画は [tests/TEST_PLAN.ja.md](tests/TEST_PLAN.ja.md)、常設ベンチの案は [tests/BENCH.ja.md](tests/BENCH.ja.md)。
