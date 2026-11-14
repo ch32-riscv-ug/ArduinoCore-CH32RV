@@ -477,6 +477,17 @@ void CH32RVTwoWire::recover(void)
     _needs_recovery = false;
     _restart_armed = false;            /* the reset dropped an armed START */
     apply_clock();
+    /* A target cut off in the middle of a byte it was sending keeps a 0 bit on
+     * SDA, waiting for the clock that never comes: the reset peripheral then
+     * sees the bus busy and every START times out (5 until a reset of the
+     * target; H417 against the OEP probe's target after a read gone wrong,
+     * 2026-11-14). Clock it out and end with a STOP, as the I2C specification's
+     * bus clear does. */
+    if (!_slave &&
+        !ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin)) &&
+        ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_scl_pin), (uint8_t)CH32RV_PIN_BIT(_scl_pin))) {
+        clearBus();
+    }
 }
 
 /* BUSY latched with the bus free: a falling SDA while SCL was high - the
@@ -833,30 +844,33 @@ bool CH32RVTwoWire::clearBus(void)
     }
     const uint8_t scl = _scl_pin;
     const uint8_t sda = _sda_pin;
+    /* Half periods of the clock asked, 5 us (100 kHz, which every slave
+     * accepts) at the shortest: the bus clear is never faster than
+     * setClock(). */
+    const uint32_t half_us = _clock_hz < 100000u ? (500000u + _clock_hz - 1u) / _clock_hz : 5u;
     line_release(sda);
     bool scl_free = scl_release(scl);
-    delayMicroseconds(5);
+    delayMicroseconds(half_us);
 
-    /* Half periods of 5 us: 100 kHz, which every slave accepts. The slave
-     * shifts out the rest of the byte it was sending, sees no ACK, and lets go;
-     * nine pulses cover eight bits and the ACK slot. */
+    /* The slave shifts out the rest of the byte it was sending, sees no ACK,
+     * and lets go; nine pulses cover eight bits and the ACK slot. */
     for (uint8_t pulses = 0; scl_free && pulses < 9 && digitalRead(sda) == LOW; pulses++) {
         line_low(scl);
-        delayMicroseconds(5);
+        delayMicroseconds(half_us);
         scl_free = scl_release(scl);
-        delayMicroseconds(5);
+        delayMicroseconds(half_us);
     }
 
     /* STOP: SDA rises while SCL is high, which ends whatever transfer any
      * device still thinks it is in. */
     line_low(scl);
-    delayMicroseconds(2);
+    delayMicroseconds(half_us / 2u);
     line_low(sda);
-    delayMicroseconds(3);
+    delayMicroseconds(half_us - half_us / 2u);
     scl_free = scl_release(scl) && scl_free;
-    delayMicroseconds(5);
+    delayMicroseconds(half_us);
     line_release(sda);
-    delayMicroseconds(5);
+    delayMicroseconds(half_us);
 
     const bool free = scl_free && digitalRead(sda) == HIGH && digitalRead(scl) == HIGH;
     if (was_started) {

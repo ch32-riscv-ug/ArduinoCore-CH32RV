@@ -139,8 +139,11 @@ compile.
   hangs every transfer, and resetting this peripheral cannot help: the line is
   not ours. `Wire.clearBus()` clocks SCL until the slave lets go (up to 9
   pulses), puts a STOP on the bus, and returns `true` when both lines read high.
-  It is never done automatically - the pulses reach every device on the bus -
-  so call it when a transfer times out and you know it is safe. Works before or
+  A controller does it itself when a transfer has gone wrong (not a NACK) and,
+  after the peripheral's reset, SDA reads low while SCL is high - the bus is
+  already unusable then, and the I2C specification's bus clear is the way out
+  (the pulses are no faster than `setClock()`, 100 kHz at the most). Call it
+  yourself for a bus found held at start-up. Works before or
   after `begin()`; an open bus is reopened as it was. Lines are released with
   the internal pull-up and SCL is never driven high, so a stretching slave is
   waited for (`CH32RV_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
