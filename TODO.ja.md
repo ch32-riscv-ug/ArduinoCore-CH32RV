@@ -29,8 +29,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] **H417 の CH32RVAdcStream で、2 本目が 1 本目につられる**: 6-2 の PC0（矩形波）と PA7（プローブが出力で保持）で、
   PA7 の 1 が 2522〜4095、0 が 0〜1398 に振れる。取り込み時間は最長（step 7、1 回約 5 µs）。H417 の ADC の AUX（SMP_SEL）・
   入力バッファー・PGA の既定を EVT と比べる。
-- [ ] **V205 EVT の PA10 と PB3 で受けられない**: periph の経路で、プローブが送ったバイトは線に見えるのに DUT が受けない。
-  PA10 は EVT の LINK の UART の線でもある。回路図で、PA10 / PB3 につながる部品を確かめる（基板の都合なら記録の defects へ）。
+- [x] **V205 EVT の PA10 と PB3 で受けられない**: periph の経路で、プローブが送ったバイトは線に見えるのに DUT が受けない。
+  基板ではなく、前の経路の端子が AF のまま残っていたもの。HardwareSerial の end() が端子を入力に戻すようにした e2384071 の
+  あとの 5 回（2026-11-13〜14）は、PA6/PA10・PA9/PA10・PB2/PB3 を含む全経路が PASS。
 - [x] **WCH-Link の台の uart で、Link の UART が DUT の Serial につながっていない**: 記録に `link_uart` を足した（RECORDS 4.8）。
   nano は回路図で LinkE の UART3 が SB3 / SB4 から PA10 / PA9 なので `{tx: pa9, rx: pa10}`（試験が Serial をその端子で開く）、
   M030 は TX だけ（ユーザー）で `{tx: pb6}`（DUT が送る向きだけ）、X315 は DUT の PD4 から何も届かず `{}`（skip）。nano と M030 は
