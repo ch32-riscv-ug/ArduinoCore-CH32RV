@@ -157,6 +157,27 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   0x2A、SET_HUB_DEPTH、ルート文字列、変化のビット）。DCD の USBSS の割り込みハンドラーは USBHS2 と同じくコアのフックへ移す
   （ホストと両方入れるとリンクでぶつかる）。段: 0 共通のヘッダーとフック → 1 リンクと接続 → 2 制御と列挙 → 3 バルクと
   ERDY → 4 burst → 5 割り込み → 6 ハブ → 7 等時 → 8 warm reset と再列挙。
+  段 0 は済み（0773d83d、ビルドだけ。SS デバイスの実機の確認は次に 6-2 で）。HCD の本体は下書き中。範囲はストリーム・
+  Mult>0・U1〜U3 も作る（2026-11-14 ユーザー: 基本はすべて作る）。対向の配線は下の「USB の試験の配線」。
+- [ ] **USB の試験の配線（2026-11-14 ユーザー: すぐには配線できない。USB のケーブルは入れ替えやすく、OEP の端子の線が高い）**。
+  網羅の軸・相手の役割・3 台の H417 のつなぎ方の案は tests/TEST_PLAN.ja.md の「USB の網羅の軸」。要るもの:
+  - H417 の 3 台目（A、LinkE で OEP に相乗り）。A の SS → USB3 の PPPS ハブ → C（6-1 の nano）の SS と USB3 メモリ（UAS）。
+    A の FS → USB2 の PPPS ハブ → C の FS、Pico、LS の機器。B（6-2）の SS と FS は PC のハブのまま。
+  - 部品: 外部給電の USB3 の PPPS ハブ（uhubctl で口ごとに切れるもの）、USB2 の PPPS ハブ（マルチ TT とシングル TT）、
+    VBUS を切った A–A の USB3 ケーブル（nano と EVB の SS の口は Type-A で、1 番ピンは基板の VBUS に直結。両端の 5 V が
+    ぶつかる）、USB3 メモリ（UAS 対応）、USB2 メモリ、LS のキーボードかマウス。
+  - HS は V407 で（USBHS1 のホスト → マルチ TT のハブ → USBHS2 のデバイス・P4・Pico・LS）。H417 の HS は SWD と同じ線なので
+    常駐しない。
+- [ ] USB の試験の仕組み（配線の前にできる）:
+  - 記録の usb に CH32RV の相手（`{to: ch32rv, port: <相手のアドレス>}`）。run_hardware が両方のスケッチを作り、相手を
+    その台のプローブで書く（Pico の相手と同じ形）。
+  - junit に controller・相手・ハブを残し、coverage の USB の項目をその軸で分ける（TST-01 の残りと同じ）。
+  - PC の libusb のベンダーの試験（Python、pyusb）: ストリーム、等時の Mult・任意のパケット数、burst、0 長、STALL と
+    CLEAR_FEATURE、サスペンドとリモートウェイクアップ、LPM / U1 / U2（sysfs）。B（6-2 の SS）で今すぐ流せる分から。
+  - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
+  - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
+- [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、
+  USBSS デバイスのストリームと Mult>0、LPM（L1）、V103 と第 1 世代 USBHS のホスト、HS ハブの先の split。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
