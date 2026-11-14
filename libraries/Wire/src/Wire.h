@@ -76,7 +76,7 @@ public:
     using ::TwoWire::begin;
     void end() override;
 
-    void setClock(uint32_t freq) override;
+    bool setClock(uint32_t freq) override;
 
     void onReceive(void (*)(int)) override;
     void onRequest(void (*)(void)) override;

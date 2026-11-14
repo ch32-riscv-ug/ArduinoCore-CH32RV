@@ -61,7 +61,7 @@ public:
      * bit-banged bus cannot hit a number. Anything at or above what the loop
      * already produces leaves it running flat out. getClock() returns what
      * was asked. */
-    void setClock(uint32_t freq) override;
+    bool setClock(uint32_t freq) override;
 
     /* Free a bus a target is holding, as Wire's clearBus() does: while SDA
      * reads low, up to 9 SCL pulses (a byte and its ACK), then a STOP. true

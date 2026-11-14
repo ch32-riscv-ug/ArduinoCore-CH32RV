@@ -380,15 +380,21 @@ void CH32RVTwoWire::end()
     _rx_read = 0;
 }
 
-__attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
+__attribute__((noinline)) bool CH32RVTwoWire::setClock(uint32_t freq)
 {
-    _clock_hz = freq ? freq : 100000;
+    /* The slowest standard-mode clock: CCR's 12 bits, PCLK / (2 x 4095) (about
+     * 12 kHz with a 100 MHz I2C clock, 2.9 kHz at 24 MHz). Slower would run at
+     * that, faster than asked: refused, as 0 is. */
+    if (freq == 0 || freq < (CH32RV_I2C_PCLK1 + 2u * CH32RV_I2C_CKCFGR_CCR_MASK - 1u) / (2u * CH32RV_I2C_CKCFGR_CCR_MASK)) {
+        return false;
+    }
+    _clock_hz = freq;
     if (!_started) {
-        return;                        /* begin() applies it */
+        return true;                   /* begin() applies it */
     }
     if (CH32RV_I2C_CTLR2(_base) & CH32RV_I2C_CTLR2_ITEVTEN) {
         apply_clock();                 /* a target: it only times its own stretching */
-        return;
+        return true;
     }
     /* A controller takes the new clock at its next transfer, from a reset
      * peripheral (recover()). Switching PE off and on in place left the next
@@ -396,6 +402,7 @@ __attribute__((noinline)) void CH32RVTwoWire::setClock(uint32_t freq)
      * again (X035 / V205 / V203 at 100 -> 20 kHz, 2026-11-14). A bus held
      * for a repeated START is let go: that transfer starts afresh. */
     _needs_recovery = true;
+    return true;
 }
 
 __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
@@ -417,10 +424,9 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
         if (ccr < 4u) {
             ccr = 4u;
         }
-        /* The slowest the field holds (a 12-bit CCR: 12.2 kHz on a 100 MHz
-         * H417, 7.3 kHz at 60 MHz): slower asks get that, where the masked
-         * value used to wrap round to a faster clock (10 kHz ran at 55 kHz
-         * on the H417, 2026-11-14). */
+        /* setClock() refuses a clock slower than the 12-bit CCR holds; kept
+         * against the masked value wrapping round to a faster clock (10 kHz
+         * ran at 55 kHz on the H417 before, 2026-11-14). */
         if (ccr > CH32RV_I2C_CKCFGR_CCR_MASK) {
             ccr = CH32RV_I2C_CKCFGR_CCR_MASK;
         }
@@ -430,7 +436,10 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
 #endif
     } else {
         /* Fast mode with the 2:1 duty cycle: 3 x CCR per period. */
-        ccr = (CH32RV_I2C_PCLK1 + 3u * _clock_hz - 1u) / (3u * _clock_hz);   /* rounded up, as above */
+        /* Rounded up, as above. From PCLK / 3 on, CCR 1 - the fastest the
+         * peripheral makes (and 3 x the clock would overflow on the way). */
+        ccr = _clock_hz >= CH32RV_I2C_PCLK1 / 3u ? 1u
+                                                  : (CH32RV_I2C_PCLK1 + 3u * _clock_hz - 1u) / (3u * _clock_hz);
         if (ccr < 1u) {
             ccr = 1u;
         }

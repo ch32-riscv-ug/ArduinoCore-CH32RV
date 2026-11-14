@@ -62,10 +62,15 @@ public:
     /* Controller on these pins (SDA, SCL). -1, -1 keeps the pins the bus has
      * (the board's default, or the last setPins() / setRoute()); one -1 alone
      * is refused. frequency 0 keeps the clock. false, and the bus left closed,
-     * when the pins cannot carry this bus. */
+     * when the pins cannot carry this bus or setClock() refuses frequency. */
     bool begin(int sda, int scl, uint32_t frequency = 0);
     virtual void end() = 0;
-    virtual void setClock(uint32_t freq) = 0;
+    /* The SCL clock, as arduino-esp32's: the bus never runs faster than it
+     * (only slower - the lines' rise, a target's stretching, SoftWire's CPU).
+     * false, and the clock kept, for 0 and for a clock slower than the bus can
+     * make (it would run faster). Faster than the bus can make runs at the
+     * fastest it makes. */
+    virtual bool setClock(uint32_t freq) = 0;
     /* Move the bus to these pins (SDA, SCL); an open bus reopens on them. */
     virtual bool setPins(int sda, int scl) = 0;
     /* A target's callbacks (the bus object's begin(address) makes it one). */

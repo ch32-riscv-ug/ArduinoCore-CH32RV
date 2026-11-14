@@ -146,7 +146,11 @@ compile.
   waited for (`CH32RV_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
   mode with a 2:1 duty cycle. The slowest is what the 12-bit CCR holds (about
-  12 kHz with a 100 MHz I2C clock, 7 kHz at 60 MHz); a slower ask gets that.
+  12 kHz with a 100 MHz I2C clock, 2.9 kHz at 24 MHz). `setClock()` returns
+  `bool`, as arduino-esp32's: `false`, and the clock kept, for 0 and for a clock
+  slower than that (the bus would run faster than asked); a clock faster than
+  the peripheral makes runs at the fastest it makes. SoftWire refuses only 0.
+  The bus never runs faster than the clock set.
   A controller takes a new clock at its next transfer. A controller counts SCL's
   high from when it sees it high, so slow rises (weak pull-ups) lengthen the
   period: 322-394 kHz for 400 kHz on the bench's probe pull-ups alone. The peripheral clock is assumed to be `F_CPU`.

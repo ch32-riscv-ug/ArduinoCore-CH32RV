@@ -162,18 +162,19 @@ bool SoftWire::setPins(int sda, int scl)
 }
 
 
-void SoftWire::setClock(uint32_t freq)
+bool SoftWire::setClock(uint32_t freq)
 {
-    /* Half of one period, rounded down, and never zero for a named frequency:
-     * the caller asked for a limit, so honour it as a limit. */
     if (freq == 0) {
-        return;
+        return false;
     }
     _clock_hz = freq;
-    /* Rounded up, so a clock that cannot be met exactly errs slow: the caller
-     * asked for a limit. */
-    const uint32_t per = 2u * freq;
-    _half_ticks = (uint32_t)((CH32RV_SYSTICK_HZ + per - 1u) / per);
+    /* Half a period in ticks, rounded up so a clock that cannot be met
+     * exactly errs slow: the caller asked for a limit. Over half the tick
+     * rate a half is one tick, the fastest there is (and 2 x freq would
+     * overflow on the way: 2^31 divided by zero). */
+    const uint32_t hz = (uint32_t)CH32RV_SYSTICK_HZ;
+    _half_ticks = freq >= hz / 2u ? 1u : (hz + 2u * freq - 1u) / (2u * freq);
+    return true;
 }
 
 

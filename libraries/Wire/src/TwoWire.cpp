@@ -9,8 +9,8 @@ bool TwoWire::begin(int sda, int scl, uint32_t frequency)
     if (!(sda < 0 && scl < 0) && !setPins(sda, scl)) {
         return false;
     }
-    if (frequency) {
-        _clock_hz = frequency;
+    if (frequency && !setClock(frequency)) {
+        return false;
     }
     begin();
     return true;
@@ -24,8 +24,8 @@ bool TwoWire::prepare(int sda, int scl, uint32_t frequency)
     if (!(sda < 0 && scl < 0) && !setPins(sda, scl)) {
         return false;
     }
-    if (frequency) {
-        _clock_hz = frequency;
+    if (frequency && !setClock(frequency)) {
+        return false;
     }
     return true;
 }
