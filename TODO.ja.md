@@ -113,6 +113,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   制御線の比較器（トリガー、変化だけ積む）は動く。端子とビットの自由な対応、直列の入出力、CRC、繰り返し回数、DDR は無いか効かない。
   CH32RVUhsif に `setBusWidth()`、`setDataMatch()`、`setDataChange()`、`setControlMatch()` と例 UhsifTrigger を入れた。
 - [x] H41x の Clock Source（25 MHz の水晶、既定）。HSI の約 1% のずれが UHSIF や HSADC の速さに出ていた（[oep] の依頼、2026-11-14）。
+- [ ] **H417 / H416 の USBSS のホスト（フルスペック、2026-11-14 ユーザー）**: ハードはホストにも対応（RM 27 章「USB3.0 SuperSpeed
+  Host/Device Controller」、EVT の USBSS/HOST に 3 つの例: セクタの読み書き、ハブ越し、ハブ越しの USB メモリ）。CH32RVUsbHost に
+  USBSS の HCD を足す: 制御・バルク・割り込み・等時、ハブ越し、USB 2.0 の機器（同じ口の 2.0 の線）の扱い。EVT のドライバは
+  ソース（ch32h417_usbss_host.c 約 300 行、列挙とハブの ch32h417_enum.c 約 2400 行。`.a` は FAT の libRV3UFI だけ）。試す相手の
+  配線が要る（案: nano の USB3 の口をホストにして USB3 のハブ、その先に USB3 のメモリと CH32RV のデバイス。ユーザーと決める）。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
