@@ -85,6 +85,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
+- [ ] （優先度低、2026-11-14 ユーザー）UHSIF のスレーブのモード（外のマスターがクロックを出す形。WCH の FPGA 型・SoC 型）。
+  レジスタは非公開だが、`libUHSIF.a` の中身は大部分が表（`UhsifTransition_Slave_FPGA` / `_Slave_SOC`、`UhsifWavedata_Slave_*`、
+  `UhsifRegValue`）なので、取り出して docs/h417-uhsif.ja.md の読み方で解読できる見込み。未確認は外部クロックの設定（w1 の
+  21:14、RCC のクロック源）と出力の向き。実機で確かめるには外からクロックとデータを出すマスターが要り、6-2 のプローブの線は
+  UHSIF の端子（VIO18 の PD / PE）にほとんど届いていない。今は文書で未対応と書いている。
 - [x] V3F を起動する API（2026-11-14: `CH32RV.startV3F()` / `isV3FRunning()` / `onV3F()`、`setup1()` / `loop1()`、例 DualCoreV3F。nano で 200 回の起動と結果、loop1 の数え上げ、V3F の millis / delay を確認。残りは V3F を外から止める仕組みと、V3F から V5F に頼む IPC）。元の項目: `ch32rv_v3f_mailbox` を包む API、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
   SRAM のバンク、スタック）、V3F を止める仕組み、V3F から使ってよいコアの機能（Serial は不可から）。最悪は今の
   「起こして眠る」だけでもよい（利用者、2026-11-11）。

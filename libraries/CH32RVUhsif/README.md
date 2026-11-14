@@ -26,8 +26,10 @@ To capture like a logic analyzer, [CH32RVLogicCapture](../CH32RVLogicCapture/REA
   comparator (2026-11-14): pattern and edge triggers, and a capture that
   keeps only the changes.
 
-Not yet: driving the bus, an external clock, the control lines as outputs,
-a 24-bit bus. What the block does not have (serial in / out, CRC, any pin
+Not yet: the slave modes (an external master clocking the bus - WCH's
+FPGA-style and SoC-style slaves, which exist only as tables inside
+`libUHSIF.a`), driving the bus, an external clock, the control lines as
+outputs, a 24-bit bus. What the block does not have (serial in / out, CRC, any pin
 on any bit) is in "FX3 由来の機能" of
 [docs/h417-uhsif.ja.md](../../docs/h417-uhsif.ja.md) (Japanese).
 
