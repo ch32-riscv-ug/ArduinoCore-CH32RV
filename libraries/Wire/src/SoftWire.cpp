@@ -2,6 +2,7 @@
 
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_ticks.h"
 
 namespace arduino {
 
@@ -40,15 +41,17 @@ void SoftWire::release(uint8_t pin)
 
 void SoftWire::half(void)
 {
-    /* Behind by more than a half (a stretched SCL, an interrupt): start the
-     * count again from now rather than rushing the halves after it. */
-    const uint32_t now = micros() * 16u;
-    _due_x16 += _half_x16;
-    if ((int32_t)(now - _due_x16) > (int32_t)_half_x16) {
-        _due_x16 = now;
+    /* Behind (the pin writes, SCL's rise, a stretch, an interrupt took longer
+     * than the half): this half ends now and the next counts a whole half from
+     * here. Never caught up by shortening a later half, so no half is shorter
+     * than setClock()'s: the clock is never faster than asked. */
+    const uint32_t now = ch32rv_ticks();
+    _due_ticks += _half_ticks;
+    if ((int32_t)(now - _due_ticks) >= 0) {
+        _due_ticks = now;
         return;
     }
-    while ((int32_t)(micros() * 16u - _due_x16) < 0) {
+    while ((int32_t)(ch32rv_ticks() - _due_ticks) < 0) {
     }
 }
 
@@ -169,7 +172,8 @@ void SoftWire::setClock(uint32_t freq)
     _clock_hz = freq;
     /* Rounded up, so a clock that cannot be met exactly errs slow: the caller
      * asked for a limit. */
-    _half_x16 = (8000000UL + freq - 1u) / freq;
+    const uint32_t per = 2u * freq;
+    _half_ticks = (uint32_t)((CH32RV_SYSTICK_HZ + per - 1u) / per);
 }
 
 
@@ -177,7 +181,7 @@ void SoftWire::start_condition(void)
 {
     /* SDA falls while SCL is high. Both are released first so that a repeated
      * start works from wherever the previous byte left the lines. */
-    _due_x16 = micros() * 16u;
+    _due_ticks = ch32rv_ticks();
     release(_sda);
     half();
     scl_high();

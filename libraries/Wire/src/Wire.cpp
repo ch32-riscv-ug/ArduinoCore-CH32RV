@@ -447,6 +447,17 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_PE;
 }
 
+/* A transfer that ended badly (anything but a NACK) resets the peripheral at
+ * once, so the bus is let go now: deferred to the next transfer, a timed-out
+ * one left SCL low until then (3.4 MHz asked on V203 / V205 / H417, the next
+ * test's lines starting low, 2026-11-14). */
+void CH32RVTwoWire::release_bus(void)
+{
+    if (_needs_recovery) {
+        recover();
+    }
+}
+
 void CH32RVTwoWire::recover(void)
 {
     /* Full re-initialisation. Cheap, and the only reliable way out of a
@@ -510,6 +521,7 @@ uint8_t CH32RVTwoWire::transmit(bool stopBit)
         clear_errors(_base);
         stop();
         _needs_recovery = !nack;
+        release_bus();
         _tx_len = 0;
         return nack ? 2 : 5;
     }
@@ -521,6 +533,7 @@ uint8_t CH32RVTwoWire::transmit(bool stopBit)
             clear_errors(_base);
             stop();
             _needs_recovery = !nack;
+            release_bus();
             _tx_len = 0;
             return nack ? 3 : 5;
         }
@@ -533,6 +546,7 @@ uint8_t CH32RVTwoWire::transmit(bool stopBit)
         clear_errors(_base);
         stop();
         _needs_recovery = !nack;
+        release_bus();
         _tx_len = 0;
         return nack ? 3 : 5;
     }
@@ -565,6 +579,7 @@ size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
         clear_errors(_base);
         stop();
         _needs_recovery = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) == 0;
+        release_bus();
         return 0;
     }
 
@@ -623,6 +638,7 @@ size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
         clear_errors(_base);
         stop();
         _needs_recovery = true;
+        release_bus();
     }
 
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;

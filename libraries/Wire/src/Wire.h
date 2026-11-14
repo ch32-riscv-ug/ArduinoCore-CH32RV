@@ -130,6 +130,7 @@ private:
     bool bus_stale(void) const;
     void stop(void);
     void recover(void);
+    void release_bus(void);
     void apply_clock(void);
 
     const uint8_t _number;

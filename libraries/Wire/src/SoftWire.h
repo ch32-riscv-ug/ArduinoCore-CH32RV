@@ -95,13 +95,15 @@ private:
     uint8_t _sda;
     uint8_t _scl;
 
-    /* Half a clock period in sixteenths of a microsecond, and the time the
-     * next half ends at (micros() x 16): each half waits for a deadline, not
-     * for a fixed delay after the pin writes, so their cost and the time SCL
-     * takes to rise come out of the wait and the clock averages what was
-     * asked (a plain delay of the half ran a V205's 100 kHz at 27 kHz). */
-    uint32_t _half_x16 = 80;
-    uint32_t _due_x16 = 0;
+    /* Half a clock period in SysTick ticks, and the tick the next half ends
+     * at: each half waits for a deadline, not for a fixed delay after the pin
+     * writes, so their cost and the time SCL takes to rise come out of the
+     * wait and the clock averages what was asked (a plain delay of the half
+     * ran a V205's 100 kHz at 27 kHz). Ticks, not micros(): a microsecond's
+     * grain made halves near 1 us wait up to a whole one more. A half that
+     * overran is not made up by a shorter one: never faster than asked. */
+    uint32_t _half_ticks = 1;
+    uint32_t _due_ticks = 0;
 };
 
 }  // namespace arduino

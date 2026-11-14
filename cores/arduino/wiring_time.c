@@ -38,14 +38,12 @@
 
 /* What SysTick counts. Every family but CH32V103 can be told to count HCLK;
  * V103 has no such bit and is fixed at HCLK/8. */
+#include "internal/ch32rv_ticks.h"   /* CH32RV_SYSTICK_HZ */
 #if CH32RV_SYSTICK_V103
-#define CH32RV_SYSTICK_HZ (F_CPU / 8u)
 #if (F_CPU / 8u) < 1000000u
 #error "F_CPU below 8 MHz leaves CH32V103's SysTick under 1 MHz, which micros() \
 cannot divide by."
 #endif
-#else
-#define CH32RV_SYSTICK_HZ (CH32RV_HCLK_HZ)   /* SysTick counts HCLK (STCLK) */
 #endif
 
 #define CH32RV_TICKS_PER_MS ((uint32_t)(CH32RV_SYSTICK_HZ / 1000u))
