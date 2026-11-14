@@ -95,7 +95,13 @@ private:
     uint8_t _sda;
     uint8_t _scl;
 
-    uint16_t _half_us = 5;             /* ~100 kHz if the loop were free */
+    /* Half a clock period in sixteenths of a microsecond, and the time the
+     * next half ends at (micros() x 16): each half waits for a deadline, not
+     * for a fixed delay after the pin writes, so their cost and the time SCL
+     * takes to rise come out of the wait and the clock averages what was
+     * asked (a plain delay of the half ran a V205's 100 kHz at 27 kHz). */
+    uint32_t _half_x16 = 80;
+    uint32_t _due_x16 = 0;
 };
 
 }  // namespace arduino

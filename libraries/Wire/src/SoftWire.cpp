@@ -23,8 +23,15 @@ void SoftWire::release(uint8_t pin)
 
 void SoftWire::half(void)
 {
-    if (_half_us) {
-        delayMicroseconds(_half_us);
+    /* Behind by more than a half (a stretched SCL, an interrupt): start the
+     * count again from now rather than rushing the halves after it. */
+    const uint32_t now = micros() * 16u;
+    _due_x16 += _half_x16;
+    if ((int32_t)(now - _due_x16) > (int32_t)_half_x16) {
+        _due_x16 = now;
+        return;
+    }
+    while ((int32_t)(micros() * 16u - _due_x16) < 0) {
     }
 }
 
@@ -143,8 +150,9 @@ void SoftWire::setClock(uint32_t freq)
         return;
     }
     _clock_hz = freq;
-    const uint32_t half = 500000UL / freq;
-    _half_us = (uint16_t)(half > 0xFFFFUL ? 0xFFFFUL : half);
+    /* Rounded up, so a clock that cannot be met exactly errs slow: the caller
+     * asked for a limit. */
+    _half_x16 = (8000000UL + freq - 1u) / freq;
 }
 
 
@@ -152,6 +160,7 @@ void SoftWire::start_condition(void)
 {
     /* SDA falls while SCL is high. Both are released first so that a repeated
      * start works from wherever the previous byte left the lines. */
+    _due_x16 = micros() * 16u;
     release(_sda);
     half();
     scl_high();
