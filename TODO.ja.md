@@ -151,7 +151,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 
 - [ ] 実機での確認がまだのもの: 第1弾（UART の操作、PWM の波形、ハードウェアの I2C の対向通信・相手不在・復旧、外部 SPI Flash の ID）、
   第2弾（ボタンの押下・長押し・解放、可変抵抗と PWM、USB の再接続時の中立、ゲームパッドの軸・両端・中立帯を PC の確認画面で）。
-- [ ] X035 のハードウェアの I2C（Wire、ba8dc851 の repeated START を含む）を線で確かめる。ベンチの CH32X035C8T6（OEP 4-2）は、
+- [x] X035 のハードウェアの I2C（Wire、ba8dc851 の repeated START を含む）を線で確かめる。→ 2026-11-14、常駐ベンチの x035c8t6-pico（PA11 / PA10、プローブの i2c-target）で wire の 3 件が通る（S W Sr R Sr W P と S W Sr R P S W P を WireSkein で 18 件 OK、受け手も）。以下は前の記録。ベンチの CH32X035C8T6（OEP 4-2）は、
   ロット番号の後ろから 5 桁目が 0 の、I2C と ADC の ch3 / 7 / 11 / 15 が使えない個体だった（データシート、device-data の errata
   `x035-adc-ch-i2c-unavailable`。2026-11-03 に oep が線と PVD で確認。前にここに書いた analogRead が 0 近くになる件のうち、IN15 はこれで説明がつく。A0（IN0）が 3〜9 だったのは説明がつかないが、2026-11-03 には IN2 が 3.3 V で 4044、0 V で 13 と正しく読めた）。
   ロットの後ろから 5 桁目が 0 でない C8T6 / R8T6 を用意して（ユーザーの判断）、PA10 / PA11 をプローブにつなぎ、case wire を流す。
@@ -409,7 +409,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 
 [docs/peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身と、[docs/peripheral-plan.ja.md](docs/peripheral-plan.ja.md) の B（後で）。
 
-- [ ] V205・X305 / X315 の Wire（プルアップの配線が要る）と、既定以外の route。V205 は LinkE の接続で s0 が壊れるので、結果はリセットごとに 1 回だけ読む。
+- [ ] X305 / X315 の Wire（プルアップの配線が要る）と、既定以外の route。V205 は常駐ベンチの v205rct6-pico（PB9 / PB8）で wire の 3 件が通る（2026-11-14）。V205 は LinkE の接続で s0 が壊れるので、結果はリセットごとに 1 回だけ読む。
 - [ ] V20x / V30x の ADC の校正値（EVT の Get_CalibrationValue）。V307 ではその値が 1728 で、当てると VDD が 2.64 V になり不自然（当てない今は 3.19 V）。外部の電圧計と照合して決める。
 - [x] CPU Clock の全部の項目を、ベンチの DUT で selfcheck（時計・Serial・SPI・GPIO・PWM・ADC）で確かめた（2026-11-13）。
   V006 の 8 MHz は、SystemInit() が flash の待ちを先に 0 へ下げてから HPRE /3 を書いていたので、リセットの直後の HSI 24 MHz を
