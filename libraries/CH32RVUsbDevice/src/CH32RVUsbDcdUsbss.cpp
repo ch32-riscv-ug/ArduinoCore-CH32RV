@@ -47,13 +47,10 @@
 #include <string.h>
 
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbss.h"
 #include "internal/CH32RVUsbDcd.h"
 
-#if defined(CH32RV_SERIES_CH32X315)
-#define SS_BASE 0x40038000u
-#else
-#define SS_BASE 0x40034000u
-#endif
+#define SS_BASE CH32RV_USBSS_BASE
 #define R8(o)  (*(volatile uint8_t *)(SS_BASE + (o)))
 #define R16(o) (*(volatile uint16_t *)(SS_BASE + (o)))
 #define R32(o) (*(volatile uint32_t *)(SS_BASE + (o)))
@@ -97,10 +94,6 @@
 #define EP_RX_CHAIN_NUMP(b) R8((b) + 0x9)          /* RX: packets the chain received */
 #define EP_DMA_OFS(b)       R16((b) + 0xA)
 #define EP_DMA(b)           R32((b) + 0xC)
-/* The PHY window (EVT USBSS_PHY_Cfg), and on H41x a trim word. */
-#define PHY_CFG_CR          (*(volatile uint32_t *)(SS_BASE + 0x1F8u))
-#define PHY_CFG_DAT         (*(volatile uint32_t *)(SS_BASE + 0x1FCu))
-#define PHY_TRIM            (*(volatile uint32_t *)0x5003C018u)
 
 #define U3_LINK_RESET       0x80000000u
 #define LINK_U2_ALLOW       0x00020000u
@@ -180,33 +173,8 @@
 #define EP_FC_ST            0x40u
 #define EP_CHAIN_IF         0x40u
 
-/* RCC: the USBSS PLL takes HSE (its reference select defaults to the
- * evaluation boards' crystal, 25 MHz on H41x, 20 MHz on X315). H41x: PLL in
- * RCC_CTLR 22 / 23, PIPE and UTMI in CFGR0 22 / 23. X315: PLL in RCC_CTLR
- * 26 / 27, PIPE in RCC_CTLR 28, no UTMI. */
-#define RCC_CTLR_HSEON        (1u << 16)
-#define RCC_CTLR_HSERDY       (1u << 17)
-#if defined(CH32RV_SERIES_CH32X315)
-#define RCC_CTLR_USBSS_PLLON  (1u << 26)
-#define RCC_CTLR_USBSS_PLLRDY (1u << 27)
-#define PIPE_REG              CH32RV_RCC_CTLR
-#define PIPE_BITS             (1u << 28)
-#define LINK_DEEMPH           0u                         /* 6 dB */
-#define LINK_CTRL_EXTRA       0x00000400u                /* LINK_U3_WKUP_EN */
-#else
-#define RCC_CTLR_USBSS_PLLON  (1u << 22)
-#define RCC_CTLR_USBSS_PLLRDY (1u << 23)
-#define PIPE_REG              CH32RV_RCC_CFGR0
-#define PIPE_BITS             ((1u << 22) | (1u << 23))   /* PIPE, UTMI */
-/* 3.5 dB, the USB 3 Gen 1 value. The EVT writes the whole field (0x300, not
- * a value the RM lists); with it some trainings came up with tens of link
- * errors a second at the hub's port, and the microphone lost a packet to a
- * transaction error every few hundred milliseconds. At 3.5 dB none of 30
- * trainings did; 6 dB enumerated late twice in 10 (bench, 6-2 behind a
- * Realtek hub, 2026-11-14). */
-#define LINK_DEEMPH           0x00000100u
-#define LINK_CTRL_EXTRA       0u
-#endif
+#define LINK_DEEMPH         CH32RV_USBSS_LINK_DEEMPH
+#define LINK_CTRL_EXTRA     CH32RV_USBSS_LINK_CTRL_EXTRA
 
 #define EP0_SIZE   512u
 #define CHAIN_MAX  16u            /* packets per chain, and the ERDY window offered */
@@ -260,13 +228,6 @@ static volatile bool attaching;  /* terminations held off after a (re)connect, u
 #define ATTACH_HOLD_MS 250u
 
 /* ------------------------------------------------------------ helpers */
-static void phy_cfg(uint8_t addr, uint16_t data)
-{
-    PHY_CFG_CR = (1u << 23) | ((uint32_t)addr << 16) | data;
-    PHY_CFG_DAT = 0x01u;
-    (void)PHY_CFG_DAT;
-}
-
 static void set_address(uint8_t a)
 {
     USB_CONTROL = (USB_CONTROL & 0x00FFFFFFu) | ((uint32_t)a << 24);
@@ -420,19 +381,7 @@ static void link_start(void)
     LINK_U2_WKUP_FILTER = 0;
     LINK_U3_WKUP_FILTER = 0;
     controller_reset();
-#if defined(CH32RV_SERIES_CH32X315)
-    phy_cfg(0x0C, 0x285D);
-    phy_cfg(0x11, 0x0501);
-    phy_cfg(0x10, 0xED29);
-    phy_cfg(0x0D, 0xBAAA);
-#else
-    phy_cfg(0x03, 0x7C12);
-    phy_cfg(0x0D, 0x79AA);
-    phy_cfg(0x15, 0x4430);
-    phy_cfg(0x13, 0x0010);
-    phy_cfg(0x11, 0x0501);
-    PHY_TRIM = 0xB0054000u;
-#endif
+    ch32rv_usbss_phy_setup();
     UEP_TX_EN = 0;
     UEP_RX_EN = 0;
     engine_reset();
@@ -452,30 +401,19 @@ static void link_stop(void)
 }
 
 /* ------------------------------------------------------------ table */
-static bool clocks_on(void)
-{
-    CH32RV_RCC_CTLR |= RCC_CTLR_HSEON;
-    for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & RCC_CTLR_HSERDY);) {
-        if ((uint32_t)(millis() - t0) > 100u) {
-            return false;                                /* no crystal */
-        }
-    }
-    CH32RV_RCC_CTLR |= RCC_CTLR_USBSS_PLLON;
-    for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & RCC_CTLR_USBSS_PLLRDY);) {
-        if ((uint32_t)(millis() - t0) > 100u) {
-            return false;
-        }
-    }
-    ch32rv_clock_enable(USBSS);
-    PIPE_REG |= PIPE_BITS;
-    return true;
-}
+static void usb_isr(void);
+static void link_isr(void);
 
 static bool dcd_open(void)
 {
-    if (!clocks_on()) {
+    if (ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_USB] && ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_USB] != usb_isr) {
+        return false;                                    /* the host has the controller */
+    }
+    if (!ch32rv_usbss_clock_on()) {
         return false;
     }
+    ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_USB] = usb_isr;
+    ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_LINK] = link_isr;
     memset(xin, 0, sizeof xin);
     memset(xout, 0, sizeof xout);
     xin[0].mps = xout[0].mps = EP0_SIZE;
@@ -508,9 +446,11 @@ static void dcd_close(void)
         free(xout[ep].bounce);
         xin[ep].bounce = xout[ep].bounce = nullptr;
     }
-    PIPE_REG &= ~PIPE_BITS;
-    ch32rv_clock_disable(USBSS);
-    CH32RV_RCC_CTLR &= ~RCC_CTLR_USBSS_PLLON;
+    ch32rv_usbss_clock_off();
+    if (ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_USB] == usb_isr) {
+        ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_USB] = nullptr;
+        ch32rv_usbss_irq_hook[CH32RV_USBSS_HOOK_LINK] = nullptr;
+    }
 }
 
 static CH32RVUsbSpeed dcd_speed(void)
@@ -738,10 +678,7 @@ static void dcd_remote_wakeup(void)
  * clocks with CFGR0: the link is gone. Bring the clocks back and train again. */
 static void clock_check(void)
 {
-    const bool ok = (CH32RV_RCC_CTLR & (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY)) ==
-                        (RCC_CTLR_HSERDY | RCC_CTLR_USBSS_PLLRDY) &&
-                    (PIPE_REG & PIPE_BITS) == PIPE_BITS;
-    if (ok || !clocks_on()) {
+    if (ch32rv_usbss_clock_ok() || !ch32rv_usbss_clock_on()) {
         return;
     }
     if (connected) {
@@ -810,13 +747,13 @@ static void link_isr(void)
         case LINK_STATE_U1:
         case LINK_STATE_U2:
             low_power = true;
-            phy_cfg(0x12, (uint16_t)(0x67C8u & ~(1u << 9)));
+            ch32rv_usbss_phy_cfg(0x12, (uint16_t)(0x67C8u & ~(1u << 9)));
             break;
         case LINK_STATE_RECOVERY:
             if (low_power) {
                 low_power = false;
                 delayMicroseconds(100);
-                phy_cfg(0x12, 0x67C8);
+                ch32rv_usbss_phy_cfg(0x12, 0x67C8);
             }
             if (suspended) {
                 suspended = false;
@@ -981,12 +918,7 @@ static void ep_out_isr(uint8_t ep)
     }
 }
 
-extern "C" CH32RV_INTERRUPT void USBSS_LINK_IRQHandler(void)
-{
-    link_isr();
-}
-
-extern "C" CH32RV_INTERRUPT void USBSS_IRQHandler(void)
+static void usb_isr(void)
 {
     const uint32_t st = USB_STATUS;
     if ((st & USBSS_UDIF_SETUP) && !(st & USBSS_UDIF_STATUS)) {
