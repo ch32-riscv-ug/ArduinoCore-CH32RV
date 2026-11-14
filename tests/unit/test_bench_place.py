@@ -115,7 +115,7 @@ def test_peer_cases_and_usb_host_parts():
     assert place.choose_cases(c8, items, caps)["usb-peer-host"] == "run"
     v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record={})
     cases = place.choose_cases(v307, items, caps)
-    assert cases["usb"] == "skip: the record's usb is not {to: host}" and cases["power"] == "skip: not on an OEP port"
+    assert cases["usb"] == "skip: no port of the record's usb is {to: host}" and cases["power"] == "skip: not on an OEP port"
     for case in place.LINE_CASES:
         assert cases[case].startswith(f"skip: the {case} case drives"), "a WCH-Link has no OEP lines"
         assert place.choose_cases(f8, items, caps)[case] == "run"

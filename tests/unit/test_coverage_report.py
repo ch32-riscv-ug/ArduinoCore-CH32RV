@@ -40,7 +40,7 @@ def test_series_and_once(tmp_path):
     assert cell["runtime"] == ""
     v003 = dict(zip(cols, [c.strip() for c in next(line for line in text.splitlines()
                                                      if line.startswith("| CH32V003 |")).strip("|").split("|")]))
-    assert v003["uart2"] == "n/a"   # one USART
+    assert v003["sd-sdio"] == "n/a"
     assert "| sd-spi | ✓ | CH32V307 (v307-linke, run-v307-linke) |" in text
 
 
@@ -50,7 +50,7 @@ def test_every_item_names_a_case_run_hardware_knows():
     from harness.bench import CASES
     for item in coverage.load_items():
         assert item["scope"] in ("series", "once"), item
-        assert set(item) <= {"id", "test", "scope", "needs", "any_of", "also", "not_on"}, item
+        assert set(item) <= {"id", "test", "scope", "needs", "any_of", "also", "not_on", "kind"}, item
         for test in coverage.tests_of(item):   # none: not covered yet, shown as "no test"
             assert test.partition("::")[0] in CASES, item
 
@@ -71,3 +71,33 @@ def test_a_list_of_tests_not_on_and_no_test(tmp_path):
     assert row("CH32V103")["usb-peer-host"] == "n/a" and row("CH32V307")["usb-peer-host"] == ""
     assert row("CH32M030")["watchdog"] == "n/a"
     assert "| console-sdi | not run |  |" in text and "| taskkit | not run |  |" in text and "| servo | not run |  |" in text
+
+
+def test_latest_run_shows_and_a_better_earlier_one_follows(tmp_path):
+    import os
+    old = run_dir(tmp_path, "old", "CH32V307VCT6", {"gpio": {"test_gpio_contract": "pass"}})
+    new = run_dir(tmp_path, "new", "CH32V307VCT6", {"gpio": {"test_gpio_contract": "fail"}})
+    os.utime(old / "result.json", (1, 1))
+    caps = {s: set(c) for s, c in coverage.series_capabilities().items()}
+    text = coverage.report(coverage.collect([new, old], list(caps)), coverage.load_items(), caps)
+    header = next(line for line in text.splitlines() if line.startswith("| series |"))
+    cols = [c.strip() for c in header.strip("|").split("|")]
+    v307 = dict(zip(cols, [c.strip() for c in next(line for line in text.splitlines()
+                                                     if line.startswith("| CH32V307 |")).strip("|").split("|")]))
+    assert v307["gpio"] == "✗ (✓ before)"
+
+
+def test_na_skip_and_a_case_that_failed_before_pytest(tmp_path):
+    run = run_dir(tmp_path, "v003", "CH32V003F4U6", {"system": {"test_sleep": "skip"}})
+    junit = run / "cases" / "v003" / "system" / "junit.xml"
+    junit.write_text(junit.read_text().replace("message='no labels'", "message='n/a: unsupported'"))
+    report = json.loads((run / "result.json").read_text())
+    report["cases"].append(dict(target="v003", case="uart", status="FAIL"))
+    (run / "result.json").write_text(json.dumps(report))
+    caps = {s: set(c) for s, c in coverage.series_capabilities().items()}
+    text = coverage.report(coverage.collect([run], list(caps)), coverage.load_items(), caps)
+    header = next(line for line in text.splitlines() if line.startswith("| series |"))
+    cols = [c.strip() for c in header.strip("|").split("|")]
+    v003 = dict(zip(cols, [c.strip() for c in next(line for line in text.splitlines()
+                                                     if line.startswith("| CH32V003 |")).strip("|").split("|")]))
+    assert v003["uart"] == "✗" and v003["uart-formats"] == "✗"

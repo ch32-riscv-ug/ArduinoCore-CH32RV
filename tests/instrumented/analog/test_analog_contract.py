@@ -6,7 +6,7 @@ back by analogRead() on the same pad eight times: the mean within 4 % of the ADC
 (the DAC's and the ADC's offsets and gains together, on the chip's own supply), the eight readings within 1 % of
 each other (a steady output). A part without a DAC skips.
 
-Prepared before a bench target had a DAC that this suite could reach (2026-11-05): V30x / V317 / V4x7 / H41x."""
+The series with a DAC: V30x / V317 / V4x7 / H41x."""
 import json
 import pathlib
 import secrets
@@ -30,7 +30,7 @@ def test_dac(dut, record_property):
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     pins = [int(p) for p in ask(dut, "dacpins", rb"DACPINS (-?\d+) (-?\d+)").groups() if int(p) >= 0]
     if not pins:
-        pytest.skip("the part has no DAC output")
+        pytest.skip("n/a: the part has no DAC output")
     readings, wrong = {}, []
     for pin in pins:
         for bits in (8, 12):

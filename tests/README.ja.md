@@ -73,7 +73,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 
 | 試験 | T | 速さ |
 |---|---|---|
-| wire | 復号の SCL の半周期 約 5 µs（100 kHz）。`i2c` のひげの判定（50 ns）は 5 / T に届かないので未検査: 100 MS/s では、ベンチの遅い立ち上がりの跳ね（10〜190 ns）を WireSkein の復号がクロックと数えて崩れる。WireSkein が spike_max_s より短いパルスを捨ててから読むようになれば上げる | 5 MS/s（25 / T） |
+| wire | wire.output-only: 測る SCL の一番短い半周期 1.25 µs（400 kHz）。wire.repeated-start は 20 kHz（半周期 25 µs）。`i2c` のひげの判定（50 ns）は 5 / T に届かないので未検査: 100 MS/s では、ベンチの遅い立ち上がりの跳ね（10〜190 ns）を WireSkein の復号がクロックと数えて崩れる。WireSkein が spike_max_s より短いパルスを捨ててから読むようになれば上げる | 20 MS/s（400 kHz で 25 / T） |
 | spi、softspi | SCK 1 MHz の半周期 500 ns。CS の 12.5 ns 以下のひげは、どの速さでも 5 / T に届かないので判定しない | 40 MS/s（20 / T） |
 | spi.slave | SCK 100 kHz の半周期 5 µs | 40 MS/s |
 | uart | 1 Mbaud のビット 1 µs | 20 MS/s（20 / T） |
@@ -87,7 +87,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 | 名前 | 持ち主 | 中身 |
 |---|---|---|
 | `oep.probe.memo/port/<口>` | OEP（§4.3） | `target`（`<系統>-<UID>`、照合に使う）、`part`（チップ ID で決まらないときの型番）、`note` |
-| `io.github.ch32-riscv-ug.arduino/port/<口>` | このコア | `board`（`<作り手>:<型>`）、`supply`（`{from: probe \| usb \| other}`）、`usb`（`{to: host}`、`{to: esp32-s3 \| esp32-p4, serial と mac の一方または両方}`、`{to: rp2040, port}`）、`parts`（`{sd: {bus, <信号>: <端子>}, eth: {to: lan}}`）、`pd`（`{max_mv, vbus_pin, vbus_ratio}`）、`defects`（`[{id, lose: [機能], why}]`）、`note`、`updated` |
+| `io.github.ch32-riscv-ug.arduino/port/<口>` | このコア | `board`（`<作り手>:<型>`）、`supply`（`{from: probe \| usb \| other}`）、`usb`（1 つの口なら`{to: host}`、`{to: esp32-s3 \| esp32-p4, serial と mac の一方または両方}`、`{to: rp2040, port}`。コントローラーごとなら`{full_speed \| high_speed \| super_speed \| usbd \| high_speed_2: <同じ形>}`。キーはコアのコントローラーの選択の名前。同じ相手の口が複数あると、case は最初の口だけで流し、ほかは not_chosen に書く）、`parts`（`{sd: {bus, <信号>: <端子>}, eth: {to: lan}}`）、`pd`（`{max_mv, vbus_pin, vbus_ratio}`）、`defects`（`[{id, lose: [機能], why}]`）、`note`、`updated` |
 
 名前、形、メンバーごとの決まり、読み方と書き方は [RECORDS.ja.md](RECORDS.ja.md) にあります（検査の実装は [harness/records.py](harness/records.py)）。書くときは `tests/bench_record.py set`（同じセッションの中で読んで書き、渡した項目だけを変え、ほかの道具の項目は残す）、見るときは `show` を使います。正しい中身はホストの側にも残してください。WCH-Link は記録を持てないので、記録の要る試験（sd、eth、usb の相手など）は流れません。ただし WCH-Link には、tests/.env の `OEP_PORT_MEMO_<serial>`（`wchlink://<serial>` と同じ serial）で同じ形の記録を渡せます（[RECORDS.ja.md](RECORDS.ja.md) §5）。プローブが運べない console（WCH-Link(CH549) の SDI など）は、`ch32rv capabilities` の答えで飛ばします。チップ ID で型番が決まらない Link の相手には、`CH32RV_CHIP` を書きます。
 
@@ -102,7 +102,7 @@ uv run --project tests --locked --extra hardware python tests/bench_record.py se
 | uart / uart.external-round-trip、uart.output-only、uart.formats、uart.receive-errors | uart.output-only: uart.formatsと同じ条件を、プローブのUARTを付けずにDUTのTXだけ取り込んでデコードする（切り分けの基準）。標準UARTに接続した独立UART。115200 8N1、64 byte binaryの往復とstdio。uart.formats（OEPの口、ラベル`<口>.rx@<端子>`と`<口>.tx@<端子>`）: 9600・115200・1 Mbaudの8N1と、115200の8E1・8O1・8N2・7E1・7O1を、2本の線の1本の取り込み（20 MS/s）で、条件ごとのWireSkeinの区間にする。DUTが送る16バイトを`uart`でデコード（中身、形式、F_CPU÷BRRのボーレート3 %以内、フレーミングとパリティの誤りなし）、プローブのUARTが送る16バイトも同じくデコードし、DUTが受けた数とFNV-1aを比べる。条件の始めと終わりは両方の線がidle、送っていない側の線は動かない。uart.receive-errors: プローブのUARTの形式をずらして誤りを起こし（8E1にした DUT へ 8O1、8N1 の DUT へ偶数パリティの 8E1 と 0x00、読まずに 100 バイト、割り込みを止めたまま 16 バイト）、`Serial.onReceiveError()` が報告した種類（パリティ・フレーム・ブレーク・バッファ満杯・オーバーラン、誤りのない条件では何も）と DUT が残したバイト数を比べる。送った波形はプローブの形式で WireSkein がデコードする | ほかのinstance/route、5・6ビットと1.5ストップビット、3 Mbaudの端、ノイズ（NE）の再現 |
 | gpio / gpio.external-levels | プローブのラベル`<口>@<端子>`（と、部品のつながらない役割の線）の全部。出力の外部観測と外部入力刺激、終了時INPUT。ラベルが無ければスキップ | 未配線pad、全package、analog/PWM/interrupt |
 | signals / signals.pwm、signals.servo、signals.tone、signals.interrupt、signals.timer-input、signals.capture-after-pwm | プローブのラベル`<口>@<端子>`の線から1本（PWMとタイマーの入力は、DUTがvariantの表でタイマーの端子だと答えた線）と、隣の線2本。試験ごとに1本で続けて取り込み（`instrumented/ws_capture.py`のstream）、条件ごとにWireSkeinの区間`## <条件>`を開いて命令を送り、その区間に線がなる状態を`becomes`で書く（前の状態から1度だけ変わり、変化のあとはどの周期も範囲内）。外側の区間は`only_moving`で、隣の線が動かないこと。区間はプローブの時計で1本の取り込みから切り出され、どの条件で外れたかは1つの記録で分かる。判定はWireSkein（pytest-embedded-wireskein）: analogWriteの64・128・192で1 kHz、同じ値の2回目、255と0でHighとLow、128の2 kHzと500 Hz、止めた後のLow。Servoの544〜2400 µsと2400の2回目で50 Hz・その幅（30 µs）、detach後のLow。toneの440 Hz・2 kHz・2 kHzの2回目で50 %、noTone後のLow、1 kHz・30 msで30周期の後にLow。どの波形の条件も、変化のあとに20周期以上と、命令から50 ms以内の変化を求める。周波数は2 %。切り替えで切れてよい周期の数はコアのきまり: デューティとServoの幅は0、PWMの周波数は2、toneは1、出し始めと止めるとき（analogWriteの0と255を含む）は1。割り込み（RISING・FALLING・CHANGEの数）とCH32RVPulseCapture（プローブのPWMの周期とHighの時間）はDUTの答えを比べる。analogWriteを止めたあと（0、pinMode、digitalWrite）に同じ端子でCH32RVPulseCaptureが始められること（動いている間は断られること）も確かめる。試験ごとにDUTを再起動する | 2本以上の同時の出力、高い周波数、Servoの複数、入力に戻した後の線（プルが無いと浮くので見分けられない） |
-| system / system.reset-reasons、system.watchdog、system.sleep | system.reset-reasons: `CH32RV.restart()` の後の`resetReason()`がSOFTWARE、プローブがNRSTを引いた後がEXTERNAL。system.watchdog と system.sleep: ラベル`<口>@<端子>`の線を2本（1本目は計時の線で、DUTが手放すとプローブの入力プルダウンでLow、2本目はプローブが動かす起こす線）、1本の取り込み（1 MS/s）に条件ごとのWireSkeinの区間。計時の線は計る間だけHigh: ウォッチドッグの最後の餌からリセットまで、眠っている間。そのHighの長さはWireSkeinの分析（states）から読み、ここで条件の範囲と比べて記録に書き戻す（`ws_run.result`）。ウォッチドッグ: `wdtEnable(250 / 1000)`を50 msごとに600 ms餌をやってリセットされないこと、そのあと餌を止めてHighの長さがタイムアウト（X033 / X035はHSI÷1024で -7 %〜+3 %、ほかはLSIで -60 %〜+70 %）、次の起動がWATCHDOG。スリープ: タイマー200 msの`lightSleep()`（OK、TIMER、`millis()`の進みがHighの長さの20 %以内、Highが0.1〜0.3 s）、起こす線をLowにして起きる`lightSleep()`（PIN）、タイマー200 msの`deepSleep()`（次の起動のwakeupCause()がTIMER） | POWERONとWWDGの要因、スタンバイの系列（V20x / V30x）のdeepSleep、ウォッチドッグを付けたままの眠り、4本の端子の起こし |
+| system / system.reset-reasons、system.watchdog、system.sleep | system.reset-reasons: `CH32RV.restart()` の後の`resetReason()`がSOFTWARE、プローブがNRSTを引いた後がEXTERNAL。system.watchdog と system.sleep（試験の関数を分け、取り込みもそれぞれ。眠れない系列は`CH32RV_SLEEP_UNSUPPORTED`の答えで sleep を n/a のスキップ）: ラベル`<口>@<端子>`の線を2本（1本目は計時の線で、DUTが手放すとプローブの入力プルダウンでLow、2本目はプローブが動かす起こす線）、1本の取り込み（1 MS/s）に条件ごとのWireSkeinの区間。計時の線は計る間だけHigh: ウォッチドッグの最後の餌からリセットまで、眠っている間。そのHighの長さはWireSkeinの分析（states）から読み、ここで条件の範囲と比べて記録に書き戻す（`ws_run.result`）。ウォッチドッグ: `wdtEnable(250 / 1000)`を50 msごとに600 ms餌をやってリセットされないこと、そのあと餌を止めてHighの長さがタイムアウト（X033 / X035はHSI÷1024で -7 %〜+3 %、ほかはLSIで -60 %〜+70 %）、次の起動がWATCHDOG。スリープ: タイマー200 msの`lightSleep()`（OK、TIMER、`millis()`の進みがHighの長さの20 %以内、Highが0.1〜0.3 s）、起こす線をLowにして起きる`lightSleep()`（PIN）、タイマー200 msの`deepSleep()`（次の起動のwakeupCause()がTIMER） | POWERONとWWDGの要因、スタンバイの系列（V20x / V30x）のdeepSleep、ウォッチドッグを付けたままの眠り、4本の端子の起こし |
 | console-rtt / console-dmdata / console-sdi | デバッグのコンソールをスケッチのただ1つのコンソールにする（`sketch_support/console`、ビルドのflag `CONSOLE_RTT` / `CONSOLE_DMDATA` / `CONSOLE_SDI`、モニターの`source`はケースのport_config）。RTTとDMDATAは双方向: nonceにビルドIDで答える、ランダムな文字列20行のecho（80文字まで）、番号とハッシュ付きの200行がそろって順に届く（RTTは`availableForWrite()`を見て待つ。`write()`は入らない分を捨てる仕様）。SDIは送るだけ: 100 msごとの行がビルドIDと番号を持ち、21行で番号が飛ばない。WCH-Link以外ではスキップ | SDIはV307のLinkEで届かない（DMDATAは同じ番号で通る、[ch32rv]に調査を依頼、2026-11-05）、RTTのバッファの大きさの変更、ホストがいないときの挙動 |
 | analog / analog.dac | 配線なし。variantがDACの出力と名指す端子（`CH32RV_DAC1_PIN` / `CH32RV_DAC2_PIN`）ごとに、`analogWrite()`を既定の8ビットと`analogWriteResolution(12)`で満量程度の0・1/4・1/2・3/4・全部に書き、同じ端子を`analogRead()`で8回読む: 平均が書いた値からADCの満量程度の4 %以内、8回の幅が1 %以内。DACの無い部品はスキップ | 外部の電圧計での絶対値、負荷をつないだとき、DACの更新の速さ |
 | hid / upload.hid-runtime | UIAPduino V003、ソフトUSB、OEP SWIO＋NRST。HID権限、Arduino upload recipe、独立DMSEQ上の新build IDとruntime | Arduino USB stack、USB PD、bootloader領域の書換え |
@@ -117,8 +117,8 @@ uv run --project tests --locked --extra hardware python tests/bench_record.py se
 | pd / pd.attach、pd.caps、pd.fixed、pd.pps、pd.restart | DUTのUSB-CにUSB PDの充電器。5 Vの契約が5秒以内にできること、profile 0が固定5 V、設定の`pd_max_mv`（既定5000）までの固定の電圧と5 Vへの戻り、どこにもない電圧が断られて契約がそのままなこと、PPS（あれば）の下限と中間、中間を（`maintain()`を呼ばず）system serviceだけで12秒保つこと、契約中の`end()`／`begin()`のあとに契約が戻ること。`pd_vbus_pin`と`pd_vbus_ratio`（分圧の比）があればVBUSを測って10 %以内 | ソース（`USBPDSource`）、Hard Reset、PD 2.0だけの充電器、ケーブルの向きの両方、M030のUSBPD1 |
 | synckit / synckit.queue、synckit.notify、synckit.ring、synckit.critical、taskkit.executor | DUTだけ（配線なし）。タイマーの更新割り込み10 kHzがCH32RVSyncKitのQueue・Notify・Ringへ入れ、64 bitの値（上下の半分が常に等しい）を進める間、loop()が3秒取り出して確かめる。断られた分以外に欠け・重複・順番の乱れがないこと、CriticalSectionで読んだ64 bitが割れないこと、その区間が50 µs未満。守らずに読んだ値の割れは対照として記録。taskkit.executor: 同じ10 kHzの割り込みがpostするWork、10 msのPeriodで起きるWork、50 msのDeadlineで起きるWorkを1 sの間loop()のrunOnce()で回す。postはまとまる（走る数はpostの数以下で1以上）、最後の走りはすべてのpostの後、Periodの走りと取りこぼしの和が100、Deadlineの仕事は1回で遅れ5 ms以内 | 複数のISR、優先度の違う割り込みの入れ子、H417の2コア、LoopOnlyの誤用の検出 |
 | flash / flash.units、flash.kept、flash.time | DUTだけ（配線なし）。`ch32rv_flash.h` の5つの関数を末尾の作業用の領域で試し（消す、書く、消して書く、2単位の消去、境界にそろっていないデータからの書き込み）、プログラム自身・単位にそろわない番地・フラッシュの外・長さ0を断ること。乱数の値を保存してソフトのリセットのあとに`setup()`が読めること。1回の`rewrite_page()`の時間と、その間の`millis()`・`micros()`の進みを記録。1回の実行で末尾の消去が約16回 | 電源断、寿命、書き込みの経路で保存が残るか |
-| wire / wire.output-only、wire.repeated-start、wire.slave | プローブのラベル`<口>@<端子>`の線で、DUTが答えたWireの既定のSDA / SCL（どちらもラベルがあること）。1本の取り込み（5 MS/s、「取り込みの速さ」）に条件ごとのWireSkeinの区間を置き、`i2c`が判定する。区間の始めと終わりは両方の線がHigh。output-only: 相手なしで、プローブの端子の入力プルアップだけ。2つのアドレスに1バイト書き、線の上はS、ACKの無いアドレス、P、`endTransmission()`は2。repeated-start: プローブのi2c-target（0x42、内部プルアップ）を相手に、100 kHzで0x10を`endTransmission(false)`で書き、`requestFrom(addr, n, stop)`でn（1、2、3。読みの3つの経路）バイト読み、0x20を`endTransmission(true)`で書く。トランザクションごとの始まりと終わり（stop 0でS W Sr R Sr W P、stop 1でS W Sr R P S W P）、バイトとACK、バスの解放。DUTの戻り値（0、0）と読んだバイトは試験の側で比べる。fqbnでそのI2CをSoftware（`i2c1=software`）にすれば、メニューのSoftwareのWireを確かめる。wire.slave（wireのみ）: `Wire.begin(0x42)`をプローブのi2c-controllerが100 kHzで動かす。3バイトの書き込みはSTOPのあと`onReceive(3)`、`onRequest()`の4バイトの読み、1バイト書いてrepeated STARTで2バイト読むと`onReceive`が先で`onRequest`が後、用意より多く読むと残りは0xFF、40バイトの書き込みはバッファの32バイト（頭）、別の番地は応答なし。バスはWireSkeinの`i2c`、コールバックが見たものとプローブが読んだものはここで比べる（ベンチのX035はI2Cの使えない個体なので、使えるI2Cのある対象で流す） | 400 kHz、クロックの引き延ばし、アービトレーション、Wireのスレーブ |
-| softwire / wire.output-only、wire.softwire | wireと同じ2つの試験を、Wireの端子でない`<口>@<端子>`の線2本のSoftWireで流す（ハードウェアのrouteでなくてよい） | wireと同じ |
+| wire / wire.output-only、wire.repeated-start、wire.slave | プローブのラベル`<口>@<端子>`の線で、DUTが答えたWireの既定のSDA / SCL（どちらもラベルがあること）。試験ごとに1本の取り込み（20 MS/s、「取り込みの速さ」）に条件ごとのWireSkeinの区間を置き、`i2c`が判定する。区間の始めと終わりは両方の線がHigh。問いは2つに分ける（2026-11-14）。クロックの問い wire.output-only: 相手なしで、プローブの端子の入力プルアップだけ。20・50・100・400 kHzのそれぞれで2つのアドレスに1バイト書き、線の上はS、ACKの無いアドレス、P、`endTransmission()`は2、SCLの周波数をWireSkeinが測る（ハードウェアは100 kHzまで10 %、400 kHzは25 %。SoftWireは20 kHzで10 %、その上は測るだけ）。取引の問い wire.repeated-start: プローブのi2c-target（0x42、内部プルアップ）を相手に、ベンチの遅い線が落ち着く20 kHzで、0x10を`endTransmission(false)`で書き、`requestFrom(addr, n, stop)`でn（1、2、3。読みの3つの経路）バイト読み、0x20を`endTransmission(true)`で書く。トランザクションごとの始まりと終わり（stop 0でS W Sr R Sr W P、stop 1でS W Sr R P S W P）、バイトとACK、バスの解放。DUTの戻り値（0、0）と読んだバイトは試験の側で比べる。fqbnでそのI2CをSoftware（`i2c1=software`）にすれば、メニューのSoftwareのWireを確かめる。wire.slave（wireのみ）: `Wire.begin(0x42)`をプローブのi2c-controllerが100 kHzで動かす。3バイトの書き込みはSTOPのあと`onReceive(3)`、`onRequest()`の4バイトの読み、1バイト書いてrepeated STARTで2バイト読むと`onReceive`が先で`onRequest`が後、用意より多く読むと残りは0xFF、40バイトの書き込みはバッファの32バイト（頭）、別の番地は応答なし。バスはWireSkeinの`i2c`、コールバックが見たものとプローブが読んだものはここで比べる | 400 kHzを超えるクロック、クロックの引き延ばし、アービトレーション、バスの回復とタイムアウト、データのNACK |
+| softwire / softwire.output-only、softwire.repeated-start | wireと同じ2つの試験を、Wireの端子でない`<口>@<端子>`の線2本のSoftWireで流す（ハードウェアのrouteでなくてよい） | wireと同じ |
 | sd / sd.spi、sd.sdio | ベンチのSDカード（FATのボリュームのあるもの）を、SDライブラリ（ラベル`spisd_*`）とSD_MMC（ラベル`sdio_*`、`sdio_d1`〜`d3`があれば4本）で識別・マウントし、64 KBを書いて読み戻し、ルートを一覧して消す。書きと読みの時間を記録。ラベルが無い方はスキップ | カードの種類ごとの違い、抜き差し、満杯 |
 | spi / spi.output-only、spi.modes、spi.slave、softspi / softspi.output-only、softspi.modes | spi.output-only: spi-targetを付けず、プローブはCS・SCK・MOSIを取り込むだけ（MISOは浮くので判定しない）。下と同じ条件・同じ判定で、CSがHighの間のSCKは、待機のレベル（CPOL）が変わるときの1回の移りだけ許す。不具合がDUTか相手かを切り分ける基準。spi.modes: プローブのラベル`<口>@<端子>`の線: ハードウェアのSPIはDUTが答えた既定のSCK / MISO / MOSI（どれもラベルがあること）と残りの線のCS、SoftSPIは4本。OEPのspi-targetにつなぐ。モード0〜3とMSBFIRST / LSBFIRST（プローブが対応すれば）を250 kHzで、モード0のMSBFIRSTを1 MHzで、`transfer()`の3バイトと`transfer16()`の1語を送る。4本を1本の取り込み（40 MS/s）にし、条件ごとのWireSkeinの区間で`spi`が判定する: 線から読んだモード、CSがLowの間に40クロック、SCKのグリッチなし、MOSIのバイトと語（MSBFIRSTで上位から、LSBFIRSTで下位から）、MISOの用意したバイト、区間の始めと終わりにCSがHigh。DUTが読んだ値はDUTの答えと比べる。CSがHighの間のSCKの動き（WireSkeinの注意`sck_outside_cs`）は、待機のレベル（CPOL）が変わる条件で1回まで、ほかはng。spi.slave（spiのみ）: DUTの既定の端子のCH32RVSPISlave（CSは残りの線）を、プローブのspi-controllerが100 kHz、CSから最初のクロックまで20 µsで動かす。4モードと2つのビット順で8バイトを用意して8クロック、モード0で8バイトの用意に10バイト（11バイト目からfillのバイト、`length` 10、残すのは8）、何も用意しないCS（fillのバイトだけ、`missed()`が1）。バスはWireSkeinの`spi`（MOSIはプローブが送ったもの、MISOはDUTが用意したものとfill）、DUTの結果とプローブが読んだものはここで比べる | CSの自動、DMA、2 MHzより速いクロック、バスを共有する別の機器、スレーブの上限のクロック |
 | usb-media / usb.audio-capture、usb.audio-playback、usb.video-bulk | usb と同じ配線。UAC1ヘッドセット（32 kHz 16 bit モノラル）とUVCカメラ（80x60 YUY2、バルク）。OSのドライバを外し、アイソクロナス転送はlibusbをctypesで直接使う（usb_iso.py）。マイクの連番が途切れないこと、スピーカーに送った100 msが数も和も一致すること、カメラのフレームが1バイト残らず期待どおりであること | OSのサウンド／ビデオ機器としての動作、UAC2、アイソクロナスのビデオ、長時間の同期 |
@@ -166,25 +166,28 @@ uv run --no-project python tests/coverage.py <--out のディレクトリ> ... [
 ```
 
 - 項目には範囲が 2 つあります。`scope = "series"` は**系列ごとに 1 回は**通したいもの（系列ごとにドライバ、端子、
-  クロックが違う: runtime、uart、gpio、flash、synckit、logic、spi、wire、uart2、pwm、adc、USB デバイス、USB ホスト、
+  クロックが違う: runtime、uart、gpio、flash、synckit、logic、spi、wire、route、pwm、adc、USB デバイス、USB ホスト、
   Ethernet、PD、SDIO、CAN）。`scope = "once"` は**全体で 1 回**通せばよいもの（ドライバの上の共通のコード、相手との
   手順: SoftSPI、SoftWire、SPI の SD、USB のクラスとデバイス側のピア試験、HID、電源）。I2S・ARGB・RS485・QSPI・CAN は
   予定の項目で、ドライバはまだありません（ラベルを付けると失敗として出ます）。
 - `test` は 1 つか、そのリストです（どれが通っても数える）。USB デバイスは、相手が PC の `usb` と、ESP32-S3 の
-  `usb-peer` のどちらでも数えます。
-- `test` の無い項目は、コアにあって実機の試験がまだ無い機能です（DAC、Wire のスレーブ、HSADC）。
-  表には「no test」と出て、分母に入ります。
+  `usb-peer` のどちらでも数えます。1 つの項目は 1 つの問いです。case 全体を指す項目はどの関数が通っても ✓ になるので、
+  問いを複数持つ case（uart、spi、wire、system、selfsys など）は、関数ごとに項目を分けます。
+- `kind = "self"` の項目（selfcheck、selfbus、selfsys: DUT が自分の端子やレジスタを読み返す）は、外から観測した結果の
+  代わりにならないので、別の表に出します。
+- `test` の無い項目は、コアにあって実機の試験がまだ無い機能です。表には「no test」と出て、分母に入ります。
 - `run_hardware.py`（harness/place.py）も同じ項目を読んで、その系列で流せる case を決めます。
-- 系列の表は、系列ごとに一番よい結果（✓ が ✗ より、✗ が skip より上）を出します。その周辺機能の無い系列は n/a、
-  まだ走らせていない所は空欄です。最後の行が「通った系列の数 / 対象の系列の数」です。
+- その周辺機能の無い系列は n/a、まだ走らせていない所は空欄です。最後の行が「最新の実行で通った系列の数 / 対象の系列の数」です。
 - 結果は試験の関数ごとに junit から取ります（`<case>::<関数>[<引数>]`）。ラベルが足りずにスキップしたものは skip で、
-  通ったことにはなりません。
+  通ったことにはなりません。チップにその機能が無いと DUT が答えてスキップした試験は、理由を `n/a:` で始め、n/a として
+  分母から外します。build や書き込みで pytest の前に落ちた case は、その case の全部の項目の ✗ に数えます。
 - 周辺機能の有無は、variant のクロックの許可の名前（`needs` / `any_of`）で見ます。名前で拾えない系列は `also`、
   名前はあっても項目の試すものが無い系列（V103 の旧い USB に USB ホストは無い、など）は `not_on` に書きます。
   表は系列ごとです。系列の中で型番によって周辺が無いもの（variant の `CH32RV_<instance>_ABSENT`。CH32M030G8R7 の SPI など）は、
   `run_hardware.py` がその型番で流さないだけで、表の上では系列の欄に数えます。
-- 渡した実行の全部から一番よい結果を取るので、古い実行の ✗ は、あとで通るまで残ります。今の状態を見るときは、
-  今のコミットの実行だけを渡します。
+- 系列の欄は、その項目を流した一番新しい実行の結果です（同じ実行の中では ✓ が ✗ より、✗ が skip より上）。それより
+  前の実行によりよい結果があれば「✗ (✓ before)」のように後ろに書くので、前は通っていたものが落ちたのが分かります。
+  実行の新しさは result.json の時刻です。
 - 項目を足すときは `coverage.toml` に書きます。`tests/unit/test_coverage_report.py` が、どの項目も `run_hardware.py`
   の case を指していることを確かめます。
 

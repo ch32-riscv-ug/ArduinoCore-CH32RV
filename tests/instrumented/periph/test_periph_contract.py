@@ -291,8 +291,8 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
     sketch reads 8 buffers of 1024 samples and reports the square wave as periph.adc-stream does; one capture, a
     WireSkein section per condition judging the stimulus (becomes); compared here: the frequency from the rises
     within 3 % of the probe's, the duty within 0.03, no overrun - at 20 Msps with 100 kHz / 0.5 and 1 MHz / 0.25,
-    and at the slowest step (1.25 Msps) with 50 kHz / 0.75. Prepared before an H41x on the bench had labelled lines
-    (2026-11-05)."""
+    and at the slowest step (1.25 Msps) with 50 kHz / 0.75.
+    The resident H417 has no line on an HSADC pad yet (TODO)."""
     from oep_client import core
     from oep_client.fixture import Pwm
     from wireskein.runlog import becomes

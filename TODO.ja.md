@@ -15,6 +15,20 @@
 - [ ] **TST-01 現状の照合**: 計画・coverage・library 実装・runner・実行 artifact の不整合を一覧化する。
   各契約を再利用/作り直し/対象外候補に分け、理由を書く。文書上の実機確認と今回の未測定を混同しない。
   2026-10-29: test-coverage の「sleep/RTC API 未実装」「CDC/HID 等の sketch USB class 未実装」を直した。
+  2026-11-14: 照合した（計 77 件）。直したもの: coverage の項目を 1 問 1 項目に（uart・spi・wire・softwire・synckit・
+  selfsys を関数ごと、uart2 と route の二重数えをやめ、reset-reasons を足す）、system の watchdog と sleep を別の関数に、
+  wire の取引の関数を test_wire_repeated_start に、coverage.py は系列ごとに最新の実行を出して前の最良を後ろに書く
+  （回帰が見える）、DUT が「無い」と答えたスキップは `n/a:` で分母から外す、pytest の前に落ちた case は全項目の ✗、
+  自己検査（selfcheck・selfbus・selfsys）は別の表。place.py は同じ相手の 2 つ目の口を not_chosen に書く。
+  TEST_PLAN・tests/README・docs/test-coverage の古い記述（2026-11-05 の実機待ちの表、「新 suite では未整備」の列など）。
+  残り:
+  - [ ] USB の項目に controller（full_speed …）と対向（S3 / P4 / Pico / PC）の軸。junit に record_property で残し、
+    coverage の欄を分ける。同じ相手の口が複数ある記録で、口ごとに case を流す。
+  - [ ] 計画にあって試験の無い契約: Wire のデータの NACK・timeout・バスの回復・clock stretch（プローブの i2c-target に
+    SDA を握らせる・NACK させる条件）、USB の STALL の解除・相手のリセット後の再通信・コアとの共存、pulseInLong、
+    shiftIn / shiftOut。
+  - [ ] TEST_PLAN の「ベンチの X035C8T6 は I2C が使えない」と X035 の wire ✓ の食い違い（どの台で通ったか）、V205 の
+    periph の serial_routes で通した route を結果から確かめる。
 - [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）。
 
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの

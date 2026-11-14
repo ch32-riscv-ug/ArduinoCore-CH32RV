@@ -121,7 +121,7 @@ def test_time_rate(dut, ready, record_property):
 def test_clocks(ready, record_property):
     record_property("clocks", json.dumps(ready))
     if not ready["pclk2_register"]:
-        pytest.skip("the family's RCC has no PPRE2 field this test decodes")
+        pytest.skip("n/a: the family's RCC has no PPRE2 field this test decodes")
     assert ready["pclk2_register"] == ready["pclk2"], \
         f"RCC_CFGR0 {ready['cfgr0']:#010x} gives PCLK2 {ready['pclk2_register']}, the build assumes {ready['pclk2']}"
     assert ready["pclk1_register"] == ready["pclk1"], \
@@ -132,7 +132,7 @@ def test_clocks(ready, record_property):
 def test_serial_transmit(dut, ready, baud, record_property):
     count = int(ask(dut, "ports", rb"PORTS (\d+)").group(1))
     if not count:
-        pytest.skip("no HardwareSerial on this board")
+        pytest.skip("n/a: no HardwareSerial on this board")
     n = 64
     results, wrong, closed, unreachable = {}, [], [], []
     for k in range(count):
@@ -170,7 +170,7 @@ def test_serial_receive(dut, ready, record_property):
     no_drive()
     count = int(ask(dut, "ports", rb"PORTS (\d+)").group(1))
     if not count:
-        pytest.skip("no HardwareSerial on this board")
+        pytest.skip("n/a: no HardwareSerial on this board")
     off = keep_off()
     n = 16
     results, wrong, left = {}, [], []
@@ -200,7 +200,7 @@ def test_spi(dut, ready, record_property):
     no_drive()
     m = ask(dut, "spi 500000 128", rb"SPI (\d+) (?:(NONE)|(\d+) (\d+))")
     if m.group(2):
-        pytest.skip("no hardware SPI with a default route")
+        pytest.skip("n/a: no hardware SPI with a default route")
     number, took, br = int(m.group(1)), int(m.group(3)), int(m.group(4))
     clock = ready["pclk2"] if number == 1 else ready["pclk1"]
     want_br = next((b for b in range(8) if clock >> (b + 1) <= 500000), 7)
@@ -280,7 +280,7 @@ def test_vref(dut, ready, record_property):
     if value < 0 or not full:
         pytest.skip("no ADC (or not at this CPU Clock)")
     if value == 0:
-        pytest.skip("no internal reference in the data (CH32M030)")
+        pytest.skip("n/a: no internal reference in the data (CH32M030)")
     record_property("vref", json.dumps(dict(raw=value, full=full, vdd_mv=vdd)))
     if not vdd:
         pytest.skip(f"no reference voltage in the data to work VDD out (raw {value} of {full} recorded)")

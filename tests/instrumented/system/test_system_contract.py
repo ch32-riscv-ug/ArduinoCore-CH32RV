@@ -3,7 +3,7 @@
 
 - system.reset-reasons: CH32RV.restart() boots with CH32RV_RESET_SOFTWARE, the probe pulling NRST low with
   CH32RV_RESET_EXTERNAL (resetReason(), as the sketch's READY reports it).
-- system.watchdog and system.sleep use two `<port>@<pad>` lines the probe labels (bench_lines.py gpio_lines): the
+- system.watchdog and system.sleep (test_watchdog, test_sleep: a capture each) use two `<port>@<pad>` lines the probe labels (bench_lines.py gpio_lines): the
   first is the sketch's timing line, held low by the probe's input pull-down when the DUT lets it go, the second
   the wake line, which the probe drives. One capture of both, a WireSkein section per condition. The timing line is
   high for exactly what is timed: from the watchdog's last feed until its reset lets the line go, or through a
@@ -18,7 +18,8 @@
     low 200 ms after the sketch says it sleeps (CH32RV_WAKEUP_PIN, the high time 0.15 .. 2 s); deepSleep() woken by
     the timer after 200 ms (the next boot says CH32RV_WAKEUP_TIMER; the pin's high time is judged only where deepSleep()
     is a light sleep and a restart - a real standby lets the pads go and its RTC alarm counts whole seconds). A family that cannot sleep answers
-    CH32RV_SLEEP_UNSUPPORTED, and its sleep conditions are skipped (recorded)."""
+    CH32RV_SLEEP_UNSUPPORTED, and test_sleep is skipped there (the answer recorded); a family whose wdtEnable() refuses
+    skips test_watchdog the same way."""
 import json
 import pathlib
 import secrets
@@ -95,7 +96,16 @@ def test_reset_reasons(dut, oep_host, record_property):
     assert external == RESET_EXTERNAL, f"after NRST resetReason() is {external}"
 
 
-def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
+def test_watchdog(dut, oep_host, ws_run, record_property):
+    timed(dut, oep_host, ws_run, record_property, "watchdog")
+
+
+def test_sleep(dut, oep_host, ws_run, record_property):
+    timed(dut, oep_host, ws_run, record_property, "sleep")
+
+
+def timed(dut, oep_host, ws_run, record_property, part):
+    """One capture of the timing and wake lines through `part`'s conditions (watchdog or sleep)."""
     from oep_client import core
     from oep_client.fixture import Gpio
     from wireskein.runlog import ends, pulses, starts
@@ -123,74 +133,82 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
     def steps(wait):
         idle = {timing["pad"]: 0, wake["pad"]: 1}
         with ws_run.section(1, top):
-            for ms in (250, 1000):
-                name = f"watchdog {ms} ms"
-                with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
-                    command = f"wdt {ms} 50 600 {timing['pin']}"
-                    ws_run.command(command)
-                    dut.write(command + "\n")
-                    ok = expect(dut, wait, rb"WDT (\d)").group(1) == b"1"
-                    if not ok:
-                        facts[name] = "wdtEnable() refused"
-                        continue
-                    expect(dut, wait, rb"FED", timeout=3)
-                    wait(ms / 1000 * 2 + 0.3)
-                    reason, _ = boot(dut, case, wait)
-                    ws_run.reply(f"reset reason {reason}")
-                    facts[name] = reason
-                    if reason != RESET_WATCHDOG:
-                        wrong.append(f"{name}: the next boot's resetReason() is {reason}")
-                    lo, hi = (0.93, 1.03) if tight else (0.4, 1.7)
-                    expect_high(name, ms / 1000 * lo, ms / 1000 * hi)
-            name = "lightSleep timer 200 ms"
+            if part == "watchdog":
+                watchdog(wait, idle)
+            else:
+                sleep(wait, idle)
+
+    def watchdog(wait, idle):
+        for ms in (250, 1000):
+            name = f"watchdog {ms} ms"
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
-                command = f"tsleep 200000 {timing['pin']}"
+                command = f"wdt {ms} 50 600 {timing['pin']}"
                 ws_run.command(command)
                 dut.write(command + "\n")
-                m = expect(dut, wait, rb"TSLEEP (\d+) (\d+) (\d+)")
-                ws_run.reply(m.group(0).decode())
-                result, cause, slept = (int(x) for x in m.groups())
-                facts[name] = [result, cause, slept]
-                if result == SLEEP_UNSUPPORTED:
-                    facts["sleep"] = "unsupported"
-                    return
-                if (result, cause) != (SLEEP_OK, WAKEUP_TIMER):
-                    wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
+                ok = expect(dut, wait, rb"WDT (\d)").group(1) == b"1"
+                if not ok:
+                    facts[name] = "wdtEnable() refused"
+                    continue
+                expect(dut, wait, rb"FED", timeout=3)
+                wait(ms / 1000 * 2 + 0.3)
+                reason, _ = boot(dut, case, wait)
+                ws_run.reply(f"reset reason {reason}")
+                facts[name] = reason
+                if reason != RESET_WATCHDOG:
+                    wrong.append(f"{name}: the next boot's resetReason() is {reason}")
+                lo, hi = (0.93, 1.03) if tight else (0.4, 1.7)
+                expect_high(name, ms / 1000 * lo, ms / 1000 * hi)
+
+    def sleep(wait, idle):
+        name = "lightSleep timer 200 ms"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"tsleep 200000 {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            m = expect(dut, wait, rb"TSLEEP (\d+) (\d+) (\d+)")
+            ws_run.reply(m.group(0).decode())
+            result, cause, slept = (int(x) for x in m.groups())
+            facts[name] = [result, cause, slept]
+            if result == SLEEP_UNSUPPORTED:
+                facts["sleep"] = "unsupported"
+                return
+            if (result, cause) != (SLEEP_OK, WAKEUP_TIMER):
+                wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
+            expect_high(name, 0.1, 0.3)
+            wait(0.05)
+        name = "lightSleep pin"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"psleep {wake['pin']} {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            expect(dut, wait, rb"PSLEEP READY")
+            wait(0.2)
+            gpio.configure(wake["channel"], Gpio.OUTPUT_LOW)
+            m = expect(dut, wait, rb"PSLEEP (\d+) (\d+) (\d+)")
+            gpio.configure(wake["channel"], Gpio.OUTPUT_HIGH)
+            ws_run.reply(m.group(0).decode())
+            result, cause, slept = (int(x) for x in m.groups())
+            facts[name] = [result, cause, slept]
+            if (result, cause) != (SLEEP_OK, WAKEUP_PIN):
+                wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
+            expect_high(name, 0.15, 2.0)
+            wait(0.05)
+        name = "deepSleep timer 200 ms"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"dsleep 200000 {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            wait(0.6)
+            reason, cause = boot(dut, case, wait)
+            ws_run.reply(f"reset reason {reason} wakeup cause {cause}")
+            facts[name] = [reason, cause]
+            if cause != WAKEUP_TIMER:
+                wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
+            if reason != RESET_POWERON:
                 expect_high(name, 0.1, 0.3)
-                wait(0.05)
-            name = "lightSleep pin"
-            with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
-                command = f"psleep {wake['pin']} {timing['pin']}"
-                ws_run.command(command)
-                dut.write(command + "\n")
-                expect(dut, wait, rb"PSLEEP READY")
-                wait(0.2)
-                gpio.configure(wake["channel"], Gpio.OUTPUT_LOW)
-                m = expect(dut, wait, rb"PSLEEP (\d+) (\d+) (\d+)")
-                gpio.configure(wake["channel"], Gpio.OUTPUT_HIGH)
-                ws_run.reply(m.group(0).decode())
-                result, cause, slept = (int(x) for x in m.groups())
-                facts[name] = [result, cause, slept]
-                if (result, cause) != (SLEEP_OK, WAKEUP_PIN):
-                    wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
-                expect_high(name, 0.15, 2.0)
-                wait(0.05)
-            name = "deepSleep timer 200 ms"
-            with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
-                command = f"dsleep 200000 {timing['pin']}"
-                ws_run.command(command)
-                dut.write(command + "\n")
-                wait(0.6)
-                reason, cause = boot(dut, case, wait)
-                ws_run.reply(f"reset reason {reason} wakeup cause {cause}")
-                facts[name] = [reason, cause]
-                if cause != WAKEUP_TIMER:
-                    wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
-                if reason != RESET_POWERON:
-                    expect_high(name, 0.1, 0.3)
-                # else real standby (the RTC families): the pads are let go as it starts, so the pin is high only
-                # until then, and the RTC alarm counts whole seconds - no width to judge (V205 2026-11-13: 0.4 ms).
-                wait(0.05)
+            # else real standby (the RTC families): the pads are let go as it starts, so the pin is high only
+            # until then, and the RTC alarm counts whole seconds - no width to judge (V205 2026-11-13: 0.4 ms).
+            wait(0.05)
 
     try:
         ws_capture.stream(ws_run, oep_host, [timing, wake], rate=1_000_000, steps=steps)
@@ -213,3 +231,7 @@ def test_watchdog_and_sleep(dut, oep_host, ws_run, record_property):
         if abs(slept / high - 1) > 0.2:
             wrong.append(f"{section}: millis() moved {slept:.3f} s across a {high:.3f} s sleep")
     assert not wrong, " | ".join(wrong)
+    if facts.get("sleep") == "unsupported":
+        pytest.skip("n/a: lightSleep() answers CH32RV_SLEEP_UNSUPPORTED on this family")
+    if part == "watchdog" and all(v == "wdtEnable() refused" for v in facts.values()):
+        pytest.skip("n/a: wdtEnable() refuses on this family")

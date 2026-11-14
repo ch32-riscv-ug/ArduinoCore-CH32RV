@@ -156,7 +156,7 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
     assert all(r == 2 for r in results.values()), f"endTransmission() gave {results}, not 2 (address NACK)"
 
 
-def test_wire_contract(dut, oep_host, ws_run, record_property):
+def test_wire_repeated_start(dut, oep_host, ws_run, record_property):
     from wireskein.runlog import ends, i2c, starts
     case = settings(__file__)
     lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
@@ -225,7 +225,9 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     - read past the reply: 2 bytes provided, 4 read - the rest 0xFF;
     - long write: 40 bytes - onReceive gets the buffer's 32 (CH32RV_WIRE_BUFFER_SIZE), the head;
     - another address: 0x43 - not acknowledged, no callback.
-    Prepared before a bench target had a usable hardware I2C (the x035 bench's lot has none, 2026-11-05)."""
+    It stays at 100 kHz, unlike the transactions above: the probe is the master here, and it passes on every series
+    of the bench's lines (2026-11-14); the 20 kHz there is for the hardware Wire as the master (H41x's SDA hold
+    against the probe's input, TODO)."""
     from oep_client.fixture import I2cController, I2cSegment
     from wireskein.runlog import ends, i2c, starts
     case = settings(__file__)
@@ -238,7 +240,7 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     record_property("probe_pullups", ctrl.internal_pullups)
     m = ask(dut, f"slave {SLAVE_ADDRESS}", rb"SLAVE (\d)")
     if m.group(1) != b"1":
-        pytest.skip("this Wire has no target mode")
+        pytest.skip("n/a: this Wire has no target mode")
     clock = ctrl.configure(100_000, 25_000)
     wrong = []
 

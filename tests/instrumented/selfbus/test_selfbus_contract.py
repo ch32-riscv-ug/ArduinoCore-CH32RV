@@ -66,7 +66,7 @@ def spi(dut):
     number, sck, miso, mosi, hs, hi, ho = (int(x) for x in ask(
         dut, "spipins", rb"SPIPINS (\d+) (-?\d+) (-?\d+) (-?\d+) (\d) (\d) (\d)").groups())
     if not number:
-        pytest.skip("no hardware SPI with a default route")
+        pytest.skip("n/a: no hardware SPI with a default route")
     off = set(case["target"].get("gpio_keep_off") or [])
     for name, pin, h in (("SCK", sck, hs), ("MISO", miso, hi), ("MOSI", mosi, ho)):
         if pad(pin) in off:
@@ -117,7 +117,7 @@ def uart(dut):
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     count, size = (int(x) for x in ask(dut, "ports", rb"PORTS (\d+) (\d+)").groups())
     if not count:
-        pytest.skip("no HardwareSerial on this board")
+        pytest.skip("n/a: no HardwareSerial on this board")
     off = set(case["target"].get("gpio_keep_off") or [])
     fed, left = [], []
     for k in range(count):
@@ -210,7 +210,7 @@ def wires(dut):
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     count = int(ask(dut, "wires", rb"WIRES (\d+)").group(1))
     if not count:
-        pytest.skip("no hardware TwoWire on this board")
+        pytest.skip("n/a: no hardware TwoWire on this board")
     off = set(case["target"].get("gpio_keep_off") or [])
     usable, left = [], []
     for k in range(count):

@@ -35,7 +35,7 @@ UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
-# The USB peer a record's usb.to names: an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
+# The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
 # own port to this host, or an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT. The P4 runs the S3's
 # sketches (EspUsbHost / EspUsbDevice) under their p4 profile.
 PEER_KINDS = {"esp32-s3": "s3", "esp32-p4": "p4", "rp2040": "pico"}
@@ -325,17 +325,23 @@ def choose_cases(place, items=None, caps=None):
     ports = records.usb_ports(core.get("usb"))
     usb = next((e for e in ports.values() if e.get("to") == "host"), {})
     peer_usb = next((e for e in ports.values() if e.get("to") in PEER_KINDS), {})
+    # One port per kind of case: a second port to the host (or to a peer) is not run - said so, not left out silently.
+    for kind, chosen in (("host", usb), ("a peer", peer_usb)):
+        same = [p for p, e in ports.items() if (e.get("to") == "host") == (kind == "host") and e.get("to")
+                and (kind == "host" or e.get("to") in PEER_KINDS)]
+        for port in same[1:]:
+            out[f"usb@{port}"] = (f"skip: the record's usb has more than one port to {kind}; the cases run on "
+                                  f"{same[0]} only")
     device = series_has("usb", series, items, caps)
     host = series_has("usb-peer-host", series, items, caps) and part not in USB_HOST_NO_PARTS
     for case in USB_CASES:
         out[case] = ("run" if usb.get("to") == "host" and device else
                      f"skip: {part} has no USB controller" if not device else
-                     "skip: the record's usb is not {to: host}")
+                     "skip: no port of the record's usb is {to: host}")
     peer = bool(peer_usb)
-    not_peer = "skip: the record's usb is not {to: esp32-s3}, {to: esp32-p4} or {to: rp2040}"
+    not_peer = "skip: no port of the record's usb is {to: esp32-s3}, {to: esp32-p4} or {to: rp2040}"
     for case in PEER_DEVICE_CASES:
-        lacks = (PICO_HOST_LACKS.get(case) if peer_usb.get("to") == "rp2040" else
-                 S3_LACKS.get(case) if peer_usb.get("to") == "esp32-s3" else None)
+        lacks = PICO_HOST_LACKS.get(case) if peer_usb.get("to") == "rp2040" else None
         out[case] = ("run" if peer and device and not lacks else
                      f"skip: {part} has no USB controller" if not device else
                      lacks if peer else not_peer)

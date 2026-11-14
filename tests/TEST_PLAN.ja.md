@@ -4,7 +4,7 @@
 
 この文書はテストの計画の概要です。
 ベンチの基準環境はネイティブ Linux です。通常のpytestはunit/とplatform/のボード不要検査を実行します。
-実機契約はrun_hardware.pyの明示入口で、local TOMLの接続先と配線を検証して実行します。
+実機契約はrun_hardware.pyの明示入口で、試験の相手のアドレス（CH32RV_PROBE か --probe）とプローブの記録から、流せる試験を選んで実行します。
 初期 bring-up の明示実行は [独立した診断入口](../tools/diagnostics/core-bringup/README.ja.md) に置き、
 通常の pytest に実機操作を持ち込みません。
 [カバレッジ](../docs/test-coverage.ja.md)は実装とテスト定義の照合、
@@ -84,9 +84,10 @@ silicon capability、part/package の端子、コア実装、board 配線、fixt
 | LinkE と代表 DUT | upload/reset/monitor と基本動作の経路差 | P4 capture を前提とした精密判定 |
 | Link と CH32V103 | V103 の経路別回帰 | 他系列の経路 |
 | UIAPduino HID | 製品 pin map、HID upload、再接続、sketch 起動 | sketch 内 USB API |
-| CH32X035 と RP2040（Pico） | FS の USB host/device 両側の契約と、異なる実装（TinyUSB）との通信。同じ OEP プローブで書き込みと RTT コンソール | アイソクロナス（RP2040 のホストに無い）、他 controller/speed、PD |
-| CH32X035 と ESP32S3 | FS の USB host/device 両側。ESP-IDF の独立したスタックとの比べ役、アイソクロナス（usb-peer-media） | 他 controller/speed、PD |
-| DUT と安価な peer | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
+| FS の DUT（X035・H417 など）と RP2040（Pico） | FS の USB host/device 両側の契約と、異なる実装（TinyUSB）との通信。同じ OEP プローブで書き込みと RTT コンソール | アイソクロナス（RP2040 のホストに無い）、他 controller/speed、PD |
+| FS の DUT と ESP32-S3 | FS の USB host/device 両側。ESP-IDF の独立したスタックとの比べ役、アイソクロナス（usb-peer-media） | 他 controller/speed、PD |
+| HS の DUT（V407 など）と ESP32-P4 のボード | HS の USB host/device 両側（P4 の OTG HS の口）。OEP プローブの P4 とは別の基板 | FS・SS、PD |
+| DUT と安価な peer（未着手） | 指定通信契約の繰り返し検証 | 独立実装との相互運用の代替 |
 | PD source と電圧計 | CC 交渉、VBUS、電源復旧 | USB データ通信 |
 
 現構成の経路代表はLink＋V103、LinkE＋V307、ESP32＋UIAPduino V003です。
@@ -149,12 +150,12 @@ DUT の lock だけでなく、共有 probe・電源・計測器も排他対象�
 
 USB データ、USB PD、HID bootloader は別契約です。TinyUSB source の存在を Arduino USB API 実装済みとは扱いません。
 
-host と device は両方を検証対象とし、CH32X035 と ESP32S3 の役割をボード名で固定しません。
+host と device は両方を検証対象とし、役割をボード名で固定しません。
 DUT host / peer device と DUT device / peer host を対等な別ケースとして定義し、
 それぞれの role 用 profile、契約、実行結果を分けます。一方の成功を他方の保証にしません。
 ケースごとに board/firmware/driver/VBUS が指定 role を満たすことを確認します。
 host と device の組を成立させ、同じ role 同士の接続を通信検証として扱いません。
-P4 の書き込み・観測と USB host は別の役割です。
+OEP プローブ（ESP32-P4）の書き込み・観測と、USB の対向（ESP32-P4 のボードなど）は別の役割で、別の基板です。
 
 | 契約 | 観測と期待結果 |
 |---|---|
@@ -164,13 +165,15 @@ P4 の書き込み・観測と USB host は別の役割です。
 | 復旧 | bus reset、切断/再接続、stall/clear、peer reset 後の再通信 |
 | コアとの共存 | timer/UART 等との同時動作 |
 
+復旧のうち stall/clear と peer reset 後の再通信、コアとの共存は、まだ試験がありません（いまあるのは end() / begin() と電源の入れ直しでの再列挙）。
+
 API/class の採用範囲が未確定なものは、契約確定後に実装対象へ加えます。
 両側の制御ログは被測定 USB と別経路にします。両側を書き込み、READY 問合せを完了してから USB を有効にします。
 primary が先に upload されるため、setup 直後の通信開始は peer upload 中の reset を誤検出します。
 状態を再問合せ可能にし、開始応答の待受けで列挙ログを読み捨てないようにします。
 
 VBUS の給電元、逆流防止、切断方法、GND は wiring と安全条件に含めます。
-FS のペアで HS を保証しません。安価な CH32X035 peer に替えても contract ID と payload を維持します。
+FS のペアで HS を保証しません。安価な CH32X035 peer に替えても contract ID と payload を維持します（安価な peer の case はまだありません）。
 同じ stack 同士に共通の不具合があっても通るため、ESP32S3 等との独立相互運用検証は残します。
 
 速さごとの対向（2026-11-10 の方針）。どの速さも、DUT は host と device の両方を対向で確かめます。PC 直結は
@@ -180,7 +183,7 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 |---|---|---|
 | FS | RP2040（Pico）がアイソクロナス以外の全部を両方の役で。ESP32-S3 は別のスタックでの確かめとアイソクロナス。S3 の DUT はホストを持つ X035（C8T6）に替える | X035 と Pico で 9 ケース（media 以外。host-input・host-storage は Pico のみ）。ほかの FS のボードにも Pico をつないでいく |
 | HS | ESP32-P4（より安い HS のボードに替えることもある）。H417 は SS と同じ口で HS の線が SWD と兼用のため、常駐のベンチにしない | コアの第 2 世代 USBHS はデバイスとホスト（V407 で実機確認）。第 1 世代はデバイスのみ |
-| SS | H417 どうし。X315 の SS はデバイスのみなので、ホストの検証には使えない | コアの USBSS はデバイスのみ。ホストは未実装（作る間は USB 3.0 メモリ） |
+| SS | H417 どうし。X315 の SS はデバイスのみなので、ホストの検証には使えない | コアの USBSS はデバイス（PC が相手）。ホストは全部の転送・ハブ・同じ口の USB 2.0 まで作る（2026-11-14、TODO）。SS の対向の case はまだ無い |
 
 ## プローブとの責務分担
 
@@ -198,19 +201,18 @@ FS のペアで HS を保証しません。安価な CH32X035 peer に替えて�
 既知不良の判定・対応条件・更新imageと更新処理はプローブ提供側、設備個体と配線はhost-local設定で管理します。
 版情報が取れない場合はunknownとして理由を記録し、最新版や互換性を推定しません。
 
-## 実機待ちの試験
+## 実機待ち・落ちている試験
 
-書いてあって、まだ流せていない試験です（2026-11-05）。機材がそろったら、下のコマンドでそのまま流せます。
-`<口>@<端子>`はプローブのラベルの線で、試験は足りない線をスキップの理由に書きます。
+2026-11-05 の表に並べた試験（wire.slave、adc-stream、dac、system、Serial の経路、SPI スレーブ、TaskKit）は、
+2026-11-14 までに常駐ベンチの系列で流れています。残りは次のとおりです。系列ごとの最新の結果は coverage.py の報告で見ます。
 
-| 試験 | 要るもの | 流し方 | 確かめること |
-|---|---|---|---|
-| wire.slave（`instrumented/wire`） | I2Cの使える系列の部品と、そのWireの既定のSDA / SCLに`<口>@<端子>`の線（ベンチのX035C8T6は、ロットの都合でI2Cが使えない） | `--probe oep://<unit>/<port> --case wire` | `onReceive` / `onRequest`の順番と中身、0xFFの埋め、32バイトの頭、別の番地へのNACK |
-| periph.hsadc（`instrumented/periph`） | H415 / H416 / H417と、PF8〜PF10のどれかに`<口>@<端子>`の線（PC0〜PC3はVIO18側で、VIO18 + 0.3 Vまでなので使わない） | `--case periph` | 20 Msps と 1.25 Msps で、プローブのPWMの周波数とデューティ、取りこぼし0 |
-| periph.adc-stream の2本以上 | CH32X035のCH32RVAdcStreamのずれの原因と直し（TODO.ja.md）。直るまでx035では落ちる | `--case periph` | 2本・3本の並びが正しく、方形波の周波数とデューティ |
-| analog.dac のほかの系列 | DACのある系列（V30x / V317 / V4x7 / H41x）の部品。配線なし | `--case analog` | V307では通った。H41x・V4x7で同じ |
-| system のほかの系列 | `<口>@<端子>`の線が2本ある、X035以外の系列（LSIの系列は誤差の幅が広い） | `--case system` | ウォッチドッグのタイムアウト、RTCで眠る系列（V20x / V30x / L103）のlightSleep / deepSleep |
-| ほかの系列のSerialの経路・SPIターゲット・TaskKit | X035以外の系列の`<口>@<端子>`の線 | `--case periph --case spi --case synckit` | 系列ごとのremap、SPIスレーブ、割り込みからのpost |
+| 試験 | 状態 | 要るもの |
+|---|---|---|
+| periph.hsadc | H417 で流れて落ちる。常駐の H417 は HSADC の端子に線が無い | PF8〜PF10 のどれかに`<口>@<端子>`の線（PC0〜PC3 は VIO18 側なので使わない）。TODO |
+| pd | どの台でも未実行 | 常駐ベンチの PD の配線。TODO |
+| wire.repeated-start（ハードの Wire、H417） | 6-2 で落ちる（H417 の SDA の保持とプローブの入力）。SoftWire は通る | TODO |
+| USBSS の対向 | 試験が無い | ホストの実装と対向の配線。TODO |
+| hid | 常駐ベンチでは流していない | UIAPduino の台 |
 
 V103にDACは無い（RMのF103との比較表）。analogはV103でスキップのままでよい。
 
@@ -218,7 +220,7 @@ V103にDACは無い（RMのF103との比較表）。analogはV103でスキップ
 
 1. contract ID、capability/対象 matrix、設定 schema、安全条件を定義する。
 2. Linux で隔離 build → 一意な DUT へ upload → READY → GPIO 外部観測 → 証拠保存を通す。
-3. 共通 API と系列差分を分け、SoftWire/SoftSPI、独立 peer による Wire slave、ADC/PWM 設定、DAC の不足を埋める。
+3. 共通 API と系列差分を分け、SoftWire/SoftSPI、独立 peer による Wire slave、ADC/PWM 設定、DAC の不足を埋める（済み）。
 4. USB host/device 両側の実装範囲を定義し、role 別に独立 peer の契約を実装する。
 5. 経路別 Arduino E2E、package、外部 library を追加する。
 
