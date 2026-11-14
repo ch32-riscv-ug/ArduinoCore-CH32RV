@@ -24,6 +24,12 @@ applied, in order: patch 1 (64-sector minimum volume) and patch 2 (on top of
 1; CVE-2026-6682, -6683 and -6687 - a broken BPB or exFAT label from a card
 could crash or overflow). The release is CRLF and the diffs LF, so the diffs
 are applied with CRLF line ends; the files keep upstream's CRLF.
+
+PATCHES are our own deliberate differences (ADR-0009), on top of the release
+and the author's patches: each replaces one piece of text, once (CRLF as the
+file has it). The lock keeps the hashes of the release with the author's
+patches; unpatched() gives those bytes back (--check and
+tests/platform/test_source_locks.py use it).
 """
 import argparse
 import hashlib
@@ -45,13 +51,25 @@ VENDORED_DIR = "fatfs"
 VERSION = "R0.16"
 URL = "https://elm-chan.org/fsw/ff/arc/ff16.zip"
 ARCHIVE_SHA256 = "99f7dc1f7e095356e4a9e3dbe29959090d8b948afe2bbc5441e52fdf4b85449e"
-PATCHES = (
+UPSTREAM_PATCHES = (
     {"url": "https://elm-chan.org/fsw/ff/patch/ff16p1.diff",
      "sha256": "7996ddc3135f3d534a8153f7d75d587030e5c8551b003c3b7ee823ffb7fc64bf",
      "why": "upstream patch 1: minimum volume 64 sectors"},
     {"url": "https://elm-chan.org/fsw/ff/patch/ff16p2.diff",
      "sha256": "5cd39f1fc299f0f1dec9fa1ce544dc0bc048b2f6eb3b8161476ed20f9cf1e290",
      "why": "upstream patch 2: CVE-2026-6682, -6683, -6687"},
+)
+FAT32_BEFORE = (b"\t\tif (nclst <= MIN_FAT12) fmt = 0;\r\n"
+                b"\t\tif (fmt == 0) return FR_NO_FILESYSTEM;\r\n")
+FAT32_AFTER = (b"\t\tif (nclst <= MIN_FAT12) fmt = 0;\r\n"
+               b"\t\t/* ArduinoCore-CH32RV: a FAT32 BPB (BPB_FATSz16 0, no fixed root directory) is FAT32 whatever the\r\n"
+               b"\t\t   cluster count, as Linux and Windows read it. mkfs.fat -F 32 makes such volumes on small cards\r\n"
+               b"\t\t   (480 MB with 32 KB clusters: 15330 clusters), which FatFs counted as FAT16 and refused. */\r\n"
+               b"\t\tif (fmt != 0 && ld_16(fs->win + BPB_FATSz16) == 0 && fs->n_rootdir == 0) fmt = FS_FAT32;\r\n"
+               b"\t\tif (fmt == 0) return FR_NO_FILESYSTEM;\r\n")
+PATCHES = (
+    {"path": "fatfs/ff.c", "before": FAT32_BEFORE, "after": FAT32_AFTER,
+     "why": "a volume whose BPB says FAT32 is mounted as FAT32 whatever its cluster count (libraries/FS/README)"},
 )
 TAKEN = {"source/ff.c": "ff.c", "source/ff.h": "ff.h", "source/diskio.h": "diskio.h",
          "source/ffunicode.c": "ffunicode.c", "LICENSE.txt": "LICENSE.txt"}
@@ -83,13 +101,32 @@ def fetch() -> dict:
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
         (work / "ff.c").write_bytes(out["ff.c"])
-        for p in PATCHES:
+        for p in UPSTREAM_PATCHES:
             diff = download(p["url"], p["sha256"]).replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
             subprocess.run(["patch", "--binary", "--silent", "--forward", "ff.c"], input=diff, cwd=work, check=True)
         out["ff.c"] = (work / "ff.c").read_bytes()
     if b"w/patch 2" not in out["ff.c"][:200]:
         raise Failure("ff.c does not say it carries patch 2")
     return out
+
+
+def patched(name: str, blob: bytes) -> bytes:
+    """Our PATCHES applied to a vendored file (fatfs-relative name)."""
+    for p in PATCHES:
+        if p["path"] == f"{VENDORED_DIR}/{name}":
+            if blob.count(p["before"]) != 1:
+                raise Failure(f"patch no longer applies to {p['path']}: {p['why']}")
+            blob = blob.replace(p["before"], p["after"], 1)
+    return blob
+
+
+def unpatched(name: str, blob: bytes):
+    """The locked bytes of a patched file (dest-relative name), or None when a patch is missing."""
+    for p in reversed([p for p in PATCHES if p["path"] == name]):
+        if blob.count(p["after"]) != 1:
+            return None
+        blob = blob.replace(p["after"], p["before"], 1)
+    return blob
 
 
 def write_lock(files: dict) -> None:
@@ -112,7 +149,7 @@ def write_lock(files: dict) -> None:
         "# The author's own fixes to the release, applied in order to ff.c (see the tool's docstring).",
         "patches = [",
     ]
-    for p in PATCHES:
+    for p in UPSTREAM_PATCHES:
         lines.append(f'  {{ url = "{p["url"]}", sha256 = "{p["sha256"]}", why = "{p["why"]}" }},')
     lines += ["]", "", "# SHA-256 of every vendored file (after the patches), relative to dest.", "files = ["]
     for name in sorted(files):
@@ -141,7 +178,7 @@ def update() -> int:
         shutil.rmtree(root)
     root.mkdir(parents=True)
     for name, blob in files.items():
-        (root / name).write_bytes(blob)
+        (root / name).write_bytes(patched(name, blob))
     write_lock({name: hashlib.sha256(blob).hexdigest() for name, blob in files.items()})
     print(f"vendored {len(files)} files into {root.relative_to(REPO)}")
     print(f"wrote {LOCK.relative_to(REPO)}")
@@ -155,8 +192,14 @@ def check() -> int:
         path = DEST / name
         if not path.exists():
             problems.append(f"missing: {name}")
-        elif hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-            problems.append(f"modified: {name}")
+        else:
+            data = path.read_bytes()
+            if any(p["path"] == name for p in PATCHES):
+                data = unpatched(name, data)
+            if data is None:
+                problems.append(f"patch missing: {name}")
+            elif hashlib.sha256(data).hexdigest() != digest:
+                problems.append(f"modified: {name}")
     root = DEST / VENDORED_DIR
     on_disk = {p.relative_to(DEST).as_posix() for p in root.rglob("*") if p.is_file()} if root.exists() else set()
     for extra in sorted(on_disk - set(locked)):
@@ -165,7 +208,7 @@ def check() -> int:
         print(f"{len(problems)} problem(s) against {LOCK.relative_to(REPO)}:", file=sys.stderr)
         for p in problems[:20]:
             print(f"  {p}", file=sys.stderr)
-        print("\nRe-run with --update; a change of our own belongs in src/, not in fatfs/.", file=sys.stderr)
+        print("\nRe-run with --update; a change of our own belongs in src/ or in PATCHES.", file=sys.stderr)
         return 1
     print(f"ok: {len(locked)} vendored files match {LOCK.relative_to(REPO)}")
     return 0

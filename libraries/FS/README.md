@@ -9,7 +9,8 @@ ESP32's `FS` / `File` API on it: `open()`, `exists()`, `remove()`,
 and 2 (CVE-2026-6682, -6683 and -6687), and one local change: a volume whose
 BPB says FAT32 mounts as FAT32 even with fewer than 65525 clusters, as
 Linux and Windows read it (`mkfs.fat -F 32` makes these on cards under
-about 2 GB).
+about 2 GB). The change is a `PATCHES` entry of tools/vendor/vendor_fatfs.py: the lock keeps
+upstream's hashes and the tests check the change is there.
 
 ```cpp
 #include <FatFS.h>

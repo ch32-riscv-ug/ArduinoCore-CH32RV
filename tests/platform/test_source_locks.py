@@ -12,6 +12,7 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 # hold each patch, and with it taken out must hash to the recorded upstream file.
 PATCH_TOOLS = {
     "arduino-core-api.lock.toml": REPO / "tools/vendor/check_api_sync.py",
+    "fatfs.lock.toml": REPO / "tools/vendor/vendor_fatfs.py",
 }
 
 
