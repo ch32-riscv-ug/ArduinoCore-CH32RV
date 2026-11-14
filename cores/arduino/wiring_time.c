@@ -9,6 +9,7 @@
  * baud divisor is computed from F_CPU, and that is expensive to debug.
  */
 #include "Arduino.h"
+#include "internal/ch32rv_v3f.h"
 #include "internal/ch32rv_clock.h"
 #include "internal/ch32rv_service.h"
 #include "internal/ch32rv_registers.h"
@@ -566,7 +567,8 @@ void delay(unsigned long ms)
      * (ch32rv_service.h): USB, the IP stack, USB PD. Never the sketch's own
      * callbacks, and never nested - inside a service this only waits. */
     while ((uint32_t)(ch32rv_millis_counter - start) < (uint32_t)ms) {
-        if (ch32rv_services_run) {
+        /* The services are the V5F's: never from the V3F (ch32rv_v3f.h). */
+        if (ch32rv_services_run && !ch32rv_on_v3f()) {
             ch32rv_services_run();
         }
         yield();

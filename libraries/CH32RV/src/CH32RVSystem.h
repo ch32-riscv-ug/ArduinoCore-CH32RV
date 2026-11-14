@@ -57,6 +57,7 @@
 
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
 #include "internal/ch32rv_vio18.h"
+#include "internal/ch32rv_v3f.h"
 
 #include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
 
@@ -190,6 +191,24 @@ public:
     bool setVio18Millivolts(uint32_t mv) { return ch32rv_vio18_set_mv(mv); }
     /* What software set, or 0 while the XO strap's voltage still applies. */
     uint32_t getVio18Millivolts() { return ch32rv_vio18_mv(); }
+#endif
+
+#if defined(CH32RV_RUN_V5F)
+    /* CH32H41x with CPU Core = V5F: the V3F as a second core. fn(arg) runs
+     * there on `stack` (its size in bytes; the stack grows down from its end)
+     * with interrupts off; when it returns the V3F waits for the next. false
+     * while the V3F is busy or when called on the V3F. setup1() / loop1() in
+     * the sketch start it before setup() instead. What the V3F may call:
+     * internal/ch32rv_v3f.h (no Serial, no peripheral the V5F uses). */
+#define CH32RV_HAS_V3F 1
+    bool startV3F(void (*fn)(void *), void *arg, void *stack, uint32_t size)
+    {
+        return stack && size >= 64u && ch32rv_v3f_launch(fn, arg, (uint8_t *)stack + size);
+    }
+    /* Whether the V3F has a function to run (not yet returned). */
+    bool isV3FRunning() { return ch32rv_v3f_running() != 0; }
+    /* Which core is running this (true on the V3F). */
+    bool onV3F() { return ch32rv_on_v3f() != 0; }
 #endif
 
 private:

@@ -148,7 +148,9 @@ V5F は、スタックと引数、関数の順に書き、PFIC_SCTLR の SETEVEN
 
 ### 4. 止めて、もう一度起動する
 
-関数が戻ると V3F は待ちに戻り、次の要求で同じように動きました（上の 1000 回は、毎回戻る関数）。V3F を外から止める仕組み（pico の `restartCore1()` に当たるもの）は、まだ作っていません。
+関数が戻ると V3F は待ちに戻り、次の要求で同じように動きました（上の 1000 回は、毎回戻る関数）。
+
+2026-11-14: この上に API を作りました（C3 と C2）。`CH32RV.startV3F(fn, arg, stack, size)`・`isV3FRunning()`・`onV3F()`（PFIC_SCTLR の bit 16 で見分ける）と、スケッチに `setup1()` / `loop1()` があれば `setup()` の前に V3F で動かす形です（スタックは 4 KB をヒープから）。mailbox に「動いている」の語を足し、V3F の `delay()` はシステムのサービス（USB など）を回しません。待機中の V3F はストップで待つので、V5F の lightSleep() で石全体が止まります。例は libraries/CH32RV/examples/DualCoreV3F。V3F を外から止める仕組み（pico の `restartCore1()` に当たるもの）は、まだ作っていません。
 
 ### 共有 SRAM の取り合い
 

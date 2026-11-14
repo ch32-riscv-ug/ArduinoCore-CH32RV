@@ -84,7 +84,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
-- [ ] V3F を起動する API（`ch32rv_v3f_mailbox` を包む）、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
+- [x] V3F を起動する API（2026-11-14: `CH32RV.startV3F()` / `isV3FRunning()` / `onV3F()`、`setup1()` / `loop1()`、例 DualCoreV3F。nano で 200 回の起動と結果、loop1 の数え上げ、V3F の millis / delay を確認。残りは V3F を外から止める仕組みと、V3F から V5F に頼む IPC）。元の項目: `ch32rv_v3f_mailbox` を包む API、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
   SRAM のバンク、スタック）、V3F を止める仕組み、V3F から使ってよいコアの機能（Serial は不可から）。最悪は今の
   「起こして眠る」だけでもよい（利用者、2026-11-11）。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。

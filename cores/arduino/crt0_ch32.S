@@ -94,7 +94,8 @@ _start:
     lw      t2, 0(t1)
     ori     t2, t2, 0x20
     sw      t2, 0(t1)
-/* Then wait for work: ch32rv_v3f_mailbox = {function, argument, stack top}.
+/* Then wait for work: ch32rv_v3f_mailbox = {function, argument, stack top,
+ * running} (ch32rv_v3f.c).
  * The V5F writes the stack and the argument, then the function, then sets
  * an event. The V3F takes it, clears the word and calls the function with
  * its own CSR values; when the function returns it waits again. */
@@ -115,6 +116,8 @@ _start:
     beqz    t0, 1b
     lw      a0, 4(t3)
     lw      sp, 8(t3)
+    li      t1, 1
+    sw      t1, 12(t3)                 /* running: ch32rv_v3f_running() */
     sw      zero, 0(t3)
 .option push
 .option norelax
@@ -137,6 +140,7 @@ _start:
     csrci   mstatus, 8
     lui     t3, %hi(ch32rv_v3f_mailbox)
     addi    t3, t3, %lo(ch32rv_v3f_mailbox)
+    sw      zero, 12(t3)               /* returned: waiting again */
     j       1b
 .option pop
 
@@ -144,7 +148,7 @@ _start:
     .globl    ch32rv_v3f_mailbox
     .align    2
 ch32rv_v3f_mailbox:
-    .space    12
+    .space    16                       /* function, argument, stack top, running */
     .section  .reset, "ax", @progbits
 #else
     j       handle_reset

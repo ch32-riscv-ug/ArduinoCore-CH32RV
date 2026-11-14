@@ -31,6 +31,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [Fade](Fade/README.md) | Vary PWM duty to fade an LED up and down. |
 | [PinInterrupt](PinInterrupt/README.md) | Count GPIO edges in an interrupt and defer printing to `loop()`. |
 | [CriticalSection](CriticalSection/README.md) | Demonstrate copying interrupt-shared values inside a short interrupt-disabled section. |
+| [DualCoreV3F](DualCoreV3F/README.md) | CH32H417: run `setup1()` / `loop1()` on the V3F while the sketch runs on the V5F. |
 | [PinCapabilities](PinCapabilities/README.md) | Inspect variant-defined pins and their ADC mappings. |
 | [PrintFormatting](PrintFormatting/README.md) | Compare integer, floating-point and string formatting with raw byte output. |
 | [PulseIn](PulseIn/README.md) | Generate a trigger and measure the duration of a High input pulse. |

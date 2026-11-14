@@ -37,6 +37,14 @@
 
 extern "C" size_t deliverEvents(void) __attribute__((weak));
 
+#if defined(CH32RV_RUN_V5F)
+/* The sketch's setup1() / loop1(), when it has them, on the V3F
+ * (ch32rv_v3f_sketch.cpp). */
+void setup1(void) __attribute__((weak));
+void loop1(void) __attribute__((weak));
+void ch32rv_v3f_sketch_start(void);
+#endif
+
 /* assert()'s end, here because this object is always linked: defined before
  * libc is searched, the C library's - which prints through fprintf to
  * stderr - is never pulled in. Under newlib it was, by String alone: String's
@@ -89,6 +97,11 @@ int main(void)
     ch32rv_stack_fill();             /* the Stack Check menu */
 #endif
     initVariant();
+#if defined(CH32RV_RUN_V5F)
+    if (setup1 || loop1) {
+        ch32rv_v3f_sketch_start();
+    }
+#endif
 
     setup();
     for (;;) {

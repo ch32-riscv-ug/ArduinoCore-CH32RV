@@ -114,6 +114,7 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
 | [PrintFormatting](examples/PrintFormatting/README.ja.md) | `Print`・`String`・`dtostrf` |
 | [TimerResource](examples/TimerResource/README.ja.md) | タイマーの取得・設定・所有権を扱う上級例 |
 | [PinCapabilities](examples/PinCapabilities/README.ja.md) | このチップに実在するpad |
+| [DualCoreV3F](examples/DualCoreV3F/README.ja.md) | CH32H417: 2 つ目のコアでの `setup1()` / `loop1()` と `CH32RV.startV3F()` |
 
 **知らないboardで最初に走らせるべきはPinCapabilities**です。
 CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、

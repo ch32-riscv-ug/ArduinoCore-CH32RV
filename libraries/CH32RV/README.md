@@ -134,6 +134,7 @@ to any library, so their examples are here. Every one of them:
 | [PrintFormatting](examples/PrintFormatting/README.md) | `Print`, `String`, `dtostrf` |
 | [TimerResource](examples/TimerResource/README.md) | Advanced timer acquisition, setup and ownership |
 | [PinCapabilities](examples/PinCapabilities/README.md) | which pads this chip actually has |
+| [DualCoreV3F](examples/DualCoreV3F/README.md) | CH32H417: `setup1()` / `loop1()` and `CH32RV.startV3F()` on the second core |
 
 **PinCapabilities is the one to run first on a board you do not know.** CH32 pin
 numbers are `((port + 2) << 5) | bit`, so they are sparse: PA0 is 64, PB0 is 96,
