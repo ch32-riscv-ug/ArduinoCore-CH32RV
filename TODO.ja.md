@@ -37,6 +37,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   して読み、注意 slow_edge。[wireskein] main、未リリース）。リリースされたら tests の wireskein を上げ、wire を 100 MS/s に戻して
   全台で確かめる。6-2 の core-20261114T104917Z-ba291801 の 0x13 だけは、SCL の High がプローブのしきい値に届いていないとみられ、
   読めない（[wireskein] の tests/data/i2c_bench）。
+  → クロックの試験（2026-11-14 夜、ユーザー: 速さを変えてハードとソフトのずれを見る）: wire.output-only が 20 / 50 / 100 / 400 kHz
+  で SCL を測る。X035・V205・V003 の wire / softwire、V203 の softwire が PASS。V203 の wire だけ、SCL の縁の 50〜100 ns の跳ねを
+  今の WireSkein が周期に数えて 22〜24 % 高く測る（新しい WireSkein の slow_edge の読みで直る見込み、リリース待ち）。
 - [ ] **6-2（H417、PB11 / PB10、100 kHz）の wire が落ちる**: DUT の I2C マスターは正常（2026-11-14 の見直し）。プローブの
   入力プルアップだけで、相手のいないアドレスへの送信を FREQ 60 / 50 / 40・SPEED 最速で計 1500 回、すべて正しく NACK（2）。
   落ちているのは受け手のプローブの側で、プルアップの弱い遅い立ち上がりに 50〜150 ns の跳ねが乗り（160 MS/s で確認）、P4 の

@@ -75,7 +75,12 @@ Adafruit_Something device(&bus);
   X035, whose GPIO has no open drain). **The bus still needs pull-ups.**
 - Clock stretching is waited for. `endTransmission()`'s codes and the timeout
   API are Wire's.
-- `setClock()` sets a **floor** on the half period, not an achieved frequency;
+- `setClock()` is the clock it keeps, up to what the CPU and the line allow:
+  each half period waits for a deadline, so the pin writes and SCL's rise come
+  out of the wait. Measured on the bench (2026-11-14, the probe's weak pull-ups):
+  20 / 50 / 100 kHz within 1 % on a V205; the ceiling is about 60 kHz on a
+  V003, 41 kHz on an X035 (its open drain is emulated) and 245 kHz on a V205.
+  Above the ceiling it runs at the ceiling, never faster than asked.
   `getClock()` returns what was asked.
 - **No target mode.** `begin(address)` opens a controller, and `onReceive()` /
   `onRequest()` do nothing. There is no `setRoute()`: that is the
@@ -140,7 +145,11 @@ compile.
   the internal pull-up and SCL is never driven high, so a stretching slave is
   waited for (`CH32RV_WIRE_CLEAR_STRETCH_US`, 1 ms per pulse).
 - Clock: `setClock(100000)` for standard mode, anything higher selects fast
-  mode with a 2:1 duty cycle. The peripheral clock is assumed to be `F_CPU`.
+  mode with a 2:1 duty cycle. The slowest is what the 12-bit CCR holds (about
+  12 kHz with a 100 MHz I2C clock, 7 kHz at 60 MHz); a slower ask gets that.
+  A controller takes a new clock at its next transfer. A controller counts SCL's
+  high from when it sees it high, so slow rises (weak pull-ups) lengthen the
+  period: 322-394 kHz for 400 kHz on the bench's probe pull-ups alone. The peripheral clock is assumed to be `F_CPU`.
   Changes to system or APB clock settings must preserve or update this assumption.
 
 ## Examples

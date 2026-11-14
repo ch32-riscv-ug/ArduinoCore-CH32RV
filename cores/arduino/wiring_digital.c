@@ -26,12 +26,9 @@ _Static_assert(CH32RV_BOARD_PIN_COUNT <= CH32RV_BOARD_PIN_LIMIT,
 const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT] = CH32RV_BOARD_PINS;
 #endif
 
-#if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
-#define CH32RV_GPIO_NO_OPEN_DRAIN 1
+#if CH32RV_GPIO_NO_OPEN_DRAIN
 /* Pins whose OUTPUT_OPENDRAIN is emulated (see pinMode). One bit per pad. */
 static uint32_t ch32rv_od_emulated[CH32RV_PORT_COUNT];
-#else
-#define CH32RV_GPIO_NO_OPEN_DRAIN 0
 #endif
 
 void pinMode(pin_size_t pin, PinMode mode)

@@ -73,7 +73,7 @@ Adafruit_Something device(&bus);
 - 両padを`OUTPUT_OPENDRAIN`にします(X033 / X035はGPIOにオープンドレインが無いので、
   入力と出力Lowの切り替えで同じことをします)。**プルアップは必要です。**
 - クロックストレッチを待ちます。`endTransmission()`の戻り値とtimeout APIは`Wire`と同じです。
-- `setClock()`は半周期の**下限**を決めるもので、狙った周波数は出ません。`getClock()`は指定した値を返します。
+- `setClock()`のクロックを、CPUと線が許す所まで保ちます。半周期ごとに締め切りの時刻まで待つので、端子の書き込みとSCLの立ち上がりの時間は待ちの中に吸収されます。ベンチで測った値(2026-11-14、プローブの弱いプルアップ): V205で20 / 50 / 100 kHzが1 %以内。上限はV003で約60 kHz、X035で約41 kHz(オープンドレインを真似るため)、V205で約245 kHz。上限より速くは頼んでも上限で動き、頼んだより速くはなりません。`getClock()`は指定した値を返します。
 - **slaveモードはありません。** `begin(address)`はcontrollerとして開き、`onReceive()` / `onRequest()`は何もしません。
   `setRoute()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。`clearBus()`は`Wire`と同じ手順でバスを解放します。
 - バッファは`Wire`と同じ`CH32RV_WIRE_BUFFER_SIZE`(既定32)です。
@@ -128,7 +128,7 @@ Adafruit_Something device(&bus);
   ときに呼んでください。`begin()`の前でも後でも使え、開いていたバスは元の状態で
   開き直します。線は内蔵プルアップで解放し、SCLをHighに駆動することはないので、
   clock stretchingするslaveは待ちます(`CH32RV_WIRE_CLEAR_STRETCH_US`、1パルス1 ms)。
-- クロックは`setClock(100000)`で標準モード、それより速い値でfast mode(2:1)。
+- クロックは`setClock(100000)`で標準モード、それより速い値でfast mode(2:1)。一番遅いのは12ビットのCCRに入る値(I2Cのクロックが100 MHzで約12 kHz、60 MHzで約7 kHz)で、それより遅く頼んでもその値になります。マスターは新しいクロックを次の取引から使います。マスターはSCLがHighになったのを見てからHighの時間を数えるので、立ち上がりが遅い(プルアップが弱い)と周期が延びます(ベンチのプローブのプルアップだけで、400 kHzが322〜394 kHz)。
   driverはペリフェラルクロックを`F_CPU`と仮定するため、system clockとAPBの設定を
   変更する場合はこの前提も更新する必要があります。
 

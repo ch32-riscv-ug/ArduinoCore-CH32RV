@@ -9,6 +9,15 @@
 extern "C" {
 #endif
 
+/* No open-drain output mode on the pads (CH32X035 / X033): OUTPUT_OPENDRAIN
+ * is emulated - low a push-pull 0, high an input let go (wiring_digital.c;
+ * SoftWire does the same). */
+#if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
+#define CH32RV_GPIO_NO_OPEN_DRAIN 1
+#else
+#define CH32RV_GPIO_NO_OPEN_DRAIN 0
+#endif
+
 /* Turn on the port's peripheral clock. Harmless to call repeatedly. */
 static inline void ch32rv_gpio_clock_enable(uint8_t port)
 {

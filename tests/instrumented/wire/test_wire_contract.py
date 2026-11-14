@@ -1,9 +1,10 @@
 """wire (case wire): Wire, the board's I2C (a hardware one, or a SoftWire when the fqbn sets it to Software); softwire
 (case softwire): a SoftWire. tests/sketch_support/wire/wire.ino.
 
-Two questions, kept apart (2026-11-14, the user): the speed - the DUT's own 100 kHz on the wire, judged where nothing
-but the DUT drives - and the transactions - repeated START, reads and writes against a target - run at 20 kHz, where
-the bench's slow lines settle. The resident bench pulls the lines up with the probe's pads alone (P4, about 45 kOhm):
+Two questions, kept apart (2026-11-14, the user): the clock - for each of 20, 50, 100 and 400 kHz, whether the SCL
+on the wire is what setClock() asked, for the hardware Wire and for SoftWire alike, judged where nothing but the DUT
+drives - and the transactions - repeated START, reads and writes against a target - run at 20 kHz, where the bench's
+slow lines settle. The resident bench pulls the lines up with the probe's pads alone (P4, about 45 kOhm):
 their rises take microseconds, beyond I2C's 1 us, and the probe's input reads high only from 0.75 VDD, above the
 DUT's Schmitt inputs, so at 100 kHz a released SDA reads low at the probe while the DUT reads it high
 (tests/README.ja.md 取り込みの速さ, TODO).
@@ -13,9 +14,9 @@ default SDA / SCL, which must be labelled; for SoftWire the first two lines that
 those at start-up). Without them the test skips, naming what is missing.
 
 wire.output-only runs first with no target: the probe only pulls the two lines up (its pads' input pull-ups) and
-captures them, so what is seen is the DUT's own. For two addresses the sketch writes one byte with
-endTransmission(true) at 100 kHz: on the wire S, the address with no acknowledge, P, SCL at 100 kHz (WireSkein's
-i2c), and endTransmission() returns 2 (compared here).
+captures them, so what is seen is the DUT's own. At each clock, for two addresses the sketch writes
+one byte with endTransmission(true): on the wire S, the address with no acknowledge, P, SCL within 10 % of the clock
+asked (WireSkein's i2c), and endTransmission() returns 2 (compared here).
 
 wire.repeated-start then makes the OEP probe's i2c-target (its own pull-ups) the target at 0x42, at 20 kHz: the sketch writes
 0x10 with endTransmission(false), reads n bytes with requestFrom(addr, n, stop) and writes 0x20 with
@@ -43,12 +44,23 @@ from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
 
 ADDRESS = 0x42
-SPEED_HZ = 100_000        # wire.output-only: the clock the speed is judged at
+SPEEDS_HZ = (20_000, 50_000, 100_000, 400_000)   # wire.output-only: the clocks whose SCL is measured
 PROTOCOL_HZ = 20_000      # wire.repeated-start: the transactions, where the bench's slow lines settle
-# tests/README.ja.md 取り込みの速さ: T = the decode's shortest SCL half period (about 5 us at 100 kHz), 25 / T. The i2c
+# tests/README.ja.md 取り込みの速さ: T = the shortest SCL half period measured, 1.25 us at 400 kHz, 16 / T. The i2c
 # check's 50 ns spikes are below 5 / T here: unchecked until WireSkein drops pulses under spike_max_s before decoding -
 # at 100 MS/s the bench's slow rises bounce (10-190 ns) and its decode counts them as clocks (2026-11-14, asked of it).
-RATE = 5_000_000
+RATE = 20_000_000
+
+
+def clock_expectation(hz, soft):
+    """What the SCL frequency is held to (WireSkein's i2c freq_hz / freq_rel; scl_hz is measured either way).
+    Hardware: 10 % up to 100 kHz; 25 % at 400 kHz, where the resident bench's slow rises (the probe's 45 k pull-ups
+    alone) stretch each high - a controller counts the high from when it sees SCL high - so a sound part reads
+    322-394 kHz there (2026-11-14). SoftWire: 10 % at 20 kHz; above it the CPU and the line set the ceiling (V003
+    about 60 kHz, X035 about 41 kHz, V205 about 245 kHz), so the speed is measured, not judged."""
+    if soft:
+        return {"freq_hz": hz, "freq_rel": 0.1} if hz <= 20_000 else {}
+    return {"freq_hz": hz, "freq_rel": 0.1 if hz <= 100_000 else 0.25}
 
 
 def settings(test_file):
@@ -113,25 +125,27 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
     try:
         for ch in channels:
             gpio.configure(ch, Gpio.INPUT_PULLUP)     # the bus's pull-ups, with no target on it
-        ask(dut, f"clock {SPEED_HZ}", rb"CLOCK (\d+)")
 
         def steps(wait):
             idle = {sda: 1, scl: 1}
             with ws_run.section(1, f"{'softwire' if soft else 'wire'} output only {sda} {scl}"):
                 with ws_run.section(2, "rest", expect=[starts(idle), ends(idle)]):
                     wait(0.02)
-                for address in (ADDRESS, 0x13):
-                    want = [i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
-                                                         "start": "S", "end": "P"}],
-                                freq_hz=None if soft else SPEED_HZ),       # SoftWire's clock is the CPU's
-                            starts(idle), ends(idle)]
-                    with ws_run.section(2, f"address 0x{address:02x}, no target", expect=want):
-                        ws_run.command(f"nack 0x{address:02x}")
-                        dut.write(f"nack 0x{address:02x}\n")
-                        m = wait_reply(dut, wait, rb"NACK (\d+)")
-                        ws_run.reply(m.group(0).decode())
-                        results[address] = int(m.group(1))
-                        wait(0.02)
+                for hz in SPEEDS_HZ:
+                    ask(dut, f"clock {hz}", rb"CLOCK (\d+)")
+                    for address in (ADDRESS, 0x13):
+                        want = [i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
+                                                             "start": "S", "end": "P"}],
+                                    **clock_expectation(hz, soft)),
+                                starts(idle), ends(idle)]
+                        name = f"{hz // 1000} kHz, address 0x{address:02x}, no target"
+                        with ws_run.section(2, name, expect=want):
+                            ws_run.command(f"nack 0x{address:02x}")
+                            dut.write(f"nack 0x{address:02x}\n")
+                            m = wait_reply(dut, wait, rb"NACK (\d+)")
+                            ws_run.reply(m.group(0).decode())
+                            results[name] = int(m.group(1))
+                            wait(0.02)
 
         ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
     finally:

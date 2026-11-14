@@ -1,8 +1,40 @@
 #include "SoftWire.h"
 
 #include "Arduino.h"
+#include "internal/ch32rv_gpio.h"
 
 namespace arduino {
+
+/* The pins' registers directly: digitalWrite() / digitalRead() looked the pin
+ * up on every call, and on an X035 (48 MHz) that capped SoftWire near 37 kHz.
+ * The pins are open-drain outputs from begin() on, so a write is all it takes. */
+static inline void line_write(uint8_t pin, bool high)
+{
+    const pin_size_t pad = CH32RV_PIN_RESOLVE(pin);
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pad), bit = (uint8_t)CH32RV_PIN_BIT(pad);
+#if CH32RV_GPIO_NO_OPEN_DRAIN
+    /* No open-drain pads (X035): low is a push-pull 0, high an input let go,
+     * as digitalWrite() does for OUTPUT_OPENDRAIN there. */
+    if (high) {
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
+    } else {
+        ch32rv_gpio_clear(port, bit);
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
+    }
+#else
+    if (high) {
+        ch32rv_gpio_set(port, bit);
+    } else {
+        ch32rv_gpio_clear(port, bit);
+    }
+#endif
+}
+
+static inline bool line_high(uint8_t pin)
+{
+    const pin_size_t pad = CH32RV_PIN_RESOLVE(pin);
+    return ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(pad), (uint8_t)CH32RV_PIN_BIT(pad)) != 0;
+}
 
 /* I2C is open-drain: nobody ever drives the line high. LOW is a real drive,
  * HIGH is letting go and leaving it to the pull-up. CH32's GPIO has an
@@ -10,7 +42,7 @@ namespace arduino {
  * the line can still be read while it is an output. */
 void SoftWire::hold(uint8_t pin)
 {
-    digitalWrite(pin, LOW);
+    line_write(pin, false);
 }
 
 void SoftWire::release(uint8_t pin)
@@ -18,7 +50,7 @@ void SoftWire::release(uint8_t pin)
     /* Whether it actually rose is not asked here: for SDA a low line is the
      * target answering, which is data, not an error. SCL is the one place a
      * stuck line matters, and scl_high() waits for it. */
-    digitalWrite(pin, HIGH);
+    line_write(pin, true);
 }
 
 void SoftWire::half(void)
@@ -42,8 +74,8 @@ void SoftWire::half(void)
 bool SoftWire::scl_high(void)
 {
     const uint32_t start_us = micros();
-    digitalWrite(_scl, HIGH);
-    while (digitalRead(_scl) == LOW) {
+    line_write(_scl, true);
+    while (!line_high(_scl)) {
         if (_timeout_us != 0 && micros() - start_us > _timeout_us) {
             _timeout_flag = true;
             return false;
@@ -204,7 +236,7 @@ bool SoftWire::write_byte(uint8_t b)
     if (!scl_high()) {
         return false;
     }
-    const bool ack = digitalRead(_sda) == LOW;
+    const bool ack = !line_high(_sda);
     half();
     hold(_scl);
     return ack;
@@ -220,7 +252,7 @@ uint8_t SoftWire::read_byte(bool ack)
             return b;
         }
         b = (uint8_t)(b << 1);
-        if (digitalRead(_sda) == HIGH) {
+        if (line_high(_sda)) {
             b |= 1u;
         }
         half();
