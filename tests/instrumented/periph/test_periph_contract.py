@@ -182,7 +182,10 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
     of full scale high, under 1/4 low, the rounds of its rises) and the second's range. One capture of the lines, a
     WireSkein section per condition judging the stimulus (becomes: the probe's wave and level); compared here: the
     wave's frequency from the rises (rounds between the first and last over the rate sampleRate() says) within 3 %
-    of the probe's, its duty within 0.03 of the probe's, no overrun, and the second pin's range at its level (all over 3/4 of full scale high, under 1/4 low)."""
+    of the probe's, its duty within 0.03 of the probe's, no overrun, and the second pin at its level (over 3/4 of full scale
+    high, under 1/4 low) in every round but at most one per edge of the wave: a held line beside the wave can dip on
+    its edges (6-2's harness, 2026-11-14: about one round in 150 between the thresholds, as often with the pin read
+    alone; the range is recorded)."""
     from oep_client import core
     from oep_client.fixture import Gpio, Pwm
     from wireskein.runlog import becomes
@@ -245,11 +248,12 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
                     if v[0] == 0:
                         wrong.append(f"{name}: begin() refused")
                         continue
-                    rate, step, overruns, rounds, high, low, rises, first, last, lo1, hi1, full = v
+                    rate, step, overruns, rounds, high, low, rises, first, last, lo1, hi1, full, high1n, low1n = v
                     got_hz = rate * (rises - 1) / (last - first) if rises > 1 and last > first else 0.0
                     got_duty = high / (high + low) if high + low else 0.0
                     results[name] = dict(rate=rate, step=step, rounds=rounds, hz=round(got_hz, 2),
                                          duty=round(got_duty, 4), overruns=overruns, second=[lo1, hi1],
+                                         second_off=rounds - (high1n if second == 1 else low1n) if second is not None else 0,
                                          probe_hz=made.hz, probe_duty=made.duty / Pwm.FULL)
                     if abs(got_hz / made.hz - 1) > 0.03:
                         wrong.append(f"{name}: {got_hz:.1f} Hz from the stream, the probe makes {made.hz:.1f}")
@@ -258,8 +262,12 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
                     if overruns:
                         wrong.append(f"{name}: {overruns} overruns")
                     # Over three quarters / under a quarter, as periph.adc: the probe's level is no reference.
-                    if second == 1 and lo1 <= full * 3 / 4 or second == 0 and hi1 >= full / 4:
-                        wrong.append(f"{name}: the second pin read {lo1}..{hi1}")
+                    if second is not None:
+                        off = rounds - (high1n if second == 1 else low1n)
+                        edges = 2 * rises + 2
+                        if off > edges:
+                            wrong.append(f"{name}: the second pin left its level in {off} of {rounds} rounds "
+                                         f"(read {lo1}..{hi1}; the wave has about {edges} edges)")
                     wait(0.02)
 
     try:

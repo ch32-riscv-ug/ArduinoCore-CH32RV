@@ -19,7 +19,8 @@
  *                             <high> <low> <rises> <first rise> <last rise>
  *                             (high / low: the rounds between the first and
  *                             the last rise, whole periods, when there are two)
- *                             <pin1 min> <pin1 max> <full scale> (rounds counted from the
+ *                             <pin1 min> <pin1 max> <full scale> <pin1 rounds over
+ *                             3/4> <pin1 rounds under 1/4> (rounds counted from the
  *                             first read; ASTREAM 0 when begin() refused)
  *   hscaps <pin>              HSCAPS <HSADC channel of the pad, or -1 (no HSADC)>
  *   hstream <rate> <bufs> <pin>
@@ -78,6 +79,7 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
     uint32_t round = 0, high = 0, low = 0, rises = 0, first = 0, last = 0;
     uint32_t high0 = 0, low0 = 0, high1 = 0, low1 = 0;   /* the counts at the first and the last rise */
     uint16_t min1 = 0xFFFF, max1 = 0;
+    uint32_t high1n = 0, low1n = 0;
     int8_t state = -1;            /* 0 low, 1 high, -1 not yet known */
     bool skipped = false;
     const uint32_t start = millis();
@@ -110,6 +112,8 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
                 state = 0;
             }
             if (count > 1) {
+                high1n += half[i + 1] >= hi;
+                low1n += half[i + 1] <= lo;
                 min1 = half[i + 1] < min1 ? half[i + 1] : min1;
                 max1 = half[i + 1] > max1 ? half[i + 1] : max1;
             }
@@ -121,10 +125,11 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
         high = high1 - high0;
         low = low1 - low0;
     }
-    SerialDMSeq.printf("ASTREAM %lu %u %lu %lu %lu %lu %lu %lu %lu %u %u %u\r\n", (unsigned long)stream.sampleRate(),
+    SerialDMSeq.printf("ASTREAM %lu %u %lu %lu %lu %lu %lu %lu %lu %u %u %u %lu %lu\r\n", (unsigned long)stream.sampleRate(),
                        stream.sampleTimeStep(), (unsigned long)stream.overruns(), (unsigned long)round,
                        (unsigned long)high, (unsigned long)low, (unsigned long)rises, (unsigned long)first,
-                       (unsigned long)last, count > 1 ? min1 : 0, count > 1 ? max1 : 0, full);
+                       (unsigned long)last, count > 1 ? min1 : 0, count > 1 ? max1 : 0, full,
+                       (unsigned long)high1n, (unsigned long)low1n);
 }
 #endif
 
