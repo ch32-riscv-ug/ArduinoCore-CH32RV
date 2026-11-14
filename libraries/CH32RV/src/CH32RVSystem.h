@@ -69,6 +69,7 @@ typedef enum {
     CH32RV_RESET_WATCHDOG,       /* the independent watchdog bit         */
     CH32RV_RESET_WINDOW_WATCHDOG,
     CH32RV_RESET_LOW_POWER,
+    CH32RV_RESET_PANIC,          /* the core reset itself: the Stack Check menu saw an overflow */
 } CH32RVResetReason;
 
 typedef enum {
@@ -143,6 +144,12 @@ public:
     /* What malloc() can still hand out: never-claimed heap plus freed blocks
      * (fragmented - one allocation of this size may still fail). */
     uint32_t getFreeHeap();
+    /* The stack the linker reserves above the heap (the Stack Size menu). */
+    uint32_t getStackSize();
+    /* Bytes at the reservation's bottom the stack has not reached since
+     * setup() (its high-water mark, as FreeRTOS's uxTaskGetStackHighWaterMark
+     * in arduino-esp32); 0 unless the Stack Check menu is on. */
+    uint32_t getMinFreeStack();
     uint32_t getCpuFreqMHz() { return (uint32_t)(F_CPU / 1000000UL); }
     /* The supply voltage in mV, from the ADC's internal reference (typical
      * value, so within a few percent); 0 where the family has none in the
@@ -188,6 +195,7 @@ public:
 private:
     uint32_t _latched = 0;     /* RSTSCKR flags, once read */
     bool _read = false;
+    bool _panic = false;       /* the core reset after a stack overflow */
     /* wdtEnable()'s setting, put back after a sleep stretched it. */
     bool _wdtOn = false;
     uint8_t _wdtField = 0;

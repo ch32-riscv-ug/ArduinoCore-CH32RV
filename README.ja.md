@@ -57,6 +57,7 @@ WCH-Link、OEP probe、または対応ボードのブートローダを選び、
 | Watchdog (`iwdg`) | `keep`（チップの設定のまま） | IWDG を、`wdtEnable()` で始める（`sw`、工場出荷）か、電源投入から動かす（`hw`）か。`sw` と `hw` はどちらも起動時にオプションバイトを比べて書き換える（V003 で 264 B 増える。Reset Pin も選ぶときは、書き換えのコードを共にするので 80 B）。`keep` は何もしない。V00x、M007、X03x、X3x5、V20x、V205、V30x、L103 / M103、V407 / V467 |
 | Erase Flash (`erase`) | `keep` | 書き込みで消す範囲。Keep Store は `CH32RV_FLASH_STORE` で確保した末尾を残す（ch32rv が退避して書き戻す。V003 の 16 KB で約 0.8 秒、V307 の 96 KB で約 1 秒増える）。All Flash（`chip`）はチップ全体を消す。H41x の DFU では All Flash を選ぶと書き込みが断られる。UIAPduino にはメニューが無い（HID だけで書く） |
 | Stack Size (`stack`) | RAM の 1/16（512 B〜4 KB、H41x は 16 KB） | リンカーがヒープの上に確保するスタック。ヒープは確保の下端まで伸ばせるので、確保より深いスタックはヒープの上端を黙って壊す（H417 の OEP プローブのファームが 2 KB で壊れた、2026-11-14）。深い再帰や大きなローカル配列を使い、ヒープも大きく使うスケッチは、ここで大きくする。選べるのは 512 B から RAM の 1/4 まで（64 KB まで）。大きくした分だけヒープの上限が下がる |
+| Stack Check (`stackcheck`) | `off` | `on`（Reset on overflow）にすると、`setup()` の前にスタックの確保を決まった値で塗り、SysTick が 1 ms ごとに確保の下端 64 バイトを調べる。スタックがそこに届いたらリセットし、次の起動の `CH32RV.resetReason()` は `CH32RV_RESET_PANIC`（ESP32 の `ESP_RST_PANIC`）。`CH32RV.getMinFreeStack()` も使えるようになる。flash 76〜84 B、RAM 4 B。既定が off なのは、確保を超えてもヒープの空きの上で動いていたスケッチがリセットするようになるため（[スケッチの組み立て方](docs/sketch-guide.ja.md) の 6） |
 
 printf の系統（`Serial.printf`、`printf`、`sprintf`、`snprintf`）、`Serial.print(float)`、`String(float)` はコアの書式化で動きます。
 既定（`fltf`）は AVR と同じく float で計算し、printf の `%f` も出します。小数を表示するスケッチは、double で計算するより約 2〜2.5 KB 小さくなります（V003、X035、V307）。

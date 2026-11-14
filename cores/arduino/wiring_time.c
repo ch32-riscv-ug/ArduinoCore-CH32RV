@@ -18,6 +18,7 @@
 #endif
 #include CH32RV_GENERATED_(CH32RV_CLOCK_INIT)
 #include "internal/ch32rv_interrupt.h"
+#include "internal/ch32rv_stack.h"
 
 /* Where the PLL word goes: RCC_CFGR0, or (CH32H41x) RCC_PLLCFGR. */
 #ifdef CH32RV_CLOCK_PLL_ADDR
@@ -413,6 +414,9 @@ static inline int ch32rv_clock_is_ours(void)
 
 CH32RV_INTERRUPT void CH32RV_SYSTICK_HANDLER(void)
 {
+#if CH32RV_STACK_CHECK
+    ch32rv_stack_check();           /* the Stack Check menu: resets on an overflow */
+#endif
     /* Put the clock back within a millisecond of a probe moving it. Here and
      * not between loop() calls, because a sketch blocked in delay(), a busy
      * wait or a stalled SerialDMSeq write never gets back to loop() - on V006

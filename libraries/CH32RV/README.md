@@ -12,7 +12,7 @@ standard Arduino API.
 #include <CH32RV.h>
 
 CH32RV.restart();                        // software reset (does not return)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / ...
+CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) ...
 CH32RV.resetReasonName();                // "software" and so on, for printing
 CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
 CH32RV.wdtFeed();                        // call it in loop()
@@ -20,6 +20,8 @@ CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Cloc
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
 CH32RV.getFreeHeap();
+CH32RV.getStackSize();                   // the stack reserved (Stack Size menu) and what was left at its deepest
+CH32RV.getMinFreeStack();                // (the latter with the Stack Check menu on; 0 when off)
 CH32RV.getChipModel();                   // "CH32V003": the series built for
 CH32RV.getSketchSize();                  // flash used, and what is left of the part's
 CH32RV.getFreeSketchSpace();

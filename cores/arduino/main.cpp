@@ -31,6 +31,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_serial_write.h"
 #include "internal/ch32rv_service.h"
+#include "internal/ch32rv_stack.h"
 
 #include <string.h>
 
@@ -84,6 +85,9 @@ extern "C" __attribute__((weak)) void initVariant(void)
 
 int main(void)
 {
+#if CH32RV_STACK_CHECK
+    ch32rv_stack_fill();             /* the Stack Check menu */
+#endif
     initVariant();
 
     setup();

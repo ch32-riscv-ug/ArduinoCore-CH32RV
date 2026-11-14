@@ -31,6 +31,7 @@ menu.iwdg=Watchdog
 menu.erase=Erase Flash
 menu.debugspeed=Debug Speed
 menu.stack=Stack Size
+menu.stackcheck=Stack Check
 
 CH32V002.name=Generic CH32V002
 CH32V002.build.board=CH32V002
@@ -203,6 +204,11 @@ CH32V002.menu.stack.s512=512 B (default)
 CH32V002.menu.stack.s512.build.stack_size=512
 CH32V002.menu.stack.s1024=1 KB
 CH32V002.menu.stack.s1024.build.stack_size=1024
+
+CH32V002.menu.stackcheck.off=Off
+CH32V002.menu.stackcheck.off.build.stackcheck_defines=
+CH32V002.menu.stackcheck.on=Reset on overflow
+CH32V002.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V002.menu.usart1.auto=AUTO (bind at begin())
 CH32V002.menu.usart1.auto.build.usart1_mode=
 CH32V002.menu.usart1.disable=Disable
@@ -401,6 +407,11 @@ CH32V003.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V003.menu.stack.s512=512 B (default)
 CH32V003.menu.stack.s512.build.stack_size=512
+
+CH32V003.menu.stackcheck.off=Off
+CH32V003.menu.stackcheck.off.build.stackcheck_defines=
+CH32V003.menu.stackcheck.on=Reset on overflow
+CH32V003.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V003.menu.usart1.auto=AUTO (bind at begin())
 CH32V003.menu.usart1.auto.build.usart1_mode=
 CH32V003.menu.usart1.disable=Disable
@@ -577,6 +588,11 @@ CH32V004.menu.stack.s512=512 B (default)
 CH32V004.menu.stack.s512.build.stack_size=512
 CH32V004.menu.stack.s1024=1 KB
 CH32V004.menu.stack.s1024.build.stack_size=1024
+
+CH32V004.menu.stackcheck.off=Off
+CH32V004.menu.stackcheck.off.build.stackcheck_defines=
+CH32V004.menu.stackcheck.on=Reset on overflow
+CH32V004.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V004.menu.usart1.auto=AUTO (bind at begin())
 CH32V004.menu.usart1.auto.build.usart1_mode=
 CH32V004.menu.usart1.disable=Disable
@@ -777,6 +793,11 @@ CH32V005.menu.stack.s512=512 B (default)
 CH32V005.menu.stack.s512.build.stack_size=512
 CH32V005.menu.stack.s1024=1 KB
 CH32V005.menu.stack.s1024.build.stack_size=1024
+
+CH32V005.menu.stackcheck.off=Off
+CH32V005.menu.stackcheck.off.build.stackcheck_defines=
+CH32V005.menu.stackcheck.on=Reset on overflow
+CH32V005.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V005.menu.usart1.auto=AUTO (bind at begin())
 CH32V005.menu.usart1.auto.build.usart1_mode=
 CH32V005.menu.usart1.disable=Disable
@@ -1045,6 +1066,11 @@ CH32V006.menu.stack.s512=512 B (default)
 CH32V006.menu.stack.s512.build.stack_size=512
 CH32V006.menu.stack.s1024=1 KB
 CH32V006.menu.stack.s1024.build.stack_size=1024
+
+CH32V006.menu.stackcheck.off=Off
+CH32V006.menu.stackcheck.off.build.stackcheck_defines=
+CH32V006.menu.stackcheck.on=Reset on overflow
+CH32V006.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V006.menu.usart1.auto=AUTO (bind at begin())
 CH32V006.menu.usart1.auto.build.usart1_mode=
 CH32V006.menu.usart1.disable=Disable
@@ -1287,6 +1313,11 @@ CH32V007.menu.stack.s1024=1 KB
 CH32V007.menu.stack.s1024.build.stack_size=1024
 CH32V007.menu.stack.s2048=2 KB
 CH32V007.menu.stack.s2048.build.stack_size=2048
+
+CH32V007.menu.stackcheck.off=Off
+CH32V007.menu.stackcheck.off.build.stackcheck_defines=
+CH32V007.menu.stackcheck.on=Reset on overflow
+CH32V007.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V007.menu.usart1.auto=AUTO (bind at begin())
 CH32V007.menu.usart1.auto.build.usart1_mode=
 CH32V007.menu.usart1.disable=Disable
@@ -1514,6 +1545,11 @@ CH32V103.menu.stack.s1024=1 KB
 CH32V103.menu.stack.s1024.build.stack_size=1024
 CH32V103.menu.stack.s2048=2 KB
 CH32V103.menu.stack.s2048.build.stack_size=2048
+
+CH32V103.menu.stackcheck.off=Off
+CH32V103.menu.stackcheck.off.build.stackcheck_defines=
+CH32V103.menu.stackcheck.on=Reset on overflow
+CH32V103.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V103.menu.usart1.auto=AUTO (bind at begin())
 CH32V103.menu.usart1.auto.build.usart1_mode=
 CH32V103.menu.usart1.disable=Disable
@@ -1828,6 +1864,11 @@ CH32V203.menu.stack.s1024=1 KB
 CH32V203.menu.stack.s1024.build.stack_size=1024
 CH32V203.menu.stack.s2048=2 KB
 CH32V203.menu.stack.s2048.build.stack_size=2048
+
+CH32V203.menu.stackcheck.off=Off
+CH32V203.menu.stackcheck.off.build.stackcheck_defines=
+CH32V203.menu.stackcheck.on=Reset on overflow
+CH32V203.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V203.menu.usart1.auto=AUTO (bind at begin())
 CH32V203.menu.usart1.auto.build.usart1_mode=
 CH32V203.menu.usart1.disable=Disable
@@ -2065,6 +2106,11 @@ CH32V205.menu.stack.s4096=4 KB
 CH32V205.menu.stack.s4096.build.stack_size=4096
 CH32V205.menu.stack.s8192=8 KB
 CH32V205.menu.stack.s8192.build.stack_size=8192
+
+CH32V205.menu.stackcheck.off=Off
+CH32V205.menu.stackcheck.off.build.stackcheck_defines=
+CH32V205.menu.stackcheck.on=Reset on overflow
+CH32V205.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V205.menu.usart1.auto=AUTO (bind at begin())
 CH32V205.menu.usart1.auto.build.usart1_mode=
 CH32V205.menu.usart1.disable=Disable
@@ -2474,6 +2520,11 @@ CH32V208.menu.stack.s8192=8 KB
 CH32V208.menu.stack.s8192.build.stack_size=8192
 CH32V208.menu.stack.s16384=16 KB
 CH32V208.menu.stack.s16384.build.stack_size=16384
+
+CH32V208.menu.stackcheck.off=Off
+CH32V208.menu.stackcheck.off.build.stackcheck_defines=
+CH32V208.menu.stackcheck.on=Reset on overflow
+CH32V208.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V208.menu.usart1.auto=AUTO (bind at begin())
 CH32V208.menu.usart1.auto.build.usart1_mode=
 CH32V208.menu.usart1.disable=Disable
@@ -2744,6 +2795,11 @@ CH32V303.menu.stack.s4096=4 KB
 CH32V303.menu.stack.s4096.build.stack_size=4096
 CH32V303.menu.stack.s8192=8 KB
 CH32V303.menu.stack.s8192.build.stack_size=8192
+
+CH32V303.menu.stackcheck.off=Off
+CH32V303.menu.stackcheck.off.build.stackcheck_defines=
+CH32V303.menu.stackcheck.on=Reset on overflow
+CH32V303.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V303.menu.usart1.auto=AUTO (bind at begin())
 CH32V303.menu.usart1.auto.build.usart1_mode=
 CH32V303.menu.usart1.disable=Disable
@@ -3043,6 +3099,11 @@ CH32V305.menu.stack.s4096=4 KB
 CH32V305.menu.stack.s4096.build.stack_size=4096
 CH32V305.menu.stack.s8192=8 KB
 CH32V305.menu.stack.s8192.build.stack_size=8192
+
+CH32V305.menu.stackcheck.off=Off
+CH32V305.menu.stackcheck.off.build.stackcheck_defines=
+CH32V305.menu.stackcheck.on=Reset on overflow
+CH32V305.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V305.menu.usart1.auto=AUTO (bind at begin())
 CH32V305.menu.usart1.auto.build.usart1_mode=
 CH32V305.menu.usart1.disable=Disable
@@ -3342,6 +3403,11 @@ CH32V307.menu.stack.s8192=8 KB
 CH32V307.menu.stack.s8192.build.stack_size=8192
 CH32V307.menu.stack.s16384=16 KB
 CH32V307.menu.stack.s16384.build.stack_size=16384
+
+CH32V307.menu.stackcheck.off=Off
+CH32V307.menu.stackcheck.off.build.stackcheck_defines=
+CH32V307.menu.stackcheck.on=Reset on overflow
+CH32V307.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V307.menu.usart1.auto=AUTO (bind at begin())
 CH32V307.menu.usart1.auto.build.usart1_mode=
 CH32V307.menu.usart1.disable=Disable
@@ -3646,6 +3712,11 @@ CH32V317.menu.stack.s8192=8 KB
 CH32V317.menu.stack.s8192.build.stack_size=8192
 CH32V317.menu.stack.s16384=16 KB
 CH32V317.menu.stack.s16384.build.stack_size=16384
+
+CH32V317.menu.stackcheck.off=Off
+CH32V317.menu.stackcheck.off.build.stackcheck_defines=
+CH32V317.menu.stackcheck.on=Reset on overflow
+CH32V317.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V317.menu.usart1.auto=AUTO (bind at begin())
 CH32V317.menu.usart1.auto.build.usart1_mode=
 CH32V317.menu.usart1.disable=Disable
@@ -3934,6 +4005,11 @@ CH32V407.menu.stack.s16384=16 KB
 CH32V407.menu.stack.s16384.build.stack_size=16384
 CH32V407.menu.stack.s32768=32 KB
 CH32V407.menu.stack.s32768.build.stack_size=32768
+
+CH32V407.menu.stackcheck.off=Off
+CH32V407.menu.stackcheck.off.build.stackcheck_defines=
+CH32V407.menu.stackcheck.on=Reset on overflow
+CH32V407.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V407.menu.usart1.auto=AUTO (bind at begin())
 CH32V407.menu.usart1.auto.build.usart1_mode=
 CH32V407.menu.usart1.disable=Disable
@@ -4233,6 +4309,11 @@ CH32V467.menu.stack.s16384=16 KB
 CH32V467.menu.stack.s16384.build.stack_size=16384
 CH32V467.menu.stack.s32768=32 KB
 CH32V467.menu.stack.s32768.build.stack_size=32768
+
+CH32V467.menu.stackcheck.off=Off
+CH32V467.menu.stackcheck.off.build.stackcheck_defines=
+CH32V467.menu.stackcheck.on=Reset on overflow
+CH32V467.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32V467.menu.usart1.auto=AUTO (bind at begin())
 CH32V467.menu.usart1.auto.build.usart1_mode=
 CH32V467.menu.usart1.disable=Disable
@@ -4506,6 +4587,11 @@ CH32X033.menu.stack.s2048=2 KB
 CH32X033.menu.stack.s2048.build.stack_size=2048
 CH32X033.menu.stack.s4096=4 KB
 CH32X033.menu.stack.s4096.build.stack_size=4096
+
+CH32X033.menu.stackcheck.off=Off
+CH32X033.menu.stackcheck.off.build.stackcheck_defines=
+CH32X033.menu.stackcheck.on=Reset on overflow
+CH32X033.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32X033.menu.usart1.auto=AUTO (bind at begin())
 CH32X033.menu.usart1.auto.build.usart1_mode=
 CH32X033.menu.usart1.disable=Disable
@@ -4755,6 +4841,11 @@ CH32X035.menu.stack.s2048=2 KB
 CH32X035.menu.stack.s2048.build.stack_size=2048
 CH32X035.menu.stack.s4096=4 KB
 CH32X035.menu.stack.s4096.build.stack_size=4096
+
+CH32X035.menu.stackcheck.off=Off
+CH32X035.menu.stackcheck.off.build.stackcheck_defines=
+CH32X035.menu.stackcheck.on=Reset on overflow
+CH32X035.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32X035.menu.usart1.auto=AUTO (bind at begin())
 CH32X035.menu.usart1.auto.build.usart1_mode=
 CH32X035.menu.usart1.disable=Disable
@@ -4961,6 +5052,11 @@ CH32X305.menu.stack.s8192=8 KB
 CH32X305.menu.stack.s8192.build.stack_size=8192
 CH32X305.menu.stack.s16384=16 KB
 CH32X305.menu.stack.s16384.build.stack_size=16384
+
+CH32X305.menu.stackcheck.off=Off
+CH32X305.menu.stackcheck.off.build.stackcheck_defines=
+CH32X305.menu.stackcheck.on=Reset on overflow
+CH32X305.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32X305.menu.usart1.auto=AUTO (bind at begin())
 CH32X305.menu.usart1.auto.build.usart1_mode=
 CH32X305.menu.usart1.disable=Disable
@@ -5406,6 +5502,11 @@ CH32X315.menu.stack.s8192=8 KB
 CH32X315.menu.stack.s8192.build.stack_size=8192
 CH32X315.menu.stack.s16384=16 KB
 CH32X315.menu.stack.s16384.build.stack_size=16384
+
+CH32X315.menu.stackcheck.off=Off
+CH32X315.menu.stackcheck.off.build.stackcheck_defines=
+CH32X315.menu.stackcheck.on=Reset on overflow
+CH32X315.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32X315.menu.usart1.auto=AUTO (bind at begin())
 CH32X315.menu.usart1.auto.build.usart1_mode=
 CH32X315.menu.usart1.disable=Disable
@@ -6007,6 +6108,11 @@ CH32L103.menu.stack.s2048=2 KB
 CH32L103.menu.stack.s2048.build.stack_size=2048
 CH32L103.menu.stack.s4096=4 KB
 CH32L103.menu.stack.s4096.build.stack_size=4096
+
+CH32L103.menu.stackcheck.off=Off
+CH32L103.menu.stackcheck.off.build.stackcheck_defines=
+CH32L103.menu.stackcheck.on=Reset on overflow
+CH32L103.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32L103.menu.usart1.auto=AUTO (bind at begin())
 CH32L103.menu.usart1.auto.build.usart1_mode=
 CH32L103.menu.usart1.disable=Disable
@@ -6253,6 +6359,11 @@ CH32M007.menu.stack.s1024=1 KB
 CH32M007.menu.stack.s1024.build.stack_size=1024
 CH32M007.menu.stack.s2048=2 KB
 CH32M007.menu.stack.s2048.build.stack_size=2048
+
+CH32M007.menu.stackcheck.off=Off
+CH32M007.menu.stackcheck.off.build.stackcheck_defines=
+CH32M007.menu.stackcheck.on=Reset on overflow
+CH32M007.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32M007.menu.usart1.auto=AUTO (bind at begin())
 CH32M007.menu.usart1.auto.build.usart1_mode=
 CH32M007.menu.usart1.disable=Disable
@@ -6463,6 +6574,11 @@ CH32M030.menu.stack.s1024=1 KB
 CH32M030.menu.stack.s1024.build.stack_size=1024
 CH32M030.menu.stack.s2048=2 KB
 CH32M030.menu.stack.s2048.build.stack_size=2048
+
+CH32M030.menu.stackcheck.off=Off
+CH32M030.menu.stackcheck.off.build.stackcheck_defines=
+CH32M030.menu.stackcheck.on=Reset on overflow
+CH32M030.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32M030.menu.usart1.auto=AUTO (bind at begin())
 CH32M030.menu.usart1.auto.build.usart1_mode=
 CH32M030.menu.usart1.disable=Disable
@@ -6642,6 +6758,11 @@ CH32M103.menu.stack.s2048=2 KB
 CH32M103.menu.stack.s2048.build.stack_size=2048
 CH32M103.menu.stack.s4096=4 KB
 CH32M103.menu.stack.s4096.build.stack_size=4096
+
+CH32M103.menu.stackcheck.off=Off
+CH32M103.menu.stackcheck.off.build.stackcheck_defines=
+CH32M103.menu.stackcheck.on=Reset on overflow
+CH32M103.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32M103.menu.usart1.auto=AUTO (bind at begin())
 CH32M103.menu.usart1.auto.build.usart1_mode=
 CH32M103.menu.usart1.disable=Disable
@@ -6845,6 +6966,11 @@ CH32H415.menu.stack.s32768=32 KB
 CH32H415.menu.stack.s32768.build.stack_size=32768
 CH32H415.menu.stack.s65536=64 KB
 CH32H415.menu.stack.s65536.build.stack_size=65536
+
+CH32H415.menu.stackcheck.off=Off
+CH32H415.menu.stackcheck.off.build.stackcheck_defines=
+CH32H415.menu.stackcheck.on=Reset on overflow
+CH32H415.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32H415.menu.usart1.auto=AUTO (bind at begin())
 CH32H415.menu.usart1.auto.build.usart1_mode=
 CH32H415.menu.usart1.disable=Disable
@@ -7206,6 +7332,11 @@ CH32H416.menu.stack.s32768=32 KB
 CH32H416.menu.stack.s32768.build.stack_size=32768
 CH32H416.menu.stack.s65536=64 KB
 CH32H416.menu.stack.s65536.build.stack_size=65536
+
+CH32H416.menu.stackcheck.off=Off
+CH32H416.menu.stackcheck.off.build.stackcheck_defines=
+CH32H416.menu.stackcheck.on=Reset on overflow
+CH32H416.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32H416.menu.usart1.auto=AUTO (bind at begin())
 CH32H416.menu.usart1.auto.build.usart1_mode=
 CH32H416.menu.usart1.disable=Disable
@@ -7511,6 +7642,11 @@ CH32H417.menu.stack.s32768=32 KB
 CH32H417.menu.stack.s32768.build.stack_size=32768
 CH32H417.menu.stack.s65536=64 KB
 CH32H417.menu.stack.s65536.build.stack_size=65536
+
+CH32H417.menu.stackcheck.off=Off
+CH32H417.menu.stackcheck.off.build.stackcheck_defines=
+CH32H417.menu.stackcheck.on=Reset on overflow
+CH32H417.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1
 CH32H417.menu.usart1.auto=AUTO (bind at begin())
 CH32H417.menu.usart1.auto.build.usart1_mode=
 CH32H417.menu.usart1.disable=Disable

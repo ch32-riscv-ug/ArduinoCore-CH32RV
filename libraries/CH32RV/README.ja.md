@@ -10,7 +10,7 @@ ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全�
 #include <CH32RV.h>
 
 CH32RV.restart();                        // ソフトウェアリセット(戻らない)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / ...
+CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）...
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
@@ -18,6 +18,8 @@ CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clo
 CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
 CH32RV.getHeapSize();                    // ヒープの大きさと、malloc() がまだ渡せる量
 CH32RV.getFreeHeap();
+CH32RV.getStackSize();                   // スタックの確保（メニュー Stack Size）と、いちばん深く使ったときの残り
+CH32RV.getMinFreeStack();                // （残りはメニュー Stack Check が On のときだけ。Off では 0）
 CH32RV.getChipModel();                   // "CH32V003": ビルドした系列
 CH32RV.getSketchSize();                  // スケッチが使う flash と、その部品の残り
 CH32RV.getFreeSketchSpace();

@@ -255,7 +255,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.iwdg=Watchdog\n"
                + "menu.erase=Erase Flash\n"
                + "menu.debugspeed=Debug Speed\n"
-               + "menu.stack=Stack Size\n")
+               + "menu.stack=Stack Size\n"
+               + "menu.stackcheck=Stack Check\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -594,6 +595,16 @@ def stack_menu(board: str, ram: int, loadcode: bool) -> list[str]:
             lines.append(f"{board}.menu.stack.s{n}={label(n)}")
             lines.append(f"{board}.menu.stack.s{n}.build.stack_size={n}")
     return lines
+
+
+def stackcheck_menu(board: str) -> list[str]:
+    """Stack Check (internal/ch32rv_stack.h): off by default (docs: its cost);
+    on, the reservation is filled before setup() and SysTick resets the part
+    with resetReason() panic once the stack reaches its bottom."""
+    return [f"{board}.menu.stackcheck.off=Off",
+            f"{board}.menu.stackcheck.off.build.stackcheck_defines=",
+            f"{board}.menu.stackcheck.on=Reset on overflow",
+            f"{board}.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1"]
 
 
 def debug_speed_menu(board: str) -> list[str]:
@@ -4485,6 +4496,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines += debug_speed_menu(board)
     lines.append("")
     lines += stack_menu(board, LOADCODE_RAM[cfg["family"]][1] if loadcode else min_sram, bool(loadcode))
+    lines.append("")
+    lines += stackcheck_menu(board)
     lines.append("")
 
     return "\n".join(lines), ld_files
