@@ -254,7 +254,8 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.rstpin=Reset Pin\n"
                + "menu.iwdg=Watchdog\n"
                + "menu.erase=Erase Flash\n"
-               + "menu.debugspeed=Debug Speed\n")
+               + "menu.debugspeed=Debug Speed\n"
+               + "menu.stack=Stack Size\n")
 
 # Per-instance menus (ADR draft 0015): AUTO binds in begin(), Disable links
 # nothing, FIX fixes one route at build time. The point is to let a small
@@ -559,6 +560,40 @@ DEBUG_SPEED_MENU = (
     ("medium", "Medium", "--speed medium"),
     ("low", "Low", "--speed low"),
 )
+
+
+def stack_default(ram: int, loadcode: bool) -> int:
+    """The stack the linker reserves above the heap (platform.txt's
+    --defsym=__stack_size). The heap may grow up to the reservation, so a
+    deeper stack writes over the heap's top: the OEP probe firmware on H417
+    did with 2 KiB (2026-11-14). A sixteenth of the RAM as a power of two,
+    512 B to 4 KiB (V003's 2 KB part keeps 512); the families that run from
+    RAM (H41x, 512 KiB) 16 KiB."""
+    if loadcode:
+        return 16384
+    size = 512
+    while size * 2 <= min(ram // 16, 4096):
+        size *= 2
+    return size
+
+
+def stack_menu(board: str, ram: int, loadcode: bool) -> list[str]:
+    """Stack Size: the default first, then the powers of two from 512 B up to
+    a quarter of the RAM (64 KiB at most)."""
+    default = stack_default(ram, loadcode)
+    sizes = []
+    size = 512
+    while size <= min(max(ram // 4, default), 65536):
+        sizes.append(size)
+        size *= 2
+    label = lambda n: f"{n // 1024} KB" if n >= 1024 else f"{n} B"
+    lines = [f"{board}.menu.stack.s{default}={label(default)} (default)",
+             f"{board}.menu.stack.s{default}.build.stack_size={default}"]
+    for n in sizes:
+        if n != default:
+            lines.append(f"{board}.menu.stack.s{n}={label(n)}")
+            lines.append(f"{board}.menu.stack.s{n}.build.stack_size={n}")
+    return lines
 
 
 def debug_speed_menu(board: str) -> list[str]:
@@ -4448,6 +4483,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines += erase_menu(board)
     lines.append("")
     lines += debug_speed_menu(board)
+    lines.append("")
+    lines += stack_menu(board, LOADCODE_RAM[cfg["family"]][1] if loadcode else min_sram, bool(loadcode))
     lines.append("")
 
     return "\n".join(lines), ld_files

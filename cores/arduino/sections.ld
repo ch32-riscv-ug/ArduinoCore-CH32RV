@@ -4,7 +4,7 @@
  */
 /* Included from the per-SKU memory scripts (ch32v006_62k_8k.ld etc.). */
 
-__stack_size = DEFINED(__stack_size) ? __stack_size : 512;
+/* __stack_size: platform.txt's --defsym, from the Stack Size menu (boards.txt). */
 PROVIDE( _stack_size = __stack_size );
 
 /* For CH32RV.getSketchSize() / getFreeSketchSpace(): the flash this build is

@@ -11,14 +11,7 @@
  * base-0 rule in sections.ld is for QingKe V2).
  */
 
-/* 16 KiB of the 512: the heap may grow up to the stack's reserved bottom
- * (ch32rv_sbrk.c), so a stack past its reservation writes over the heap's
- * top. 2 KiB was too little: with LTO the OEP probe firmware's main() takes
- * 2032 bytes of frame on entry, the calls below it reached into its heap and
- * the V5F trapped on a pointer read back from there (6-2, 2026-11-14: an
- * HSE build of it never enumerated, the HSI build, 64 bytes of .bss
- * different, ran by luck). ESP32's loop() has 8 KiB. */
-__stack_size = DEFINED(__stack_size) ? __stack_size : 16384;
+/* __stack_size: platform.txt's --defsym, from the Stack Size menu (boards.txt). */
 PROVIDE( _stack_size = __stack_size );
 
 PROVIDE( _ch32rv_flash_origin = ORIGIN(FLASH) );

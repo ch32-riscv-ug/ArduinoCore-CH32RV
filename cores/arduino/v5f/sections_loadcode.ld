@@ -14,7 +14,7 @@
  */
 /* 16 KiB, as the V3F layout (../sections_loadcode.ld has why: 2 KiB let the
  * OEP probe firmware's stack run over its heap). */
-__stack_size = DEFINED(__stack_size) ? __stack_size : 16384;
+/* __stack_size: platform.txt's --defsym, from the Stack Size menu (boards.txt). */
 PROVIDE( _stack_size = __stack_size );
 
 PROVIDE( _ch32rv_flash_origin = ORIGIN(FLASH) );

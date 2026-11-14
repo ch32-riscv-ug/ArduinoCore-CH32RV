@@ -59,6 +59,7 @@ def test_data_loads_where_the_copy_starts(clang_bin, tmp_path, variant, ld, marc
                     "-Os", "-ffunction-sections", "-fdata-sections", "-nostdlib", "-fuse-ld=lld",
                     "-mno-relax", "-Wl,--gc-sections", "-Wl,-u,pad", "-Wl,-u,big", "-Wl,-u,fn", "-Wl,-e,_vector_base",
                     f"-L{CORE}", f"-L{REPO / 'variants' / variant}", f"-T{REPO / 'variants' / variant / ld}",
+                    "-Wl,--defsym=__stack_size=512",    # platform.txt passes the Stack Size menu's this way
                     str(src), "-o", str(elf)], check=True, capture_output=True, text=True)
     heads = subprocess.run([str(clang_bin / "llvm-objdump"), "-h", str(elf)], capture_output=True,
                            text=True, check=True).stdout
