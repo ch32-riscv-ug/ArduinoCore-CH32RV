@@ -661,15 +661,16 @@ static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
     }
     uint8_t interval = ch32rv_usb_interval(speed, 10);
     if (speed != CH32RVUsbSpeed::Full) {
-        uint8_t asked = 0;                       /* setHighSpeedInterval(): the smallest asked */
+        /* setHighSpeedInterval(): each class's value, the default for a class
+         * that set none (it wants the default too), the smallest of them -
+         * as EspUsbDevice does. */
+        const uint8_t fallback = interval;
         for (uint8_t i = 0; i < h.count; i++) {
             const uint8_t b = h.at(i)->highSpeedInterval();
-            if (b && (!asked || b < asked)) {
-                asked = b;
+            const uint8_t want = b ? b : fallback;
+            if (i == 0 || want < interval) {
+                interval = want;
             }
-        }
-        if (asked) {
-            interval = asked;
         }
     }
     h.epIn = (uint8_t)(0x80 | n);
