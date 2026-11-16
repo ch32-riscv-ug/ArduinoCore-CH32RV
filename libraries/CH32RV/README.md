@@ -16,6 +16,11 @@ CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / 
 CH32RV.resetReasonName();                // "software" and so on, for printing
 CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
 CH32RV.wdtFeed();                        // call it in loop()
+CH32RV.wwdgEnable(20000, 10000);         // window watchdog: feed 10-20 ms after the last feed
+CH32RV.wwdgFeed();
+CH32RV.setBackupRegister(0, 42);         // 16-bit words that survive a reset (RTC families)
+CH32RV.getBackupRegister(0);
+CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s seconds or a struct tm
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
@@ -47,6 +52,32 @@ analogReadVref();                        // the internal reference, on analogRea
   asked for.
 - `wdtEnable()` **returns false** on CH32M030, which has no IWDG. CH32X033/X035
   have no LSI; their IWDG runs on HSI/1024 (46.875 kHz).
+- **The window watchdog (WWDG)** is on every family. `wwdgEnable(timeoutUs, windowUs, earlyWarning)`:
+  the chip resets unless `wwdgFeed()` comes within `timeoutUs` of the last feed, and (with a window) also
+  when a feed comes before `windowUs` has passed. It counts PCLK1 / 4096 / 1-8 with 63 counts, so the
+  longest timeout is short - `wwdgMaxTimeoutUs()`, about 43 ms at 48 MHz, 258 ms at 8 MHz - and
+  `wwdgEnable()` returns false (starting nothing) beyond it. Both edges are exact to one count: the reset
+  never comes after the timeout, and a feed is always allowed from `windowUs` on. `earlyWarning` runs in
+  an interrupt one count before the reset: feed there, or record why. Like the IWDG it cannot be stopped.
+  `resetReason()` says `CH32RV_RESET_WINDOW_WATCHDOG` for its reset, `CH32RV_RESET_WATCHDOG` for the
+  IWDG's. Sleeps do not feed it: its clock stops in stop / standby, but the plain-WFI parts of a sleep
+  (under a second on the RTC families, under 150 ms on M030) count.
+- **Backup registers** are 16-bit words that survive a reset and standby: `backupRegisterCount()`,
+  `getBackupRegister(i)`, `setBackupRegister(i, v)`, STM32duino's names, indexed from 0. They are BKP DR5
+  and up (DR1-DR4 hold the RTC's settings): 6 words on V103, V205 and L103/M103, 6 or 38 on V20x, V30x
+  and V4x7 (the part is asked whether DR42 exists), kept through a power cut by a VBAT battery. H41x and
+  X305/X315 have no BKP data registers: there they are 16 words of RAM that no startup clears, with a
+  check word - kept through every reset, zero again after power-up (`backupRegistersKeepPower()` says
+  false). V003, V00x, M030 and X033/X035 have none (the count is 0).
+- **The RTC alarm** (the RTC families). The calendar is POSIX's, as on arduino-esp32: `time()`,
+  `localtime_r()`, `mktime()`, `settimeofday()`. `setAlarm(when, callback)` takes `time()`'s seconds or a
+  `struct tm` in local time; the callback runs once, in the alarm's interrupt, within a second after
+  `when` (the RTC counts whole seconds). One alarm: a new call replaces it, `clearAlarm()` drops it,
+  `getAlarm()` says what is still to come (0 once it has run). `settimeofday()` keeps it at its wall time.
+  `setAlarm()` returns false where there is no RTC. Why this shape: arduino-esp32 has no RTC alarm API
+  (its calendar is POSIX time), and RTCZero's per-field setters and match masks fit a calendar RTC, not
+  this one - a 32-bit seconds counter with one compare register. An absolute time in the units `time()`
+  already uses is that register as it is; a repeating alarm is one `setAlarm()` in the callback.
 - **`clockSource()`** says HSE only when the Clock Source menu chose the crystal
   and it started. A crystal that does not start leaves the same CPU Clock on HSI
   (`F_CPU` unchanged, at HSI's accuracy).
@@ -71,18 +102,20 @@ CH32RV.enableTimerWakeup(5 * 1000000ULL);  // wake in 5 s
 CH32RV.enablePinWakeup(PA1, LOW);          // or when PA1 reads LOW (set the pin's mode yourself)
 CH32RV.lightSleep();                       // returns on waking; RAM and pin states kept
 CH32RV.deepSleep();                        // starts again from setup() (a software restart)
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _UNDEFINED
+CH32RV.enableAlarmWakeup();                // or at setAlarm()'s time (RTC families)
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _UNDEFINED
 CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
 ```
 
 - **Supported families.**
-  - V003, V00x and X033/X035, woken by the AWU.
-  - V20x, V205, V30x, L103/M103 and H41x, woken by the RTC alarm; they sleep in stop. H41x's stop takes both cores: the V3F waits in it while the V5F runs the sketch (and with the V3F build, the V5F is never started); its regulator stays in normal mode. Its pin wakeup is not yet checked on a board.
-  - Elsewhere the calls return `CH32RV_SLEEP_UNSUPPORTED`.
+  - V003, V00x, M030 and X033/X035, woken by the AWU. M030's AWU counts LSI / 51000, about 150 ms a count (no prescaler): a remainder under that is slept in a plain WFI, and the first sleep of a boot is up to 300 ms longer while it measures the LSI.
+  - V20x, V205, V30x, V4x7, L103/M103, X305/X315 and H41x, woken by the RTC alarm; they sleep in stop. H41x's stop takes both cores: the V3F waits in it while the V5F runs the sketch (and with the V3F build, the V5F is never started); its regulator stays in normal mode, as does X305/X315's. Its pin wakeup is not yet checked on a board.
+  - V103 does not sleep yet (`CH32RV_SLEEP_UNSUPPORTED`): with its alarm fixed (2026-11-15) the alarm, `setAlarm()` and the backup registers work, but its first `lightSleep(200 ms)` still never returned from stop, and neither the probe nor NRST reached it (2026-11-17, TODO). H41x, V20x, V205, V30x and V407 were run; X305/X315 and M030 are built and not yet run.
+  - `CH32RV_SLEEP_UNSUPPORTED` remains for a family added later without its sleep.
 - **On the RTC families `time()` is the RTC.**
   - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.
   - `settimeofday()` sets it, including through SNTP's `configTime()`.
-  - BKP DR1-DR4 are the core's. H41x has no BKP data registers: the core keeps them in RAM, which a reset keeps, so after a power cut with a VBAT battery its RTC starts again too.
+  - BKP DR1-DR4 are the core's. H41x and X305/X315 have no BKP data registers: the core keeps them in RAM, which a reset keeps, so after a power cut with a VBAT battery their RTC starts again too. X305/X315 has no backup domain at all (its RTC's clock bits are in the RTC itself).
 - **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.
 - **`millis()` counts the sleep.** The AWU measures the time asleep, and the core adds it.
   - On the AWU families a pin wake part-way through cannot be measured. It adds nothing and moves `timeDomain()` on instead. The RTC families measure it with the RTC.
@@ -91,7 +124,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - just before sleeping it stretches the IWDG to its longest;
   - it wakes every half of that to feed it, and nothing else runs;
   - on waking it puts back the `wdtEnable()` setting.
-- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x (which has no standby) when only the timer wakes it and the watchdog is off. Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
+- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x and X305/X315 (which have no standby) when only the timer or the alarm wakes it and the watchdog is off; `wakeupCause()` then says `CH32RV_WAKEUP_ALARM` when the alarm came first (the backup domain carries that), and the alarm's callback does not run (RAM was lost). Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
 - **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
 
 The design and the measurements are in sections 4.3 and 5.1 of

@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_backup.h"
 
 #ifdef CH32RV_HAS_RTC
 
@@ -13,8 +14,7 @@
 #define BDCTLR_RTCSEL   (3u << 6)
 #define BDCTLR_LSI      (2u << 6)
 #define BDCTLR_RTCEN    (1u << 8)
-#define RTC_STORE_RAM   1
-#else
+#elif !defined(CH32RV_RTC_X3X5)
 #define RCC_BDCTLR      CH32RV_REG32(0x40021020u)
 #define BDCTLR_RTCSEL   (3u << 8)
 #define BDCTLR_LSI      (2u << 8)
@@ -29,27 +29,20 @@
 #define RTC_CTLRL_CNF   (1u << 4)
 #define RTC_CTLRL_RTOFF (1u << 5)
 #define RTC_CTLRH_ALRIE (1u << 1)
-#define BKP_MARKER      0xC32Bu
-#ifdef RTC_STORE_RAM
-/* No BKP data registers (CH32H41x): the core's four words in RAM that no
- * startup touches, with a check word so that RAM's power-on contents never
- * pass for them. */
-static volatile struct {
-    uint16_t dr[5];
-    uint16_t check;
-} rtc_store __attribute__((section(".noinit")));
-static uint16_t store_sum(void)
-{
-    return (uint16_t)(rtc_store.dr[1] ^ rtc_store.dr[2] ^ rtc_store.dr[3] ^ rtc_store.dr[4] ^ 0x5A3Cu);
-}
-#define BKP_DR(n)       (rtc_store.dr[(n)])
-#define BKP_SEAL()      (rtc_store.check = store_sum())
-#define BKP_VALID()     (rtc_store.check == store_sum())
-#else
-#define BKP_DR(n)       CH32RV_REG16(0x40006C00u + 4u * (n))
-#define BKP_SEAL()      ((void)0)
-#define BKP_VALID()     1
+#ifdef CH32RV_RTC_X3X5
+/* X305 / X315: the clock's choice and enable in CTLRL itself (RTCEN bit 6,
+ * RTCSEL bit 7 - 0 is LSI; the reference manual's 6.3.2), a 32-bit register. */
+#define RTC_CTLRL32     CH32RV_REG32(0x40002804u)
+#define CTLRL_RTCEN     (1u << 6)
+#define CTLRL_RTCSEL    (1u << 7)
 #endif
+#define BKP_MARKER      0xC32Bu
+#define DR4_OFFSET      0x03FFu      /* settimeofday()'s milliseconds */
+#define DR4_ALARM_SB    0x8000u      /* a standby the sketch's alarm ended */
+#define BKP_DR(n)       CH32RV_RTC_DR(n)
+
+/* The alarm code's, linked only with it (ch32rv_rtc_alarm.c). */
+void ch32rv_rtc_alarm_rearm(void) __attribute__((weak));
 
 static uint8_t rtc_up;
 static uint32_t rtc_psc;        /* prescaler: RTCCLK ticks per second - 1 */
@@ -101,37 +94,61 @@ static uint32_t measure_lsi(void)
     return ticks * 1000000u / (t1 - t0);
 }
 
+/* Whether the RTC already counts LSI (an earlier boot started it). */
+static int rtc_on_lsi(void)
+{
+#ifdef CH32RV_RTC_X3X5
+    return (RTC_CTLRL32 & (CTLRL_RTCEN | CTLRL_RTCSEL)) == CTLRL_RTCEN;
+#else
+    return (RCC_BDCTLR & (BDCTLR_RTCSEL | BDCTLR_RTCEN)) == (BDCTLR_LSI | BDCTLR_RTCEN);
+#endif
+}
+
+/* LSI as the RTC's clock, and the clock on. */
+static void rtc_clock_lsi(void)
+{
+#ifdef CH32RV_RTC_X3X5
+    RTC_CTLRL32 &= ~CTLRL_RTCSEL;
+    RTC_CTLRL32 |= CTLRL_RTCEN;
+#else
+    /* The backup domain is reset only when RTCSEL holds another clock (it
+     * cannot be changed otherwise): after a power-up it is 0 and written
+     * as it is, so the sketch's backup words written before the RTC's
+     * first start survive it. */
+    if ((RCC_BDCTLR & BDCTLR_RTCSEL) != 0u && (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI) {
+        RCC_BDCTLR |= BDCTLR_BDRST;
+        RCC_BDCTLR &= ~BDCTLR_BDRST;
+    }
+    /* Each field read back before the next write: on CH32H417 RTCSEL written
+     * right after the reset was lost (RTCEN alone stuck, the RTC had no clock;
+     * its EVT waits ten NOPs between the two, 2026-11-14). */
+    for (uint32_t spin = 0; (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI && spin < 1000u; spin++) {
+        RCC_BDCTLR = (RCC_BDCTLR & ~BDCTLR_RTCSEL) | BDCTLR_LSI;
+    }
+    RCC_BDCTLR |= BDCTLR_RTCEN;                /* a write of its own, or it does not stick */
+    for (uint32_t spin = 0; !(RCC_BDCTLR & BDCTLR_RTCEN) && spin < 1000u; spin++) {
+        RCC_BDCTLR |= BDCTLR_RTCEN;
+    }
+#endif
+}
+
 int ch32rv_rtc_begin(void)
 {
     if (rtc_up) {
         return 1;
     }
-    ch32rv_clock_enable(PWR);
-    ch32rv_clock_enable(BKP);
-    PWR_CTLR |= PWR_CTLR_DBP;
+    ch32rv_rtc_domain_open();
     CH32RV_RCC_RSTSCKR |= 1u;                  /* LSION: not kept by a reset */
     for (uint32_t spin = 0; !(CH32RV_RCC_RSTSCKR & 2u) && spin < 1000000u; spin++) {
     }
-    if ((RCC_BDCTLR & (BDCTLR_RTCSEL | BDCTLR_RTCEN)) == (BDCTLR_LSI | BDCTLR_RTCEN) &&
-        BKP_DR(1) == BKP_MARKER && BKP_VALID()) {
+    if (rtc_on_lsi() && BKP_DR(1) == BKP_MARKER) {
         /* Running since an earlier boot: leave it counting. */
         rtc_psc = BKP_DR(2) | ((uint32_t)BKP_DR(3) << 16);
         ch32rv_rtc_resync();
         rtc_up = 1;
         return 1;
     }
-    RCC_BDCTLR |= BDCTLR_BDRST;
-    RCC_BDCTLR &= ~BDCTLR_BDRST;
-    /* Each field read back before the next write: on CH32H417 RTCSEL written
-     * right after the reset was lost (RTCEN alone stuck, the RTC had no clock;
-     * its EVT waits ten NOPs between the two, 2026-11-14). */
-    for (uint32_t spin = 0; (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI && spin < 1000u; spin++) {
-        RCC_BDCTLR = BDCTLR_LSI;
-    }
-    RCC_BDCTLR |= BDCTLR_RTCEN;                /* a write of its own, or it does not stick */
-    for (uint32_t spin = 0; !(RCC_BDCTLR & BDCTLR_RTCEN) && spin < 1000u; spin++) {
-        RCC_BDCTLR |= BDCTLR_RTCEN;
-    }
+    rtc_clock_lsi();
     ch32rv_rtc_resync();
     const uint32_t lsi = measure_lsi();
     rtc_psc = (lsi ? lsi : 40000u) - 1u;
@@ -145,7 +162,7 @@ int ch32rv_rtc_begin(void)
     BKP_DR(3) = (uint16_t)(rtc_psc >> 16);
     BKP_DR(4) = 0;
     BKP_DR(1) = BKP_MARKER;
-    BKP_SEAL();
+    ch32rv_rtc_domain_seal();
     rtc_up = 1;
     return 1;
 }
@@ -167,7 +184,7 @@ void ch32rv_rtc_get(uint32_t *sec, uint32_t *ms)
 {
     uint32_t s, m;
     ch32rv_rtc_raw(&s, &m);
-    m += BKP_DR(4);
+    m += BKP_DR(4) & DR4_OFFSET;
     if (m >= 1000u) {
         m -= 1000u;
         s++;
@@ -191,15 +208,46 @@ void ch32rv_rtc_set(uint32_t sec, uint32_t ms)
     RTC(0x18) = (uint16_t)(cnt >> 16);
     RTC(0x1C) = (uint16_t)cnt;
     config_end();
-    BKP_DR(4) = (uint16_t)off;
-    BKP_SEAL();
+    BKP_DR(4) = (uint16_t)((BKP_DR(4) & ~DR4_OFFSET) | (uint16_t)off);
+    ch32rv_rtc_domain_seal();
+    if (ch32rv_rtc_alarm_rearm) {
+        ch32rv_rtc_alarm_rearm();              /* the sketch's alarm is wall time */
+    }
+}
+
+uint32_t ch32rv_rtc_counter_for(uint32_t when)
+{
+    /* The counter reaches c at wall time c + offset: the first c at or after
+     * `when` is `when` itself, the offset (under a second) late. */
+    return when;
+}
+
+void ch32rv_rtc_mark_alarm_standby(int on)
+{
+    BKP_DR(4) = (uint16_t)(on ? (BKP_DR(4) | DR4_ALARM_SB) : (BKP_DR(4) & ~DR4_ALARM_SB));
+    ch32rv_rtc_domain_seal();
+}
+
+int ch32rv_rtc_take_alarm_standby(void)
+{
+    ch32rv_rtc_domain_open();
+    if (BKP_DR(1) != BKP_MARKER || !(BKP_DR(4) & DR4_ALARM_SB)) {
+        return 0;
+    }
+    ch32rv_rtc_mark_alarm_standby(0);
+    return 1;
 }
 
 void ch32rv_rtc_alarm(uint32_t sec)
 {
     /* The flag rises one count after the alarm value (V307 2026-10-28: a
-     * 2 s sleep took 3), so the register holds one less. */
+     * 2 s sleep took 3), so the register holds one less. Not on V103: its
+     * flag rises as the counter reaches the value, as on the F1 (2026-11-15:
+     * an alarm written one less never came for a counter already there - the
+     * first-sleep hang of 2026-10-28 - and a 2 s alarm came a second early). */
+#ifndef CH32RV_SERIES_CH32V103
     sec--;
+#endif
     config_begin();
     RTC(0x20) = (uint16_t)(sec >> 16);
     RTC(0x24) = (uint16_t)sec;

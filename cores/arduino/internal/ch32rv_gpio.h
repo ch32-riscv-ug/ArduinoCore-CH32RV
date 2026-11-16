@@ -24,6 +24,7 @@ static inline void ch32rv_gpio_clock_enable(uint8_t port)
     /* One register, PA at CH32RV_CLKEN_GPIO_BIT0 and the ports contiguous
      * after it - true of every family in clock_enables.csv. */
     CH32RV_REG32(CH32RV_CLKEN_GPIO_ADDR) |= 1u << (CH32RV_CLKEN_GPIO_BIT0 + (port));
+    CH32RV_CLKEN_SETTLE(CH32RV_CLKEN_GPIO_ADDR);   /* ch32rv_registers.h */
 }
 
 /* Write the 4-bit configuration nibble for one pin. */

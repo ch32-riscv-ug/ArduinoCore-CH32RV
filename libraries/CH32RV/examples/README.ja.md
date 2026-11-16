@@ -48,6 +48,8 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [SystemInfo](SystemInfo/README.ja.md) | ビルド対象・メモリ・利用可能なチップ固有情報を表示します。 |
 | [ResetReason](ResetReason/README.ja.md) | リセット理由と、操作によるソフトウェア再起動を比較します。 |
 | [WatchdogRecovery](WatchdogRecovery/README.ja.md) | 操作でwatchdogを開始し、給餌停止による再起動を確認します。 |
+| [WindowWatchdog](WindowWatchdog/README.ja.md) | 操作で窓ウォッチドッグを開始し、遅い餌と早い餌でのリセットを確認します。 |
+| [RtcAlarm](RtcAlarm/README.ja.md) | RTCで日時を保ち、アラームを鳴らし、アラームまで眠り、起動の回数をバックアップレジスタで数えます。 |
 | [FlashSettings](FlashSettings/README.ja.md) | 内蔵のフラッシュの 1 ページに設定を保存し、リセット後に読み戻します（上級者向け。推奨は外部の SD・EEPROM）。 |
 | [FlashSettingsTwoBanks](FlashSettingsTwoBanks/README.ja.md) | 2 ページに交互に保存し、保存中の電源断でも前の設定を残します（上級者向け）。 |
 | [PwmFrequency](PwmFrequency/README.ja.md) | dutyの数値を保ってPWM周波数を切り替えます。 |

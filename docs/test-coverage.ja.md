@@ -66,9 +66,12 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | Print/Stream、printf | あり | あり・限定: print_format、stdio_printf、serial_echo | overload、timeout、partial read/write、境界。host と独立 serial peer |
 | math/random 等 | あり | あり・限定: core_api | 再現性、境界値、API 契約。native/host と実機 |
 | initVariant/yield/serialEvent | あり | あり・限定: hooks_selftest | dispatch/再入条件と他機能との共存。host と実機 |
-| reset/system 情報 | あり | 現行: system::test_reset_reasons（restart で SOFTWARE、プローブの NRST で EXTERNAL）、selfsys::test_identity・test_restart | POWERON と WWDG の要因、系列差 |
+| reset/system 情報 | あり | 現行: system::test_reset_reasons（restart で SOFTWARE、プローブの NRST で EXTERNAL）、selfsys::test_identity・test_restart。WWDG の要因は下の WWDG の行 | POWERON の要因、系列差 |
 | IWDG | 条件付きであり（M030 に無い） | 現行: system::test_watchdog（最後の餌からリセットまでを外から測る、次の起動が WATCHDOG）、selfsys::test_watchdog | 長い時間、ウォッチドッグを付けたままの眠り |
-| 休止（`CH32RV.lightSleep` / `deepSleep`）と RTC の時計（`time()` / `settimeofday()`） | AWU の系列（V003・V00x・X033/X035）と RTC の系列（V20x・V205・V30x・L103/M103・H41x）。V103 は外した（試験は n/a） | 現行: system::test_sleep（タイマーと端子で起きる lightSleep、タイマーの deepSleep を外から測る）、selfsys::test_rtc・test_light_sleep。手動（2026-10-27）: 休止の長さのずれ X035 +3 %、V006 −10 % | V103（最初の休止から起きない）、スタンバイの系列の deepSleep の長さ、外部時計との照合 |
+| WWDG（`CH32RV.wwdgEnable` / `wwdgFeed`） | あり（全 12 family、2026-11-15 はビルドのみ） | 現行: system::test_window_watchdog（窓の中で 300 ms 餌、そのあと餌なし・窓の前の餌を外から測る。次の起動が WINDOW_WATCHDOG、早期警告のコールバックは遅いほうで 1 回・早いほうで 0 回）、selfsys::test_window_watchdog（同じことを DUT の報告で） | 実機の結果、早期警告で餌をやって続ける形、休止との組み合わせ |
+| BKP（`CH32RV.get/setBackupRegister`） | あり（RTC の系列。H41x・X3x5 は .noinit の RAM。2026-11-15 はビルドのみ） | 現行: system::test_backup_registers・selfsys::test_backup_registers（全語に模様を書き、restart をまたいで読む。数が 0 の系列は n/a） | 電源断と VBAT、スタンバイをまたぐもの、V20x・V30x・V4x7 の語数（10 か 42）の実測 |
+| 休止（`CH32RV.lightSleep` / `deepSleep`）と RTC の時計（`time()` / `settimeofday()`） | 全 12 family: AWU の系列（V003・V00x・M030・X033/X035）と RTC の系列（V103・V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x）。V103・V4x7・X3x5・M030 は 2026-11-15 に入れてビルドのみ | 現行: system::test_sleep（タイマーと端子で起きる lightSleep、タイマーの deepSleep を外から測る）、selfsys::test_rtc・test_light_sleep。手動（2026-10-27）: 休止の長さのずれ X035 +3 %、V006 −10 % | V103（以前は最初の休止から起きなかった。アラーム 0 の修正の前）・V4x7・X3x5・M030 の実機、スタンバイの系列の deepSleep の長さ、外部時計との照合 |
+| RTC のアラーム（`CH32RV.setAlarm` / `enableAlarmWakeup`） | RTC の系列（2026-11-15 はビルドのみ） | 現行: system::test_rtc_alarm（コールバックで線を下げる・アラームで起きる lightSleep と deepSleep を外から測る）、selfsys::test_rtc_alarm（コールバックまでの時間とアラームでの lightSleep を DUT が測る）。RTC の無い系列は n/a | 実機の結果、settimeofday() をまたぐアラーム、struct tm の形（mktime と TZ） |
 | EEPROM API | 出さない（[flash-store](flash-store.ja.md)。内蔵フラッシュは `ch32rv_flash.h`） | — | — |
 
 ## 通信

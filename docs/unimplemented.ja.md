@@ -26,17 +26,17 @@
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 2 | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |
 | LSE（32 kHz 水晶） | RTC のある系列 | 2 | 単発→自動 | LSE の載った板。自己 | PS:53 |
 | PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 2 | 単発 | 可変電源（VDD を下げる）。ベンチでは電源を動かせないので手作業 | PS:60, PM:290 |
-| 休止（lightSleep / deepSleep）の残りの系列 | V103、M030、X315（X305）、V407/V467 | 1 | 自動 | プローブ（端子で起こす・時間を測る）。V103 は休止から戻らない件の復旧手段（uhubctl） | PS:41, libraries/CH32RV/README.ja.md:71 |
+| 休止（lightSleep / deepSleep）の残りの系列 | V103、M030、X315（X305）、V407/V467 | 実装済み（2026-11-15、ビルドのみ。V103・V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は以前最初の休止から起きなかった件を実機で最初に確かめる） | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep。V103 の復旧手段（uhubctl） | libraries/CH32RV/README.ja.md |
 | 周辺を動かしたままの休止 | 全系列 | 2 | 自動 | プローブ | FC:31 |
 | Standby の RAM 保持・低電圧の形 | V20x、V205、V30x、V407、L103 | 2 | 単発→自動 | プローブ（起床）＋電流計 | PS:41, EVT PWR/Standby_RAM_Mode・Standby_RAM_LV_Mode・Standby_RAM_Application |
 | 停止モード 3（LPDS=1、FLASH_LP） | L103/M103、V205 | 2 | 単発→自動 | 電流計、プローブ | TODO:191 |
 | VDD12 の外部給電・低消費の Stop | H417、X315 | 2 | 単発 | 外部 1.2 V 電源の板（手作業） | EVT PWR/VDD12_ExternPower・VDD12_ExternPowerInStopLP |
 | 過電圧保護（OVP）の設定 | M030 | 2 | 単発 | 可変電源（壊す試験に近い。専用チップ） | docs/adr/0017-option-byte-menus.ja.md:23, EVT CH32M030 PWR/PWR_OVP |
-| RTC の残りの系列 | H41x、V4x7、X315、V103 | 1 | 自動 | 自己（selfsys-rtc） | PS:53, PM:206 |
-| RTC のカレンダー・アラームの公開 API | RTC の系列 | 1 | 自動 | 自己 | FC:32, EVT RTC/RTC_Calendar |
+| RTC の残りの系列 | H41x、V4x7、X315、V103 | 実装済み（H41x は 2026-11-14。V4x7・X3x5・V103 は 2026-11-15、ビルドのみ） | 自動 | 自己（selfsys::test_rtc） | PS:53 |
+| RTC のカレンダー・アラームの公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。暦は POSIX、`CH32RV.setAlarm()`・`enableAlarmWakeup()`） | 自動 | 自己＋プローブ。system::test_rtc_alarm、selfsys::test_rtc_alarm | libraries/CH32RV/README.ja.md |
 | RTC の校正・校正クロック出力 | V103、V20x、V205、V30x、V407、H417、X315 | 2 | 自動 | プローブ（1 Hz / 512 Hz を測る） | EVT RTC/RTC_Calibrations, RTC/RTC_OutputCalibrateClock（V205） |
-| BKP の公開 API | RTC の系列 | 1 | 自動 | 自己（リセットをまたいで読む） | PS:54, FC:35 |
-| WWDG | 全 12 family | 1 | 自動 | 自己（窓の外で餌→リセット理由）。外から測るならプローブ | PS:52, PM:205 |
+| BKP の公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。`CH32RV.get/setBackupRegister()`。H41x・X3x5 は .noinit の RAM） | 自動 | 自己（リセットをまたいで読む）。system::test_backup_registers、selfsys::test_backup_registers | libraries/CH32RV/README.ja.md |
+| WWDG | 全 12 family | 実装済み（2026-11-15、ビルドのみ。`CH32RV.wwdgEnable()`） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
 | IWDG のオプションバイト（Watchdog メニュー）の残り | V103、H41x | 2 | 自動 | 自己（書き換えと戻し） | docs/adr/0017-option-byte-menus.ja.md:21 |
 | PFIC の割込み優先度の設定 | 全系列 | 1 | 自動 | 自己（タイマー 2 本で入れ子を確かめる） | PS:38, FC:37 |
 | VTF（高速割込み）、割込みの入れ子、ベクタを RAM へ | 全系列 | 2 | 自動 | 自己（遅延を SysTick で測る） | EVT INT/Interrupt_VTF, INT/VectorInRAM |
@@ -50,7 +50,7 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| GPIO 以外の EXTI の線（PVD・RTC アラーム・USB 起床など） | 全系列 | 1 | 単発→自動 | 自己（RTC アラームの線）、PVD は可変電源 | PS:37, FC:36 |
+| GPIO 以外の EXTI の線（PVD・USB 起床など。RTC のアラームは `CH32RV.setAlarm()` が使う） | 全系列 | 1 | 単発→自動 | 自己（RTC アラームの線）、PVD は可変電源 | PS:37, FC:36 |
 | EXTI のイベントモード（割込みでなく起床イベント） | 全系列 | 2 | 自動 | プローブ | PS:37 |
 | GPIO の速さ・駆動力の設定 | 全系列 | 2 | 自動 | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
 | PWM の remap 先・CHxN の端子 | TIM のある全系列 | 1 | 自動 | プローブ | PS:48, FC:70 |

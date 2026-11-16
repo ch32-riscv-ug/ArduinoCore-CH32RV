@@ -44,6 +44,8 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [SystemInfo](SystemInfo/README.md) | Print the build target, memory information and optional chip identity. |
 | [ResetReason](ResetReason/README.md) | Compare the current reset reason with a command-triggered software reset. |
 | [WatchdogRecovery](WatchdogRecovery/README.md) | Start the watchdog on command and observe a reset after feeding stops. |
+| [WindowWatchdog](WindowWatchdog/README.md) | Start the window watchdog on command and see it reset on a late and on an early feed. |
+| [RtcAlarm](RtcAlarm/README.md) | Keep the date in the RTC, ring an alarm, sleep until it, and count boots in a backup register. |
 | [FlashSettings](FlashSettings/README.md) | Save settings in one page of the internal flash and read them back after a reset (advanced; an external SD card or EEPROM is recommended). |
 | [FlashSettingsTwoBanks](FlashSettingsTwoBanks/README.md) | Save to two pages in turn so a power cut while saving keeps the previous settings (advanced). |
 | [PwmFrequency](PwmFrequency/README.md) | Change PWM frequency while keeping the duty scale and value constant. |

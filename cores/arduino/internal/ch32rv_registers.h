@@ -100,11 +100,25 @@
  * ports, and the helpers below use them. */
 #define CH32RV_CLKEN_(name, op) \
     (CH32RV_REG32(CH32RV_CLKEN_##name##_ADDR) op CH32RV_CLKEN_##name##_MASK)
-#define ch32rv_clock_enable(name)  CH32RV_CLKEN_(name, |=)
+/* After a clock is turned on, the enable register is read back on H41x
+ * before anything else is written: the V5F runs at 400 MHz, four times the
+ * peripherals' 100 MHz bus, and a peripheral's first write right after its
+ * clock enable was lost - WWDG_CFGR kept its reset value (the counter stepped
+ * at PCLK1 / 4096, no window, no early-warning interrupt), and a pin's first
+ * drive after a reset went missing (2026-11-15). A read of the RCC register
+ * completes only after the enable has. */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
+#define CH32RV_CLKEN_SETTLE(addr) ((void)CH32RV_REG32(addr))
+#else
+#define CH32RV_CLKEN_SETTLE(addr) ((void)0)
+#endif
+#define ch32rv_clock_enable(name) \
+    (CH32RV_CLKEN_(name, |=), CH32RV_CLKEN_SETTLE(CH32RV_CLKEN_##name##_ADDR))
 #define ch32rv_clock_disable(name) CH32RV_CLKEN_(name, &= ~)
 static inline void ch32rv_clock_enable_at(uint32_t addr, uint32_t mask)
 {
     CH32RV_REG32(addr) |= mask;
+    CH32RV_CLKEN_SETTLE(addr);
 }
 static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 {

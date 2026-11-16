@@ -14,6 +14,11 @@ CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / 
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
+CH32RV.wwdgEnable(20000, 10000);         // 窓ウォッチドッグ: 前の餌から10〜20 msの間に餌
+CH32RV.wwdgFeed();
+CH32RV.setBackupRegister(0, 42);         // リセットをまたいで残る16ビットの語（RTCの系列）
+CH32RV.getBackupRegister(0);
+CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // RTCのアラーム。time()の秒かstruct tmで
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clock Source メニュー）
 CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
 CH32RV.getHeapSize();                    // ヒープの大きさと、malloc() がまだ渡せる量
@@ -48,6 +53,28 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
   ばらつきは数%。温度は校正していないので、系列によっては数十℃ずれます
   (V103はデータシートのV25が1.1〜1.6 Vと広い)。温度センサがあるのは
   V103・V20x・V205・V30x・V407/V467・L103/M103。M030は内部基準のデータが無く0を返します
+- **窓ウォッチドッグ（WWDG）** は全系列にあります。`wwdgEnable(timeoutUs, windowUs, earlyWarning)` で、前の
+  `wwdgFeed()` から `timeoutUs` のうちに餌が来なければリセット、窓を付けると `windowUs` より前の餌でもリセットします。
+  PCLK1 / 4096 / 1〜8 を 63 カウントまで数えるので、最長は短く（`wwdgMaxTimeoutUs()`。48 MHz で約 43 ms、8 MHz で
+  258 ms）、それを越えると `wwdgEnable()` は何も始めずに false を返します。両端とも 1 カウントの精度で、リセットが
+  タイムアウトより遅れることはなく、`windowUs` 以降の餌は必ず通ります。`earlyWarning` はリセットの 1 カウント前に
+  割込みの中で呼ばれます（そこで餌をやるか、理由を残す）。IWDG と同じく止められません。リセットの理由は
+  `CH32RV_RESET_WINDOW_WATCHDOG`（IWDG は `CH32RV_RESET_WATCHDOG`）で区別できます。休止は餌をやりません。ストップと
+  スタンバイではクロックが止まって待ちますが、休止の中の普通の WFI（RTC の系列で 1 秒未満、M030 で 150 ms 未満）は数えます
+- **バックアップの語**は、リセットとスタンバイをまたいで残る 16 ビットの語です。`backupRegisterCount()`、
+  `getBackupRegister(i)`、`setBackupRegister(i, v)`（STM32duino の名前、0 から）。BKP の DR5 以降で（DR1〜DR4 は
+  RTC の設定）、V103・V205・L103/M103 は 6 語、V20x・V30x・V4x7 は 6 か 38 語（DR42 があるかを石に聞く）。VBAT の電池が
+  あれば電源を切っても残ります。H41x と X305/X315 には BKP のデータレジスタが無く、起動で消さない RAM の 16 語
+  （チェック語つき）で代わります。リセットでは残り、電源を入れ直すと 0 に戻ります（`backupRegistersKeepPower()` が
+  false）。V003・V00x・M030・X033/X035 には無く、数は 0 です
+- **RTC のアラーム**（RTC の系列）。暦は arduino-esp32 と同じく POSIX（`time()`・`localtime_r()`・`mktime()`・
+  `settimeofday()`）です。`setAlarm(when, callback)` は `time()` の秒か、地方時の `struct tm` を取ります。コールバックは
+  アラームの割込みの中で 1 回、`when` のあと 1 秒以内に呼ばれます（RTC は秒で数える）。アラームは 1 つで、呼び直すと
+  置き換わり、`clearAlarm()` で消え、`getAlarm()` はまだ来ていない時刻（済めば 0）を返します。`settimeofday()` を
+  またいでも同じ時刻のままです。RTC の無い系列では false。この形にした理由: arduino-esp32 には RTC のアラームの API が
+  無く（暦は POSIX の時刻）、RTCZero の項目ごとの設定と一致のマスクは暦を持つ RTC 向けで、ここの RTC（32 ビットの秒の
+  カウンタと比較レジスタ 1 つ）には合いません。`time()` と同じ単位の絶対時刻は、そのレジスタそのままです。繰り返しは
+  コールバックの中で `setAlarm()` を 1 回呼びます
 - **`clockSource()`** が HSE を返すのは、Clock Source メニューで水晶を選び、その水晶が立ったときだけです。
   立たなければ同じ CPU Clock を HSI で作ります(`F_CPU` は同じで、精度は HSI のもの)
 - **`getUniqueId()`** は UNIID1 | UNIID2 << 32 です。UID の 96 ビットのうち、チップごとに違うのはこの 64 ビットだけです。
@@ -64,16 +91,17 @@ CH32RV.enableTimerWakeup(5 * 1000000ULL);  // 5秒後に起きる
 CH32RV.enablePinWakeup(PA1, LOW);          // または PA1 が LOW になったら（端子のモードは自分で）
 CH32RV.lightSleep();                       // 起きたら戻る。RAMと端子の状態は残る
 CH32RV.deepSleep();                        // 起きたら setup() から（ソフトで再起動）
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _UNDEFINED
+CH32RV.enableAlarmWakeup();                // または setAlarm() の時刻に（RTC の系列）
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _UNDEFINED
 CH32RV.timeDomain();                       // 測れない時間を飛ばすたびに増える
 ```
 
-- **対応は V003・V00x・X033/X035**（AWU で起こす）と **V20x・V205・V30x・L103/M103・H41x**（RTC のアラームで起こす。ストップで眠る。H41x のストップは両方のコアが入ったときだけ効くので、V5F がスケッチを動かす間 V3F はストップで待つ。V3F のビルドでは V5F を起こさない。レギュレータは通常のまま。H41x の端子での起床はまだ実機で確かめていない）。ほかの系列は `CH32RV_SLEEP_UNSUPPORTED` を返します。
-- **RTC の系列では `time()` が RTC になります。** LSI を測って 1 Hz にし、リセットとスタンバイをまたいで時刻が残ります（電源が切れると 1970 から）。`settimeofday()`（SNTP の `configTime()` も）が RTC を合わせます。BKP の DR1〜DR4 はコアが使います（H41x には BKP のデータレジスタが無いので RAM に置く。リセットでは残るが、VBAT の電池で電源を切ったときは RTC も始めからになる）。
+- **V103 以外の全系列で眠ります**（V103 の休止は未対応のまま（`CH32RV_SLEEP_UNSUPPORTED`。2026-11-17: アラームの直しのあとも最初の lightSleep(200 ms) のストップから戻らず、プローブも NRST も効かなかった。アラーム・BKP・WWDG は V103 でも動く。TODO））。 V003・V00x・M030・X033/X035 は AWU で起こし、V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x は RTC のアラームで起こします（ストップで眠る。H41x のストップは両方のコアが入ったときだけ効くので、V5F がスケッチを動かす間 V3F はストップで待つ。V3F のビルドでは V5F を起こさない。H41x と X305/X315 のレギュレータは通常のまま。H41x の端子での起床はまだ実機で確かめていない）。M030 の AWU は LSI / 51000 で 1 カウント約 150 ms（分周の選択が無い）なので、それ未満の端数は普通の WFI で待ち、起動後最初の休止は LSI を測る分だけ最大 300 ms 長くなります。V103・V4x7・X305/X315・M030 はビルドのみです（2026-11-15）。V103 は以前、最初の休止から起きなかったので外していました。RTC が動き始めた最初の 1 秒に眠るとアラームが設定されない不具合（V203・V307・L103・V205 で同じ止まり方）を直す前のことで、それが原因と見ています。実機ではまずここを確かめます。`CH32RV_SLEEP_UNSUPPORTED` は、休止の無いまま後から足した系列のために残しています。
+- **RTC の系列では `time()` が RTC になります。** LSI を測って 1 Hz にし、リセットとスタンバイをまたいで時刻が残ります（電源が切れると 1970 から）。`settimeofday()`（SNTP の `configTime()` も）が RTC を合わせます。BKP の DR1〜DR4 はコアが使います（H41x・X305/X315 には BKP のデータレジスタが無いので RAM に置く。リセットでは残るが、VBAT の電池で電源を切ったときは RTC も始めからになる。X305/X315 にはバックアップ領域そのものが無く、RTC のクロックの設定は RTC の中にある）。
 - **自動では眠りません。** 呼んだときだけ。眠る前に `Serial` は送り終えます。
 - **`millis()` は休止の間も進んだことになります**（AWU で測った分を足す）。AWU の系列で端子で途中で起きたときは測れないので、足さずに `timeDomain()` を進めます（RTC の系列は RTC で測れる）。休止の長さの正確さ（2026-10-28、ベンチの1個ずつ）: V003 は PC の時計と0.1%以内、X035 は3%長く、V006 は10%短く眠った（起きている間に測った AWU の速さと、眠っている間の速さが違う）。
 - **WDT は休止の間は止まって見えます。** IWDG は止められないので、休止の直前に最長に延ばし、その半分ごとにコアが起きて餌をやります（ほかの処理は動かない）。起きたら `wdtEnable()` の設定に戻ります。
-- **`deepSleep()`** は、RTC の系列（スタンバイの無い H41x を除く）でタイマーだけで起こし WDT が無効なら本物のスタンバイ（RAM は消え、リセットから戻る）。それ以外は `lightSleep()` と同じ休止のあとで再起動します。起床の理由は再起動をまたいで `wakeupCause()` で読めます。
+- **`deepSleep()`** は、RTC の系列（スタンバイの無い H41x・X305/X315 を除く）でタイマーかアラームだけで起こし WDT が無効なら本物のスタンバイ（RAM は消え、リセットから戻る）。アラームが先に来たときは `wakeupCause()` が `CH32RV_WAKEUP_ALARM` を返し（バックアップ領域で渡す）、コールバックは呼ばれません（RAM が消えたため）。それ以外は `lightSleep()` と同じ休止のあとで再起動します。起床の理由は再起動をまたいで `wakeupCause()` で読めます。
 - 使わなければ0 B。タイマーの休止で約1.4 KB、端子での起床を足すと約0.65 KB増えます（V003）。
 
 設計と実測は [A の機能の全体設計](../../docs/peripheral-a-design.ja.md) の 4.3 と 5.1 にあります。

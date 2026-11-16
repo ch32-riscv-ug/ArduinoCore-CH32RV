@@ -285,6 +285,21 @@ scope = "series"
 not_on = ["CH32M030"]
 
 [[item]]
+id = "wwdg"                 # wwdgEnable / the window watchdog: too-late and too-early feeds, the reset reason, EWI
+test = "system::test_window_watchdog"
+scope = "series"
+
+[[item]]
+id = "bkp"                  # the backup words across CH32RV.restart(); n/a where the DUT has none (no RTC domain)
+test = "system::test_backup_registers"
+scope = "series"
+
+[[item]]
+id = "rtc-alarm"            # setAlarm's callback and enableAlarmWakeup (light and deep); n/a where setAlarm refuses
+test = "system::test_rtc_alarm"
+scope = "series"
+
+[[item]]
 id = "selfcheck-time-rate"  # millis() / micros() against the host's clock
 test = "selfcheck::test_time_rate"
 scope = "series"
@@ -387,6 +402,24 @@ kind = "self"
 [[item]]
 id = "selfsys-rtc"          # the RTC clock across a wait
 test = "selfsys::test_rtc"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfsys-wwdg"         # the window watchdog's resets, as the DUT tells them
+test = "selfsys::test_window_watchdog"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfsys-bkp"          # the backup words across CH32RV.restart()
+test = "selfsys::test_backup_registers"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfsys-rtc-alarm"    # the RTC alarm's callback and wake, timed by the DUT
+test = "selfsys::test_rtc_alarm"
 scope = "series"
 kind = "self"
 

@@ -19,7 +19,20 @@
     the timer after 200 ms (the next boot says CH32RV_WAKEUP_TIMER; the pin's high time is judged only where deepSleep()
     is a light sleep and a restart - a real standby lets the pads go and its RTC alarm counts whole seconds). A family that cannot sleep answers
     CH32RV_SLEEP_UNSUPPORTED, and test_sleep is skipped there (the answer recorded); a family whose wdtEnable() refuses
-    skips test_watchdog the same way."""
+    skips test_watchdog the same way.
+- system.window-watchdog (test_window_watchdog, the same two lines and capture): wwdgEnable(T, T / 2) with
+  T = min(wwdgMaxTimeoutUs(), 40 ms) - the DUT's own ceiling, asked of it - fed every 3T/4 for 300 ms inside the
+  window, then the timing line goes high at the last feed and (late) nothing feeds it, or (early) one more feed
+  comes T/8 after it, before the window opens. Either way the next boot says CH32RV_RESET_WINDOW_WATCHDOG (never
+  the IWDG's), the early-warning callback ran once before the late reset and never before the early one, and the
+  high time is T to one count (a count is at most wwdgMaxTimeoutUs() / 63; the reset never comes after T) or T/8.
+- system.backup-registers (test_backup_registers, no lines): every backup word written with a pattern, then
+  CH32RV.restart(): the next boot reads all of them back. n/a where backupRegisterCount() is 0 (no RTC domain).
+- system.rtc-alarm (test_rtc_alarm, the same two lines and capture): setAlarm(time() + 2 s) with a callback that lets
+  the timing line low (high 1-3 s: the alarm is the RTC's whole second at or after the time asked, getAlarm() 0
+  after it); lightSleep() with enableAlarmWakeup() (CH32RV_WAKEUP_ALARM, the same high time, millis() across it
+  within 20 % of it); deepSleep() the same (the next boot says CH32RV_WAKEUP_ALARM; its high time judged only where
+  it is a light sleep and a restart, as for the timer). n/a where setAlarm() refuses (no RTC)."""
 import json
 import pathlib
 import secrets
@@ -34,8 +47,8 @@ from bench_lines import gpio_lines
 import ws_capture
 
 # CH32RVResetReason, CH32RVWakeupCause, CH32RVSleepResult (CH32RVSystem.h)
-RESET_POWERON, RESET_EXTERNAL, RESET_SOFTWARE, RESET_WATCHDOG = 1, 2, 3, 4
-WAKEUP_TIMER, WAKEUP_PIN = 1, 2
+RESET_POWERON, RESET_EXTERNAL, RESET_SOFTWARE, RESET_WATCHDOG, RESET_WINDOW_WATCHDOG = 1, 2, 3, 4, 5
+WAKEUP_TIMER, WAKEUP_PIN, WAKEUP_ALARM = 1, 2, 3
 SLEEP_OK, SLEEP_UNSUPPORTED = 0, 2
 
 
@@ -69,6 +82,16 @@ def expect(dut, wait, pattern, timeout=5.0):
             wait(0.05)
 
 
+def wwdg_tick_us(t_us, max_us):
+    """The count the core chose for a timeout: the finest prescaler whose 63 counts hold it (max_us is 63 at /8)."""
+    tick = max_us / 63
+    for b in range(4):
+        tb = tick / 2 ** (3 - b)
+        if t_us / tb <= 63:
+            return tb
+    return tick
+
+
 def test_reset_reasons(dut, oep_host, record_property):
     from oep_client import core
     from oep_client.fixture import Gpio
@@ -98,6 +121,34 @@ def test_reset_reasons(dut, oep_host, record_property):
 
 def test_watchdog(dut, oep_host, ws_run, record_property):
     timed(dut, oep_host, ws_run, record_property, "watchdog")
+
+
+def test_window_watchdog(dut, oep_host, ws_run, record_property):
+    timed(dut, oep_host, ws_run, record_property, "wwdg")
+
+
+def test_backup_registers(dut, record_property):
+    case = settings(__file__)
+    boot(dut, case)
+    seed = secrets.randbelow(0x10000)
+    dut.write(f"bkpw {seed}\n")
+    m = expect(dut, time.sleep, rb"BKPW (\d+) (\d)")
+    count, keeps = int(m.group(1)), m.group(2) == b"1"
+    if count == 0:
+        pytest.skip("n/a: backupRegisterCount() is 0 on this family (no RTC domain)")
+    dut.write("restart\n")
+    time.sleep(0.3)
+    reason = boot(dut, case)[0]
+    dut.write(f"bkpr {seed}\n")
+    m = expect(dut, time.sleep, rb"BKPR (\d+) (\d+)")
+    same = int(m.group(2))
+    record_property("backup", json.dumps(dict(count=count, keeps_power=keeps, same=same, reason=reason)))
+    assert reason == RESET_SOFTWARE, f"after CH32RV.restart() resetReason() is {reason}"
+    assert same == count, f"{same} of {count} backup words survived CH32RV.restart()"
+
+
+def test_rtc_alarm(dut, oep_host, ws_run, record_property):
+    timed(dut, oep_host, ws_run, record_property, "alarm")
 
 
 def test_sleep(dut, oep_host, ws_run, record_property):
@@ -135,6 +186,10 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(1, top):
             if part == "watchdog":
                 watchdog(wait, idle)
+            elif part == "wwdg":
+                wwdg(wait, idle)
+            elif part == "alarm":
+                alarm(wait, idle)
             else:
                 sleep(wait, idle)
 
@@ -158,6 +213,90 @@ def timed(dut, oep_host, ws_run, record_property, part):
                     wrong.append(f"{name}: the next boot's resetReason() is {reason}")
                 lo, hi = (0.93, 1.03) if tight else (0.4, 1.7)
                 expect_high(name, ms / 1000 * lo, ms / 1000 * hi)
+
+    def wwdg(wait, idle):
+        for mode in ("late", "early"):
+            name = f"wwdg {mode}"
+            with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+                command = f"wwdg {mode} {timing['pin']}"
+                ws_run.command(command)
+                dut.write(command + "\n")
+                m = expect(dut, wait, rb"WWDG (\d+) (\d+) (\d+)")
+                t_us, w_us, max_us = (int(x) for x in m.groups())
+                try:
+                    dut.expect(rb"WWDG REFUSED\r?\n", timeout=0.3)
+                    facts[name] = "wwdgEnable() refused"
+                    wrong.append(f"{name}: wwdgEnable({t_us}, {w_us}) refused (ceiling {max_us} us)")
+                    continue
+                except pexpect.TIMEOUT:
+                    pass
+                wait(0.3 + t_us / 1e6 + 0.3)
+                reason, _ = boot(dut, case, wait)
+                dut.write("ewi\n")
+                ewi, span, steps = (int(x) for x in expect(dut, wait, rb"EWI (\d+) (\d+) (\d+)").groups())
+                ws_run.reply(f"reset reason {reason} early warnings {ewi} counter {steps} steps in {span} us")
+                facts[name] = dict(timeout_us=t_us, window_us=w_us, max_us=max_us, reason=reason, ewi=ewi,
+                                   step_us=round(span / steps, 1) if steps else None)
+                # The counter's own rate against the clock the core computed the timeout from.
+                want_step = wwdg_tick_us(t_us, max_us)
+                if not steps or abs(span / steps / want_step - 1) > 0.15:
+                    wrong.append(f"{name}: the counter stepped {steps} times in {span} us, {want_step:.1f} us a step computed")
+                if reason != RESET_WINDOW_WATCHDOG:
+                    wrong.append(f"{name}: the next boot's resetReason() is {reason}")
+                if ewi != (1 if mode == "late" else 0):
+                    wrong.append(f"{name}: the early-warning callback ran {ewi} times")
+                tick = max_us / 63 / 1e6          # a count at the slowest prescaler: the coarsest it can be
+                if mode == "late":
+                    expect_high(name, t_us / 1e6 - 2 * tick - 0.0003, t_us / 1e6 + 0.0005)
+                else:
+                    expect_high(name, t_us / 8e6 * 0.9 - 0.0001, t_us / 8e6 * 1.1 + 0.0005)
+
+    def alarm(wait, idle):
+        name = "alarm callback 2 s"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"alarm 2 {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            if expect(dut, wait, rb"ALARM (\d)").group(1) == b"0":
+                facts["alarm"] = "unsupported"
+                return
+            m = expect(dut, wait, rb"ALARM DONE (\d+) (-?\d+)", timeout=8)
+            ws_run.reply(m.group(0).decode())
+            took, after = int(m.group(1)), int(m.group(2))
+            facts[name] = [took, after]
+            if not 950 <= took <= 3100:
+                wrong.append(f"{name}: the callback came {took} ms after setAlarm(time() + 2)")
+            if after != 0:
+                wrong.append(f"{name}: getAlarm() {after} after the alarm ran")
+            expect_high(name, 0.95, 3.1)
+            wait(0.05)
+        name = "lightSleep alarm 2 s"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"asleep 2 {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            m = expect(dut, wait, rb"ASLEEP (\d+) (\d+) (\d+)", timeout=12)
+            ws_run.reply(m.group(0).decode())
+            result, cause, slept = (int(x) for x in m.groups())
+            facts[name] = [result, cause, slept]
+            if (result, cause) != (SLEEP_OK, WAKEUP_ALARM):
+                wrong.append(f"{name}: lightSleep() {result}, wakeupCause() {cause}")
+            expect_high(name, 0.95, 3.1)
+            wait(0.05)
+        name = "deepSleep alarm 2 s"
+        with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
+            command = f"adeep 2 {timing['pin']}"
+            ws_run.command(command)
+            dut.write(command + "\n")
+            wait(3.5)
+            reason, cause = boot(dut, case, wait)
+            ws_run.reply(f"reset reason {reason} wakeup cause {cause}")
+            facts[name] = [reason, cause]
+            if cause != WAKEUP_ALARM:
+                wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
+            if reason != RESET_POWERON:
+                expect_high(name, 0.95, 3.1)
+            wait(0.05)
 
     def sleep(wait, idle):
         name = "lightSleep timer 200 ms"
@@ -225,13 +364,15 @@ def timed(dut, oep_host, ws_run, record_property, part):
             _ok, got, _why = check_pulses(seg["capture"], want[section])
             widths[section] = got.get("widths_s", [])
     record_property("high_s", json.dumps({k: [round(w, 4) for w in v] for k, v in widths.items()}))
-    section = "lightSleep timer 200 ms"
-    if len(widths.get(section, [])) == 1 and isinstance(facts.get(section), list):
-        high, slept = widths[section][0], facts[section][2] / 1000
-        if abs(slept / high - 1) > 0.2:
-            wrong.append(f"{section}: millis() moved {slept:.3f} s across a {high:.3f} s sleep")
+    for section in ("lightSleep timer 200 ms", "lightSleep alarm 2 s"):
+        if len(widths.get(section, [])) == 1 and isinstance(facts.get(section), list):
+            high, slept = widths[section][0], facts[section][2] / 1000
+            if abs(slept / high - 1) > 0.2:
+                wrong.append(f"{section}: millis() moved {slept:.3f} s across a {high:.3f} s sleep")
     assert not wrong, " | ".join(wrong)
     if facts.get("sleep") == "unsupported":
         pytest.skip("n/a: lightSleep() answers CH32RV_SLEEP_UNSUPPORTED on this family")
     if part == "watchdog" and all(v == "wdtEnable() refused" for v in facts.values()):
         pytest.skip("n/a: wdtEnable() refuses on this family")
+    if part == "alarm" and facts.get("alarm") == "unsupported":
+        pytest.skip("n/a: setAlarm() refuses on this family (no RTC)")

@@ -2,9 +2,10 @@
  * CH32RV.lightSleep() / deepSleep() (libraries/CH32RV). docs/peripheral-a-
  * design.ja.md 4.3 and 5.1 hold the rules and the measurements.
  *
- *   - The mode is the deepest one that keeps RAM: V003 / V00x "standby" (they
- *     have no stop), X035 standby (PDDS; its stop resumes as well). Families
- *     not listed here say so through ch32rv_power_supported().
+ *   - The mode is the deepest one that keeps RAM: V003 / V00x and M030
+ *     "standby" (RAM kept, resumes), X035 standby (PDDS; its stop resumes as
+ *     well), stop on the RTC families. Every family sleeps now
+ *     (ch32rv_power_supported()).
  *   - Wake sources: the AWU (a timer: LSI on V00x, measured against the
  *     system clock once per boot; HSI / 1024 on X035) and EXTI lines set up
  *     by ch32rv_exti_configure() (pins).
@@ -26,6 +27,7 @@ extern "C" {
 typedef enum {
     CH32RV_POWER_WOKE_TIMER = 1,
     CH32RV_POWER_WOKE_PIN = 2,
+    CH32RV_POWER_WOKE_ALARM = 3,    /* the sketch's RTC alarm (enableAlarmWakeup()) */
 } CH32RVPowerWake;
 
 /* Bumped by every wake whose sleep length is not known: millis() then left
@@ -42,6 +44,7 @@ int ch32rv_power_supported(void);
 struct ch32rv_power_wake {
     uint32_t timer_ms;
     uint8_t pins;
+    uint8_t alarm;                  /* the sketch's RTC alarm wakes it too */
     int16_t pin[4];
     uint8_t level[4];
 };
@@ -51,14 +54,18 @@ extern struct ch32rv_power_wake ch32rv_power_wake;
  * (yet) or the pin has no EXTI line / four are taken. */
 int ch32rv_power_set_timer(uint64_t us);
 int ch32rv_power_add_pin(int pin, int level);
+/* The sketch's RTC alarm (ch32rv_rtc_user_alarm()) as a wake source; 0 where
+ * the family wakes on the AWU (no RTC). */
+int ch32rv_power_set_alarm(void);
 void ch32rv_power_clear(void);
 
 /* lightSleep(): 0 slept and woke, 1 nothing to wake on, 2 not on this
  * family. A pin already at its level is a wake without sleeping. */
 int ch32rv_power_sleep(uint32_t wdt_slice_us);
 
-/* deepSleep() on the RTC families: standby when it is woken by the timer
- * alone (pins other than WKUP cannot wake it). Returns only if it cannot. */
+/* deepSleep() on the RTC families: standby when it is woken by the timer or
+ * the alarm alone (pins other than WKUP cannot wake it). Returns only if it
+ * cannot. */
 int ch32rv_power_can_standby(void);
 void ch32rv_power_standby(void);
 

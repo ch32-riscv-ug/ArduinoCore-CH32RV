@@ -177,7 +177,7 @@ STATUS = {
     "RCC (クロック)": ("一部実装", "F_CPU",
         "HSI(とHSI由来PLL)。ビルド時にCPU Clockのメニューで選ぶ(項目名に使えるものを書く。取得は`getCpuFrequencyMhz()`/`getApbFrequency()`、実行中に変えるAPIは無い)。既定はV103 72 MHz、V20x/V30x 96 MHz、X033/X035 48 MHz、V00x/M007 24 MHz、L103/M103 8 MHz、M030 72 MHz・V205 160 MHz(実機で確認してEVTの既定に。L103/M103のPLLの項目は未確認)。X315は20 MHz(240 MHzも選べる。HSIからUSBHS PLL、EVTの手順の順に書く。X315MCU6で実機確認)。メニューの無いもの: X305 20 MHz、H415/H416/H417 100 MHz(V3F。SYSCLK は HSI×16 の 400 MHz、V5F は 400 MHz で停止のまま)。HSEは未実装(USB HSとH417のUSB SSのみHSEを使う)"),
     "PWR (低消費電力)": ("一部実装", "CH32RV.lightSleep / deepSleep",
-        "V003・V00x・X033/X035はAWU、V20x・V205・V30x・L103/M103はRTCのアラームで起こす。RAMを残す深い休止(V00x・X035のスタンバイ、RTCの系列のストップ)、タイマーと端子(EXTI)で起床、millis()は測った分を足す(RTCの系列は端子での起床も測れる)、WDTは休止中は止まって見える(延ばして間で餌)、deepSleep()はRTCの系列でタイマーだけ・WDTなしなら本物のスタンバイ、ほかは休止のあと再起動。V103・M030・X315・V4x7・H41xは未対応。設計と実測はdocs/peripheral-a-design.ja.md 5.1"),
+        "V103以外の11 familyで眠る(V103は最初のlightSleepから戻らず未対応のまま、2026-11-17、TODO)。V003・V00x・M030・X033/X035はAWU、V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41xはRTCのアラームで起こす。RAMを残す深い休止(V00x・M030・X035のスタンバイ、RTCの系列のストップ。H41x・X305/X315はスタンバイが無い)、タイマー・端子(EXTI)・RTCのアラーム(`enableAlarmWakeup()`)で起床、millis()は測った分を足す(RTCの系列は端子での起床も測れる)、IWDGは休止中は止まって見える(延ばして間で餌)、deepSleep()はスタンバイのあるRTCの系列でタイマーかアラームだけ・WDTなしなら本物のスタンバイ、ほかは休止のあと再起動。M030のAWUは約150 ms単位で、端数は普通のWFIで待つ。V103・V4x7・X305/X315・M030はビルドのみ(2026-11-15、実機未確認。V103は以前最初の休止から起きなかった)。設計と実測はdocs/peripheral-a-design.ja.md 5.1"),
     "FLASH (自己書き換え)": ("実装済", "ch32rv_flash.h",
                             "全系列で同じ関数(消す・書く・消して書く、範囲と1単位)とCH32RV_FLASH_STORE(末尾の確保)。"
                             "上級者向け。推奨は外部のSD・EEPROM。EEPROM.hは無い。例はFlashSettings・FlashSettingsTwoBanks。"
@@ -203,11 +203,12 @@ STATUS = {
         "Arduino APIには露出しない。CH32RVLogicCapture(全系列、実機はH41xのみ)、CH32RVHsAdc(H41x)、CH32RVAdcStream(ADC1の連続取り込み。全系列、V4x7はDMA1のチャネル12、H41xはDMAMUXでDMA1のチャネル1。実機はX035/V307/V103/V205/V407/X315/H417)が使う"),
     "IWDG": ("実装済", "`CH32RV.wdtEnable/wdtFeed`",
              "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
-    "WWDG": ("未実装", "-", ""),
-    "RTC": ("一部実装", "time() / settimeofday()",
-        "V20x・V205・V30x・L103/M103: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。休止のアラームにも使う。V20x・V205・V307・L103で実機確認(2026-10-28)。V103は同じRTCだが休止から起きなかったので外している。LSEは未対応。H41x・V4x7・X315は未実装"),
-    "BKP (バックアップレジスタ)": ("一部実装", "-",
-        "RTCの系列でDR1〜DR4をコアが使う(RTCの印、分周、settimeofday()のずれ)。DR5以降はスケッチが直接使える(APIは無い)"),
+    "WWDG": ("実装済", "`CH32RV.wwdgEnable/wwdgFeed`",
+        "PCLK1/4096/1〜8で数える7ビットのカウンタ。タイムアウト(最大`wwdgMaxTimeoutUs()`、48 MHzで約43 ms)・窓(早すぎる餌でリセット)・早期警告の割込み(コールバック)。`resetReason()`はCH32RV_RESET_WINDOW_WATCHDOGでIWDGと区別する。止められない。全12 familyでビルドのみ(2026-11-15、実機未確認)"),
+    "RTC": ("一部実装", "time() / settimeofday() / `CH32RV.setAlarm`",
+        "V103・V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)を読み書きし、リセットとスタンバイをまたいで時刻が残る。暦はPOSIX(localtime_r/mktime)。アラームは`CH32RV.setAlarm(time_t か struct tm, callback)`(割込みで1回、1秒単位)と`enableAlarmWakeup()`(休止を終える)。休止のアラームと同じレジスタを分け合う。V20x・V205・V307・L103で時刻を実機確認(2026-10-28)、H41xも動く。V103・V4x7・X305/X315とアラームのAPIはビルドのみ(2026-11-15)。X305/X315はBDCTLRが無くRTCEN/RTCSELがRTC_CTLRLにあり、アラームはEXTIの20番。LSE・校正は未対応"),
+    "BKP (バックアップレジスタ)": ("実装済", "`CH32RV.getBackupRegister/setBackupRegister/backupRegisterCount`",
+        "16ビットの語をindex(0から)で読み書き。DR1〜DR4はコアのもの(RTCの印、分周、settimeofday()のずれ)なので、DR5以降を出す: V103・V205・L103/M103は6語、V20x・V30x・V4x7は6か38語(DR42が残るかを石に聞く)。VBATがあれば電源断でも残る。H41x・X305/X315はBKPのデータレジスタが無く、.noinitのRAMの16語で代わる(チェック語つき。リセットでは残り、電源を切ると0に戻る。`backupRegistersKeepPower()`がfalse)。ビルドのみ(2026-11-15)"),
     "CRC": ("未実装", "-", ""),
     "ECDC (AES/SM4)": ("未実装", "-", "AES-128/192/256とSM4、ECBとCTRのみ。TLS(mbedTLS)はsoftwareで計算している"),
     "OPA/コンパレータ": ("未実装", "-", "CH32固有"),
@@ -304,7 +305,7 @@ STATUS = {
     "RAM実行": ("実装済", "CH32RV_RAMFUNC",
         "関数に付けるとRAMに置く(.highcode、起動時に.dataと一緒に写す)。その大きさ分のRAMを使う。H41xは全部RAMで動く"),
     "AWU (自動起床)": ("実装済", "CH32RV.enableTimerWakeup",
-        "休止からのタイマー起床に使う(V00xはPWRの中、X035は別のブロック)。V00xのAWUはLSIで、起動後最初の休止で速さを測る"),
+        "休止からのタイマー起床に使う(V003・V00x・M030はPWRの中、X035は別のブロック)。LSIで動くもの(V00x・M030)は起動後最初の休止で速さを測る。M030は分周が51000固定で約150 ms単位"),
     "LVDS": ("未実装", "-",
         "V205。用途は未確認(ch32-device-dataに問い合わせ中)"),
     "オプションバイト": ("未実装", "-",
@@ -345,6 +346,10 @@ CELLS = {
     "ADC 連続・DMA・トリガ": {ALL: "◐"},
     # ch32-device-data lists a DAC block for V103, but no V103 part has one (parts.csv; asked upstream).
     "DAC": {"V103": ""},
+    # No BKP data registers there: a .noinit record stands in (STATUS's note).
+    "BKP (バックアップレジスタ)": {"X305/X315": "◐", "H415/H416/H417": "◐"},
+    # The AWU of V003 / V00x / M030 sits in PWR, which the scan cannot see.
+    "AWU (自動起床)": {"V003": "●", "V00x/M007": "●", "M030": "●", "X033/X035": "●"},
     "FPU": {"V303/305/307/317": "●", "X305/X315": "●", "H415/H416/H417": "●"},
     "SDI print (debug出力)": {ALL: "●"},
     "RTT (debug出力)": {ALL: "●"},

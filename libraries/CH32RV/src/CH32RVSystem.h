@@ -46,10 +46,62 @@
  *  - The watchdog looks paused while asleep: it cannot be stopped, so it is
  *    stretched to its longest and fed between sleep periods - nothing else
  *    runs - and put back as wdtEnable() set it on waking.
- *  - V003, V00x (V002-V007, M007) and X033 / X035 wake on the AWU; V20x,
- *    V205, V30x and L103 / M103 on the RTC alarm (they sleep in stop,
- *    and millis() is timed by the RTC, a pin wake included). Elsewhere these
- *    return CH32RV_SLEEP_UNSUPPORTED.
+ *  - V003, V00x (V002-V007, M007), M030 and X033 / X035 wake on the AWU;
+ *    V103, V20x, V205, V30x, V4x7, L103 / M103, X305 / X315 and H41x on the
+ *    RTC alarm (they sleep in stop, and millis() is timed by the RTC, a pin
+ *    wake included). M030's AWU counts about 150 ms at a time: what is left
+ *    under that is slept in a plain WFI. CH32RV_SLEEP_UNSUPPORTED remains for
+ *    a family added later without its sleep.
+ *
+ * The window watchdog (WWDG), beside the independent one:
+ *
+ *     CH32RV.wwdgEnable(20000, 10000);      // feed between 10 and 20 ms after the last feed
+ *     CH32RV.wwdgFeed();
+ *
+ *  - It runs on PCLK1 / 4096 / 1..8: at most wwdgMaxTimeoutUs() - 63 counts at
+ *    the slowest prescaler, about 43 ms at 48 MHz, 258 ms at 8 MHz. Both
+ *    edges are exact to one count: the reset comes at most one count before
+ *    the timeout (never later), and a feed more than a count before the
+ *    window opens resets the chip (from windowUs on it is always allowed).
+ *  - Like the IWDG it cannot be stopped once started, and its early-warning
+ *    interrupt cannot be turned off. The callback runs in that interrupt one
+ *    count before the reset: feed there, or record why (the reset follows).
+ *  - resetReason() tells its reset (CH32RV_RESET_WINDOW_WATCHDOG) from the
+ *    IWDG's (CH32RV_RESET_WATCHDOG).
+ *  - Sleeps do not feed it. Its clock stops in stop / standby, so it waits
+ *    there; the parts of a sleep spent in a plain WFI (under a second on the
+ *    RTC families, under 150 ms on M030) count, and reset the chip if it was
+ *    not fed just before.
+ *
+ * The RTC (V103, V20x, V205, V30x, V4x7, L103 / M103, X305 / X315, H41x): the
+ * calendar is POSIX's - time(), localtime_r(), mktime(), settimeofday() - as
+ * on arduino-esp32. One alarm, in the same wall time:
+ *
+ *     CH32RV.setAlarm(time(nullptr) + 60, onAlarm);   // or a struct tm (local time)
+ *     CH32RV.enableAlarmWakeup();                      // and let it end a sleep
+ *
+ *  - The callback runs in the RTC alarm's interrupt, once, within a second
+ *    after `when` (the RTC counts whole seconds); setAlarm() again for the
+ *    next. An alarm already due runs at once. settimeofday() keeps it at its
+ *    wall time.
+ *  - enableAlarmWakeup(): lightSleep() / deepSleep() end at the alarm, and
+ *    wakeupCause() says CH32RV_WAKEUP_ALARM when it came before the timer.
+ *    deepSleep() woken by the alarm alone is a real standby (not on X305 /
+ *    X315 and H41x, which have none); the callback does not run after a
+ *    standby (RAM is lost) - wakeupCause() says why it started.
+ *
+ * Backup registers: 16-bit words that survive a reset and standby.
+ *
+ *     CH32RV.setBackupRegister(0, bootCount + 1);
+ *     CH32RV.getBackupRegister(0);
+ *
+ *  - BKP DR5 and up (DR1-DR4 are the RTC's): 6 words on V103, V205 and
+ *    L103 / M103, 6 or 38 on V20x, V30x and V4x7 (read from the part). They
+ *    keep VBAT's power: a power cycle with a battery on VBAT keeps them.
+ *  - H41x and X305 / X315 have no BKP data registers: 16 words of .noinit RAM
+ *    with a check word instead - kept through every reset, lost with power
+ *    (backupRegistersKeepPower() says false), zeroed after a power-up.
+ *  - None on V003, V00x, M030 and X033 / X035: the count is 0.
  */
 #pragma once
 
@@ -60,6 +112,7 @@
 #include "internal/ch32rv_v3f.h"
 
 #include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
+#include <time.h>
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
 typedef enum {
@@ -84,6 +137,7 @@ typedef enum {
     CH32RV_WAKEUP_UNDEFINED,         /* not woken from sleep (a reset)      */
     CH32RV_WAKEUP_TIMER,
     CH32RV_WAKEUP_PIN,
+    CH32RV_WAKEUP_ALARM,             /* the RTC alarm (enableAlarmWakeup()) */
 } CH32RVWakeupCause;
 
 /* Where SYSCLK comes from. */
@@ -114,6 +168,36 @@ public:
     bool wdtEnable(uint32_t ms);
     void wdtFeed();
 
+    /* Start the window watchdog: reset unless wwdgFeed() comes within
+     * timeoutUs of the last feed, and (windowUs > 0) not before windowUs
+     * after it - to one count, see above. earlyWarning runs in the interrupt
+     * one count before a reset. False (nothing started) when the timeout is
+     * beyond wwdgMaxTimeoutUs() or under one count at the fastest prescaler,
+     * or no count is left between the window and the timeout. Every family
+     * has the block. Cannot be undone. */
+    bool wwdgEnable(uint32_t timeoutUs, uint32_t windowUs = 0, void (*earlyWarning)() = nullptr);
+    void wwdgFeed();
+    /* The longest timeout at this build's PCLK1. */
+    uint32_t wwdgMaxTimeoutUs();
+
+    /* The sketch's backup words (above): how many, and read / write by index
+     * from 0. False / 0 past the count and where there are none. */
+    uint8_t backupRegisterCount();
+    uint16_t getBackupRegister(uint8_t index);
+    bool setBackupRegister(uint8_t index, uint16_t value);
+    /* True where they are BKP registers (VBAT keeps them); false where they
+     * are RAM (H41x, X305 / X315) or absent. */
+    bool backupRegistersKeepPower();
+
+    /* The RTC alarm at `when` (time()'s seconds), or a local time; callback
+     * may be nullptr. Replaces the one set before. False where there is no
+     * RTC (V003, V00x, M030, X033 / X035) or `when` is not a time. */
+    bool setAlarm(time_t when, void (*callback)() = nullptr);
+    bool setAlarm(const struct tm &local, void (*callback)() = nullptr);
+    void clearAlarm();
+    /* The alarm still to come, or 0 (none, or it has run). */
+    time_t getAlarm();
+
     /* HSE when the Clock Source menu chose the crystal and it started; HSI
      * otherwise - also when the crystal was chosen and did not start, in
      * which case the same CPU Clock runs off HSI (F_CPU is unchanged, its
@@ -128,6 +212,9 @@ public:
      * next sleep return at once. attachInterrupt() on the same pin keeps
      * working. */
     bool enablePinWakeup(int pin, int level);
+    /* setAlarm()'s alarm ends a sleep too (CH32RV_WAKEUP_ALARM). False where
+     * there is no RTC. */
+    bool enableAlarmWakeup();
     void disableWakeup();
     CH32RVSleepResult lightSleep();
     /* Returns only when it cannot sleep: otherwise the chip restarts. */

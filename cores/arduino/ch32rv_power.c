@@ -47,6 +47,26 @@ static volatile struct {
 #define AWU_LINE  27u
 #define AWU_ON_LSI 0
 #define AWU_NOMINAL_HZ (48000000u / 1024u)
+#elif defined(CH32RV_SERIES_CH32M030)
+/* In PWR as on V00x, but with no prescaler register: LSI (340 kHz nominal)
+ * divided by 51000, so one count is about 150 ms, and a 4-bit window of 1-16
+ * counts (written less one; the reference manual's 2.3.5 and 2.4.3). EXTI
+ * line 17. What is left under one count is slept in a plain WFI, where
+ * SysTick runs. Standby keeps RAM and resumes here: "the only difference
+ * from stop is the regulator's low-power mode" (2.3.4), and the EVT's
+ * Standby_Mode returns from it. */
+#define POWER_AWU 1
+#define AWU_CSR   CH32RV_REG32(0x40007008u)
+#define AWU_WR    CH32RV_REG32(0x4000700Cu)
+#define AWU_LINE  17u
+#define AWU_ON_LSI 1
+#define AWU_NOMINAL_HZ 340000u
+#define AWU_FIXED_DIV 51000u
+#define AWU_WINDOW_MAX 16u
+#endif
+
+#ifndef AWU_WINDOW_MAX
+#define AWU_WINDOW_MAX 63u
 #endif
 
 #if defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
@@ -54,13 +74,20 @@ static volatile struct {
 #else
 #define POWER_H41X 0
 #endif
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define POWER_X3X5 1          /* stop and sleep only: no PDDS, PWR_CSR holds only PVDO */
+#else
+#define POWER_X3X5 0
+#endif
+/* No standby that wakes through a reset: deepSleep() is a stop and a restart. */
+#define POWER_NO_STANDBY (POWER_H41X || POWER_X3X5)
 
 #if !defined(POWER_AWU) && defined(CH32RV_HAS_RTC)
 /* Stop (RAM kept, resumes) woken by the RTC alarm on EXTI line 17; standby
  * (RAM lost, wakes through a reset) for deepSleep(). V307 2026-10-28: the
  * PLL is gone on waking and SystemInit() brings it back. */
 #define POWER_RTC 1
-#define ALARM_LINE 17u
+#define ALARM_LINE CH32RV_RTC_ALARM_LINE      /* 17; 20 on X305 / X315 */
 #define PWR_CSR        CH32RV_REG32(0x40007004u)
 #define PWR_CTLR_LPDS  (1u << 0)
 #define PWR_CTLR_CWUF  (1u << 2)
@@ -103,8 +130,13 @@ static uint32_t awu_hz;
 static void awu_run(uint8_t field, uint8_t window)
 {
     AWU_CSR &= ~AWU_CSR_AWUEN;
+#ifdef AWU_FIXED_DIV
+    (void)field;
+    AWU_WR = (uint32_t)window - 1u;            /* the window is the value plus one */
+#else
     AWU_PSC = field;
     AWU_WR = window;
+#endif
     AWU_CSR |= AWU_CSR_AWUEN;                  /* the count starts again from 0 */
 }
 
@@ -121,7 +153,18 @@ static void awu_lines(void)
  * there a period was 21.5 ms, and the first lightSleep() of a boot slept
  * about 100 ms more than asked while it measured (200 ms took 317, CH32X035,
  * 2026-11-05). */
+#ifdef AWU_FIXED_DIV
+/* M030: one count (about 150 ms) is the shortest period, and one period after
+ * the first event is what is timed: the first sleep of a boot is up to about
+ * 300 ms longer while it measures. */
+#define AWU_CAL_WINDOW 1u
+#define AWU_CAL_PERIODS 1
+#define AWU_CAL_TIMEOUT_US 400000u
+#else
 #define AWU_CAL_WINDOW (AWU_NOMINAL_HZ / 2000u < 63u ? AWU_NOMINAL_HZ / 2000u : 63u)
+#define AWU_CAL_PERIODS 4
+#define AWU_CAL_TIMEOUT_US 50000u
+#endif
 
 /* The AWU's clock, once per boot: four periods of 16 x AWU_CAL_WINDOW ticks
  * (about 8 ms each) timed with micros(), between consecutive events, so the
@@ -138,10 +181,10 @@ static uint32_t awu_clock(void)
     awu_lines();
     awu_run(5, AWU_CAL_WINDOW);
     uint32_t t0 = 0;
-    for (int n = 0; n <= 4; n++) {
+    for (int n = 0; n <= AWU_CAL_PERIODS; n++) {
         const uint32_t start = micros();
         while (!(CH32RV_EXTI_INTFR & (1u << AWU_LINE))) {
-            if (micros() - start > 50000u) {
+            if (micros() - start > AWU_CAL_TIMEOUT_US) {
                 AWU_CSR &= ~AWU_CSR_AWUEN;
                 return AWU_NOMINAL_HZ;         /* no event: keep the nominal value */
             }
@@ -153,7 +196,13 @@ static uint32_t awu_clock(void)
     }
     const uint32_t us = micros() - t0;
     AWU_CSR &= ~AWU_CSR_AWUEN;
+#ifdef AWU_FIXED_DIV
+    /* 51000 ticks x 10^6 / us, split to stay in 32 bits: 51000 x 15625 is
+     * 7.97e8, and x 64 after the divide (a resolution of 64 Hz in 340 kHz). */
+    return AWU_FIXED_DIV * 15625u / us * 64u;
+#else
     return 4u * 16u * AWU_CAL_WINDOW * 1000000u / us;     /* at most 4.03e9: still 32 bits */
+#endif
 }
 
 /* AWU ticks to microseconds, in 32 bits (V003 has no 64-bit divide, and the
@@ -172,6 +221,19 @@ static uint32_t awu_period(uint32_t us, uint8_t *field, uint8_t *window)
 {
     const uint32_t hz8 = awu_hz >> 3;
     const uint32_t ticks = us / 1000u * hz8 / 125u + us % 1000u * hz8 / 125000u;
+#ifdef AWU_FIXED_DIV
+    /* 0: shorter than one count, which this AWU cannot do. */
+    uint32_t w = ticks / AWU_FIXED_DIV;
+    if (w == 0u) {
+        return 0;
+    }
+    if (w > AWU_WINDOW_MAX) {
+        w = AWU_WINDOW_MAX;
+    }
+    *field = 0;
+    *window = (uint8_t)w;
+    return awu_us(w * AWU_FIXED_DIV);
+#endif
     for (uint8_t f = 0; f < 16; f++) {
         if (f == 1) {
             continue;
@@ -191,11 +253,29 @@ static uint32_t awu_period(uint32_t us, uint8_t *field, uint8_t *window)
     return awu_us(63u * 61440u);
 }
 
+/* The longest AWU period. */
+static uint32_t awu_longest_us(void)
+{
+#ifdef AWU_FIXED_DIV
+    return awu_us(AWU_WINDOW_MAX * AWU_FIXED_DIV);
+#else
+    return awu_us(63u * 61440u);
+#endif
+}
+
 #endif
 
 int ch32rv_power_supported(void)
 {
-#if POWER_AWU || POWER_RTC
+#if defined(CH32RV_SERIES_CH32V103)
+    /* V103 does not come back from lightSleep()'s stop: with the alarm
+     * written as V103 counts it (2026-11-15) its alarm callback, setAlarm()
+     * and deepSleep()'s wake-up work, but the first lightSleep(200 ms) still
+     * never returns, the probe cannot attach while it sleeps and NRST does not
+     * bring it back (it came back by itself minutes later). Unsupported until
+     * that is found (TODO). */
+    return 0;
+#elif POWER_AWU || POWER_RTC
     return 1;
 #else
     return 0;
@@ -208,7 +288,7 @@ uint32_t ch32rv_power_awu_max_us(void)
     if (!awu_hz) {
         awu_hz = awu_clock();
     }
-    return awu_us(63u * 61440u);
+    return awu_longest_us();
 #else
     return 0;
 #endif
@@ -226,8 +306,10 @@ static void deep_wfi(void)
      * stop in mode 1 (LPDS clear) - mode 3's lower current is a TODO. */
 #if defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || defined(CH32RV_SERIES_CH32V205)
     PWR_CTLR &= ~(PWR_CTLR_PDDS | PWR_CTLR_LPDS);
-#elif POWER_H41X
-    /* H41x: no PDDS (its bit is reserved) and the regulator kept in normal
+#elif POWER_NO_STANDBY
+    /* X305 / X315: no PDDS either; LPDS left clear (its EVT lowers VDDK
+     * with PLAN first - a TODO, as on H41x).
+     * H41x: no PDDS (its bit is reserved) and the regulator kept in normal
      * mode: LPDS wants SYSCLK on HSI and VDDK lowered first (the EVT's
      * Stop_Mode_RTC_WakeUp). Stop takes effect only with both cores in it:
      * the V3F waits for work in it (crt0_ch32.S). */
@@ -249,14 +331,9 @@ static void deep_wfi(void)
 }
 
 #if POWER_RTC
-static volatile uint32_t alarm_events;
-
-CH32RV_INTERRUPT void RTCAlarm_IRQHandler(void)
-{
-    CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
-    CH32RV_REG16(0x40002804u) &= ~(1u << 1);   /* RTC CTLRL.ALRF */
-    alarm_events++;
-}
+/* The alarm's interrupt is ch32rv_rtc_alarm.c's: one register for the sleeps
+ * and the sketch's alarm. */
+#define alarm_events ch32rv_rtc_alarm_events
 
 /* (s, ms) + add ms. */
 static void rtc_add(uint32_t *s, uint32_t *ms, uint32_t add)
@@ -278,6 +355,23 @@ static uint32_t rtc_diff(uint32_t as, uint32_t ams, uint32_t bs, uint32_t bms)
 static int rtc_before(uint32_t as, uint32_t ams, uint32_t bs, uint32_t bms)
 {
     return as < bs || (as == bs && ams < bms);
+}
+
+/* Milliseconds from now until the counter reaches the sketch's alarm (0: it
+ * has; at most 2^32 - 1). The RTC started first: the alarm did that already. */
+static uint32_t alarm_ms(void)
+{
+    const uint32_t c = ch32rv_rtc_counter_for(ch32rv_rtc_user_alarm_at());
+    uint32_t s, m;
+    ch32rv_rtc_raw(&s, &m);
+    if (c <= s) {
+        return 0;
+    }
+    const uint32_t secs = c - s;
+    if (secs > 4294966u) {
+        return 0xFFFFFFFFu;
+    }
+    return secs * 1000u - m;
 }
 #endif
 
@@ -312,7 +406,8 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
     if (pin_lines) {
         ch32rv_exti_seen &= ~pin_lines;
     }
-    const uint32_t awu_max = awu_us(63u * 61440u);
+    const uint32_t awu_max = awu_longest_us();
+    uint32_t awake_ms = 0;                      /* slept in a plain WFI: millis() counted it */
 
     for (;;) {
         /* This period: what is left of the timer, no longer than the IWDG
@@ -333,6 +428,27 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
         if (want) {
             uint8_t field, window;
             period = awu_period(want, &field, &window);
+            if (!period) {
+                /* Under the AWU's shortest period (M030): a plain WFI, woken by
+                 * SysTick every millisecond, until the rest has passed. */
+                const uint32_t t0 = (uint32_t)millis();
+                const uint32_t rest = want / 1000u;
+                while ((uint32_t)millis() - t0 < rest && !(pin_lines && (ch32rv_exti_seen & pin_lines))) {
+                    __asm__ volatile ("wfi");
+                }
+                const uint32_t took = (uint32_t)millis() - t0;
+                known_ms += took;
+                awake_ms += took;
+                if (pin_lines && (ch32rv_exti_seen & pin_lines)) {
+                    woke = CH32RV_POWER_WOKE_PIN;
+                    break;
+                }
+                if (!timer_ms || known_ms + 1u >= timer_ms) {
+                    woke = CH32RV_POWER_WOKE_TIMER;
+                    break;
+                }
+                continue;
+            }
             awu_run(field, window);
         }
         const uint32_t events = awu_events;
@@ -362,7 +478,7 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
     }
     ch32rv_irq_disable(AWU_IRQN);
     CH32RV_EXTI_INTENR &= ~(1u << AWU_LINE);
-    ch32rv_millis_advance(known_ms);
+    ch32rv_millis_advance(known_ms - awake_ms);
     if (woke == CH32RV_POWER_WOKE_PIN) {
         ch32rv_time_domain++;                  /* part of a period went by unmeasured */
     }
@@ -392,6 +508,7 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
     CH32RV_EXTI_INTENR |= 1u << ALARM_LINE;
     CH32RV_EXTI_INTFR = 1u << ALARM_LINE;
     PFIC_IPRR(CH32RV_IRQN_RTCAlarm >> 5) = 1u << (CH32RV_IRQN_RTCAlarm & 31u);
+    ch32rv_rtc_alarm_in_sleep = 1;
     ch32rv_irq_enable(CH32RV_IRQN_RTCAlarm);
 
     uint32_t s0, m0, end_s = 0, end_ms = 0;
@@ -433,7 +550,9 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             __asm__ volatile ("wfi");
         } else {
             if (have_alarm) {
-                ch32rv_rtc_alarm(alarm);
+                ch32rv_rtc_alarm_arm(alarm);
+            } else {
+                ch32rv_rtc_alarm_restore();     /* only the sketch's alarm, if any */
             }
             const uint32_t events = alarm_events;
             uint32_t ss, sm;
@@ -459,6 +578,8 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
     }
     ch32rv_irq_disable(CH32RV_IRQN_RTCAlarm);
     CH32RV_EXTI_INTENR &= ~(1u << ALARM_LINE);
+    ch32rv_rtc_alarm_in_sleep = 0;
+    ch32rv_rtc_alarm_restore();                 /* the sketch's alarm back in the register */
     known_ms = (uint32_t)millis() - start_millis;
 #else
     (void)timer_ms;
@@ -497,6 +618,17 @@ void ch32rv_power_clear(void)
 {
     ch32rv_power_wake.timer_ms = 0;
     ch32rv_power_wake.pins = 0;
+    ch32rv_power_wake.alarm = 0;
+}
+
+int ch32rv_power_set_alarm(void)
+{
+#if POWER_RTC
+    ch32rv_power_wake.alarm = 1;
+    return 1;
+#else
+    return 0;
+#endif
 }
 
 int ch32rv_power_sleep(uint32_t wdt_slice_us)
@@ -505,7 +637,24 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
         return 2;
     }
     const struct ch32rv_power_wake *w = &ch32rv_power_wake;
-    if (!w->timer_ms && !w->pins) {
+    uint32_t timer_ms = w->timer_ms;
+    int alarm_first = 0;
+#if POWER_RTC
+    /* enableAlarmWakeup(): the sketch's alarm ends the sleep as a timer to
+     * it would, and wakeupCause() says which came first. */
+    if (w->alarm && ch32rv_rtc_user_alarm_at()) {
+        const uint32_t to = alarm_ms();
+        if (!to) {
+            ch32rv_wake_cause = CH32RV_POWER_WOKE_ALARM;     /* already there */
+            return 0;
+        }
+        if (!timer_ms || to <= timer_ms) {
+            timer_ms = to;
+            alarm_first = 1;
+        }
+    }
+#endif
+    if (!timer_ms && !w->pins) {
         return 1;
     }
     uint32_t lines = 0;
@@ -517,8 +666,14 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
         }
         lines |= 1u << CH32RV_PIN_BIT(CH32RV_PIN_RESOLVE(w->pin[i]));
     }
-    const int woke = ch32rv_power_light_sleep(w->timer_ms, lines, wdt_slice_us, 0);
-    ch32rv_wake_cause = (uint8_t)(woke ? woke : CH32RV_POWER_WOKE_TIMER);
+    int woke = ch32rv_power_light_sleep(timer_ms, lines, wdt_slice_us, 0);
+    if (!woke) {
+        woke = CH32RV_POWER_WOKE_TIMER;
+    }
+    if (woke == CH32RV_POWER_WOKE_TIMER && alarm_first) {
+        woke = CH32RV_POWER_WOKE_ALARM;
+    }
+    ch32rv_wake_cause = (uint8_t)woke;
     return 0;
 }
 
@@ -536,7 +691,7 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
         ch32rv_wake_cause = (uint8_t)wake_record.cause;
     }
     wake_record.magic = 0;
-#if POWER_RTC && !POWER_H41X
+#if POWER_RTC && !POWER_NO_STANDBY
     /* Out of standby (RAM was lost, so this is the only trace): it was
      * entered for a timer only (ch32rv_power_standby()). The PWR clock
      * first, or the flags read 0. */
@@ -547,8 +702,10 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
     const uint32_t flags = CH32RV_RCC_RSTSCKR & 0xFE000000u;
     /* SBF on V307; a V203 wakes with only WUF (2026-11-13), which is also
      * what its EVT's Standby_Mode checks. A real power-on clears both. */
-    if ((PWR_CSR & (PWR_CSR_SBF | PWR_CSR_WUF)) && flags == CH32RV_RST_POR) {
-        ch32rv_wake_cause = CH32RV_POWER_WOKE_TIMER;
+    /* V103 wakes with no reset flag at all (2026-11-15: resetReason() 0 after
+     * an alarm's standby); nothing else leaves none. */
+    if ((PWR_CSR & (PWR_CSR_SBF | PWR_CSR_WUF)) && (flags == CH32RV_RST_POR || flags == 0u)) {
+        ch32rv_wake_cause = ch32rv_rtc_take_alarm_standby() ? CH32RV_POWER_WOKE_ALARM : CH32RV_POWER_WOKE_TIMER;
         PWR_CTLR |= PWR_CTLR_CSBF | PWR_CTLR_CWUF;
     }
 #endif
@@ -556,8 +713,9 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
 
 int ch32rv_power_can_standby(void)
 {
-#if POWER_RTC && !POWER_H41X
-    return ch32rv_power_wake.timer_ms && !ch32rv_power_wake.pins;
+#if POWER_RTC && !POWER_NO_STANDBY
+    const int alarm = ch32rv_power_wake.alarm && ch32rv_rtc_user_alarm_at();
+    return (ch32rv_power_wake.timer_ms || alarm) && !ch32rv_power_wake.pins;
 #else
     return 0;
 #endif
@@ -565,7 +723,7 @@ int ch32rv_power_can_standby(void)
 
 void ch32rv_power_standby(void)
 {
-#if POWER_RTC && !POWER_H41X
+#if POWER_RTC && !POWER_NO_STANDBY
     ch32rv_rtc_begin();
     if (ch32rv_serial_sleep_prepare) {
         ch32rv_serial_sleep_prepare();
@@ -573,7 +731,19 @@ void ch32rv_power_standby(void)
     uint32_t s, m;
     ch32rv_rtc_raw(&s, &m);
     rtc_add(&s, &m, ch32rv_power_wake.timer_ms);
-    ch32rv_rtc_alarm(s + (m ? 1u : 0u));       /* the alarm is whole seconds: round up */
+    uint32_t end = s + (m ? 1u : 0u);          /* the alarm is whole seconds: round up */
+    /* The sketch's alarm, when it wakes and comes first: the next boot says
+     * so through the backup domain (RAM is lost). */
+    int by_alarm = 0;
+    if (ch32rv_power_wake.alarm && ch32rv_rtc_user_alarm_at()) {
+        const uint32_t c = ch32rv_rtc_counter_for(ch32rv_rtc_user_alarm_at());
+        if (!ch32rv_power_wake.timer_ms || c <= end) {
+            end = c;
+            by_alarm = 1;
+        }
+    }
+    ch32rv_rtc_mark_alarm_standby(by_alarm);
+    ch32rv_rtc_alarm(end);
     /* Only the alarm: standby loses RAM and every peripheral anyway, and a
      * line left on - a pin wakeup's falling edge (lightSleep() earlier) or an
      * attachInterrupt() - ended standby without the wake flags, so the next
@@ -584,7 +754,7 @@ void ch32rv_power_standby(void)
     CH32RV_EXTI_RTENR = 1u << ALARM_LINE;     /* the alarm's rising edge ends standby */
     CH32RV_EXTI_INTFR = 0xFFFFFFFFu;
     PWR_CTLR |= PWR_CTLR_CWUF;
-#if defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103)
+#if defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103)
     /* FLASH_LP [11:10] = 10 (flash low-power mode 1), as the EVT's
      * PWR_EnterSTANDBYMode() writes it. Left at its reset value 01 the RTC
      * alarm never ends standby: V205RCT6 2026-11-13, 1 s alarm, stuck until

@@ -17,6 +17,19 @@
  *   pad <pin>                 PAD <pin> <1 when the board holds it: the pulls do not move it>
  *   tone <pin> <hz>           tone(pin, hz), the pad read for 100 ms: TONE <rising edges> <samples>
  *   servo <pin> <us>          a Servo on pin at us, pulseIn() three times: SERVO <width> <width> <width>
+ *   wwdg <early|late>         the window watchdog, T = min(wwdgMaxTimeoutUs(), 40 ms), window T / 2:
+ *                             WWDG <T us> <window us> <max us>; fed every 3T/4 for 300 ms, then once
+ *                             more T/8 after the last feed (early: before the window) or never
+ *                             (late); either resets the chip (WWDG REFUSED when wwdgEnable() is false)
+ *   ewi                       EWI <early-warning callbacks the boot before this one counted> <us>
+ *                             <counter steps>: the WWDG counter's rate before its first feed
+ *   bkpw <seed>               every backup word i := seed + 257 i: BKPW <count> <keeps power>
+ *   bkpr <seed>               BKPR <count> <words that read seed + 257 i>
+ *   alarm <s>                 setAlarm(time() + s) with a callback: ALARM <1 / 0> <ms from the call to
+ *                             the callback, 0 if none in s + 3 s> <getAlarm() after it>
+ *   asleep <s>                setAlarm(time() + s), enableAlarmWakeup(), a 10 s timer as a backstop,
+ *                             lightSleep(): ASLEEP <result> <wakeupCause()> <millis() across it>,
+ *                             or ASLEEP REFUSED without an RTC
  *
  * STARTUP <resetReasonName()> <wakeupCause()> comes first after every boot;
  * `why` asks for the same again (WHY ...): the probe's console may miss the
@@ -29,6 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <time.h>
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
@@ -39,6 +53,50 @@
 
 static char line[64];
 static uint8_t used;
+
+/* The window watchdog's early warnings, across the reset that follows them. */
+static volatile struct {
+    uint32_t magic;
+    uint32_t count;
+    uint32_t span_us;      /* the counter's own rate, before the first feed: */
+    uint32_t steps;        /* steps counted in span_us */
+} ewi_record __attribute__((section(".noinit")));
+
+/* Feeds wait until `due` us after `start`; the first wait also watches the
+ * counter (WWDG_CTLR's T) and keeps its rate, across a reset, in ewi_record. */
+static void wwdg_wait(uint32_t start, uint32_t due, bool watch)
+{
+    const uint32_t c0 = *(volatile uint32_t *)0x40002C00u & 0x7Fu;
+    uint32_t last = c0;
+    while ((uint32_t)(micros() - start) < due) {
+        if (watch) {
+            const uint32_t c = *(volatile uint32_t *)0x40002C00u & 0x7Fu;
+            if (c != last) {
+                last = c;
+                ewi_record.steps = c0 - c;
+                ewi_record.span_us = micros() - start;
+            }
+        }
+    }
+}
+#define EWI_MAGIC 0xE1A1C0DEu
+static uint32_t ewi_seen, ewi_span, ewi_steps;
+
+static void on_early_warning()
+{
+    ewi_record.count++;
+}
+
+#ifdef CH32RV_HAS_RTC
+static volatile uint32_t alarm_at;
+static volatile bool alarm_fired;
+
+static void on_alarm()
+{
+    alarm_at = millis();
+    alarm_fired = true;
+}
+#endif
 
 static bool held(pin_size_t p)
 {
@@ -242,6 +300,87 @@ static void reply(char *command)
         servo.detach();
         pinMode(p, INPUT);
         SerialDMSeq.printf("SERVO %lu %lu %lu\r\n", w[0], w[1], w[2]);
+    } else if (!strcmp(argv[0], "wwdg") && argc == 2) {
+        const bool early = !strcmp(argv[1], "early");
+        const uint32_t max = CH32RV.wwdgMaxTimeoutUs();
+        const uint32_t t = max < 40000u ? max : 40000u, w = t / 2u;
+        ewi_record.magic = EWI_MAGIC;
+        ewi_record.count = 0;
+        ewi_record.span_us = 0;
+        ewi_record.steps = 0;
+        SerialDMSeq.printf("WWDG %lu %lu %lu\r\n", (unsigned long)t, (unsigned long)w, (unsigned long)max);
+        delay(50);                                /* the line out before the feeds begin */
+        if (!CH32RV.wwdgEnable(t, w, on_early_warning)) {
+            SerialDMSeq.printf("WWDG REFUSED\r\n");
+            return;
+        }
+        const uint32_t start = millis();
+        bool first = true;
+        while (millis() - start < 300u) {
+            wwdg_wait(micros(), t * 3u / 4u, first);
+            first = false;
+            CH32RV.wwdgFeed();
+        }
+        if (early) {
+            delayMicroseconds(t / 8u);
+            CH32RV.wwdgFeed();
+        }
+        for (;;) {
+        }
+    } else if (!strcmp(argv[0], "ewi")) {
+        SerialDMSeq.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
+#ifdef CH32RV_HAS_RTC
+    } else if (!strcmp(argv[0], "bkpw") && argc == 2) {
+        const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
+        const uint8_t n = CH32RV.backupRegisterCount();
+        for (uint8_t i = 0; i < n; i++) {
+            CH32RV.setBackupRegister(i, (uint16_t)(seed + 257u * i));
+        }
+        SerialDMSeq.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
+    } else if (!strcmp(argv[0], "bkpr") && argc == 2) {
+        const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
+        const uint8_t n = CH32RV.backupRegisterCount();
+        int same = 0;
+        for (uint8_t i = 0; i < n; i++) {
+            same += CH32RV.getBackupRegister(i) == (uint16_t)(seed + 257u * i);
+        }
+        SerialDMSeq.printf("BKPR %d %d\r\n", n, same);
+    } else if (!strcmp(argv[0], "alarm") && argc == 2) {
+        const uint32_t s = strtoul(argv[1], nullptr, 10);
+        alarm_fired = false;
+        const uint32_t t0 = millis();
+        if (!CH32RV.setAlarm(time(nullptr) + (time_t)s, on_alarm)) {
+            SerialDMSeq.printf("ALARM 0 0 0\r\n");
+            return;
+        }
+        while (!alarm_fired && millis() - t0 < (s + 3u) * 1000u) {
+        }
+        SerialDMSeq.printf("ALARM 1 %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
+                           (long)CH32RV.getAlarm());
+    } else if (!strcmp(argv[0], "asleep") && argc == 2) {
+        const uint32_t s = strtoul(argv[1], nullptr, 10);
+        CH32RV.disableWakeup();
+        if (!CH32RV.setAlarm(time(nullptr) + (time_t)s) || !CH32RV.enableAlarmWakeup()) {
+            SerialDMSeq.printf("ASLEEP REFUSED\r\n");
+            return;
+        }
+        CH32RV.enableTimerWakeup(10u * 1000000u);
+        const uint32_t t0 = millis();
+        const CH32RVSleepResult r = CH32RV.lightSleep();
+        const uint32_t took = millis() - t0;
+        const CH32RVWakeupCause cause = CH32RV.wakeupCause();
+        CH32RV.disableWakeup();
+        SerialDMSeq.printf("ASLEEP %d %d %lu\r\n", (int)r, (int)cause, (unsigned long)took);
+#else
+    /* No RTC and no backup registers (V003, V00x, M030, X033 / X035): the
+     * calls answer 0 / false there; left out to keep V003's 16 KB. */
+    } else if (!strcmp(argv[0], "bkpw") || !strcmp(argv[0], "bkpr")) {
+        SerialDMSeq.printf("%s 0 0\r\n", argv[0][3] == 'w' ? "BKPW" : "BKPR");
+    } else if (!strcmp(argv[0], "alarm")) {
+        SerialDMSeq.printf("ALARM 0 0 0\r\n");
+    } else if (!strcmp(argv[0], "asleep")) {
+        SerialDMSeq.printf("ASLEEP REFUSED\r\n");
+#endif
     } else {
         SerialDMSeq.printf("UNKNOWN %d [%s]\r\n", argc, whole);
     }
@@ -249,6 +388,12 @@ static void reply(char *command)
 
 void setup()
 {
+    if (ewi_record.magic == EWI_MAGIC) {
+        ewi_seen = ewi_record.count;
+        ewi_span = ewi_record.span_us;
+        ewi_steps = ewi_record.steps;
+    }
+    ewi_record.magic = 0;
     SerialDMSeq.begin(115200);
     SerialDMSeq.printf("STARTUP %s %d\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause());
 }

@@ -13,6 +13,18 @@ selfsys.restart: CH32RV.restart() boots again with resetReasonName() "software".
 selfsys.watchdog: wdtEnable(500) fed for 300 ms, then not fed: the chip resets within 0.15-1.5 s of the last feed
 by the host's clock (the LSI's tolerance and the console's latency) and boots with "watchdog".
 
+selfsys.window_watchdog: wwdgEnable(T, T / 2) with T = min(wwdgMaxTimeoutUs(), 40 ms), fed inside the window for
+300 ms, then (late) not fed or (early) fed T/8 after the last feed, before the window: the chip boots with
+"window_watchdog" both times (never "watchdog", the IWDG's), and the early-warning callback ran once before the late
+reset, never before the early one (a .noinit count the next boot reports).
+
+selfsys.backup_registers: every backup word written with a pattern survives CH32RV.restart(); n/a where
+backupRegisterCount() is 0 (no RTC domain: V003, V00x, M030, X033 / X035).
+
+selfsys.rtc_alarm: setAlarm(time() + 2) runs its callback 0.95-3.1 s later (the RTC's whole second at or after the
+time asked) and getAlarm() is 0 after it; lightSleep() with enableAlarmWakeup() returns CH32RV_WAKEUP_ALARM with
+millis() moved as long. n/a where setAlarm() refuses (no RTC).
+
 selfsys.light_sleep: lightSleep() with a timer wake after 200 ms returns CH32RV_SLEEP_OK, wakeupCause() is
 CH32RV_WAKEUP_TIMER and millis() moved 150-400 ms across it; a family that cannot sleep says
 CH32RV_SLEEP_UNSUPPORTED and skips. deepSleep() is left to the system case: a WCH-LinkE could not get a part out of
@@ -37,11 +49,12 @@ import pathlib
 import secrets
 import time
 
+import pexpect
 import pytest
 
 RESET = {"software": "software", "watchdog": "watchdog"}
 SLEEP_OK, SLEEP_UNSUPPORTED = 0, 2
-WAKEUP_TIMER = 1
+WAKEUP_TIMER, WAKEUP_ALARM = 1, 3
 
 
 def settings(test_file):
@@ -119,6 +132,56 @@ def test_watchdog(dut, ready, record_property):
     record_property("watchdog_s", round(took, 3))
     assert why == "watchdog", f"booted with {why} after the watchdog ran out"
     assert 0.15 <= took <= 1.5, f"the reset came {took:.2f} s after the last feed, 500 ms asked"
+
+
+def wwdg_tick_us(t_us, max_us):
+    """The count the core chose for a timeout: the finest prescaler whose 63 counts hold it (max_us is 63 at /8)."""
+    tick = max_us / 63
+    for b in range(4):
+        tb = tick / 2 ** (3 - b)
+        if t_us / tb <= 63:
+            return tb
+    return tick
+
+
+def test_window_watchdog(dut, ready, record_property):
+    seen, wrong = {}, []
+    for mode in ("late", "early"):
+        dut.write(f"wwdg {mode}\n")
+        t_us, w_us, max_us = (int(x) for x in dut.expect(rb"WWDG (\d+) (\d+) (\d+)\r?\n", timeout=10).groups())
+        try:
+            dut.expect(rb"WWDG REFUSED\r?\n", timeout=0.5)
+            wrong.append(f"{mode}: wwdgEnable({t_us}, {w_us}) refused (ceiling {max_us} us)")
+            continue
+        except pexpect.TIMEOUT:
+            pass
+        _, why = after_reset(dut)
+        ewi, span, steps = (int(x) for x in ask(dut, "ewi", rb"EWI (\d+) (\d+) (\d+)").groups())
+        seen[mode] = dict(timeout_us=t_us, window_us=w_us, max_us=max_us, why=why, ewi=ewi,
+                          step_us=round(span / steps, 1) if steps else None)
+        want_step = wwdg_tick_us(t_us, max_us)
+        if not steps or abs(span / steps / want_step - 1) > 0.15:
+            wrong.append(f"{mode}: the counter stepped {steps} times in {span} us, {want_step:.1f} us a step computed")
+        if why != "window_watchdog":
+            wrong.append(f"{mode}: booted with {why}")
+        if ewi != (1 if mode == "late" else 0):
+            wrong.append(f"{mode}: the early-warning callback ran {ewi} times")
+    record_property("wwdg", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
+
+
+def test_backup_registers(dut, ready, record_property):
+    seed = secrets.randbelow(0x10000)
+    count, keeps = (int(x) for x in ask(dut, f"bkpw {seed}", rb"BKPW (\d+) (\d)").groups())
+    if count == 0:
+        pytest.skip("n/a: backupRegisterCount() is 0 on this family (no RTC domain)")
+    dut.write("restart\n")
+    dut.expect(rb"RESTARTING\r?\n", timeout=10)
+    _, why = after_reset(dut)
+    same = int(ask(dut, f"bkpr {seed}", rb"BKPR \d+ (\d+)").group(1))
+    record_property("backup", json.dumps(dict(count=count, keeps_power=bool(keeps), same=same, why=why)))
+    assert why == "software", f"restart() booted with {why}"
+    assert same == count, f"{same} of {count} backup words survived CH32RV.restart()"
 
 
 def free_pad(dut, target):
@@ -207,6 +270,20 @@ def test_rtc(dut, ready, record_property):
     rtc = int(m.group(1)) + int(m.group(2)) / 1e6 - s0
     record_property("rtc", json.dumps(dict(rtc_s=round(rtc, 3), host_s=round(host, 3))))
     assert abs(rtc - host) <= 0.1 * host + 0.1, f"the RTC moved {rtc:.3f} s while the host's clock moved {host:.3f} s"
+
+
+def test_rtc_alarm(dut, ready, record_property):
+    ok, took, after = (int(x) for x in ask(dut, "alarm 2", rb"ALARM (\d) (\d+) (-?\d+)", timeout=10).groups())
+    if not ok:
+        pytest.skip("n/a: setAlarm() refuses on this family (no RTC)")
+    m = ask(dut, "asleep 2", rb"ASLEEP (?:(REFUSED)|(-?\d+) (-?\d+) (\d+))", timeout=15)
+    record_property("alarm", json.dumps(dict(callback_ms=took, after=after, asleep=m.group(0).decode())))
+    assert 950 <= took <= 3100, f"the callback came {took} ms after setAlarm(time() + 2)"
+    assert after == 0, f"getAlarm() {after} after the alarm ran"
+    assert not m.group(1), "enableAlarmWakeup() refused where setAlarm() did not"
+    r, cause, slept = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    assert r == SLEEP_OK and cause == WAKEUP_ALARM, f"lightSleep() {r}, wakeupCause() {cause}"
+    assert 900 <= slept <= 3200, f"millis() moved {slept} ms across a sleep to an alarm 2 s on"
 
 
 # Last: a sleep that never ends takes the console with it (the RTC families did, until the alarm-0 fix, 2026-11-12).

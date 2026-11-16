@@ -36,6 +36,11 @@ bool CH32RVSystem::enableTimerWakeup(uint64_t us)
 }
 
 
+bool CH32RVSystem::enableAlarmWakeup()
+{
+    return ch32rv_power_set_alarm() != 0;
+}
+
 void CH32RVSystem::disableWakeup()
 {
     ch32rv_power_clear();
@@ -80,6 +85,7 @@ CH32RVWakeupCause CH32RVSystem::wakeupCause()
 {
     return ch32rv_wake_cause == CH32RV_POWER_WOKE_TIMER ? CH32RV_WAKEUP_TIMER
          : ch32rv_wake_cause == CH32RV_POWER_WOKE_PIN ? CH32RV_WAKEUP_PIN
+         : ch32rv_wake_cause == CH32RV_POWER_WOKE_ALARM ? CH32RV_WAKEUP_ALARM
          : CH32RV_WAKEUP_UNDEFINED;
 }
 
