@@ -659,7 +659,9 @@ static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
     if (!rl) {
         return false;                            /* a report descriptor that does not parse */
     }
-    uint8_t interval = ch32rv_usb_interval(speed, 10);
+    /* 1 ms at every speed (bInterval 1 at full speed, 4 at high speed and
+     * SuperSpeed), EspUsbDevice's default (the user, 2026-11-17). */
+    uint8_t interval = ch32rv_usb_interval(speed, 1);
     if (speed != CH32RVUsbSpeed::Full) {
         /* setHighSpeedInterval(): each class's value, the default for a class
          * that set none (it wants the default too), the smallest of them -

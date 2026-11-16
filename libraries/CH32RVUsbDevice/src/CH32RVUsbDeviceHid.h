@@ -44,8 +44,8 @@ public:
 
     /* The interrupt endpoints' interval at high speed and SuperSpeed
      * (EspUsbDevice's setHighSpeedInterval()): bInterval 1-16, 2^(bInterval-1)
-     * x 125 us; 0 goes back to the default (the largest under 10 ms: 8 ms,
-     * bInterval 7). Full speed keeps 10 ms. On a shared interface the
+     * x 125 us; 0 goes back to the default (1 ms, bInterval 4). Full speed
+     * keeps its 1 ms. On a shared interface the
      * smallest of its classes' values is used (the default for a class that
      * set none). Before the device
      * begins; false after, or for more than 16. */

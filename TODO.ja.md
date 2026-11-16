@@ -212,6 +212,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   戻せなくなった。戻し方: ハブ 3-3.3.4 の port 3 でプローブごと切り入れ、プローブの GPIO16（NRST）を押して放し、眠る前に書く）。
 - [ ] H417（6-2）の uart.formats の 115200 7O1 で、DUT が何も受けなかったことが 1 回（2026-11-17、core-20261116T223121Z-dc183e78。
   流し直しは通った）。
+- [ ] V407 と P4（ホスト）の usb-peer で、DUT の `end()` のあと P4 が「S3 DISCONNECTED」を出さないことが 3 回に 1 回
+  （2026-11-17、core-20261116T225416Z-463912b5。P4 のログは「USB HOST: EP command error: ESP_ERR_INVALID_STATE」）。HID の既定を
+  1 ms にした直後の回。EspUsbHost の切断の扱いか DUT か切り分ける。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、

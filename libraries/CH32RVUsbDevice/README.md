@@ -154,12 +154,13 @@ mouse there is a boot device beside the merged ones). Up to 4 HID interfaces;
 an own interface comes after the functions declared before it, and
 `sendHidReport(instance, ...)` / `hidReportDescriptor(instance)` take the HID
 interfaces in the device's order.
-At high speed and SuperSpeed the interrupt endpoints poll every 8 ms
-(bInterval 7) unless a class asks otherwise with `setHighSpeedInterval(b)`
+HID's interrupt endpoints poll every 1 ms at every speed (EspUsbDevice's
+default: bInterval 1 at full speed, 4 at high speed and SuperSpeed). At high
+speed and SuperSpeed a class can ask otherwise with `setHighSpeedInterval(b)`
 before `begin()` (EspUsbDevice's name): 2^(b-1) x 125 us for b 1-16, 0 for the
-default; a shared interface takes the smallest of its classes' values (the default for a class that set none). Full speed keeps 10 ms.
-Several HID devices on one high-speed root port can run a host out of periodic
-bandwidth at 125 us; a longer interval reserves less.
+default; a shared interface takes the smallest of its classes' values (the
+default for a class that set none). Several HID devices on one high-speed root
+port can run a host out of periodic bandwidth; a longer interval reserves less.
 
 ## Examples
 
