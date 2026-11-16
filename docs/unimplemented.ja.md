@@ -8,6 +8,8 @@
 （行ごとの根拠は棚卸しの元の表にあり、主なものを「根拠」に残しました）。「対象外」「範囲外」「不要そう」と書かれていたものも
 未実装として数えています。
 
+- **決定済み・保留**: ユーザーが過去に「作らない」「今はやらない」と決めたものは、その決定のまま（優先の欄に書く）。作る対象には
+  しない（2026-11-17、ユーザー: 実装しないことにしたはず）。
 - **優先**（案。ユーザーと決める）: 1 = Arduino の利用者がよく使う API と、今の実装の穴（系列の抜け、ライブラリの片側だけ）。
   2 = ほかのペリフェラルと機能。3 = 範囲そのものの判断が要るもの（RTOS の port、互換層、別アーキテクチャなど）。
   未実装はどれも、実装済みの機能の磨き込みより先に置きます。
@@ -21,7 +23,7 @@
 | HSE（外付け水晶）の残りの系列 | M030、X315（X305）、V407/V467 | 1 | 単発→自動 | 水晶の載った板（EVT 板）。自己（selfcheck-clocks で RCC を読む＋時間の速さ） | PS:62, PM:294 |
 | HSE の周波数の選択（EVT の前提以外の水晶） | HSE のある全系列 | 2 | 単発→自動 | 別の周波数の水晶の板。自己 | README.ja.md:49 |
 | HSI の外での MCO（クロック出力） | 全 12 family | 2 | 自動 | プローブ 1 本（周波数を測る） | PS:61, PM:292 |
-| 実行中のクロック変更 | 全系列 | 1 | 自動 | 自己（変更前後で millis・Serial・PWM の selfcheck） | PS:40, FC:33 |
+| 実行中のクロック変更 | 全系列 | 決定済み: 作らない（SYS-05） | — | 自己（変更前後で millis・Serial・PWM の selfcheck） | PS:40, FC:33 |
 | H41x・X305 の CPU Clock メニュー | H415/H416/H417、X305 | 1 | 自動 | 自己（selfcheck） | PS:40, TODO:504 |
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 2 | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |
 | LSE（32 kHz 水晶） | RTC のある系列 | 2 | 単発→自動 | LSE の載った板。自己 | PS:53 |
@@ -210,8 +212,8 @@
 | SDMMC（eMMC、HS200/HS400、SDIO slave） | H417 | 2 | 単発 | eMMC の板 | PS:103, PM:246 |
 | FSMC / FMC（SRAM、NOR、NAND、LCD、SDRAM） | V205、V30x、V4x7、H417 | 2 | 単発 | 外部メモリの板 | PS:102, PM:245 |
 | PSRAM（チップ内 4〜8 MB） | V467 | 2 | 単発→自動 | V467 の石（自己） | PS:109, PM:254 |
-| キーと値の保存（Preferences 相当）・EEPROM.h | 全系列 | 1 | 自動 | 自己 | FC:29, TODO:228 |
-| 内蔵 Flash 上のファイルシステム（littlefs）、FAT を NOR に、SPIFFS | 全系列（大きい系列） | 1 | 自動 | 自己（電源断の試験は uhubctl） | FC:92, docs/filesystem.ja.md:255-258 |
+| キーと値の保存（Preferences 相当）・EEPROM.h | 全系列 | 決定済み: 作らない（SYS-01、推奨は外部の SD・I2C の EEPROM） | — | 自己 | FC:29, TODO:228 |
+| 内蔵 Flash 上のファイルシステム（littlefs）、FAT を NOR に、SPIFFS | 全系列（大きい系列） | 決定済み: 作らない（STO-04、2026-11-04） | — | 自己（電源断の試験は uhubctl） | FC:92, docs/filesystem.ja.md:255-258 |
 | eMMC・USB ホストの MSC のブロックデバイス（FS の下） | H417、ホスト | 2 | 単発→自動 | eMMC の板、Pico の MSC | libraries/FS/README.ja.md:38, docs/filesystem.ja.md:286 |
 | フラッシュの書き換え（UPD-01 自己更新、Update API） | 全系列 | 2 | 自動 | 自己 | FC:97 |
 | ITCM / DTCM の配置の仕組み | H41x | 2 | 自動 | 自己 | TODO:172,176 |
@@ -224,7 +226,7 @@
 | CRC の公開 API | V103、V20x、V205、V30x、V4x7、L103、X3x5、H41x | 1 | 自動 | 自己（既知のデータ） | PS:55, PM:210 |
 | RNG の公開 API（`esp_random()`、`randomSeed()` の種） | V30x、V4x7、H41x | 1 | 自動 | 自己 | PS:115, PM:260 |
 | ECDC（AES-128/192/256、SM4、ECB・CTR） | H417 | 2 | 自動 | 自己（既知のベクトル） | PS:56, PM:211 |
-| PIOC（RISC8B の 8 bit コア） | X035、V205、H41x | 2 | 自動 | プローブ（1-Wire・IR・UART の波形） | PS:79, PM:215 |
+| PIOC（RISC8B の 8 bit コア） | X035、V205、H41x | 保留（ユーザー、2026-11-11: 今はやらない） | — | プローブ（1-Wire・IR・UART の波形） | PS:79, PM:215 |
 | ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 1 | 自動 | プローブ（0.35 µs の High を測る） | FC:138, PLAN:44 |
 | DVP（カメラ入力） | V30x（100 ピン）、V4x7、H417 | 2 | 単発→自動 | カメラ、またはプローブが PCLK・データを出す | PS:111, PM:256 |
 | LTDC（RGB の LCD 出力） | V4x7、H417 | 2 | 単発→自動 | プローブ（取り込み）か LCD | PS:112, PM:257 |

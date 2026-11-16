@@ -16,7 +16,8 @@
 
 - [ ] 優先の案をユーザーと決める。範囲の判断が要るもの（RTOS の port、EVT / SPL 互換、ベンダ IDE 互換、CH32F、無線 SoC
   を BLE の除外に含めるか、汎用ドライバの同梱、EVT のバイナリのライブラリ相当）はユーザーに聞く。
-- [ ] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（peripheral-plan の C、software-peripherals、
+- [ ] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（ただし、ユーザーが決めたもの — EEPROM.h と Preferences、
+  内蔵フラッシュのファイルシステム、実行中のクロック変更、PIOC の保留 — はそのまま。2026-11-17）（peripheral-plan の C、software-peripherals、
   network-stack、filesystem、FEATURE_CANDIDATES、ADR-0017、upload-routes、usb.ja.md、CH32RVUsbHost の README など。
   docs/unimplemented.ja.md の元の棚卸しの 15 章）。peripheral-support の表は直した（2026-11-14）。
 - [ ] tools/generate/peripheral_matrix.py の STATUS が文書の手直しより古い（RCC・PWR・ADC・UHSIF の備考、H41x の HSE の欄）。
