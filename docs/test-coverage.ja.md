@@ -78,11 +78,16 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 
 実装根拠: [Wire](../libraries/Wire/src/)、[SoftWire](../libraries/Wire/src/SoftWire.cpp)、
 [SPI](../libraries/SPI/src/)、[SoftSPI](../libraries/SPI/src/SoftSPI.cpp)、
-[HardwareSerial](../cores/arduino/HardwareSerial.cpp)。
+[HardwareSerial](../cores/arduino/HardwareSerial.cpp)、[HardwareSerialMode](../cores/arduino/HardwareSerialMode.cpp)、[SoftwareSerial](../libraries/SoftwareSerial/src/SoftwareSerial.cpp)。
 
 | 契約 | 実装 | 現行の試験 / 旧検証の参考 | 不足する保証 / 必要設備 |
 |---|---|---|---|
 | UART TX/RX、設定、buffer | あり | 現行: uart::test_uart_contract（独立 UART と往復）・test_uart_output_only・test_uart_formats（9600〜1 Mbaud、8E1・8O1・8N2・7E1・7O1、WireSkein で線の上）・test_uart_receive_errors（parity・frame・break・buffer full・overrun）、periph::test_serial_routes（Serial の route ごと）、selfbus（自己検査） | 全 instance、reset の対象整理 |
+| UART のハードウェアフロー制御（RTS/CTS） | あり（2026-11-17、ベンチ未確認） | 現行: uart::test_uart_flow_control（Serial の CTS / RTS の端子をプローブの素の線から DUT に探させる。CTS を High にして TX が出ないこと、Low で 16 バイト。RTS のしきい値 16 で読まずに 32 バイト受け、17 バイト目から読むまで RTS が High、読むと Low、16 保持・17 読める） | CTS / RTS の両方が素の線に無い台はスキップ。プローブの UART に CTS が無いので、RTS で相手が止まることは見ない |
+| UART の RS485（DE） | あり（2026-11-17、ベンチ未確認） | 現行: uart::test_uart_rs485（素の線を DE に、115200 と 1 Mbaud で 2 回の書き込み、WireSkein の `rs485` で DE の窓がフレームを覆い前後 20 µs 以内） | トランシーバーを挟んだバス（`rs485_*` のラベルの台） |
+| UART の 1 線半二重 | あり（2026-11-17、ベンチ未確認） | 現行: uart::test_uart_half_duplex（DUT の TX の端子だけ、9600、プローブのプルアップ。DUT の送信（自分の受信には戻らないこと）、プローブの UART の TX からの受信。開放ドレインの無い X033/X035 は受信を飛ばす） | X033/X035 の受信、速い速度（プルアップの立ち上がり） |
+| UART の受信イベント（`onReceive()`） | あり（2026-11-17、ベンチ未確認） | 現行: uart::test_uart_receive_event（IDLE の 1 シンボル、10 シンボル、受信バッファの 8 バイト） | DMA 受信、ノイズ（NE）の再現 |
+| SoftwareSerial | あり（2026-11-17、ベンチ未確認） | 現行: uart::test_uart_software_serial（素の線 2 本、9600・57600・115200 の 8N1、9600 の 8E1・8O1・8N2・7E1、プローブの UART と両方向） | 115200 より速い受信、送信中の受信（半二重なので失われる）、ほかの割込みと重なったとき |
 | Wire master 正常通信 | あり | 現行: wire::test_wire_output_only（クロックの問い: 20 kHz〜3.4 MHz の SCL、頼んだより速くないこと）、wire::test_wire_repeated_start（取引の問い: プローブの i2c-target と repeated START・読み書き、20 kHz） | instance/route、buffer 境界、別実装 driver 互換 |
 | Wire master NACK/timeout/recovery | あり | 現行: アドレスの NACK のみ（wire::test_wire_output_only、selfbus::test_i2c_nack） | データの NACK、timeout、バスの回復、clock stretch。SDA を握る・NACK を返す peer |
 | Wire slave 受信・応答 | あり | 現行: wire::test_wire_slave（プローブの i2c-controller が独立 master、100 kHz。onReceive / onRequest の順と中身、repeated START の register read、0xFF の埋め、32 バイトの頭、別の番地） | callback 文脈、復旧 |

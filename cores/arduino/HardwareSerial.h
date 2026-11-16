@@ -53,21 +53,60 @@ namespace arduino {
  * read out of the data register), UART_BUFFER_FULL_ERROR the receive buffer
  * full (the byte was dropped), UART_FRAME_ERROR / UART_PARITY_ERROR a byte that
  * came with that error and was dropped, UART_BREAK_ERROR a frame error on an
- * all-zero byte (the line held low). */
+ * all-zero byte (the line held low). UART_NOISE_ERROR is the USART's own and
+ * not ESP32's: the three samples of a bit disagreed (STATR NE); the byte, their
+ * majority, is kept. */
 typedef enum {
     UART_NO_ERROR,
     UART_BREAK_ERROR,
     UART_BUFFER_FULL_ERROR,
     UART_FIFO_OVF_ERROR,
     UART_FRAME_ERROR,
-    UART_PARITY_ERROR
+    UART_PARITY_ERROR,
+    UART_NOISE_ERROR
 } hardwareSerial_error_t;
 
-/* takeErrors()'s two kinds besides STATR's ORE (bit 3), FE (bit 1) and PE
- * (bit 0): a frame error on an all-zero byte (in place of FE), and a byte
- * dropped because the receive buffer was full. */
+/* setHwFlowCtrlMode()'s modes, by ESP32's names and numbers (ESP-IDF's
+ * uart_hw_flowcontrol_t): RTS paces what comes in, CTS what goes out. */
+typedef enum {
+    UART_HW_FLOWCTRL_DISABLE = 0,
+    UART_HW_FLOWCTRL_RTS = 1,
+    UART_HW_FLOWCTRL_CTS = 2,
+    UART_HW_FLOWCTRL_CTS_RTS = 3
+} SerialHwFlowCtrl;
+
+/* setMode()'s modes, by ESP32's names and numbers (ESP-IDF's uart_mode_t).
+ * UART_MODE_UART and UART_MODE_RS485_HALF_DUPLEX are what this core does; the
+ * others are refused. */
+typedef enum {
+    UART_MODE_UART = 0,
+    UART_MODE_RS485_HALF_DUPLEX = 1,
+    UART_MODE_IRDA = 2,
+    UART_MODE_RS485_COLLISION_DETECT = 3,
+    UART_MODE_RS485_APP_CTRL = 4
+} SerialMode;
+
+/* takeErrors()'s two kinds besides STATR's ORE (bit 3), NE (bit 2), FE (bit 1)
+ * and PE (bit 0): a frame error on an all-zero byte (in place of FE), and a
+ * byte dropped because the receive buffer was full. */
 #define CH32RV_SERIAL_MARK_BREAK (1u << 4)
 #define CH32RV_SERIAL_MARK_FULL  (1u << 5)
+
+class CH32RVHardwareSerial;
+/* The modes beyond plain UART (HardwareSerialMode.cpp): hardware flow
+ * control, RS485's driver enable, single-wire half duplex and the receive
+ * events. Until a sketch uses one of them this pointer is never written, so
+ * link-time optimisation drops every call through it: a sketch that does not
+ * use them pays nothing for them. */
+struct CH32RVSerialModeOps {
+    void (*start)(CH32RVHardwareSerial &port);   /* end of begin(): the mode's registers and pads */
+    void (*end)(CH32RVHardwareSerial &port);     /* in end(): the mode's pads let go */
+    void (*irq)(CH32RVHardwareSerial &port, uint32_t base);   /* the whole interrupt, in place of irq()'s */
+    void (*read)(CH32RVHardwareSerial &port);    /* after read() took a byte */
+    void (*write)(CH32RVHardwareSerial &port);   /* before write() hands a byte on */
+    void (*written)(CH32RVHardwareSerial &port); /* after it has */
+};
+extern const CH32RVSerialModeOps *ch32rv_serial_mode_ops;
 
 /* One object is one port. Which USART it drives is decided in begin(), not
  * here: the object holds state only, and that state is all zero at reset, so a
@@ -127,10 +166,57 @@ public:
      * without pins would take); setPins() names the pins, and any enabled
      * USART whose route they are will do. Both return false and change nothing when no enabled USART has
      * that route, and setPins() refuses a TX and an RX from different routes -
-     * the hardware cannot do that. CTS / RTS must stay -1: hardware flow
-     * control is not supported. setPins() takes RX first, as on an ESP32. */
+     * the hardware cannot do that. setPins() takes RX first, as on an ESP32.
+     *
+     * As on an ESP32, a pin given as -1 is left as it is: setPins(-1, -1,
+     * cts, rts) names only CTS / RTS. RX and TX the same pin is single-wire
+     * half duplex (ESP32's one-wire): the USART's TX pad of a route, open
+     * drain (it needs a pull-up), the receiver joined to it inside. Unlike
+     * ESP32's, what the port sends does not come back to its own receive
+     * buffer: the USART does not receive while it sends (every family on the
+     * bench, 2026-11-17). CTS and RTS are the
+     * pins setHwFlowCtrlMode() uses (they have to be the USART's own CTS / RTS
+     * pads on the route TX / RX are on) and RTS is the driver enable of
+     * UART_MODE_RS485_HALF_DUPLEX (any pin). */
     bool setRoute(uint8_t route);
     bool setPins(int rxPin, int txPin, int ctsPin = -1, int rtsPin = -1);
+
+    /* ESP32's hardware flow control. RTS: low while the receive buffer holds
+     * fewer than `threshold` bytes (at most the buffer's CH32RV_SERIAL_RX_BUFFER_SIZE
+     * - 1); from there the USART keeps the next byte in its data register and
+     * lets RTS go high at its stop bit, until read() makes room. CTS: a byte
+     * goes out only while CTS is low (the pad is pulled up, so a CTS left
+     * unconnected holds every byte). The pads are the ones setPins() named, or
+     * else the USART's own on the route TX / RX are on (the first, where pads
+     * choose their function one by one). False, and nothing changed, where
+     * the USART has no such pad on that route, or in RS485 mode. Before or
+     * after begin(); it lasts until changed, across end() and begin(). */
+    bool setHwFlowCtrlMode(SerialHwFlowCtrl mode = UART_HW_FLOWCTRL_CTS_RTS, uint8_t threshold = 64);
+
+    /* UART_MODE_RS485_HALF_DUPLEX: the RTS pin of setPins() (any pin; false
+     * without one) is the transceiver's driver enable - high from before the
+     * first start bit of a write until the last stop bit has gone out (the
+     * transmit-complete interrupt), low otherwise and after end(). No USART
+     * here drives it in hardware: the core does, with the TC flag. Hardware
+     * flow control is off in this mode. UART_MODE_UART goes back (the pin is
+     * let go, an input). IrDA and the RS485 test modes are refused. */
+    bool setMode(SerialMode mode);
+
+    /* ESP32's receive event: function runs (after loop(), as onReceiveError()
+     * does - ch32rv_deliver.h) when the receive buffer reaches setRxFIFOFull()'s
+     * count, and when the line has been quiet for setRxTimeout()'s symbols
+     * after a byte. onlyOnTimeout: the second only (a whole message at once).
+     * Called only with bytes to read. nullptr removes it. */
+    void onReceive(CH32RVCallback<void(void)> function, bool onlyOnTimeout = false);
+    /* Symbols (whole frames, at the port's baud and format) of quiet that
+     * make a receive timeout; 0 none (onReceive() then runs on the count
+     * alone). The USART's IDLE flag marks the first; the rest are counted when
+     * the event is delivered. Default 1. */
+    bool setRxTimeout(uint8_t symbols);
+    /* Bytes in the receive buffer that make onReceive() run (unless
+     * onlyOnTimeout), 1 .. CH32RV_SERIAL_RX_BUFFER_SIZE - 1 (a larger value is
+     * that; 0 is refused). Default half the buffer. */
+    bool setRxFIFOFull(uint8_t fifoBytes);
 
     /* Called after loop() (with serialEvent()), once for each kind of receive
      * error that happened since, as ESP32's onReceiveError() reports them
@@ -143,14 +229,26 @@ public:
     /* For the shared interrupt handler and serialEvent() only. */
     void irq(void);
     uint8_t number(void) const { return _number; }
-    /* The receive errors since the last call, cleared: STATR's ORE / FE / PE
-     * bits and CH32RV_SERIAL_MARK_BREAK / _FULL. */
+    /* The receive errors since the last call, cleared: STATR's ORE / NE / FE /
+     * PE bits and CH32RV_SERIAL_MARK_BREAK / _FULL. */
     uint8_t takeErrors(void);
 
 private:
+    friend struct CH32RVSerialMode;    /* HardwareSerialMode.cpp */
+
     bool bind(uint8_t index, const ch32rv_route_t &route);
     uint32_t base(void) const;
     void start(void);
+    /* irq()'s two halves, shared with the modes' interrupt (both inline,
+     * internal/ch32rv_serial_irq.h). */
+    void serviceRx(uint32_t base, uint16_t status);
+    void serviceTx(uint32_t base, uint16_t status);
+    /* For HardwareSerialMode.cpp, out of line: the registers of the open
+     * USART; the route and table index of the open port, or those the next
+     * begin() takes (nullptr: none); move the port onto a route. */
+    uint32_t registers(void) const;
+    const ch32rv_route_t *plannedRoute(uint8_t &index) const;
+    void useRoute(uint8_t index, const ch32rv_route_t *route);
 
     const uint8_t _number;
     /* 0 = closed; otherwise 1 + index into the USART table. */

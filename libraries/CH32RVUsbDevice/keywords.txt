@@ -60,6 +60,8 @@ device	KEYWORD2
 dtr	KEYWORD2
 enableNkro	KEYWORD2
 enableOwnInterface	KEYWORD2
+setHighSpeedInterval	KEYWORD2
+highSpeedInterval	KEYWORD2
 end	KEYWORD2
 flush	KEYWORD2
 function	KEYWORD2

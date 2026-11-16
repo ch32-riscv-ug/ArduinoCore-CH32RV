@@ -1,0 +1,8 @@
+SoftwareSerial	KEYWORD1
+begin	KEYWORD2
+end	KEYWORD2
+listen	KEYWORD2
+isListening	KEYWORD2
+stopListening	KEYWORD2
+overflow	KEYWORD2
+peek	KEYWORD2

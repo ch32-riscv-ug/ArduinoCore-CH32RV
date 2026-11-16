@@ -208,6 +208,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   あと、アラーム・BKP・WWDG は通るが、最初の lightSleep(200 ms) が戻らない。眠っている間はプローブがつながらず、NRST でも
   戻らない（数分後に自然に戻った）。休止は未対応（UNSUPPORTED）に戻した。見る所: 1 秒未満を待つ普通の WFI のあいだに
   SLEEPDEEP が残っていないか、V3A のストップの入り方と EXTI 17、.noinit に段を残して電源の入れ直しのあとに読む。
+- [ ] H417（6-2）の uart.formats の 115200 7O1 で、DUT が何も受けなかったことが 1 回（2026-11-17、core-20261116T223121Z-dc183e78。
+  流し直しは通った）。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、

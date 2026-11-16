@@ -17,10 +17,10 @@ hardware peripheral の代わりを GPIO で実装する library は、次を満
 | `SoftSPI` | controller、peripheral（`SPI_PERIPHERAL`） | polling 方式。hardware SPI より CPU を占有する。peripheral は SCK を polling で追う |
 | `SoftSPISlave` | slave（CS で区切る） | 端子変化の割込み。1 ビット 1 回、縁から半周期のうちに処理する必要がある。SCK と CS は別の EXTI の線 |
 | `SoftWire` | controller、target | open-drain GPIO を使用。clock stretching と timeout を扱う。target は端子変化の割込みで追い、処理の間 SCL を握る。SDA と SCL は別の EXTI の線 |
-| SoftSerial | 未実装 | RX の timing、割り込み競合、error reporting の共通仕様がない |
+| `SoftwareSerial` | 送受信（Arduino の SoftwareSerial の API、`begin(speed, config)` で 5〜8 ビット・パリティ・ストップ 2） | 受信はスタートビットの端子変化の割込みでフレームを読む（SysTick で各ビットの中央、割込みの遅れは `listen()` で測って差し引く）。送信は 1 フレームの間割込みを止める。AVR と同じ半二重、listen できるのは 1 つ。RX は別のビット番号の EXTI と共存。2026-11-17、ベンチ未確認 |
 | SoftPWM | 未実装 | timer resource manager と hardware PWM の競合を増やすため独立 API にしない |
 
-`SoftSPI` は `SPIClass`（SPI ライブラリ）、`SoftWire` は `TwoWire`（Wire ライブラリ）を継承し、対応する Arduino API を受け取る library へ
+`SoftSPI` は `SPIClass`（SPI ライブラリ）、`SoftWire` は `TwoWire`（Wire ライブラリ）、`SoftwareSerial`（SoftwareSerial ライブラリ）は `Stream` を継承し、対応する Arduino API を受け取る library へ
 渡せます。個別 API、pin 順、対応 mode は各 library の README を正本とします。
 
 ## 実装しないもの

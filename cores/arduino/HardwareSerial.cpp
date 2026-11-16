@@ -4,6 +4,7 @@
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_interrupt.h"
+#include "internal/ch32rv_serial_irq.h"
 
 using namespace arduino;
 
@@ -468,7 +469,8 @@ Found find_route(uint8_t prefer, uint8_t tx, uint8_t rx, const CH32RVHardwareSer
         }
         const RouteSet &set = route_sets[i];
         for (uint8_t r = 0; r < set.count; r++) {
-            if (set.rows[r].pins[0] == tx && set.rows[r].pins[1] == rx) {
+            /* rx CH32RV_ROUTE_NO_PIN: any RX (single wire, TX alone). */
+            if (set.rows[r].pins[0] == tx && (rx == CH32RV_ROUTE_NO_PIN || set.rows[r].pins[1] == rx)) {
                 if (i == prefer) {
                     return {(int)i, &set.rows[r]};
                 }
@@ -503,49 +505,17 @@ __attribute__((always_inline)) inline uint32_t CH32RVHardwareSerial::base(void) 
 __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(void)
 {
     const uint32_t base = this->base();
+    /* A mode beyond plain UART (flow control, RS485, single wire, receive
+     * events) has an interrupt of its own. Nothing ever sets the pointer in a
+     * sketch that uses none of them, and the link-time optimiser then drops
+     * the test and the call: the handler stays the one below. */
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->irq(*this, base);
+        return;
+    }
     const uint16_t status = CH32RV_USART_STATR(base);
-
-    /* RXNEIE also raises the interrupt for the receive error flags, and those
-     * are only cleared by reading STATR and then DATAR. Handling just RXNE
-     * leaves an overrun asserted, the interrupt re-enters immediately and the
-     * core never returns to loop() - which is what a noisy or unconnected RX
-     * line produces. So always drain the data register when any receive flag
-     * is set, and only keep the byte when it is a real one: a frame that came
-     * with a framing or parity error is a glitch on the line (a probe
-     * re-opening its UART put one such byte in front of the next command line,
-     * 2026-09-22), not data. Noise alone (NE: the three samples of a bit did
-     * not agree) leaves the byte valid - its bits are the samples' majority -
-     * and the byte is kept, as AVR, STM32duino and WCH's own core do. (A good
-     * byte, right on the wire, was lost once in about 13 000 at 115200 on
-     * CH32X035's Serial1, 2026-11-05; noise alone explains it, the flags were
-     * not seen.) An overrun still leaves this byte valid. */
-    if (status & (CH32RV_USART_STATR_RXNE | CH32RV_USART_STATR_ORE |
-                  CH32RV_USART_STATR_NE | CH32RV_USART_STATR_FE |
-                  CH32RV_USART_STATR_PE)) {
-        /* The whole register: a break is every bit 0, the parity bit's
-         * place too. */
-        const uint32_t data = CH32RV_USART_DATAR(base);
-        /* The kinds for onReceiveError(), as STATR's own bits (overrun,
-         * framing, parity) plus two of ours, read out there. */
-        uint32_t marks = status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_FE |
-                                   CH32RV_USART_STATR_PE);
-        if (marks & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE)) {
-            if ((marks & CH32RV_USART_STATR_FE) && !data) {
-                marks ^= CH32RV_USART_STATR_FE | CH32RV_SERIAL_MARK_BREAK;
-            }
-        } else if ((status & CH32RV_USART_STATR_RXNE) && !_rx.push((uint8_t)(data & _rx_mask))) {
-            marks |= CH32RV_SERIAL_MARK_FULL;
-        }
-        _errors |= (uint8_t)marks;
-    }
-    if (status & CH32RV_USART_STATR_TXE) {
-        const int c = _tx.pop();   /* empty: -1, the ring's indices read once */
-        if (c < 0) {
-            CH32RV_USART_CTLR1(base) &= (uint16_t)~CH32RV_USART_CTLR1_TXEIE;
-        } else {
-            CH32RV_USART_DATAR(base) = (uint16_t)c;
-        }
-    }
+    serviceRx(base, status);       /* internal/ch32rv_serial_irq.h */
+    serviceTx(base, status);
 }
 
 extern "C" CH32RV_INTERRUPT void ch32rv_usart_irq(void)
@@ -659,6 +629,9 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
     CH32RV_USART_CTLR2(d.base) = ctlr2;
     CH32RV_USART_CTLR3(d.base) = 0;
     CH32RV_USART_CTLR1(d.base) = ctlr1 | CH32RV_USART_CTLR1_UE;
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->start(*this);   /* the mode's bits and pads */
+    }
     ch32rv_irq_enable(d.irqn);
 }
 
@@ -772,6 +745,9 @@ void CH32RVHardwareSerial::end(void)
         return;
     }
     flush();
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->end(*this);     /* DE low, CTS / RTS let go */
+    }
     const UsartDesc &d = usarts[index_of(_slot)];
     ch32rv_irq_disable(d.irqn);
     CH32RV_USART_CTLR1(d.base) = 0;
@@ -794,24 +770,55 @@ void CH32RVHardwareSerial::end(void)
 
 bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 {
-    if (ctsPin >= 0 || rtsPin >= 0) {
-        return false;                  /* no hardware flow control */
+    const bool control = ctsPin >= 0 || rtsPin >= 0;
+    if (rxPin < 0 && txPin < 0) {
+        /* CTS / RTS alone, the route kept (ESP32: -1 leaves a pin as it is). */
+        return control && CH32RVSerialMode::setControlPins(*this, ctsPin, rtsPin);
     }
     if (rxPin < 0 || txPin < 0 || rxPin > 0xFE || txPin > 0xFE) {
         return false;
     }
-    const Found f = find_route(_number, (uint8_t)CH32RV_PIN_RESOLVE(txPin),
-                               (uint8_t)CH32RV_PIN_RESOLVE(rxPin), this);
+    /* RX and TX one pin: single-wire half duplex, on a route whose TX it is. */
+    const uint8_t tx = (uint8_t)CH32RV_PIN_RESOLVE(txPin);
+    const uint8_t rx = rxPin == txPin ? (uint8_t)CH32RV_ROUTE_NO_PIN
+                                      : (uint8_t)CH32RV_PIN_RESOLVE(rxPin);
+    const Found f = find_route(_number, tx, rx, this);
     if (f.index < 0) {
         return false;
     }
-    _want = f.row;
-    _want_index = (uint8_t)f.index;
+    if (rx == CH32RV_ROUTE_NO_PIN) {
+        return CH32RVSerialMode::setOneWire(*this, (uint8_t)f.index, *f.row, ctsPin, rtsPin);
+    }
+    if (control && !CH32RVSerialMode::setControlPins(*this, ctsPin, rtsPin)) {
+        return false;
+    }
+    useRoute((uint8_t)f.index, f.row);
+    return true;
+}
+
+void CH32RVHardwareSerial::useRoute(uint8_t index, const ch32rv_route_t *route)
+{
+    _want = route;
+    _want_index = index;
     if (_slot) {
         end();                         /* hands the old pads back */
         bind(_want_index, *_want);
     }
-    return true;
+}
+
+uint32_t CH32RVHardwareSerial::registers(void) const
+{
+    return base();
+}
+
+const ch32rv_route_t *CH32RVHardwareSerial::plannedRoute(uint8_t &index) const
+{
+    if (USART_COUNT == 0) {
+        return nullptr;
+    }
+    index = _slot ? index_of(_slot) : _want ? _want_index : USART_COUNT == 1 ? 0 : _number;
+    const ch32rv_route_t *route = _want ? _want : &usarts[index].def;
+    return route->pins[0] == CH32RV_ROUTE_NO_PIN ? nullptr : route;
 }
 
 bool CH32RVHardwareSerial::setRoute(uint8_t route)
@@ -845,7 +852,11 @@ int CH32RVHardwareSerial::peek(void)
 
 int CH32RVHardwareSerial::read(void)
 {
-    return _rx.pop();
+    const int c = _rx.pop();
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->read(*this);   /* RTS: room again */
+    }
+    return c;
 }
 
 void CH32RVHardwareSerial::flush(void)
@@ -866,6 +877,9 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
         return 0;
     }
     const uint32_t base = this->base();
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->write(*this);  /* RS485: the driver on */
+    }
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
     /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
      * a burst larger than the 63-byte ring capacity can otherwise wait here
@@ -874,7 +888,6 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
     while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TXE) == 0u) {
     }
     CH32RV_USART_DATAR(base) = c;
-    return 1;
 #else
     /* Block until the ring has room. The TX interrupt is what drains it, so
      * this cannot deadlock as long as interrupts are enabled. */
@@ -882,8 +895,11 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
     }
     _tx.push(c);
     CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TXEIE;
-    return 1;
 #endif
+    if (ch32rv_serial_mode_ops) {
+        ch32rv_serial_mode_ops->written(*this);  /* RS485: watch for the end */
+    }
+    return 1;
 }
 
 /* Before a deep sleep (ch32rv_power.c, by a weak reference: linked only with
@@ -929,6 +945,9 @@ uint8_t CH32RVHardwareSerial::takeErrors(void)
 
 /* Set by onReceiveError() (HardwareSerialError.cpp): run after loop(). */
 void (*ch32rv_serial_error_delivery)(void) = nullptr;
+
+/* Set by the modes beyond plain UART (HardwareSerialMode.cpp). */
+const CH32RVSerialModeOps *arduino::ch32rv_serial_mode_ops = nullptr;
 
 namespace arduino {
 

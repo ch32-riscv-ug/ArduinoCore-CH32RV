@@ -659,7 +659,19 @@ static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
     if (!rl) {
         return false;                            /* a report descriptor that does not parse */
     }
-    const uint8_t interval = ch32rv_usb_interval(speed, 10);
+    uint8_t interval = ch32rv_usb_interval(speed, 10);
+    if (speed != CH32RVUsbSpeed::Full) {
+        uint8_t asked = 0;                       /* setHighSpeedInterval(): the smallest asked */
+        for (uint8_t i = 0; i < h.count; i++) {
+            const uint8_t b = h.at(i)->highSpeedInterval();
+            if (b && (!asked || b < asked)) {
+                asked = b;
+            }
+        }
+        if (asked) {
+            interval = asked;
+        }
+    }
     h.epIn = (uint8_t)(0x80 | n);
     h.epOut = out_ep ? n : 0;
     const uint8_t head[] = {
@@ -679,6 +691,15 @@ static bool hid_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
 CH32RVUsbDeviceHidClass::CH32RVUsbDeviceHidClass(CH32RVUsbDevice &device) : _device(device)
 {
     _attached = interface_for(device).add(this);
+}
+
+bool CH32RVUsbDeviceHidClass::setHighSpeedInterval(uint8_t bInterval)
+{
+    if (bInterval > 16u || _device.started()) {
+        return false;
+    }
+    _hsInterval = bInterval;
+    return true;
 }
 
 bool CH32RVUsbDeviceHidClass::enableOwnInterface(bool enable)

@@ -318,7 +318,9 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 
 #define CH32RV_USART_CTLR1_RE     (1u << 2)
 #define CH32RV_USART_CTLR1_TE     (1u << 3)
+#define CH32RV_USART_CTLR1_IDLEIE (1u << 4)
 #define CH32RV_USART_CTLR1_RXNEIE (1u << 5)
+#define CH32RV_USART_CTLR1_TCIE   (1u << 6)
 #define CH32RV_USART_CTLR1_TXEIE  (1u << 7)
 #define CH32RV_USART_CTLR1_PCE    (1u << 10)
 #define CH32RV_USART_CTLR1_PS     (1u << 9)
@@ -329,6 +331,14 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART_CTLR2_STOP_0P5 (1u << 12)
 #define CH32RV_USART_CTLR2_STOP_2   (2u << 12)
 #define CH32RV_USART_CTLR2_STOP_1P5 (3u << 12)
+
+/* Single-wire half duplex (TX and RX joined inside, the TX pad only), and the
+ * hardware flow control: RTS low while the data register can take a byte, a
+ * byte sent only while CTS is low. The same bits on every family's USART
+ * (device-data registers.csv). */
+#define CH32RV_USART_CTLR3_HDSEL (1u << 3)
+#define CH32RV_USART_CTLR3_RTSE  (1u << 8)
+#define CH32RV_USART_CTLR3_CTSE  (1u << 9)
 
 /* -------------------------------------------------------------- SysTick */
 /* CH32V103 (QingKe V3A) lays this out differently from every other family:

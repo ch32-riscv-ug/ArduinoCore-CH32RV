@@ -47,11 +47,11 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 | BUS-05 | I2C マルチマスター | `Wire` はマスター／スレーブ対応、マルチマスター非対応 | バス調停、競合時の通知・復旧 | 未決定 |
 | BUS-06 | I2C マスターとスレーブの兼用 | 1インスタンスはどちらか一方 | スレーブ待受とマスター送信の併用。BUS-05 との関係を確認 | 未決定 |
 | BUS-07 | I2C 拡張アドレス・呼び出し | 通常の7bitアドレスを使用。General Call は受けない | 10bitアドレス、General Call を個別に判断 | 未決定 |
-| BUS-08 | UART RS485 | 通常 UART はあるが専用の方向制御 API なし | 外付けトランシーバの DE／RE 制御、送信完了に合わせた方向切り替え | 未決定 |
-| BUS-09 | UART 1線式半二重 | 公開モードなし | 同一信号線での送受信切り替え。RS485 とは別に判断 | 未決定 |
-| BUS-10 | UART ハードウェアフロー制御 | `setPins()` の CTS／RTS は指定不可 | RTS／CTS の設定とフロー制御 | 未決定 |
-| BUS-11 | UART 受信イベント・エラー通知 | バッファと `serialEvent` はある | 通信エラー、オーバーフロー、IDLE 等の受信区切り通知。既存 `serialEvent` との差を明確にする | 未決定 |
-| BUS-12 | SoftwareSerial | ソフトウェア UART は未実装 | GPIO による送受信、対応速度・同時動作条件。SoftSPI／SoftWire は既存（SPI / Wire ライブラリの中。BUS-15） | 未決定 |
+| BUS-08 | UART RS485 | `setMode(UART_MODE_RS485_HALF_DUPLEX)`、DE は `setPins()` の RTS に名指した任意の端子をコアが送信完了の割込みで切り替える（ESP32 の形、2026-11-17） | ベンチで確認（uart.rs485、2026-11-17） | 採用 |
+| BUS-09 | UART 1線式半二重 | `setPins(p, p)` / `begin(..., p, p)`（ESP32 の one-wire の形、HDSEL、開放ドレイン。2026-11-17） | ベンチで確認（uart.half-duplex、自分の送信は受けない）、X033/X035 の受信 | 採用 |
+| BUS-10 | UART ハードウェアフロー制御 | `setPins(rx, tx, cts, rts)`、`setHwFlowCtrlMode()`（ESP32 の形、2026-11-17） | ベンチで確認（uart.flow-control、V003・V006・V205）。ラベルの無い台 | 採用 |
+| BUS-11 | UART 受信イベント・エラー通知 | `onReceiveError()`（ノイズも）、`onReceive()`・`setRxTimeout()`・`setRxFIFOFull()`（ESP32 の形、IDLE と受信バッファの数。2026-11-17） | DMA 受信 | 採用 |
+| BUS-12 | SoftwareSerial | SoftwareSerial ライブラリ（Arduino の API と `begin(speed, config)`、2026-11-17） | 受信の上限は石しだい（V006 は 115200 で欠ける） | 採用 |
 | BUS-13 | CAN | 現行対応表では対象外。`HardwareCAN` は抽象クラスのみ | CH32 用ドライバ、標準／拡張 ID、フィルタ、Listen-only、Loopback、エラー状態。CAN FD はハードウェア対応確認後に別判断 | 未決定 |
 | BUS-14 | I2S | 現行対応表では対象外 | 送信／受信、Master／Slave、対応データ形式・サンプルレート、連続ストリーミング | 未決定 |
 | BUS-15 | 名前の付いたバスをソフトにする | ボードメニューの I2Cn / SPIn の Software で、`Wire` / `SPI` などを SoftWire / SoftSPI にする（ハードウェアのコードはリンクされない。2026-11-03）。ソフトかハードかはクラスで決まり、自動では切り替えない | UART（BUS-12 が入ったら） | 採用 |

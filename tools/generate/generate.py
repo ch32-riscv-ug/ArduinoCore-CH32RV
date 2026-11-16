@@ -2371,6 +2371,18 @@ UART_SIGNAL_RE = [
     (re.compile(r"^U(TX|RX)$"),            lambda m: (1, m.group(1))),
     (re.compile(r"^UART_(TX|RX)$"),        lambda m: (1, m.group(1))),
 ]
+# The flow-control pads (setPins()' CTS / RTS, setHwFlowCtrlMode()), in the
+# same spellings. They are not route roles: a route is chosen by TX / RX, and
+# CTS / RTS are looked up on the route that was (remap families: the same
+# field value moves them; per-pin families: each pad has its own function
+# number). One table per role, so a USART whose RTS is bonded and CTS is not
+# still gets RTS - and the RS485 DE pin, which any GPIO can be, needs neither.
+UART_FLOW_SIGNAL_RE = [
+    (re.compile(r"^US?ART(\d+)_(CTS|RTS)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^(CTS|RTS)(\d+)$"),        lambda m: (int(m.group(2)), m.group(1))),
+    (re.compile(r"^U(CTS|RTS)$"),             lambda m: (1, m.group(1))),
+    (re.compile(r"^UART_(CTS|RTS)$"),         lambda m: (1, m.group(1))),
+]
 # Route preference: the first one present wins. Families that expose no
 # "default" route (V205/X305/X315) only carry af-N alternate-function numbers.
 # USART instances the core can drive (ch32rv_registers.h names their bases).
@@ -2716,6 +2728,12 @@ def load_uart_pins(tables: pathlib.Path, alts=None) -> dict:
                            "uart", alts)
 
 
+def load_uart_flow_pins(tables: pathlib.Path, alts=None) -> dict:
+    """part -> {(usart index, route): {"CTS": ..., "RTS": ...}}."""
+    return load_pin_routes(tables, UART_FLOW_SIGNAL_RE, UART_ROUTE_ORDER,
+                           "uart", alts)
+
+
 def load_i2c_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(i2c index, route): {"SCL": ..., "SDA": ...}}."""
     return load_pin_routes(tables, I2C_SIGNAL_RE, I2C_ROUTE_ORDER,
@@ -2839,6 +2857,10 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
 
 # Set by main(): family -> internal ADC channels (load_adc_internal).
 ADC_INTERNAL: dict = {}
+
+# Set by main(): the USARTs' CTS / RTS pads, shaped like the uarts dict
+# (load_uart_flow_pins).
+UART_FLOW: dict = {}
 
 # Set by main(): every pad device-data offers per (kind, part, index, route,
 # role), where load_pin_routes() kept only one in the pin dicts.
@@ -3012,7 +3034,7 @@ def emit_misfit_defaults(out: list, prefix: str, roles: tuple, series: str,
 def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
                          parts: list, pins: dict, remap: dict, kind: str,
                          index: int, route_order: tuple, forbidden: dict,
-                         series_default: bool) -> bool:
+                         series_default: bool, mark_absent: bool = True) -> bool:
     """The instance's route table, and for an instance without a series-wide
     default, its default pins and remap value per part.
 
@@ -3027,7 +3049,7 @@ def emit_instance_routes(out: list, prefix: str, roles: tuple, series: str,
     absent = [pn for pn in parts
               if not any(i == index and set(roles) <= set(entry)
                          for (i, _r), entry in pins.get(pn, {}).items())]
-    if absent:
+    if absent and mark_absent:
         cond = " || ".join(f"defined(CH32RV_PART_{m})" for m in absent)
         out.append(f"#if {cond}")
         out.append(f"#define CH32RV_{prefix}_ABSENT 1   /* not on this part */")
@@ -3797,6 +3819,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             emit_instance_routes(out, f"SERIAL{index}", ("TX", "RX"), series, parts,
                                  uarts, remap, "usart", index, UART_ROUTE_ORDER,
                                  forbidden, route is not None)
+            # CTS and RTS, one table each, by the route they belong to
+            # (HardwareSerial's setHwFlowCtrlMode()).
+            for role in ("CTS", "RTS"):
+                if any(role in e for pn in parts
+                       for (i, _r), e in UART_FLOW.get(pn, {}).items() if i == index):
+                    emit_instance_routes(out, f"SERIAL{index}_{role}", (role,), series,
+                                         parts, UART_FLOW, remap, "usart", index,
+                                         UART_ROUTE_ORDER, forbidden, True,
+                                         mark_absent=False)
         # TX / RX: the pads of the first USART's default route, in the shape
         # arduino-esp32's pins_arduino.h has them (TX, RX next to SDA, SCL, SS
         # ...). With every USART on AUTO that is where Serial.begin() without
@@ -4523,6 +4554,7 @@ def main() -> int:
     # load_pin_routes - but the pick has to be visible rather than silent.
     route_alts = ROUTE_ALTS
     uarts = load_uart_pins(args.tables, route_alts)
+    UART_FLOW.update(load_uart_flow_pins(args.tables, route_alts))
     i2cs = load_i2c_pins(args.tables, route_alts)
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
@@ -4566,7 +4598,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, i2cs, spis, dacs], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

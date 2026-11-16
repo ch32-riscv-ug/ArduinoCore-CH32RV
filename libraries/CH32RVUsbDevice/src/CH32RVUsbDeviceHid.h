@@ -42,6 +42,15 @@ public:
     bool enableOwnInterface(bool enable = true);
     bool ownInterfaceEnabled() const { return _ownInterface; }
 
+    /* The interrupt endpoints' interval at high speed and SuperSpeed
+     * (EspUsbDevice's setHighSpeedInterval()): bInterval 1-16, 2^(bInterval-1)
+     * x 125 us; 0 goes back to the default (the largest under 10 ms: 8 ms,
+     * bInterval 7). Full speed keeps 10 ms. On a shared interface the
+     * smallest value its classes asked for is used. Before the device
+     * begins; false after, or for more than 16. */
+    bool setHighSpeedInterval(uint8_t bInterval);
+    uint8_t highSpeedInterval() const { return _hsInterval; }
+
     /* For the shared interface. */
     virtual uint8_t hidReportId() const { return 0; }
     virtual const uint8_t *hidReportDescriptor() const = 0;
@@ -89,6 +98,7 @@ private:
     CH32RVUsbDeviceHidInterface *_hidItf = nullptr;   /* the interface it is on */
     CH32RVUsbDeviceHidClass *_hidNext = nullptr;   /* that interface's next class */
     bool _ownInterface = false;
+    uint8_t _hsInterval = 0;         /* setHighSpeedInterval(); 0: the default */
     uint8_t _idle = 0;               /* SET_IDLE for its report, in 4 ms; 0: none */
     uint32_t _idleFrom = 0;          /* its last input report went out */
 };

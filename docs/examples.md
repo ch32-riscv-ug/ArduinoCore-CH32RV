@@ -18,6 +18,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | SD cards (SPI, SDIO) | [SD](../libraries/SD/README.md), [SD_MMC](../libraries/SD_MMC/README.md) | CardInfo |
 | SPI slave | [CH32RVSPISlave](../libraries/CH32RVSPISlave/README.md) | SPISlaveSelfTest |
 | Software SPI | [SoftSPI](../libraries/SPI/examples/SoftSPILoopback/README.md) | SoftSPILoopback |
+| Software UART | [SoftwareSerial](../libraries/SoftwareSerial/README.md) | SoftwareSerialExample |
 | Servo control | [Servo](../libraries/Servo/examples/Sweep/README.md) | Sweep |
 | ISR data transfer | [CH32RVSyncKit](../libraries/CH32RVSyncKit/examples/README.md) | QueueFromInterrupt / DeadlinePeriod |
 | Combining work | [CH32RVTaskKit](../libraries/CH32RVTaskKit/examples/README.md) | BasicWork → ButtonBlinkConsole |
@@ -39,6 +40,7 @@ Distinguish USB roles first: Device connects as a peripheral to a PC or another 
 ## Further UART and system examples
 
 After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/examples/SerialLineReceiver/README.md) and [binary packet receiver](../libraries/CH32RV/examples/SerialPacketReceiver/README.md) to process input incrementally.
+[SerialReceiveEvent](../libraries/CH32RV/examples/SerialReceiveEvent/README.md) takes a message at once when the line goes quiet; [SerialFlowControl](../libraries/CH32RV/examples/SerialFlowControl/README.md) (RTS / CTS), [SerialRS485](../libraries/CH32RV/examples/SerialRS485/README.md) (a transceiver's driver enable) and [SerialHalfDuplex](../libraries/CH32RV/examples/SerialHalfDuplex/README.md) (one wire) show the UART's other modes.
 [SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.md) introduce system APIs using only UART; [WindowWatchdog](../libraries/CH32RV/examples/WindowWatchdog/README.md) (the window watchdog) and [RtcAlarm](../libraries/CH32RV/examples/RtcAlarm/README.md) (the RTC's calendar and alarm, sleeping until it, backup registers) go further.
 [FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.md) and [FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.md) keep settings in the internal flash; they are for advanced use - read [storing in flash](flash-store.ja.md) for the limits and costs first.
 After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.md) to distinguish frequency from duty.

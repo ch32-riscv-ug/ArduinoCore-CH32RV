@@ -31,6 +31,7 @@ void deliver(void)
             {CH32RV_USART_STATR_ORE, UART_FIFO_OVF_ERROR},
             {CH32RV_USART_STATR_FE, UART_FRAME_ERROR},
             {CH32RV_USART_STATR_PE, UART_PARITY_ERROR},
+            {CH32RV_USART_STATR_NE, UART_NOISE_ERROR},
         };
         const uint8_t errors = r.port->takeErrors();
         for (const auto &kind : kinds) {

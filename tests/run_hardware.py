@@ -79,6 +79,7 @@ SKETCHES = {
     "pd": TESTS / "sketch_support/pd/pd.ino",
     "synckit": TESTS / "sketch_support/synckit/synckit.ino",
     "flash": TESTS / "sketch_support/flash/flash.ino",
+    "uart": TESTS / "sketch_support/uart/uart.ino",
     "wire": TESTS / "sketch_support/wire/wire.ino",
     "softwire": TESTS / "sketch_support/wire/wire.ino",
     "softspi": TESTS / "sketch_support/spi/spi.ino",

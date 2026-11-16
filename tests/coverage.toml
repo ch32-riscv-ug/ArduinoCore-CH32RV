@@ -38,6 +38,31 @@ test = "uart::test_uart_receive_errors"
 scope = "series"
 
 [[item]]
+id = "uart-flow-control"    # setHwFlowCtrlMode(): CTS holds TX, RTS rises at the threshold and falls after read()
+test = "uart::test_uart_flow_control"
+scope = "series"
+
+[[item]]
+id = "uart-rs485"           # setMode(UART_MODE_RS485_HALF_DUPLEX): DE high around every frame (WireSkein rs485)
+test = "uart::test_uart_rs485"
+scope = "series"
+
+[[item]]
+id = "uart-half-duplex"     # setPins(tx, tx): single wire (HDSEL), the echo, receiving on the TX pad
+test = "uart::test_uart_half_duplex"
+scope = "series"
+
+[[item]]
+id = "uart-receive-event"   # onReceive(): the IDLE timeout, a longer timeout, the FIFO-full count
+test = "uart::test_uart_receive_event"
+scope = "series"
+
+[[item]]
+id = "software-serial"      # SoftwareSerial: 9600 / 57600 / 115200 8N1 and 8E1, 8O1, 8N2, 7E1 both ways
+test = "uart::test_uart_software_serial"
+scope = "series"
+
+[[item]]
 id = "gpio"
 test = "gpio"
 scope = "series"
