@@ -57,7 +57,7 @@ old pads to inputs.
 
 The hardware I2C reaches only the pads its routes name, and on the small parts
 those are often not bonded out, or already carry something else. `SoftWire` is a
-bit-banged controller on any two pads. It is a `TwoWire`, like `Wire`, so a
+bit-banged controller (and target) on any two pads. It is a `TwoWire`, like `Wire`, so a
 library that takes `TwoWire *` takes it unchanged. It comes with the same
 `<Wire.h>` (or `<SoftWire.h>`).
 
@@ -83,10 +83,33 @@ Adafruit_Something device(&bus);
   a V103, 373 kHz on a V205, 526 kHz on a V203 and 862 kHz on an H417.
   Above the ceiling it runs at the ceiling, never faster than asked.
   `getClock()` returns what was asked.
-- **No target mode.** `begin(address)` opens a controller, and `onReceive()` /
-  `onRequest()` do nothing. There is no `setRoute()`: that is the
-  hardware's. `peripheral()` returns 0, and `clearBus()` frees the bus the way
-  Wire's does.
+- **A target too.** `bus.begin(0x42)` (or `bus.begin(0x42, sda, scl, 0)`)
+  answers at 0x42 with Wire's target contract: `onReceive(count)` after the
+  STOP (or at a repeated START, before `onRequest()` in a register read),
+  `onRequest()` at a read's address, 0xFF past what it wrote, the head of a
+  write longer than the buffer. A START (SDA falling, `attachInterrupt()`)
+  starts one interrupt that follows the controller's clock by watching both
+  lines until the STOP: SDA is sampled as SCL rises, SDA moving while SCL is
+  high is a repeated START / STOP. What the next low phase does to SDA (the
+  ACK, letting go, the next bit it sends) is decided in the high phase before
+  it and written as soon as the fall is seen. Where a callback runs
+  (`onRequest()` at a read's address, the `onReceive()` a repeated START
+  owes) it **holds SCL low until done** - clock stretching, so the callbacks
+  may take their time; the controller has to allow stretching. What has to be
+  in time: the START's interrupt, by the end of the first bit's low phase
+  (about 10 us at 100 kHz), and in each low phase seeing the fall plus one pin
+  write before SCL rises; the bit loop runs from RAM for that (about 0.5 KB).
+  Measured against a 100 kHz controller (2026-11-15, a 5.5 us low half): the
+  write lands 2.0-3.7 us after the fall on a V003 at 24 MHz, 3.1-4.0 us on an
+  X035 at 48 MHz; the tests pass on V003, X035 and V203. Estimated ceiling on
+  X035 and V003: about 100 kHz, not 400 kHz. **The CPU stays in that
+  interrupt while the bus is busy, other targets' transfers included**; an
+  interrupt of the same or higher priority running then can lose a bit. SCL
+  takes no interrupt, so SDA and SCL may share an EXTI line (pin bit); SDA's
+  line is the target's (no `attachInterrupt()` of your own on it). Only a
+  sketch calling `begin(address)` links the target and the EXTI handlers.
+- There is no `setRoute()`: that is the hardware's. `peripheral()` returns 0,
+  and `clearBus()` frees the bus the way Wire's does.
 - The buffers are Wire's `CH32RV_WIRE_BUFFER_SIZE` (32 by default).
 - `endTransmission()` on a bus that is not open returns 4, as on `Wire` (it
   does not `begin()` by itself).
@@ -118,8 +141,9 @@ compile.
 - **The buffer is 32 bytes**, as on AVR. Writing more truncates and reports 1.
   Raise it with `-DCH32RV_WIRE_BUFFER_SIZE=128`; both buffers grow, on every
   instance.
-- **Slave mode is interrupt-driven.** `begin(address)` selects slave mode;
-  `onReceive()` and `onRequest()` callbacks run in interrupt context. An instance
+- **Slave mode is interrupt-driven**, on `Wire` and on `SoftWire` alike.
+  `begin(address)` selects slave mode; `onReceive()` and `onRequest()`
+  callbacks run in interrupt context. An instance
   cannot act as master and slave simultaneously. Multi-master arbitration and
   general-call responses are unsupported.
 - **Slave mode is begun on the bus object** (`Wire.begin(0x42)`), not through

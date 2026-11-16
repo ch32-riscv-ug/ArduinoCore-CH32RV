@@ -3,24 +3,12 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_ticks.h"
+#include "softwire_lines.h"
 
 namespace arduino {
 
-/* The pins' registers directly: digitalWrite() / digitalRead() looked the pin
- * up on every call, and on an X035 (48 MHz) that capped SoftWire near 37 kHz.
- * The pins are open-drain outputs from begin() on: the core's open-drain write
- * (ch32rv_gpio.h) is all it takes, the pads without open drain included. */
-static inline void line_write(uint8_t pin, bool high)
-{
-    const pin_size_t pad = CH32RV_PIN_RESOLVE(pin);
-    ch32rv_gpio_od_write((uint8_t)CH32RV_PIN_PORT(pad), (uint8_t)CH32RV_PIN_BIT(pad), high);
-}
-
-static inline bool line_high(uint8_t pin)
-{
-    const pin_size_t pad = CH32RV_PIN_RESOLVE(pin);
-    return ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(pad), (uint8_t)CH32RV_PIN_BIT(pad)) != 0;
-}
+static inline void line_write(uint8_t pin, bool high) { softwire_line_write(pin, high); }
+static inline bool line_high(uint8_t pin) { return softwire_line_high(pin); }
 
 /* I2C is open-drain: nobody ever drives the line high. LOW is a real drive,
  * HIGH is letting go and leaving it to the pull-up. CH32's GPIO has an
@@ -79,6 +67,9 @@ void SoftWire::begin()
     if (_sda == CH32RV_ROUTE_NO_PIN) {
         return;
     }
+    if (_slave) {
+        end();                         /* a target becomes a controller, as Wire's does */
+    }
     setClock(_clock_hz);
     /* Both lines released. OUTPUT_OPENDRAIN before the write, so the pad never
      * drives high even briefly - on a bus with another controller, or a target
@@ -129,10 +120,18 @@ bool SoftWire::clearBus(void)
     return free;
 }
 
+/* Set by begin(address) (SoftWireTarget.cpp): how end() lets the target's
+ * lines go. A pointer rather than a call, so a controller-only sketch does not
+ * link detachInterrupt() and the EXTI handlers through end(). */
+void (*softwire_target_stop)(SoftWire *bus);
+
 void SoftWire::end()
 {
     if (!_started) {
         return;
+    }
+    if (_slave && softwire_target_stop) {
+        softwire_target_stop(this);
     }
     pinMode(_sda, INPUT);
     pinMode(_scl, INPUT);

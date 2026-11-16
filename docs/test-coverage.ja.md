@@ -87,7 +87,7 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | Wire master NACK/timeout/recovery | あり | 現行: アドレスの NACK のみ（wire::test_wire_output_only、selfbus::test_i2c_nack） | データの NACK、timeout、バスの回復、clock stretch。SDA を握る・NACK を返す peer |
 | Wire slave 受信・応答 | あり | 現行: wire::test_wire_slave（プローブの i2c-controller が独立 master、100 kHz。onReceive / onRequest の順と中身、repeated START の register read、0xFF の埋め、32 バイトの頭、別の番地） | callback 文脈、復旧 |
 | SoftWire master | あり | 現行: softwire::test_wire_output_only・test_wire_repeated_start（wire と同じ問いを任意の 2 本で） | stretch、NACK、timeout/recovery |
-| SoftWire slave | あり（2026-11-15、実機未確認。端子変化の割込みとクロックストレッチ） | 配線待ち: softwire::test_wire_slave（wire.slave と同じ問いを、SoftWire の 2 本で。100 kHz） | 割込みの遅れの上限（速いクロック）、ほかの割込みと重なったとき |
+| SoftWire slave | あり（2026-11-17、START の割込みから STOP まで線を追う。V003・V006・V103・V203・V205・X035・H417 で確認） | 現行: softwire::test_wire_slave（wire.slave と同じ問いを、SoftWire の 2 本で。100 kHz） | 割込みの遅れの上限（速いクロック）、ほかの割込みと重なったとき |
 | SPI master | あり | 現行: spi::test_spi_output_only・test_spi_contract（mode/order、CS、プローブを相手に往復）、selfbus::test_spi_out / test_spi_in（自己検査） | data/buffer 境界、clock ごとの実観測 |
 | SoftSPI master | あり | 現行: softspi（spi と同じ問いを任意の端子で） | 8/16/32-bit/block、MISO 無し、clock floor |
 | SPI slave（CH32RVSPISlave）、SoftSPI slave（SoftSPISlave） | どちらもあり（SoftSPISlave は 2026-11-15、V203・V006・V205・V103 で確認） | 現行: spi::test_spi_slave（プローブが master）。現行: softspi::test_spi_slave（同じ問いを SoftSPI の 4 本で、50 kHz） | SPI slave の DMA 境界、復旧。SoftSPISlave の上限のクロック |

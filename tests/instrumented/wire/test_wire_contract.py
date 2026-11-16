@@ -105,7 +105,9 @@ def open_bus(dut, oep_host, case, record_property):
         free = [p for p in lines if p not in (wire_sda, wire_scl)]
         if len(free) < 2:
             pytest.skip(f"SoftWire wants two <port>@<pad> lines besides Wire's {wire_sda} / {wire_scl}")
-        sda, scl = free[:2]
+        # SoftWire's target takes an interrupt on each line: SCL on a pin bit (EXTI line) other than SDA's
+        sda = free[0]
+        scl = next((p for p in free[1:] if int(p[2:]) != int(sda[2:])), free[1])
         assert ask(dut, f"soft {lines[sda]['pin']} {lines[scl]['pin']}", rb"SOFT (\d)").group(1) == b"1", \
             f"SoftWire refused SDA {sda} / SCL {scl}"
         record_property("bus", "SoftWire")
@@ -140,9 +142,11 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                 for hz in SPEEDS_HZ:
                     ask(dut, f"clock {hz}", rb"CLOCK (\d+)")
                     for address in (ADDRESS, 0x13):
-                        want = [i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
-                                                             "start": "S", "end": "P"}]),
-                                starts(idle), ends(idle)]
+                        # Above PROMISED_HZ the transfer is recorded, not required: no expectation on the wire
+                        # there (the SCL that comes out is judged by judge_clocks all the same).
+                        want = ([i2c(scl, sda, transactions=[{"addr": address, "rw": "write", "bytes": [], "ack": False,
+                                                              "start": "S", "end": "P"}]),
+                                 starts(idle), ends(idle)] if hz <= PROMISED_HZ else [])
                         name = f"{hz // 1000} kHz, address 0x{address:02x}, no target"
                         with ws_run.section(2, name, expect=want):
                             ws_run.command(f"nack 0x{address:02x}")
@@ -261,11 +265,14 @@ def test_wire_repeated_start(dut, oep_host, ws_run, record_property):
 
 
 SLAVE_ADDRESS = 0x42
+SOFT_SLAVE_HZ = 100_000    # softwire.slave: the master's clock; the target's write must land within its low half
+                           # (tests/README.ja.md 取り込みの速さ: T = 5 us, 100 MS/s is 500 / T)
 
 
 def test_wire_slave(dut, oep_host, ws_run, record_property):
-    """wire.slave (case wire only): Wire.begin(0x42) on its default pins with onReceive / onRequest, the probe's
-    i2c-controller the master at 100 kHz (its pull-ups). One capture of SDA and SCL, a WireSkein section per
+    """wire.slave, softwire.slave: Wire.begin(0x42) on its default pins - or, for softwire, a SoftWire's begin(0x42)
+    on the two lines open_bus picked (SDA and SCL on different pin bits: the target takes an interrupt on each) - with
+    onReceive / onRequest, the probe's i2c-controller the master at 100 kHz (its pull-ups). One capture of SDA and SCL, a WireSkein section per
     condition judging the bus (i2c: the transactions, their starts and ends, the bytes, the bus released); what the
     sketch's callbacks saw (sgot) and what the probe read are compared here - Wire's target contract
     (libraries/Wire/README.md, AVR's semantics):
@@ -277,21 +284,25 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     - another address: 0x43 - not acknowledged, no callback.
     It stays at 100 kHz, unlike the transactions above: the probe is the master here, and it passes on every series
     of the bench's lines (2026-11-14); the 20 kHz there is for the hardware Wire as the master (H41x's SDA hold
-    against the probe's input, TODO)."""
+    against the probe's input, TODO). SoftWire's target follows the clock by watching the lines from the START's
+    interrupt to the STOP and holds SCL low (stretches) where a callback runs, so the probe has to honour clock
+    stretching (the 25 ms timeout); what has to be in time is the START's interrupt (by the end of the first bit's
+    low phase) and, in each low phase, one pin write before SCL rises - SOFT_SLAVE_HZ is the clock it is asked at
+    (2026-11-15: passes on V003 at 24 MHz, X035 at 48 MHz, V203)."""
     from oep_client.fixture import I2cController, I2cSegment
     from wireskein.runlog import ends, i2c, starts
     case = settings(__file__)
-    if case.get("case") != "wire":
-        pytest.skip("the target mode is the hardware Wire's")
-    lines, sda, scl, _ = open_bus(dut, oep_host, case, record_property)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
     host = oep_host.host
     ctrl = I2cController(host)
     core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
     record_property("probe_pullups", ctrl.internal_pullups)
     m = ask(dut, f"slave {SLAVE_ADDRESS}", rb"SLAVE (\d)")
     if m.group(1) != b"1":
-        pytest.skip("n/a: this Wire has no target mode")
-    clock = ctrl.configure(100_000, 25_000)
+        if soft and int(sda[2:]) == int(scl[2:]):
+            pytest.skip(f"n/a: SoftWire's target wants SDA and SCL on different EXTI lines, {sda} / {scl} share one")
+        pytest.fail(f"begin({SLAVE_ADDRESS}) refused on {sda} / {scl}")
+    clock = ctrl.configure(SOFT_SLAVE_HZ if soft else 100_000, 25_000)
     wrong = []
 
     def got(wait):
@@ -303,7 +314,7 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     def steps(wait):
         idle = {sda: 1, scl: 1}
         A = SLAVE_ADDRESS
-        with ws_run.section(1, f"wire slave {sda} {scl} at 0x{A:02x}, master {clock} Hz"):
+        with ws_run.section(1, f"{'softwire' if soft else 'wire'} slave {sda} {scl} at 0x{A:02x}, master {clock} Hz"):
             def run(name, segments, transactions, reply=None):
                 with ws_run.section(2, name, expect=[i2c(scl, sda, transactions=transactions),
                                                      starts(idle), ends(idle)]):

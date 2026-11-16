@@ -14,10 +14,12 @@
  *                         NACK <result> (2: the address was not acknowledged)
  *   clock <hz>            the bus's setClock(hz) (100 kHz from start-up): CLOCK <hz>
  *
- * Wire as a target of the probe's i2c-controller (begin(address)):
+ * The bus as a target of the probe's i2c-controller (begin(address)): Wire, or
+ * the SoftWire `soft` named (on its pins):
  *
- *   slave <addr>          Wire.end(), Wire.begin(addr) with onReceive / onRequest:
- *                         SLAVE 1 (SLAVE 0 where Wire has no target mode)
+ *   slave <addr>          end(), begin(addr) with onReceive / onRequest:
+ *                         SLAVE 1 (SLAVE 0 where the bus refused: a SoftWire whose
+ *                         SDA and SCL share an EXTI line)
  *   sreply <hex or ->     what onRequest() write()s from now on (- : nothing)
  *   sgot                  SGOT <onReceive calls> <onRequest calls> <the order, R / Q per
  *                         call, last 8> <the last onReceive's count> <its bytes, hex or -> */
@@ -36,6 +38,8 @@
  * menu sets its I2C to Software), or the SoftWire `soft` names. */
 static TwoWire *bus = &Wire;
 static SoftWire soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+/* The target the callbacks read from and write to. */
+static TwoWire *target = &Wire;
 
 /* The target side: what onReceive() got, what onRequest() sends, and in which order they ran. */
 static volatile uint32_t receives, requests;
@@ -61,8 +65,8 @@ static void onReceived(int count)
     receives = receives + 1;
     lastCount = count;
     int i = 0;
-    while (Wire.available()) {
-        const int b = Wire.read();
+    while (target->available()) {
+        const int b = target->read();
         if (i < (int)sizeof lastBytes) {
             lastBytes[i++] = (uint8_t)b;
         }
@@ -74,7 +78,7 @@ static void onRequested()
 {
     requests = requests + 1;
     if (replyLength) {
-        Wire.write(replyBytes, replyLength);
+        target->write(replyBytes, replyLength);
     }
     noteOrder('Q');
 }
@@ -168,15 +172,22 @@ void loop()
             SerialDMSeq.println(hz);
         } else if (strncmp(line, "slave ", 6) == 0) {
             const unsigned long address = strtoul(line + 6, nullptr, 0);
-            Wire.end();
             receives = requests = 0;
             lastCount = 0;
             orderUsed = 0;
             order[0] = 0;
-            Wire.onReceive(onReceived);
-            Wire.onRequest(onRequested);
-            Wire.begin((uint8_t)address);
-            SerialDMSeq.println("SLAVE 1");
+            target = bus;
+            target->end();
+            target->onReceive(onReceived);
+            target->onRequest(onRequested);
+            bool ok = true;
+            if (bus == &soft) {
+                ok = soft.begin((uint8_t)address, -1, -1, 0);   /* on the pins `soft` named */
+            } else {
+                Wire.begin((uint8_t)address);
+            }
+            SerialDMSeq.print("SLAVE ");
+            SerialDMSeq.println(ok ? 1 : 0);
         } else if (strncmp(line, "sreply ", 7) == 0) {
             const char *p = line + 7;
             uint8_t n = 0;

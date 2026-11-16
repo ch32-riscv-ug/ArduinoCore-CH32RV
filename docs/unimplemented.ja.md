@@ -121,7 +121,7 @@
 | I2C の 10 bit アドレス・General Call | 全系列 | 1 | 自動 | プローブ（i2c-target / controller が 10 bit を扱えるかは [oep] に確認） | FC:49, libraries/Wire/src/Wire.h:22-23 |
 | I2C の PEC（SMBus）・DMA | 全系列 | 2 | 自動 | プローブ | TODO:307, EVT I2C/I2C_PEC・I2C_DMA |
 | Wire の NACK・timeout・回復・clock stretch の試験 | 全系列 | 1 | 自動 | プローブ（SDA を握る相手） | TODO:27, TC:81 |
-| SoftWire のスレーブ | 全系列 | 実装済み（2026-11-15、実機未確認） | 自動 | プローブ（i2c-controller）。softwire::test_wire_slave | libraries/Wire/README.ja.md, TC:87 |
+| SoftWire のスレーブ | 全系列 | 実装済み（2026-11-17、7 台で確認。100 kHz 台まで） | 自動 | プローブ（i2c-controller）。softwire::test_wire_slave | libraries/Wire/README.ja.md, TC:87 |
 | SPI ライブラリのスレーブ（`SPI_HAS_PERIPHERAL_MODE`） | 全系列 | 実装済み（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。spi・softspi::test_spi_peripheral | libraries/SPI/README.ja.md |
 | CH32RVSPISlave の残り（DMA、ハードの NSS、上限クロック、V407・H417） | 全系列 | 2 | 自動 | プローブ（速いマスター） | PS:45, libraries/CH32RVSPISlave/README.ja.md:38,48 |
 | SoftSPI のスレーブ | 全系列 | 実装済み（2026-11-15、SoftSPISlave。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。softspi::test_spi_slave | libraries/SPI/README.ja.md, TC:90 |

@@ -146,7 +146,7 @@ protected:
     bool _transmitting = false;
     bool _tx_overflow = false;
     bool _timeout_flag = false;
-    /* A target, or answering a read in onRequest(): the hardware bus only. */
+    /* A target, or answering a read in onRequest(). */
     volatile bool _slave = false;
     volatile bool _slave_replying = false;
 

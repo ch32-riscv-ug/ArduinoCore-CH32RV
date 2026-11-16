@@ -58,7 +58,7 @@ X035のいくつかのrouteは**同じpadでSCLとSDAが入れ替わる**ので�
 
 ハードウェアのI2Cはrouteが名指すpadにしか出せません。小さい部品ではそのpadが
 bondされていない、あるいは別の用途で埋まっていることがよくあります。
-`SoftWire`は任意の2 padでbit-bangするcontrollerで、`Wire`と同じ`TwoWire`なので、
+`SoftWire`は任意の2 padでbit-bangするcontroller(とtarget)で、`Wire`と同じ`TwoWire`なので、
 `TwoWire *`を取るライブラリがそのまま受け取れます。同じ`<Wire.h>`(または`<SoftWire.h>`)で使えます。
 
 ```cpp
@@ -74,8 +74,23 @@ Adafruit_Something device(&bus);
   入力と出力Lowの切り替えで同じことをします)。**プルアップは必要です。**
 - クロックストレッチを待ちます。`endTransmission()`の戻り値とtimeout APIは`Wire`と同じです。
 - `setClock()`のクロックを、CPUと線が許す所まで保ちます。半周期ごとに締め切りの時刻まで待つので、端子の書き込みとSCLの立ち上がりの時間は待ちの中に吸収されます。ベンチで測った値(2026-11-15、プローブの弱いプルアップ): 20 / 50 kHzはどの台も1 %以内。上限はX035で約67 kHz(オープンドレインを真似るため)、V006で約78 kHz、V003で約102 kHz、V103で約210 kHz、V205で約373 kHz、V203で約526 kHz、H417で約862 kHz。上限より速くは頼んでも上限で動き、頼んだより速くはなりません。`getClock()`は指定した値を返します。
-- **slaveモードはありません。** `begin(address)`はcontrollerとして開き、`onReceive()` / `onRequest()`は何もしません。
-  `setRoute()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。`clearBus()`は`Wire`と同じ手順でバスを解放します。
+- **slave(target)にもなります。** `bus.begin(0x42)`(または`bus.begin(0x42, sda, scl, 0)`)で0x42に応え、
+  契約は`Wire`のtargetと同じです: STOPのあと(register readではrepeated STARTで`onRequest()`より先)に`onReceive(count)`、
+  読みのアドレスで`onRequest()`、書いた分より多く読まれたら0xFF、バッファより長い書き込みは頭を残します。
+  START(SDAの立ち下がり、`attachInterrupt()`)で入った割り込みが、STOPまで両方の線を見てcontrollerのクロックを追います:
+  SCLの立ち上がりでSDAを読み、SCLがHighの間のSDAの変化がrepeated START / STOPです。次のLowでSDAに何をするか
+  (ACK、手放す、送る次のビット)はその前のHighの間に決めておき、立ち下がりを見たらすぐ書きます。callbackの所
+  (読みのアドレスの`onRequest()`、repeated STARTで払う`onReceive()`)では**終わるまでSCLをLowに握ります**
+  (クロックストレッチ)。callbackは時間を掛けてよく、controllerはストレッチを待つ必要があります。
+  間に合う必要があるのは、STARTの割り込みが最初のビットのLowが終わるまで(100 kHzで約10 µs)と、
+  各Lowで立ち下がりを見てから1回の書き込みがSCLの立ち上がりまでです。そのためビットのループはRAMで動きます
+  (約0.5 KB)。100 kHzのcontrollerで測った値(2026-11-15、Lowは5.5 µs): 書き込みは立ち下がりから
+  V003(24 MHz)で2.0〜3.7 µs、X035(48 MHz)で3.1〜4.0 µs。V003・X035・V203で試験が通ります。
+  見積もりの上限はX035・V003とも100 kHz台で、400 kHzは無理です。**バスが動いている間(ほかのtargetの転送も)
+  CPUはその割り込みの中にいます。**同じか高い優先度の割り込みがその間に走るとビットを落とすことがあります。
+  SCLは割り込みを使わないので、SDAとSCLが同じEXTIの線(同じビット番号)でもかまいません。SDAの線はtargetが使います
+  (自分の`attachInterrupt()`を重ねない)。targetとEXTIの処理は`begin(address)`を呼ぶスケッチだけにリンクされます。
+- `setRoute()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。`clearBus()`は`Wire`と同じ手順でバスを解放します。
 - バッファは`Wire`と同じ`CH32RV_WIRE_BUFFER_SIZE`(既定32)です。
 - 開いていないバスへの`endTransmission()`は、`Wire`と同じく4を返します(自動では`begin()`しません)。
 
@@ -104,7 +119,7 @@ Adafruit_Something device(&bus);
 - **バッファは32バイト**(AVRと同じ)。超えると切り捨てて1を返します。
   `-DCH32RV_WIRE_BUFFER_SIZE=128`で増やせますが、
   送受信の両方が、インスタンスごとに増えます。
-- **slaveモードは割り込み駆動です。** `begin(address)`でslaveを選び、
+- **slaveモードは割り込み駆動です**(`Wire`も`SoftWire`も)。`begin(address)`でslaveを選び、
   `onReceive()`と`onRequest()`のcallbackは割り込みcontextで呼ばれます。
   1つのinstanceをmasterとslaveに同時利用すること、multi-master arbitration、
   general callへの応答には対応しません。
