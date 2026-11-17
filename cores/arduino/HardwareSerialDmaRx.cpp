@@ -52,6 +52,7 @@ struct Rx {
     uint8_t seen;           /* the USART's error flags at the last look  */
     uint16_t tail;          /* the reader's place                        */
     uint16_t last;          /* the DMA's place at the last look          */
+    uint16_t cap;           /* own: the heap block's size                */
 };
 Rx ports[CH32RV_SERIAL_COUNT];
 
@@ -135,8 +136,16 @@ struct CH32RVSerialDmaRx {
         return pos >= t ? pos - t : pos + n - t;
     }
 
+    /* Bytes the last look saw and not read yet are counted without another
+     * look: a reader polling available() byte by byte kept CH32V003 at
+     * 48 MHz below 1 Mbaud (bench 2026-11-17, the buffer overran). */
     static int available(CH32RVHardwareSerial &port)
     {
+        const Rx &r = of(port);
+        const uint32_t last = r.last, tail = r.tail;
+        if (last != tail) {
+            return (int)(last >= tail ? last - tail : last + r.size - tail);
+        }
         return (int)look(port);
     }
 
@@ -243,9 +252,28 @@ size_t CH32RVHardwareSerial::rxBufferHeap(size_t size)
         return rxBufferBuiltin(size);
     }
     size = ch32rv_serial_dma_size(_slot != 0, size);
-    uint8_t *buf = size ? (uint8_t *)malloc(size) : nullptr;
-    if (!buf) {
+    if (!size) {
         return 0;
+    }
+    /* The heap block of an earlier call is used again where it is large
+     * enough, and otherwise given back before the new one is taken: two at
+     * once did not fit CH32V003's 2 KB (bench 2026-11-17, a second begin()'s
+     * sizes refused). A new block that does not fit leaves the direction
+     * off DMA (size 0). */
+    Rx &d = CH32RVSerialDmaRx::of(*this);
+    uint8_t *buf = d.own && d.cap >= size ? d.buf : nullptr;
+    if (!buf) {
+        if (d.own) {
+            free(d.buf);
+            d.buf = nullptr;
+            d.size = 0;
+            d.own = 0;
+        }
+        buf = (uint8_t *)malloc(size);
+        if (!buf) {
+            return 0;
+        }
+        d.cap = (uint16_t)size;
     }
     heap_free = free;
     return CH32RVSerialDmaRx::set(*this, size, buf, true);

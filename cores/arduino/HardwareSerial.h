@@ -259,8 +259,10 @@ public:
      * bytes, not an interrupt per byte. A size up to the built-in
      * CH32RV_SERIAL_RX_BUFFER_SIZE / _TX_BUFFER_SIZE uses that storage; a
      * larger one is taken from the heap (a constant size that fits links no
-     * heap). Returns the size, or 0 - and nothing changes - while the port is
-     * open, below 2, above 65534, or when the heap has no room.
+     * heap; an earlier call's block is used again when large enough, else
+     * given back first). Returns the size, or 0 while the port is open, below
+     * 2 or above 65534 (nothing changes), or when the heap has no room (that
+     * direction then runs on the built-in buffer).
      *
      * Receive: the DMA fills the buffer in a circle while the CPU does
      * anything else, interrupts off included, so nothing is lost at any baud

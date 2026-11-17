@@ -30,8 +30,9 @@ import ws_capture
 RX_BUFFER = 512
 TX_BUFFER = 256
 BAUDS = (1_000_000, 2_000_000)
-# tests/README.ja.md 取り込みの速さ: T = 0.5 us, the bit at 2 Mbaud; 20 / T.
-FAST_RATE = 40_000_000
+# tests/README.ja.md 取り込みの速さ: T = 0.5 us, the bit at 2 Mbaud; 10 / T. 40 MS/s overran the probe's stream on
+# V103's bench (2026-11-17: "the probe dropped a segment").
+FAST_RATE = 20_000_000
 # 1 Mbaud only: T = 1 us, 20 / T.
 UART_RATE = 20_000_000
 # 115200: T 8.7 us, 35 / T.

@@ -38,6 +38,7 @@ struct Tx {
     volatile uint16_t head; /* write()'s place                           */
     volatile uint16_t tail; /* the first byte not yet sent               */
     volatile uint16_t run;  /* bytes in the run in flight; 0: none       */
+    uint16_t cap;           /* own: the heap block's size                */
 };
 Tx ports[CH32RV_SERIAL_COUNT];
 
@@ -102,7 +103,16 @@ struct CH32RVSerialDmaTx {
         }
         t.buf[head] = c;
         t.head = (uint16_t)next;
+        /* The run in flight is over as soon as its count is 0 (its last byte
+         * handed to the USART, not yet sent): the next starts here and not at
+         * that byte's transmit complete. Waiting for the interrupt left the
+         * line idle while write() filled the buffer (bench 2026-11-17: with
+         * interrupts off a gap of the buffer's filling at each wrap, 0.3 ms
+         * on V203 to 2.8 ms on V006; with them on, on V006 / X035, whose
+         * write() is about as slow as a byte at 1 Mbaud, one run and one
+         * interrupt per byte - a third of the line's speed). */
         const uint32_t irq = ch32rv_irq_save();
+        advance(t, line(port), port.registers());
         kick(t, line(port), port.registers());
         ch32rv_irq_restore(irq);
     }
@@ -223,9 +233,28 @@ size_t CH32RVHardwareSerial::txBufferHeap(size_t size)
         return txBufferBuiltin(size);
     }
     size = ch32rv_serial_dma_size(_slot != 0, size);
-    uint8_t *buf = size ? (uint8_t *)malloc(size) : nullptr;
-    if (!buf) {
+    if (!size) {
         return 0;
+    }
+    /* The heap block of an earlier call is used again where it is large
+     * enough, and otherwise given back before the new one is taken: two at
+     * once did not fit CH32V003's 2 KB (bench 2026-11-17, a second begin()'s
+     * sizes refused). A new block that does not fit leaves the direction
+     * off DMA (size 0). */
+    Tx &d = CH32RVSerialDmaTx::of(*this);
+    uint8_t *buf = d.own && d.cap >= size ? d.buf : nullptr;
+    if (!buf) {
+        if (d.own) {
+            free(d.buf);
+            d.buf = nullptr;
+            d.size = 0;
+            d.own = 0;
+        }
+        buf = (uint8_t *)malloc(size);
+        if (!buf) {
+            return 0;
+        }
+        d.cap = (uint16_t)size;
     }
     heap_free = free;
     return CH32RVSerialDmaTx::set(*this, size, buf, true);

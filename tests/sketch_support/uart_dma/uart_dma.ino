@@ -32,7 +32,12 @@ uint8_t eventSeen[8];
 uint32_t eventTotal;
 uint32_t eventHash = 2166136261u;
 
-uint32_t fnv(uint32_t hash, uint8_t byte) { return (hash ^ byte) * 16777619u; }
+// FNV-1a's multiply by 16777619 (2^24 + 2^8 + 0x93) in shifts: rv32ec (CH32V003) has no multiply, and __mulsi3 per
+// byte left the reader below 1 Mbaud (bench 2026-11-17).
+uint32_t fnv(uint32_t hash, uint8_t byte) {
+  const uint32_t h = hash ^ byte;
+  return h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+}
 
 // The registers of Serial's USART (0 while closed).
 uint32_t serialBase() {
@@ -150,8 +155,9 @@ void reply(const char *command) {
     const unsigned long n = strtoul(command + 6, &end, 10);
     const bool off = strtoul(end, nullptr, 10) != 0;
     const uint32_t start = micros();
+    uint8_t b = 11;                        // (i * 37 + 11) & 0xFF without a multiply per byte (rv32ec)
     if (off) noInterrupts();
-    for (unsigned long i = 0; i < n; ++i) Serial.write((uint8_t)(i * 37u + 11u));
+    for (unsigned long i = 0; i < n; ++i, b += 37) Serial.write(b);
     if (off) interrupts();
     Serial.flush();
     const uint32_t took = micros() - start;
