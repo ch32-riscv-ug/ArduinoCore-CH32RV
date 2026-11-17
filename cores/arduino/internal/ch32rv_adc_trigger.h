@@ -3,10 +3,11 @@
  * CTLR2.EXTSEL names them (ch32rv_adc_trigger.c sets the source up;
  * ch32rv_adc_run.h runs the ADC on it).
  *
- * The sources differ between families, and ch32-device-data has the EXTSEL
- * field (registers.csv) but not what its values select, so the table is
- * here, from the EVT headers' ADC_ExternalTrigConv_* (ch32*_adc.h) and the
- * reference manuals:
+ * The sources differ between families. The table is here, from the EVT
+ * headers' ADC_ExternalTrigConv_* (ch32*_adc.h) and the reference manuals,
+ * and matches ch32-device-data's index/adc_triggers.csv (checked 2026-11-18;
+ * the CSV also lists value 6's other sources - V205's TKEY / OPA, V006's OPA
+ * - which this core does not use):
  *
  *   F1 layout (V103, V20x, V205, V30x, V4x7, L103 / M103, H41x, X305 / X315):
  *     0 TIM1 CC1, 1 TIM1 CC2, 2 TIM1 CC3, 3 TIM2 CC2, 4 TIM3 TRGO, 5 TIM4 CC4,

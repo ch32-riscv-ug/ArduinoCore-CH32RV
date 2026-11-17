@@ -242,7 +242,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   （core-20261117T113920Z-40375c22）。通った回は直前のイメージが USB を使わないもの、落ちた回は USB を使うもの
   だった。DCD の SET_INTERFACE と等時のエンドポイントの開き直しを、再列挙の直後に追う（usbmon は root が要る）。
 - [ ] ch32-device-data cb02bca（2026-11-17、push 済み、lock は 3c9ed13）の取り込み: コアに手で書いた表を生成に
-  移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（conflict は V103 の値 6、V205 の注入の値 6）。
+  移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（2026-11-18 に突き合わせ、値はすべて一致。
+  conflict は V103 の値 6、V205 の注入の値 6。コアは値 6 の付け替えを使わない）。
   exti_lines.csv → internal/ch32rv_exti_line.h の線の表（2026-11-18 に突き合わせた: V407 の回避を外し、線 18 =
   USBHS1・ベクタ 58、線 20 = USBHS2・84 だけにした。selfexti の swi で 18・20 とも 1 回ずつ呼ばれる、
   core-20261117T221818Z-d3fa53ac。ほかの系列は同じ。CSV に V20x / V30x の線 18 が無いのは [data] に知らせた。
