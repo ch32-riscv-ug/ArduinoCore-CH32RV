@@ -136,16 +136,12 @@ struct CH32RVSerialDmaRx {
         return pos >= t ? pos - t : pos + n - t;
     }
 
-    /* Bytes the last look saw and not read yet are counted without another
-     * look: a reader polling available() byte by byte kept CH32V003 at
-     * 48 MHz below 1 Mbaud (bench 2026-11-17, the buffer overran). */
+    /* Always a fresh look: onReceive() takes its FIFO-full count and its
+     * callback's available() from here (counting only what an earlier look
+     * saw broke both, bench 2026-11-17). read() and peek() skip the look
+     * while bytes of the last one remain. */
     static int available(CH32RVHardwareSerial &port)
     {
-        const Rx &r = of(port);
-        const uint32_t last = r.last, tail = r.tail;
-        if (last != tail) {
-            return (int)(last >= tail ? last - tail : last + r.size - tail);
-        }
         return (int)look(port);
     }
 

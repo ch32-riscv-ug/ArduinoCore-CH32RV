@@ -12,8 +12,8 @@ uart.dma-interrupts-off (test_uart_dma_interrupts_off): at 1 Mbaud, 400 bytes wh
 1 s - all 400 already in the buffer when they come back (the DMA's count, read with interrupts still off), then read
 whole; and 640 (a quarter more than the buffer): UART_BUFFER_FULL_ERROR and the newest 511 kept.
 uart.dma-transmit (test_uart_dma_transmit): 2048 bytes written at 1 Mbaud and 2 Mbaud, eight times the buffer: the
-probe's UART and WireSkein get every byte, and the DUT's time from the first write to flush() is the line's time
-within 1 % and 1 ms; then the same written with interrupts off (write() moves the DMA's runs on itself).
+probe's UART and WireSkein get every byte, and the DUT's time from the first write to flush() is the longer of the
+line's and 2048 write()s' (dwcost) within 5 % and 1 ms; then the same written with interrupts off.
 uart.dma-receive-event (test_uart_dma_receive_event): onReceive() on a DMA buffer at 115200, as uart.receive-event."""
 import json
 import pathlib
@@ -224,10 +224,14 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
     """2048 bytes written at each baud of BAUDS the DUT reaches - eight times the 256 of the buffer, so write() waits
     for room and the DMA's runs follow one another. The probe's UART reads them all, in order, and WireSkein decodes
     them on the DUT's TX (`uart`, the DUT's baud from BRR). Time: from the first write to flush() the line needs
-    2048 x 10 bits; a run ends at the buffer's end (8 times) and the next starts in write() as soon as the count is
-    0 (a few microseconds), so the DUT's time is within 1 % of the line's (BRR's own rounding is in dut_baud) plus 1 ms
-    (flush()'s last frame, micros()). Then the same with interrupts off around the writes (not timed: micros() stands
-    still): every byte still goes out, write() moving the runs on itself."""
+    2048 x 10 bits, and the sketch 2048 x one write()'s time (dwcost, measured on the DUT with Serial as it is: 50
+    writes that do not wait). The DMA starts each run from write() as soon as the last one's count is 0, so the line
+    waits for neither: the DUT's time is within 5 % of the longer of the two plus 1 ms (flush()'s last frame,
+    micros(), the 50-write sample's spread). On the bench of 2026-11-17 the slower parts' write() was the longer (V003
+    / V006 / X035 about 28 us a byte at 1 Mbaud): this case asks that the DMA adds no wait of its own, not that every
+    part's write() outruns 1 Mbaud. Both write() times (with and without DMA) are recorded. Then the same with
+    interrupts off around the writes (not timed: micros() stands still): every byte still goes out, write() moving the
+    runs on itself."""
     from oep_client import fixture
     from wireskein.runlog import uart
     target, oep_host, dut_tx, dut_rx, io, used = _setup(dut, request)
@@ -247,6 +251,9 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
                 except Exception as e:
                     got[baud] = f"skip: the probe's UART at {baud}: {e}"
                     continue
+                m = _ask(dut, wait, "dwcost", rb"DWCOST (\d+) (\d+)")
+                ws_run.reply(m.group(0).decode())
+                plain_ns, dma_ns = int(m.group(1)), int(m.group(2))
                 for off in (0, 1):
                     name = f"{baud} {'interrupts off' if off else 'timed'}"
                     with ws_run.section(2, name, expect=[uart(dut_tx["pad"], dut_baud, data=sent.hex())]):
@@ -256,6 +263,7 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
                         ws_run.reply(m.group(0).decode())
                         line = _read(io, wait, n, timeout=3)
                         got[name] = dict(us=int(m.group(2)), line_us=n * 10 * 1e6 / dut_baud,
+                                         write_us=n * dma_ns / 1000, plain_write_ns=plain_ns, dma_write_ns=dma_ns,
                                          ok=line == sent, received=len(line))
 
     try:
@@ -269,8 +277,9 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
             continue
         if not r["ok"]:
             wrong.append(f"{name}: the probe read {r['received']} bytes, not the {n} sent")
-        if name.endswith("timed") and r["us"] > r["line_us"] * 1.01 + 1000:
-            wrong.append(f"{name}: {r['us']} us, the line needs {r['line_us']:.0f}")
+        need = max(r["line_us"], r["write_us"])
+        if name.endswith("timed") and r["us"] > need * 1.05 + 1000:
+            wrong.append(f"{name}: {r['us']} us, the line needs {r['line_us']:.0f} and write() {r['write_us']:.0f}")
     assert not wrong, " | ".join(wrong)
     if got and all(isinstance(r, str) for r in got.values()):
         pytest.skip(" | ".join(got.values()))

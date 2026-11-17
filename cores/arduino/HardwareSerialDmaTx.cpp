@@ -4,12 +4,13 @@
  * that does not call setTxBufferSize() links none of it.
  *
  * write() puts the byte in the buffer, and one channel in normal mode sends
- * what lies there in one run, up to the buffer's end. The USART's
- * transmit-complete interrupt, after the run's last stop bit, starts the next
- * - a gap of the interrupt's entry between runs; write() and flush() start it
- * themselves as soon as the run's count is 0 when they wait for room, so a
- * sketch that writes faster than the line sends without gaps (and interrupts
- * off do not stop it). No DMA interrupt: its vectors stay the libraries'. */
+ * what lies there in one run, up to the buffer's end. write() (and flush())
+ * start the next run as soon as the one in flight has a count of 0 - its
+ * last byte handed to the USART - so the line does not stop while write()
+ * keeps up, interrupts off included. Only while bytes wait behind a run is
+ * the USART's transmit-complete interrupt on, to start them when write()
+ * does not come again: a write() slower than the line takes no interrupt per
+ * byte. No DMA interrupt: its vectors stay the libraries'. */
 #include "HardwareSerial.h"
 
 #include "Arduino.h"
@@ -69,7 +70,18 @@ struct CH32RVSerialDmaTx {
         CH32RV_USART_STATR(base) = (uint16_t)~CH32RV_USART_STATR_TC;
         CH32RV_DMA_CFGR(l) |= CH32RV_DMA_CFGR_EN;
         t.run = (uint16_t)len;
-        CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TCIE;
+    }
+
+    /* The transmit-complete interrupt only while bytes wait behind the run
+     * in flight (it starts the next run when write() does not come again):
+     * a write() slower than the line starts each run itself, and then no
+     * interrupt per byte is taken. */
+    static void waiting(Tx &t, uint32_t base)
+    {
+        const uint32_t run = t.run;
+        if (run && ch32rv_serial_dma_wrap(t.tail + run, t.size) != t.head) {
+            CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TCIE;
+        }
     }
 
     /* The run in flight, once the DMA has handed its last byte on: its room
@@ -112,8 +124,10 @@ struct CH32RVSerialDmaTx {
          * write() is about as slow as a byte at 1 Mbaud, one run and one
          * interrupt per byte - a third of the line's speed). */
         const uint32_t irq = ch32rv_irq_save();
-        advance(t, line(port), port.registers());
-        kick(t, line(port), port.registers());
+        const uint32_t base = port.registers();
+        advance(t, line(port), base);
+        kick(t, line(port), base);
+        waiting(t, base);
         ch32rv_irq_restore(irq);
     }
 
@@ -151,8 +165,12 @@ struct CH32RVSerialDmaTx {
         }
         Tx &t = of(port);
         advance(t, line(port), base);
+        /* A run started here keeps the interrupt to its end (RS485's driver
+         * enable is dropped at that TC, HardwareSerialMode.cpp). */
         if (!t.run) {
             CH32RV_USART_CTLR1(base) &= (uint16_t)~CH32RV_USART_CTLR1_TCIE;
+        } else {
+            CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TCIE;
         }
     }
 

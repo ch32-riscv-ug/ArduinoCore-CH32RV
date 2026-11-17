@@ -10,6 +10,8 @@
  *   dsend <n> <off>           n bytes ((i * 37 + 11) & 0xFF) and flush(): DSEND <n> <microseconds>; off 1: the writes
  *                             with interrupts off (the DMA's run moved on by write() itself)
  *   devt <only> <symbols> <fifo> | devt off, devq   onReceive() on the DMA buffer, as uart.ino's uevt / uevq
+ *   dwcost                    DWCOST <ns a write() took without DMA (at startup, 115200)> <ns with Serial as it is now>:
+ *                             50 writes each, fewer than either buffer holds, so none waits for the line
  *
  * <errors>: Serial.takeErrors() - STATR's ORE 8 / NE 4 / FE 2 / PE 1, 16 break, 32 buffer full. */
 #include <Arduino.h>
@@ -24,6 +26,16 @@
 #endif
 
 uint32_t requests;
+uint32_t plainWriteNs;                   // write()'s time on the built-in path, measured in setup()
+
+// ns one Serial.write() takes, from 50 that do not wait for the line (0x55 each), then flushed.
+uint32_t writeNs() {
+  const uint32_t start = micros();
+  for (uint8_t i = 0; i < 50; ++i) Serial.write((uint8_t)0x55);
+  const uint32_t took = micros() - start;
+  Serial.flush();
+  return took * 20u;                     // x 1000 / 50
+}
 char line[80];
 uint8_t used;
 
@@ -84,6 +96,12 @@ void reply(const char *command) {
     SerialDMSeq.print(BENCH_BUILD_ID);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(requests);
+  } else if (strcmp(command, "dwcost") == 0) {
+    const uint32_t now = writeNs();
+    SerialDMSeq.print("DWCOST ");
+    SerialDMSeq.print(plainWriteNs);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(now);
   } else if (strcmp(command, "dmax") == 0) {
     const uint32_t clock = Serial.peripheral() == 1 ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
     SerialDMSeq.print("DMAX ");
@@ -214,6 +232,7 @@ void reply(const char *command) {
 
 void setup() {
   Serial.begin(115200);
+  plainWriteNs = writeNs();
   SerialDMSeq.begin(115200);
   SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
   SerialDMSeq.println(CH32RV.resetReasonName());
