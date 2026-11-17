@@ -241,18 +241,16 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   最初の代替設定の切り替え（SET_INTERFACE）が "Other error" になり、以後の転送が status 1 / submit -1 で続けて落ちる
   （core-20261117T113920Z-40375c22）。通った回は直前のイメージが USB を使わないもの、落ちた回は USB を使うもの
   だった。DCD の SET_INTERFACE と等時のエンドポイントの開き直しを、再列挙の直後に追う（usbmon は root が要る）。
-- [ ] ch32-device-data cb02bca（2026-11-17、push 済み、lock は 3c9ed13）の取り込み: コアに手で書いた表を生成に
-  移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（2026-11-18 に突き合わせ、値はすべて一致。
-  conflict は V103 の値 6、V205 の注入の値 6。コアは値 6 の付け替えを使わない）。
-  exti_lines.csv → internal/ch32rv_exti_line.h の線の表（2026-11-18 に突き合わせた: V407 の回避を外し、線 18 =
-  USBHS1・ベクタ 58、線 20 = USBHS2・84 だけにした。selfexti の swi で 18・20 とも 1 回ずつ呼ばれる、
-  core-20261117T221818Z-d3fa53ac。ほかの系列は同じ。CSV に V20x / V30x の線 18 が無いのは [data] に知らせた。
-  表を生成に移すのは、名前の対応表が要るので残す）。pvd_levels.csv → 生成器の load_pvd
-  （L103 の 8 段、V007・M007・H417 が入る。V004・M030 はデータシートに段の表が無い。V203 は parts.csv の datasheet 列で
-  2 つの表から選ぶ）。interrupts.csv の handler 列と V30x D8 の slot 58。同じく cb02bca の次（push 待ち）: pinout.csv の
-  condition の列。生成器の SDIO_ROUTE_FIXES（V30x・V4x7 の PB14 / PB15 の D0 / D1 を外す補正）をやめ、「condition が
-  周辺の有効化（XXXEN=1）だけではない default の行」を外す一般の規則にする（PB14 は SDIOEN=1&ETHMACEN=1）。
-  H416RDU6 は SDIO の D0 を封装に出していない（表の抜けではない）。SD は別の周辺 SDMMC（D0 = PC8）なら使える。
+- [x] ch32-device-data cb02bca / 3c9ed13 の取り込み（lock は 3c9ed13）。pvd_levels.csv は生成器の load_pvd に、pinout.csv の
+  condition の列は SDIO の経路の一般の規則にした（SDIO_ROUTE_FIXES をやめた）。2026-11-18 に残りの表をコアと突き合わせた:
+  adc_triggers.csv は ch32rv_adc_trigger.h と値がすべて一致（値 6 の TKEY / OPA はコアが使わない）。exti_lines.csv は
+  V407 の線 18 = USBHS1・20 = USBHS2 で確定し、両方のベクタを有効にする回避を外した（selfexti の swi で 18・20 とも 1 回
+  ずつ、core-20261117T221818Z-d3fa53ac）。ほかは一致、CSV に V20x / V30x の線 18 が無いのは [data] に知らせた。
+  interrupts.csv は生成器の tools/generate/interrupts/interrupts.csv と slot ごとの handler が一致（差は D8W・D8C の条件
+  つきの行だけ。V30x D8 の slot 58 も USBWakeUp で同じ）。
+- [ ] EXTI の線の表（internal/ch32rv_exti_line.h）と ADC のトリガの表（internal/ch32rv_adc_trigger.h）を device-data から
+  生成する。値は一致しているので、残りは device-data の名前（USBHS1_WAKEUP など）とコアの名前（CH32RV_EXTI_*、
+  ベクタ名、試す順番）の対応表。[data] の線 18 の答えを待ってから。
 - [x] CH32V003 の VDD の測定が約 35 % 高かった（3.3 V の板で 4448〜4464 mV）。ADC の初期化が CTLR1 = 0 と書き、
   CALVOLSELECT（26:25、リセット値 01 = VDDA × 2/4、00 は無効）を消した状態で自己校正していたため、校正が約 100
   カウント低く残っていた（Vrefint 277 / 1023、VDDA/2 が 410。直して 378・511・767、VDD 3256 mV）。CTLR1 を書く
