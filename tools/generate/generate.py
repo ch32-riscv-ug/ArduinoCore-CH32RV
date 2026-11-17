@@ -797,10 +797,11 @@ CLOCK_MENU = {
     # crystal: from HSI it is about 1 % off), 295 MHz (V3F 73.75 MHz,
     # micros()'s reciprocal, as V407's 175) and 600 MHz (HSE only, no HSI
     # setting to fall back to). 400 / 100 has run on the nanoH417 with both
-    # cores and both oscillators (2026-11-14); the others not yet.
-    **{s: [("400", 400, 100, "V5F 400MHz, V3F 100MHz"),
-           ("200", 400, 50, "V5F 200MHz, V3F 50MHz (not checked)"),
-           ("25", 25, 25, "V5F 25MHz, V3F 25MHz (no PLL, lowest power, not checked)")]
+    # cores and both oscillators (2026-11-14). Only the EVT's settings are
+    # offered (the user, 2026-11-17): a V5F 200 / V3F 50 MHz entry made by
+    # HPRE / 2 and a 25 / 25 MHz one without the PLL were taken out - the
+    # former's window watchdog left no reset flag after an early feed.
+    **{s: [("400", 400, 100, "V5F 400MHz, V3F 100MHz")]
        for s in ("CH32H415", "CH32H416", "CH32H417")},
     "CH32M030": [("72", 144, 72, "72MHz (USB)"), ("48", 144, 48, "48MHz (USB)"), ("24", 144, 24, "24MHz (USB)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, USB)")],

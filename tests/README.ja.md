@@ -49,7 +49,7 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 
 新しいクロックの設定や休止など、接続できなくなるかもしれないイメージを試すときは、`CH32_TEST_BOOT_HOLD_MS=1000` を付けます。
 その回のすべてのイメージが `-DCH32RV_BOOT_HOLD_MS=1000` 付きでビルドされます（docs/upload-routes.ja.md「接続できなくなる
-イメージを試すとき」）。メニューの値は `CH32_TEST_OPTIONS`（例 `clock=200,core=v3f`）で選びます（RECORDS.ja.md）。
+イメージを試すとき」）。メニューの値は `CH32_TEST_OPTIONS`（例 `clock=48,opt=oslto`）で選びます（RECORDS.ja.md）。
 
 ### 取り込みの速さ
 

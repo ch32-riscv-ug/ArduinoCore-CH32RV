@@ -255,12 +255,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
   8 KB 刻みで進み、範囲の確認も 8 KB 揃えを求める（半分を消し残す）。2026-11-17、ファームウェア更新の実装中に
   コードを読んで見つけた。更新は読み返しで止まるので壊れないが、480K モードでは flash の書き込み・更新が使えない。
-- [ ] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、400 MHz の PLL を HPRE で 1/2。EVT に無い設定）で、window watchdog の
-  早すぎる給餌のリセットが原因のフラグを残さない（resetReason() が unknown、RSTSCKR 00000000）。2026-11-17 に試しの
-  スケッチ（BOOT_HOLD 付き）で確かめた: 200 でも早い給餌でリセットはかかる（次の起動が来る）。400（PCLK1 100 MHz）では
-  window_watchdog と出る。200 の late（窓を過ぎて切れる）は window_watchdog と出る。25 MHz も正しい。コアの読み方の
-  誤りではなく、石がこの組で早い給餌のリセットにフラグを立てない。EVT の設定（SetSYSCLK_*）にある組だけを
-  メニューに出すか、200 の項目は selfsys の early を「既知の差」として記録にするかを決める（ユーザーと）。
+- [x] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、HPRE で 1/2 の EVT に無い組）で、window watchdog の早い給餌のリセットが
+  原因のフラグを残さなかった（2026-11-17）。EVT に無い組は出さないことにし（ユーザー）、200 と 25（PLL 無し）の項目を
+  H415〜H417 のメニューから外した。H41x の CPU Clock は EVT の 400 / 100 だけ。
 - [ ] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出している（tests/instrumented/uart）。
   BRR を数えるのは USART の APB のクロックなので、F_CPU と違う石（H41x の V5F: F_CPU 400 MHz、PCLK 100 MHz。PPRE を
   分ける系列）では式が違う。丸めがほぼ同じなので今は通る。DUT が USART のクロック（または BRR から出した実際の
