@@ -225,7 +225,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   exti_lines.csv → internal/ch32rv_exti_line.h の線の表（V407 は線 18 = USBHS1・ベクタ 58、線 20 = USBHS2・84 で
   確定。両方のベクタを有効にしている回避を外す。H417 の PVD の線は資料に無い）。pvd_levels.csv → 生成器の load_pvd
   （L103 の 8 段、V007・M007・H417 が入る。V004・M030 はデータシートに段の表が無い。V203 は parts.csv の datasheet 列で
-  2 つの表から選ぶ）。interrupts.csv の handler 列と V30x D8 の slot 58。
+  2 つの表から選ぶ）。interrupts.csv の handler 列と V30x D8 の slot 58。同じく cb02bca の次（push 待ち）: pinout.csv の
+  condition の列。生成器の SDIO_ROUTE_FIXES（V30x・V4x7 の PB14 / PB15 の D0 / D1 を外す補正）をやめ、「condition が
+  周辺の有効化（XXXEN=1）だけではない default の行」を外す一般の規則にする（PB14 は SDIOEN=1&ETHMACEN=1）。
+  H416RDU6 は SDIO の D0 を封装に出していない（表の抜けではない）。SD は別の周辺 SDMMC（D0 = PC8）なら使える。
 - [ ] CH32V003 の VDD の測定（ch32rv_adc_vdd_millivolts）が約 35 % 高い: 3.3 V の板で 4448〜4464 mV を答える
   （2026-11-17、selfapi の millivolts と selfexti の pvd。ほかの 7 台は 3248〜3352 mV）。プローブが 3.3 V で High にした
   端子を V003 は 1023 と読む（periph の test_adc）ので、VDD は 3.3 V 以下。Vrefint（チャネル 8、1.2 V、データシートの
