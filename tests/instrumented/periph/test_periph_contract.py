@@ -232,7 +232,7 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
                 if second is not None:
                     want.append(becomes(rest[0][0]["pad"], level=second))
                 with ws_run.section(2, name, expect=want):
-                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    made = pwm.start(0, round(hz), round(duty * Pwm.FULL))       # whole Hz: the fixture packs it as u32
                     if second is not None:
                         gpio.configure(rest[0][0]["channel"], Gpio.OUTPUT_HIGH if second else Gpio.OUTPUT_LOW)
                     wait(0.02)
@@ -370,7 +370,7 @@ def test_adc_timer_trigger(dut, oep_host, ws_run, record_property):
                 name = f"{rate} Hz, wave {hz:g} Hz duty {duty}"
                 want = [becomes(wave["pad"], freq_hz=hz, duty=duty, irregular_max=3, min_periods=20, duty_abs=0.01)]
                 with ws_run.section(2, name, expect=want):
-                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    made = pwm.start(0, round(hz), round(duty * Pwm.FULL))       # whole Hz: the fixture packs it as u32
                     wait(0.05)
                     m = until(dut, ws_run, wait, f"atimer {rate} {halves} {wave['pin']}", rb"ATIMER ([\d ]+)", 8)
                     v = [int(x) for x in m.group(1).split()]
@@ -503,14 +503,18 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
             pwm.stop(0)
         except Unavailable:      # the PWM was never assigned (the capture failed before the rate section)
             pass
+        # Lines back to inputs while the GPIO function still holds them (a configure after its release is refused),
+        # then both functions released; a line the GPIO no longer holds (the trigger, on the PWM) is skipped.
+        for ch in (trigger["channel"], adc["channel"]):
+            try:
+                gpio.configure(ch, Gpio.INPUT)
+            except Unavailable:
+                pass
         for fn in (pwm.fn, gpio.fn):
             try:
                 core.plan_release(host, [fn])
             except Exception:
                 pass
-        gpio.configure(trigger["channel"], Gpio.INPUT)
-        gpio.configure(adc["channel"], Gpio.INPUT)
-        core.plan_release(host, [gpio.fn])
     record_property("results", json.dumps(results))
     assert not wrong, " | ".join(wrong)
 
@@ -612,7 +616,7 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
                 name = f"{rate // 1000} ksps, {hz // 1000} kHz duty {duty}"
                 with ws_run.section(2, name, expect=[becomes(line["pad"], freq_hz=hz, duty=duty, irregular_max=3,
                                                              min_periods=20, duty_abs=0.01)]):
-                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    made = pwm.start(0, round(hz), round(duty * Pwm.FULL))       # whole Hz: the fixture packs it as u32
                     wait(0.02)
                     command = f"hstream {rate} 8 {line['pin']}"
                     ws_run.command(command)
