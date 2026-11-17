@@ -373,6 +373,26 @@ extern "C" void ch32rv_usbh_isr_port(bool attached)
 CH32RVUsbHost *ch32rv_usb_host_active;
 uint8_t ch32rv_usb_host_scratch[CH32RV_USB_HOST_SCRATCH] __attribute__((aligned(4)));
 
+void ch32rv_usb_host_buffer_free(uint8_t *&heap)
+{
+    if (heap && hcd && hcd->bufferFree) {
+        hcd->bufferFree(heap);
+    }
+    heap = nullptr;
+}
+
+uint8_t *ch32rv_usb_host_buffer(uint8_t *own, uint16_t ownSize, uint16_t need, uint8_t *&heap)
+{
+    ch32rv_usb_host_buffer_free(heap);
+    if (need <= ownSize) {
+        return own;
+    }
+    if (hcd && hcd->bufferAlloc) {
+        heap = (uint8_t *)hcd->bufferAlloc(need);
+    }
+    return heap;
+}
+
 void ch32rv_usb_host_join(CH32RVUsbHostGroup &group)
 {
     for (CH32RVUsbHostGroup *g = groups; g; g = g->next) {

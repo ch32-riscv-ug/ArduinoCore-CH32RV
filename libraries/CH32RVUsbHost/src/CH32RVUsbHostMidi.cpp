@@ -20,8 +20,12 @@ struct Port {
     volatile bool inBusy, outDone;
     volatile uint8_t outResult;
     volatile uint16_t head, tail;              /* rx ring of packets */
-    uint8_t rx[RX_PACKETS][4];
-    uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
+    uint16_t rxPackets;                        /* the ring's length: RX_PACKETS, or a heap one's */
+    uint8_t (*rx)[4];                          /* ownRx, or a heap one for a packet larger than `own` */
+    uint8_t *in;                               /* own, or a heap one */
+    uint8_t *heapIn, *heapRx;
+    uint8_t ownRx[RX_PACKETS][4];
+    uint8_t own[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
 };
 Port ports[1];
 CH32RVUsbHost::MidiMessageCallback message_cb;
@@ -39,7 +43,7 @@ struct Join {
 
 uint16_t rx_free(const Port &p)
 {
-    return (uint16_t)(RX_PACKETS - 1 - (uint16_t)((p.head + RX_PACKETS - p.tail) % RX_PACKETS));
+    return (uint16_t)(p.rxPackets - 1 - (uint16_t)((p.head + p.rxPackets - p.tail) % p.rxPackets));
 }
 
 void in_done(void *user, uint8_t result, uint16_t length);
@@ -66,7 +70,7 @@ void in_done(void *user, uint8_t result, uint16_t length)
             if (p.in[at] == 0 && p.in[at + 1] == 0) {
                 continue;              /* padding */
             }
-            const uint16_t next = (uint16_t)((p.head + 1) % RX_PACKETS);
+            const uint16_t next = (uint16_t)((p.head + 1) % p.rxPackets);
             if (next == p.tail) {
                 break;
             }
@@ -111,7 +115,7 @@ uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
             const uint16_t mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
             if ((d[2] & 0x80) && !p.epIn && ch32rv_usb_host_ep_open(daddr, d)) {
                 p.epIn = d[2];
-                p.mpsIn = mps < sizeof p.in ? mps : sizeof p.in;
+                p.mpsIn = mps;
             } else if (!(d[2] & 0x80) && !p.epOut && ch32rv_usb_host_ep_open(daddr, d)) {
                 p.epOut = d[2];
                 p.mpsOut = mps;
@@ -128,7 +132,25 @@ uint16_t midi_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
     if (!p.epIn && !p.epOut) {
         return 0;
     }
-    ports[0] = p;
+    Port &q = ports[0];
+    ch32rv_usb_host_buffer_free(q.heapIn);
+    ch32rv_usb_host_buffer_free(q.heapRx);
+    q = p;
+    /* A packet larger than the static buffer (a high-speed endpoint on V30x)
+     * gets a heap one and a ring for a whole packet's events and some; without
+     * the heap, what the static ones hold. */
+    q.in = ch32rv_usb_host_buffer(q.own, sizeof q.own, q.mpsIn, q.heapIn);
+    if (!q.in) {
+        q.in = q.own;
+        q.mpsIn = q.mpsIn < sizeof q.own ? q.mpsIn : sizeof q.own;
+    }
+    const uint16_t events = (uint16_t)(q.mpsIn / 4u + 32u);
+    q.rx = (uint8_t (*)[4])ch32rv_usb_host_buffer(&q.ownRx[0][0], sizeof q.ownRx, (uint16_t)(4u * events), q.heapRx);
+    q.rxPackets = events > RX_PACKETS ? events : (uint16_t)RX_PACKETS;
+    if (!q.rx) {
+        q.rx = q.ownRx;
+        q.rxPackets = RX_PACKETS;
+    }
     return k;
 }
 
@@ -151,6 +173,8 @@ void midi_configured(uint8_t daddr, uint8_t itf)
 void midi_detach(uint8_t daddr)
 {
     if (ports[0].daddr == daddr) {
+        ch32rv_usb_host_buffer_free(ports[0].heapIn);
+        ch32rv_usb_host_buffer_free(ports[0].heapRx);
         memset(&ports[0], 0, sizeof ports[0]);
     }
 }
@@ -167,7 +191,7 @@ size_t deliver(CH32RVUsbHost &host)
     while (p.mounted && p.tail != p.head) {
         uint8_t pk[4];
         memcpy(pk, p.rx[p.tail], 4);
-        p.tail = (uint16_t)((p.tail + 1) % RX_PACKETS);
+        p.tail = (uint16_t)((p.tail + 1) % p.rxPackets);
         CH32RVUsbHostMidiMessage m;
         m.address = p.daddr;
         m.interfaceNumber = p.itf;

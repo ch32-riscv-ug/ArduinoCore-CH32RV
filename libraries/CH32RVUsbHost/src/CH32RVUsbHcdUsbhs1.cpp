@@ -43,6 +43,7 @@
 #ifdef CH32RV_USBHS1_BASE
 
 #include <Arduino.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "internal/CH32RVUsbHcd.h"
@@ -672,11 +673,16 @@ static void hcd_poll(void)
     }
 }
 
+/* The classes' buffers are full speed's 64 bytes on V30x (a sketch on USBFS
+ * carries no more); a high-speed endpoint's come from the heap. */
+static void *buffer_alloc(unsigned bytes) { return malloc(bytes); }
+static void buffer_free(void *buffer) { free(buffer); }
+
 const CH32RVUsbHcd ch32rv_usb_hcd_usbhs1 = {
     "USBHS host (CH32V305/V307/V317)", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    hcd_poll, nullptr, nullptr, nullptr, nullptr, nullptr,
+    hcd_poll, nullptr, nullptr, nullptr, nullptr, nullptr, buffer_alloc, buffer_free,
 };
 
 #endif

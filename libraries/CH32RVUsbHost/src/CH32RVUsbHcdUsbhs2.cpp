@@ -749,7 +749,7 @@ struct Hcd {
     {
         return {name, PACKET_MAX, open, close, connected, port_reset, port_reset_end, port_disable,
                 ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll,
-                nullptr, nullptr, nullptr, nullptr, nullptr};
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     }
 };
 

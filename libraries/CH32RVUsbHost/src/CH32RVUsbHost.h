@@ -128,15 +128,17 @@ struct CH32RVUsbHostConfig {
  * terminator: CH32RVUsbHostDeviceInfo keeps the strings whole, and a buffer
  * this long takes any getStringDescriptor(). */
 #define CH32RV_USB_HOST_STRING_MAX 127
-/* The largest bulk or interrupt packet a class takes in one piece: 512 on the
- * series with a high-speed host, 1024 with a SuperSpeed one (H417 / H416),
- * where the receive buffers below grow to hold more than one such packet (an
- * IN is armed only with room for a whole one). */
+/* The largest bulk or interrupt packet a class's static buffers take: 512 on
+ * the series with a high-speed host, 1024 with a SuperSpeed one (H417 / H416);
+ * V30x keeps full speed's 64 - its high-speed host (the first-generation
+ * USBHS, linked only when a sketch picks HIGH_SPEED) gives the classes heap
+ * buffers for larger packets (a HID report stays within 64 there). Where it
+ * is larger, the receive buffers below grow to hold more than one such packet
+ * (an IN is armed only with room for a whole one). */
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
 #define CH32RV_USB_HOST_MAX_PACKET 1024
 #elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || \
-    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
-    defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
 #define CH32RV_USB_HOST_MAX_PACKET 512
 #else
 #define CH32RV_USB_HOST_MAX_PACKET 64

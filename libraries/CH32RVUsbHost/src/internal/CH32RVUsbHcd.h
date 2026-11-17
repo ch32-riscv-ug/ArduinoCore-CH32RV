@@ -98,6 +98,13 @@ struct CH32RVUsbHcd {
      * (the driver opens its own clock in open()). */
     bool (*prepare)(void);
     void (*release)(void);
+    /* Packets larger than the classes' static buffers (CH32RV_USB_HOST_MAX_PACKET)
+     * on this controller - V30x's first-generation USBHS, 512 bytes where the
+     * series' buffers are full speed's 64: where the classes get bigger ones
+     * (malloc / free). nullptr: the static buffers hold every packet, and the
+     * heap is not linked. */
+    void *(*bufferAlloc)(unsigned bytes);
+    void (*bufferFree)(void *buffer);
 };
 
 /* From a driver's interrupt. */

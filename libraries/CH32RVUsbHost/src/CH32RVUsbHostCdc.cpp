@@ -60,7 +60,9 @@ struct Port {
     bool dtr, rts;
     volatile bool inBusy;
     volatile uint16_t pendingLength;         /* a received packet the task has not handed on */
-    uint8_t in[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
+    uint8_t *in;                             /* own, or a heap one for a packet larger than it */
+    uint8_t *heapIn;
+    uint8_t own[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
     uint8_t ctl[8] __attribute__((aligned(4)));
 };
 Port ports[CDC_PORTS];
@@ -73,6 +75,7 @@ struct Rx {
     uint8_t *buf;                  /* the owner's (setBuffer()) or `own` */
     uint16_t size;
     uint16_t head, tail;
+    uint8_t *heap;                 /* `own` outgrown by a packet larger than it */
     uint8_t own[CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE];
 };
 Rx rx[CDC_PORTS];
@@ -625,7 +628,7 @@ uint16_t cdc_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
         const uint16_t mps = (uint16_t)((e[4] | e[5] << 8) & 0x7FF);
         if (type == CH32RV_USBH_BULK && (e[2] & 0x80) && !n.epIn) {
             n.epIn = e[2];
-            n.mpsIn = mps < sizeof n.in ? mps : sizeof n.in;
+            n.mpsIn = mps;
         } else if (type == CH32RV_USBH_BULK && !(e[2] & 0x80) && !n.epOut) {
             n.epOut = e[2];
             n.mpsOut = mps;
@@ -643,6 +646,13 @@ uint16_t cdc_open(uint8_t daddr, const uint8_t *itf, uint16_t length)
     }
     n.claimed = true;
     *p = n;
+    /* A packet larger than the static buffer (a high-speed endpoint on V30x)
+     * gets a heap one; without the heap, what the static one holds. */
+    p->in = ch32rv_usb_host_buffer(p->own, sizeof p->own, p->mpsIn, p->heapIn);
+    if (!p->in) {
+        p->in = p->own;
+        p->mpsIn = sizeof p->own;
+    }
     return at;
 }
 
@@ -678,6 +688,7 @@ void cdc_detach(uint8_t daddr)
 {
     for (uint8_t i = 0; i < CDC_PORTS; i++) {
         if (ports[i].claimed && ports[i].daddr == daddr) {
+            ch32rv_usb_host_buffer_free(ports[i].heapIn);
             memset(&ports[i], 0, sizeof ports[i]);
             rx[i].head = rx[i].tail = 0;
         }
@@ -698,6 +709,26 @@ size_t hand_on()
         }
         if (!data_cb_set && !r.owner) {
             continue;              /* nobody listens: the device waits */
+        }
+        if (r.owner && r.buf == r.own && n >= r.size) {
+            /* The Stream's own ring cannot hold this packet (a high-speed one
+             * on V30x): one from the heap with room for two, the waiting bytes
+             * moved over. */
+            uint8_t *keep = r.heap;
+            r.heap = nullptr;
+            uint8_t *big = ch32rv_usb_host_buffer(r.own, sizeof r.own, (uint16_t)(2u * p.mpsIn), r.heap);
+            if (big) {
+                uint16_t k = 0;
+                while (r.tail != r.head) {
+                    big[k++] = r.buf[r.tail];
+                    r.tail = (uint16_t)((r.tail + 1u) % r.size);
+                }
+                r.buf = big;
+                r.size = (uint16_t)(2u * p.mpsIn);
+                r.tail = 0;
+                r.head = k;
+            }
+            ch32rv_usb_host_buffer_free(keep);
         }
         if (r.owner && (uint16_t)(r.size - 1u - rx_count(r)) < n) {
             continue;              /* the Stream is full: wait for its reader */
@@ -877,6 +908,7 @@ static int bound_index(CH32RVUsbHostCdcSerial &s, uint8_t address, uint8_t port)
         if (!rx[idx].owner) {
             Rx &r = rx[idx];
             r.owner = &s;
+            ch32rv_usb_host_buffer_free(r.heap);
             r.buf = s.rxBuffer() ? s.rxBuffer() : r.own;
             r.size = s.rxBuffer() ? s.rxSize() : (uint16_t)sizeof r.own;
             r.head = r.tail = 0;

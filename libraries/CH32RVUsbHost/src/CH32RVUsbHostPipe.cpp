@@ -18,7 +18,7 @@ static void in_done(void *user, uint8_t result, uint16_t length)
         if (next == p.tail) {
             break;                  /* full: the rest is lost (armed only with room) */
         }
-        p.ring[p.head] = p.inBuf[i];
+        p.ring[p.head] = p.in[i];
         p.head = next;
     }
 }
@@ -33,7 +33,7 @@ static void arm_in(CH32RVUsbHostPipe &p)
         return;                     /* wait for the reader; the device is NAKed meanwhile */
     }
     p.inBusy = true;
-    if (!ch32rv_usb_host_xfer(p.daddr, p.epIn, p.inBuf, p.mpsIn, in_done, &p)) {
+    if (!ch32rv_usb_host_xfer(p.daddr, p.epIn, p.in, p.mpsIn, in_done, &p)) {
         p.inBusy = false;
     }
 }
@@ -100,8 +100,20 @@ bool ch32rv_usb_host_pipe_open(CH32RVUsbHostPipe &p, uint8_t daddr, uint8_t itf,
     if (!p.epIn && !p.epOut) {
         return false;
     }
-    if (p.mpsIn > sizeof p.inBuf) {
+    /* A packet larger than the static buffers (a high-speed endpoint on V30x)
+     * gets a heap one, and a ring with room for two of them; without the heap,
+     * as much of a packet as the static buffer holds. */
+    p.in = ch32rv_usb_host_buffer(p.inBuf, sizeof p.inBuf, p.mpsIn, p.heapIn);
+    if (!p.in) {
+        p.in = p.inBuf;
         p.mpsIn = sizeof p.inBuf;
+    }
+    if (p.ringSize <= p.mpsIn) {
+        uint8_t *big = ch32rv_usb_host_buffer(ring, ringSize, (uint16_t)(2u * p.mpsIn), p.heapRing);
+        if (big) {
+            p.ring = big;
+            p.ringSize = (uint16_t)(2u * p.mpsIn);
+        }
     }
     p.open = true;
     ch32rv_usb_host_mark_claimed(daddr, found);
@@ -121,6 +133,8 @@ void ch32rv_usb_host_pipe_close(CH32RVUsbHostPipe &p)
     }
     p.open = false;
     p.inBusy = false;
+    ch32rv_usb_host_buffer_free(p.heapIn);
+    ch32rv_usb_host_buffer_free(p.heapRing);
 }
 
 void ch32rv_usb_host_pipe_poll(CH32RVUsbHostPipe &p)

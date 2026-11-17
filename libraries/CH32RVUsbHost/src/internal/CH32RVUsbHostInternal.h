@@ -67,6 +67,15 @@ bool ch32rv_usb_host_wait(volatile bool &done, uint32_t timeoutMs);
  * descriptor). One user at a time, from task context. */
 extern uint8_t ch32rv_usb_host_scratch[CH32RV_USB_HOST_SCRATCH];
 
+/* A buffer of at least `need` bytes: `own` when its `ownSize` is enough, else
+ * one from the controller's heap (CH32RVUsbHcd::bufferAlloc) kept in `heap`,
+ * any earlier one there freed first; nullptr when neither will do. Only a
+ * controller whose packets outgrow the static buffers allocates (V30x's
+ * first-generation USBHS), so a full-speed sketch carries no more than before.
+ * ch32rv_usb_host_buffer_free() gives `heap` back. */
+uint8_t *ch32rv_usb_host_buffer(uint8_t *own, uint16_t ownSize, uint16_t need, uint8_t *&heap);
+void ch32rv_usb_host_buffer_free(uint8_t *&heap);
+
 /* Walk the active configuration descriptor of `daddr` a descriptor at a time,
  * however long it is: the scratch buffer holds a window of it, read again
  * further on when the next descriptor is not whole in it. Each descriptor
@@ -146,6 +155,8 @@ struct CH32RVUsbHostPipe {
     uint8_t *ring;
     uint16_t ringSize;
     volatile uint16_t head, tail;
+    uint8_t *in;                   /* inBuf, or a heap one for a packet larger than it */
+    uint8_t *heapIn, *heapRing;    /* ch32rv_usb_host_buffer()'s */
     uint8_t inBuf[CH32RV_USB_HOST_MAX_PACKET] __attribute__((aligned(4)));
 };
 

@@ -89,7 +89,10 @@ HSE (the Clock Source menu's crystal; 8 MHz when HSE is not chosen there).
 **Implemented, not yet tested on hardware.** Its SPLIT register is 12 bits
 with no description of its fields, so full- and low-speed devices behind a
 high-speed hub are not handled there (their endpoints do not open); a
-low-speed device behind a full-speed hub (PRE) is not checked either.
+low-speed device behind a full-speed hub (PRE) is not checked either. V30x's
+class buffers stay full speed's 64 bytes (a sketch on USBFS alone grows by
+nothing); an endpoint with 512-byte high-speed packets gets heap buffers when
+it opens (CDC, MIDI, vendor, CCID; HID reports stay within 64 bytes).
 
 On every port only the driver of the port a sketch picks is linked (begin()
 picks it in the sketch; with a constant port the others stay out).
