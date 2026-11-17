@@ -195,6 +195,10 @@ public:
 
     /* The USART number this port is bound to, 0 while closed. */
     uint8_t peripheral(void) const;
+    /* The baud the line runs at: the USART's clock / BRR, the asked-for baud
+     * rounded to what the divider makes (arduino-esp32's baudRate()). 0 while
+     * closed. */
+    uint32_t baudRate(void) const;
 
     /* Choose the pins for the next begin(), or move an open port onto them.
      *

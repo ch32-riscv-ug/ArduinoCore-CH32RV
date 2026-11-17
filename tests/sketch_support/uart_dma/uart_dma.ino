@@ -3,7 +3,8 @@
  *
  *   dmax                      DMAX <the highest baud Serial's USART takes: its clock / 16>
  *   dbegin <baud> <rx> <tx>   Serial again with those buffer sizes (0: the built-in path) at that baud, 8N1:
- *                             DBEGIN <rx size set> <tx size set> <open> <DMAR> <DMAT> (the USART's CTLR3: the DMA in use)
+ *                             DBEGIN <rx size set> <tx size set> <open> <DMAR> <DMAT> <baud> (the USART's CTLR3: the DMA
+ *                             in use; the baud the line runs at, Serial.baudRate())
  *   drecv <n> <ms>            up to n bytes within ms: DRECV <count> <FNV-1a> <errors>
  *   doff <ms> <n>             interrupts off for at least ms, then DOFF <available() still with interrupts off> and the
  *                             count, FNV-1a and errors of up to n bytes read until 20 ms with nothing
@@ -125,7 +126,9 @@ void reply(const char *command) {
     SerialDMSeq.print(' ');
     SerialDMSeq.print(ctlr3 & CH32RV_USART_CTLR3_DMAR ? 1 : 0);
     SerialDMSeq.print(' ');
-    SerialDMSeq.println(ctlr3 & CH32RV_USART_CTLR3_DMAT ? 1 : 0);
+    SerialDMSeq.print(ctlr3 & CH32RV_USART_CTLR3_DMAT ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(Serial.baudRate());
   } else if (strncmp(command, "drecv ", 6) == 0) {
     const unsigned long n = strtoul(command + 6, &end, 10);
     const unsigned long ms = strtoul(end, nullptr, 10);

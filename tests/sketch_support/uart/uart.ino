@@ -80,6 +80,7 @@ void reply(const char *command) {
     SerialDMSeq.println(n);
   } else if (strncmp(command, "ucfg ", 5) == 0) {
     // ucfg <baud> <format>: Serial again at that baud and format (0 8N1, 1 8E1, 2 8O1, 3 8N2, 4 7E1, 5 7O1).
+    // UCFG <ok> <the baud the line runs at, Serial.baudRate()>.
     char *end;
     const unsigned long baud = strtoul(command + 5, &end, 10);
     const unsigned long k = strtoul(end, nullptr, 10);
@@ -89,7 +90,9 @@ void reply(const char *command) {
       Serial.begin(baud, formats[k]);
     }
     SerialDMSeq.print("UCFG ");
-    SerialDMSeq.println(ok && Serial ? 1 : 0);
+    SerialDMSeq.print(ok && Serial ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(Serial.baudRate());
   } else if (strncmp(command, "upins ", 6) == 0) {
     // upins <rx> <tx>: Serial again on those pads (a WCH-Link whose UART reaches other pads than the default).
     char *end;
@@ -222,14 +225,16 @@ void reply(const char *command) {
     Serial.flush();
     SerialDMSeq.println("UDE");
   } else if (strncmp(command, "uhd ", 4) == 0) {
-    // uhd <pin>: Serial at 9600 8N1 as single-wire half duplex on that pad (RX = TX). UHD <ok> <open drain>.
+    // uhd <pin>: Serial at 9600 8N1 as single-wire half duplex on that pad (RX = TX). UHD <ok> <open drain> <baud>.
     const int pin = (int)strtol(command + 4, nullptr, 10);
     Serial.end();
     Serial.begin(9600, SERIAL_8N1, pin, pin);
     SerialDMSeq.print("UHD ");
     SerialDMSeq.print(Serial ? 1 : 0);
     SerialDMSeq.print(' ');
-    SerialDMSeq.println(CH32RV_GPIO_NO_OPEN_DRAIN ? 0 : 1);
+    SerialDMSeq.print(CH32RV_GPIO_NO_OPEN_DRAIN ? 0 : 1);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(Serial.baudRate());
   } else if (strcmp(command, "uavail") == 0) {
     // uavail: the count and FNV-1a of what Serial holds (until 20 ms with nothing), drained.
     unsigned long count = 0;

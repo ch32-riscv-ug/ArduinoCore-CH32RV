@@ -272,10 +272,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、HPRE で 1/2 の EVT に無い組）で、window watchdog の早い給餌のリセットが
   原因のフラグを残さなかった（2026-11-17）。EVT に無い組は出さないことにし（ユーザー）、200 と 25（PLL 無し）の項目を
   H415〜H417 のメニューから外した。H41x の CPU Clock は EVT の 400 / 100 だけ。
-- [ ] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出している（tests/instrumented/uart）。
-  BRR を数えるのは USART の APB のクロックなので、F_CPU と違う石（H41x の V5F: F_CPU 400 MHz、PCLK 100 MHz。PPRE を
-  分ける系列）では式が違う。丸めがほぼ同じなので今は通る。DUT が USART のクロック（または BRR から出した実際の
-  ボーレート）を答え、ホストはそれを使う形にする（試験のホストは石の値を知らない）。
+- [x] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出していた（BRR を数えるのは USART の
+  APB のクロック）。コアに `Serial.baudRate()`（arduino-esp32 と同じ。USART のクロック / BRR）を足し、試験のスケッチが
+  ucfg・uhd・dbegin の答えに入れ、ホストはそれを使う。H417（PCLK 100 MHz、F_CPU 400 MHz）と V203 で uart・uart-dma が
+  通る（2026-11-18、core-20261117T221139Z-0d30325f）。
 - [ ] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
   core-20261117T034033Z-6f14bd0b）。X035 の SoftWire target は SDA を SCL の立ち上がりの約 1.5 µs 前に変える（規格の
   setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した

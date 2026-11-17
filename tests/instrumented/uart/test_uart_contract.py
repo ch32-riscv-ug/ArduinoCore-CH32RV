@@ -5,7 +5,8 @@ ch32rv_set_stdout(&Serial) brings it back.
 uart.output-only (OEP ports with <port>.rx@<pad>): the formats' conditions with no UART on the probe, the DUT's TX
 only, decoded the same way - the baseline. uart.formats (OEP ports with <port>.rx@<pad> and <port>.tx@<pad> labelled): 9600, 115200 and 1 Mbaud at 8N1, and
 8E1, 8O1, 8N2, 7E1, 7O1 at 115200, both ways, in one capture of the two lines with a WireSkein section per
-condition (both lines idle at its start and end): the DUT sends 16 bytes (decoded on its TX: the bytes, the format, the bit time F_CPU / BRR within 3 %,
+condition (both lines idle at its start and end): the DUT sends 16 bytes (decoded on its TX: the bytes, the format, the bit time of the DUT's
+Serial.baudRate() (its USART clock / BRR) within 3 %,
 no framing or parity error) and receives 16 the probe's UART sends (decoded on its RX the same way, and the DUT's
 count and FNV-1a hash of what it read); the other line stays idle meanwhile.
 
@@ -97,7 +98,8 @@ def _fnv(data):
 def test_uart_output_only(dut, ws_run, request, record_property):
     """Every condition of uart.formats with no UART on the probe: it only captures the DUT's TX, so what is seen is
     the DUT's own (the baseline when the round trip looks wrong). The DUT sends 16 bytes in each; decoded on its TX
-    (the bytes, the format, the bit time F_CPU / BRR within 3 %, no framing or parity error), idle at the section's
+    (the bytes, the format, the bit time of the DUT's Serial.baudRate() (its USART clock / BRR) within 3 %, no
+    framing or parity error), idle at the section's
     start and end."""
     from wireskein.runlog import ends, starts, uart
     case = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
@@ -109,7 +111,6 @@ def test_uart_output_only(dut, ws_run, request, record_property):
     if "rx" not in roles:
         pytest.skip("the probe labels no <port>.rx@<pad> (the DUT's TX)")
     dut_tx = roles["rx"]
-    f_cpu = int(target["f_cpu"])
     sent = bytes((i * 37 + 11) & 0xFF for i in range(COUNT))
 
     def steps(wait):
@@ -122,9 +123,9 @@ def test_uart_output_only(dut, ws_run, request, record_property):
                 with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                     ws_run.command(f"ucfg {baud} {k}")
                     dut.write(f"ucfg {baud} {k}\n")
-                    _expect(dut, wait, rb"UCFG 1")
+                    dut_baud = int(_expect(dut, wait, rb"UCFG 1 (\d+)").group(1))   # what BRR makes of it
                     wait(0.02)
-                    with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], f_cpu / round(f_cpu / baud),
+                    with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], dut_baud,
                                                                      data=out.hex(), bits=bits, parity=parity,
                                                                      stop=stop)]):
                         ws_run.command(f"usend {COUNT}")
@@ -136,7 +137,7 @@ def test_uart_output_only(dut, ws_run, request, record_property):
         ws_capture.stream(ws_run, oep_host, [dut_tx], rate=UART_RATE, steps=steps)
     finally:
         dut.write("ucfg 115200 0\n")
-        dut.expect(rb"UCFG \d\r?\n", timeout=5)
+        dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
 
 
 def _expect(dut, wait, pattern, timeout=3.0):
@@ -176,7 +177,6 @@ def test_uart_formats(dut, ws_run, request, record_property):
         pytest.skip("the formats need the probe's logic capture (an OEP port)")
     oep_host = request.getfixturevalue("oep_host")
     dut_tx, dut_rx, io, used = _probe_uart(oep_host, target)
-    f_cpu = int(target["f_cpu"])
     host = oep_host.host
     sent = bytes((i * 37 + 11) & 0xFF for i in range(COUNT))
     hashes = {}
@@ -199,13 +199,14 @@ def test_uart_formats(dut, ws_run, request, record_property):
                 bits, parity, stop = FORMATS[k]
                 name = f"{baud} {bits}{parity[0].upper()}{stop}"
                 mask = (1 << bits) - 1
-                dut_baud = f_cpu / round(f_cpu / baud)         # what BRR makes of it
                 out = bytes(b & mask for b in sent)
                 back = bytes(b & mask for b in reversed(sent))
                 idle = {dut_tx["pad"]: 1, dut_rx["pad"]: 1}
                 with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                     ws_run.command(f"ucfg {baud} {k}")
-                    assert ask(wait, f"ucfg {baud} {k}", rb"UCFG (\d)").group(1) == b"1", f"{name}: Serial.begin refused"
+                    m = ask(wait, f"ucfg {baud} {k}", rb"UCFG (\d) (\d+)")
+                    assert m.group(1) == b"1", f"{name}: Serial.begin refused"
+                    dut_baud = int(m.group(2))                 # what BRR makes of it (Serial.baudRate())
                     probe_baud = io.configure(baud, fixture.FixtureUart.format_byte(bits, parity[0].upper(), stop))
                     wait(0.02)
                     common = dict(bits=bits, parity=parity, stop=stop)
@@ -239,7 +240,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
     finally:
         core.plan_release(host, [used])
         dut.write("ucfg 115200 0\n")
-        dut.expect(rb"UCFG \d\r?\n", timeout=5)
+        dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
     record_property("received", json.dumps(hashes))
     for baud, k in CONDITIONS:
         bits, parity, stop = FORMATS[k]
@@ -301,7 +302,7 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
                 wire_errors = WIRE_ERRORS.get(name)
                 with ws_run.section(2, name):
                     ws_run.command(f"ucfg {baud} {k}")
-                    assert _expect_after(dut, wait, f"ucfg {baud} {k}", rb"UCFG (\d)").group(1) == b"1"
+                    assert _expect_after(dut, wait, f"ucfg {baud} {k}", rb"UCFG (\d) \d+").group(1) == b"1"
                     probe_baud = io.configure(baud, fixture.FixtureUart.format_byte(bits, parity[0].upper(), stop))
                     _expect_after(dut, wait, "uerr", rb"UERR \d+")          # registers, clears what came before
                     wait(0.02)
@@ -336,7 +337,7 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
     finally:
         core.plan_release(host, [used])
         dut.write("ucfg 115200 0\n")
-        dut.expect(rb"UCFG \d\r?\n", timeout=5)
+        dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
     record_property("received", json.dumps({n: [kept, sorted(kinds)] for n, (kept, kinds) in got.items()}))
     wrong = []
     for name, (*_, kept, kinds) in conditions.items():
@@ -429,10 +430,9 @@ def test_uart_flow_control(dut, ws_run, request, record_property):
     from wireskein.runlog import becomes, ends, level, starts, uart
     target, oep_host = _oep_only(request)
     dut_tx, dut_rx = _serial_lines(oep_host, target)
-    f_cpu = int(target["f_cpu"])
     host = oep_host.host
     plain = _plain_lines(oep_host, target, dut_tx, dut_rx)
-    _ask_now(dut, "ucfg 115200 0", rb"UCFG \d")
+    dut_baud = int(_ask_now(dut, "ucfg 115200 0", rb"UCFG \d (\d+)").group(1))
     cts = next((p for p in plain if _ask_now(dut, f"uflow cts {p['pin']}", rb"UFLOW (\d)").group(1) == b"1"), None)
     rts = next((p for p in plain if p is not cts
                 and _ask_now(dut, f"uflow rts {p['pin']} 16", rb"UFLOW (\d)").group(1) == b"1"), None)
@@ -448,7 +448,6 @@ def test_uart_flow_control(dut, ws_run, request, record_property):
         core.plan_apply(host, [(gpio.fn, 1, cts["channel"])])
         gpio.configure(cts["channel"], Gpio.OUTPUT_HIGH)
     baud = 115200
-    dut_baud = f_cpu / round(f_cpu / baud)
     probe_baud = io.configure(baud)
     sent = bytes((i * 53 + 7) & 0xFF for i in range(32))
     got = {}
@@ -498,7 +497,7 @@ def test_uart_flow_control(dut, ws_run, request, record_property):
             core.plan_release(host, [gpio.fn])
         core.plan_release(host, [used])
         _ask_now(dut, "uflow off", rb"UFLOW \d")
-        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
     if rts:
         record_property("rts_result", json.dumps(got.get("rts")))
         assert got.get("rts") == (16, 17, f"{_fnv(sent[:17]):X}"), \
@@ -518,14 +517,14 @@ def test_uart_rs485(dut, ws_run, request, record_property):
         pytest.skip("the probe labels no plain <port>@<pad> line for the driver enable")
     de = plain[0]
     record_property("de", de["pad"])
-    f_cpu = int(target["f_cpu"])
 
     def steps(wait):
         with ws_run.section(1, f"rs485 de {de['pad']}"):
             for baud in (115200, 1000000):
-                dut_baud = f_cpu / round(f_cpu / baud)
                 idle = {de["pad"]: 0, dut_tx["pad"]: 1}
-                assert _ask(dut, wait, f"ucfg {baud} 0", rb"UCFG (\d)").group(1) == b"1"
+                m = _ask(dut, wait, f"ucfg {baud} 0", rb"UCFG (\d) (\d+)")
+                assert m.group(1) == b"1"
+                dut_baud = int(m.group(2))
                 assert _ask(dut, wait, f"u485 {de['pin']}", rb"U485 (\d)").group(1) == b"1", "setMode refused"
                 wait(0.01)
                 with ws_run.section(2, f"{baud} 8N1",
@@ -540,7 +539,7 @@ def test_uart_rs485(dut, ws_run, request, record_property):
         ws_capture.stream(ws_run, oep_host, [dut_tx, de], rate=UART_RATE, steps=steps)
     finally:
         _ask_now(dut, "u485 off", rb"U485 \d")
-        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
 
 
 def test_uart_half_duplex(dut, ws_run, request, record_property):
@@ -556,13 +555,12 @@ def test_uart_half_duplex(dut, ws_run, request, record_property):
     target, oep_host = _oep_only(request)
     dut_tx, dut_rx = _serial_lines(oep_host, target)
     host = oep_host.host
-    f_cpu = int(target["f_cpu"])
     baud = 9600
-    dut_baud = f_cpu / round(f_cpu / baud)
     gpio = Gpio(host)
     core.plan_apply(host, [(gpio.fn, 1, dut_tx["channel"])])
     gpio.configure(dut_tx["channel"], Gpio.INPUT_PULLUP)
-    m = _ask_now(dut, f"uhd {dut_tx['pin']}", rb"UHD (\d) (\d)")
+    m = _ask_now(dut, f"uhd {dut_tx['pin']}", rb"UHD (\d) (\d) (\d+)")
+    dut_baud = int(m.group(3))
     if m.group(1) != b"1":
         core.plan_release(host, [gpio.fn])
         raise AssertionError(f"Serial.begin(9600, SERIAL_8N1, {dut_tx['pad']}, {dut_tx['pad']}) refused")
@@ -610,7 +608,7 @@ def test_uart_half_duplex(dut, ws_run, request, record_property):
     finally:
         core.plan_release(host, [f for f in (gpio.fn, used) if f is not None])
         _ask_now(dut, f"upins {dut_rx['pin']} {dut_tx['pin']}", rb"UPINS \d")
-        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
     record_property("received", json.dumps(got))
     assert got.get("echo") == (0, f"{_fnv(b''):X}"), f"what the DUT sent came back to it: {got.get('echo')}"
     if open_drain:

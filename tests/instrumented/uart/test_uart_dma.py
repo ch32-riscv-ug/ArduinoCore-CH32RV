@@ -101,8 +101,8 @@ def _setup(dut, request):
 
 def _begin(dut, wait, baud):
     """Serial at `baud` with the DMA buffers; asserts the sizes took and the DMA requests are on."""
-    m = _ask(dut, wait, f"dbegin {baud} {RX_BUFFER} {TX_BUFFER}", rb"DBEGIN (\d+) (\d+) (\d) (\d) (\d)")
-    got = tuple(int(x) for x in m.groups())
+    m = _ask(dut, wait, f"dbegin {baud} {RX_BUFFER} {TX_BUFFER}", rb"DBEGIN (\d+) (\d+) (\d) (\d) (\d) (\d+)")
+    got = tuple(int(x) for x in m.groups()[:5])
     want = (RX_BUFFER, TX_BUFFER, 1, 1, 1)
     assert got == want, f"dbegin {baud}: sizes / open / DMAR / DMAT {got}, want {want}"
     return m
@@ -236,7 +236,6 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
     from wireskein.runlog import uart
     target, oep_host, dut_tx, dut_rx, io, used = _setup(dut, request)
     bauds = _bauds(dut)
-    f_cpu = int(target["f_cpu"])
     n = 2048
     sent = _pattern(n)
     got = {}
@@ -244,8 +243,7 @@ def test_uart_dma_transmit(dut, ws_run, request, record_property):
     def steps(wait):
         with ws_run.section(1, f"dma transmit {dut_tx['pad']}"):
             for baud in bauds:
-                _begin(dut, wait, baud)
-                dut_baud = f_cpu / round(f_cpu / baud)
+                dut_baud = int(_begin(dut, wait, baud).group(6))   # what BRR makes of it (Serial.baudRate())
                 try:
                     io.configure(baud, fixture.FixtureUart.format_byte(8, "N", 1))
                 except Exception as e:

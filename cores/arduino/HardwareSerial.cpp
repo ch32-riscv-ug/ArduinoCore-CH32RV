@@ -738,6 +738,16 @@ void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config)
     bind(index, *route);       /* one call site: bind() is inlined once */
 }
 
+uint32_t CH32RVHardwareSerial::baudRate(void) const
+{
+    if (!_slot) {
+        return 0;
+    }
+    const uint32_t brr = CH32RV_USART_BRR(registers());
+    const uint32_t fck = peripheral() == 1 ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
+    return brr ? (fck + brr / 2u) / brr : 0;
+}
+
 void CH32RVHardwareSerial::begin(unsigned long baudrate, uint16_t config, int rxPin,
                                int txPin, bool invert)
 {
