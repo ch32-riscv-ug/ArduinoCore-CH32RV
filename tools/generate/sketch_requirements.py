@@ -49,6 +49,15 @@ def _ethernet_conditions() -> list:
 
 
 @functools.lru_cache(maxsize=1)
+def rtc_series() -> frozenset:
+    """The series the core gives the RTC (CH32RV_HAS_RTC): the
+    CH32RV_SERIES_<X> its internal/ch32rv_rtc.h names where it defines it."""
+    text = (REPO / "cores/arduino/internal/ch32rv_rtc.h").read_text(encoding="utf-8")
+    conds = re.findall(r"^#(?:el)?if\b(.*(?:\\\n.*)*)\n#define CH32RV_HAS_RTC 1", text, re.M)
+    return frozenset(s for cond in conds for s in re.findall(r"CH32RV_SERIES_(\w+)", cond))
+
+
+@functools.lru_cache(maxsize=1)
 def ethernet_parts() -> dict:
     """part -> series, for the parts NetworkEthernet.h gives an ETH by part
     number in a series that has none (CH32V203RBT6): the ANY entry, sized for
@@ -68,18 +77,27 @@ def ethernet_parts() -> dict:
 @functools.lru_cache(maxsize=1)
 def series_capabilities() -> dict:
     """series -> the peripherals its variant header names a clock enable for,
-    plus the DERIVED names it has one of, SERIAL1 where it has a second USART
-    or UART (Serial1, CH32RV_SERIAL_COUNT >= 2), and ETHERNET where the
+    plus the DERIVED names it has one of, SERIAL1 where the core gives it a
+    second HardwareSerial (Serial1, CH32RV_SERIAL_COUNT >= 2), RTC where the core
+    has the RTC (CH32RV_HAS_RTC, rtc_series()), and ETHERNET where the
     Network library has an ETH (ethernet_series())."""
     caps = {}
     for header in sorted((REPO / "variants").glob("*/pins_arduino.h")):
-        found = frozenset(re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR",
-                                     header.read_text(encoding="utf-8")))
+        text = header.read_text(encoding="utf-8")
+        found = frozenset(re.findall(r"CH32RV_CLKEN_([A-Z0-9_]+)_ADDR", text))
         extra = {name for name, any_of in DERIVED.items() if found & any_of}
-        if len([c for c in found if re.fullmatch(r"U(S)?ART\d+", c)]) >= 2:
+        # Serial1 is the core's second HardwareSerial: CH32RV_SERIAL_COUNT counts
+        # the CH32RV_SERIAL<n>_CLKEN_ADDR the variant defines (ch32rv_instances.h),
+        # not the USARTs with a clock enable - CH32V002 clocks a USART2 that has
+        # no pads and so no Serial. A part-only CH32RV_SERIAL<n>_ABSENT does not
+        # take it from the series (the ANY build has it).
+        serials = set(re.findall(r"^#define\s+CH32RV_SERIAL(\d+)_CLKEN_ADDR\b", text, re.M))
+        if len(serials) >= 2:
             extra.add("SERIAL1")
         if header.parent.name in ethernet_series():
             extra.add("ETHERNET")
+        if header.parent.name in rtc_series():
+            extra.add("RTC")
         caps[header.parent.name] = found | extra
     return caps
 
@@ -146,7 +164,7 @@ def requirements(src: pathlib.Path) -> dict:
                 f"{ino.name}: no series declares a capability {cap!r} and no "
                 f"variant defines {key!r}. Capabilities are the <X> of "
                 f"CH32RV_CLKEN_<X>_ADDR in variants/*/pins_arduino.h, or "
-                f"{', '.join([*DERIVED, 'SERIAL1', 'ETHERNET'])}.")
+                f"{', '.join([*DERIVED, 'SERIAL1', 'RTC', 'ETHERNET'])}.")
         if key not in ("flash", "ram"):
             raise BadRequirement(f"{ino.name}: unknown requires: key {key!r}")
         scale = SIZE_SUFFIX.get(value[-1].upper(), 1)

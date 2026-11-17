@@ -2,6 +2,7 @@
 // ja: RTCで日時を保ち、10秒ごとにアラームを鳴らし、アラームまで眠り、起動の回数をバックアップレジスタで数える。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
+/* requires: RTC */
 
 #include <CH32RV.h>
 #include <time.h>

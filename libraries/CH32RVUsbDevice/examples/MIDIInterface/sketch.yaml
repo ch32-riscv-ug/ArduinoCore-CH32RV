@@ -3,9 +3,9 @@
 # see docs/examples-build-rules.ja.md.
 
 profiles:
-  # CH32V002: omitted, requires USB_DEVICE, which CH32V002 does not have
+  # CH32V002: omitted, requires USB_DEVICE, SERIAL1, which CH32V002 does not have
   # CH32V003: omitted, requires USB_DEVICE, SERIAL1, which CH32V003 does not have
-  # CH32V004: omitted, requires USB_DEVICE, which CH32V004 does not have
+  # CH32V004: omitted, requires USB_DEVICE, SERIAL1, which CH32V004 does not have
   # CH32V005: omitted, requires USB_DEVICE, which CH32V005 does not have
   # CH32V006: omitted, requires USB_DEVICE, which CH32V006 does not have
   # CH32V007: omitted, requires USB_DEVICE, which CH32V007 does not have

@@ -3,9 +3,9 @@
 # see docs/examples-build-rules.ja.md.
 
 profiles:
-  # CH32V002: omitted, requires CH32RV_SERIAL2_TX, which CH32V002 does not have
+  # CH32V002: omitted, requires SERIAL1, CH32RV_SERIAL2_TX, which CH32V002 does not have
   # CH32V003: omitted, requires SERIAL1, CH32RV_SERIAL2_TX, which CH32V003 does not have
-  # CH32V004: omitted, requires CH32RV_SERIAL2_TX, which CH32V004 does not have
+  # CH32V004: omitted, requires SERIAL1, CH32RV_SERIAL2_TX, which CH32V004 does not have
   ch32v005:
     fqbn: ch32-riscv-ug:ch32rv:CH32V005:pnum=ANY
     platforms:
