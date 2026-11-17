@@ -2,7 +2,8 @@
  * per line, run in the line's interrupt, and the sleeps' wake on it
  * (ch32rv_exti_seen). Linked only by a sketch that attaches one: the vectors
  * defined here then replace the default handlers, the RTC alarm's excepted
- * (ch32rv_rtc_alarm_irq.c owns it and hands its edges here). */
+ * (ch32rv_rtc_alarm.c owns it and hands its edges here through
+ * ch32rv_rtc_alarm_line_hook). */
 #include "Arduino.h"
 #include "internal/ch32rv_exti_line.h"
 #include "internal/ch32rv_bits.h"
@@ -68,9 +69,12 @@ int ch32rv_exti_line_attach(uint8_t line, void (*cb)(void), int mode)
     }
 #ifdef CH32RV_EXTI_RTC_ALARM
     if (line == CH32RV_EXTI_RTC_ALARM) {
-        /* Shared with setAlarm() and the sleeps: the flag is theirs too. */
-        ch32rv_rtc_alarm_generic = 1;
-        ch32rv_rtc_alarm_lines_on();
+        /* Shared with setAlarm() and the sleeps (ch32rv_rtc_alarm.c's
+         * vector): it hands the edges here, and keeps the rising one. */
+        ch32rv_rtc_alarm_line_hook = ch32rv_exti_line_deliver;
+        CH32RV_EXTI_RTENR |= bit;
+        CH32RV_EXTI_INTENR |= bit;
+        ch32rv_irq_enable(CH32RV_IRQN_RTCAlarm);
         return 1;
     }
 #endif
@@ -92,10 +96,13 @@ void ch32rv_exti_line_detach(uint8_t line)
     line_cb[line - CH32RV_EXTI_LINE_FIRST] = 0;
 #ifdef CH32RV_EXTI_RTC_ALARM
     if (line == CH32RV_EXTI_RTC_ALARM) {
-        /* Its edge (rising) and the line stay for setAlarm() / the sleeps,
-         * which turn them on again themselves; off unless they hold it. */
-        ch32rv_rtc_alarm_generic = 0;
-        ch32rv_rtc_alarm_lines_off();
+        /* Its edge (rising) and the line stay while setAlarm() has an alarm
+         * to come; a sleep turns them on again itself. */
+        ch32rv_rtc_alarm_line_hook = 0;
+        if (!ch32rv_rtc_user_alarm_at()) {
+            ch32rv_irq_disable(CH32RV_IRQN_RTCAlarm);
+            CH32RV_EXTI_INTENR &= ~bit;
+        }
         return;
     }
 #endif

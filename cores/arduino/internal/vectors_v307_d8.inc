@@ -60,7 +60,7 @@
     CH32RV_IRQ USART3_IRQHandler                 /*  55 */
     CH32RV_IRQ EXTI15_10_IRQHandler              /*  56 */
     CH32RV_IRQ RTCAlarm_IRQHandler               /*  57 */
-    CH32RV_RSV                          /*  58 reserved */
+    CH32RV_IRQ USBWakeUp_IRQHandler              /*  58 */
     CH32RV_IRQ TIM8_BRK_IRQHandler               /*  59 */
     CH32RV_IRQ TIM8_UP_IRQHandler                /*  60 */
     CH32RV_IRQ TIM8_TRG_COM_IRQHandler           /*  61 */

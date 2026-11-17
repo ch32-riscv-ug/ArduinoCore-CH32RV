@@ -67,11 +67,11 @@
 
 #elif defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || \
       defined(CH32RV_SERIES_CH32V317)
-/* 18 the USBFS (OTG) wake-up, 19 the ETH's, 20 the USBHS's: on the D8C die
- * only (V305 / V307 / V317); V303 (D8) has no vector for them. */
+/* 18 the USBFS (OTG) wake-up; 19 the ETH's and 20 the USBHS's on the D8C die
+ * only (V305 / V307 / V317): V303 (D8) has neither vector. */
 #define CH32RV_EXTI_PVD 16u
-#ifdef CH32RV_IRQN_USBHSWakeup
 #define CH32RV_EXTI_USBFS_WAKEUP 18u
+#ifdef CH32RV_IRQN_USBHSWakeup
 #define CH32RV_EXTI_ETH_WAKEUP 19u
 #define CH32RV_EXTI_USBHS_WAKEUP 20u
 #define CH32RV_EXTI_LINE_VECTORS(X) \
@@ -81,7 +81,8 @@
     X(USBHSWakeup, 1u << 20)
 #else
 #define CH32RV_EXTI_LINE_VECTORS(X) \
-    X(PVD, 1u << 16)
+    X(PVD, 1u << 16) \
+    X(USBWakeUp, 1u << 18)
 #endif
 
 #elif defined(CH32RV_SERIES_CH32V205)
@@ -102,11 +103,12 @@
     X(LVDSWakeup, 1u << 23)
 
 #elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
-/* The two USBHS wake-ups: the reference manual has USBHS1 on 18 and USBHS2 on
- * 20, the EVT's ch32v4x7_exti.h the other way round; and the EVT's startup
- * puts USBHS1's vector at 58 where the core's table (tools/generate/
- * interrupts) names 58 USBHS2WakeUp. Either line enables both vectors, so the
- * callback comes whichever is right; the names follow the reference manual. */
+/* The two USBHS wake-ups: the vectors are USBHS1's at 58 and USBHS2's at 84
+ * (the reference manual's vector table, the EVT's startup and IRQn, device-
+ * data). Which line feeds which is not settled: the reference manual has
+ * USBHS1 on 18 and USBHS2 on 20, the EVT's ch32v4x7_exti.h the other way
+ * round. Either line enables both vectors, so the callback comes whichever is
+ * right; the names follow the reference manual. */
 #define CH32RV_EXTI_PVD 16u
 #define CH32RV_EXTI_USBHS_WAKEUP 18u
 #define CH32RV_EXTI_ETH_WAKEUP 19u
@@ -114,8 +116,8 @@
 #define CH32RV_EXTI_I3C_WAKEUP 21u
 #define CH32RV_EXTI_LINE_VECTORS(X) \
     X(PVD, 1u << 16) \
-    X(USBHS2WakeUp, (1u << 18) | (1u << 20)) \
-    X(USBHS1Wakeup, (1u << 18) | (1u << 20)) \
+    X(USBHS1WakeUp, (1u << 18) | (1u << 20)) \
+    X(USBHS2Wakeup, (1u << 18) | (1u << 20)) \
     X(ETH_WKUP, 1u << 19) \
     X(I3CWakeup, 1u << 21)
 
@@ -192,7 +194,7 @@
     X(USART_WKUP, 1u << 26)
 #endif
 
-/* The RTC alarm's line: its vector is ch32rv_rtc_alarm_irq.c's, shared with
+/* The RTC alarm's line: its vector is ch32rv_rtc_alarm.c's, shared with
  * CH32RV.setAlarm() and the sleeps. */
 #ifdef CH32RV_HAS_RTC
 #define CH32RV_EXTI_RTC_ALARM CH32RV_RTC_ALARM_LINE
@@ -230,11 +232,9 @@ void ch32rv_exti_line_trigger(uint8_t line);
  * found pending and cleared, to run their callbacks. */
 void ch32rv_exti_line_deliver(uint32_t pending);
 
-/* ch32rv_rtc_alarm_irq.c: the RTC alarm line's interrupt on, and off unless
- * attachExtiLine() holds it (ch32rv_rtc_alarm_generic). */
-void ch32rv_rtc_alarm_lines_on(void);
-void ch32rv_rtc_alarm_lines_off(void);
-extern volatile uint8_t ch32rv_rtc_alarm_generic;
+/* ch32rv_rtc_alarm.c: where its vector hands the RTC alarm line's edges, set
+ * only by attachExtiLine() (null: the line is the alarm's and the sleeps'). */
+extern void (*ch32rv_rtc_alarm_line_hook)(uint32_t pending);
 
 #ifdef __cplusplus
 }

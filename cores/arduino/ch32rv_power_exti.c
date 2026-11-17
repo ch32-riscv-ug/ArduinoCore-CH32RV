@@ -12,7 +12,7 @@ int ch32rv_power_add_line(uint8_t line, int mode)
         !ch32rv_exti_line_attach(line, ch32rv_exti_line_callback(line), mode)) {
         return 0;
     }
-    ch32rv_power_wake.lines |= 1u << line;
+    ch32rv_power_wake_lines |= 1u << line;
     return 1;
 #else
     (void)line;

@@ -49,9 +49,10 @@ struct ch32rv_power_wake {
     uint8_t alarm;                  /* the sketch's RTC alarm wakes it too */
     int16_t pin[4];
     uint8_t level[4];
-    uint32_t lines;                 /* EXTI lines that are not pins (ch32rv_power_exti.c) */
 };
 extern struct ch32rv_power_wake ch32rv_power_wake;
+/* EXTI lines that are not pins (ch32rv_power_exti.c). */
+extern uint32_t ch32rv_power_wake_lines;
 
 /* The wake sources the next sleep waits for. 0 where the family cannot sleep
  * (yet) or the pin has no EXTI line / four are taken. */

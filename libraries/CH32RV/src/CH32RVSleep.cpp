@@ -83,11 +83,13 @@ CH32RVSleepResult CH32RVSystem::deepSleep()
 
 CH32RVWakeupCause CH32RVSystem::wakeupCause()
 {
-    return ch32rv_wake_cause == CH32RV_POWER_WOKE_TIMER ? CH32RV_WAKEUP_TIMER
-         : ch32rv_wake_cause == CH32RV_POWER_WOKE_PIN ? CH32RV_WAKEUP_PIN
-         : ch32rv_wake_cause == CH32RV_POWER_WOKE_ALARM ? CH32RV_WAKEUP_ALARM
-         : ch32rv_wake_cause == CH32RV_POWER_WOKE_EXTI ? CH32RV_WAKEUP_EXTI_LINE
-         : CH32RV_WAKEUP_UNDEFINED;
+    /* The same numbers on both sides: a cause is passed as it is. */
+    static_assert(CH32RV_WAKEUP_TIMER == (int)CH32RV_POWER_WOKE_TIMER &&
+                  CH32RV_WAKEUP_PIN == (int)CH32RV_POWER_WOKE_PIN &&
+                  CH32RV_WAKEUP_ALARM == (int)CH32RV_POWER_WOKE_ALARM &&
+                  CH32RV_WAKEUP_EXTI_LINE == (int)CH32RV_POWER_WOKE_EXTI, "wake cause numbers");
+    const uint8_t cause = ch32rv_wake_cause;
+    return cause <= CH32RV_POWER_WOKE_EXTI ? (CH32RVWakeupCause)cause : CH32RV_WAKEUP_UNDEFINED;
 }
 
 uint32_t CH32RVSystem::timeDomain()

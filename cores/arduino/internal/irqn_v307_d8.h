@@ -52,6 +52,7 @@
 #define CH32RV_IRQN_USART3                     55
 #define CH32RV_IRQN_EXTI15_10                  56
 #define CH32RV_IRQN_RTCAlarm                   57
+#define CH32RV_IRQN_USBWakeUp                  58
 #define CH32RV_IRQN_TIM8_BRK                   59
 #define CH32RV_IRQN_TIM8_UP                    60
 #define CH32RV_IRQN_TIM8_TRG_COM               61

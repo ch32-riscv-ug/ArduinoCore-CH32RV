@@ -1,4 +1,4 @@
-/* The RTC alarm's work in its interrupt, the sketch's alarm (CH32RV.setAlarm()) and the
+/* The RTC alarm's interrupt, the sketch's alarm (CH32RV.setAlarm()) and the
  * sleeps' use of the same register (ch32rv_rtc.h). One alarm register: a sleep
  * arms it for whichever comes first, its end or the sketch's alarm, and puts
  * the sketch's back on waking. A file of its own, linked by a sleep or an
@@ -24,6 +24,13 @@ volatile uint8_t ch32rv_rtc_alarm_in_sleep;
 static volatile uint32_t user_when;        /* wall seconds; 0: none */
 static void (*volatile user_cb)(void);
 
+/* attachExtiLine(CH32RV_EXTI_RTC_ALARM)'s callbacks (ch32rv_exti_line.c,
+ * the only writer): the line's edges go there too, and while it is set the
+ * line stays on when the alarm and the sleeps let it go. A sketch that never
+ * attaches the line has no store to it, and the link-time optimiser drops
+ * every test of it: the handler is the alarm's alone. */
+void (*ch32rv_rtc_alarm_line_hook)(uint32_t pending);
+
 static uint32_t wall_now(void)
 {
     uint32_t s, m;
@@ -31,28 +38,41 @@ static uint32_t wall_now(void)
     return s;
 }
 
-/* The alarm's part of its interrupt (the vector is ch32rv_rtc_alarm_irq.c's,
- * which has cleared the line). 0 when the edge was a sleep's own alarm, which
- * attachExtiLine(CH32RV_EXTI_RTC_ALARM)'s callback is not shown. */
-int ch32rv_rtc_alarm_isr(void)
+CH32RV_INTERRUPT void RTCAlarm_IRQHandler(void)
 {
+    void (*const hook)(uint32_t) = ch32rv_rtc_alarm_line_hook;
+    const uint32_t pending = hook ? CH32RV_EXTI_INTFR & (1u << CH32RV_RTC_ALARM_LINE) : 0u;
+    CH32RV_EXTI_INTFR = 1u << CH32RV_RTC_ALARM_LINE;
     RTC_CTLRL &= ~RTC_CTLRL_ALRF;
     ch32rv_rtc_alarm_events++;
     const uint32_t when = user_when;
-    if (when && wall_now() >= when) {
-        user_when = 0;                         /* once: setAlarm() again for the next */
-        void (*const cb)(void) = user_cb;
-        if (cb) {
-            cb();
+    int due = 0;
+    if (when) {
+        if (wall_now() >= when) {
+            user_when = 0;                     /* once: setAlarm() again for the next */
+            void (*const cb)(void) = user_cb;
+            if (cb) {
+                cb();
+            }
+            due = 1;
+        } else if (!ch32rv_rtc_alarm_in_sleep) {
+            /* Early (a sleep's alarm, or settimeofday() moved the clock): the
+             * register back to the sketch's. A sleep re-arms it itself. */
+            ch32rv_rtc_alarm(ch32rv_rtc_counter_for(when));
         }
-        return 1;
     }
-    if (when && !ch32rv_rtc_alarm_in_sleep) {
-        /* Early (a sleep's alarm, or settimeofday() moved the clock): the
-         * register back to the sketch's. A sleep re-arms it itself. */
-        ch32rv_rtc_alarm(ch32rv_rtc_counter_for(when));
+    /* attachExtiLine()'s callback: every edge but a sleep's own alarm. */
+    if (hook && pending && (due || !ch32rv_rtc_alarm_in_sleep)) {
+        hook(pending);
     }
-    return !ch32rv_rtc_alarm_in_sleep;
+}
+
+/* The alarm's EXTI line (rising edge) and interrupt on. */
+static void lines_on(void)
+{
+    CH32RV_EXTI_RTENR |= 1u << CH32RV_RTC_ALARM_LINE;
+    CH32RV_EXTI_INTENR |= 1u << CH32RV_RTC_ALARM_LINE;
+    ch32rv_irq_enable(CH32RV_IRQN_RTCAlarm);
 }
 
 void ch32rv_rtc_alarm_restore(void)
@@ -61,7 +81,7 @@ void ch32rv_rtc_alarm_restore(void)
     if (!when) {
         return;
     }
-    ch32rv_rtc_alarm_lines_on();               /* ch32rv_rtc_alarm_irq.c */
+    lines_on();
     if (wall_now() >= when) {
         /* It came while the register held something else: the interrupt
          * runs it now, in the same context as always. */
@@ -99,7 +119,11 @@ int ch32rv_rtc_user_alarm(uint32_t when, void (*cb)(void))
     if (!when) {
         RTC_CTLRH &= ~RTC_CTLRH_ALRIE;
         PFIC_IPRR(CH32RV_IRQN_RTCAlarm >> 5) = 1u << (CH32RV_IRQN_RTCAlarm & 31u);
-        ch32rv_rtc_alarm_lines_off();          /* on again if attachExtiLine() holds it */
+        if (ch32rv_rtc_alarm_line_hook) {
+            ch32rv_irq_enable(CH32RV_IRQN_RTCAlarm);   /* attachExtiLine() holds the line */
+        } else {
+            CH32RV_EXTI_INTENR &= ~(1u << CH32RV_RTC_ALARM_LINE);
+        }
         return 1;
     }
     user_when = when;

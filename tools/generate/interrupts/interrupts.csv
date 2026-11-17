@@ -470,7 +470,7 @@ v307_d8,word,54,USART2_IRQHandler
 v307_d8,word,55,USART3_IRQHandler
 v307_d8,word,56,EXTI15_10_IRQHandler
 v307_d8,word,57,RTCAlarm_IRQHandler
-v307_d8,word,58,
+v307_d8,word,58,USBWakeUp_IRQHandler
 v307_d8,word,59,TIM8_BRK_IRQHandler
 v307_d8,word,60,TIM8_UP_IRQHandler
 v307_d8,word,61,TIM8_TRG_COM_IRQHandler
@@ -676,7 +676,7 @@ v4x7,word,54,USART2_IRQHandler
 v4x7,word,55,USART3_IRQHandler
 v4x7,word,56,EXTI15_10_IRQHandler
 v4x7,word,57,RTCAlarm_IRQHandler
-v4x7,word,58,USBHS2WakeUp_IRQHandler
+v4x7,word,58,USBHS1WakeUp_IRQHandler
 v4x7,word,59,TIM8_BRK_IRQHandler
 v4x7,word,60,TIM8_UP_IRQHandler
 v4x7,word,61,TIM8_TRG_COM_IRQHandler
@@ -702,7 +702,7 @@ v4x7,word,80,PSRAM_IRQHandler
 v4x7,word,81,USART9_IRQHandler
 v4x7,word,82,USART10_IRQHandler
 v4x7,word,83,USBHS1_IRQHandler
-v4x7,word,84,USBHS1Wakeup_IRQHandler
+v4x7,word,84,USBHS2Wakeup_IRQHandler
 v4x7,word,85,USBHS2_IRQHandler
 v4x7,word,86,DVP_IRQHandler
 v4x7,word,87,USART6_IRQHandler

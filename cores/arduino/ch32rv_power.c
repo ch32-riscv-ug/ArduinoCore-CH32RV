@@ -12,6 +12,10 @@ volatile uint32_t ch32rv_time_domain;
 volatile uint8_t ch32rv_wake_cause;
 
 struct ch32rv_power_wake ch32rv_power_wake;
+/* enableExtiLineWakeup()'s lines (ch32rv_power_exti.c, the only writer but
+ * the clear below): with no store of anything but 0 the link-time optimiser
+ * takes it for 0, and a sleep without them carries none of their code. */
+uint32_t ch32rv_power_wake_lines;
 
 /* deepSleep()'s cause across its restart: RAM keeps power through it.
  * volatile: to the compiler the record starts as zero like any static, and
@@ -577,7 +581,10 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             break;
         }
     }
-    ch32rv_rtc_alarm_lines_off();               /* kept on for attachExtiLine() */
+    if (!ch32rv_rtc_alarm_line_hook) {          /* kept on for attachExtiLine() */
+        ch32rv_irq_disable(CH32RV_IRQN_RTCAlarm);
+        CH32RV_EXTI_INTENR &= ~(1u << ALARM_LINE);
+    }
     ch32rv_rtc_alarm_in_sleep = 0;
     ch32rv_rtc_alarm_restore();                 /* the sketch's alarm back in the register */
     known_ms = (uint32_t)millis() - start_millis;
@@ -619,7 +626,7 @@ void ch32rv_power_clear(void)
     ch32rv_power_wake.timer_ms = 0;
     ch32rv_power_wake.pins = 0;
     ch32rv_power_wake.alarm = 0;
-    ch32rv_power_wake.lines = 0;
+    ch32rv_power_wake_lines = 0;
 }
 
 int ch32rv_power_set_alarm(void)
@@ -655,10 +662,11 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
         }
     }
 #endif
-    if (!timer_ms && !w->pins && !w->lines) {
+    const uint32_t exti_lines = ch32rv_power_wake_lines;
+    if (!timer_ms && !w->pins && !exti_lines) {
         return 1;
     }
-    uint32_t lines = w->lines;
+    uint32_t lines = exti_lines;
     for (uint8_t i = 0; i < w->pins; i++) {
         /* Woken by a level, as ESP32's ext0: one already there is a wake. */
         if (digitalRead(w->pin[i]) == w->level[i]) {
@@ -671,8 +679,8 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
     if (!woke) {
         woke = CH32RV_POWER_WOKE_TIMER;
     }
-    /* w->lines is set only with ch32rv_exti_line.c, which brings the flags. */
-    if (woke == CH32RV_POWER_WOKE_PIN && w->lines && (ch32rv_exti_seen & w->lines)) {
+    /* Lines are set only with ch32rv_exti_line.c, which brings the flags. */
+    if (woke == CH32RV_POWER_WOKE_PIN && exti_lines && (ch32rv_exti_seen & exti_lines)) {
         woke = CH32RV_POWER_WOKE_EXTI;
     }
     if (woke == CH32RV_POWER_WOKE_TIMER && alarm_first) {
@@ -720,7 +728,7 @@ int ch32rv_power_can_standby(void)
 {
 #if POWER_RTC && !POWER_NO_STANDBY
     const int alarm = ch32rv_power_wake.alarm && ch32rv_rtc_user_alarm_at();
-    return (ch32rv_power_wake.timer_ms || alarm) && !ch32rv_power_wake.pins && !ch32rv_power_wake.lines;
+    return (ch32rv_power_wake.timer_ms || alarm) && !ch32rv_power_wake.pins && !ch32rv_power_wake_lines;
 #else
     return 0;
 #endif
