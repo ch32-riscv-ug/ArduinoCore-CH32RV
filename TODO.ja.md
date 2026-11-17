@@ -226,11 +226,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   アラームがあるときは、割り込みの中で ch32rv_rtc_resync() してから比べる。試しのスケッチ B〜H（タイマーだけ・
   +60 s は起き、+2 s は戻らない）で絞った。selfexti は H417・V203・V205・V407、H417 の selfsys が通る
   （core-20261117T112525Z-2256aada、core-20261117T112730Z-023d555f）。
-- [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso が H417 で全部落ちる（2026-11-17、core-20261117T094315Z-1be712f3）。
-  Mult 0 の基準（代替設定 1、bMaxBurst 1）でも最初の転送が libusb の status 1（TRANSFER_ERROR）、以後の
-  submit は -1（IO）。DUT は SS のまま切れず、カーネルに xHCI のエラーも出ない。同じ回の usb-media（UVC の等時）は
-  通る。代替設定の切り替え（SET_INTERFACE で DCD がエンドポイントを開き直すか）、chain の積み方（ISO_CHAIN_MAX、
-  EOB_LPF）、試験の libusb の使い方（usb_iso.py）を順に切り分ける。usbmon で SET_INTERFACE と最初の等時の URB を見る。
+- [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso: Mult 0・1・2（bMaxBurst 1）の IN と OUT の 6 つは H417 で通った
+  （2026-11-17、core-20261117T113755Z-a6e137fd、どの間隔もそろった）ので、Mult>0 はハードで動く。48 パケットの代替設定は
+  usbfs の ENOMEM（1 回 8 MiB）で、試験を 1 回 2 MiB に直した。残り: 同じ試験が通る回と全部落ちる回がある。落ちる回は
+  最初の代替設定の切り替え（SET_INTERFACE）が "Other error" になり、以後の転送が status 1 / submit -1 で続けて落ちる
+  （core-20261117T113920Z-40375c22）。通った回は直前のイメージが USB を使わないもの、落ちた回は USB を使うもの
+  だった。DCD の SET_INTERFACE と等時のエンドポイントの開き直しを、再列挙の直後に追う（usbmon は root が要る）。
 - [ ] ch32-device-data cb02bca（2026-11-17、push 待ち）の取り込み: push のあと lock を上げ、コアに手で書いた表を生成に
   移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（conflict は V103 の値 6、V205 の注入の値 6）。
   exti_lines.csv → internal/ch32rv_exti_line.h の線の表（V407 は線 18 = USBHS1・ベクタ 58、線 20 = USBHS2・84 で

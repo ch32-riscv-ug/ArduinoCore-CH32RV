@@ -42,9 +42,11 @@ from usb_iso import iso_transfer  # noqa: E402
 #   after interval.
 PARTIAL_MAX = 0.01
 WHOLE_MIN = 0.90
-# usbfs buffers a transfer's data in kernel memory (usbfs_memory_mb, 16 MiB by default): at most 8 MiB per transfer,
-# and at most 800 intervals (100 ms).
-TRANSFER_BYTES_MAX = 8 << 20
+# usbfs buffers a transfer's data in kernel memory (usbfs_memory_mb, 16 MiB by default, for the whole process with
+# its packet descriptors): 8 MiB in one transfer of the 48-packet alternate settings (170 intervals of 48 KiB) was
+# refused with ENOMEM (2026-11-17), so at most 2 MiB per transfer (42 intervals there), and at most 800 intervals
+# (100 ms).
+TRANSFER_BYTES_MAX = 2 << 20
 INTERVALS_MAX = 800
 # Alternate settings at most one SuperSpeed port may not have the bandwidth for (393 MB/s periodic): the host
 # refusing SET_INTERFACE there is the host's limit, reported as a skip.
