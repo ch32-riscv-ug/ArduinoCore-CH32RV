@@ -304,6 +304,16 @@ def adc_pads(dut, oep_host, case, n, skip_pads=()):
     return found
 
 
+def built(dut, command):
+    """Skip unless this periph build holds `command` (the DUT says, has: a build for a small flash leaves some out,
+    periph.ino)."""
+    m = ask(dut, "has", rb"HAS (\d) (\d) (\d)")
+    held = dict(zip(("atimer", "aext", "acont"), (g == b"1" for g in m.groups())))
+    if not held[command]:
+        pytest.skip(f"{command} is not in this periph build (the DUT says so: has; periph.ino leaves it out of a "
+                    "16 KB flash)")
+
+
 def until(dut, ws_run, wait, command, reply, seconds):
     """Send command, record it and its reply in the run, letting the stream be read meanwhile."""
     ws_run.command(command)
@@ -334,12 +344,14 @@ def test_adc_timer_trigger(dut, oep_host, ws_run, record_property):
       triggers more, is far outside;
     - the probe's wave seen in the samples: its frequency (rate x rises / rounds between the first and last rise)
       within 3 % of the probe's (the DUT's clock against the probe's, as adc-stream), its duty within 1/40 + 0.01
-      (one sample of a period; the wave and the ticks keep nearly the same phase) of the probe's; no overrun."""
+      (one sample of a period; the wave and the ticks keep nearly the same phase) of the probe's; no overrun.
+    Skipped where the periph build leaves atimer out (the DUT says so: has)."""
     from oep_client import core
     from oep_client.fixture import Pwm
     from wireskein.runlog import becomes
     case = settings(__file__)
     ready(dut, case)
+    built(dut, "atimer")
     found = adc_pads(dut, oep_host, case, 1)
     if not found:
         pytest.skip("no labelled <port>@<pad> line is an ADC channel")
@@ -415,6 +427,7 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
     from wireskein.runlog import becomes, pulses
     case = settings(__file__)
     ready(dut, case)
+    built(dut, "aext")
     trigger = None
     for candidate in gpio_lines(oep_host, case["target"]):
         if ask(dut, f"tcaps {candidate['pin']}", rb"TCAPS (\d)").group(1) == b"1":
@@ -505,13 +518,14 @@ def test_analog_continuous(dut, oep_host, ws_run, record_property):
     the frames counted (the callback) at least 10; the time between the first frame's callback and the last's,
     over the frames between them, within 0.5 % + 50 us of 10 ms (the timer's pace on the DUT's own clock: the
     callbacks' latency is microseconds); the average under 1/4 of full scale low and over 3/4 high (as adc), and
-    its mV higher high than low (the mV's accuracy is a manual test). V003's build leaves it out (ACONT 0 there,
-    skipped)."""
+    its mV higher high than low (the mV's accuracy is a manual test). Skipped where the periph build leaves it
+    out (the DUT says so: has)."""
     from oep_client import core
     from oep_client.fixture import Gpio
     from wireskein.runlog import becomes
     case = settings(__file__)
     ready(dut, case)
+    built(dut, "acont")
     found = adc_pads(dut, oep_host, case, 1)
     if not found:
         pytest.skip("no labelled <port>@<pad> line is an ADC channel")
@@ -521,7 +535,7 @@ def test_analog_continuous(dut, oep_host, ws_run, record_property):
     gpio = Gpio(host)
     core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
     gpio.configure(line["channel"], Gpio.OUTPUT_HIGH)
-    results, wrong, skipped = {}, [], []
+    results, wrong = {}, []
 
     def steps(wait):
         with ws_run.section(1, f"analog continuous {line['pad']}"):
@@ -532,7 +546,7 @@ def test_analog_continuous(dut, oep_host, ws_run, record_property):
                     m = until(dut, ws_run, wait, f"acont 10000 100 10 {line['pin']}", rb"ACONT ([-\d ]+)", 8)
                     v = [int(x) for x in m.group(1).split()]
                     if v[0] == 0:
-                        skipped.append("analogContinuous() refused or not in this build")
+                        wrong.append(f"level {level}: analogContinuous() refused")
                         return
                     _, frames, span, raw, mv, full = v
                     period = span / (frames - 1) if frames > 1 else 0.0
@@ -552,8 +566,6 @@ def test_analog_continuous(dut, oep_host, ws_run, record_property):
         gpio.configure(line["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
     record_property("results", json.dumps(results))
-    if skipped:
-        pytest.skip(skipped[0])
     if 0 in results and 1 in results and results[1]["mv"] <= results[0]["mv"]:
         wrong.append(f"mV high {results[1]['mv']} not above low {results[0]['mv']}")
     assert not wrong, " | ".join(wrong)

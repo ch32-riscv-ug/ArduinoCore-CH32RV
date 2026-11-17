@@ -66,7 +66,8 @@ public:
     bool begin(const pin_size_t *pins, uint8_t count, uint32_t rate);
     /* One round per tick of a timer at `rate` rounds per second. False when a
      * pin is no ADC1 input, no trigger timer is free, or none reaches the
-     * rate (0, or faster than its clock). */
+     * rate (0, or faster than its clock). (CH32RVAdcStreamTrigger.cpp: linked
+     * only by a sketch calling it or beginExternal().) */
     bool beginTimer(pin_size_t pin, uint32_t rate);
     bool beginTimer(const pin_size_t *pins, uint8_t count, uint32_t rate);
     /* One round per edge of `triggerPin` (`edge` RISING, FALLING or CHANGE).
@@ -110,23 +111,26 @@ public:
     /* The timer beginTimer() took (its number), 0 otherwise. */
     uint8_t triggerTimer() const;
 
+    /* For the interrupt handler. */
+    void isr();
+
 private:
     enum : uint8_t { TRIGGER_STOP, TRIGGER_START, TRIGGER_END };
-    bool prepare(const pin_size_t *pins, uint8_t count);
+    bool configure(uint8_t step);
+    uint32_t measure(uint8_t step);
     uint8_t longestStep(uint32_t rate);
-    static void handler(void *self, uint32_t flags);
-    static void timerControl(CH32RVAdcStream *self, uint8_t op);
-    static void pinControl(CH32RVAdcStream *self, uint8_t op);
+    /* The trigger's part of stop(), startContinuous() and end(): true when it
+     * did it. A weak default returning false in CH32RVAdcStream.cpp; the real
+     * one is CH32RVAdcStreamTrigger.cpp's, linked with beginTimer() /
+     * beginExternal() - so a free-running stream carries none of it. */
+    bool triggerControl(uint8_t op);
 
     uint8_t _channels[MAX_PINS] = {};
     uint8_t _count = 0, _step = 0;
     uint32_t _rate = 0;
     bool _begun = false, _running = false;
-    uint8_t _trigger = 0;               /* a triggered stream's EXTSEL value */
+    uint8_t _trigger = 0;               /* 0 free-running, 1 a timer, 2 a pad */
     pin_size_t _triggerPin = 0;
-    /* The trigger's set-up, only where beginTimer() / beginExternal() set it:
-     * a free-running stream links none of it. */
-    void (*_control)(CH32RVAdcStream *, uint8_t) = nullptr;
     uint16_t *_buf = nullptr;
     uint16_t _samples = 0;
     volatile uint8_t _ready = 0;        /* bit n: half n full and not yet taken */

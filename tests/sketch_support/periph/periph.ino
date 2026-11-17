@@ -22,6 +22,9 @@
  *                             <pin1 min> <pin1 max> <full scale> <pin1 rounds over
  *                             3/4> <pin1 rounds under 1/4> (rounds counted from the
  *                             first read; ASTREAM 0 when begin() refused)
+ *   has                       HAS <atimer> <aext> <acont>: 1 for each of those commands this
+ *                             build holds, 0 for one it leaves out (V003's 16 KB: atimer
+ *                             and acont; a part without ADC: all three)
  *   atimer <rate> <halves> <pin>
  *                             CH32RVAdcStream.beginTimer() on the pin at <rate>, read as
  *                             astream does (one pin): ATIMER <ok> <rate got> <timer>
@@ -387,6 +390,23 @@ static void reply(char *command)
 #else
         SerialDMSeq.printf("HSTREAM 0\r\n");
 #endif
+    } else if (!strcmp(argv[0], "has")) {
+#if PERIPH_ATIMER
+        const int atimer_in = 1;
+#else
+        const int atimer_in = 0;
+#endif
+#if PERIPH_AEXT
+        const int aext_in = 1;
+#else
+        const int aext_in = 0;
+#endif
+#if PERIPH_ACONT
+        const int acont_in = 1;
+#else
+        const int acont_in = 0;
+#endif
+        SerialDMSeq.printf("HAS %d %d %d\r\n", atimer_in, aext_in, acont_in);
     } else if (!strcmp(argv[0], "atimer") && argc == 4) {
 #if PERIPH_ATIMER
         atimer((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (pin_size_t)atoi(argv[3]));

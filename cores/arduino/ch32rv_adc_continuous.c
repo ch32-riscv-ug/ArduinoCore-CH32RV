@@ -18,10 +18,12 @@
 #include "internal/ch32rv_adc_run.h"
 #include "internal/ch32rv_adc_trigger.h"
 
+#define MAX_CHANNELS 16u              /* the regular sequence's length */
+
 static struct {
     bool init, running;
     uint8_t count, step, width;   /* width 0: the ADC's own */
-    uint8_t channels[CH32RV_ADC_RUN_MAX_CHANNELS];
+    uint8_t channels[MAX_CHANNELS];
     uint32_t frame;               /* values in a frame (conversions_per_pin x pins) */
     uint32_t vdd_mv;
     uint16_t *buf;                /* two frames */
@@ -32,11 +34,19 @@ static struct {
     volatile uint8_t last;        /* the frame filled most recently */
 } cont;
 
-static void on_frame(void *context, uint32_t flags)
+/* The DMA's interrupt (ch32rv_adc_run.c), as each frame fills: nothing
+ * while no run is going (CH32RVAdcStream's hook, after this one, has the
+ * flags then). */
+void ch32rv_adc_continuous_irq(void)
 {
-    (void)context;
+    if (!cont.running) {
+        return;
+    }
+    const uint32_t f = CH32RV_ADC_DMA_INTFR;
+    CH32RV_ADC_DMA_INTFCR = f & CH32RV_ADC_DMA_ALL;
+    CH32RV_ADC_DMA_DONE();
     for (uint8_t half = 0; half < 2; half++) {
-        if (flags & (half == 0 ? CH32RV_ADC_RUN_HALF : CH32RV_ADC_RUN_FULL)) {
+        if (f & (half == 0 ? CH32RV_ADC_DMA_HTIF : CH32RV_ADC_DMA_TCIF)) {
             cont.ready |= (uint8_t)(1u << half);
             cont.last = half;
             if (cont.fn) {
@@ -44,6 +54,81 @@ static void on_frame(void *context, uint32_t flags)
             }
         }
     }
+}
+
+/* The pins' ADC1 channels: false when one is no ADC1 input (X305 / X315: an
+ * ADC2..4 pad, whose requests reach no DMA channel here). Each pad set up as
+ * analogRead() does it (analog mode, the ADC started and calibrated). */
+static bool channels_of(const uint8_t *pins, uint8_t count)
+{
+#ifdef NUM_ANALOG_INPUTS
+    for (uint8_t i = 0; i < count; i++) {
+        const pin_size_t pad = CH32RV_PIN_RESOLVE(pins[i]);
+        const unsigned channel = CH32RV_PIN_TO_ADC_CHANNEL(pad);
+        if (channel == NOT_AN_ANALOG_PIN) {
+            return false;
+        }
+#ifdef CH32RV_PIN_TO_ADC_INSTANCE
+        if (CH32RV_PIN_TO_ADC_INSTANCE(pad) != 1) {
+            return false;
+        }
+#endif
+        cont.channels[i] = (uint8_t)channel;
+        (void)analogRead(pins[i]);
+    }
+    ch32rv_clock_enable(DMA1);
+    CH32RV_ADC_DMA_MUX();
+    return true;
+#else
+    (void)pins;
+    (void)count;
+    return false;
+#endif
+}
+
+/* The sequence (up to 16 places: RSQR3, RSQR2, RSQR1 at descending
+ * addresses, six 5-bit places each, RSQR1 four and the length at bit 20)
+ * and every channel's sample time at `step`, single conversion. */
+static void sequence(uint8_t count, uint8_t step)
+{
+    uint32_t smpr1 = CH32RV_ADC_SAMPTR1, smpr2 = CH32RV_ADC_SAMPTR2;
+    CH32RV_ADC_RSQR1 = (uint32_t)(count - 1u) << 20;
+    CH32RV_ADC_RSQR2 = 0;
+    CH32RV_ADC_RSQR3 = 0;
+    volatile uint32_t *sq = &CH32RV_ADC_RSQR3;
+    uint8_t place = 0;
+    for (uint8_t i = 0; i < count; i++) {
+        const uint8_t c = cont.channels[i];
+        if (c < 10u) {
+            smpr2 = (smpr2 & ~(7u << (3u * c))) | ((uint32_t)step << (3u * c));
+        } else {
+            smpr1 = (smpr1 & ~(7u << (3u * (c - 10u)))) | ((uint32_t)step << (3u * (c - 10u)));
+        }
+        *sq |= (uint32_t)c << place;
+        place += 5u;
+        if (place == 30u) {
+            place = 0;
+            sq--;
+        }
+    }
+    CH32RV_ADC_SAMPTR1 = smpr1;
+    CH32RV_ADC_SAMPTR2 = smpr2;
+    CH32RV_ADC_CTLR1 = count > 1u ? CH32RV_ADC_CTLR1_SCAN : 0u;
+}
+
+/* Rounds per second free-running at `step`, from two runs (what both pay
+ * once drops out, as CH32RVAdcStream measures). 0 if the DMA never finished. */
+static uint32_t measure(uint8_t count, uint8_t step)
+{
+    sequence(count, step);
+    const uint16_t n1 = (uint16_t)(32u / count * count);
+    const uint16_t n2 = (uint16_t)(544u / count * count);
+    const uint32_t dt1 = ch32rv_adc_timed_run(n1);
+    const uint32_t dt2 = dt1 ? ch32rv_adc_timed_run(n2) : 0u;
+    if (dt2 <= dt1) {
+        return 0;
+    }
+    return (uint32_t)((uint64_t)(n2 - n1) * 1000000u / (dt2 - dt1) / count);
 }
 
 bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversions_per_pin,
@@ -57,13 +142,13 @@ bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversi
     (void)userFunc;
     return false;
 #else
-    if (cont.init || !pins || pins_count == 0u || pins_count > CH32RV_ADC_RUN_MAX_CHANNELS ||
+    if (cont.init || !pins || pins_count == 0u || pins_count > MAX_CHANNELS ||
         conversions_per_pin == 0u || sampling_freq_hz == 0u ||
         (uint64_t)conversions_per_pin * pins_count > 32767u) {
         return false;
     }
     const uint8_t count = (uint8_t)pins_count;
-    if (!ch32rv_adc_run_channels(pins, count, cont.channels)) {
+    if (!channels_of(pins, count)) {
         return false;
     }
     /* One round of the pins per trigger: sampling_freq_hz conversions a
@@ -99,12 +184,12 @@ bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversi
     const uint64_t want = ((uint64_t)ch32rv_adc_timer_trigger_millihz(&cont.timer) * 5u + 3999u) / 4000u;
     cont.step = 0;
     for (int8_t step = 7; step >= 0; step--) {
-        if (ch32rv_adc_run_measure(cont.channels, count, (uint8_t)step) >= want) {
+        if (measure(count, (uint8_t)step) >= want) {
             cont.step = (uint8_t)step;
             break;
         }
     }
-    ch32rv_adc_run_sequence(cont.channels, count, cont.step);
+    sequence(count, cont.step);
     cont.count = count;
     cont.frame = frame;
     cont.fn = userFunc;
@@ -164,10 +249,15 @@ bool analogContinuousStart(void)
         return true;
     }
     cont.ready = 0;
-    ch32rv_adc_run_sequence(cont.channels, cont.count, cont.step);
-    ch32rv_adc_run_start_triggered(cont.buf, 2u * cont.frame, cont.timer.extsel, on_frame, 0);
-    ch32rv_adc_timer_trigger_start(&cont.timer);
+    sequence(cont.count, cont.step);
+    ch32rv_adc_run_link();
+    ch32rv_irq_disable(CH32RV_ADC_DMA_IRQN);
+    ch32rv_adc_halt();
+    ch32rv_adc_dma_ring(cont.buf, 2u * cont.frame);
     cont.running = true;
+    ch32rv_irq_enable(CH32RV_ADC_DMA_IRQN);
+    ch32rv_adc_arm_triggered(cont.timer.extsel);
+    ch32rv_adc_timer_trigger_start(&cont.timer);
     return true;
 }
 
@@ -178,7 +268,8 @@ bool analogContinuousStop(void)
     }
     if (cont.running) {
         ch32rv_adc_timer_trigger_stop(&cont.timer);
-        ch32rv_adc_run_stop_triggered();
+        ch32rv_irq_disable(CH32RV_ADC_DMA_IRQN);
+        ch32rv_adc_halt_triggered();
         cont.running = false;
     }
     return true;
@@ -191,7 +282,7 @@ bool analogContinuousDeinit(void)
     }
     analogContinuousStop();
     ch32rv_adc_timer_trigger_end(&cont.timer);
-    ch32rv_adc_run_restore();
+    ch32rv_adc_restore();
     free(cont.buf);
     free(cont.result);
     cont.buf = 0;

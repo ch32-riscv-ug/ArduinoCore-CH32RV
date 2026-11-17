@@ -1,40 +1,55 @@
-/* CH32RVAdcStream: ADC1 in continuous (and, with several pins, scan) mode, or
- * one round per trigger, on the core's ADC run (internal/ch32rv_adc_run.h:
- * the DMA channel, its interrupt, the stops that leave nothing pending) and
- * trigger sources (internal/ch32rv_adc_trigger.h: the family's timers and
- * trigger pad). */
+/* CH32RVAdcStream: ADC1 in continuous (and, with several pins, scan) mode,
+ * its results moved by DMA1 channel 1 into one circular buffer whose halves
+ * the half-transfer and transfer-complete interrupts hand over in turn. The
+ * DMA channel, its interrupt and the ADC's stops are the core's
+ * (internal/ch32rv_adc_run.h); the triggered runs are
+ * CH32RVAdcStreamTrigger.cpp's.
+ *
+ * The ADC is the STM32F1-shaped one every family here has (ch32rv_registers.h).
+ * analogRead() brings the ADC up (clock divider, calibration); this file only
+ * changes the sequence, the sample time and the mode, and end() puts back
+ * what analogRead() expects. */
 #include "CH32RVAdcStream.h"
 
 #include "internal/ch32rv_adc_run.h"
+
+static CH32RVAdcStream *active;
 
 bool CH32RVAdcStream::begin(pin_size_t pin, uint32_t rate)
 {
     return begin(&pin, 1, rate);
 }
 
-bool CH32RVAdcStream::prepare(const pin_size_t *pins, uint8_t count)
+bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate)
 {
-    if (!pins || count == 0 || count > MAX_PINS) {
+    if (!pins || count == 0 || count > MAX_PINS || rate == 0) {
         return false;
     }
     end();
-    if (!ch32rv_adc_run_channels(pins, count, _channels)) {
-        return false;
+    for (uint8_t i = 0; i < count; i++) {
+        const pin_size_t pad = CH32RV_PIN_RESOLVE(pins[i]);
+        const unsigned channel = CH32RV_PIN_TO_ADC_CHANNEL(pad);
+        if (channel == NOT_AN_ANALOG_PIN) {
+            return false;
+        }
+#ifdef CH32RV_PIN_TO_ADC_INSTANCE
+        if (CH32RV_PIN_TO_ADC_INSTANCE(pad) != 1) {
+            return false;                    /* X305 / X315: only ADC1 has this DMA request */
+        }
+#endif
+        _channels[i] = (uint8_t)channel;
+        /* analogRead() starts and calibrates the ADC and puts the pad in analog mode. */
+        (void)analogRead(pins[i]);
     }
     _count = count;
-    _rate = 0;
-    return true;
-}
+    ch32rv_clock_enable(DMA1);
+    CH32RV_ADC_DMA_MUX();
 
-bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate)
-{
-    if (rate == 0 || !prepare(pins, count)) {
-        return false;
-    }
     /* Fastest first: the first step at or below the rate is the one. */
     _step = 7;
+    _rate = 0;
     for (uint8_t step = 0; step < 8; step++) {
-        const uint32_t got = ch32rv_adc_run_measure(_channels, _count, step);
+        const uint32_t got = measure(step);
         if (got == 0) {
             continue;
         }
@@ -47,112 +62,61 @@ bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate
     if (_rate == 0) {
         return false;
     }
-    ch32rv_adc_run_sequence(_channels, _count, _step);
+    configure(_step);
     _begun = true;
     return true;
 }
 
-/* The longest step whose free-running rounds come at least 1.25 times as
- * fast as `rate`: a round then fits in 80 % of a trigger's period. The
- * shortest when none does (the ADC then misses triggers, as asked). */
-uint8_t CH32RVAdcStream::longestStep(uint32_t rate)
+/* The sequence (the pins in order) and every one of their sample times at
+ * `step`; single conversion mode, no DMA yet. */
+bool CH32RVAdcStream::configure(uint8_t step)
 {
-    const uint64_t want = (uint64_t)rate + rate / 4u;
-    for (int8_t step = 7; step > 0; step--) {
-        if (ch32rv_adc_run_measure(_channels, _count, (uint8_t)step) >= want) {
-            return (uint8_t)step;
+    uint32_t smpr1 = CH32RV_ADC_SAMPTR1, smpr2 = CH32RV_ADC_SAMPTR2;
+    uint32_t sq = 0;
+    for (uint8_t i = 0; i < _count; i++) {
+        const uint8_t c = _channels[i];
+        if (c < 10u) {
+            smpr2 = (smpr2 & ~(7u << (3u * c))) | ((uint32_t)step << (3u * c));
+        } else {
+            smpr1 = (smpr1 & ~(7u << (3u * (c - 10u)))) | ((uint32_t)step << (3u * (c - 10u)));
         }
+        sq |= (uint32_t)c << (5u * i);
     }
-    return 0;
-}
-
-bool CH32RVAdcStream::beginTimer(pin_size_t pin, uint32_t rate)
-{
-    return beginTimer(&pin, 1, rate);
-}
-
-/* One stream's timer at a time: there is one ADC1. */
-static ch32rv_adc_timer_trigger_t stream_timer;
-
-void CH32RVAdcStream::timerControl(CH32RVAdcStream *self, uint8_t op)
-{
-    if (op == TRIGGER_START) {
-        ch32rv_adc_run_start_triggered(self->_buf, (uint32_t)self->_samples * 2u, self->_trigger, handler, self);
-        ch32rv_adc_timer_trigger_start(&stream_timer);
-    } else if (op == TRIGGER_STOP) {
-        ch32rv_adc_timer_trigger_stop(&stream_timer);
-        ch32rv_adc_run_stop_triggered();
-    } else {
-        ch32rv_adc_timer_trigger_end(&stream_timer);
-    }
-}
-
-uint8_t CH32RVAdcStream::triggerTimer() const
-{
-    return _control == timerControl ? stream_timer.timer : 0u;
-}
-
-bool CH32RVAdcStream::beginTimer(const pin_size_t *pins, uint8_t count, uint32_t rate)
-{
-    if (!prepare(pins, count) || !ch32rv_adc_timer_trigger_begin(&stream_timer, rate, 1)) {
-        return false;
-    }
-    _control = timerControl;
-    _trigger = stream_timer.extsel;
-    _rate = (ch32rv_adc_timer_trigger_millihz(&stream_timer) + 500u) / 1000u;
-    _step = longestStep(rate);
-    ch32rv_adc_run_sequence(_channels, _count, _step);
-    _begun = true;
+    CH32RV_ADC_SAMPTR1 = smpr1;
+    CH32RV_ADC_SAMPTR2 = smpr2;
+    CH32RV_ADC_RSQR3 = sq;
+    CH32RV_ADC_RSQR2 = 0;
+    CH32RV_ADC_RSQR1 = (uint32_t)(_count - 1u) << 20;
+    CH32RV_ADC_CTLR1 = _count > 1 ? CH32RV_ADC_CTLR1_SCAN : 0u;
     return true;
 }
 
-void CH32RVAdcStream::pinControl(CH32RVAdcStream *self, uint8_t op)
+/* Rounds per second at `step`, from two runs: the rate is the difference in
+ * conversions over the difference in time, so what both runs pay once - the
+ * ADC's first conversion after the start, the calls around it - drops out.
+ * One run of 64 conversions counted that in and came out 4 % slow on a
+ * CH32X035 (960 Hz for a 1 kHz wave, 2026-11-12). 0 if the DMA never finished. */
+uint32_t CH32RVAdcStream::measure(uint8_t step)
 {
-    if (op == TRIGGER_START) {
-        ch32rv_adc_run_start_triggered(self->_buf, (uint32_t)self->_samples * 2u, self->_trigger, handler, self);
-    } else if (op == TRIGGER_STOP) {
-        ch32rv_adc_run_stop_triggered();
-    } else {
-        ch32rv_adc_pin_trigger_end(self->_triggerPin);
+    configure(step);
+    const uint16_t n1 = (uint16_t)(32u / _count * _count);
+    const uint16_t n2 = (uint16_t)(544u / _count * _count);
+    const uint32_t dt1 = ch32rv_adc_timed_run(n1);
+    const uint32_t dt2 = dt1 ? ch32rv_adc_timed_run(n2) : 0u;
+    if (dt2 <= dt1) {
+        return 0;
     }
-}
-
-bool CH32RVAdcStream::beginExternal(pin_size_t pin, pin_size_t triggerPin, PinStatus edge, uint32_t maxRate)
-{
-    return beginExternal(&pin, 1, triggerPin, edge, maxRate);
-}
-
-bool CH32RVAdcStream::beginExternal(const pin_size_t *pins, uint8_t count, pin_size_t triggerPin,
-                                    PinStatus edge, uint32_t maxRate)
-{
-    if (!ch32rv_adc_pin_trigger_valid(triggerPin) || (edge != RISING && edge != FALLING && edge != CHANGE) ||
-        !prepare(pins, count)) {
-        return false;
-    }
-    uint8_t extsel = 0;
-    if (!ch32rv_adc_pin_trigger_begin(triggerPin, (uint8_t)edge, &extsel)) {
-        return false;
-    }
-    _trigger = extsel;
-    _triggerPin = triggerPin;
-    _control = pinControl;
-    _step = maxRate ? longestStep(maxRate) : 7u;
-    ch32rv_adc_run_sequence(_channels, _count, _step);
-    _begun = true;
-    return true;
+    return (uint32_t)((uint64_t)(n2 - n1) * 1000000u / (dt2 - dt1) / _count);
 }
 
 void CH32RVAdcStream::end()
 {
     stop();
-    if (_control) {
-        _control(this, TRIGGER_END);
-        _control = nullptr;
-    }
+    triggerControl(TRIGGER_END);
     if (!_begun) {
         return;
     }
-    ch32rv_adc_run_restore();
+    ch32rv_adc_restore();
     _begun = false;
 }
 
@@ -175,12 +139,19 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
     _ready = 0;
     _last = 0;
     _overruns = _filled = 0;
-    ch32rv_adc_run_sequence(_channels, _count, _step);
+    active = this;
+    ch32rv_adc_run_link();
+    configure(_step);
+    ch32rv_adc_halt();
+    CH32RV_ADC_DMA_MUX();
+    CH32RV_ADC_DMA_PADDR = (uint32_t)(uintptr_t)&CH32RV_ADC_RDATAR;
+    CH32RV_ADC_DMA_MADDR = (uint32_t)(uintptr_t)buffer;
+    CH32RV_ADC_DMA_CNTR = (uint32_t)samples * 2u;
+    CH32RV_ADC_DMA_CFGR = CH32RV_ADC_DMA_MINC | CH32RV_ADC_DMA_CIRC | CH32RV_ADC_DMA_16BIT | CH32RV_ADC_DMA_PL_HI | CH32RV_ADC_DMA_HTIE | CH32RV_ADC_DMA_TCIE | CH32RV_ADC_DMA_EN;
     _running = true;
-    if (_control) {
-        _control(this, TRIGGER_START);   /* the triggered run, then its source */
-    } else {
-        ch32rv_adc_run_start(buffer, (uint32_t)samples * 2u, handler, this);
+    ch32rv_irq_enable(CH32RV_ADC_DMA_IRQN);
+    if (!triggerControl(TRIGGER_START)) {
+        ch32rv_adc_go(ch32rv_adc_arm());
     }
     return true;
 }
@@ -190,10 +161,9 @@ void CH32RVAdcStream::stop()
     if (!_running) {
         return;
     }
-    if (_control) {
-        _control(this, TRIGGER_STOP);   /* its source, then the triggered run */
-    } else {
-        ch32rv_adc_run_stop();
+    ch32rv_irq_disable(CH32RV_ADC_DMA_IRQN);
+    if (!triggerControl(TRIGGER_STOP)) {
+        ch32rv_adc_halt();
     }
     _running = false;
 }
@@ -210,8 +180,27 @@ const uint16_t *CH32RVAdcStream::readBuffer()
         _ready = (uint8_t)(r & ~(1u << take));
     }
     interrupts();
-    __asm__ volatile("fence rw, rw" ::: "memory");
+    CH32RV_ADC_DMA_DONE();
     return take == 0xFF ? nullptr : _buf + (size_t)take * _samples;
+}
+
+void CH32RVAdcStream::isr()
+{
+    const uint32_t f = CH32RV_ADC_DMA_INTFR;
+    CH32RV_ADC_DMA_INTFCR = f & CH32RV_ADC_DMA_ALL;
+    /* Half-transfer: the first half is full; transfer-complete: the second.
+     * Both at once (an interrupt held off for a whole half) - first, then second. */
+    for (uint8_t half = 0; half < 2; half++) {
+        if (!(f & (half == 0 ? CH32RV_ADC_DMA_HTIF : CH32RV_ADC_DMA_TCIF))) {
+            continue;
+        }
+        if (_ready & (1u << half)) {
+            _overruns++;                     /* the sketch still had not taken it */
+        }
+        _ready |= (uint8_t)(1u << half);
+        _last = half;
+        _filled++;
+    }
 }
 
 uint32_t CH32RVAdcStream::conversions() const
@@ -223,17 +212,17 @@ uint32_t CH32RVAdcStream::conversions() const
     uint32_t laps, remaining, pending;
     /* The counter and the wrap's flag read together: a wrap between them
      * would count its lap twice or not at all. */
-    do {
+    for (;;) {
         noInterrupts();
-        pending = ch32rv_adc_run_pending() & CH32RV_ADC_RUN_FULL;
+        pending = CH32RV_ADC_DMA_INTFR & CH32RV_ADC_DMA_TCIF;
         laps = _filled / 2u;             /* halves alternate: every second one ends a lap */
-        remaining = ch32rv_adc_run_remaining();
-        const uint32_t again = ch32rv_adc_run_pending() & CH32RV_ADC_RUN_FULL;
+        remaining = CH32RV_ADC_DMA_CNTR;
+        const uint32_t again = CH32RV_ADC_DMA_INTFR & CH32RV_ADC_DMA_TCIF;
         interrupts();
         if (again == pending) {
             break;
         }
-    } while (true);
+    }
     if (pending) {
         laps++;                          /* wrapped, its interrupt still to run */
     }
@@ -241,20 +230,20 @@ uint32_t CH32RVAdcStream::conversions() const
     return (laps * total + written) / _count;
 }
 
-void CH32RVAdcStream::handler(void *self, uint32_t flags)
+/* No trigger linked: nothing to do (CH32RVAdcStreamTrigger.cpp has the real
+ * one; the library is an archive, so it comes only with beginTimer() /
+ * beginExternal()). */
+__attribute__((weak)) bool CH32RVAdcStream::triggerControl(uint8_t op)
 {
-    CH32RVAdcStream *s = static_cast<CH32RVAdcStream *>(self);
-    /* Half-transfer: the first half is full; transfer-complete: the second.
-     * Both at once (an interrupt held off for a whole half) - first, then second. */
-    for (uint8_t half = 0; half < 2; half++) {
-        if (!(flags & (half == 0 ? CH32RV_ADC_RUN_HALF : CH32RV_ADC_RUN_FULL))) {
-            continue;
-        }
-        if (s->_ready & (1u << half)) {
-            s->_overruns++;              /* the sketch still had not taken it */
-        }
-        s->_ready |= (uint8_t)(1u << half);
-        s->_last = half;
-        s->_filled++;
+    (void)op;
+    return false;
+}
+
+extern "C" void ch32rv_adc_stream_irq(void)
+{
+    if (active) {
+        active->isr();
+    } else {
+        CH32RV_ADC_DMA_INTFCR = CH32RV_ADC_DMA_ALL;
     }
 }

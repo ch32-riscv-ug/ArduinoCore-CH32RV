@@ -502,7 +502,17 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_ADC_CTLR2_ADON    (1u << 0)
 #define CH32RV_ADC_CTLR2_CAL     (1u << 2)
 #define CH32RV_ADC_CTLR2_RSTCAL  (1u << 3)
+/* EXTSEL's software start: 111 in CTLR2[19:17] on every family but M030,
+ * whose EXTSEL is CTLR2[19:16] with 0000 the software start (RM V1.2 8.2.3
+ * Table 8-1 and 8.3.3; its EVT writes ADC_ExternalTrigConv_None, 0) - 7 << 17
+ * there is 1110, a reserved source (whether SWSTART still started with it is
+ * unknown: no bench run has converted on M030 - every ADC test there skipped,
+ * its board's pads are not driven). */
+#if defined(CH32RV_SERIES_CH32M030)
+#define CH32RV_ADC_CTLR2_EXTSEL_SWSTART (0u << 16)
+#else
 #define CH32RV_ADC_CTLR2_EXTSEL_SWSTART (7u << 17)
+#endif
 #define CH32RV_ADC_CTLR2_EXTTRIG (1u << 20)
 #define CH32RV_ADC_CTLR2_SWSTART (1u << 22)
 /* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8 (the families that have it; the
