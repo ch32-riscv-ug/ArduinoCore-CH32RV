@@ -8,6 +8,8 @@
  *   ready <nonce>             READY <nonce> <build id>
  *   clocks                    CLOCKS <F_CPU> <HCLK> <PCLK1> <PCLK2> <CFGR0 hex> <PCLK2 from CFGR0, or 0>
  *                             <PCLK1 from CFGR0, or 0>
+ *   source                    SOURCE <Clock Source asked: 1 HSE, 0 HSI or no menu> <running on HSE: 1 / 0>
+ *                             <the setting has a PLL: 1 / 0> <RCC_CFGR0's SWS> <RCC_CTLR's HSERDY>
  *   ports                     PORTS <count>: the HardwareSerial objects (Serial, Serial1, ...)
  *   tx <k> <baud> <n>         port k sends n bytes: TX <USARTn> <sent> <microseconds to the last stop bit> <BRR>
  *   rx <k> <n>                port k at 9600 receives n bytes the sketch sends on its RX pad (made an output):
@@ -445,6 +447,20 @@ static void reply(char *command)
                            (unsigned long)CH32RV_PCLK2_HZ, (unsigned long)cfgr0,
                            (unsigned long)pclk2_from_register(cfgr0),
                            (unsigned long)pclk1_from_register(cfgr0));
+    } else if (!strcmp(argv[0], "source")) {
+        /* CH32RV.clockSource() says HSE only when SystemInit() switched to
+         * the crystal; the PLL flag is the setting it then ran. */
+        const int on_hse = CH32RV.clockSource() == CH32RV_CLOCK_SOURCE_HSE;
+#ifdef CH32RV_CLOCK_HSE_HZ
+        const int asked = 1;
+        const int use_pll = on_hse ? CH32RV_CLOCK_HSE_USE_PLL : CH32RV_CLOCK_USE_PLL;
+#else
+        const int asked = 0;
+        const int use_pll = CH32RV_CLOCK_USE_PLL;
+#endif
+        SerialDMSeq.printf("SOURCE %d %d %d %lu %d\r\n", asked, on_hse, use_pll,
+                           (unsigned long)((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) >> 2),
+                           (CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSERDY) ? 1 : 0);
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {

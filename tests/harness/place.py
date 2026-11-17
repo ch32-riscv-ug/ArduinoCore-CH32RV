@@ -120,22 +120,42 @@ def tty_of(topology, interface=None, sysfs=SYSFS):
     return f"/dev/{found[0]}" if found else None
 
 
+def menu_f_cpu(text, board, chosen=None):
+    """build.f_cpu as arduino-cli makes it for the board with these menu values ({menu: value}; a menu not named
+    takes its first entry): the board's build properties, each menu's entry over them in boards.txt's order, then the
+    {build.*} references expanded - CH32H41x's CPU Core takes F_CPU from the CPU Clock entry's V5F or HCLK number
+    (build.clock_v5f_hz / clock_hclk_hz). None where nothing sets it."""
+    chosen = chosen or {}
+    props, menus = {}, {}
+    for key, value in re.findall(rf"^{re.escape(board)}\.([^=\n]+)=([^\n]*)$", text, re.M):
+        if key.startswith("build."):
+            props[key] = value
+            continue
+        m = re.fullmatch(r"menu\.([a-z0-9_]+)\.([^.]+)\.(build\.[^\n]+)", key)
+        if m:
+            entries = menus.setdefault(m.group(1), {})
+            entries.setdefault(m.group(2), {})[m.group(3)] = value
+    for menu, entries in menus.items():
+        props.update(entries.get(chosen.get(menu), next(iter(entries.values()))))
+    value = props.get("build.f_cpu")
+    for _ in range(8):
+        if value is None or "{" not in value:
+            break
+        value = re.sub(r"\{(build\.[^}]+)\}", lambda m: props.get(m.group(1), m.group(0)), value)
+    m = re.fullmatch(r"(\d+)L?", value or "")
+    return int(m.group(1)) if m else None
+
+
 def boards(path=REPO / "boards.txt"):
-    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus. A board without a CPU Clock
-    menu takes the first entry of the menu that sets f_cpu (H41x's CPU Core), else its own build.f_cpu (X305)."""
+    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus: every menu at its first entry
+    (menu_f_cpu)."""
     text = path.read_text(encoding="utf-8")
     first_clock = {}
-    for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.menu\.clock\.[^.=\n]+\.build\.f_cpu=(\d+)L?$", text, re.M):
-        first_clock.setdefault(board, int(hz))
-    # No CPU Clock menu: the first entry of the menu that sets it (H41x's CPU Core, V5F 400 MHz by default), else
-    # the board's own (X305).
-    for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.menu\.[a-z0-9_]+\.[^.=\n]+\.build\.f_cpu=(\d+)L?$", text, re.M):
-        first_clock.setdefault(board, int(hz))
-    for board, hz in re.findall(r"^([A-Za-z0-9_]+)\.build\.f_cpu=(\d+)L?$", text, re.M):
-        first_clock.setdefault(board, int(hz))
     out = {}
     for board, part in re.findall(r"^([A-Za-z0-9_]+)\.menu\.pnum\.([A-Z0-9]+)=", text, re.M):
-        out.setdefault(part, (board, first_clock.get(board)))
+        if board not in first_clock:
+            first_clock[board] = menu_f_cpu(text, board)
+        out.setdefault(part, (board, first_clock[board]))
     return out
 
 
@@ -227,10 +247,7 @@ def with_options(fqbn, f_cpu, options, path=REPO / "boards.txt"):
         if not re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}=", text, re.M):
             raise PlaceError(f"options (the record's or CH32_TEST_OPTIONS): {board} has no {menu}={value} in boards.txt")
         pairs[menu] = value
-        hz = re.search(rf"^{re.escape(board)}\.menu\.{re.escape(menu)}\.{re.escape(value)}\.build\.f_cpu=(\d+)L?$",
-                       text, re.M)
-        if hz:
-            f_cpu = int(hz.group(1))
+    f_cpu = menu_f_cpu(text, board, pairs) or f_cpu
     return f"{head}{board}:" + ",".join(f"{k}={v}" for k, v in pairs.items()), f_cpu
 
 

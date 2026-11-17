@@ -396,7 +396,13 @@ scope = "series"
 kind = "self"
 
 [[item]]
-id = "selfcheck-serial"     # every Serial: BRR on its own bus and the real baud; its receiver fed from its own RX pad
+id = "selfcheck-clock-source"  # the oscillator Clock Source asked for is the one RCC runs (clocksrc=hse needs the crystal)
+test = "selfcheck::test_clock_source"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfcheck-serial"    # every Serial: BRR on its own bus and the real baud; its receiver fed from its own RX pad
 test = ["selfcheck::test_serial_transmit", "selfcheck::test_serial_receive"]
 scope = "series"
 kind = "self"

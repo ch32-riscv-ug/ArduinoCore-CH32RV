@@ -266,6 +266,18 @@ void SystemInit(void)
                        CH32RV_FLASH_LATENCY;
 #endif
 
+#ifdef CH32RV_CLOCK_HSE_SEQUENCE
+    /* CH32X315 / CH32V407 with Clock Source = HSE: EVT's HSE setter, its
+     * steps in its order (clock_init_<family>.h). X315 takes the PLL from the
+     * USBHS / USBSS PLL, and V407's 120 / 240 MHz SYSCLK comes from the
+     * USBHS PLL off the 25 MHz crystal (no main-PLL multiplier makes them),
+     * so the crystal setting is not the HSI one with another PLL word. The
+     * crystal is on already; the steps' own HSEON is a no-op. */
+    if (on_hse && use_pll) {
+        CH32RV_CLOCK_HSE_SEQUENCE();
+    } else
+#endif
+    {
 /* The flag, not the value: CH32V30x_D8C encodes a x18 multiplier as field
  * 0 (RCC_PLLMULL18_EXTEN), so a zero PLL word is a real configuration. */
 #if CH32RV_CLOCK_USE_PLL && defined(CH32RV_CLOCK_SEQUENCE)
@@ -325,6 +337,7 @@ void SystemInit(void)
         }
     }
 #endif
+    }
 
     /* 1 kHz tick off HCLK - or HCLK/8 on CH32V103, which cannot select. */
     CH32RV_SYSTICK_CTLR = 0u;

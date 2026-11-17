@@ -113,8 +113,10 @@ static inline bool ch32rv_usbfs_otg_clock_on(void)
 }
 
 #elif defined(CH32RV_SERIES_CH32M030)
-/* The PLL is HSI x 18 = 144 MHz, fixed, and its /3 is the USBFS clock (RM
- * figure 3-2). It runs here whatever SYSCLK is: turned on, never switched to. */
+/* The PLL is x 18 = 144 MHz, fixed, and its /3 is the USBFS clock (RM
+ * figure 3-2). It runs here whatever SYSCLK is: turned on, never switched to.
+ * Its source is the 8 MHz crystal when it runs (Clock Source = HSE), else HSI
+ * (also 8 MHz). */
 #define CH32RV_USBFS_OTG_RCC_CTLR_PLLON  (1u << 24)
 #define CH32RV_USBFS_OTG_RCC_CTLR_PLLRDY (1u << 25)
 #define CH32RV_USBFS_OTG_USB_CLKEN()     ch32rv_clock_enable(USBFS)
@@ -127,7 +129,8 @@ static inline bool ch32rv_usbfs_otg_clock_ok(void)
 static inline bool ch32rv_usbfs_otg_clock_on(void)
 {
     if (!(CH32RV_RCC_CTLR & CH32RV_USBFS_OTG_RCC_CTLR_PLLRDY)) {
-        CH32RV_RCC_CFGR0 &= ~(1u << 16);                 /* PLLSRC: HSI */
+        CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~(1u << 16)) |  /* PLLSRC: HSE (HSERDY) or HSI */
+                           ((CH32RV_RCC_CTLR & (1u << 17)) ? (1u << 16) : 0u);
         CH32RV_RCC_CTLR |= CH32RV_USBFS_OTG_RCC_CTLR_PLLON;
         if (!ch32rv_usbfs_otg_wait_ctlr(CH32RV_USBFS_OTG_RCC_CTLR_PLLRDY)) {
             return false;

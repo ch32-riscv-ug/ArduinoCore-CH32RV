@@ -9,6 +9,11 @@ CH32_TEST_OPTIONS (run_hardware.py) the same at another CPU Clock entry.
 selfcheck.clocks: the bus clocks the build assumes (CH32RV_PCLK2_HZ, internal/ch32rv_bus_clock.h) are the ones
 RCC_CFGR0 is set to, where the family has the STM32F1-shaped PPRE2 field.
 
+selfcheck.clock_source: the oscillator the Clock Source menu asked for is the one the part runs (CH32RV.clockSource(),
+RCC_CTLR's HSERDY): with clocksrc=hse the crystal started - run it on a board that carries its EVT's (8 MHz on V20x / V30x /
+L103 / V103 / M030, 24 on V00x, 20 on X3x5, 25 on V4x7 / H41x, 32 on V208) - and HSI otherwise; RCC_CFGR0's SWS is the
+PLL where the setting has one, else that oscillator. With CH32_TEST_OPTIONS=clocksrc=hse (and clock=...) per entry.
+
 selfcheck.serial_transmit: every HardwareSerial object sends 64 bytes at 115200 and 1000000 baud: BRR is the
 rounded clock / baud of the USART's own bus (USART1 on PCLK2, the rest on PCLK1), and sending them took 10 bits a
 byte at that baud within 4 % (the buffered write, the interrupt and flush() included).
@@ -126,6 +131,23 @@ def test_clocks(ready, record_property):
         f"RCC_CFGR0 {ready['cfgr0']:#010x} gives PCLK2 {ready['pclk2_register']}, the build assumes {ready['pclk2']}"
     assert ready["pclk1_register"] == ready["pclk1"], \
         f"RCC_CFGR0 {ready['cfgr0']:#010x} gives PCLK1 {ready['pclk1_register']}, the build assumes {ready['pclk1']}"
+
+
+def test_clock_source(dut, ready, record_property):
+    """The oscillator the build asked for (Clock Source) is the one RCC runs."""
+    asked, on_hse, use_pll, sws, hserdy = (int(x) for x in ask(
+        dut, "source", rb"SOURCE (\d) (\d) (\d) (\d) (\d)").groups())
+    record_property("source", json.dumps(dict(asked="hse" if asked else "hsi", on_hse=on_hse, use_pll=use_pll,
+                                              sws=sws, hserdy=hserdy)))
+    if asked:
+        # A board with the EVT's crystal: HSI here is the fallback of a crystal that did not start.
+        assert on_hse, "Clock Source = HSE, but the crystal did not start: the part runs the same entry on HSI"
+        assert hserdy, "on HSE by CH32RV.clockSource(), but RCC_CTLR's HSERDY is 0"
+    else:
+        assert not on_hse, "Clock Source = HSI (or no menu), but CH32RV.clockSource() says HSE"
+    # SWS: 0 HSI, 1 HSE, 2 PLL - the PLL's own source is family-specific and left to time_rate's frequency.
+    want = 2 if use_pll else 1 if on_hse else 0
+    assert sws == want, f"RCC_CFGR0's SWS is {sws}, the setting wants {want} (0 HSI, 1 HSE, 2 PLL)"
 
 
 @pytest.mark.parametrize("baud", [115200, 1000000])
