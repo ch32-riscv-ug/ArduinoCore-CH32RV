@@ -1,7 +1,8 @@
 """The case names run_hardware.py knows. A target is named by its address alone (harness/place.py); the bench file
 (tests/fixtures/bench.*.toml, CH32_TEST_CONFIG) is gone since 2026-11-05."""
 
-CASES = {"runtime", "uart", "uart-dma", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit",
+CASES = {"runtime", "uart", "uart-dma", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "usb-power",
+         "usb-firmware", "eth", "logic", "pd", "synckit",
          "flash", "wire", "softwire", "softspi", "spi", "sd", "periph", "signals", "system",
          "console-rtt", "console-dmdata", "console-sdi", "analog", "selfcheck", "selfbus", "selfsys", "selfapi",
          "selfexti",

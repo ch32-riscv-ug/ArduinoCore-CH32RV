@@ -70,7 +70,7 @@ DUT 自身の USB 端子がどこへつながっているかです。
 
 | 形 | 意味 | 流す case |
 |---|---|---|
-| `{"to": "host"}` | 試験を流すホストにつながっている | usb、usb-classes、usb-media |
+| `{"to": "host"}` | 試験を流すホストにつながっている | usb、usb-classes、usb-media、usb-power、usb-firmware |
 | `{"to": "host", "ss_only": true}` | 同じく、ただしケーブルが SuperSpeed の線だけ（USB 2.0 の線を切ってある・無い） | 同じ。usb の ISP への切り替え（dfu-detach、1200 bps）は飛ばす（ISP のブートローダーは USB 2.0 なので見えない） |
 | `{"to": "esp32-s3", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-S3 につながっている（full speed） | usb-peer の各 case。USB host の case は、USB host を持つ型番だけ |
 | `{"to": "esp32-p4", "serial": "<USB serial>", "mac": "<12 桁>"}` | 相手の ESP32-P4 の OTG HS の口につながっている（high speed） | usb-peer のデバイス側の case と、usb-peer-host / usb-peer-host-classes（DUT は USBHS のホスト）。input と storage は P4 のスケッチが無いので飛ばす |
@@ -112,7 +112,7 @@ usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH3
 - キーは「どのコントローラーか」だけを表します。そこで流せる case（デバイスだけか、ホストもか）は、試験が系列のデータと
   実装の状況から決めます（place.py の choose_cases）。X315 の `super_speed` はデバイスだけ、H417 の `super_speed` はハードでは
   両対応でも今の実装はデバイスだけ、のように、同じキーでも石と実装で範囲が変わります。
-- usb・usb-classes・usb-media は `{"to": "host"}` の口で、usb-peer の各 case はプローブなどの相手（esp32-s3 / esp32-p4 /
+- usb・usb-classes・usb-media・usb-power・usb-firmware は `{"to": "host"}` の口で、usb-peer の各 case はプローブなどの相手（esp32-s3 / esp32-p4 /
   rp2040 / ch32rv）の口で流れます。run_hardware.py が、その口をスケッチに渡します（デバイスは `USB_TEST_CONTROLLER`、ホストは
   `USB_PEER_HOST_PORT`）。1 つの形は、系列の既定のコントローラー（`Auto`）のままです。
 - 書き方: `tests/bench_record.py set <アドレス> --usb rp2040,port=rp2040-h417 --usb-port full_speed`（CH32RV の相手は

@@ -258,6 +258,12 @@ H41x の自己書き換えに対応した構成では、DFU_DETACH 後に DFU mo
 | [Update](../libraries/Update/) ライブラリ（arduino-esp32 の `Update`） | 何でも（UART、CDC、ベンダーなど、スケッチが運ぶ） | — | [SerialUpdate](../libraries/Update/examples/SerialUpdate/) |
 
 どれも同じコアの部品（`ch32rv_update.h`、`ch32rv_flash.h` の staging と `ch32rv_flash_install()`）で書きます。
+使わないスケッチには何もリンクされません（V003 の例、USB のキーボードの例とも、前とバイト単位で同じイメージ）。
+
+費用（X035、`USBDevice.begin()` だけのスケッチとの差。2026-11-17 測定）: `CH32RVUsbDeviceDfu` は Flash +3.6 KB、
+RAM +1.0 KB（うちコピーの処理 600 B は RAM で動くので両方に数える）と、最初のダウンロードでヒープから
+`transferBytes`（既定 1 KB）。`CH32RVUsbDeviceMscFirmwareDisk` は MSC の RAM ディスクとの差で Flash +5.1 KB、
+RAM +1.0 KB と `storage`。
 
 ### イメージの置き場所と入れ替え
 

@@ -11,6 +11,8 @@ CH32RVUsbDeviceCdcLineState	KEYWORD1
 CH32RVUsbDeviceCdcSerial	KEYWORD1
 CH32RVUsbDeviceConfig	KEYWORD1
 CH32RVUsbDeviceDfuRuntime	KEYWORD1
+CH32RVUsbDeviceDfu	KEYWORD1
+CH32RVUsbDeviceMscFirmwareDisk	KEYWORD1
 CH32RVUsbDeviceError	KEYWORD1
 CH32RVUsbDeviceFunction	KEYWORD1
 CH32RVUsbDeviceGamepadReport	KEYWORD1

@@ -16,7 +16,7 @@ import usb.util
 
 # The runner stages usb_host.py beside this file; pytest imports tests without adding their directory.
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from usb_host import APP, PcUsbHost, endpoints, interface
+from usb_host import APP, BulkOnly, PcUsbHost, endpoints, interface
 
 GUID = "{0B1C2D3E-4F50-6172-8394-A5B6C7D8E9F0}"
 WEBUSB_UUID = bytes.fromhex("38b60834a909a0478bfda0768815b665")
@@ -25,40 +25,6 @@ MS_OS_20_UUID = bytes.fromhex("df60ddd88945c74c9cd2659d9e648a9f")
 
 def utf16(text):
     return text.encode("utf-16-le")
-
-
-class BulkOnly:
-    """SCSI over mass-storage bulk-only transport."""
-
-    def __init__(self, itf):
-        self.ep_in, self.ep_out = endpoints(itf)
-        self.tag = 1
-
-    def command(self, cb, length=0, data=None):
-        self.tag += 1
-        direction = 0x00 if data is not None else 0x80
-        cbw = struct.pack("<4sIIBBB", b"USBC", self.tag, len(data) if data is not None else length,
-                          direction, 0, len(cb)) + cb.ljust(16, b"\0")
-        self.ep_out.write(cbw, timeout=2000)
-        payload = b""
-        if data is not None:
-            self.ep_out.write(data, timeout=2000)
-        elif length:
-            while len(payload) < length:
-                payload += bytes(self.ep_in.read(length - len(payload), timeout=2000))
-        csw = bytes(self.ep_in.read(13, timeout=2000))
-        signature, tag, _residue, status = struct.unpack("<4sIIB", csw)
-        assert signature == b"USBS" and tag == self.tag, csw
-        return status, payload
-
-    def read(self, lba, count=1):
-        status, data = self.command(struct.pack(">BBIBHB", 0x28, 0, lba, 0, count, 0), 512 * count)
-        assert status == 0
-        return data
-
-    def write(self, lba, data):
-        status, _ = self.command(struct.pack(">BBIBHB", 0x2A, 0, lba, 0, len(data) // 512, 0), data=data)
-        assert status == 0
 
 
 def fat12_add_file(disk, name, data):

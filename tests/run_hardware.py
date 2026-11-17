@@ -36,6 +36,8 @@ MODULES = {
     "usb": TESTS / "instrumented/usb/test_usb_contract.py",
     "usb-classes": TESTS / "instrumented/usb/test_usb_classes_contract.py",
     "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
+    "usb-power": TESTS / "instrumented/usb/test_usb_power_contract.py",
+    "usb-firmware": TESTS / "instrumented/usb/test_usb_firmware_contract.py",
     "eth": TESTS / "instrumented/eth/test_eth_contract.py",
     "logic": TESTS / "instrumented/logic/test_logic_contract.py",
     "pd": TESTS / "instrumented/pd/test_pd_contract.py",
@@ -77,6 +79,8 @@ SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
+    "usb-power": TESTS / "sketch_support/usb_power/usb_power.ino",
+    "usb-firmware": TESTS / "sketch_support/usb_firmware/usb_firmware.ino",
     "eth": TESTS / "sketch_support/eth/eth.ino",
     "logic": TESTS / "sketch_support/logic/logic.ino",
     "pd": TESTS / "sketch_support/pd/pd.ino",
@@ -124,6 +128,8 @@ BUILD_OPTS = {
     "usb-peer-media": "-DUSB_MEDIA_ISOCHRONOUS=1\n",
     # X035 (a small series) has no format() by default; the test formats.
     "usb-peer-fs": "-DFF_USE_MKFS=1\n",
+    # Rewrites the whole program flash: a part-written image stays reachable from the probe.
+    "usb-firmware": "-DCH32RV_BOOT_HOLD_MS=1000\n",
 }
 # The peer sketch directory staged beside a case's test (pytest-embedded-arduino-cli's peer_<name>/).
 PEERS = {
@@ -175,6 +181,8 @@ HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
+    "usb-power": [TESTS / "instrumented/usb/usb_host.py"],
+    "usb-firmware": [TESTS / "instrumented/usb/usb_host.py"],
     "gpio": [TESTS / "instrumented/bench_lines.py"],
     "uart": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "uart-dma": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],

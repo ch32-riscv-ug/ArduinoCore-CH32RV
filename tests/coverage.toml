@@ -244,6 +244,18 @@ scope = "series"
 needs = ["SDIO"]
 
 [[item]]
+id = "usb-power"            # the host suspends and resumes the device; the device wakes the host (remote wakeup)
+test = "usb-power"
+scope = "series"            # each controller's driver detects suspend and signals resume its own way
+any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
+
+[[item]]
+id = "usb-firmware"         # DFU download and the UF2 / .bin drive install a new image; what is no image is refused
+test = "usb-firmware"
+scope = "series"            # the staging and the copy over the program use each series' flash
+any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
+
+[[item]]
 id = "usb-classes"
 test = "usb-classes"
 scope = "once"

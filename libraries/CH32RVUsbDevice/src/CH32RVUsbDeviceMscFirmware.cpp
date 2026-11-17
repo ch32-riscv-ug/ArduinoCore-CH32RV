@@ -412,6 +412,12 @@ bool CH32RVUsbDeviceMscFirmwareDisk::uf2(const uint8_t *b)
 /* Bytes landing past the RAM sectors, `at` from the region's start. */
 bool CH32RVUsbDeviceMscFirmwareDisk::region(uint32_t at, const uint8_t *data, uint32_t size)
 {
+    if (ch32rv_update_pending()) {
+        /* An image is accepted and waits for the restart: what still comes
+         * (the rest of a UF2 file's last packet, the host's metadata) must
+         * not start another update over it. */
+        return true;
+    }
     if (!_format) {
         /* Decided once, from the first bytes to land here; anything that is
          * neither is a stray file or the host's metadata, left alone. */
