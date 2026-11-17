@@ -214,6 +214,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   SLEEPDEEP が残っていないか、V3A のストップの入り方と EXTI 17、.noinit に段を残して電源の入れ直しのあとに読む。
   試しのイメージは必ず `-DCH32RV_BOOT_HOLD_MS=1000` を付けて作る（docs/upload-routes.ja.md。2026-11-17 に付けずに試し、眠ったまま
   戻せなくなった。戻し方: ハブ 3-3.3.4 の port 3 でプローブごと切り入れ、プローブの GPIO16（NRST）を押して放し、眠る前に書く）。
+  2026-11-18: IWDG を安全網にした試し（scratchpad の v103-sleep-trial.patch: CH32RV_TRIAL_V103_SLEEP で段を .noinit に残す）
+  を書こうとしたが、v103r8t6-evt（80f1b2d80a34）が RVSWD に答えなくなっていた。電源の切り入れのあと数秒だけ答え、code flash は
+  消した（空）。その後は切り入れの直後から答えない。[oep] の調べ: どのファーム・リセットのやり方でも status 2（線から答え
+  なし）。NRST は High、SWDIO（PA13）が V103 側から引き上げられていない → V103 に電源が届いていないか、デバッグの線を出せない
+  状態。基板（電源の経路・ジャンパ）を見てもらう待ち。
 - [ ] H417（6-2）の uart.formats の 115200 7O1 で、DUT が何も受けなかったことが 1 回（2026-11-17、core-20261116T223121Z-dc183e78。
   流し直しは通った）。
 - [ ] V407 と P4（ホスト）の usb-peer で、DUT の `end()` のあと P4 が「S3 DISCONNECTED」を出さないことが 3 回に 1 回
