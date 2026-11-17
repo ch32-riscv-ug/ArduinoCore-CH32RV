@@ -32,7 +32,7 @@
  *                             or ASLEEP REFUSED without an RTC
  *
  * STARTUP <resetReasonName()> <wakeupCause()> comes first after every boot;
- * `why` asks for the same again (WHY ...): the probe's console may miss the
+ * `why` asks for the same again (WHY ... <RCC_RSTSCKR at boot, hex>): the probe's console may miss the
  * first bytes after a reset. */
 #include <Arduino.h>
 #include <CH32RV.h>
@@ -82,6 +82,10 @@ static void wwdg_wait(uint32_t start, uint32_t due, bool watch)
         }
     }
 }
+/* RCC_RSTSCKR as it was at boot, before resetReason() reads and clears its flags: the WHY line's last field, so a
+ * reason of "unknown" shows which flags (none?) the reset left. */
+static uint32_t boot_rstsckr;
+
 #define EWI_MAGIC 0xE1A1C0DEu
 static uint32_t ewi_seen, ewi_span, ewi_steps;
 
@@ -220,7 +224,8 @@ static void reply(char *command)
         SerialDMSeq.printf("TEMP %d -\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
 #endif
     } else if (!strcmp(argv[0], "why")) {
-        SerialDMSeq.printf("WHY %s %d\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause());
+        SerialDMSeq.printf("WHY %s %d %08lx\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause(),
+                           (unsigned long)boot_rstsckr);
     } else if (!strcmp(argv[0], "restart")) {
         SerialDMSeq.printf("RESTARTING\r\n");
         delay(50);
@@ -391,6 +396,7 @@ static void reply(char *command)
 
 void setup()
 {
+    boot_rstsckr = CH32RV_RCC_RSTSCKR;
     if (ewi_record.magic == EWI_MAGIC) {
         ewi_seen = ewi_record.count;
         ewi_span = ewi_record.span_us;

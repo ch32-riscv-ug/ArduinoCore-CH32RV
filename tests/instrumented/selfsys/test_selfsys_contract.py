@@ -116,7 +116,10 @@ def after_reset(dut, timeout=15):
         pass
     t = time.monotonic()
     dut.write("why\n")
-    return t, dut.expect(rb"WHY (\S+) (\d+)\r?\n", timeout=5).group(1).decode()
+    m = dut.expect(rb"WHY (\S+) (\d+)(?: ([0-9a-f]+))?\r?\n", timeout=5)
+    why = m.group(1).decode()
+    # An unexpected reason carries RCC_RSTSCKR as the DUT read it at boot, for the report.
+    return t, why if why != "unknown" or not m.group(3) else f"unknown (RSTSCKR {m.group(3).decode()})"
 
 
 def test_restart(dut, ready):
