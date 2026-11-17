@@ -34,7 +34,8 @@ USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
-PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
+PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
+                   "usb-peer-host-power")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
 # own port to this host, an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT, or another CH32RV board
 # (its own address, the controller of it the cable reaches). The P4 runs the S3's sketches (EspUsbHost / EspUsbDevice)

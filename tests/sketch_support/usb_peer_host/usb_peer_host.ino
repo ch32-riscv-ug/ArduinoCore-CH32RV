@@ -41,6 +41,9 @@
  *   ccidpresent          H CCIDPRESENT <present>
  *   ccidoff              H CCIDOFF <ok>
  *   ccidesc <hex>        H CCIDESC <ok> <hex>  (ccidEscape())
+ *   suspend              H SUSPEND <ok> <last error>   (suspend(): the root port, remote wakeup armed)
+ *   resume               H RESUME <ok> <last error>
+ *   power                H POWER <suspended 0/1> <remote wakeups seen>
  *   where <addr>         H WHERE <addr> <hub address> <hub speed> (0 0: on the root port; the hub the device
  *                        hangs from - a high-speed one reaches a full-speed device by split transactions)
  *
@@ -48,7 +51,7 @@
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
  * <buttons> / H CONSUMER <usage> <p|r> / H HIDVIN <hex> / H MIDI <cin>
  * <status> <d1> <d2> / H GAMEPAD <report hex> / H SYSTEM <usage> <p|r> /
- * H HIDIN <itf> <report hex> (with hidraw 1) / H CARD <in|out>. */
+ * H HIDIN <itf> <report hex> (with hidraw 1) / H CARD <in|out> / H WAKEUP <n> (onRemoteWakeup()). */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -63,6 +66,7 @@ CH32RVUsbHost usb;
 CH32RVUsbHostCdcSerial cdc(usb);
 
 static bool began;
+static uint32_t wakeups;          /* onRemoteWakeup() calls */
 static char line[400];
 static uint16_t used;
 static uint8_t block[512], keep[512];
@@ -301,6 +305,18 @@ static void reply(char *cmd)
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {
         cmd_where(arg);
+    } else if (strcmp(cmd, "suspend") == 0 || strcmp(cmd, "resume") == 0) {
+        const bool s = cmd[0] == 's';
+        const bool ok = s ? usb.suspend() : usb.resume();
+        SerialDMSeq.print(s ? "H SUSPEND " : "H RESUME ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(usb.lastErrorName());
+    } else if (strcmp(cmd, "power") == 0) {
+        SerialDMSeq.print("H POWER ");
+        SerialDMSeq.print(usb.suspended() ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println(wakeups);
     } else if (strcmp(cmd, "cdc") == 0) {
         cmd_cdc(arg);
     } else if (strcmp(cmd, "cdcbig") == 0) {
@@ -569,6 +585,10 @@ void setup()
     SerialDMSeq.begin(115200);
     SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
     SerialDMSeq.println(CH32RV.resetReasonName());
+    usb.onRemoteWakeup([] {
+        SerialDMSeq.print("H WAKEUP ");
+        SerialDMSeq.println(++wakeups);
+    });
     usb.onDeviceConnected([](const CH32RVUsbHostDeviceInfo &d) {
         SerialDMSeq.print("H CONNECTED ");
         SerialDMSeq.print(d.address);

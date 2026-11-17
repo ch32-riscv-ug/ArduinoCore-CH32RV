@@ -8,8 +8,9 @@ CASES = {"runtime", "uart", "uart-dma", "gpio", "hid", "power", "usb", "usb-clas
          "selfexti",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware",
          "usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input",
-         "usb-peer-host-storage", "usb-peer-input"}
+         "usb-peer-host-storage", "usb-peer-host-power", "usb-peer-input"}
 # Cases with a USB peer on the DUT's own USB port, an ESP32-S3 or an RP2040 (tests/peer/usb).
 PEER_CASES = {"usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware",
               "usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
+              "usb-peer-host-power",
               "usb-peer-input"}

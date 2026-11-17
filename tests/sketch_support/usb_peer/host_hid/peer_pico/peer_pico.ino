@@ -11,6 +11,8 @@
  *   consumer <usage>     PD CONSUMER <ok>     (pressed, then released)
  *   leds                 PD LEDS <LED bits the host last set>
  *   cdcsend <hex>        PD CDCSENT <ok>
+ *   power                PD POWER <suspended 0/1> <suspends> <resumes> <remote wakeup enabled at the last suspend 0/1>
+ *   wake                 PD WAKE <ok>         (remote wakeup: refused unless suspended and enabled by the host)
  *
  * Without a command: CDC echoes every byte, a vendor output report comes back
  * as an input report with its first byte incremented. */
@@ -56,6 +58,15 @@ static volatile uint8_t leds;
 static uint8_t vendorEcho[63];
 static volatile size_t vendorEchoLength;
 static char line[200];
+/* TinyUSB's bus power callbacks (the library leaves them to the sketch). */
+static volatile uint32_t suspends, resumes;
+static volatile bool wakeupEnabled;
+extern "C" void tud_suspend_cb(bool remote_wakeup_en)
+{
+  suspends++;
+  wakeupEnabled = remote_wakeup_en;
+}
+extern "C" void tud_resume_cb(void) { resumes++; }
 static size_t used;
 
 /* A report is sent once the host has taken the one before (up to 500 ms). */
@@ -132,6 +143,18 @@ static void run(char *cmd)
   }
   else if (!strcmp(cmd, "consumer")) say("PD CONSUMER %u\n", consumer((uint16_t)strtoul(arg, nullptr, 0)) ? 1 : 0);
   else if (!strcmp(cmd, "leds")) say("PD LEDS %u\n", leds);
+  else if (!strcmp(cmd, "power"))
+    say("PD POWER %u %lu %lu %u\n", TinyUSBDevice.suspended() ? 1 : 0, (unsigned long)suspends,
+        (unsigned long)resumes, wakeupEnabled ? 1 : 0);
+  else if (!strcmp(cmd, "wake"))
+  {
+    bool ok;
+    {
+      UsbLock lock;
+      ok = TinyUSBDevice.remoteWakeup();
+    }
+    say("PD WAKE %u\n", ok ? 1 : 0);
+  }
   else if (!strcmp(cmd, "cdcsend"))
   {
     uint8_t d[96];

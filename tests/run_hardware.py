@@ -70,6 +70,7 @@ MODULES = {
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
     "usb-peer-host-input": TESTS / "peer/usb/host/input/test_usb_peer_host_input.py",
     "usb-peer-host-storage": TESTS / "peer/usb/host/storage/test_usb_peer_host_storage.py",
+    "usb-peer-host-power": TESTS / "peer/usb/host/power/test_usb_peer_host_power.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
@@ -115,6 +116,7 @@ SKETCHES = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-power": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
 # The record's usb ports (harness.records.USB_PORTS) as the test sketches' controller (USB_TEST_CONTROLLER) and host port
 # (USB_PEER_HOST_PORT).
@@ -142,6 +144,7 @@ PEERS = {
     "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
+    "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
 }
 # The same cases with an RP2040 (Raspberry Pi Pico) as the peer: on the DUT's own OEP probe, written over SWD and
 # talked to over SEGGER RTT (oep-client's pytest plugin writes it through the upload hook), staged as peer_pico/.
@@ -156,6 +159,7 @@ PICO_PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_pico",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_pico",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_pico",
+    "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_pico",
 }
 # The same cases with another CH32RV board as the peer (the record's usb {to: ch32rv, port, controller}): written and
 # talked to through its own address like a DUT (arduino-cli upload, the platform's monitor over SerialDMSeq), staged
@@ -170,6 +174,7 @@ CH32RV_PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_ch32rv",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_ch32rv",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_ch32rv",
+    "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
 }
 # The host peer's FAT (its own, apart from the DUT's FatFS) is the Pico's: staged beside the CH32RV peer's sketch.
 PEER_FAT = TESTS / "sketch_support/usb_peer/device/peer_pico/peer_fat.h"
@@ -206,6 +211,7 @@ HELPERS = {
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-input": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-storage": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-power": [TESTS / "peer/usb/host/host_peer.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin",

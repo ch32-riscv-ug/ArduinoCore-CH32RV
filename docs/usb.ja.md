@@ -391,10 +391,21 @@ SET_FEATURE(DEVICE_REMOTE_WAKEUP) で許可したとき（`remoteWakeupEnabled()
 | 第 2 世代 USBHS | WAKE_CTRL |
 | USBSS | U3 からの復帰（LINK_TX_UX_EXIT） |
 
+ホストの側（CH32RVUsbHost の `suspend()` / `resume()` / `onRemoteWakeup()`）は、コントローラごとに次の信号を使います。
+
+| コントローラ | サスペンド | レジュームの信号 | 相手のウェイクアップの受け取り |
+|---|---|---|---|
+| USBFS（3 つの配置） | SOF を止める | BASE_CTRL の SYS_CTRL を 11 にして K を 20 ms、01 で SE0（EOP） | サスペンドの割り込みで、D+ / D- が K のとき |
+| 第 1 世代 USBHS（V30x） | SOF を止め TX_BUS_SUSPEND | TX_BUS_RESUME（ハードが K を 30 ms） | サスペンドの割り込みで、SUSPEND の LINESTATE が K のとき（ビルドのみ） |
+| 第 2 世代 USBHS | PORT_CTRL の SET_PORT_SUSP | CLR_PORT_SUSP | PORT_CHG の SUSP で、PORT_ST の SUSP が落ちたとき |
+| USBSS | LGO_U3 | LINK_TX_UX_EXIT | U3 から U0 へ（ビルドのみ） |
+
+USBFS は、SOF の再開だけでは RP2040 が起きず、低速の bit や GPIO では K が出ませんでした（V205、2026-11-18）。
+
 試験は、バスの手順そのもの（suspend・resume・リモートウェイクアップ）なので、PC ではなくピアを相手にします
-（実転送の試験だけを PC 相手にする方針、2026-11-17）。サスペンドをかけられるピアは、今は CH32RVUsbHost だけで、
-その FS / HS のホスト（USBFS、USBHS1、USBHS2）に suspend・resume とリモートウェイクアップの受け取りを足すのが先です
-（TODO）。DUT の側のスケッチは tests/sketch_support/usb_power（CDC とリモートウェイクアップの宣言）。
+（実転送の試験だけを PC 相手にする方針、2026-11-17）。ホストの側は usb-peer-host-power（DUT がホスト、Pico / P4 /
+CH32RV がデバイス）。デバイスの側は、サスペンドをかけられるピアが CH32RVUsbHost しかないので、CH32RV どうしの配線を
+待ちます（TODO）。DUT の側のスケッチは tests/sketch_support/usb_power（CDC とリモートウェイクアップの宣言）。
 
 ## PD（CH32RVUsbPd）
 

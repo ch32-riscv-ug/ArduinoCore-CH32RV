@@ -13,6 +13,8 @@
  *   leds                 S3D LEDS <LED bits the host last set>
  *   file                 S3D FILE <first line of HOST.TXT, or NONE>
  *   cdcsend <hex>        S3D CDCSENT <ok>
+ *   power                S3D POWER <suspended 0/1> <suspends> <resumes> <remote wakeup enabled at the last suspend>
+ *   wake                 S3D WAKE <ok>       (remote wakeup: refused unless suspended and enabled by the host)
  *
  * Without a command: CDC echoes every byte, a vendor output report comes back
  * as an input report with its first byte incremented. The disk holds
@@ -34,6 +36,8 @@ static uint8_t vendorEcho[64];
 static volatile size_t vendorEchoLength;
 static char line[200];
 static size_t used;
+static bool wasSuspended, wakeupEnabled;
+static uint32_t suspends, resumes;
 
 /* EspUsbDevice 2.6.0's sendHidReport() ignored its timeout: a report while
  * the previous one still waited for the host's IN failed at once (2.6.1 honours
@@ -78,6 +82,10 @@ static void run(char *cmd)
     Serial.printf("S3D CONSUMER %u\n", RETRY(consumer.press(usage)) && RETRY(consumer.release()) ? 1 : 0);
   }
   else if (!strcmp(cmd, "leds")) Serial.printf("S3D LEDS %u\n", keyboard.ledState().leds);
+  else if (!strcmp(cmd, "power"))
+    Serial.printf("S3D POWER %u %lu %lu %u\n", device.suspended() ? 1 : 0, (unsigned long)suspends,
+                  (unsigned long)resumes, wakeupEnabled ? 1 : 0);
+  else if (!strcmp(cmd, "wake")) Serial.printf("S3D WAKE %u\n", device.remoteWakeup() == ESP_OK ? 1 : 0);
   else if (!strcmp(cmd, "file"))
   {
     char text[80] = {};
@@ -118,6 +126,7 @@ void setup()
   config.product = "S3 peer hid";
   config.manufacturer = "EspUsbDevice";
   config.serialNumber = "S3PEERHID";
+  config.remoteWakeupSupported = true;
 #if CONFIG_IDF_TARGET_ESP32P4
   config.controller = EspUsbController::HighSpeed;   /* the OTG HS port, wired to the DUT's USBHS */
 #endif
@@ -128,6 +137,20 @@ void setup()
 
 void loop()
 {
+  /* Suspends and resumes as loop() sees them (EspUsbDevice has no callback for them); a suspend shorter than a
+   * pass of loop() is missed, the test's are seconds. */
+  const bool nowSuspended = device.suspended();
+  if (nowSuspended != wasSuspended)
+  {
+    wasSuspended = nowSuspended;
+    if (nowSuspended)
+    {
+      suspends++;
+      wakeupEnabled = device.remoteWakeupEnabled();
+    }
+    else
+      resumes++;
+  }
   while (cdc.available()) cdc.write((uint8_t)cdc.read());
   if (vendorEchoLength)
   {

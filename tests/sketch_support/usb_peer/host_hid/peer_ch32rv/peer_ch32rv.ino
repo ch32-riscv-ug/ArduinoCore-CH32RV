@@ -10,6 +10,8 @@
  *   consumer <usage>     CD CONSUMER <ok>     (pressed, then released)
  *   leds                 CD LEDS <LED bits the host last set>
  *   cdcsend <hex>        CD CDCSENT <ok>
+ *   power                CD POWER <suspended 0/1> <suspends> <resumes> <remote wakeup enabled at the last suspend>
+ *   wake                 CD WAKE <ok>         (remote wakeup: refused unless suspended and enabled by the host)
  *
  * Without a command: CDC echoes every byte, a vendor output report comes back as an input report with its first
  * byte incremented. The disk is 128 blocks of 512 bytes, too many for the RAM of the smaller parts: a block reads
@@ -34,6 +36,8 @@ CH32RVUsbDeviceMsc msc;
 /* Reports wait this long for the host to take the one before: the DUT's host stack runs between its sketch's
  * prints, and over a slow console it can leave the endpoint unpolled for a few hundred ms (peer_pico's host_hid). */
 static const uint32_t REPORT_MS = 2000;
+static uint32_t suspends, resumes;
+static bool wakeupEnabled;
 
 static void say(const char *format, ...)
 {
@@ -132,6 +136,10 @@ static void run(char *cmd)
         const uint16_t usage = (uint16_t)strtoul(arg, nullptr, 0);
         say("CD CONSUMER %u\n", consumer.press(usage, REPORT_MS) && consumer.release(REPORT_MS) ? 1 : 0);
     } else if (!strcmp(cmd, "leds")) say("CD LEDS %u\n", keyboard.ledState().leds);
+    else if (!strcmp(cmd, "power"))
+        say("CD POWER %u %lu %lu %u\n", USBDevice.suspended() ? 1 : 0, (unsigned long)suspends,
+            (unsigned long)resumes, wakeupEnabled ? 1 : 0);
+    else if (!strcmp(cmd, "wake")) say("CD WAKE %u\n", USBDevice.remoteWakeup() ? 1 : 0);
     else if (!strcmp(cmd, "cdcsend")) {
         uint8_t d[96];
         size_t n = 0;
@@ -163,6 +171,15 @@ void setup()
     config.product = "CH32RV peer hid";
     config.serialNumber = "CH32RVPEERHID";
     config.dfuRuntime = false;
+    config.remoteWakeupSupported = true;
+    USBDevice.onBusEvent([](CH32RVUsbBusEvent e) {
+        if (e == CH32RVUsbBusEvent::Suspended) {
+            suspends++;
+            wakeupEnabled = USBDevice.remoteWakeupEnabled();
+        } else if (e == CH32RVUsbBusEvent::Resumed) {
+            resumes++;
+        }
+    });
     config.controller = PEER_USB_CONTROLLER;
     const bool began = USBDevice.begin(config);
     say("CD BOOTED %u %s\n", began ? 1 : 0, USBDevice.lastErrorName());
