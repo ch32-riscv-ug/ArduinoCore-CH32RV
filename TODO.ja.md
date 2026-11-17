@@ -241,10 +241,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   最初の代替設定の切り替え（SET_INTERFACE）が "Other error" になり、以後の転送が status 1 / submit -1 で続けて落ちる
   （core-20261117T113920Z-40375c22）。通った回は直前のイメージが USB を使わないもの、落ちた回は USB を使うもの
   だった。DCD の SET_INTERFACE と等時のエンドポイントの開き直しを、再列挙の直後に追う（usbmon は root が要る）。
-- [ ] ch32-device-data cb02bca（2026-11-17、push 待ち）の取り込み: push のあと lock を上げ、コアに手で書いた表を生成に
+- [ ] ch32-device-data cb02bca（2026-11-17、push 済み、lock は 3c9ed13）の取り込み: コアに手で書いた表を生成に
   移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（conflict は V103 の値 6、V205 の注入の値 6）。
-  exti_lines.csv → internal/ch32rv_exti_line.h の線の表（V407 は線 18 = USBHS1・ベクタ 58、線 20 = USBHS2・84 で
-  確定。両方のベクタを有効にしている回避を外す。H417 の PVD の線は資料に無い）。pvd_levels.csv → 生成器の load_pvd
+  exti_lines.csv → internal/ch32rv_exti_line.h の線の表（2026-11-18 に突き合わせた: V407 の回避を外し、線 18 =
+  USBHS1・ベクタ 58、線 20 = USBHS2・84 だけにした。selfexti の swi で 18・20 とも 1 回ずつ呼ばれる、
+  core-20261117T221818Z-d3fa53ac。ほかの系列は同じ。CSV に V20x / V30x の線 18 が無いのは [data] に知らせた。
+  表を生成に移すのは、名前の対応表が要るので残す）。pvd_levels.csv → 生成器の load_pvd
   （L103 の 8 段、V007・M007・H417 が入る。V004・M030 はデータシートに段の表が無い。V203 は parts.csv の datasheet 列で
   2 つの表から選ぶ）。interrupts.csv の handler 列と V30x D8 の slot 58。同じく cb02bca の次（push 待ち）: pinout.csv の
   condition の列。生成器の SDIO_ROUTE_FIXES（V30x・V4x7 の PB14 / PB15 の D0 / D1 を外す補正）をやめ、「condition が

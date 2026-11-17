@@ -7,8 +7,9 @@
  * only where the series has it and a vector reaches it: a sketch tests
  * `#ifdef CH32RV_EXTI_PVD`, and a line the series lacks does not compile.
  *
- * The table is written here by hand: ch32-device-data has no EXTI line table
- * (reported). Its sources are the reference manuals' "EXTI interrupt mapping"
+ * The table is written here by hand, checked against ch32-device-data's
+ * index/exti_lines.csv (2026-11-18: the same lines, but V20x / V30x's line 18,
+ * which the CSV lacks). Its sources are the reference manuals' "EXTI interrupt mapping"
  * tables (CH32xRM 9-3, CH32FV2x_V3xRM, CH32V205RM, CH32V407RM, CH32L103RM,
  * CH32H417RM, CH32X315RM, CH32X035RM, CH32M030RM, CH32V003RM, CH32V00XRM) and
  * the EVT's ch32*_exti.h comments; where they disagree it says so below. The
@@ -103,12 +104,10 @@
     X(LVDSWakeup, 1u << 23)
 
 #elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
-/* The two USBHS wake-ups: the vectors are USBHS1's at 58 and USBHS2's at 84
- * (the reference manual's vector table, the EVT's startup and IRQn, device-
- * data). Which line feeds which is not settled: the reference manual has
- * USBHS1 on 18 and USBHS2 on 20, the EVT's ch32v4x7_exti.h the other way
- * round. Either line enables both vectors, so the callback comes whichever is
- * right; the names follow the reference manual. */
+/* The two USBHS wake-ups: USBHS1 on line 18 (vector 58), USBHS2 on line 20
+ * (vector 84), as the reference manual has them - ch32-device-data's
+ * exti_lines.csv settles it (confirmed); the EVT's ch32v4x7_exti.h has the
+ * lines the other way round. */
 #define CH32RV_EXTI_PVD 16u
 #define CH32RV_EXTI_USBHS_WAKEUP 18u
 #define CH32RV_EXTI_ETH_WAKEUP 19u
@@ -116,8 +115,8 @@
 #define CH32RV_EXTI_I3C_WAKEUP 21u
 #define CH32RV_EXTI_LINE_VECTORS(X) \
     X(PVD, 1u << 16) \
-    X(USBHS1WakeUp, (1u << 18) | (1u << 20)) \
-    X(USBHS2Wakeup, (1u << 18) | (1u << 20)) \
+    X(USBHS1WakeUp, 1u << 18) \
+    X(USBHS2Wakeup, 1u << 20) \
     X(ETH_WKUP, 1u << 19) \
     X(I3CWakeup, 1u << 21)
 
