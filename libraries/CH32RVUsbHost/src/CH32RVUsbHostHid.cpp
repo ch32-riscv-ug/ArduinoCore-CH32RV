@@ -553,8 +553,7 @@ void hid_configured(uint8_t daddr, uint8_t itf)
         ch32rv_usb_host_control_sync(daddr, 0x21, HID_REQ_SET_PROTOCOL, 1, itf, nullptr, 0, nullptr, 1000);
     }
     uint8_t *desc = ch32rv_usb_host_scratch;
-    uint16_t len = h.descriptorLength < sizeof ch32rv_usb_host_scratch ? h.descriptorLength
-                                                                       : (uint16_t)sizeof ch32rv_usb_host_scratch;
+    uint16_t len = h.descriptorLength < CH32RV_USB_HOST_SCRATCH ? h.descriptorLength : CH32RV_USB_HOST_SCRATCH;
     uint16_t got = 0;
     if (!len || ch32rv_usb_host_control_sync(daddr, 0x81, 6, 0x2200, itf, desc, len, &got, 1000) != CH32RV_USBH_OK) {
         got = 0;
@@ -575,8 +574,7 @@ void hid_configured(uint8_t daddr, uint8_t itf)
 size_t deliver_descriptor(HidItf &h)
 {
     h.descriptorPending = false;
-    const uint16_t len = h.descriptorLength < sizeof ch32rv_usb_host_scratch ? h.descriptorLength
-                                                                             : (uint16_t)sizeof ch32rv_usb_host_scratch;
+    const uint16_t len = h.descriptorLength < CH32RV_USB_HOST_SCRATCH ? h.descriptorLength : CH32RV_USB_HOST_SCRATCH;
     uint16_t got = 0;
     if (!descriptor_cb_set || !len ||
         ch32rv_usb_host_control_sync(h.daddr, 0x81, 6, 0x2200, h.itf, ch32rv_usb_host_scratch, len, &got, 1000) !=

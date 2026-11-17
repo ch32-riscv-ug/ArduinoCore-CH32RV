@@ -78,7 +78,7 @@
 
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_usbss.h"
-#include "internal/CH32RVUsbHcd.h"
+#include "internal/CH32RVUsbHostInternal.h"
 
 #define SS_BASE CH32RV_USBSS_BASE
 #define R8(o)  (*(volatile uint8_t *)(SS_BASE + (o)))
@@ -1361,6 +1361,13 @@ bool hcd_port_suspend(bool on)
 }
 
 }  // namespace
+
+/* The stack's windows and SuperSpeed state, in place of its own (weak) 256-byte
+ * windows without it: linked with this driver only (CH32RVUsbHostInternal.h). */
+static uint8_t ss_scratch[1024] __attribute__((aligned(4)));
+static uint8_t ss_enumeration[1024] __attribute__((aligned(4)));
+static CH32RVUsbHostSsState ss_state;
+extern const CH32RVUsbHostWindows ch32rv_usb_host_windows = {ss_scratch, ss_enumeration, 1024, &ss_state};
 
 /* The classes' buffers are full speed's 64 bytes (H417 / H416's default port
  * is USBFS); a SuperSpeed endpoint's (up to 1024) come from the heap. */

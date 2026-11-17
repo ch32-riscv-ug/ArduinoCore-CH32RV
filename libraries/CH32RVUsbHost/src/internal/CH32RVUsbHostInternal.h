@@ -8,7 +8,8 @@
 /* CH32RV_USB_HOST_STACK: the series with a host controller driver (CH32RVUsbHostPort.h). */
 
 /* A SuperSpeed host (CH32RVUsbHcdUsbss.cpp): the stack's SuperSpeed
- * enumeration, hub and route code is built only where one exists. */
+ * enumeration, hub and route code is built only where one exists, and linked
+ * only when a sketch picks SUPER_SPEED (ch32rv_usb_host_windows.ss below). */
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
 #define CH32RV_USB_HOST_SUPERSPEED 1
 #else
@@ -18,15 +19,47 @@
 /* Device addresses 1..CH32RV_USB_HOST_DEVICES: a hub and the devices behind it. */
 #define CH32RV_USB_HOST_DEVICES 5
 /* A window of a configuration descriptor (the enumeration's and the walks'
- * below), and the scratch buffer the walks share. A configuration may be up
- * to 64 KB; it is read a window at a time, the window starting on a packet of
- * EP0, so it must hold more than one: 256 bytes (EP0 is 64 at most) where
- * SuperSpeed is not, 1024 with SuperSpeed's 512-byte EP0. */
+ * below), and the scratch buffer the walks share (a HID report descriptor is
+ * read into it whole, up to its size). A configuration may be up to 64 KB; it
+ * is read a window at a time, the window starting on a packet of EP0, so it
+ * must hold more than one: 256 bytes (EP0 is 64 at most), 1024 with
+ * SuperSpeed's 512-byte EP0.
+ *
+ * ch32rv_usb_host_windows holds them and the SuperSpeed state (route strings,
+ * hub tiers and delays, U1 / U2 exit latencies; nullptr: no SuperSpeed). The
+ * stack's definition is weak, with the 256-byte windows; the USBSS driver's,
+ * linked only when a sketch picks SUPER_SPEED, takes its place with 1024-byte
+ * ones and the state. LTO then sees `ss` as nullptr on every other port and
+ * drops the SuperSpeed code. */
 #if CH32RV_USB_HOST_SUPERSPEED
-#define CH32RV_USB_HOST_SCRATCH 1024
+struct CH32RVUsbHostSsDevice {
+    uint32_t route;                /* the route string (USB 3.2 8.9) */
+    uint8_t tier;                  /* 0 on the root port; a hub's SET_HUB_DEPTH value */
+    uint8_t u1Latency;             /* the BOS's U1 / U2 exit latencies (us) */
+    uint16_t hubDelay;             /* the hubs' delay to it (ns, SET_ISOCH_DELAY) */
+    uint16_t u2Latency;
+};
+struct CH32RVUsbHostSsState {
+    CH32RVUsbHostSsDevice devs[CH32RV_USB_HOST_DEVICES + 1];   /* by address, as the stack's devices */
+    /* The enumeration's: the device being enumerated, the next E_LPM request,
+     * a hub port's warm reset asked for, SET_SEL's data. */
+    CH32RVUsbHostSsDevice now;
+    uint8_t lpm;
+    bool warmed;
+    uint8_t sel[6] __attribute__((aligned(4)));
+};
 #else
-#define CH32RV_USB_HOST_SCRATCH 256
+struct CH32RVUsbHostSsState;
 #endif
+struct CH32RVUsbHostWindows {
+    uint8_t *scratch;
+    uint8_t *enumeration;
+    uint16_t size;                 /* each window's bytes */
+    CH32RVUsbHostSsState *ss;
+};
+extern const CH32RVUsbHostWindows ch32rv_usb_host_windows;
+#define CH32RV_USB_HOST_SCRATCH (ch32rv_usb_host_windows.size)
+#define ch32rv_usb_host_scratch (ch32rv_usb_host_windows.scratch)
 
 /* A transfer finished: result CH32RV_USBH_*, length what moved. Runs in
  * normal context, from the stack; it may start the next transfer. */
@@ -65,7 +98,6 @@ bool ch32rv_usb_host_wait(volatile bool &done, uint32_t timeoutMs);
 
 /* The shared scratch buffer (a configuration's window, a string or report
  * descriptor). One user at a time, from task context. */
-extern uint8_t ch32rv_usb_host_scratch[CH32RV_USB_HOST_SCRATCH];
 
 /* A buffer of at least `need` bytes: `own` when its `ownSize` is enough, else
  * one from the controller's heap (CH32RVUsbHcd::bufferAlloc) kept in `heap`,

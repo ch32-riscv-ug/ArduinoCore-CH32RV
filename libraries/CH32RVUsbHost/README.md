@@ -110,7 +110,11 @@ on the same connector belongs to the USBHS controller (`HIGH_SPEED`), a host
 of its own; the two do not run together yet. `speed` is
 `CH32RV_USB_HOST_SPEED_SUPER` (3), and the USBSS driver takes heap buffers
 for endpoints with 1024-byte packets (`CH32RV_USB_HOST_MAX_PACKET` stays full
-speed's 64, so a sketch on the full-speed port grows by nothing).
+speed's 64). The stack's SuperSpeed part (the BOS / SET_SEL enumeration, route
+strings, SuperSpeed hubs, the 1024-byte descriptor windows a 512-byte EP0
+needs) is linked only when a sketch picks `SUPER_SPEED` too: a sketch on the
+full-speed port is as large as on any full-speed series (HID report
+descriptors up to 256 bytes).
 
 - Control, bulk, interrupt and isochronous (Mult included) endpoints, one
   packet per transaction for now; SuperSpeed hubs (route strings, hub depth);

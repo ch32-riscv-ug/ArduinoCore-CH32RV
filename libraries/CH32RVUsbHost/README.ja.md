@@ -91,7 +91,9 @@ H416 / H417 の `SUPER_SPEED` は、USBSS を SuperSpeed（USB 3、5 Gbps）の�
 まだ確かめていません。** SuperSpeed だけを扱います。同じコネクターの USB 2.0 の機器や USB 3 のハブの USB 2.0 側は
 USBHS（`HIGH_SPEED`）の担当で、別のホストです（両方を同時に動かすことは、まだできません）。`speed` は
 `CH32RV_USB_HOST_SPEED_SUPER`（3）になり、1024 バイトのパケットのエンドポイントには、USBSS のドライバがヒープから
-受け皿を取ります（`CH32RV_USB_HOST_MAX_PACKET` は FS の 64 のまま。FS のポートだけのスケッチは大きくなりません）。
+受け皿を取ります（`CH32RV_USB_HOST_MAX_PACKET` は FS の 64 のまま）。スタックの SuperSpeed の部分（BOS・SET_SEL などの列挙、
+ルート文字列、SS のハブ、512 バイトの EP0 のための 1024 バイトの記述子の窓）も、`SUPER_SPEED` を選んだときだけリンクされます。
+FS のポートだけのスケッチは、ほかの FS の系列と同じ大きさです（HID のレポート記述子も 256 バイトまで）。
 
 - 制御・バルク・インタラプト・アイソクロナス（Mult を含む）。今は 1 トランザクションに 1 パケットです。SuperSpeed の
   ハブ（ルート文字列、ハブの段）。SET_SEL のあと、機器からの U1 / U2 を受け付けます（`-DCH32RV_USB_HOST_SS_LINK_PM=0`
