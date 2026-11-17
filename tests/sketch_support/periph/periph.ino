@@ -33,6 +33,7 @@
  *                             counted over micros() from the first half's end to the last's;
  *                             ATIMER 0 when beginTimer() refused)
  *   tcaps <pin>               TCAPS <1 when the pad can start the ADC by its edge, else 0>
+ *                             <1 when it can on CHANGE too, else 0>
  *   aext <trigger> <edge> <pin> [<max rate>]
  *                             CH32RVAdcStream.beginExternal() (edge: 2 CHANGE, 3 FALLING,
  *                             4 RISING, as PinStatus) and startContinuous(): AEXT <ok>
@@ -215,7 +216,10 @@ static bool ext_running;
 static void aext(pin_size_t trigger, int edge, pin_size_t pin, uint32_t max_rate)
 {
     stream.end();
-    pinMode(trigger, INPUT);
+    /* Pulled down: the probe's channel does not drive the line between its
+     * GPIO and its PWM, and a floating PB11 picked up hundreds of pulses
+     * there (V103, 2026-11-17). */
+    pinMode(trigger, INPUT_PULLDOWN);
     ext_running = stream.beginExternal(pin, trigger, (PinStatus)edge, max_rate) &&
                   stream.startContinuous(stream_buf, ASTREAM_HALF);
     SerialDMSeq.printf("AEXT %d\r\n", ext_running ? 1 : 0);
@@ -416,9 +420,11 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "tcaps") && argc == 2) {
 #if PERIPH_AEXT
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
-        SerialDMSeq.printf("TCAPS %d\r\n", digitalPinIsValid(pin) && CH32RVAdcStream::isExternalTriggerPin(pin) ? 1 : 0);
+        const bool valid = digitalPinIsValid(pin);
+        SerialDMSeq.printf("TCAPS %d %d\r\n", valid && CH32RVAdcStream::isExternalTriggerPin(pin) ? 1 : 0,
+                           valid && CH32RVAdcStream::isExternalTriggerPin(pin, CHANGE) ? 1 : 0);
 #else
-        SerialDMSeq.printf("TCAPS 0\r\n");
+        SerialDMSeq.printf("TCAPS 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "aext") && argc >= 4) {
 #if PERIPH_AEXT

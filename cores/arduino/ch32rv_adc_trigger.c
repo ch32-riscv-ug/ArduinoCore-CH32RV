@@ -174,7 +174,7 @@ bool ch32rv_adc_pin_trigger_begin(uint32_t pin, uint8_t mode, uint8_t *extsel)
 {
     const uint32_t pad = CH32RV_PIN_RESOLVE(pin);
     const int remap = pad_remap(pad);
-    if (remap < 0 || (mode != RISING && mode != FALLING && mode != CHANGE)) {
+    if (remap < 0 || !ch32rv_adc_pin_trigger_mode_ok(mode)) {
         return false;
     }
     const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pad);

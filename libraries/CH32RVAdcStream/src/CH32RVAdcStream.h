@@ -73,13 +73,17 @@ public:
     /* One round per edge of `triggerPin` (`edge` RISING, FALLING or CHANGE).
      * `maxRate`: the most edges a second expected, for the sample time (the
      * longest that converts a round in 80 % of their period); 0 takes the
-     * longest. False when a pin is no ADC1 input or `triggerPin` no trigger
-     * pad. */
+     * longest. False when a pin is no ADC1 input, `triggerPin` no trigger
+     * pad, or `edge` one it cannot give (isExternalTriggerPin()). */
     bool beginExternal(pin_size_t pin, pin_size_t triggerPin, PinStatus edge, uint32_t maxRate = 0);
     bool beginExternal(const pin_size_t *pins, uint8_t count, pin_size_t triggerPin, PinStatus edge,
                        uint32_t maxRate = 0);
-    /* Whether `pin` can be beginExternal()'s trigger on this part. */
-    static bool isExternalTriggerPin(pin_size_t pin) { return ch32rv_adc_pin_trigger_valid(pin); }
+    /* Whether `pin` can be beginExternal()'s trigger on this part, for
+     * `edge` (CHANGE is refused where the pad gives one edge only: V00x). */
+    static bool isExternalTriggerPin(pin_size_t pin, PinStatus edge = RISING)
+    {
+        return ch32rv_adc_pin_trigger_valid(pin) && ch32rv_adc_pin_trigger_mode_ok((uint8_t)edge);
+    }
     /* Stops a capture, frees the timer or the trigger pad, and gives the ADC
      * back to analogRead(). */
     void end();

@@ -24,7 +24,13 @@
  *
  * A pad source passes through the EXTI line of its bit (the EVTs'
  * ExtLines_Trigger set the line up in event mode with its edge), which is
- * how the edge is chosen here too. */
+ * how the edge is chosen here too. The ADC starts on the rising edge of what
+ * reaches it (every RM: "only its rising edge can start the conversion");
+ * through EXTI line 11 that is one start per edge the line is set to, both
+ * on CHANGE (V203, V103: 32 conversions for 16 pulses), but V00x's PD3 / PC2
+ * gave one per pulse on CHANGE where RISING and FALLING each gave theirs
+ * (V003, V006, 2026-11-17): CHANGE is refused there
+ * (CH32RV_ADC_TRIGGER_ONE_EDGE). M030's PA14 / PB6 is not measured yet. */
 #pragma once
 
 #include <stdbool.h>
@@ -77,11 +83,13 @@ extern "C" {
 #elif defined(CH32RV_SERIES_CH32V003)
 #define CH32RV_ADC_TRIGGER_EXTSEL 6u
 #define CH32RV_ADC_TRIGGER_REMAP_BIT 18u
+#define CH32RV_ADC_TRIGGER_ONE_EDGE 1
 #define CH32RV_ADC_TRIGGER_PADS(X) X(CH32RV_PIN(3, 3), 0) X(CH32RV_PIN(2, 2), 1)
 #elif defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V004) || defined(CH32RV_SERIES_CH32V005) || \
     defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || defined(CH32RV_SERIES_CH32M007)
 #define CH32RV_ADC_TRIGGER_EXTSEL 6u
 #define CH32RV_ADC_TRIGGER_REMAP_BIT 19u
+#define CH32RV_ADC_TRIGGER_ONE_EDGE 1
 #define CH32RV_ADC_TRIGGER_PADS(X) X(CH32RV_PIN(3, 3), 0) X(CH32RV_PIN(2, 2), 1)
 #elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
 #define CH32RV_ADC_TRIGGER_EXTSEL 6u
@@ -116,9 +124,20 @@ void ch32rv_adc_timer_trigger_end(ch32rv_adc_timer_trigger_t *t);
 
 /* Whether `pin` (a sketch's pin number) can start the ADC by its edge. */
 bool ch32rv_adc_pin_trigger_valid(uint32_t pin);
+/* Whether the trigger pad starts a round on `mode` (RISING, FALLING or
+ * CHANGE): not CHANGE where the pad gives one edge only. */
+static inline bool ch32rv_adc_pin_trigger_mode_ok(uint8_t mode)
+{
+#ifdef CH32RV_ADC_TRIGGER_ONE_EDGE
+    return mode == RISING || mode == FALLING;
+#else
+    return mode == RISING || mode == FALLING || mode == CHANGE;
+#endif
+}
 /* The pad's EXTI line set to give the ADC its edge (`mode` RISING, FALLING
  * or CHANGE, as attachInterrupt()), the port and any remap selected; the
- * EXTSEL value in *extsel. False when the pad is no trigger source. The pad's
+ * EXTSEL value in *extsel. False when the pad is no trigger source, or the
+ * mode one it cannot give (ch32rv_adc_pin_trigger_mode_ok()). The pad's
  * mode is the sketch's (pinMode(); after reset it is a floating input). The
  * line's interrupt is not touched, so attachInterrupt() on the same pad
  * still works and shares its edge setting. */

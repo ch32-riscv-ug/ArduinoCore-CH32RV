@@ -88,7 +88,7 @@ bool CH32RVAdcStream::beginExternal(pin_size_t pin, pin_size_t triggerPin, PinSt
 bool CH32RVAdcStream::beginExternal(const pin_size_t *pins, uint8_t count, pin_size_t triggerPin,
                                     PinStatus edge, uint32_t maxRate)
 {
-    if (!ch32rv_adc_pin_trigger_valid(triggerPin) || (edge != RISING && edge != FALLING && edge != CHANGE) ||
+    if (!isExternalTriggerPin(triggerPin, edge) ||
         !begin(pins, count, 0xFFFFFFFFu)) {
         return false;
     }

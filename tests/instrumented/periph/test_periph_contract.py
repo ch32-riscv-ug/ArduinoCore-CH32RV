@@ -360,6 +360,10 @@ def test_adc_timer_trigger(dut, oep_host, ws_run, record_property):
     host = oep_host.host
     pwm = Pwm(host)
     core.plan_apply(host, pwm.assignments(wave["channel"]))
+    # Held low from here on (duty 0): the channel assigned and not started leaves the line floating, and the floating
+    # pad gave six 1 us pulses in the 5 ms before the PWM's first period - before the DUT had the command (H417 PC0,
+    # 2026-11-17, more than becomes' 3 at the change).
+    pwm.start(0, 500, 0)
     conditions = [(20000, 0.5, 16), (2000, 0.25, 12)]      # (rate, the wave's duty, halves read)
     results, wrong = {}, []
 
@@ -414,7 +418,7 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
     trigger pad (any pad of bit 11 on most families, bit 12 on X305 / X315, PD3 / PC2 on V00x, PA14 / PB6 on M030:
     the DUT says, tcaps) - with a labelled trigger pad and a labelled ADC pad beside it. One capture of both lines,
     a WireSkein section per condition judging the stimulus: the trigger's 16 pulses (pulses), the PWM (becomes).
-    - For RISING, FALLING and CHANGE: the probe sets the ADC pad to the next level of a 16-bit pattern, then pulses
+    - For RISING, FALLING and CHANGE (CHANGE only where the DUT says its pad gives it, tcaps; V00x's does not): the probe sets the ADC pad to the next level of a 16-bit pattern, then pulses
       the trigger (high, low), 16 times. The DUT's conversions are exactly 16 (32 for CHANGE: both edges of a
       pulse) and their levels the pattern (each twice for CHANGE): one conversion per edge, of the level at it - an
       edge missed, a conversion more, or one at another time shows. Over 3/4 of full scale high, under 1/4 low, as
@@ -429,10 +433,11 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
     case = settings(__file__)
     ready(dut, case)
     built(dut, "aext")
-    trigger = None
+    trigger, change = None, False
     for candidate in gpio_lines(oep_host, case["target"]):
-        if ask(dut, f"tcaps {candidate['pin']}", rb"TCAPS (\d)").group(1) == b"1":
-            trigger = candidate
+        m = ask(dut, f"tcaps {candidate['pin']}", rb"TCAPS (\d) (\d)")
+        if m.group(1) == b"1":
+            trigger, change = candidate, m.group(2) == b"1"
             break
     if trigger is None:
         pytest.skip("no labelled <port>@<pad> line is the ADC's trigger pad (the DUT names none, tcaps)")
@@ -451,7 +456,10 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
 
     def steps(wait):
         with ws_run.section(1, f"adc external trigger {trigger['pad']} -> {adc['pad']}"):
-            for edge, name, per_pulse in ((4, "rising", 1), (3, "falling", 1), (2, "change", 2)):
+            edges = [(4, "rising", 1), (3, "falling", 1)] + ([(2, "change", 2)] if change else [])
+            if not change:
+                results["change"] = "n/a: the DUT says its trigger pad gives no CHANGE (tcaps)"
+            for edge, name, per_pulse in edges:
                 with ws_run.section(2, name, expect=[pulses(trigger["pad"], count=len(EXT_PATTERN))]):
                     m = until(dut, ws_run, wait, f"aext {trigger['pin']} {edge} {adc['pin']}", rb"AEXT (\d)", 5)
                     if m.group(1) != b"1":
@@ -475,6 +483,7 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
             gpio.configure(adc["channel"], Gpio.OUTPUT_HIGH)
             core.plan_release(host, [gpio.fn])
             core.plan_apply(host, pwm.assignments(trigger["channel"]))
+            pwm.start(0, 1000, 0)          # held low until the section starts it (an assigned PWM floats the line)
             core.plan_apply(host, [(gpio.fn, 1, adc["channel"])])
             gpio.configure(adc["channel"], Gpio.OUTPUT_HIGH)
             want = [becomes(trigger["pad"], freq_hz=1000, duty=0.5, irregular_max=3, min_periods=20, duty_abs=0.02)]
@@ -493,7 +502,11 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
                     wrong.append("rate: beginExternal() refused")
                 elif abs(got / made.hz - 1) > 0.03:
                     wrong.append(f"rate: {n} conversions in {us} us ({got:.1f} a second), the probe makes {made.hz:.1f} Hz")
-                if levels.strip("H"):
+                # Every conversion here starts on the trigger's edge, beside the ADC pad: a held pad can read between
+                # the thresholds there now and then - adc-stream's second pin dips on the wave's edges (about one
+                # round in 150 on 6-2's harness), H417 PC0 read one '?' in 64 (2026-11-17). Two of 64 allowed; a low
+                # reading is not.
+                if "L" in levels or levels.count("?") > 2:
                     wrong.append(f"rate: the ADC pad held high read {levels}")
 
     try:
