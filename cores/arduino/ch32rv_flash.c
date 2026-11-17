@@ -17,18 +17,14 @@ uint32_t ch32rv_flash_size(void)
 
 uint32_t ch32rv_flash_erase_size(void)
 {
-#if CH32RV_FLASH_SELF_WRITE
-    return (FL_CFGR0 & CFGR0_DBMODE) ? 8192u : 4096u;
-#else
     return CH32RV_FLASH_ERASE_SIZE;
-#endif
 }
 
 static bool range_ok(uint32_t offset, uint32_t length, uint32_t unit)
 {
     const uint32_t end = offset + length;
     if (((offset | length) & (unit - 1u)) || !length || end < offset ||
-        end > (uint32_t)(uintptr_t)_ch32rv_flash_length) {
+        end > ch32rv_flash_size()) {
         return false;
     }
 #if !CH32RV_FLASH_SELF_WRITE

@@ -100,7 +100,7 @@ CH32RV_FLASH_OP bool done_ok(void)
     return false;
 }
 
-CH32RV_FLASH_OP bool erase_one(uint32_t a)
+CH32RV_FLASH_OP bool erase_sector(uint32_t a)
 {
     FL_CTLR |= CR_ER;
     FL_ADDR = a;
@@ -108,6 +108,19 @@ CH32RV_FLASH_OP bool erase_one(uint32_t a)
     const bool ok = done_ok();
     FL_CTLR &= ~CR_ER;
     return ok;
+}
+
+/* One CH32RV_FLASH_ERASE_SIZE unit. H41x: the flash erases by 8 KiB with
+ * FLASH_CFGR0.DBMODE set (960K) and by 4 KiB without it (480K, RM 46.2 tables
+ * 46-1 / 46-2); the unit is 8 KiB in both, two sectors in 480K. */
+CH32RV_FLASH_OP bool erase_one(uint32_t a)
+{
+#if CH32RV_FLASH_SELF_WRITE
+    if (!(FL_CFGR0 & CFGR0_DBMODE)) {
+        return erase_sector(a) && erase_sector(a + 4096u);
+    }
+#endif
+    return erase_sector(a);
 }
 
 /* Byte loads when unaligned: memcpy would link newlib's (298 B on rv32imac). */

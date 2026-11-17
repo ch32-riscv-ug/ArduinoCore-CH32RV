@@ -49,8 +49,8 @@
 #define CH32RV_FLASH_ERASE_SIZE 4096u
 #define CH32RV_FLASH_WRITE_SIZE 256u
 #elif defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H415)
-/* 960K (FLASH_CFGR0.DBMODE set) erases by 8 KiB; ch32rv_flash_erase_size()
- * reads the mode. */
+/* 960K (FLASH_CFGR0.DBMODE set) erases by 8 KiB, 480K by 4 KiB: the unit
+ * is 8 KiB in both (two sectors in 480K). */
 #define CH32RV_FLASH_ERASE_SIZE 8192u
 #define CH32RV_FLASH_WRITE_SIZE 256u
 #else
