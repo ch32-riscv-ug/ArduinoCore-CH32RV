@@ -178,7 +178,8 @@ void CH32RVUsbDescriptorWriter::put(const uint8_t *data, uint16_t n)
                 return;
             }
         }
-        if (_have >= 6 && _head[1] == 5) {
+        /* Constant false on a series without SuperSpeed: no companion code. */
+        if (ch32rv_usb_series_can(CH32RVUsbSpeed::Super) && _have >= 6 && _head[1] == 5) {
             if (companions) {
                 const bool periodic = (_head[3] & 1) != 0;      /* isochronous or interrupt */
                 const bool bulk = (_head[3] & 3) == 2;
