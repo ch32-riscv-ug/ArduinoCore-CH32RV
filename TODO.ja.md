@@ -218,6 +218,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、400 MHz の PLL を HPRE で 1/2）で、selfsys の window watchdog の
+  early（窓の前に給餌）がリセットにならない（2026-11-17、core=v5f・v3f とも 3 回。400・25 MHz は通る）。late は
+  window_watchdog で戻る。early の後の起動は RSTSCKR が 00000000（フラグなし: WWDG のリセットでなく、止まった DUT を
+  デバッガーが戻した）。早すぎる給餌の判定が HCLK 50 MHz のときだけ効いていない。PCLK1 の分周・WWDG の CFGR の
+  W と T の書き方・クロックの許可の後の待ち（CH32RV_CLKEN_SETTLE）を、200 の組で RM と比べて調べる。
 - [ ] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出している（tests/instrumented/uart）。
   BRR を数えるのは USART の APB のクロックなので、F_CPU と違う石（H41x の V5F: F_CPU 400 MHz、PCLK 100 MHz。PPRE を
   分ける系列）では式が違う。丸めがほぼ同じなので今は通る。DUT が USART のクロック（または BRR から出した実際の
