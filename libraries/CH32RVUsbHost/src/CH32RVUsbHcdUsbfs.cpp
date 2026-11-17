@@ -242,21 +242,28 @@ static bool port_has_host(void)
 
 #define UC_HOST_MODE   0x80
 #define UC_LOW_SPEED   0x40
+#define UC_SYS_CTRL_MASK 0x30   /* host mode: 00 normal, 01 SE0, 10 J, 11 K */
+#define UC_SYS_FORCE_SE0 0x10
+#define UC_SYS_FORCE_K   0x30
 #define UC_INT_BUSY    0x08
 #define UC_RESET_SIE   0x04
 #define UC_CLR_ALL     0x02
 #define UC_DMA_EN      0x01
 
 #define UH_PD_DIS      0x80
+#define UH_DP_PIN      0x20
+#define UH_DM_PIN      0x10
 #define UH_LOW_SPEED   0x04
 #define UH_BUS_RESET   0x02
 #define UH_PORT_EN     0x01
 
 #define UIE_HST_SOF    0x08
+#define UIE_SUSPEND    0x04
 #define UIE_TRANSFER   0x02
 #define UIE_DETECT     0x01
 
 #define UIF_HST_SOF    0x08
+#define UIF_SUSPEND    0x04
 #define UIF_TRANSFER   0x02
 #define UIF_DETECT     0x01
 
@@ -289,6 +296,10 @@ static bool port_has_host(void)
  * its synchronous calls would wait forever). Bulk and interrupt wait for as
  * long as it takes - that is what they are for. */
 #define CONTROL_TIMEOUT_FRAMES 5000u
+/* After a resume no transaction goes out for this long: the device's resume
+ * recovery (USB 2.0 7.1.7.7, TRSMRCY 10 ms). */
+#define RESUME_RECOVERY_US 10000u   /* SOF only, nothing to the device */
+#define RESUME_SIGNAL_US 20000u     /* the host's resume K, TDRSMDN */
 
 static uint8_t rx_buf[PACKET_MAX] __attribute__((aligned(4)));
 static uint8_t tx_buf[PACKET_MAX] __attribute__((aligned(4)));
@@ -328,6 +339,11 @@ static volatile uint32_t frame;           /* counts SOF interrupts */
 static volatile bool irq_on;
 static volatile bool port_up;
 static uint8_t root_speed = CH32RV_USBH_FULL;
+/* Bus power (ch32rv_usb_hcd_usbfs_power): a suspended port is down
+ * (port_up false: nothing starts) with suspend_irq set, which takes the
+ * suspend / resume interrupt. Only that pointer and its test are in a sketch
+ * that never suspends. */
+static void (*volatile suspend_irq)(void);
 
 static void schedule(void);
 
@@ -562,6 +578,7 @@ static bool hcd_open(void)
     memset(eps, 0, sizeof(eps));
     active = -1;
     port_up = false;
+    suspend_irq = nullptr;
     frame = 0;
     BASE_CTRL = UC_RESET_SIE | UC_CLR_ALL;
     for (volatile int d = 0; d < 2000; d++) {
@@ -801,6 +818,83 @@ static uint32_t hcd_frame(void)
     return frame;
 }
 
+/* The K state on the root port: D- high and D+ low at full speed, the other
+ * way at low speed (a device's remote wakeup, USB 2.0 7.1.7.7). */
+static bool line_k(void)
+{
+    const uint8_t lines = HOST_CTRL & (UH_DP_PIN | UH_DM_PIN);
+    return lines == (root_speed == CH32RV_USBH_LOW ? UH_DP_PIN : UH_DM_PIN);
+}
+
+/* Suspend: no SOF, the bus idles and the device suspends after 3 ms (USB 2.0
+ * 7.1.7.6). Resume: the block drives the K state itself in host mode with
+ * BASE_CTRL's SYS_CTRL 11 (01 SE0, 10 J - CH32V103 EVT ch32v10x_usb.h,
+ * CH32V20x RM table 23-2; the same bits in the X03x and USBOTG_FS layouts):
+ * K for 20 ms (TDRSMDN), the low-speed EOP (SE0 for two low-speed bits),
+ * then SOF again and nothing else for the resume recovery. SOF alone does not
+ * wake an RP2040 (TinyUSB), nor do the low-speed bit or the pads as GPIO (the
+ * PHY keeps them) - measured on V205 2026-11-18. While suspended, the suspend
+ * / resume interrupt with the bus in K is the device's remote wakeup; it also
+ * comes as the bus goes idle, in J, which is not. */
+/* Suspended: the interrupt with the bus in K is the device's remote wakeup
+ * (it also comes as the bus goes idle, in J). Once the port is up again - a
+ * reset after a detach while suspended - it is not this one's any more. */
+static void on_suspend_irq(void)
+{
+    INT_FG = UIF_SUSPEND;
+    if (port_up) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        suspend_irq = nullptr;
+    } else if (line_k()) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        ch32rv_usbh_isr_wakeup();
+    }
+}
+
+static bool hcd_port_suspend(bool on)
+{
+    bool was;
+    lock(&was);
+    const bool suspended = suspend_irq && !port_up;
+    bool ok = true;
+    if (on && !suspended) {
+        ok = port_up;
+        if (ok) {
+            port_up = false;
+            stop_active();
+            HOST_SETUP &= ~UH_SOF_EN;
+            suspend_irq = on_suspend_irq;
+            INT_FG = UIF_SUSPEND;
+            INT_EN |= UIE_SUSPEND;
+        }
+    } else if (!on && suspended) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        suspend_irq = nullptr;
+        BASE_CTRL = (uint8_t)((BASE_CTRL & ~UC_SYS_CTRL_MASK) | UC_SYS_FORCE_K);
+        unlock(was);
+        for (const uint32_t t0 = micros(); (uint32_t)(micros() - t0) < RESUME_SIGNAL_US;) {
+        }
+        lock(&was);
+        BASE_CTRL = (uint8_t)((BASE_CTRL & ~UC_SYS_CTRL_MASK) | UC_SYS_FORCE_SE0);
+        delayMicroseconds(2);
+        BASE_CTRL &= (uint8_t)~UC_SYS_CTRL_MASK;
+        const bool attached = (MIS_ST & UMS_DEV_ATTACH) != 0;
+        if (attached) {
+            HOST_SETUP |= UH_SOF_EN;
+        }
+        unlock(was);
+        for (const uint32_t t0 = micros(); (uint32_t)(micros() - t0) < RESUME_RECOVERY_US;) {
+        }
+        lock(&was);
+        if (attached && (HOST_CTRL & UH_PORT_EN)) {   /* not detached meanwhile */
+            port_up = true;
+            schedule();
+        }
+    }
+    unlock(was);
+    return ok;
+}
+
 static void isr(void)
 {
     const uint8_t flags = INT_FG;
@@ -827,6 +921,9 @@ static void isr(void)
     }
     if ((flags & UIF_TRANSFER) && (INT_EN & UIE_TRANSFER)) {
         transfer_done();
+    }
+    if ((flags & UIF_SUSPEND) && suspend_irq) {
+        suspend_irq();
     }
     if (flags & UIF_HST_SOF) {
         INT_FG = UIF_HST_SOF;
@@ -866,7 +963,8 @@ const CH32RVUsbHcd ch32rv_usb_hcd_usbfs = {
     "USBFS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    port_poll, nullptr, nullptr, nullptr, hcd_prepare, port_close, nullptr, nullptr,
+    port_poll, nullptr, nullptr, hcd_prepare, port_close, nullptr, nullptr,
 };
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbfs_power = {&ch32rv_usb_hcd_usbfs, hcd_port_suspend};
 
 #endif

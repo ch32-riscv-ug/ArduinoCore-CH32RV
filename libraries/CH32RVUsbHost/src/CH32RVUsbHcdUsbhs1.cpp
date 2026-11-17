@@ -57,6 +57,7 @@
 #define INT_EN      R8(0x02)
 #define DEV_AD      R8(0x03)
 #define FRAME_NO    R16(0x04)
+#define SUSPEND     R8(0x06)
 #define SPEED_TYPE  R8(0x08)
 #define MIS_ST      R8(0x09)
 #define INT_FG      R8(0x0A)
@@ -84,12 +85,19 @@
 
 #define UH_SOF_EN       0x80
 #define UH_PHY_SUSPENDM 0x10
+#define UH_BUS_RESUME   0x04
+#define UH_BUS_SUSPEND  0x02
 #define UH_BUS_RESET    0x01
+#define LINESTATE_MASK  0x30      /* SUSPEND: the PHY's line state, D+ in bit 4, D- in bit 5 */
+#define LINESTATE_DP    0x10
+#define LINESTATE_DM    0x20
 
 #define UIE_SOF      0x08
+#define UIE_SUSPEND  0x04
 #define UIE_TRANSFER 0x02
 #define UIE_DETECT   0x01
 #define UIF_SOF      0x08
+#define UIF_SUSPEND  0x04
 #define UIF_TRANSFER 0x02
 #define UIF_DETECT   0x01
 #define UMS_ATTACH   0x02
@@ -116,6 +124,8 @@
 #define PACKET_MAX 1024u
 #define NO_RESPONSE_TRIES 3u
 #define CONTROL_TIMEOUT_MS 5000u      /* USB 2.0 9.2.6.4 */
+#define RESUME_RECOVERY_MS 10u        /* TRSMRCY, USB 2.0 7.1.7.7 */
+#define RESUME_SIGNAL_MS   30u        /* the K the block drives after TX_BUS_RESUME (RM 22.2.3.1) */
 #define EP_MAX 32
 
 static uint8_t rx_buf[PACKET_MAX] __attribute__((aligned(4)));
@@ -140,6 +150,11 @@ static uint8_t next_rr;
 static volatile uint32_t ticks;            /* microframes (high speed) or frames since open */
 static uint16_t last_frame;                /* FRAME_NO as last read */
 static volatile bool irq_on, port_up;
+/* Bus power (ch32rv_usb_hcd_usbhs1_power): a suspended port is down
+ * (port_up false: nothing starts) with suspend_irq set, which takes the
+ * suspend / resume interrupt. Only that pointer and its test are in a sketch
+ * that never suspends. */
+static void (*volatile suspend_irq)(void);
 static uint8_t root_speed = CH32RV_USBH_FULL;
 
 /* A tick is a microframe on a high-speed root port, a frame otherwise. */
@@ -400,6 +415,9 @@ static void isr(void)
     if ((flags & UIF_TRANSFER) && (INT_EN & UIE_TRANSFER)) {
         transfer_done();
     }
+    if ((flags & UIF_SUSPEND) && suspend_irq) {
+        suspend_irq();
+    }
     if (flags & UIF_SOF) {
         INT_FG = UIF_SOF;
         advance_ticks();
@@ -444,6 +462,7 @@ static bool hcd_open(void)
     memset(eps, 0, sizeof eps);
     active = -1;
     port_up = false;
+    suspend_irq = nullptr;
     ticks = 0;
     root_speed = CH32RV_USBH_FULL;
     CONTROL = UC_CLR_ALL | UC_RESET_SIE;
@@ -495,7 +514,7 @@ static void hcd_port_reset(void)
     INT_EN &= (uint8_t)~UIE_DETECT;
     DEV_AD = 0;
     CONTROL = (uint8_t)((CONTROL & ~UC_SPEED_MASK) | UC_SPEED_HIGH);   /* the chirp needs high speed asked for */
-    HOST_CTRL = (uint8_t)((HOST_CTRL & ~UH_SOF_EN) | UH_BUS_RESET);
+    HOST_CTRL = (uint8_t)((HOST_CTRL & ~(UH_SOF_EN | UH_BUS_SUSPEND)) | UH_BUS_RESET);
     unlock(was);
 }
 
@@ -529,9 +548,75 @@ static void hcd_port_disable(void)
     bool was;
     lock(&was);
     stop_active();
-    port_up = false;
+    port_down();
     HOST_CTRL &= (uint8_t)~UH_SOF_EN;
     unlock(was);
+}
+
+/* While suspended: the suspend / resume event with the bus in K (D- high at
+ * full and high speed - the bus is at full speed's levels in suspend - D+ at
+ * low speed) is the device's remote wakeup. Once the port is up again (a
+ * reset after a detach while suspended) it is not this one's. */
+static void on_suspend_irq(void)
+{
+    INT_FG = UIF_SUSPEND;
+    const uint8_t k = root_speed == CH32RV_USBH_LOW ? LINESTATE_DP : LINESTATE_DM;
+    if (port_up) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        suspend_irq = nullptr;
+    } else if ((SUSPEND & LINESTATE_MASK) == k) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        ch32rv_usbh_isr_wakeup();
+    }
+}
+
+/* Suspend: SOF off and TX_BUS_SUSPEND, held while suspended (RM 22.2.3.1:
+ * "pulled up by software"). Resume: TX_BUS_RESUME for a moment, and the
+ * block drives K for 30 ms itself; SOF starts again after it, and transfers
+ * after the device's recovery. Build only - no V30x host is wired to a
+ * device on the bench (the TODO's usb-peer-power). */
+static bool hcd_port_suspend(bool on)
+{
+    bool was;
+    lock(&was);
+    const bool suspended = suspend_irq && !port_up;
+    bool ok = true;
+    if (on && !suspended) {
+        ok = port_up;
+        if (ok) {
+            port_up = false;
+            stop_active();
+            suspend_irq = on_suspend_irq;
+            HOST_CTRL = (uint8_t)((HOST_CTRL & ~UH_SOF_EN) | UH_BUS_SUSPEND);
+            INT_FG = UIF_SUSPEND;
+            INT_EN |= UIE_SUSPEND;
+        }
+    } else if (!on && suspended) {
+        INT_EN &= (uint8_t)~UIE_SUSPEND;
+        suspend_irq = nullptr;
+        HOST_CTRL = (uint8_t)((HOST_CTRL & ~UH_BUS_SUSPEND) | UH_BUS_RESUME);
+        delayMicroseconds(1);
+        HOST_CTRL &= (uint8_t)~UH_BUS_RESUME;
+        unlock(was);
+        for (const uint32_t t0 = millis(); (uint32_t)(millis() - t0) <= RESUME_SIGNAL_MS;) {
+        }
+        lock(&was);
+        const bool attached = (MIS_ST & UMS_ATTACH) != 0;
+        if (attached) {
+            last_frame = FRAME_NO;
+            HOST_CTRL |= UH_SOF_EN;
+        }
+        unlock(was);
+        for (const uint32_t t0 = millis(); (uint32_t)(millis() - t0) <= RESUME_RECOVERY_MS;) {
+        }
+        lock(&was);
+        if (attached && (MIS_ST & UMS_ATTACH)) {          /* not detached meanwhile */
+            port_up = true;
+            schedule();
+        }
+    }
+    unlock(was);
+    return ok;
 }
 
 static void hcd_device_close(uint8_t daddr)
@@ -682,7 +767,8 @@ const CH32RVUsbHcd ch32rv_usb_hcd_usbhs1 = {
     "USBHS host (CH32V305/V307/V317)", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    hcd_poll, nullptr, nullptr, nullptr, nullptr, nullptr, buffer_alloc, buffer_free,
+    hcd_poll, nullptr, nullptr, nullptr, nullptr, buffer_alloc, buffer_free,
 };
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs1_power = {&ch32rv_usb_hcd_usbhs1, hcd_port_suspend};
 
 #endif

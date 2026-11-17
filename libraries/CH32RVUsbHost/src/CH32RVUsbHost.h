@@ -413,6 +413,7 @@ public:
     typedef CH32RVCallback<void(const CH32RVUsbHostMidiMessage &message)> MidiMessageCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostVendorData &data)> VendorDataCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostCcidSlotEvent &event)> CcidSlotChangeCallback;
+    typedef CH32RVCallback<void()> RemoteWakeupCallback;
 
     CH32RVUsbHost();
 
@@ -429,6 +430,19 @@ public:
 
     CH32RVUsbHostError lastError() const { return _error; }
     const char *lastErrorName() const;
+
+    /* ---- bus power (the root port) ---- */
+    /* suspend(): the device on the root port (and everything behind a hub
+     * there) suspends; its remote wakeup is enabled first when its
+     * configuration offers it. Transfers wait until resume(). Unsupported
+     * where the controller's driver cannot suspend. resume() wakes it; a
+     * remote wakeup from the device resumes the port by itself and then
+     * calls onRemoteWakeup() (from delay() / after loop(), like the other
+     * callbacks). */
+    bool suspend();
+    bool resume();
+    bool suspended() const;
+    void onRemoteWakeup(RemoteWakeupCallback cb);
 
     /* ---- devices ---- */
     void onDeviceConnected(DeviceCallback cb) { _connected = cb; }

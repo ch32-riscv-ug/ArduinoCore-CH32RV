@@ -156,6 +156,19 @@ callback はそれぞれ1枠の関数ポインタです。再登録すると置�
 USB address は抜き挿しで変わり得ます。複数機器を扱うときは接続 callback の address で選び、切断時に状態を破棄します。
 CDC の port は同一デバイス内の0始まりの番号です。
 
+### サスペンドとレジューム
+
+| API | 意味 |
+|---|---|
+| `suspend()` | ルートポートを止める（SOF なし。SuperSpeed は U3）。そこの機器とハブの先も止まる。構成でリモートウェイクアップを宣言している機器には、先に有効にする（`SET_FEATURE(DEVICE_REMOTE_WAKEUP)`） |
+| `resume()` | ポートが resume を出し（USB 2.0 は K を 20 ms）、機器の 10 ms の復帰を待ってから転送を再開する |
+| `suspended()` | `suspend()` が効いている |
+| `onRemoteWakeup()` | 機器がバスを起こした。ポートはもう戻っている |
+
+止めている間に頼んだ転送は、ポートが戻るまで待ちます（制御転送はタイムアウトになります）。機器がないと `suspend()` は
+`NotConnected`、controller のドライバが止められないと `Unsupported` で失敗します。V205 の USBFS と RP2040、V407 の
+USBHS と ESP32-P4 で確かめています（tests/peer/usb の usb-peer-host-power）。V30x の USBHS と USBSS はビルドだけです。
+
 ## ディスクリプタと制御転送
 
 | API | 用途 |

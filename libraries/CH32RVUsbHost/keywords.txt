@@ -11,6 +11,10 @@ CH32RVUsbHostKeyboardEvent	KEYWORD1
 CH32RVUsbHostMouseEvent	KEYWORD1
 CH32RVUsbHostMidiMessage	KEYWORD1
 
+suspend	KEYWORD2
+resume	KEYWORD2
+suspended	KEYWORD2
+onRemoteWakeup	KEYWORD2
 begin	KEYWORD2
 end	KEYWORD2
 ready	KEYWORD2

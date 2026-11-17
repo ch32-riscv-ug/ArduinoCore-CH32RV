@@ -45,6 +45,18 @@ struct Event {
 volatile Event events[EVENTS];
 volatile uint8_t ev_head, ev_tail;
 volatile bool port_changed;
+/* Bus power of the root port: suspended by suspend(), the driver's suspend
+ * (its _power table, found by the first suspend() after begin()), a remote
+ * wakeup seen by the driver's interrupt, wakeups not yet handed to
+ * onRemoteWakeup(), and the hooks suspend() puts into the task and the
+ * delivery - so none of it is linked into a sketch that never suspends. */
+bool root_suspended;
+const CH32RVUsbHcdPower *power;
+volatile bool root_wakeup;
+uint8_t wakeups_due;
+CH32RVUsbHost::RemoteWakeupCallback remote_wakeup_cb;
+void (*power_pump)(void);
+size_t (*power_deliver)(CH32RVUsbHost &host);
 
 /* A transfer in flight on an endpoint (not EP0) and who hears of it. */
 struct Pending {
@@ -369,6 +381,11 @@ extern "C" void ch32rv_usbh_isr_port(bool attached)
 {
     (void)attached;
     port_changed = true;
+}
+
+extern "C" void ch32rv_usbh_isr_wakeup(void)
+{
+    root_wakeup = true;
 }
 
 /* ------------------------------------------------------------- the endpoint API */
@@ -1702,6 +1719,7 @@ void root_changed(void)
         return;
     }
     en_unqueue(0, 0);
+    root_suspended = false;
     for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
         if (devs[a].state != DEV_FREE && devs[a].parent == 0) {
             remove_device(a);
@@ -1720,6 +1738,9 @@ void pump(void)
     if (port_changed) {
         port_changed = false;
         root_changed();
+    }
+    if (power_pump) {
+        power_pump();
     }
     while (ev_tail != ev_head) {
         const uint8_t i = ev_tail;
@@ -1837,9 +1858,15 @@ void ch32rv_usb_host_reenumerate(uint8_t daddr)
     en_queue(parent, port);
 }
 
-bool ch32rv_usb_host_suspend(bool suspend)
+/* The device on the root port (a hub, or the device itself): 0 when none is mounted. */
+static uint8_t root_device(void)
 {
-    return hcd && hcd->portSuspend && hcd->portSuspend(suspend);
+    for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
+        if (devs[a].state == DEV_MOUNTED && devs[a].parent == 0) {
+            return a;
+        }
+    }
+    return 0;
 }
 
 /* ------------------------------------------------------------- the task */
@@ -1928,6 +1955,9 @@ static size_t host_deliver(void)
     if (!host->ready()) {
         return ran;
     }
+    if (power_deliver) {
+        ran += power_deliver(*host);
+    }
     for (CH32RVUsbHostGroup *g = groups; g; g = g->next) {
         if (g->deliver) {
             ran += g->deliver(*host);
@@ -1964,6 +1994,8 @@ bool CH32RVUsbHost::beginOn(const CH32RVUsbHcd *driver)
     memset(hubs, 0, sizeof hubs);
     ev_head = ev_tail = 0;
     port_changed = false;
+    root_suspended = false;
+    power = nullptr;
     if (!driver) {
         return fail(CH32RVUsbHostError::Unsupported);
     }
@@ -2016,6 +2048,118 @@ void CH32RVUsbHost::end()
 bool CH32RVUsbHost::ready() const
 {
     return _started;
+}
+
+/* The drivers' suspend, weakly: only the driver begin() linked resolves. */
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbfs_power __attribute__((weak));
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs1_power __attribute__((weak));
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_power __attribute__((weak));
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_b_power __attribute__((weak));
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbss_power __attribute__((weak));
+
+static const CH32RVUsbHcdPower *power_of(const CH32RVUsbHcd *driver)
+{
+    const CH32RVUsbHcdPower *const all[] = {&ch32rv_usb_hcd_usbfs_power, &ch32rv_usb_hcd_usbhs1_power,
+                                            &ch32rv_usb_hcd_usbhs2_power, &ch32rv_usb_hcd_usbhs2_b_power,
+                                            &ch32rv_usb_hcd_usbss_power};
+    for (const CH32RVUsbHcdPower *p : all) {
+        if (p && p->hcd == driver) {
+            return p;
+        }
+    }
+    return nullptr;
+}
+
+/* From the task: the device woke the bus, and the port resumes for it. */
+static void wakeup_pump(void)
+{
+    if (!root_wakeup) {
+        return;
+    }
+    root_wakeup = false;
+    if (root_suspended && power) {
+        root_suspended = false;
+        power->portSuspend(false);
+        if (wakeups_due < 0xFF) {
+            wakeups_due++;
+        }
+    }
+}
+
+static size_t wakeup_deliver(CH32RVUsbHost &)
+{
+    size_t ran = 0;
+    for (; wakeups_due; wakeups_due--) {
+        if (remote_wakeup_cb) {
+            remote_wakeup_cb();
+            ran++;
+        }
+    }
+    return ran;
+}
+
+void CH32RVUsbHost::onRemoteWakeup(RemoteWakeupCallback cb)
+{
+    remote_wakeup_cb = cb;
+}
+
+/* Every device that suspends with the port has its remote wakeup armed first
+ * when its configuration offers it (SET_FEATURE(DEVICE_REMOTE_WAKEUP), USB 2.0
+ * 9.4.9) - a hub's too, or a wakeup behind it stops there. Not on SuperSpeed,
+ * where it is a function's (FUNCTION_SUSPEND), not the device's. */
+bool CH32RVUsbHost::suspend()
+{
+    if (!_started) {
+        return fail(CH32RVUsbHostError::NotStarted);
+    }
+    if (!power) {
+        power = power_of(hcd);
+        if (!power) {
+            return fail(CH32RVUsbHostError::Unsupported);
+        }
+        root_wakeup = false;
+        wakeups_due = 0;
+        power_pump = wakeup_pump;
+        power_deliver = wakeup_deliver;
+    }
+    if (root_suspended) {
+        return ok();
+    }
+    if (!root_device()) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES; a++) {
+        if (devs[a].state == DEV_MOUNTED && (devs[a].configAttributes & 0x20u) && !is_super(devs[a].speed) &&
+            !ch32rv_usb_host_control(*this, a, 0x00, 3, 1, 0, nullptr, 0, nullptr, 1000)) {
+            return false;
+        }
+    }
+    if (!power->portSuspend(true)) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    root_suspended = true;
+    return ok();
+}
+
+bool CH32RVUsbHost::resume()
+{
+    if (!_started) {
+        return fail(CH32RVUsbHostError::NotStarted);
+    }
+    if (!root_suspended || !power) {
+        return ok();
+    }
+    root_suspended = false;
+    root_wakeup = false;
+    if (!power->portSuspend(false)) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    return ok();
+}
+
+bool CH32RVUsbHost::suspended() const
+{
+    return root_suspended;
 }
 
 void CH32RVUsbHost::task()
@@ -2214,6 +2358,10 @@ bool CH32RVUsbHost::getStringDescriptor(uint8_t address, uint8_t index, char *ou
 bool CH32RVUsbHost::beginOn(const CH32RVUsbHcd *) { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::end() {}
 bool CH32RVUsbHost::ready() const { return false; }
+bool CH32RVUsbHost::suspend() { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::resume() { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::suspended() const { return false; }
+void CH32RVUsbHost::onRemoteWakeup(RemoteWakeupCallback) {}
 void CH32RVUsbHost::task() {}
 uint32_t CH32RVUsbHost::droppedDeviceEvents() const { return 0; }
 uint8_t CH32RVUsbHost::resolve(uint8_t) const { return 0; }

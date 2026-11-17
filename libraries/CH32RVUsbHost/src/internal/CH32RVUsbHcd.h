@@ -86,12 +86,10 @@ struct CH32RVUsbHcd {
      * on the hub nearest the root in bits 3:0; 0 on the root port). nullptr:
      * the driver does not need it. */
     void (*deviceAt)(uint8_t daddr, uint32_t route);
-    /* Link power management of the root port (nullptr: none). linkAllow:
-     * accept the device's own entry into U1 / U2 (after the stack sent
-     * SET_SEL and U1_ENABLE / U2_ENABLE). portSuspend: true sends the link to
-     * U3 (suspend), false wakes it to U0; false when the link is not up. */
+    /* Link power management of the root port (nullptr: none): accept the
+     * device's own entry into U1 / U2 (after the stack sent SET_SEL and
+     * U1_ENABLE / U2_ENABLE). */
     void (*linkAllow)(bool u1, bool u2);
-    bool (*portSuspend)(bool suspend);
     /* Before open(): the part's clock, PHY and pins for host mode, and
      * whether the die has the host half - false is Unsupported (open()'s
      * false is Busy). release() undoes it after close(). nullptr: nothing
@@ -111,10 +109,30 @@ struct CH32RVUsbHcd {
 extern "C" {
 void ch32rv_usbh_isr_port(bool attached);
 void ch32rv_usbh_isr_xfer(uint8_t daddr, uint8_t address, uint8_t result, uint16_t length);
+void ch32rv_usbh_isr_wakeup(void);
 }
+
+/* Suspend and resume of a driver's root port, apart from its table: the
+ * stack refers to these weakly, from suspend() / resume() only. The driver's
+ * object file is in the link through its table, so the one in use resolves;
+ * a sketch that never suspends calls none of it, and the garbage collection
+ * drops it. portSuspend: true suspends the root port (no SOF on USB 2.0, U3
+ * on SuperSpeed), false resumes it and holds transfers back for the device's
+ * resume recovery; false when the port is not up. While suspended, a
+ * device's remote wakeup is ch32rv_usbh_isr_wakeup() (the stack then
+ * resumes the port). */
+struct CH32RVUsbHcdPower {
+    const CH32RVUsbHcd *hcd;
+    bool (*portSuspend)(bool suspend);
+};
 
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbfs;
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2;     /* the second-generation USBHS (V407 / V467: USBHS1) */
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2_b;   /* V407 / V467: USBHS2 */
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbss;      /* H417 / H416: USBSS, SuperSpeed only */
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs1;     /* V305 / V307 / V317: the first-generation USBHS */
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbfs_power;
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_power;
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_b_power;
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbss_power;
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs1_power;

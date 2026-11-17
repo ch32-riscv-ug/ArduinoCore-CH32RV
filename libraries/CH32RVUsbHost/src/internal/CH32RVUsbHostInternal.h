@@ -161,9 +161,6 @@ void ch32rv_usb_host_abort(uint8_t daddr, uint8_t address);
 bool ch32rv_usb_host_clear_halt(uint8_t daddr, uint8_t address);
 /* Enumerate the device on the root port again (a stuck device's way back). */
 void ch32rv_usb_host_reenumerate(uint8_t daddr);
-/* Suspend (true) or resume the root port's link: U3 on SuperSpeed. false
- * where the controller cannot (no public API yet). */
-bool ch32rv_usb_host_suspend(bool suspend);
 
 /* Map a transfer result to the library's error. */
 CH32RVUsbHostError ch32rv_usb_host_result_error(uint8_t result);

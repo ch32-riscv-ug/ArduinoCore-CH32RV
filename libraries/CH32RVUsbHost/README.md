@@ -195,6 +195,21 @@ matching device / port. A USB address can change across a reconnect. With
 several devices, choose by the address the connect callback gives, and drop
 the state on disconnect. A CDC port is a number from 0 within one device.
 
+### Suspend and resume
+
+| API | Meaning |
+|---|---|
+| `suspend()` | The root port suspends (no SOF; U3 on SuperSpeed), and with it the device there and everything behind a hub on it. Every device that offers remote wakeup in its configuration has it enabled first (`SET_FEATURE(DEVICE_REMOTE_WAKEUP)`) |
+| `resume()` | The port drives the resume (K for 20 ms on USB 2.0) and transfers start again after the device's 10 ms recovery |
+| `suspended()` | `suspend()` is in effect |
+| `onRemoteWakeup()` | A device woke the bus: the port has already resumed |
+
+Transfers asked for while suspended wait until the port resumes (a control
+transfer meets its timeout). `suspend()` fails with `NotConnected` without a
+device and `Unsupported` where the controller's driver cannot suspend.
+Measured on V205's USBFS with an RP2040 and V407's USBHS with an ESP32-P4
+(tests/peer/usb, usb-peer-host-power); V30x's USBHS and USBSS are build only.
+
 ## Descriptors and control transfers
 
 | API | For |

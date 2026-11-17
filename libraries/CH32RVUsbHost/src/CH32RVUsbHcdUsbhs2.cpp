@@ -95,10 +95,10 @@ constexpr uint8_t IF_FIFO_OVER = 0x80, IF_TX_HALT = 0x40, IF_SOF_ACT = 0x20, IF_
 constexpr uint32_t CTL_RX_NO_RES = 0x800000, CTL_TX_NO_RES = 0x400000, CTL_RX_NO_DATA = 0x200000,
                    CTL_TX_NO_DATA = 0x100000, CTL_PRE_PID_EN = 0x080000, CTL_SPLIT_VALID = 0x040000,
                    CTL_HOST_ACTION = 0x010000, CTL_TOG1 = 0x0100;
-constexpr uint32_t PORT_SET_RESET = 0x01, PORT_CLR_EN = 0x10;
+constexpr uint32_t PORT_SET_RESET = 0x01, PORT_SET_SUSP = 0x02, PORT_CLR_SUSP = 0x04, PORT_CLR_EN = 0x10;
 constexpr uint8_t PORT_CFG_PD_EN = 0x80, PORT_CFG_HOST_EN = 0x01;
-constexpr uint16_t PST_HS = 0x0400, PST_LS = 0x0200, PST_RESET = 0x0010, PST_CONNECT = 0x0001;
-constexpr uint8_t PCHG_RESET = 0x10, PCHG_EN = 0x02, PCHG_CONNECT = 0x01;
+constexpr uint16_t PST_HS = 0x0400, PST_LS = 0x0200, PST_RESET = 0x0010, PST_SUSP = 0x0004, PST_CONNECT = 0x0001;
+constexpr uint8_t PCHG_RESET = 0x10, PCHG_SUSP = 0x04, PCHG_EN = 0x02, PCHG_CONNECT = 0x01;
 
 constexpr uint8_t PID_OUT = 0x1, PID_IN = 0x9, PID_SETUP = 0xD, PID_ACK = 0x2, PID_NYET = 0x6, PID_NAK = 0xA,
                   PID_STALL = 0xE, PID_DATA0 = 0x3, PID_DATA1 = 0xB, PID_MDATA = 0xF;
@@ -106,6 +106,7 @@ constexpr uint8_t PID_OUT = 0x1, PID_IN = 0x9, PID_SETUP = 0xD, PID_ACK = 0x2, P
 constexpr uint16_t PACKET_MAX = 1024;
 constexpr uint8_t NO_RESPONSE_TRIES = 3;
 constexpr uint32_t CONTROL_TIMEOUT_MS = 5000;      /* USB 2.0 9.2.6.4 */
+constexpr uint32_t RESUME_RECOVERY_MS = 10;        /* TRSMRCY, USB 2.0 7.1.7.7: nothing to the device after a resume */
 /* A periodic complete split is asked for up to a frame (the spec's three
  * microframes from the second after the start, with room for this driver
  * not starting it in the microframe it is due). */
@@ -147,6 +148,11 @@ struct Hcd {
     static uint8_t next_rr;
     static volatile uint32_t ticks;              /* SOF interrupts since the port came up */
     static volatile bool irq_on, port_up, resetting;
+    /* Bus power (the _power tables): a suspended port is down (port_up
+     * false: nothing starts) with suspend_irq set, which takes a change of
+     * the port's suspend state. Only that pointer and its test are in a
+     * sketch that never suspends. */
+    static void (*volatile suspend_irq)();
     static uint8_t root_speed;
 
     /* A tick is a microframe on a high-speed root port, a frame otherwise. */
@@ -490,6 +496,9 @@ struct Hcd {
                     ch32rv_usbh_isr_port(false);
                 }
             }
+            if ((chg & PCHG_SUSP) && suspend_irq) {
+                suspend_irq();
+            }
         }
         const uint8_t flags = r8(H_INT_FLAG);
         if ((flags & IF_TRANSFER) && (r8(H_INT_EN) & IF_TRANSFER)) {
@@ -531,6 +540,7 @@ struct Hcd {
         memset(eps, 0, sizeof eps);
         active = -1;
         port_up = resetting = false;
+        suspend_irq = nullptr;
         ticks = 0;
         root_speed = CH32RV_USBH_FULL;
         r8(H_CFG) = CFG_CLR_ALL | CFG_RST_SIE | CFG_RST_LINK;
@@ -614,6 +624,63 @@ struct Hcd {
         port_down();
         r32(H_PORT_CTRL) = PORT_CLR_EN;
         unlock(was);
+    }
+
+    /* Suspend and resume are the root port's own (PORT_CTRL SET_PORT_SUSP /
+     * CLR_PORT_SUSP, RM 22.2.2.16 of CH32V205): it stops SOF, and on the way
+     * out drives the resume. A remote wakeup takes the port out of suspend
+     * (PORT_CHG.SUSP with PORT_ST.SUSP clear). Transfers wait out the
+     * device's resume recovery after it. */
+    /* Out of suspend without portSuspend(false): the device's remote wakeup.
+     * Once the port is up again (a reset after a detach while suspended) the
+     * change is not this one's. */
+    static void on_suspend_irq()
+    {
+        if (port_up) {
+            r8(H_PORT_INT_EN) = PCHG_CONNECT;
+            suspend_irq = nullptr;
+        } else if (!(r16(H_PORT_ST) & PST_SUSP)) {
+            r8(H_PORT_INT_EN) = PCHG_CONNECT;
+            ch32rv_usbh_isr_wakeup();
+        }
+    }
+
+    static bool port_suspend(bool on)
+    {
+        bool was;
+        lock(&was);
+        const bool suspended = suspend_irq && !port_up;
+        bool ok = true;
+        if (on && !suspended) {
+            ok = port_up;
+            if (ok) {
+                port_up = false;
+                stop_active();
+                suspend_irq = on_suspend_irq;
+                r8(H_PORT_CHG) = PCHG_SUSP;
+                r8(H_PORT_INT_EN) = PCHG_CONNECT | PCHG_SUSP;
+                r32(H_PORT_CTRL) = PORT_SET_SUSP;
+            }
+        } else if (!on && suspended) {
+            r8(H_PORT_INT_EN) = PCHG_CONNECT;
+            suspend_irq = nullptr;
+            if (r16(H_PORT_ST) & PST_SUSP) {
+                r32(H_PORT_CTRL) = PORT_CLR_SUSP;
+            }
+            unlock(was);
+            /* The port drives the resume itself; then the device's recovery. */
+            for (const uint32_t t0 = millis(); (r16(H_PORT_ST) & PST_SUSP) && (uint32_t)(millis() - t0) < 50u;) {
+            }
+            for (const uint32_t t0 = millis(); (uint32_t)(millis() - t0) <= RESUME_RECOVERY_MS;) {
+            }
+            lock(&was);
+            if (r16(H_PORT_ST) & PST_CONNECT) {          /* not detached meanwhile */
+                port_up = true;
+                schedule();
+            }
+        }
+        unlock(was);
+        return ok;
     }
 
     static void device_close(uint8_t daddr)
@@ -764,7 +831,7 @@ struct Hcd {
     {
         return {name, PACKET_MAX, open, close, connected, port_reset, port_reset_end, port_disable,
                 ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll,
-                nullptr, nullptr, nullptr, nullptr, nullptr, USBHS2_BUFFER_ALLOC, USBHS2_BUFFER_FREE};
+                nullptr, nullptr, nullptr, nullptr, USBHS2_BUFFER_ALLOC, USBHS2_BUFFER_FREE};
     }
 };
 
@@ -778,13 +845,18 @@ template <uint32_t B, uint8_t U, uint32_t I> volatile uint32_t Hcd<B, U, I>::tic
 template <uint32_t B, uint8_t U, uint32_t I> volatile bool Hcd<B, U, I>::irq_on;
 template <uint32_t B, uint8_t U, uint32_t I> volatile bool Hcd<B, U, I>::port_up;
 template <uint32_t B, uint8_t U, uint32_t I> volatile bool Hcd<B, U, I>::resetting;
+template <uint32_t B, uint8_t U, uint32_t I> void (*volatile Hcd<B, U, I>::suspend_irq)();
 template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hcd<B, U, I>::root_speed;
 
 }  // namespace
 
 const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2 = Hcd<CH32RV_USBHS2_BASE1, 1, CH32RV_USBHS2_IRQN1>::table("USBHS host");
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_power = {
+    &ch32rv_usb_hcd_usbhs2, Hcd<CH32RV_USBHS2_BASE1, 1, CH32RV_USBHS2_IRQN1>::port_suspend};
 #if CH32RV_USBHS2_UNITS == 2
 const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2_b = Hcd<CH32RV_USBHS2_BASE2, 2, CH32RV_USBHS2_IRQN2>::table("USBHS2 host");
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbhs2_b_power = {
+    &ch32rv_usb_hcd_usbhs2_b, Hcd<CH32RV_USBHS2_BASE2, 2, CH32RV_USBHS2_IRQN2>::port_suspend};
 #endif
 
 #endif

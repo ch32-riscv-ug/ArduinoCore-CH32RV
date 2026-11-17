@@ -879,7 +879,10 @@ void link_isr(void)
             phy_low_power(false);
             break;
         case LINK_STATE_U0:
-            suspended = false;                           /* a resume, or a remote wakeup */
+            if (suspended) {
+                ch32rv_usbh_isr_wakeup();                /* a remote wakeup (the stack ignores its own resume) */
+            }
+            suspended = false;
             schedule();
             break;
         default:
@@ -1378,7 +1381,8 @@ const CH32RVUsbHcd ch32rv_usb_hcd_usbss = {
     "USBSS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    hcd_poll, hcd_device_at, hcd_link_allow, hcd_port_suspend, nullptr, nullptr, buffer_alloc, buffer_free,
+    hcd_poll, hcd_device_at, hcd_link_allow, nullptr, nullptr, buffer_alloc, buffer_free,
 };
+extern const CH32RVUsbHcdPower ch32rv_usb_hcd_usbss_power = {&ch32rv_usb_hcd_usbss, hcd_port_suspend};
 
 #endif
