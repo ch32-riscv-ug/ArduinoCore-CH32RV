@@ -218,18 +218,31 @@ def test_cores_ipc(dut, ready, record_property):
         record_property("ipc", json.dumps(dict(mode=mode, results=got)))
         assert got == [0, 0, 0], f"CPU Core = V3F (no other core): send/onReceive/receive gave {got}, want 0 0 0"
         return
-    m = ask(dut, f"ipc {n}", rb"IPC V5F (?:(BUSY)|(\d+) (\d+) (\d+) ([0-9a-f]{8}) (\d+) ([0-9a-f]{8}) (\d+) (\d+) "
-                             rb"([0-9a-f]{8}))", timeout=20)
-    assert not m.group(1), "the V3F was busy: startV3F() refused"
-    asked, ok, us = (int(x) for x in m.groups()[1:4])
-    v3f_cause, v3f_core = int(m.group(5), 16), int(m.group(6))
-    v5f_cause, v5f_core = int(m.group(7), 16), int(m.group(8))
-    runs, polled = int(m.group(9)), int(m.group(10), 16)
+    dut.write(f"ipc {n}\n")
+    regs = []
+    m = None
+    while m is None:
+        line = dut.expect(rb"(IPCREGS(?: [0-9a-f]{8}){5}|IPC V5F (?:(BUSY)|(\d+) (\d+) (\d+) ([0-9a-f]{8}) (\d+) "
+                          rb"([0-9a-f]{8}) (\d+) (\d+) ([0-9a-f]{8}) (\d)))\r?\n", timeout=20)
+        if line.group(1).startswith(b"IPCREGS"):
+            regs.append(dict(zip(("ctlr", "ena", "sts", "isr", "ism"), line.group(1).decode().split()[1:])))
+        else:
+            m = line
+    # CTLR, ENA, STS, ISR and ISM after the one-way message and after the first round trip's send: recorded for the
+    # bench, not judged (the judging is on what the handlers saw).
+    record_property("ipc_registers", json.dumps(regs))
+    assert not m.group(2), "the V3F was busy: startV3F() refused"
+    asked, ok, us = (int(x) for x in m.groups()[2:5])
+    v3f_cause, v3f_core = int(m.group(6), 16), int(m.group(7))
+    v5f_cause, v5f_core = int(m.group(8), 16), int(m.group(9))
+    runs, polled, to_v5f = int(m.group(10)), int(m.group(11), 16), int(m.group(12))
     per = us / ok if ok else None
     record_property("ipc", json.dumps(dict(mode=mode, asked=asked, answered=ok, us=us, us_per_round_trip=per,
                                            v3f_mcause=hex(v3f_cause), v5f_mcause=hex(v5f_cause),
-                                           v3f_runs=runs, polled=hex(polled))))
+                                           v3f_runs=runs, polled=hex(polled), to_v5f=to_v5f)))
     wrong = []
+    if not to_v5f:
+        wrong.append("a message from the V3F did not reach the V5F's handler")
     if ok != asked or runs != asked:
         wrong.append(f"{ok} of {asked} round trips answered, the V3F's handler ran {runs} times")
     # The handlers run in each core's own IPC interrupt: mcause is an interrupt (bit 31) with IPC_CH1's number (17)

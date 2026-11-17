@@ -2,18 +2,21 @@
  * with its two interrupt handlers, only when called.
  *
  * The IPC's channel n has 8 status bits (STS), their interrupt enables (ENA) and a control byte in CTLR: the core
- * its receive interrupt goes to (RX_CID), the receive interrupt's enable (RX_IER) and AUTOEN - a status bit set
- * through IPC_SET sets its ENA bit too. A status bit at 1 with its ENA bit at 1 raises the receive interrupt on
- * RX_CID's core, as the private interrupt IPC_CHn (16 + n; RM 4.7: the low 32 are per core). Here:
+ * its receive interrupt goes to (RX_CID) and the receive interrupt's enable (RX_IER). A status bit at 1 with its
+ * ENA bit at 1 raises the receive interrupt on RX_CID's core, as the private interrupt IPC_CHn (16 + n; RM 4.7: the
+ * low 32 are per core). Here:
  *
  *   channel 0: to the V5F (core 1); status bit 0 = a message in MSG0
  *   channel 1: to the V3F (core 0); status bit 0 = a message in MSG1
  *
  * The sender waits for the bit to be 0 (the last message taken), writes MSG, then sets the bit; the receiver
- * reads MSG and clears the bit. ENA stays set after the first message (clearing STS leaves ENA, RM 4.4.1), and the
- * transmit interrupt (ENA 1 and STS 0) is never enabled. STS and MSG have no reset value (RM 4.4.2): the V5F sets
- * the two channels up and clears their bits once, before the V3F runs anything of the sketch (ch32rv_v3f.c calls
- * ch32rv_ipc_init() when this file is linked) or at its own first call. */
+ * reads MSG and clears the bit. The two ENA bits are set once and stay set: the transmit interrupt (ENA 1 and
+ * STS 0) is never enabled (TX_IER 0), so ENA at 1 only lets STS raise the receive one. AUTOEN (ENA following a
+ * write of STS) is left off: the bench's H417 took no interrupt with it and ENA left to it (2026-11-17, every
+ * message stayed unanswered while polling saw them), and the EVT's IPC example drives ENA itself. STS and MSG have
+ * no reset value (RM 4.4.2): the V5F sets the two channels up and clears their bits once, before the V3F runs
+ * anything of the sketch (ch32rv_v3f.c calls ch32rv_ipc_init() when this file is linked) or at its own first
+ * call. */
 #include "ch32rv_multicore.h"
 
 #if defined(CH32RV_HAS_IPC)
@@ -30,10 +33,9 @@
 #define IPC_CLR   CH32RV_REG32(0xE000D01Cu)
 #define IPC_MSG(n) CH32RV_REG32(0xE000D020u + 4u * (n))
 
-/* CTLR's byte for a channel: RX_CID bit 2, RX_IER bit 5, AUTOEN bit 6 (TX_CID, TX_IER and LOCK left 0). */
+/* CTLR's byte for a channel: RX_CID bit 2, RX_IER bit 5 (TX_CID, TX_IER, AUTOEN and LOCK left 0). */
 #define IPC_RX_CID   (1u << 2)
 #define IPC_RX_IER   (1u << 5)
-#define IPC_AUTOEN   (1u << 6)
 #define IPC_TO_V5F   0u     /* channel */
 #define IPC_TO_V3F   1u
 #define IPC_BIT(ch)  (1u << (8u * (ch)))      /* its status bit 0 */
@@ -47,10 +49,10 @@ void ch32rv_ipc_init(void)
         return;
     }
     const uint32_t lock = ch32rv_cores_lock();
-    IPC_CTLR = (IPC_CTLR & 0xFFFF0000u) | (IPC_RX_CID | IPC_RX_IER | IPC_AUTOEN) << (8u * IPC_TO_V5F) |
-               (IPC_RX_IER | IPC_AUTOEN) << (8u * IPC_TO_V3F);
+    IPC_CTLR = (IPC_CTLR & 0xFFFF0000u) | (IPC_RX_CID | IPC_RX_IER) << (8u * IPC_TO_V5F) |
+               IPC_RX_IER << (8u * IPC_TO_V3F);
     IPC_CLR = IPC_BIT(IPC_TO_V5F) | IPC_BIT(IPC_TO_V3F);
-    IPC_ENA &= ~(IPC_BIT(IPC_TO_V5F) | IPC_BIT(IPC_TO_V3F));
+    IPC_ENA |= IPC_BIT(IPC_TO_V5F) | IPC_BIT(IPC_TO_V3F);
     ready = 1;
     ch32rv_cores_unlock(lock);
 }

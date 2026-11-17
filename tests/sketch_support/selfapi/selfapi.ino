@@ -383,14 +383,27 @@ static void ipc_v3f(void *)
 {
     CH32RV.ipcOnReceive(ipc_on_v3f);
     cores_done = 1;
+    v3f_await(5);
+    cores_result[1] = CH32RV.ipcSend(0x11110000u, 100);   /* one way, to the V5F's handler */
+    cores_done = 5;
     v3f_await(2);                                     /* the round trips run in the handler meanwhile */
     CH32RV.ipcOnReceive(nullptr);
     cores_result[0] = CH32RV.ipcSend(0x5A5A1234u, 100);   /* to the V5F, which polls */
     cores_done = 2;
 }
 
-/* IPC V5F <round trips asked> <answered> <microseconds for them> <V3F's mcause> <V3F's core> <V5F's mcause>
- *          <V5F's core> <V3F handler runs> <the polled message, hex> */
+/* IPCREGS <CTLR> <ENA> <STS> <ISR> <ISM>, hex, read on the V5F (the ISM is the reading core's view)
+ * IPC V5F <round trips asked> <answered> <microseconds for them> <V3F's mcause> <V3F's core> <V5F's mcause>
+ *          <V5F's core> <V3F handler runs> <the polled message, hex> <V3F -> V5F one way: 1 reached its handler>
+ * The registers are printed twice: after the one-way message and right after the first round trip's send,
+ * before its answer - what the bench needs to see when an interrupt does not come. */
+static void ipc_regs()
+{
+    SerialDMSeq.printf("IPCREGS %08lx %08lx %08lx %08lx %08lx\r\n", (unsigned long)CH32RV_REG32(0xE000D000u),
+                       (unsigned long)CH32RV_REG32(0xE000D010u), (unsigned long)CH32RV_REG32(0xE000D014u),
+                       (unsigned long)CH32RV_REG32(0xE000D004u), (unsigned long)CH32RV_REG32(0xE000D008u));
+}
+
 static void ipc_check(uint32_t n)
 {
     ipc_v5f_last = ipc_v5f_cause = ipc_v5f_core = ipc_v3f_cause = ipc_v3f_core = ipc_v3f_count = 0;
@@ -403,19 +416,29 @@ static void ipc_check(uint32_t n)
     }
     cores_wait(&cores_done, 1, 1000);
     CH32RV.ipcOnReceive(ipc_on_v5f);
+    cores_step = 5;
+    const bool to_v5f = cores_wait(&ipc_v5f_last, 0x11110000u, 200);
+    cores_wait(&cores_done, 5, 1000);
+    ipc_regs();
     uint32_t ok = 0;
+    uint32_t took_first = 0;
     const uint32_t t0 = micros();
     for (uint32_t i = 1; i <= n; i++) {
         const uint32_t m = i * 2u;
         if (!CH32RV.ipcSend(m, 100)) {
             break;
         }
+        if (i == 1u) {
+            const uint32_t r0 = micros();
+            ipc_regs();     /* before its answer can matter; its time is taken out of the total */
+            took_first = micros() - r0;
+        }
         if (!cores_wait(&ipc_v5f_last, m + 1u, 100)) {
             break;
         }
         ok++;
     }
-    const uint32_t took = micros() - t0;
+    const uint32_t took = micros() - t0 - took_first;
     CH32RV.ipcOnReceive(nullptr);
     cores_step = 2;
     cores_wait(&cores_done, 2, 1000);
@@ -425,10 +448,10 @@ static void ipc_check(uint32_t n)
         delayMicroseconds(2);
     }
     cores_finish(1000);
-    SerialDMSeq.printf("IPC V5F %lu %lu %lu %08lx %lu %08lx %lu %lu %08lx\r\n", (unsigned long)n,
+    SerialDMSeq.printf("IPC V5F %lu %lu %lu %08lx %lu %08lx %lu %lu %08lx %d\r\n", (unsigned long)n,
                        (unsigned long)ok, (unsigned long)took, (unsigned long)ipc_v3f_cause,
                        (unsigned long)ipc_v3f_core, (unsigned long)ipc_v5f_cause, (unsigned long)ipc_v5f_core,
-                       (unsigned long)ipc_v3f_count, (unsigned long)polled);
+                       (unsigned long)ipc_v3f_count, (unsigned long)polled, to_v5f ? 1 : 0);
 }
 
 /* ---- a USART on the V3F: begun there, its interrupts taken there ---- */
