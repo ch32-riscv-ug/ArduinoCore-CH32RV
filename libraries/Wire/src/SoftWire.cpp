@@ -186,6 +186,18 @@ void SoftWire::start_condition(void)
     half();
     scl_high();
     half();
+    /* SDA low with SCL high: a target cut off in the middle of a byte it
+     * sends is holding it. Clock it out - up to 9 pulses, a byte and its
+     * ACK, until it lets go (it sees no ACK) - as the I2C specification's
+     * bus clear does; Wire's controller does the same after a failed
+     * transfer. Without it the address went out as the clocks of that byte
+     * and the target answered whatever came next. */
+    for (uint8_t n = 0; n < 9 && !line_high(_sda); n++) {
+        hold(_scl);
+        half();
+        scl_high();
+        half();
+    }
     hold(_sda);
     half();
     hold(_scl);
@@ -265,10 +277,23 @@ uint8_t SoftWire::read_byte(bool ack)
 
 
 
+/* The address after a START, false when it went unacknowledged. A 10-bit
+ * one is Wire10Bit.cpp's, there when the sketch named WIRE_10BIT. */
+bool SoftWire::send_address(uint16_t address, bool read)
+{
+    if ((address & CH32RV_WIRE_10BIT_BIT) && softwire_send10) {
+        return softwire_send10(*this, address, read);
+    }
+    return write_byte((uint8_t)(((address & 0x7Fu) << 1) | (read ? 1u : 0u)));
+}
+
 uint8_t SoftWire::transmit(bool stopBit)
 {
+    if (_slave) {
+        return 4;                      /* a target: one role at a time */
+    }
     start_condition();
-    if (!write_byte((uint8_t)(_address << 1))) {
+    if (!send_address(_address, false)) {
         stop_condition();
         return _timeout_flag ? 5 : 2;  /* 2 = nothing at that address */
     }
@@ -284,10 +309,13 @@ uint8_t SoftWire::transmit(bool stopBit)
     return 0;
 }
 
-size_t SoftWire::receive(uint8_t address, size_t len, bool stopBit)
+size_t SoftWire::receive(uint16_t address, size_t len, bool stopBit)
 {
+    if (_slave) {
+        return 0;
+    }
     start_condition();
-    if (!write_byte((uint8_t)((address << 1) | 1u))) {
+    if (!send_address(address, true)) {
         stop_condition();
         return 0;
     }

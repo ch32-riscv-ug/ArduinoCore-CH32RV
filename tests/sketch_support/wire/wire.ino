@@ -4,6 +4,9 @@
  * Console on SerialDMSeq:
  *
  *   ready <nonce>         READY <nonce> <build id> <sda pin> <scl pin> (Wire's)
+ *   end                   end() the bus that is the target (its lines let go): END
+ *   controller            Wire anew as a controller only (a test before may have
+ *                         left it a target): CONTROLLER
  *   soft <sda> <scl>      run the sequences on a SoftWire on these pins instead
  *                         of Wire: SOFT <1 opened / 0 refused>
  *   seq <addr> <n> <stop> write 0x10 with endTransmission(false), then
@@ -22,7 +25,28 @@
  *                         SDA and SCL share an EXTI line)
  *   sreply <hex or ->     what onRequest() write()s from now on (- : nothing)
  *   sgot                  SGOT <onReceive calls> <onRequest calls> <the order, R / Q per
- *                         call, last 8> <the last onReceive's count> <its bytes, hex or -> */
+ *                         call, last 8> <the last onReceive's count> <its bytes, hex or ->
+ *
+ * Single transfers and the bus's settings, for the faults and the extensions
+ * (an address is 7-bit, or 10-bit with ten 1: WIRE_10BIT):
+ *
+ *   w <addr> <ten> <hex or -> <stop>
+ *                         beginTransmission, write the bytes, endTransmission(stop):
+ *                         W <result> <the timeout flag, cleared after>
+ *   r <addr> <ten> <n> <stop>
+ *                         requestFrom(addr, n, stop): R <got> <hex bytes or ->
+ *   timeout <us>          setWireTimeout(us): TIMEOUT <us>
+ *   pec <0/1>             setPEC(): PEC <0/1>
+ *   slave <addr> [ten]    as above, a 10-bit address with ten 1
+ *   gc <0/1>              the target's setGeneralCall(): GC <0/1>
+ *   strand <addr> <bits>  close the bus and, on its pins, bit-bang START, a read of
+ *                         addr, its ACK and <bits> clocks of the byte the target
+ *                         sends, leaving SCL high in the last bit - a target cut off
+ *                         mid-byte, holding SDA low if that bit is 0 - then reopen the
+ *                         bus (no transfer): STRAND <ack 1/0> <SDA level 1/0>
+ *   contend <ms> <addr>   for <ms>, back-to-back 1-byte writes to addr (the bus a
+ *                         target as well, answering the probe in between):
+ *                         CONTEND <results 0> <2> <3> <4> <5> <other> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -38,6 +62,8 @@
  * menu sets its I2C to Software), or the SoftWire `soft` names. */
 static TwoWire *bus = &Wire;
 static SoftWire soft(CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN);
+/* The pins of the bus the sequences run on (strand). */
+static int busSda = PIN_WIRE_SDA, busScl = PIN_WIRE_SCL;
 /* The target the callbacks read from and write to. */
 static TwoWire *target = &Wire;
 
@@ -116,7 +142,85 @@ static void sequence(uint8_t address, size_t n, bool stop)
     SerialDMSeq.println(last);
 }
 
-static char line[48];
+static uint16_t addressOf(unsigned long address, unsigned long ten)
+{
+    return ten ? (uint16_t)(address | WIRE_10BIT) : (uint16_t)address;
+}
+
+static void printHex(const uint8_t *data, size_t n)
+{
+    if (!n) {
+        SerialDMSeq.print('-');
+    }
+    for (size_t i = 0; i < n; i++) {
+        SerialDMSeq.print((char)"0123456789abcdef"[data[i] >> 4]);
+        SerialDMSeq.print((char)"0123456789abcdef"[data[i] & 15]);
+    }
+}
+
+static size_t parseHex(const char *p, uint8_t *out, size_t room)
+{
+    size_t n = 0;
+    while (p[0] && p[1] && p[0] != '-' && p[0] != ' ' && n < room) {
+        const char pair[3] = {p[0], p[1], 0};
+        out[n++] = (uint8_t)strtoul(pair, nullptr, 16);
+        p += 2;
+    }
+    return n;
+}
+
+/* A target cut off in the middle of the byte it sends: START, the address
+ * with R, its ACK, `bits` clocks of the data, SCL left high. At about 10 kHz,
+ * the pins open-drain outputs (the bus closed meanwhile). */
+static void strand(uint8_t address, uint8_t bits)
+{
+    bus->end();
+    const int sda = busSda, scl = busScl;
+    pinMode(sda, OUTPUT_OPENDRAIN);
+    pinMode(scl, OUTPUT_OPENDRAIN);
+    digitalWrite(sda, HIGH);
+    digitalWrite(scl, HIGH);
+    delayMicroseconds(100);
+    digitalWrite(sda, LOW);                       /* START */
+    delayMicroseconds(50);
+    digitalWrite(scl, LOW);
+    const uint8_t byte = (uint8_t)((address << 1) | 1u);
+    for (int8_t b = 7; b >= 0; b--) {
+        digitalWrite(sda, (byte >> b) & 1u ? HIGH : LOW);
+        delayMicroseconds(50);
+        digitalWrite(scl, HIGH);
+        delayMicroseconds(50);
+        digitalWrite(scl, LOW);
+    }
+    digitalWrite(sda, HIGH);                      /* the target's ACK */
+    delayMicroseconds(50);
+    digitalWrite(scl, HIGH);
+    delayMicroseconds(25);
+    const bool ack = digitalRead(sda) == LOW;
+    delayMicroseconds(25);
+    digitalWrite(scl, LOW);
+    for (uint8_t k = 0; k < bits; k++) {
+        delayMicroseconds(50);
+        digitalWrite(scl, HIGH);
+        delayMicroseconds(50);
+        digitalWrite(scl, LOW);
+    }
+    delayMicroseconds(50);
+    digitalWrite(scl, HIGH);                      /* the next bit's rise: left there */
+    delayMicroseconds(50);
+    const bool level = digitalRead(sda) == HIGH;
+    if (bus == &soft) {
+        soft.begin(busSda, busScl, 0);
+    } else {
+        Wire.begin();
+    }
+    SerialDMSeq.print("STRAND ");
+    SerialDMSeq.print(ack ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(level ? 1 : 0);
+}
+
+static char line[96];
 static uint8_t used;
 
 void setup()
@@ -149,6 +253,13 @@ void loop()
             SerialDMSeq.print(PIN_WIRE_SDA);
             SerialDMSeq.print(' ');
             SerialDMSeq.println(PIN_WIRE_SCL);
+        } else if (strcmp(line, "end") == 0) {
+            target->end();
+            SerialDMSeq.println("END");
+        } else if (strcmp(line, "controller") == 0) {
+            Wire.end();
+            Wire.begin();
+            SerialDMSeq.println("CONTROLLER");
         } else if (strncmp(line, "soft ", 5) == 0) {
             char *p = line + 5;
             const long sda = strtol(p, &p, 10);
@@ -156,6 +267,8 @@ void loop()
             const bool ok = soft.begin((int)sda, (int)scl, 100000);
             if (ok) {
                 bus = &soft;
+                busSda = (int)sda;
+                busScl = (int)scl;
             }
             SerialDMSeq.print("SOFT ");
             SerialDMSeq.println(ok ? 1 : 0);
@@ -171,7 +284,9 @@ void loop()
             SerialDMSeq.print("CLOCK ");
             SerialDMSeq.println(hz);
         } else if (strncmp(line, "slave ", 6) == 0) {
-            const unsigned long address = strtoul(line + 6, nullptr, 0);
+            char *p = line + 6;
+            const unsigned long address7 = strtoul(p, &p, 0);
+            const uint16_t address = addressOf(address7, strtoul(p, &p, 10));
             receives = requests = 0;
             lastCount = 0;
             orderUsed = 0;
@@ -182,9 +297,9 @@ void loop()
             target->onRequest(onRequested);
             bool ok = true;
             if (bus == &soft) {
-                ok = soft.begin((uint8_t)address, -1, -1, 0);   /* on the pins `soft` named */
+                ok = soft.begin(address, -1, -1, 0);   /* on the pins `soft` named */
             } else {
-                Wire.begin((uint8_t)address);
+                Wire.begin(address);
             }
             SerialDMSeq.print("SLAVE ");
             SerialDMSeq.println(ok ? 1 : 0);
@@ -215,6 +330,87 @@ void loop()
                 SerialDMSeq.print((char)"0123456789abcdef"[lastBytes[i] & 15]);
             }
             SerialDMSeq.println(shown ? "" : "-");
+        } else if (strncmp(line, "w ", 2) == 0) {
+            char *p = line + 2;
+            const unsigned long address = strtoul(p, &p, 0);
+            const uint16_t a = addressOf(address, strtoul(p, &p, 10));
+            while (*p == ' ') {
+                p++;
+            }
+            uint8_t data[40];
+            const size_t n = parseHex(p, data, sizeof data);
+            while (*p && *p != ' ') {
+                p++;
+            }
+            const unsigned long stop = strtoul(p, &p, 10);
+            bus->beginTransmission(a);
+            bus->write(data, n);
+            const uint8_t rc = bus->endTransmission(stop != 0);
+            SerialDMSeq.print("W ");
+            SerialDMSeq.print(rc);
+            SerialDMSeq.print(' ');
+            SerialDMSeq.println(bus->getWireTimeoutFlag() ? 1 : 0);
+            bus->clearWireTimeoutFlag();
+        } else if (strncmp(line, "r ", 2) == 0) {
+            char *p = line + 2;
+            const unsigned long address = strtoul(p, &p, 0);
+            const uint16_t a = addressOf(address, strtoul(p, &p, 10));
+            const unsigned long n = strtoul(p, &p, 10);
+            const unsigned long stop = strtoul(p, &p, 10);
+            const size_t got = bus->requestFrom(a, (size_t)n, stop != 0);
+            uint8_t data[CH32RV_WIRE_BUFFER_SIZE];
+            size_t kept = 0;
+            while (bus->available() && kept < sizeof data) {
+                data[kept++] = (uint8_t)bus->read();
+            }
+            SerialDMSeq.print("R ");
+            SerialDMSeq.print((unsigned)got);
+            SerialDMSeq.print(' ');
+            printHex(data, kept);
+            SerialDMSeq.println();
+        } else if (strncmp(line, "timeout ", 8) == 0) {
+            const unsigned long us = strtoul(line + 8, nullptr, 10);
+            bus->setWireTimeout(us);
+            SerialDMSeq.print("TIMEOUT ");
+            SerialDMSeq.println(us);
+        } else if (strncmp(line, "pec ", 4) == 0) {
+            const bool on = strtoul(line + 4, nullptr, 10) != 0;
+            bus->setPEC(on);
+            SerialDMSeq.print("PEC ");
+            SerialDMSeq.println(bus->getPEC() ? 1 : 0);
+        } else if (strncmp(line, "gc ", 3) == 0) {
+            const bool on = strtoul(line + 3, nullptr, 10) != 0;
+            if (bus == &soft) {
+                soft.setGeneralCall(on);
+            } else {
+                Wire.setGeneralCall(on);
+            }
+            SerialDMSeq.print("GC ");
+            SerialDMSeq.println(on ? 1 : 0);
+        } else if (strncmp(line, "strand ", 7) == 0) {
+            char *p = line + 7;
+            const unsigned long address = strtoul(p, &p, 0);
+            const unsigned long bits = strtoul(p, &p, 10);
+            strand((uint8_t)address, (uint8_t)bits);
+        } else if (strncmp(line, "contend ", 8) == 0) {
+            char *p = line + 8;
+            const unsigned long ms = strtoul(p, &p, 10);
+            const uint16_t a = (uint16_t)strtoul(p, &p, 0);
+            uint32_t counts[6] = {0, 0, 0, 0, 0, 0};   /* 0, 2, 3, 4, 5, other */
+            const uint32_t t0 = millis();
+            uint8_t i = 0;
+            while (millis() - t0 < ms) {
+                bus->beginTransmission(a);
+                bus->write(i++);
+                const uint8_t rc = bus->endTransmission(true);
+                counts[rc == 0 ? 0 : rc >= 2 && rc <= 5 ? rc - 1 : 5]++;
+            }
+            SerialDMSeq.print("CONTEND");
+            for (uint8_t k = 0; k < 6; k++) {
+                SerialDMSeq.print(' ');
+                SerialDMSeq.print((unsigned long)counts[k]);
+            }
+            SerialDMSeq.println();
         } else if (strncmp(line, "seq ", 4) == 0) {
             char *p = line + 4;
             const unsigned long address = strtoul(p, &p, 0);

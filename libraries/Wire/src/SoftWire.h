@@ -21,7 +21,8 @@
  * HIGH is a genuine release to the pull-ups rather than a switch to INPUT.
  * **The bus still needs pull-ups**; nothing here can substitute for them.
  *
- * A target too: bus.begin(0x42) answers at 0x42 with Wire's contract
+ * A target too: bus.begin(0x42) answers at 0x42 (or a 10-bit address with
+ * WIRE_10BIT, and the general call with setGeneralCall(true)) with Wire's contract
  * (onReceive() after the STOP or a repeated START, onRequest() at the address,
  * 0xFF past the reply, the head of a long write). A START (SDA falling,
  * attachInterrupt) starts one interrupt that follows the controller's clock by
@@ -33,7 +34,9 @@
  * at 48 MHz and a CH32V003 at 24 MHz keep up with a 100 kHz controller. The
  * CPU stays in that interrupt while the bus is busy, other targets' transfers
  * included (README). SDA's EXTI line is the target's while it runs; SCL takes
- * no interrupt.
+ * no interrupt. A SoftWire is a controller or a target, one at a time: a
+ * transfer started while it is a target returns 4 / 0 (its own START would
+ * be followed by its own interrupt).
  */
 #pragma once
 
@@ -44,6 +47,12 @@
 
 namespace arduino {
 
+class SoftWire;
+/* Wire10Bit.cpp: a 10-bit address after the START (weak: see WIRE_10BIT). */
+bool softwire_send10(SoftWire &bus, uint16_t address, bool read) __attribute__((weak));
+/* SoftWireTargetExt.cpp: the extended target's transfer (weak: see above). */
+uint8_t softwire_follow_ext(SoftWire &bus) __attribute__((weak));
+
 class SoftWire : public ::TwoWire {
 public:
     SoftWire(uint8_t sda, uint8_t scl) : _sda(sda), _scl(scl) {}
@@ -51,13 +60,13 @@ public:
     using ::TwoWire::begin;
 
     void begin() override;
-    /* Target at `address` (7 bits) on the bus's pins - a plain member in a
-     * file of its own (SoftWireTarget.cpp), as Wire's, so only a sketch that
-     * calls it links the target and attachInterrupt(). */
-    void begin(uint8_t address);
+    /* Target at `address` (7 bits, or 10 with WIRE_10BIT) on the bus's pins -
+     * a plain member in a file of its own (SoftWireTarget.cpp), as Wire's, so
+     * only a sketch that calls it links the target and attachInterrupt(). */
+    void begin(uint16_t address);
     /* Target at `address` on these pins (SDA, SCL); false when they cannot
      * carry it. */
-    bool begin(uint8_t address, int sda, int scl, uint32_t frequency)
+    bool begin(uint16_t address, int sda, int scl, uint32_t frequency)
     {
         if (!prepare(sda, scl, frequency)) {
             return false;
@@ -91,6 +100,10 @@ public:
      * a read's address, where what it write()s is what the controller reads. */
     void onReceive(void (*callback)(int)) override { _on_receive = callback; }
     void onRequest(void (*callback)(void)) override { _on_request = callback; }
+    /* Answer a general call (address 0) as a target too, as Wire's
+     * (SoftWireTargetExt.cpp). */
+    void setGeneralCall(bool enable);
+    bool getGeneralCall(void) const { return _general_call; }
 
     /* The target's START interrupt (SoftWireTarget.cpp). Public for the
      * reason Wire's ev_irq() is; not part of the sketch-facing API. */
@@ -98,9 +111,10 @@ public:
 
 protected:
     uint8_t transmit(bool stop) override;
-    size_t receive(uint8_t address, size_t len, bool stop) override;
+    size_t receive(uint16_t address, size_t len, bool stop) override;
 
 private:
+    friend bool softwire_send10(SoftWire &bus, uint16_t address, bool read);
     void hold(uint8_t pin);            /* drive low                     */
     void release(uint8_t pin);         /* let the pull-up take it high  */
     bool scl_high(void);               /* release SCL, honour stretching */
@@ -109,6 +123,7 @@ private:
     void start_condition(void);
     void stop_condition(void);
     bool write_byte(uint8_t b);        /* true when the target ACKed    */
+    bool send_address(uint16_t address, bool read);   /* after the START */
     uint8_t read_byte(bool ack);
 
     uint8_t _sda;
@@ -127,7 +142,7 @@ private:
     /* The target (SoftWireTarget.cpp). */
     void (*_on_receive)(int) = nullptr;
     void (*_on_request)(void) = nullptr;
-    uint8_t _own = 0;                  /* its address                         */
+    uint8_t _own = 0;                  /* its address (7 bits)                */
     volatile uint8_t _tx_sent = 0;     /* how much of _tx the controller read */
     /* The transfer being followed, inside the START's interrupt: the bit
      * loop (in RAM) and the byte's edges and callbacks (in flash) share it. */
@@ -142,6 +157,23 @@ private:
     void byteEdge(bool sampled);       /* the 8th and 9th clocks' decisions    */
     void lowWork(void);                /* a low phase with a callback          */
     static void targetStop(SoftWire *bus);   /* end()'s half for a target */
+
+    /* The extended target - a 10-bit address, the general call - in
+     * SoftWireTargetExt.cpp: a bit loop of its own, chosen at begin(address),
+     * so a plain 7-bit target runs the loop it always had (a V003 at 24 MHz
+     * missed ACKs at 100 kHz with both in one, 2026-11-17). Linked only by a
+     * sketch naming WIRE_10BIT or calling setGeneralCall(); softwire_ext is
+     * the weak way in. */
+    friend uint8_t softwire_follow_ext(SoftWire &bus);
+    uint8_t followExt(void);
+    void byteEdgeExt(bool sampled);
+    uint8_t acceptWrite(void);         /* a write to it: ACK, onReceive() owed */
+    uint16_t _own10 = 0;               /* its 10-bit address                  */
+    bool _general_call = false;        /* address 0 answered too              */
+    bool _t_ext = false;               /* the extended loop follows           */
+    bool _t_ten = false;               /* its address is 10-bit               */
+    bool _t_10 = false;                /* its 10-bit address matched since the START */
+    uint8_t _t_aw = 0;                 /* its address byte with W             */
 };
 
 }  // namespace arduino

@@ -112,6 +112,8 @@ def open_bus(dut, oep_host, case, record_property):
             f"SoftWire refused SDA {sda} / SCL {scl}"
         record_property("bus", "SoftWire")
     else:
+        # Wire anew as a controller: a test before may have left it a target (wire.slave)
+        ask(dut, "controller", rb"CONTROLLER")
         sda, scl = wire_sda, wire_scl
         missing = [p for p in (sda, scl) if p not in lines]
         if missing:
@@ -297,12 +299,15 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     ctrl = I2cController(host)
     core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
     record_property("probe_pullups", ctrl.internal_pullups)
+    # Configured first: until then the probe's pads are idle (no pull-ups) and the lines float, and a SoftWire
+    # target begun on floating lines takes their noise for STARTs (V006 starved, X035 missed the first write,
+    # 2026-11-17).
+    clock = ctrl.configure(SOFT_SLAVE_HZ if soft else 100_000, 25_000)
     m = ask(dut, f"slave {SLAVE_ADDRESS}", rb"SLAVE (\d)")
     if m.group(1) != b"1":
         if soft and int(sda[2:]) == int(scl[2:]):
             pytest.skip(f"n/a: SoftWire's target wants SDA and SCL on different EXTI lines, {sda} / {scl} share one")
         pytest.fail(f"begin({SLAVE_ADDRESS}) refused on {sda} / {scl}")
-    clock = ctrl.configure(SOFT_SLAVE_HZ if soft else 100_000, 25_000)
     wrong = []
 
     def got(wait):
@@ -366,6 +371,650 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     try:
         ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
     finally:
+        end_target(dut)
         core.plan_release(host, [ctrl.fn])
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
+
+
+# ---- the faults and the extensions (2026-11-17) ---------------------------------------------------------------------
+# Each test is one capture of SDA and SCL, a WireSkein section per condition (tests/README.ja.md 取り込みの速さ: 100 MS/s;
+# WireSkein 0.0.28 reads I2C as a spec input). The DUT is the controller at PROTOCOL_HZ against the probe's i2c-target
+# (or its gpio, for a line held low), or the target of the probe's i2c-controller at 100 kHz, as above.
+# SoftWire's 10-bit / general-call target runs its own bit loop from flash (SoftWireTargetExt.cpp; a plain 7-bit
+# target keeps the RAM loop): the probe's controller is slowed for it (X035 with flash wait states, 2026-11-17).
+SOFT_EXT_HZ = 50_000
+TEN_BIT = 0x2A5           # a 10-bit address: header 11110 10 -> the 7-bit 0x7A on the wire, then the low byte 0xA5
+TEN_HEADER = 0x78 | (TEN_BIT >> 8)
+ABSENT = 0x13             # nobody answers it
+
+
+def say(ws_run, dut, wait, command, pattern, timeout=3.0):
+    """Send the DUT a console command, logged in the run, and wait for its reply."""
+    ws_run.command(command)
+    dut.write(command + "\n")
+    m = wait_reply(dut, wait, pattern, timeout)
+    ws_run.reply(m.group(0).decode())
+    return m
+
+
+def w(ws_run, dut, wait, address, data=b"", stop=1, ten=0, timeout=3.0):
+    """endTransmission()'s result and the timeout flag."""
+    m = say(ws_run, dut, wait, f"w 0x{address:x} {ten} {data.hex() or '-'} {stop}", rb"W (\d+) (\d)", timeout)
+    return int(m.group(1)), int(m.group(2))
+
+
+def r(ws_run, dut, wait, address, n, stop=1, ten=0):
+    """requestFrom()'s count and the bytes read."""
+    m = say(ws_run, dut, wait, f"r 0x{address:x} {ten} {n} {stop}", rb"R (\d+) (\S+)")
+    return int(m.group(1)), bytes.fromhex(m.group(2).decode()) if m.group(2) != b"-" else b""
+
+
+def pec8(data):
+    """SMBus's CRC-8 (x^8 + x^2 + x + 1), initial 0."""
+    crc = 0
+    for b in data:
+        crc ^= b
+        for _ in range(8):
+            crc = ((crc << 1) ^ 0x07) & 0xFF if crc & 0x80 else (crc << 1) & 0xFF
+    return crc
+
+
+def drain(target):
+    frames = []
+    while True:
+        pending, data = target.read_rx()
+        if data:
+            frames.append(data)
+        if not pending:
+            return frames
+
+
+def test_wire_data_nack(dut, oep_host):
+    """wire.data-nack: endTransmission() 3 when the target NACKs a data byte. Not producible: the probe's i2c-target
+    ACKs every byte of a write (oep-if-fixture §3: past max_length it drops the bytes but still ACKs), and nothing else
+    on the bench answers the DUT."""
+    pytest.skip("the probe's i2c-target ACKs every data byte (oep-if-fixture §3); a data NACK needs an option to NACK "
+                "from a given byte of a write (e.g. a nack_from op, or NACKing past max_length) - asked of [oep] "
+                "2026-11-17, awaiting its decision")
+
+
+def test_wire_timeout(dut, oep_host, ws_run, record_property):
+    """wire.timeout: a target holding SCL low. The probe's gpio holds SCL (open drain, its pull-up on SDA): the write
+    ends in 5 with getWireTimeoutFlag() set, within the bus's timeout; SCL let go, a write to an absent address is 2 -
+    the bus works again with no reset of the DUT. Then, where the probe's i2c-target offers stretch, a stretch of
+    three times the DUT's timeout (setWireTimeout) after a data byte: 5 and the flag; the stretch off, a write
+    goes through within two tries (the automatic bus clear after a failed transfer). WireSkein: after each fault a
+    clean transaction, both lines high at its start and end."""
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+    gpio = Gpio(host)
+    target = I2cTarget(host)
+    wrong, seen = [], {}
+    idle = {sda: 1, scl: 1}
+
+    def steps(wait):
+        with ws_run.section(1, f"{'softwire' if soft else 'wire'} timeout {sda} {scl}"):
+            core.plan_apply(host, [(gpio.fn, 1, lines[ch]["channel"]) for ch in (sda, scl)])
+            try:
+                gpio.configure(lines[sda]["channel"], Gpio.INPUT_PULLUP)
+                gpio.configure(lines[scl]["channel"], Gpio.INPUT_PULLUP)
+                wait(0.02)
+                with ws_run.section(2, "SCL held low by the probe"):
+                    gpio.pull_low(lines[scl]["channel"])
+                    wait(0.01)
+                    t0 = time.monotonic()
+                    seen["held"] = w(ws_run, dut, wait, ADDRESS, b"\x10")
+                    seen["held_s"] = round(time.monotonic() - t0, 3)
+                    gpio.configure(lines[scl]["channel"], Gpio.INPUT_PULLUP)
+                    wait(0.02)
+                with ws_run.section(2, "SCL let go: an absent address",
+                                    expect=[i2c(scl, sda, transactions=[{"addr": ABSENT, "rw": "write", "bytes": [],
+                                                                         "ack": False, "start": "S", "end": "P"}]),
+                                            starts(idle), ends(idle)]):
+                    seen["after"] = w(ws_run, dut, wait, ABSENT, b"\x10")
+                    wait(0.01)
+            finally:
+                core.plan_release(host, [gpio.fn])
+            if seen["held"] != (5, 1):
+                wrong.append(f"SCL held: endTransmission {seen['held'][0]}, timeout flag {seen['held'][1]} (want 5, 1)")
+            if seen["after"][0] != 2:
+                wrong.append(f"SCL let go: endTransmission {seen['after'][0]} to an absent address (want 2)")
+
+            if not target.offers(I2cTarget.STRETCH) or not target.max_stretch_us:
+                seen["stretch"] = "the probe's i2c-target offers no stretch"
+                return
+            # The DUT's timeout: four byte times at PROTOCOL_HZ (a byte waits at most that long between flags), the
+            # stretch three times that - both within what the probe takes.
+            limit_us = 4 * 9 * 1_000_000 // PROTOCOL_HZ
+            if 3 * limit_us > target.max_stretch_us:
+                seen["stretch"] = f"max_stretch_us {target.max_stretch_us} < {3 * limit_us}"
+                return
+            core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+            try:
+                target.configure(ADDRESS)
+                say(ws_run, dut, wait, f"timeout {limit_us}", rb"TIMEOUT \d+")
+                with ws_run.section(2, f"the target stretches {3 * limit_us} us, the DUT waits {limit_us} us"):
+                    target.stretch(3 * limit_us)
+                    seen["stretched"] = w(ws_run, dut, wait, ADDRESS, b"\x10\x11")
+                    target.stretch(0)
+                    wait(0.02)
+                    seen["retries"] = [w(ws_run, dut, wait, ADDRESS, b"\x20")]
+                    if seen["retries"][0][0] != 0:
+                        seen["retries"].append(w(ws_run, dut, wait, ADDRESS, b"\x20"))
+                    drain(target)
+                with ws_run.section(2, "after the stretch",
+                                    expect=[i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": [0x30],
+                                                                         "ack": True, "start": "S", "end": "P"}]),
+                                            starts(idle), ends(idle)]):
+                    seen["clean"] = w(ws_run, dut, wait, ADDRESS, b"\x30")
+                    wait(0.01)
+                    frames = drain(target)
+                say(ws_run, dut, wait, f"timeout {CH32RV_TIMEOUT_US}", rb"TIMEOUT \d+")
+            finally:
+                core.plan_release(host, [target.fn])
+            if seen["stretched"] != (5, 1):
+                wrong.append(f"stretched past the timeout: endTransmission {seen['stretched']} (want 5, 1)")
+            if seen["retries"][-1][0] != 0:
+                wrong.append(f"after the stretch: {seen['retries']} - the bus was not cleared within two writes")
+            if seen["clean"][0] != 0 or frames != [b"\x30"]:
+                wrong.append(f"after the stretch: endTransmission {seen['clean'][0]}, the target got {frames}")
+
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    record_property("results", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
+
+
+CH32RV_TIMEOUT_US = 25_000   # CH32RV_WIRE_TIMEOUT_US, the default the DUT goes back to
+
+
+def test_wire_clock_stretch(dut, oep_host, ws_run, record_property):
+    """wire.clock-stretch: the probe's i2c-target stretches SCL after each byte it takes (and after a read's address)
+    by STRETCH_US - well past a bit time at PROTOCOL_HZ, well inside the DUT's timeout: a 3-byte write is 0 and the
+    target gets the 3 bytes, a 2-byte read gets what was preloaded; WireSkein sees the transactions whole (S ... P, the
+    bytes, the acknowledges) with the stretches in them (its scl_stretch notice). Skips where the probe offers no
+    stretch."""
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    target = I2cTarget(host)
+    if not target.offers(I2cTarget.STRETCH) or not target.max_stretch_us:
+        pytest.skip("the probe's i2c-target offers no stretch (oep-if-fixture §3, optional)")
+    stretch_us = min(STRETCH_US, target.max_stretch_us)
+    core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+    wrong, seen = [], {}
+    try:
+        target.configure(ADDRESS)
+        target.stretch(stretch_us)
+        ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+
+        def steps(wait):
+            idle = {sda: 1, scl: 1}
+            with ws_run.section(1, f"{'softwire' if soft else 'wire'} {sda} {scl}, the target stretches {stretch_us} us"):
+                data = secrets.token_bytes(3)
+                with ws_run.section(2, "write 3", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": list(data), "ack": True,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["write"] = w(ws_run, dut, wait, ADDRESS, data)
+                    wait(0.01)
+                    frames = drain(target)
+                if seen["write"][0] != 0 or frames != [data]:
+                    wrong.append(f"write 3: endTransmission {seen['write']}, the target got {frames}, sent {data.hex()}")
+                reply = secrets.token_bytes(2)
+                target.preload_tx(reply)
+                with ws_run.section(2, "read 2", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "read", "bytes": list(reply), "ack": True,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["read"] = r(ws_run, dut, wait, ADDRESS, 2)
+                    wait(0.01)
+                if seen["read"] != (2, reply):
+                    wrong.append(f"read 2: {seen['read']}, the target sent {reply.hex()}")
+
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("results", json.dumps({k: [v[0], v[1].hex() if isinstance(v[1], bytes) else v[1]]
+                                           for k, v in seen.items()}))
+    assert not wrong, " | ".join(wrong)
+
+
+STRETCH_US = 500          # wire.clock-stretch: 10 bit times at PROTOCOL_HZ, a fiftieth of the DUT's 25 ms timeout
+
+
+def test_wire_bus_recovery(dut, oep_host, ws_run, record_property):
+    """wire.bus-recovery: a target cut off in the middle of the byte it sends keeps SDA low. The DUT bit-bangs on the
+    bus's own pins a read of the probe's i2c-target (0x00 preloaded) and stops after 3 bits of the data with SCL
+    high - the target holding SDA low (STRAND: the address ACKed, SDA read low) - and reopens the bus. The next
+    endTransmission() may fail (the bus is not free), and the one after it must be 0: the driver clears the bus
+    itself (up to 9 clocks while SDA is low, then a STOP) after a failed transfer, with no clearBus() from the sketch.
+    WireSkein: the last write clean (S, the address and its ACK, the byte, P), both lines high at its start and end."""
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    target = I2cTarget(host)
+    core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+    wrong, seen = [], {}
+    try:
+        target.configure(ADDRESS)
+        ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+
+        def steps(wait):
+            idle = {sda: 1, scl: 1}
+            with ws_run.section(1, f"{'softwire' if soft else 'wire'} bus recovery {sda} {scl}"):
+                with ws_run.section(2, "the target left holding SDA, then the writes that clear it"):
+                    target.preload_tx(b"\x00\x00\x00\x00")
+                    m = say(ws_run, dut, wait, f"strand 0x{ADDRESS:x} 3", rb"STRAND (\d) (\d)")
+                    seen["strand"] = (int(m.group(1)), int(m.group(2)))
+                    seen["tries"] = [w(ws_run, dut, wait, ADDRESS, b"\x10")]
+                    if seen["tries"][0][0] != 0:
+                        seen["tries"].append(w(ws_run, dut, wait, ADDRESS, b"\x10"))
+                    wait(0.01)
+                    drain(target)
+                with ws_run.section(2, "after", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": [0x20], "ack": True,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["after"] = w(ws_run, dut, wait, ADDRESS, b"\x20")
+                    wait(0.01)
+                    seen["frames"] = [f.hex() for f in drain(target)]
+
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("results", json.dumps(seen))
+    if seen["strand"] != (1, 0):
+        pytest.fail(f"the stranded read did not leave SDA low (ACK {seen['strand'][0]}, SDA {seen['strand'][1]}): "
+                    "the fault was not produced")
+    if seen["tries"][-1][0] != 0:
+        wrong.append(f"the writes after it: {seen['tries']} - the bus was not cleared within two")
+    if seen["after"][0] != 0 or seen["frames"] != ["20"]:
+        wrong.append(f"after: endTransmission {seen['after'][0]}, the target got {seen['frames']}")
+    assert not wrong, " | ".join(wrong)
+
+
+def end_target(dut):
+    """Close the target before the probe lets its lines go: a SoftWire target left listening on floating lines takes
+    their noise for transfers and can keep the CPU in its interrupt (V006 stopped answering the next test's `soft`,
+    2026-11-17). Best effort: a DUT that does not answer is the test's failure, reported already."""
+    try:
+        ask(dut, "end", rb"END", timeout=3)
+    except pexpect.TIMEOUT:
+        pass
+
+
+def begin_target(dut, ws_run, wait, address, ten=0, soft=False, sda="", scl=""):
+    m = say(ws_run, dut, wait, f"slave {address} {ten}", rb"SLAVE (\d)")
+    if m.group(1) != b"1":
+        if soft and int(sda[2:]) == int(scl[2:]):
+            pytest.skip(f"n/a: SoftWire's target wants SDA and SCL on different EXTI lines, {sda} / {scl} share one")
+        pytest.fail(f"begin({address}) refused on {sda} / {scl}")
+
+
+def sgot(dut, ws_run, wait):
+    m = say(ws_run, dut, wait, "sgot", rb"SGOT (\d+) (\d+) (\S+) (-?\d+) (\S+)")
+    return int(m.group(1)), int(m.group(2)), m.group(3).decode(), int(m.group(4)), m.group(5).decode()
+
+
+def test_wire_10bit(dut, oep_host, ws_run, record_property):
+    """wire.10bit: WIRE_10BIT. As a controller: a write and a read to 0x2A5 put the header 11110 10 + W (0x7A on the
+    wire, WireSkein's 7-bit reading of it) on the bus, nobody acknowledges it (the probe's i2c-target takes no reserved
+    address, oep-if-fixture §3): 2 and 0. As a target at 0x2A5 with the probe's i2c-controller at 100 kHz (its 7-bit
+    address field takes 0x7A, §5): a write of 3 bytes (header W, 0xA5, data) - onReceive(3) with them; a read of 2
+    (header W, 0xA5, repeated START, header R, data) - what onRequest() wrote, and no onReceive for the addressing
+    write; 0x2A6 (same header, another low byte) - the low byte NACKed, no callback; the 7-bit 0x42 - not
+    acknowledged."""
+    from oep_client.fixture import I2cController, I2cSegment
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    low = TEN_BIT & 0xFF
+    wrong, seen = [], {}
+    ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+    ctrl = I2cController(host)
+
+    def steps(wait):
+        idle = {sda: 1, scl: 1}
+        with ws_run.section(1, f"{'softwire' if soft else 'wire'} 10-bit 0x{TEN_BIT:03x} {sda} {scl}"):
+            gpio = Gpio(host)
+            core.plan_apply(host, [(gpio.fn, 1, lines[ch]["channel"]) for ch in (sda, scl)])
+            try:
+                for ch in (sda, scl):
+                    gpio.configure(lines[ch]["channel"], Gpio.INPUT_PULLUP)
+                wait(0.02)
+                header_nack = [i2c(scl, sda, transactions=[{"addr": TEN_HEADER, "rw": "write", "bytes": [], "ack": False,
+                                                            "start": "S", "end": "P"}]), starts(idle), ends(idle)]
+                with ws_run.section(2, "controller: write, nobody there", expect=header_nack):
+                    seen["write"] = w(ws_run, dut, wait, TEN_BIT, b"\x10", ten=1)
+                    wait(0.01)
+                with ws_run.section(2, "controller: read, nobody there", expect=header_nack):
+                    seen["read"] = r(ws_run, dut, wait, TEN_BIT, 1, ten=1)
+                    wait(0.01)
+            finally:
+                core.plan_release(host, [gpio.fn])
+            if seen["write"][0] != 2 or seen["read"][0] != 0:
+                wrong.append(f"controller: endTransmission {seen['write'][0]} (want 2), requestFrom {seen['read'][0]}")
+
+            core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+            try:
+                # the probe's pull-ups on before the target begins (test_wire_slave)
+                seen["clock"] = ctrl.configure(SOFT_EXT_HZ if soft else 100_000, 25_000)
+                begin_target(dut, ws_run, wait, TEN_BIT, 1, soft, sda, scl)
+                data = secrets.token_bytes(3)
+                with ws_run.section(2, "target: write 3", expect=[
+                        i2c(scl, sda, transactions=[{"addr": TEN_HEADER, "rw": "write", "bytes": [low, *data],
+                                                     "ack": True, "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    done = ctrl.write(TEN_HEADER, bytes([low]) + data)
+                    wait(0.02)
+                    got = sgot(dut, ws_run, wait)
+                if not done.ok or got[0] != 1 or (got[3], got[4]) != (3, data.hex()):
+                    wrong.append(f"target write 3: result {done.result}, onReceive {got[0]}, {got[3]} bytes {got[4]}")
+                reply = secrets.token_bytes(2)
+                say(ws_run, dut, wait, f"sreply {reply.hex()}", rb"SREPLY \d+")
+                with ws_run.section(2, "target: read 2", expect=[
+                        i2c(scl, sda, transactions=[
+                            {"addr": TEN_HEADER, "rw": "write", "bytes": [low], "ack": True, "start": "S", "end": "Sr"},
+                            {"addr": TEN_HEADER, "rw": "read", "bytes": list(reply), "ack": True, "start": "Sr",
+                             "end": "P"}]), starts(idle), ends(idle)]):
+                    done = ctrl.transfer([I2cSegment.write(TEN_HEADER, bytes([low])), I2cSegment.reading(TEN_HEADER, 2)])
+                    wait(0.02)
+                    got2 = sgot(dut, ws_run, wait)
+                if not done.ok or done.data != reply or got2[:2] != (1, 1):
+                    wrong.append(f"target read 2: result {done.result}, read {done.data.hex()}, callbacks {got2[:2]} "
+                                 f"(want onReceive 1 - the write before - and onRequest 1)")
+                with ws_run.section(2, "target: another 10-bit address", expect=[
+                        i2c(scl, sda, transactions=[{"addr": TEN_HEADER, "rw": "write", "bytes": [low + 1], "ack": True,
+                                                     "acks": [False], "start": "S", "end": "P"}]),
+                        starts(idle), ends(idle)]):
+                    other = ctrl.write(TEN_HEADER, bytes([low + 1, 0x55]))
+                    wait(0.02)
+                    got3 = sgot(dut, ws_run, wait)
+                if other.result != I2cController.DATA_NACK or other.index != 0 or got3[:2] != got2[:2]:
+                    wrong.append(f"0x{TEN_BIT + 1:03x}: result {other.result} at byte {other.index} (want the low byte "
+                                 f"NACKed), callbacks {got2[:2]} -> {got3[:2]}")
+                with ws_run.section(2, "target: the 7-bit 0x42", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": [], "ack": False,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seven = ctrl.write(ADDRESS, b"\x01")
+                    wait(0.02)
+                    got4 = sgot(dut, ws_run, wait)
+                if seven.result != I2cController.ADDRESS_NACK or got4[:2] != got3[:2]:
+                    wrong.append(f"7-bit 0x42: result {seven.result}, callbacks {got3[:2]} -> {got4[:2]}")
+            finally:
+                end_target(dut)
+                core.plan_release(host, [ctrl.fn])
+
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
+def test_wire_general_call(dut, oep_host, ws_run, record_property):
+    """wire.general-call: as a controller, a write to address 0 goes on the wire (S, 0x00 W, P - nobody answers it on
+    the bench: 2); as a target at 0x42 of the probe's i2c-controller, with setGeneralCall(true) a write of 2 bytes to
+    address 0 is acknowledged and reaches onReceive(2), the target's own address still answered; with it false, address
+    0 is not acknowledged and no callback runs."""
+    from oep_client.fixture import I2cController
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    wrong, seen = [], {}
+    ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+    ctrl = I2cController(host)
+
+    def steps(wait):
+        idle = {sda: 1, scl: 1}
+        with ws_run.section(1, f"{'softwire' if soft else 'wire'} general call {sda} {scl}"):
+            gpio = Gpio(host)
+            core.plan_apply(host, [(gpio.fn, 1, lines[ch]["channel"]) for ch in (sda, scl)])
+            try:
+                for ch in (sda, scl):
+                    gpio.configure(lines[ch]["channel"], Gpio.INPUT_PULLUP)
+                wait(0.02)
+                with ws_run.section(2, "controller: a general call", expect=[
+                        i2c(scl, sda, transactions=[{"addr": 0, "rw": "write", "bytes": [], "ack": False, "start": "S",
+                                                     "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["controller"] = w(ws_run, dut, wait, 0, b"\x06")
+                    wait(0.01)
+            finally:
+                core.plan_release(host, [gpio.fn])
+            if seen["controller"][0] != 2:
+                wrong.append(f"controller: endTransmission {seen['controller'][0]} to address 0 (want 2, nobody there)")
+
+            core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+            try:
+                ctrl.configure(SOFT_EXT_HZ if soft else 100_000, 25_000)   # pull-ups first (test_wire_slave)
+                begin_target(dut, ws_run, wait, ADDRESS, 0, soft, sda, scl)
+                say(ws_run, dut, wait, "gc 1", rb"GC 1")
+                data = secrets.token_bytes(2)
+                with ws_run.section(2, "general call on", expect=[
+                        i2c(scl, sda, transactions=[{"addr": 0, "rw": "write", "bytes": list(data), "ack": True,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    done = ctrl.write(0, data)
+                    wait(0.02)
+                    got = sgot(dut, ws_run, wait)
+                if not done.ok or got[0] != 1 or (got[3], got[4]) != (2, data.hex()):
+                    wrong.append(f"general call on: result {done.result}, onReceive {got[0]}, {got[3]} bytes {got[4]}")
+                own = ctrl.write(ADDRESS, b"\x07")
+                wait(0.02)
+                got2 = sgot(dut, ws_run, wait)
+                if not own.ok or got2[0] != got[0] + 1:
+                    wrong.append(f"its own address with the general call on: result {own.result}, onReceive {got2[0]}")
+                say(ws_run, dut, wait, "gc 0", rb"GC 0")
+                with ws_run.section(2, "general call off", expect=[
+                        i2c(scl, sda, transactions=[{"addr": 0, "rw": "write", "bytes": [], "ack": False, "start": "S",
+                                                     "end": "P"}]), starts(idle), ends(idle)]):
+                    off = ctrl.write(0, data)
+                    wait(0.02)
+                    got3 = sgot(dut, ws_run, wait)
+                if off.result != I2cController.ADDRESS_NACK or got3[:2] != got2[:2]:
+                    wrong.append(f"general call off: result {off.result}, callbacks {got2[:2]} -> {got3[:2]}")
+            finally:
+                end_target(dut)
+                core.plan_release(host, [ctrl.fn])
+
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
+def test_wire_pec(dut, oep_host, ws_run, record_property):
+    """wire.pec: setPEC(true) against the probe's i2c-target at 0x42. A write of 2 bytes goes out with a third, the
+    CRC-8 of [0x84, the 2 bytes] (computed here); SMBus's read word - write 0x10 with endTransmission(false), read 2 -
+    takes the 2 data bytes when the target's third byte is the CRC of [0x84, 0x10, 0x85, the data] (requestFrom 2) and
+    none when it is not (requestFrom 0). WireSkein: the bytes as sent and read, PEC included."""
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    target = I2cTarget(host)
+    core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+    wrong, seen = [], {}
+    wa, ra = ADDRESS << 1, (ADDRESS << 1) | 1
+    try:
+        target.configure(ADDRESS)
+        ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+
+        def steps(wait):
+            idle = {sda: 1, scl: 1}
+            with ws_run.section(1, f"{'softwire' if soft else 'wire'} PEC {sda} {scl}"):
+                say(ws_run, dut, wait, "pec 1", rb"PEC 1")
+                data = secrets.token_bytes(2)
+                crc = pec8([wa, *data])
+                with ws_run.section(2, "write 2 with PEC", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": [*data, crc], "ack": True,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["write"] = w(ws_run, dut, wait, ADDRESS, data)
+                    wait(0.01)
+                    frames = drain(target)
+                if seen["write"][0] != 0 or frames != [data + bytes([crc])]:
+                    wrong.append(f"write: endTransmission {seen['write'][0]}, the target got "
+                                 f"{[f.hex() for f in frames]}, want {(data + bytes([crc])).hex()}")
+                for good in (True, False):
+                    reply = secrets.token_bytes(2)
+                    crc = pec8([wa, 0x10, ra, *reply])
+                    sent = reply + bytes([crc if good else crc ^ 0x5A])
+                    target.preload_tx(sent)
+                    name = "read word, the right PEC" if good else "read word, a wrong PEC"
+                    with ws_run.section(2, name, expect=[
+                            i2c(scl, sda, transactions=[
+                                {"addr": ADDRESS, "rw": "write", "bytes": [0x10], "ack": True, "start": "S", "end": "Sr"},
+                                {"addr": ADDRESS, "rw": "read", "bytes": list(sent), "ack": True, "start": "Sr",
+                                 "end": "P"}]), starts(idle), ends(idle)]):
+                        first = w(ws_run, dut, wait, ADDRESS, b"\x10", stop=0)
+                        got = r(ws_run, dut, wait, ADDRESS, 2)
+                        wait(0.01)
+                        drain(target)
+                    seen[name] = [first[0], got[0], got[1].hex()]
+                    want = (2, reply) if good else (0, b"")
+                    if first[0] != 0 or got != want:
+                        wrong.append(f"{name}: endTransmission {first[0]}, requestFrom {got[0]} {got[1].hex()}, "
+                                     f"want {want[0]} {want[1].hex()}")
+                say(ws_run, dut, wait, "pec 0", rb"PEC 0")
+
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("results", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
+
+
+CONTEND_MS = 1500         # wire.controller-and-target: the DUT's back-to-back writes while the probe writes to it
+
+
+def test_wire_controller_and_target(dut, oep_host, ws_run, record_property):
+    """wire.controller-and-target: Wire begun as a target at 0x42 is a controller too (one instance). In turn: the
+    probe's i2c-controller writes to 0x42 (onReceive with the bytes); the probe's i2c-target at 0x43 takes a write of
+    the DUT (0, the bytes; the DUT still a target); the probe writes to 0x42 again (answered). Then both at once:
+    for CONTEND_MS the DUT writes back to back to an absent address while the probe writes to 0x42 as fast as the
+    host sends. The probe does not wait for the bus to be free (2026-11-17: it starts in the middle of the DUT's
+    transfers), so the collisions are recorded, not judged; judged: the DUT never hangs, its results are mostly 2 (the
+    rest counted), its onReceive ran at least once per probe write that was done, and
+    afterwards the probe's write is answered and the DUT's write to an absent address is a clean 2 (WireSkein).
+    SoftWire: n/a (one role at a time)."""
+    from oep_client.fixture import I2cController
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    if case.get("case") == "softwire":
+        pytest.skip("n/a: a SoftWire is a controller or a target, one at a time (SoftWire.h)")
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    ctrl, target = I2cController(host), I2cTarget(host)
+    wrong, seen = [], {}
+    ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+
+    def probe_writes(wait, idle):
+        core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+        ctrl.configure(100_000, 25_000)
+        data = secrets.token_bytes(2)
+        before = sgot(dut, ws_run, wait)[0]
+        with ws_run.section(2, "the probe writes to the DUT", expect=[
+                i2c(scl, sda, transactions=[{"addr": ADDRESS, "rw": "write", "bytes": list(data), "ack": True,
+                                             "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+            done = ctrl.write(ADDRESS, data)
+            wait(0.02)
+            got = sgot(dut, ws_run, wait)
+        if not done.ok or got[0] != before + 1 or (got[3], got[4]) != (2, data.hex()):
+            wrong.append(f"the probe's write: result {done.result}, onReceive {before} -> {got[0]}, {got[3]} bytes {got[4]}")
+
+    def steps(wait):
+        idle = {sda: 1, scl: 1}
+        with ws_run.section(1, f"wire controller and target {sda} {scl}"):
+            core.plan_apply(host, ctrl.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+            ctrl.configure(100_000, 25_000)   # the probe's pull-ups on before the target begins (test_wire_slave)
+            begin_target(dut, ws_run, wait, ADDRESS)
+            core.plan_release(host, [ctrl.fn])
+            probe_writes(wait, idle)
+            core.plan_release(host, [ctrl.fn])
+
+            core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+            try:
+                target.configure(ADDRESS + 1)
+                data = secrets.token_bytes(2)
+                with ws_run.section(2, "the DUT, a target, writes to the probe", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ADDRESS + 1, "rw": "write", "bytes": list(data),
+                                                     "ack": True, "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["dut write"] = w(ws_run, dut, wait, ADDRESS + 1, data)
+                    wait(0.01)
+                    frames = drain(target)
+                if seen["dut write"][0] != 0 or frames != [data]:
+                    wrong.append(f"the DUT's write: endTransmission {seen['dut write'][0]}, the probe got "
+                                 f"{[f.hex() for f in frames]}")
+            finally:
+                core.plan_release(host, [target.fn])
+
+            try:
+                probe_writes(wait, idle)
+                before = sgot(dut, ws_run, wait)[0]
+                results = {}
+                with ws_run.section(2, f"both controllers for {CONTEND_MS} ms", expect=[ends(idle)]):
+                    ws_run.command(f"contend {CONTEND_MS} 0x{ABSENT:x}")
+                    dut.write(f"contend {CONTEND_MS} 0x{ABSENT:x}\n")
+                    end = time.monotonic() + CONTEND_MS / 1000 * 0.8
+                    while time.monotonic() < end:
+                        done = ctrl.write(ADDRESS, b"\xa5\x5a")
+                        results[done.result] = results.get(done.result, 0) + 1
+                    m = wait_reply(dut, wait, rb"CONTEND (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)", timeout=CONTEND_MS / 1000 + 5)
+                    ws_run.reply(m.group(0).decode())
+                    wait(0.02)
+                after = sgot(dut, ws_run, wait)[0]
+            finally:
+                core.plan_release(host, [ctrl.fn])
+            counts = dict(zip(("0", "2", "3", "4", "5", "other"), (int(x) for x in m.groups())))
+            seen.update(dut=counts, probe={str(k): v for k, v in results.items()}, received=after - before)
+            # The probe's i2c-controller starts a transfer when the host asks, without waiting for the bus to be
+            # free (2026-11-17: most of its writes collided, some cut the DUT's mid-byte), so it is not the
+            # multi-master peer UM10204 describes: what comes out of a collision is recorded, not judged. Judged:
+            # the DUT never hangs, its results are mostly 2, its target
+            # took at least every write the probe finished, and both roles work cleanly once the probe stops.
+            # (a 3 or even a 0 can come out too: the probe's address bits overlapping the DUT's ACK slot read as an
+            # ACK - V205 / X035 once each, 2026-11-17)
+            if counts["other"] or not counts["2"]:
+                wrong.append(f"contention: the DUT's results {counts} (mostly 2, nothing but 0-5)")
+            if after - before < results.get(I2cController.DONE, 0):
+                wrong.append(f"contention: onReceive ran {after - before} times for "
+                             f"{results.get(I2cController.DONE, 0)} writes the probe finished")
+            try:
+                probe_writes(wait, idle)
+            finally:
+                core.plan_release(host, [ctrl.fn])
+            gpio = Gpio(host)
+            core.plan_apply(host, [(gpio.fn, 1, lines[ch]["channel"]) for ch in (sda, scl)])
+            try:
+                for ch in (sda, scl):
+                    gpio.configure(lines[ch]["channel"], Gpio.INPUT_PULLUP)
+                wait(0.02)
+                # the section inside the pull-ups: let go after it, the lines fall (V203, 2026-11-17)
+                with ws_run.section(2, "the DUT after the contention, an absent address", expect=[
+                        i2c(scl, sda, transactions=[{"addr": ABSENT, "rw": "write", "bytes": [], "ack": False,
+                                                     "start": "S", "end": "P"}]), starts(idle), ends(idle)]):
+                    seen["after"] = w(ws_run, dut, wait, ABSENT, b"\x01")
+                    wait(0.01)
+            finally:
+                end_target(dut)
+                core.plan_release(host, [gpio.fn])
+            if seen["after"][0] != 2:
+                wrong.append(f"after the contention: endTransmission {seen['after'][0]} to an absent address (want 2)")
+
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    record_property("results", json.dumps(seen))
+    record_property("collisions", json.dumps({"probe_lost": seen.get("probe", {}).get(str(I2cController.BUS_ERROR), 0),
+                                              "dut_gave_up": seen.get("dut", {}).get("4", 0)}))
+    assert not wrong, " | ".join(wrong)
+
+
+def test_wire_arbitration_lost(dut, oep_host):
+    """wire.arbitration: the DUT losing arbitration on purpose - its START within one SCL bit of another controller's
+    and its address losing a 1 bit to their 0 - retried (Wire.h, CH32RV_WIRE_ARBITRATION_RETRIES) and reported as 4
+    when lost every time. Not producible on purpose: the probe's i2c-controller starts a transfer when the host's
+    request arrives (milliseconds), so it cannot put its START within a bit time of the DUT's;
+    wire.controller-and-target only counts the collisions that happen."""
+    pytest.skip("the probe's i2c-controller cannot time its START against the DUT's: arbitration on purpose needs a "
+                "transfer started by a line event (on SDA falling - the DUT's START - with no delay of the host), or "
+                "an i2c-target / gpio option to pull SDA low at a given bit of the next transfer - asked of [oep] "
+                "2026-11-17, awaiting its decision")

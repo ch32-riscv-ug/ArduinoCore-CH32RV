@@ -84,7 +84,8 @@ Adafruit_Something device(&bus);
   Above the ceiling it runs at the ceiling, never faster than asked.
   `getClock()` returns what was asked.
 - **A target too.** `bus.begin(0x42)` (or `bus.begin(0x42, sda, scl, 0)`)
-  answers at 0x42 with Wire's target contract: `onReceive(count)` after the
+  answers at 0x42 - or a 10-bit address (`0x2A5 | WIRE_10BIT`), and address 0
+  after `setGeneralCall(true)` - with Wire's target contract: `onReceive(count)` after the
   STOP (or at a repeated START, before `onRequest()` in a register read),
   `onRequest()` at a read's address, 0xFF past what it wrote, the head of a
   write longer than the buffer. A START (SDA falling, `attachInterrupt()`)
@@ -108,6 +109,18 @@ Adafruit_Something device(&bus);
   takes no interrupt, so SDA and SCL may share an EXTI line (pin bit); SDA's
   line is the target's (no `attachInterrupt()` of your own on it). Only a
   sketch calling `begin(address)` links the target and the EXTI handlers.
+- **One role at a time.** Unlike `Wire`, a `SoftWire` begun as a target is
+  not a controller as well: `endTransmission()` returns 4 and `requestFrom()`
+  0 until `begin()` makes it a controller again (its own START would be
+  followed by its own interrupt). It has no multi-master arbitration either.
+- 10-bit addresses and SMBus PEC work as on `Wire` (below). A target with a
+  10-bit address or the general call on follows the bus in a loop of its own,
+  run from flash and linked only by a sketch that names `WIRE_10BIT` or calls
+  `setGeneralCall()`; a plain 7-bit target keeps the RAM loop above. From
+  flash it is slower on parts with flash wait states: test it up to 50 kHz.
+- **A target left holding SDA** (cut off mid-byte) is clocked free before
+  each START - up to 9 SCL pulses while SDA reads low - the bus clear `Wire`
+  does after a failed transfer.
 - There is no `setRoute()`: that is the hardware's. `peripheral()` returns 0,
   and `clearBus()` frees the bus the way Wire's does.
 - The buffers are Wire's `CH32RV_WIRE_BUFFER_SIZE` (32 by default).
@@ -137,15 +150,53 @@ compile.
 - **Every wait is bounded.** `CH32RV_WIRE_TIMEOUT_US` (25 ms by default) caps
   each step, so a stuck bus returns an error instead of hanging the sketch.
   `endTransmission()` returns 5 for a timeout, 2 for an address NACK, 3 for a
-  data NACK, 1 for an over-long write, 0 for success.
+  data NACK, 1 for an over-long write, 4 for a bus that is not open or a
+  transfer that lost the bus to another controller every time (below), 0 for
+  success.
 - **The buffer is 32 bytes**, as on AVR. Writing more truncates and reports 1.
   Raise it with `-DCH32RV_WIRE_BUFFER_SIZE=128`; both buffers grow, on every
   instance.
 - **Slave mode is interrupt-driven**, on `Wire` and on `SoftWire` alike.
   `begin(address)` selects slave mode; `onReceive()` and `onRequest()`
-  callbacks run in interrupt context. An instance
-  cannot act as master and slave simultaneously. Multi-master arbitration and
-  general-call responses are unsupported.
+  callbacks run in interrupt context.
+- **`Wire` is a controller and a target at once.** After `Wire.begin(0x42)`,
+  `beginTransmission()` / `endTransmission()` / `requestFrom()` still work: the
+  transfer waits for the bus to be free (a controller talking to this target
+  meanwhile is answered), takes it, and the bus goes back to listening. The
+  bus's timeout bounds the wait. A message being built for `endTransmission()` is safe from
+  `onRequest()` (the target's reply has a buffer of its own); the receive
+  buffer is shared, so read what `requestFrom()` brought before a controller
+  can write to this target - its `onReceive()` message replaces it.
+- **Multi-master.** A controller transfer that loses arbitration - or meets
+  another controller's START or STOP in the middle, or is addressed as a
+  target before its own START got out - lets the bus go, waits for it to be
+  free and starts again, up to `CH32RV_WIRE_ARBITRATION_RETRIES` (3) more
+  times; then `endTransmission()` returns 4 (AVR's "other error") and
+  `requestFrom()` 0. AVR, arduino-esp32 and STM32duino report the first loss
+  as 4 and leave the retry to the sketch. A bus whose BUSY looks stale is reset
+  only after both lines have read high for 100 us, so another controller's
+  transfer is not taken for one.
+- **10-bit addresses**: `Wire.beginTransmission(0x2A5 | WIRE_10BIT)`,
+  `Wire.requestFrom(0x2A5 | WIRE_10BIT, n)`, a target at
+  `Wire.begin(0x2A5 | WIRE_10BIT)`. On the wire: the header 11110 + bits 9:8 +
+  W, the low byte, and for a read a repeated START with the header + R. A
+  target's 10-bit read (the write of the address alone, turned round) does not
+  call `onReceive(0)`. `WIRE_10BIT` is a constant defined beside the
+  controller's 10-bit code, so naming it is what links that code; it is not a
+  compile-time constant (no `constexpr`, no `case` label).
+- **General call**: `Wire.setGeneralCall(true)` makes a target answer address
+  0 as well; its bytes come to `onReceive()` like any write. A controller
+  sends one with `beginTransmission(0)`.
+- **SMBus PEC**: `Wire.setPEC(true)` appends the CRC-8 (x^8 + x^2 + x + 1) of
+  the whole transaction - address bytes included - to a write ended with a
+  STOP, and makes `requestFrom(address, n)` read the device's PEC byte after
+  the n data bytes: on a mismatch it returns 0 and nothing is readable. A write
+  ended with `endTransmission(false)` carries its share of the CRC into the
+  read that follows (SMBus read byte / word). Computed in software, the same on
+  `Wire` and `SoftWire`; only a sketch calling `setPEC()` links it.
+  `TwoWire::pec(crc, data, len)` is the CRC for a target's own replies.
+- **No DMA yet.** Transfers are at most the 32-byte buffer and are polled (the
+  controller) or interrupt-driven (the target).
 - **Slave mode is begun on the bus object** (`Wire.begin(0x42)`), not through
   a `TwoWire *`: `begin(address)` belongs to `Wire`'s and `SoftWire`'s classes,
   not to `TwoWire`, so a sketch that never calls it links none of the slave's
@@ -160,7 +211,7 @@ compile.
   `setWireTimeout(0)` turns it off; `getWireTimeoutFlag()` is sticky until
   `clearWireTimeoutFlag()`. The peripheral is reset after a timeout either way,
   so `reset_with_timeout` is accepted and does not change anything.
-- **A slave holding SDA low** (cut off mid-byte by a reset or a lost clock)
+- **A target holding SDA low** (cut off mid-byte by a reset or a lost clock)
   hangs every transfer, and resetting this peripheral cannot help: the line is
   not ours. `Wire.clearBus()` clocks SCL until the slave lets go (up to 9
   pulses), puts a STOP on the bus, and returns `true` when both lines read high.

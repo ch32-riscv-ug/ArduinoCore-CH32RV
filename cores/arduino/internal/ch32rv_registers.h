@@ -147,6 +147,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_I2C_RTR(b)    CH32RV_REG16((b) + 0x20u)
 
 #define CH32RV_I2C_CTLR1_PE      (1u << 0)   /* peripheral enable             */
+#define CH32RV_I2C_CTLR1_ENGC    (1u << 6)   /* answer the general call (0)   */
 #define CH32RV_I2C_CTLR1_START   (1u << 8)
 #define CH32RV_I2C_CTLR1_STOP    (1u << 9)
 #define CH32RV_I2C_CTLR1_ACK     (1u << 10)
@@ -161,6 +162,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_I2C_STAR1_SB      (1u << 0)   /* start condition generated     */
 #define CH32RV_I2C_STAR1_ADDR    (1u << 1)   /* address sent / matched        */
 #define CH32RV_I2C_STAR1_BTF     (1u << 2)   /* byte transfer finished        */
+#define CH32RV_I2C_STAR1_ADD10   (1u << 3)   /* 10-bit header sent (master)   */
 #define CH32RV_I2C_STAR1_STOPF   (1u << 4)   /* stop received (slave)         */
 #define CH32RV_I2C_STAR1_RXNE    (1u << 6)
 #define CH32RV_I2C_STAR1_TXE     (1u << 7)
@@ -172,6 +174,11 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_I2C_STAR2_MSL     (1u << 0)   /* master mode                   */
 #define CH32RV_I2C_STAR2_BUSY    (1u << 1)
 #define CH32RV_I2C_STAR2_TRA     (1u << 2)   /* transmitting                  */
+#define CH32RV_I2C_STAR2_GENCALL (1u << 4)   /* the general call matched      */
+/* OADDR1: ADDMODE (10-bit own address in bits 9:0), and bit 14, which the
+ * reference manuals say must be kept set. */
+#define CH32RV_I2C_OADDR1_ADDMODE (1u << 15)
+#define CH32RV_I2C_OADDR1_KEEP    (1u << 14)
 
 #define CH32RV_I2C_CKCFGR_CCR_MASK 0x0FFFu
 #define CH32RV_I2C_CKCFGR_DUTY     (1u << 14) /* fast mode 16/9 instead of 2/1 */

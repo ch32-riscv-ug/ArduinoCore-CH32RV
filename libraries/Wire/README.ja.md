@@ -74,7 +74,8 @@ Adafruit_Something device(&bus);
   入力と出力Lowの切り替えで同じことをします)。**プルアップは必要です。**
 - クロックストレッチを待ちます。`endTransmission()`の戻り値とtimeout APIは`Wire`と同じです。
 - `setClock()`のクロックを、CPUと線が許す所まで保ちます。半周期ごとに締め切りの時刻まで待つので、端子の書き込みとSCLの立ち上がりの時間は待ちの中に吸収されます。ベンチで測った値(2026-11-15、プローブの弱いプルアップ): 20 / 50 kHzはどの台も1 %以内。上限はX035で約67 kHz(オープンドレインを真似るため)、V006で約78 kHz、V003で約102 kHz、V103で約210 kHz、V205で約373 kHz、V203で約526 kHz、H417で約862 kHz。上限より速くは頼んでも上限で動き、頼んだより速くはなりません。`getClock()`は指定した値を返します。
-- **slave(target)にもなります。** `bus.begin(0x42)`(または`bus.begin(0x42, sda, scl, 0)`)で0x42に応え、
+- **slave(target)にもなります。** `bus.begin(0x42)`(または`bus.begin(0x42, sda, scl, 0)`)で0x42に応え
+  (10 bitのアドレス`0x2A5 | WIRE_10BIT`も、`setGeneralCall(true)`でアドレス0も)、
   契約は`Wire`のtargetと同じです: STOPのあと(register readではrepeated STARTで`onRequest()`より先)に`onReceive(count)`、
   読みのアドレスで`onRequest()`、書いた分より多く読まれたら0xFF、バッファより長い書き込みは頭を残します。
   START(SDAの立ち下がり、`attachInterrupt()`)で入った割り込みが、STOPまで両方の線を見てcontrollerのクロックを追います:
@@ -90,6 +91,14 @@ Adafruit_Something device(&bus);
   CPUはその割り込みの中にいます。**同じか高い優先度の割り込みがその間に走るとビットを落とすことがあります。
   SCLは割り込みを使わないので、SDAとSCLが同じEXTIの線(同じビット番号)でもかまいません。SDAの線はtargetが使います
   (自分の`attachInterrupt()`を重ねない)。targetとEXTIの処理は`begin(address)`を呼ぶスケッチだけにリンクされます。
+- **役割は1つずつです。** `Wire`と違い、targetとして始めた`SoftWire`はcontrollerを兼ねません。
+  `begin()`でcontrollerに戻すまで`endTransmission()`は4、`requestFrom()`は0です(自分のSTARTを
+  自分の割り込みが追ってしまうため)。multi-masterのarbitrationもありません。
+- 10 bitのアドレスとSMBusのPECは`Wire`と同じです(下)。10 bitのアドレスかgeneral callのtargetは、別のループ
+  (flashで動く。`WIRE_10BIT`を書くか`setGeneralCall()`を呼ぶスケッチだけにリンク)で線を追います。7 bitだけのtargetは
+  上のRAMのループのままです。flashの待ちのある石では遅くなるので、試験は50 kHzまでです。
+- **SDAを握ったままのtarget**(byteの途中で切られた)は、STARTの前ごとにSDAがLowの間SCLを最大9回打って
+  離させます(`Wire`が失敗した転送のあとに行うbus clearと同じ)。
 - `setRoute()`はありません(ハードウェアだけの機能です)。`peripheral()`は0を返します。`clearBus()`は`Wire`と同じ手順でバスを解放します。
 - バッファは`Wire`と同じ`CH32RV_WIRE_BUFFER_SIZE`(既定32)です。
 - 開いていないバスへの`endTransmission()`は、`Wire`と同じく4を返します(自動では`begin()`しません)。
@@ -115,14 +124,37 @@ Adafruit_Something device(&bus);
 - **すべての待ちに上限があります。** `CH32RV_WIRE_TIMEOUT_US`(既定25ms)で
   各ステップを打ち切るので、バスが固まってもsketchは止まりません。
   `endTransmission()`の戻り値は 5=タイムアウト、2=アドレスNACK、
-  3=データNACK、1=書きすぎ、0=成功です。
+  3=データNACK、1=書きすぎ、4=開いていないバス・ほかのcontrollerに毎回バスを取られた(下)、0=成功です。
 - **バッファは32バイト**(AVRと同じ)。超えると切り捨てて1を返します。
   `-DCH32RV_WIRE_BUFFER_SIZE=128`で増やせますが、
   送受信の両方が、インスタンスごとに増えます。
 - **slaveモードは割り込み駆動です**(`Wire`も`SoftWire`も)。`begin(address)`でslaveを選び、
   `onReceive()`と`onRequest()`のcallbackは割り込みcontextで呼ばれます。
-  1つのinstanceをmasterとslaveに同時利用すること、multi-master arbitration、
-  general callへの応答には対応しません。
+- **`Wire`はcontrollerとtargetを兼ねます。** `Wire.begin(0x42)`のあとも`beginTransmission()` /
+  `endTransmission()` / `requestFrom()`が使えます。転送はバスが空くのを待ち(その間にこのtargetへ来た転送には
+  応えます)、バスを取り、終わるとtargetの待ち受けに戻ります。待ちの上限はバスのタイムアウトです。
+  `endTransmission()`のために組み立て中のメッセージは`onRequest()`で壊れません(targetの返事は別のバッファ)。
+  受信のバッファは共有なので、`requestFrom()`で受けたバイトは、ほかのcontrollerがこのtargetに書く前に読んでください
+  (`onReceive()`のメッセージで置き換わります)。
+- **multi-master。** arbitrationに負けた転送(転送の途中でほかのcontrollerのSTART・STOPを見た、自分のSTARTが
+  出る前にtargetとして呼ばれた、も同じ)はバスを手放し、空くのを待って最初からやり直します。やり直しは
+  `CH32RV_WIRE_ARBITRATION_RETRIES`(3)回までで、それでも負ければ`endTransmission()`は4(AVRの「その他のエラー」)、
+  `requestFrom()`は0です。AVR・arduino-esp32・STM32duinoは最初の負けを4で返し、やり直しはスケッチに任せます。
+  BUSYが残っただけに見えるバスは、両方の線が100 µs続けてHighのときだけresetします(ほかのcontrollerの転送を
+  取り違えないため)。
+- **10 bitのアドレス**: `Wire.beginTransmission(0x2A5 | WIRE_10BIT)`、`Wire.requestFrom(0x2A5 | WIRE_10BIT, n)`、
+  targetは`Wire.begin(0x2A5 | WIRE_10BIT)`。線の上はヘッダー11110 + ビット9:8 + W、下位バイト、読みはrepeated STARTと
+  ヘッダー + R。targetへの10 bitの読み(アドレスだけの書き込みを折り返したもの)では`onReceive(0)`を呼びません。
+  `WIRE_10BIT`はcontrollerの10 bitのコードと同じ所で定義した定数で、名前を書いたスケッチだけにそのコードが
+  リンクされます。コンパイル時の定数ではありません(`constexpr`や`case`のラベルには使えません)。
+- **general call**: `Wire.setGeneralCall(true)`でtargetがアドレス0にも応え、そのバイトは普通の書き込みと同じく
+  `onReceive()`に来ます。controllerからは`beginTransmission(0)`で送れます。
+- **SMBusのPEC**: `Wire.setPEC(true)`で、STOPで終わる書き込みの後ろに取引全体(アドレスのバイトを含む)の
+  CRC-8(x^8 + x^2 + x + 1)を付け、`requestFrom(address, n)`はnバイトの後ろのデバイスのPECも読みます。合わなければ
+  0を返し、何も読めません。`endTransmission(false)`で終えた書き込みは、そのCRCを続く読みに持ち越します
+  (SMBusのread byte / word)。ソフトウェアで計算し、`Wire`も`SoftWire`も同じです。`setPEC()`を呼ぶスケッチだけに
+  リンクされます。targetが返すPECには`TwoWire::pec(crc, data, len)`を使えます。
+- **DMAはまだありません。** 転送はバッファの32バイトまでで、controllerはポーリング、targetは割り込みです。
 - **slaveはバスのオブジェクトで始めます**(`Wire.begin(0x42)`)。`TwoWire *`越しには呼べません。
   `begin(address)`は`Wire`と`SoftWire`のクラスのもので、`TwoWire`にはありません。呼ばないスケッチには
   slaveの割り込みの処理がリンクされません(V003でcontrollerだけの`Wire`のスケッチは3364 B、644 B小さい)。
@@ -135,7 +167,7 @@ Adafruit_Something device(&bus);
   `getWireTimeoutFlag()`はstickyで、`clearWireTimeoutFlag()`まで残ります。
   タイムアウト後はどちらにせよペリフェラルをリセットするので、
   `reset_with_timeout`は受け取るだけで挙動を変えません。
-- **slaveがSDAをLowに握ったまま**(resetやclockの途切れでbyteの途中で切られた)
+- **targetがSDAをLowに握ったまま**(resetやclockの途切れでbyteの途中で切られた)
   だと、以後の転送はすべて失敗し、このペリフェラルをresetしても直りません
   (握っているのは相手です)。`Wire.clearBus()`はslaveが離すまでSCLを最大9回打ち、
   STOPを出して、両方の線がHighなら`true`を返します。controllerは、転送が

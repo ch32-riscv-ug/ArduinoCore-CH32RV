@@ -1,6 +1,12 @@
 /* What the hardware and the software bus share. */
 #include "TwoWire.h"
 
+/* SMBus PEC (TwoWirePec.cpp). Weak: the library is an archive, and a weak
+ * reference does not pull a member out of one, so only a sketch calling
+ * setPEC() - which is in that file - links them; _pec is never set without it. */
+uint8_t twowire_pec_tx(TwoWire &bus, bool stop) __attribute__((weak));
+size_t twowire_pec_rx(TwoWire &bus, uint16_t address, size_t len, bool stop) __attribute__((weak));
+
 bool TwoWire::begin(int sda, int scl, uint32_t frequency)
 {
     if (_started) {
@@ -30,7 +36,7 @@ bool TwoWire::prepare(int sda, int scl, uint32_t frequency)
     return true;
 }
 
-void TwoWire::beginTransmission(uint8_t address)
+void TwoWire::beginTransmission(uint16_t address)
 {
     _address = address;
     _tx_len = 0;
@@ -40,10 +46,10 @@ void TwoWire::beginTransmission(uint8_t address)
 
 uint8_t TwoWire::endTransmission(bool stopBit)
 {
-    if (!_transmitting || _slave || !_started) {
-        /* A target starting a controller transfer would have to win the bus
-         * from the controller that is addressing it; one role at a time. A
-         * bus that is not open has nothing to drive. */
+    if (!_transmitting || !_started) {
+        /* A bus that is not open has nothing to drive. (A target may be a
+         * controller too: the hardware Wire's transmit() waits for the bus;
+         * SoftWire's refuses, 4.) */
         _transmitting = false;
         return 4;
     }
@@ -53,22 +59,22 @@ uint8_t TwoWire::endTransmission(bool stopBit)
         _tx_len = 0;
         return 1;                        /* AVR's "data too long" */
     }
-    const uint8_t rc = transmit(stopBit);
+    const uint8_t rc = _pec ? twowire_pec_tx(*this, stopBit) : transmit(stopBit);
     _tx_len = 0;
     return rc;
 }
 
-size_t TwoWire::requestFrom(uint8_t address, size_t len, bool stopBit)
+size_t TwoWire::requestFrom(uint16_t address, size_t len, bool stopBit)
 {
     _rx_len = 0;
     _rx_read = 0;
-    if (!_started || _slave || len == 0) {
+    if (!_started || len == 0) {
         return 0;
     }
     if (len > CH32RV_WIRE_BUFFER_SIZE) {
         len = CH32RV_WIRE_BUFFER_SIZE;
     }
-    const size_t got = receive(address, len, stopBit);
+    const size_t got = _pec ? twowire_pec_rx(*this, address, len, stopBit) : receive(address, len, stopBit);
     _rx_len = (uint8_t)got;
     return got;
 }

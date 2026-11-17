@@ -61,6 +61,9 @@ inline void end_read(uint32_t base, bool stop)
     CH32RV_I2C_CTLR1(base) |= stop ? CH32RV_I2C_CTLR1_STOP : CH32RV_I2C_CTLR1_START;
 }
 
+/* A controller transfer that lost the bus to another controller (fail()). */
+constexpr uint8_t LOST = 0xFFu;
+
 }  // namespace
 
 /* Which I2Cs are in the table, and the board's choice for each (Disable /
@@ -329,13 +332,12 @@ void CH32RVTwoWire::begin()
 }
 
 /* begin(address)'s second half, after the controller's bring-up (pins,
- * reset, FREQ, which the slave needs too: it times its own SCL stretching
+ * reset, FREQ, which the target needs too: it times its own SCL stretching
  * from it): the own address and the interrupt machinery. begin(address)
  * itself is WireTarget.cpp's, so that nothing here names the vectors. */
-void CH32RVTwoWire::targetStart(uint8_t address)
+void CH32RVTwoWire::targetStart(uint16_t address)
 {
-    /* Bit 14 of OADDR1 is documented "must be kept set"; the EVT init does. */
-    CH32RV_I2C_OADDR1(_base) = (uint16_t)(0x4000u | ((address & 0x7Fu) << 1));
+    _own = address;
     _rx_len = 0;
     _rx_read = 0;
     _tx_len = 0;
@@ -346,12 +348,8 @@ void CH32RVTwoWire::targetStart(uint8_t address)
                              CH32RV_I2C_CTLR2_ITERREN;
     ch32rv_irq_enable(wires[index_of(_slot)].ev_irqn);
     ch32rv_irq_enable(wires[index_of(_slot)].er_irqn);
-    /* ACK is what makes the peripheral answer its address at all. */
-    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
+    targetRegs();
 }
-
-
-
 
 void CH32RVTwoWire::end()
 {
@@ -392,15 +390,13 @@ __attribute__((noinline)) bool CH32RVTwoWire::setClock(uint32_t freq)
     if (!_started) {
         return true;                   /* begin() applies it */
     }
-    if (CH32RV_I2C_CTLR2(_base) & CH32RV_I2C_CTLR2_ITEVTEN) {
-        apply_clock();                 /* a target: it only times its own stretching */
-        return true;
-    }
-    /* A controller takes the new clock at its next transfer, from a reset
+    /* The controller takes the new clock at its next transfer, from a reset
      * peripheral (recover()). Switching PE off and on in place left the next
      * START unanswered - endTransmission() 5 once, then recover() and right
      * again (X035 / V205 / V203 at 100 -> 20 kHz, 2026-11-14). A bus held
-     * for a repeated START is let go: that transfer starts afresh. */
+     * for a repeated START is let go: that transfer starts afresh. A target
+     * only times its stretching from FREQ, which the clock does not change;
+     * its reset waits for the bus to be free (claim()). */
     _needs_recovery = true;
     return true;
 }
@@ -412,7 +408,9 @@ __attribute__((noinline)) void CH32RVTwoWire::apply_clock(void)
 
     const uint32_t pclk_mhz = CH32RV_I2C_PCLK1 / 1000000u;
     const uint32_t mhz = pclk_mhz > CH32RV_I2C_FREQ_MAX_MHZ ? CH32RV_I2C_FREQ_MAX_MHZ : pclk_mhz;
-    CH32RV_I2C_CTLR2(_base) = (uint16_t)(mhz & CH32RV_I2C_CTLR2_FREQ_MASK);
+    /* The interrupt enables above FREQ are the target's: kept. */
+    CH32RV_I2C_CTLR2(_base) = (uint16_t)((CH32RV_I2C_CTLR2(_base) & ~CH32RV_I2C_CTLR2_FREQ_MASK) |
+                                         (mhz & CH32RV_I2C_CTLR2_FREQ_MASK));
 
     uint32_t ccr;
     if (_clock_hz <= 100000u) {
@@ -467,24 +465,32 @@ void CH32RVTwoWire::release_bus(void)
     }
 }
 
-void CH32RVTwoWire::recover(void)
+/* Full re-initialisation. Cheap, and the only reliable way out of a latched
+ * BUSY - which is exactly the state a sketch reaches by resetting the MCU in
+ * the middle of a transfer. A target gets its address back; its interrupt
+ * enables are claim()'s and release_target()'s. */
+void CH32RVTwoWire::reset(void)
 {
-    /* Full re-initialisation. Cheap, and the only reliable way out of a
-     * latched BUSY - which is exactly the state a sketch reaches by resetting
-     * the MCU in the middle of a transfer. */
     CH32RV_I2C_CTLR1(_base) = CH32RV_I2C_CTLR1_SWRST;
     CH32RV_I2C_CTLR1(_base) = 0;
     _needs_recovery = false;
     _restart_armed = false;            /* the reset dropped an armed START */
     apply_clock();
+    if (_slave) {
+        targetRegs();
+    }
+}
+
+void CH32RVTwoWire::recover(void)
+{
+    reset();
     /* A target cut off in the middle of a byte it was sending keeps a 0 bit on
      * SDA, waiting for the clock that never comes: the reset peripheral then
      * sees the bus busy and every START times out (5 until a reset of the
      * target; H417 against the OEP probe's target after a read gone wrong,
      * 2026-11-14). Clock it out and end with a STOP, as the I2C specification's
      * bus clear does. */
-    if (!_slave &&
-        !ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin)) &&
+    if (!ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin)) &&
         ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_scl_pin), (uint8_t)CH32RV_PIN_BIT(_scl_pin))) {
         clearBus();
     }
@@ -496,27 +502,68 @@ void CH32RVTwoWire::recover(void)
  * our START waits for a bus that never frees (5 after the timeout; the first
  * transfer on an OEP bench whose probe pulls the lines up after the DUT has
  * begun, CH32V003, 2026-11-06). Not ours (MSL clear) and both lines high: no
- * transfer is on, so start from a reset peripheral. */
+ * transfer is on, so start from a reset peripheral. Both high for 100 us
+ * (a 10 kHz clock's period): another controller's transfer on a
+ * multi-controller bus has both lines high only for the high half of a 1 bit,
+ * and it must not be taken for a stale BUSY. */
 bool CH32RVTwoWire::bus_stale(void) const
 {
     if ((CH32RV_I2C_STAR2(_base) & (CH32RV_I2C_STAR2_BUSY | CH32RV_I2C_STAR2_MSL)) !=
         CH32RV_I2C_STAR2_BUSY) {
         return false;
     }
-    return ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_scl_pin), (uint8_t)CH32RV_PIN_BIT(_scl_pin)) &&
-           ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin));
+    const uint32_t t0 = micros();
+    do {
+        if (!ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_scl_pin), (uint8_t)CH32RV_PIN_BIT(_scl_pin)) ||
+            !ch32rv_gpio_read((uint8_t)CH32RV_PIN_PORT(_sda_pin), (uint8_t)CH32RV_PIN_BIT(_sda_pin))) {
+            return false;
+        }
+    } while (micros() - t0 < 100u);
+    return true;
 }
 
-bool CH32RVTwoWire::start(uint8_t address, bool read)
+/* Before a controller transfer: a peripheral marked for it is reset, or a
+ * stale BUSY cleared; then a target waits for the bus to be free, with its
+ * interrupts on so a transfer to it goes on being answered, and turns them
+ * off for this one (targetClaim()). false when the bus did not come free
+ * within the timeout. */
+bool CH32RVTwoWire::claim(void)
+{
+    const bool held = _held;
+    _held = false;
+    if (_needs_recovery || (!held && bus_stale())) {
+        recover();
+    }
+    return held || !_slave || targetClaim();
+}
+
+/* After one: a target listens again, unless the bus is still ours (a
+ * transfer ended without a STOP, its next one to come). */
+void CH32RVTwoWire::release_target(void)
+{
+    if (_slave && !_held) {
+        targetRelease();
+    }
+}
+
+bool CH32RVTwoWire::start(uint16_t address, bool read)
 {
     clear_errors(_base);
     if (!_restart_armed) {
         CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_START;
     }
     _restart_armed = false;
-    if (!wait_flag1(CH32RV_I2C_STAR1_SB, true)) {
+    /* ADDR before SB: another controller's START came first and addressed
+     * this bus as a target (fail() takes it as the bus lost). */
+    if (!wait_flag1(CH32RV_I2C_STAR1_SB | CH32RV_I2C_STAR1_ADDR, true) ||
+        !(CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_SB)) {
         return false;
     }
+    /* A 10-bit address: Wire10Bit.cpp, there when the sketch named WIRE_10BIT. */
+    if ((address & CH32RV_WIRE_10BIT_BIT) && wire_start10) {
+        return wire_start10(*this, address, read);
+    }
+    /* DATAR takes the low 8 bits: a 7-bit address shifted, its R/W bit. */
     CH32RV_I2C_DATAR(_base) = (uint16_t)((address << 1) | (read ? 1u : 0u));
     return wait_flag1(CH32RV_I2C_STAR1_ADDR, true);
 }
@@ -526,85 +573,109 @@ void CH32RVTwoWire::stop(void)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_STOP;
 }
 
+/* A controller transfer that went wrong, as endTransmission() reports it: a
+ * NACK (AF) is nack_code and leaves the peripheral as it is; another
+ * controller (ARLO: lost arbitration, the peripheral has let the lines go and
+ * is a target now; BERR: their START or STOP in the middle of ours; ADDR
+ * before our SB: theirs came first and addressed this bus) is LOST, our START
+ * withdrawn and the transfer to be tried again once the bus is free; anything
+ * else (a timeout) is 5, and the peripheral is reset now. */
+uint8_t CH32RVTwoWire::fail(uint8_t nack_code)
+{
+    const uint16_t s1 = CH32RV_I2C_STAR1(_base);
+    clear_errors(_base);
+    if (s1 & (CH32RV_I2C_STAR1_ARLO | CH32RV_I2C_STAR1_BERR | CH32RV_I2C_STAR1_ADDR)) {
+        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~(CH32RV_I2C_CTLR1_START | CH32RV_I2C_CTLR1_STOP);
+        /* After a misplaced START / STOP the peripheral may still think it is
+         * the controller: reset before the next try (claim()). */
+        _needs_recovery = (s1 & CH32RV_I2C_STAR1_BERR) != 0;
+        return LOST;
+    }
+    /* AF here is the ordinary "nothing at that address" case. */
+    const bool nack = (s1 & CH32RV_I2C_STAR1_AF) != 0;
+    stop();
+    _needs_recovery = !nack;
+    release_bus();
+    return nack ? nack_code : 5;
+}
 
 uint8_t CH32RVTwoWire::transmit(bool stopBit)
 {
-    const bool held = _held;
-    _held = false;
-    if (_needs_recovery || (!held && bus_stale())) {
-        recover();
+    for (uint8_t tries = 0;; tries++) {
+        if (!claim()) {
+            return 5;
+        }
+        const uint8_t rc = transmit_once(stopBit);
+        release_target();
+        if (rc != LOST) {
+            return rc;
+        }
+        if (tries == CH32RV_WIRE_ARBITRATION_RETRIES) {
+            return 4;
+        }
     }
+}
 
+uint8_t CH32RVTwoWire::transmit_once(bool stopBit)
+{
     if (!start(_address, false)) {
-        /* AF here is the ordinary "nothing at that address" case. */
-        const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
-        clear_errors(_base);
-        stop();
-        _needs_recovery = !nack;
-        release_bus();
-        _tx_len = 0;
-        return nack ? 2 : 5;
+        return fail(2);
     }
     clear_addr(_base);
 
     for (uint8_t i = 0; i < _tx_len; i++) {
         if (!wait_flag1(CH32RV_I2C_STAR1_TXE, true)) {
-            const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
-            clear_errors(_base);
-            stop();
-            _needs_recovery = !nack;
-            release_bus();
-            _tx_len = 0;
-            return nack ? 3 : 5;
+            return fail(3);
         }
         CH32RV_I2C_DATAR(_base) = _tx[i];
     }
     /* BTF rather than TXE: TXE only says the shift register took the byte,
      * and stopping there truncates the last one on the wire. */
     if (!wait_flag1(CH32RV_I2C_STAR1_BTF, true)) {
-        const bool nack = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) != 0;
-        clear_errors(_base);
-        stop();
-        _needs_recovery = !nack;
-        release_bus();
-        _tx_len = 0;
-        return nack ? 3 : 5;
+        return fail(3);
     }
 
     if (stopBit) {
         stop();
     }
     _held = !stopBit;
-    _tx_len = 0;
     return 0;
 }
 
-size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
+size_t CH32RVTwoWire::receive(uint16_t address, size_t len, bool stopBit)
 {
-    const bool held = _held;
-    _held = false;
-    if (_needs_recovery || (!held && bus_stale())) {
-        recover();
+    for (uint8_t tries = 0;; tries++) {
+        if (!claim()) {
+            return 0;
+        }
+        const int got = receive_once(address, len, stopBit);
+        release_target();
+        if (got >= 0) {
+            return (size_t)got;
+        }
+        if (tries == CH32RV_WIRE_ARBITRATION_RETRIES) {
+            return 0;
+        }
     }
+}
 
-    /* ACK has to be right before ADDR is cleared, because the peripheral
-     * decides what to do with the first byte at that moment. */
-    if (len == 1) {
-        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_ACK;
-    } else {
-        CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
-    }
-
+/* -1: the bus was lost to another controller (fail()'s LOST). */
+int CH32RVTwoWire::receive_once(uint16_t address, size_t len, bool stopBit)
+{
+    /* ACK set before the START: a read of 2 or more needs it at the address
+     * (with ACK clear at ADDR, the first byte went out NACKed - a reset of the
+     * peripheral, begin() or a recovery, clears ACK with PE; 2026-11-17), and a
+     * target answers its own address while the START waits for the bus. A read
+     * of 1 clears it at ADDR, before ADDR is cleared - the peripheral decides
+     * the first byte's acknowledge then. */
+    CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
     if (!start(address, true)) {
-        clear_errors(_base);
-        stop();
-        _needs_recovery = (CH32RV_I2C_STAR1(_base) & CH32RV_I2C_STAR1_AF) == 0;
-        release_bus();
-        return 0;
+        return fail(2) == LOST ? -1 : 0;
     }
 
     size_t got = 0;
     if (len == 1) {
+        CH32RV_I2C_CTLR1(_base) &= (uint16_t)~CH32RV_I2C_CTLR1_ACK;
         {
             NoIrq lock;
             clear_addr(_base);
@@ -664,8 +735,7 @@ size_t CH32RVTwoWire::receive(uint8_t address, size_t len, bool stopBit)
     CH32RV_I2C_CTLR1(_base) |= CH32RV_I2C_CTLR1_ACK;
     _held = !stopBit && got == len;
     _restart_armed = _held;
-    _rx_len = (uint8_t)got;
-    return got;
+    return (int)got;
 }
 
 void CH32RVTwoWire::onReceive(void (*callback)(int))
@@ -679,6 +749,26 @@ void CH32RVTwoWire::onRequest(void (*callback)(void))
 }
 
 /* ------------------------------------------------------- slave handlers */
+
+namespace {
+/* What a target's onRequest() wrote, one per I2C, apart from _tx (which the
+ * controller's messages use): only the handler below names it, so only a
+ * sketch with a target has it. */
+struct Reply {
+    uint8_t data[CH32RV_WIRE_BUFFER_SIZE];
+    uint8_t len;
+};
+Reply replies[WIRE_COUNT > 0 ? WIRE_COUNT : 1];
+
+void exchange(uint8_t *a, uint8_t *b)
+{
+    for (uint8_t i = 0; i < CH32RV_WIRE_BUFFER_SIZE; i++) {
+        const uint8_t t = a[i];
+        a[i] = b[i];
+        b[i] = t;
+    }
+}
+}  // namespace
 
 void CH32RVTwoWire::ev_irq(void)
 {
@@ -709,19 +799,35 @@ void CH32RVTwoWire::ev_irq(void)
             /* Write, repeated START, read - a register read: onReceive() gets
              * the written bytes (the register number) before onRequest()
              * answers, as AVR's twi does. */
+            /* (A 10-bit read is a write of the address alone, turned round:
+             * that is addressing, not a message - no onReceive(0) for it.) */
             if (_slave_receiving) {
                 _slave_receiving = false;
-                if (_on_receive) {
+                if (_on_receive && (_rx_len || !(_own & CH32RV_WIRE_10BIT_BIT))) {
                     _on_receive((int)_rx_len);
                 }
             }
+            /* onRequest() write()s into _tx, where the sketch may be building
+             * a message of its own as the controller: that is put aside
+             * whole, the reply taken into this bus's reply buffer, and the
+             * message put back - a swap of the whole buffer, so even a byte
+             * write() stored just before this interrupt, with its count not
+             * yet raised, comes back. */
+            Reply &reply = replies[index_of(_slot)];
+            const uint8_t kept_len = _tx_len;
+            const bool kept_overflow = _tx_overflow;
+            exchange(_tx, reply.data);
             _tx_len = 0;
-            _tx_sent = 0;
             if (_on_request) {
                 _slave_replying = true;
                 _on_request();
                 _slave_replying = false;
             }
+            reply.len = _tx_len;
+            exchange(_tx, reply.data);
+            _tx_len = kept_len;
+            _tx_overflow = kept_overflow;
+            _tx_sent = 0;
         } else {
             _rx_len = 0;
             _rx_read = 0;
@@ -740,8 +846,9 @@ void CH32RVTwoWire::ev_irq(void)
     if (s1 & CH32RV_I2C_STAR1_TXE) {
         /* Past what onRequest() provided, 0xFF: the value a released bus
          * reads as, so an over-reading master sees "nothing", not echoes. */
+        const Reply &reply = replies[index_of(_slot)];
         CH32RV_I2C_DATAR(_base) =
-            _tx_sent < _tx_len ? _tx[_tx_sent++] : (uint16_t)0xFFu;
+            _tx_sent < reply.len ? reply.data[_tx_sent++] : (uint16_t)0xFFu;
     }
     if (s1 & CH32RV_I2C_STAR1_STOPF) {
         /* Cleared by the STAR1 read above plus a CTLR1 write; re-arming ACK
@@ -837,8 +944,7 @@ bool CH32RVTwoWire::clearBus(void)
 {
     const bool was_started = _started;
     const bool was_slave = _slave;
-    /* The own address has to be read before end() stops the peripheral clock. */
-    const uint8_t own = was_slave ? (uint8_t)((CH32RV_I2C_OADDR1(_base) >> 1) & 0x7Fu) : 0u;
+    const uint16_t own = _own;
     if (was_started) {
         end();                    /* the peripheral must not watch while we clock */
     }
@@ -875,8 +981,9 @@ bool CH32RVTwoWire::clearBus(void)
     const bool free = scl_free && digitalRead(sda) == HIGH && digitalRead(scl) == HIGH;
     if (was_started) {
         /* As it was. A bus that was a target came from begin(address), which
-         * linked the interrupt handling; begin(address) itself is not named
-         * here, or every sketch calling clearBus() would carry it. */
+         * linked the interrupt handling and the target's registers
+         * (targetRegs(), weak here, so a controller-only sketch carries
+         * neither). */
         begin();
         if (was_slave && _slot) {
             targetStart(own);

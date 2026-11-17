@@ -37,6 +37,28 @@
 #define WIRE_HAS_END 1
 #define WIRE_HAS_TIMEOUT 1
 
+/* A 10-bit address, for beginTransmission() / requestFrom() and a target's
+ * begin(address), on Wire and SoftWire alike (Linux's I2C_M_TEN, as a bit of
+ * the address):
+ *
+ *   Wire.beginTransmission(0x2A5 | WIRE_10BIT);
+ *   Wire.requestFrom(0x2A5 | WIRE_10BIT, 2);
+ *   Wire.begin(0x2A5 | WIRE_10BIT);          // a target at 0x2A5
+ *
+ * On the wire it is the header 11110xx0 and the low byte, and a read turns
+ * round with a repeated START and 11110xx1. Without the bit an address is a
+ * 7-bit one, as everywhere in Arduino.
+ *
+ * WIRE_10BIT is that bit (CH32RV_WIRE_10BIT_BIT) as a constant defined in
+ * Wire10Bit.cpp, beside the controllers' 10-bit addressing, which the
+ * transfers reach through weak references: naming it is what links that
+ * code, so a sketch that never does carries none of it. It is not a
+ * compile-time constant (no `constexpr`, no `case` label); a value read from
+ * it is. */
+#define CH32RV_WIRE_10BIT_BIT 0x8000u
+extern "C" const uint16_t ch32rv_wire_10bit;
+#define WIRE_10BIT ch32rv_wire_10bit
+
 /* AVR's Wire uses 32, and libraries written against it assume a write of more
  * than 32 bytes is truncated rather than sent. Raise it per sketch with
  *   -DCH32RV_WIRE_BUFFER_SIZE=128
@@ -73,7 +95,10 @@ public:
     virtual bool setClock(uint32_t freq) = 0;
     /* Move the bus to these pins (SDA, SCL); an open bus reopens on them. */
     virtual bool setPins(int sda, int scl) = 0;
-    /* A target's callbacks (the bus object's begin(address) makes it one). */
+    /* A target's callbacks (the bus object's begin(address) makes it one). On
+     * the hardware Wire the bus stays a controller as well: a sketch may call
+     * beginTransmission() / requestFrom() while it is a target (SoftWire's
+     * target is one role at a time: 4 / 0 there). */
     virtual void onReceive(void (*)(int)) = 0;
     virtual void onRequest(void (*)(void)) = 0;
 
@@ -103,13 +128,32 @@ public:
     void setTimeOut(uint16_t timeout_ms) { setWireTimeout((uint32_t)timeout_ms * 1000u); }
     uint16_t getTimeOut(void) { return (uint16_t)(_timeout_us / 1000u); }
 
-    void beginTransmission(uint8_t address);
+    /* address: 7 bits, or 10 with WIRE_10BIT. */
+    void beginTransmission(uint16_t address);
     /* 0 sent, 1 more than CH32RV_WIRE_BUFFER_SIZE, 2 address NACK, 3 data
-     * NACK, 4 the bus is not open (or is a target), 5 timeout. */
+     * NACK, 4 the bus is not open (a SoftWire: or is a target) or another
+     * controller kept winning the bus (lost arbitration on every try, AVR's
+     * "other error"), 5 timeout. */
     uint8_t endTransmission(bool stopBit);
     uint8_t endTransmission(void) { return endTransmission(true); }
-    size_t requestFrom(uint8_t address, size_t len, bool stopBit);
-    size_t requestFrom(uint8_t address, size_t len) { return requestFrom(address, len, true); }
+    size_t requestFrom(uint16_t address, size_t len, bool stopBit);
+    size_t requestFrom(uint16_t address, size_t len) { return requestFrom(address, len, true); }
+
+    /* SMBus packet error checking: with it on, endTransmission(true) sends
+     * the CRC-8 (x^8 + x^2 + x + 1) of the whole transaction - the address
+     * bytes included, from the first START - after the data, and
+     * requestFrom(address, n) reads n bytes and the device's PEC byte and
+     * returns 0, with nothing to read, when it does not match. A write ended
+     * with endTransmission(false) carries its part of the CRC into the read
+     * or write that follows (SMBus's read byte / word: command, repeated
+     * START, data, PEC). Off by default; per bus. In software, the same on
+     * Wire and SoftWire: one bit loop of 8 per byte, and only a sketch that
+     * calls setPEC() links it (TwoWirePec.cpp). A target's PEC is the
+     * sketch's (pec() below over what it got and what it sends). */
+    void setPEC(bool enable);
+    bool getPEC(void) const { return _pec != 0; }
+    /* SMBus's CRC-8 of `len` bytes, continuing from `crc` (0 to start). */
+    static uint8_t pec(uint8_t crc, const uint8_t *data, size_t len);
 
     size_t write(uint8_t data) override;
     size_t write(const uint8_t *data, size_t len) override;
@@ -126,6 +170,9 @@ public:
     void flush(void) override {}
 
 protected:
+    friend uint8_t twowire_pec_tx(TwoWire &bus, bool stop);
+    friend size_t twowire_pec_rx(TwoWire &bus, uint16_t address, size_t len, bool stop);
+
     /* begin(address, sda, scl, frequency)'s shared half: close an open bus,
      * move it to the pins (unless both are -1) and keep the clock; false when
      * the pins cannot carry this bus. */
@@ -136,25 +183,34 @@ protected:
      * receive() reads len (1..CH32RV_WIRE_BUFFER_SIZE) bytes into _rx and
      * returns how many arrived. */
     virtual uint8_t transmit(bool stop) = 0;
-    virtual size_t receive(uint8_t address, size_t len, bool stop) = 0;
+    virtual size_t receive(uint16_t address, size_t len, bool stop) = 0;
 
     uint32_t _clock_hz = 100000;
     /* 0 disables the timeout, as on AVR. */
     uint32_t _timeout_us = CH32RV_WIRE_TIMEOUT_US;
-    uint8_t _address = 0;          /* target of the transmission being built */
+    uint16_t _address = 0;         /* target of the transmission being built (WIRE_10BIT) */
     bool _started = false;
     bool _transmitting = false;
     bool _tx_overflow = false;
     bool _timeout_flag = false;
-    /* A target, or answering a read in onRequest(). */
+    /* A target. */
     volatile bool _slave = false;
-    volatile bool _slave_replying = false;
 
     /* Volatile for the halves a target's interrupt handler writes while the
-     * sketch reads. */
+     * sketch reads. (_tx at the offset it had before the 10-bit address and
+     * PEC came - 31, a short load - and what they added after _rx: SoftWire's
+     * target bit loop reads these, 2026-11-17.) */
     uint8_t _tx[CH32RV_WIRE_BUFFER_SIZE];
     volatile uint8_t _tx_len = 0;
     uint8_t _rx[CH32RV_WIRE_BUFFER_SIZE];
     volatile uint8_t _rx_len = 0;
     volatile uint8_t _rx_read = 0;
+    /* Answering a read in onRequest(). */
+    volatile bool _slave_replying = false;
+    /* SMBus PEC (setPEC()): 0 off, PEC_ON, and PEC_CARRY while a write ended
+     * without a STOP carries its CRC (_pec_crc) into the next transfer of the
+     * same transaction. */
+    enum : uint8_t { PEC_ON = 1, PEC_CARRY = 2 };
+    uint8_t _pec = 0;
+    uint8_t _pec_crc = 0;
 };
