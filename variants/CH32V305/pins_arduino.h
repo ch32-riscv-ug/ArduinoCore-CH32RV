@@ -313,7 +313,7 @@
 #define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
 #define CH32RV_ADC_BUFFER_ENABLE (1u << 26)   /* CTLR1.BUFEN */
 
-/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,
+/* ---- programmable voltage detector (device-data pvd_levels.csv,
  *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
 #define CH32RV_PVD_LEVELS 8
 #define CH32RV_PVD_FALL_MV {2310u, 2480u, 2570u, 2690u, 2810u, 2960u, 3080u, 3210u}   /* VDD falling below, by PLS */

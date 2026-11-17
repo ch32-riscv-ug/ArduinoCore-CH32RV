@@ -250,7 +250,7 @@
 #define CH32RV_ADC_TEMP_RISES 1   /* the voltage goes up with temperature */
 #define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
 
-/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,
+/* ---- programmable voltage detector (device-data pvd_levels.csv,
  *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
 #define CH32RV_PVD_LEVELS 8
 #define CH32RV_PVD_FALL_MV {2500u, 2700u, 2890u, 3080u, 3270u, 3550u, 3840u, 4180u}   /* VDD falling below, by PLS */

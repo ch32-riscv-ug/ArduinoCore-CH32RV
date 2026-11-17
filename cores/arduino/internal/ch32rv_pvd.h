@@ -9,8 +9,9 @@
 #include "internal/ch32rv_exti_line.h"
 
 /* The levels come from the variant (CH32RV_PVD_*, generated), the line from
- * ch32rv_exti_line.h: CH32H41x has levels in its registers but no PVD line,
- * CH32M030 neither, CH32V004 / V007 / M007 no levels in the data. */
+ * ch32rv_exti_line.h: CH32H41x has levels (device-data pvd_levels.csv) but no
+ * PVD line in its reference manual or EVT, CH32M030 and CH32V004 no levels
+ * (their datasheets have no PVD table). */
 #if defined(CH32RV_PVD_LEVELS) && defined(CH32RV_EXTI_PVD)
 #define CH32RV_HAS_PVD 1
 #else

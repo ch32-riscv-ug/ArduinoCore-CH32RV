@@ -281,7 +281,7 @@
 #define CH32RV_ADC_VREFINT_CHANNEL 15
 #define CH32RV_ADC_VREFINT_MV 1200
 
-/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,
+/* ---- programmable voltage detector (device-data pvd_levels.csv,
  *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
 #define CH32RV_PVD_LEVELS 4
 #define CH32RV_PVD_FALL_MV {2100u, 2300u, 3000u, 4000u}   /* VDD falling below, by PLS */

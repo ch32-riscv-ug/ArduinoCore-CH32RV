@@ -343,6 +343,14 @@
 #define CH32RV_ADC_TEMP_RISES 0   /* the voltage goes up with temperature */
 #define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
 
+/* ---- programmable voltage detector (device-data pvd_levels.csv,
+ *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
+#define CH32RV_PVD_LEVELS 8
+#define CH32RV_PVD_FALL_MV {2440u, 2490u, 2590u, 2690u, 2790u, 2890u, 2990u, 3090u}   /* VDD falling below, by PLS */
+#define CH32RV_PVD_PLS_MASK 0xe0u
+#define CH32RV_PVD_PVDE 1   /* PWR_CTLR bit 4 (none: always on) */
+#define CH32RV_PVD_PVDO_BIT 0   /* in PWR_CSR */
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u

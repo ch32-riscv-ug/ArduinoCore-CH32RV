@@ -1744,16 +1744,17 @@ def adc_internal_defines(info: dict, family: str = "") -> list:
 
 def load_pvd(tables: pathlib.Path) -> dict:
     """series -> the programmable voltage detector, for CH32RV.setLowVoltageDetect()
-    (ch32rv_pvd.c): the falling-edge threshold of each PLS value in mV (datasheet
-    V_PVD rows of operating_conditions.csv) and, per family, PWR_CTLR's PLS mask,
+    (ch32rv_pvd.c): the falling-edge threshold of each PLS value in mV
+    (pvd_levels.csv, the datasheets' V_PVD tables) and, per family, PWR_CTLR's PLS mask,
     whether there is a PVDE bit (CH32X033 / X035 have none: their PVD is always on)
     and PWR_CSR's PVDO bit (registers.csv).
 
     A series gets the rows that name it alone when there are any (CH32V203 has its
     own sheet's and the CH32V205 sheet's, which covers the V203 parts on the V205
     die), else the rows it shares. A PLS value without a row (CH32L103 lists five
-    of eight) is left out at the top; a hole below the last is an error. Series
-    without rows (CH32H41x, CH32M030, CH32V004 / V007 / M007) get nothing."""
+    of eight before device-data cb02bca) is left out at the top; a hole below the
+    last is an error. Series without rows (CH32M030, CH32V004: their datasheets
+    have no PVD table) get nothing."""
     fields: dict = {}
     for r in read_table(tables, "registers.csv",
                         ("family", "type", "register", "field", "bits", "kind")):
@@ -1776,17 +1777,12 @@ def load_pvd(tables: pathlib.Path) -> dict:
         info["pvdo_bit"] = int(pvdo)
     fam_of_series = {s: f for f, ss in _family_series(tables).items() for s in ss}
     rows: dict = {}
-    for r in read_table(tables, "operating_conditions.csv",
-                        ("series", "symbol", "condition", "typ", "unit")):
-        if r["symbol"] != "V_PVD" or not r["typ"] or r["unit"] != "V":
-            continue
-        m = re.search(r"PLS\[\d:0\]\s*=\s*([01]+)\s*\(?\s*(falling|rising)",
-                      r["condition"], re.IGNORECASE)
-        if not m or m.group(2).lower() != "falling":
+    for r in read_table(tables, "pvd_levels.csv", ("series", "pls", "edge", "typ", "unit")):
+        if r["edge"] != "falling" or not r["typ"] or r["unit"] != "V":
             continue
         names = r["series"].split(";")
         for s in names:
-            rows.setdefault(s, {}).setdefault(len(names) == 1, {})[int(m.group(1), 2)] = \
+            rows.setdefault(s, {}).setdefault(len(names) == 1, {})[int(r["pls"])] = \
                 int(round(float(r["typ"]) * 1000))
     out: dict = {}
     for series, by_kind in rows.items():
@@ -1808,7 +1804,7 @@ def pvd_defines(info: dict) -> list:
     if not info:
         return []
     return [
-        "/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,",
+        "/* ---- programmable voltage detector (device-data pvd_levels.csv,",
         " *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */",
         f"#define CH32RV_PVD_LEVELS {len(info['fall_mv'])}",
         "#define CH32RV_PVD_FALL_MV {" + ", ".join(f"{mv}u" for mv in info["fall_mv"])
