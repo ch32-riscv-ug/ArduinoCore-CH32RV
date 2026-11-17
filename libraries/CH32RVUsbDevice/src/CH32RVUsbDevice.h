@@ -208,8 +208,9 @@ enum class CH32RVUsbDeviceError : uint8_t {
  *   visiting       each descriptor's first bytes handed to `visit` (the stack
  *                  finds the endpoints of an alternate setting so).
  * With `companions` set (SuperSpeed) a 6-byte endpoint companion follows every
- * endpoint descriptor (USB 3.2 9.6.7: no bursts, no streams, a periodic
- * endpoint moving one packet per interval). Whole descriptors only, in order. */
+ * endpoint descriptor (USB 3.2 9.6.7): bulk bursts CH32RV_USB_SS_BULK_BURST
+ * packets, no streams; a periodic endpoint moves one packet per interval
+ * unless superSpeedBurst() said more for it. Whole descriptors only, in order. */
 struct CH32RVUsbDescriptorWriter {
     uint8_t *out = nullptr;
     uint32_t skip = 0;
@@ -227,12 +228,32 @@ struct CH32RVUsbDescriptorWriter {
     void u24(uint32_t v);
     void u32(uint32_t v);
     void bytes(const uint8_t *data, uint16_t n) { put(data, n); }
+    /* SuperSpeed: the companion of the next endpoint descriptor written, a
+     * periodic one. bMaxBurst `maxBurst` (packets per burst - 1, 0-15) and,
+     * for an isochronous endpoint, Mult `mult` (bursts per service interval
+     * - 1, 0-2): up to (maxBurst + 1) x (mult + 1) packets per interval,
+     * which wBytesPerInterval says in bytes (`bytesPerInterval`, 0 for all
+     * of them, and never more). One transfer is then one interval.
+     * maxBurst is cut to its 4 bits and mult to 2, the most USB 3.2 has; a
+     * mult on an interrupt endpoint is dropped. Bulk endpoints keep
+     * CH32RV_USB_SS_BULK_BURST, the window the USBSS driver offers. Below
+     * SuperSpeed there is no companion and the call does nothing, so a class
+     * makes it at every speed. */
+    void superSpeedBurst(uint8_t maxBurst, uint8_t mult = 0, uint16_t bytesPerInterval = 0)
+    {
+        _burst = (uint8_t)(0x80u | (maxBurst & 0x0Fu));
+        _mult = (uint8_t)(mult > 2 ? 2 : mult);
+        _bytesPerInterval = bytesPerInterval;
+    }
 
 private:
     void emit(uint8_t v);
     uint8_t _left = 0;            /* bytes of the current descriptor still to come */
     uint8_t _have = 0;
     uint8_t _head[8] = {};
+    uint8_t _burst = 0;           /* bit 7: superSpeedBurst() set it for the next endpoint */
+    uint8_t _mult = 0;
+    uint16_t _bytesPerInterval = 0;
 };
 
 /* What one class contributes. Each class file has one, as a constant; the

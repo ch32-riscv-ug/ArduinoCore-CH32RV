@@ -301,6 +301,18 @@ test = "usb-media"
 scope = "once"
 
 [[item]]
+id = "usb-ss-iso-in"        # isochronous IN intervals of more than one burst (companion Mult 1, 2) arrive whole
+test = "usb-ss-iso::test_usb_ss_iso_in"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
+id = "usb-ss-iso-out"       # isochronous OUT intervals of more than one burst (companion Mult 1, 2) are taken whole
+test = "usb-ss-iso::test_usb_ss_iso_out"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
 id = "usb-peer"
 test = "usb-peer"
 scope = "once"

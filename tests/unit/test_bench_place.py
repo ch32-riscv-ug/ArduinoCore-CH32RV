@@ -139,7 +139,11 @@ def test_usb_per_controller():
                                 "super_speed": {"to": "host", "ss_only": True}}})
     cases = place.choose_cases(h417, items, caps)
     assert cases["usb"] == "run" and cases["usb-peer"] == "run"
+    assert cases["usb-ss-iso"] == "run"                                  # USBSS: the SuperSpeed isochronous bursts
     assert cases["usb-peer-media"].startswith("skip: the RP2040")
+    v307 = dict(chip="CH32V307VCT6", kind="wchlink", lines={}, record={"usb": {"to": "host"}})
+    cases = place.choose_cases(v307, items, caps)
+    assert cases["usb-media"] == "run" and cases["usb-ss-iso"] == "skip: CH32V307 has no controller for usb-ss-iso"
     assert records.check_core(h417["record"]) == []
     assert records.check_core({"usb": {"qq": {"to": "host"}}})          # an unknown controller
     assert records.check_core({"usb": {"full_speed": {"to": "nope"}}})

@@ -197,6 +197,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   - junit に controller・相手・ハブを残し、coverage の USB の項目をその軸で分ける（TST-01 の残りと同じ）。
   - PC の libusb のベンダーの試験（Python、pyusb）: ストリーム、等時の Mult・任意のパケット数、burst、0 長、STALL と
     CLEAR_FEATURE、サスペンドとリモートウェイクアップ、LPM / U1 / U2（sysfs）。B（6-2 の SS）で今すぐ流せる分から。
+    2026-11-17: 等時の Mult は usb-ss-iso（tests/instrumented/usb/test_usb_ss_iso.py、スケッチ usb_ss_iso）を入れた
+    （DCD は 1 間隔を 1 chain、記述子は superSpeedBurst()）。ビルドだけで、6-2 で未実行。
   - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
   - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
 - [ ] **H417 の SPI（マスター）が CPHA 0 で最初のビットを遅れて出す（2026-11-15、[oep] の解析）**: 6-2 の spi.output-only と
@@ -251,7 +253,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、
-  USBSS デバイスのストリームと Mult>0、LPM（L1）。V103 と第 1 世代 USBHS のホスト、HS ハブの先の split、H41x の USBHS の
+  USBSS デバイスのストリーム（Mult>0 は 2026-11-17 に実装、ビルドのみ）、LPM（L1）。V103 と第 1 世代 USBHS のホスト、HS ハブの先の split、H41x の USBHS の
   ホストは 2026-11-17 に実装した（ビルドのみ）。配線待ち: V103 の USB の口 → Pico、V307 の USBHS（HSE の板）→ P4、V407 の
   USBHS1 → USB2 の PPPS ハブ（マルチ TT とシングル TT）→ Pico・P4（記録の `hub`）、H417 の USBHS → P4（SWD が外れるので
   単発、起動待ちのイメージで）。表は tests/TEST_PLAN.ja.md の「ホストのコントローラーの配線待ち」。

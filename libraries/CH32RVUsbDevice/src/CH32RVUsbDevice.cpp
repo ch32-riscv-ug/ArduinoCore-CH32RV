@@ -178,14 +178,25 @@ void CH32RVUsbDescriptorWriter::put(const uint8_t *data, uint16_t n)
                 return;
             }
         }
-        if (companions && _have >= 6 && _head[1] == 5) {
-            const bool periodic = (_head[3] & 1) != 0;      /* isochronous or interrupt */
-            const bool bulk = (_head[3] & 3) == 2;
-            const uint8_t c[6] = {6, 0x30, (uint8_t)(bulk ? CH32RV_USB_SS_BULK_BURST - 1u : 0), 0,
-                                  (uint8_t)(periodic ? _head[4] : 0), (uint8_t)(periodic ? _head[5] : 0)};
-            for (uint8_t k = 0; k < sizeof c; k++) {
-                emit(c[k]);
+        if (_have >= 6 && _head[1] == 5) {
+            if (companions) {
+                const bool periodic = (_head[3] & 1) != 0;      /* isochronous or interrupt */
+                const bool bulk = (_head[3] & 3) == 2;
+                const bool iso = (_head[3] & 3) == 1;
+                const uint8_t burst = bulk ? (uint8_t)(CH32RV_USB_SS_BULK_BURST - 1u) : _burst ? (uint8_t)(_burst & 0x0Fu) : 0;
+                const uint8_t mult = iso ? _mult : 0;
+                /* wBytesPerInterval: what the host reserves each service
+                 * interval (an xHCI's Max ESIT Payload), all the packets
+                 * unless the class said less. */
+                const uint32_t most = (uint32_t)((_head[4] | _head[5] << 8) & 0x7FF) * (burst + 1u) * (mult + 1u);
+                const uint32_t bpi = !periodic ? 0 : _bytesPerInterval && _bytesPerInterval < most ? _bytesPerInterval : most;
+                const uint8_t c[6] = {6, 0x30, burst, mult, (uint8_t)bpi, (uint8_t)(bpi >> 8)};
+                for (uint8_t k = 0; k < sizeof c; k++) {
+                    emit(c[k]);
+                }
             }
+            _burst = _mult = 0;
+            _bytesPerInterval = 0;
         }
     }
 }

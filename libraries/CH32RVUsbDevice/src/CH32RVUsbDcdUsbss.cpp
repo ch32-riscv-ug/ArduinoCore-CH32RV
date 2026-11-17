@@ -172,12 +172,25 @@
 #define EP_CHAIN_CLR        0x20u
 #define EP_FC_ST            0x40u
 #define EP_CHAIN_IF         0x40u
+#define EP_TX_EOB_LPF       0x20u                  /* TX CHAIN_ST: the chain's last packet carries EOB / LPF */
 
 #define LINK_DEEMPH         CH32RV_USBSS_LINK_DEEMPH
 #define LINK_CTRL_EXTRA     CH32RV_USBSS_LINK_CTRL_EXTRA
 
 #define EP0_SIZE   512u
 #define CHAIN_MAX  16u            /* packets per chain, and the ERDY window offered */
+/* Isochronous: one transfer is one service interval and goes out (comes in)
+ * as one chain, up to (Mult + 1) x (bMaxBurst + 1) = 48 packets (USB 3.2
+ * 9.6.7). The controller has no Mult or burst setting of its own: the host
+ * asks for the interval's packets burst by burst (ACK TPs) and the chain
+ * answers them until its packets run out, the last one carrying LPF (TX
+ * CHAIN_ST.EOB_LPF, or a short packet with EOB_MODE 0); an OUT chain ends at
+ * the host's LPF (RX CHAIN_ST, RM 27.2.4.6). The packet counts are 8 bits
+ * (TX_CHAIN_EXP_NUMP / RX_CHAIN_MAX_NUMP), and the EVT's SuperSpeed camera
+ * (UVC-DVP: bMaxBurst 15, Mult 2) sends up to 32 packets an interval in one
+ * chain. A second chain armed from the interrupt would come after the
+ * host's next burst had found none. */
+#define ISO_CHAIN_MAX 48u
 /* The OUT ERDY window: packets the host may send ahead, the bulk bMaxBurst + 1
  * the descriptors give. A window of 1 with a multi-packet chain stalled after
  * two packets (bench, 2026-10-21); 4 and 16 move data. */
@@ -299,9 +312,10 @@ static void arm_in(uint8_t ep)
         npkt = 1;
         last = 0;
     } else {
+        const uint16_t most = x.iso ? ISO_CHAIN_MAX : CHAIN_MAX;
         npkt = (uint16_t)((left + x.mps - 1u) / x.mps);
-        if (npkt > CHAIN_MAX) {
-            npkt = CHAIN_MAX;
+        if (npkt > most) {
+            npkt = most;
             last = x.mps;
         } else {
             last = (uint16_t)(left - (uint16_t)(npkt - 1u) * x.mps);
@@ -310,6 +324,16 @@ static void arm_in(uint8_t ep)
     EP_DMA(b) = (uint32_t)(uintptr_t)src;
     EP_DMA_OFS(b) = x.mps;
     EP_CHAIN_LEN(b) = last;
+    if (x.iso) {
+        /* The interval's last packet carries LPF: a short one does so by
+         * itself (EOB_MODE 0); a full one that ends the transfer gets it from
+         * the chain, or a host that may take more (Mult > 0, or fewer
+         * packets than wBytesPerInterval) would wait for them. CHAIN_IF
+         * (write-only) is left alone. */
+        const bool ends = (uint32_t)x.done + (uint32_t)(npkt - 1u) * x.mps + last >= x.len;
+        const uint8_t st = (uint8_t)(EP_CHAIN_ST(b) & ~(EP_CHAIN_IF | EP_TX_EOB_LPF));
+        EP_CHAIN_ST(b) = (uint8_t)(st | (ends && last == x.mps ? EP_TX_EOB_LPF : 0u));
+    }
     EP_CHAIN_NUMP(b) = (uint8_t)npkt;
     EP_ST(b) = EP_FC_ST;
     x.armed = (uint16_t)((uint16_t)(npkt - 1u) * x.mps + last);
@@ -328,8 +352,9 @@ static void arm_out(uint8_t ep)
     const uint16_t room = (uint16_t)(x.len - x.done);
     x.bounced = room < x.mps || ((uintptr_t)dst & 3u) != 0;
     uint16_t npkt = x.bounced ? 1u : (uint16_t)(room / x.mps);
-    if (npkt > CHAIN_MAX) {
-        npkt = CHAIN_MAX;
+    const uint16_t most = x.iso ? ISO_CHAIN_MAX : CHAIN_MAX;
+    if (npkt > most) {
+        npkt = most;
     }
     EP_DMA(b) = (uint32_t)(uintptr_t)(x.bounced ? x.bounce : dst);
     EP_DMA_OFS(b) = x.mps;
@@ -910,7 +935,9 @@ static void ep_out_isr(uint8_t ep)
         memcpy(x.buf + x.done, x.bounce, take);
     }
     x.done = (uint16_t)(x.done + take);
-    if (x.done >= x.len || last < x.mps) {
+    /* Isochronous: a chain is a service interval (it ended at the host's LPF
+     * or full), and so the transfer. */
+    if (x.done >= x.len || last < x.mps || x.iso) {
         x.active = false;
         ch32rv_usbd_isr_xfer(ep, x.done);
     } else {

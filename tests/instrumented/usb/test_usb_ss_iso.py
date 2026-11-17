@@ -1,0 +1,198 @@
+"""usb-ss-iso: SuperSpeed isochronous intervals of more than one burst (the endpoint companion's Mult > 0).
+
+The DUT runs tests/sketch_support/usb_ss_iso: a vendor interface whose alternate settings have isochronous
+endpoints of 1024 bytes at bInterval 1 (125 us) and companions of bMaxBurst / Mult 1/0 (the one-burst baseline),
+1/1, 1/2 and 15/2 (48 packets, IN and OUT apart). The controller has no Mult setting (RM 27: no such field); the
+driver sends and takes a whole service interval as one chain, so the question is whether the host gets (and the DUT
+gets) every burst of an interval. This host reads what an interval holds from the descriptors (the companion), asks
+the DUT what it serves, and through libusb (usb_iso.py: one libusb packet is one service interval at SuperSpeed)
+looks at each interval's bytes:
+
+  whole    every packet of the interval, in order, each carrying the interval's number and its own
+  empty    nothing: the DUT had no transfer armed (its USB task was late) or the host saw an error
+  partial  some of the packets: the signature of Mult not served (one burst of the interval, 1 / (Mult + 1))
+
+A controller that served one burst an interval would make every interval of alternate settings 2-5 partial.
+Passes when partial intervals are at most 1 % and whole ones at least 90 %; see the bounds below.
+"""
+import json
+import pathlib
+import secrets
+import struct
+import sys
+import time
+
+import pytest
+import usb.core
+import usb.util
+
+# The runner stages the helpers beside this file; pytest imports tests without adding their directory.
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+from usb_host import APP, PcUsbHost  # noqa: E402
+from usb_iso import iso_transfer  # noqa: E402
+
+# Bounds, from what decides each:
+# - PARTIAL_MAX: a partial interval comes from the controller (a burst not served), or from the DUT arming its
+#   chain in the middle of an interval (the host's first burst found none; then the chain starts in a later burst).
+#   The DUT arms the next interval as soon as the last completes, from its USB task, with nothing else in its loop,
+#   so that race is rare; a Mult the controller does not serve makes every interval partial. 1 % separates the two
+#   by two orders of magnitude.
+# - WHOLE_MIN: empty intervals are the DUT's task timing and link errors (the usb-media microphone at SuperSpeed
+#   loses about 0.1 % to the latter), not what this case asks; 90 % still needs the driver to keep up interval
+#   after interval.
+PARTIAL_MAX = 0.01
+WHOLE_MIN = 0.90
+# usbfs buffers a transfer's data in kernel memory (usbfs_memory_mb, 16 MiB by default): at most 8 MiB per transfer,
+# and at most 800 intervals (100 ms).
+TRANSFER_BYTES_MAX = 8 << 20
+INTERVALS_MAX = 800
+# Alternate settings at most one SuperSpeed port may not have the bandwidth for (393 MB/s periodic): the host
+# refusing SET_INTERFACE there is the host's limit, reported as a skip.
+LARGE = (4, 5)
+
+
+def _companion(ep):
+    """(bMaxBurst, Mult, wBytesPerInterval) of a SuperSpeed endpoint, from the descriptor after it."""
+    extra = bytes(ep.extra_descriptors)
+    i = 0
+    while i + 1 < len(extra) and extra[i]:
+        if extra[i + 1] == 0x30 and extra[i] >= 6:
+            return extra[i + 2], extra[i + 3] & 3, extra[i + 4] | extra[i + 5] << 8
+        i += extra[i]
+    raise AssertionError(f"endpoint {ep.bEndpointAddress:#04x} has no SuperSpeed companion")
+
+
+def _ready(dut):
+    settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    build_id = settings["build_id"]
+    host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
+    nonce = secrets.token_hex(4)
+    dut.write(f"ready {nonce}\n")
+    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    assert m.group(1).decode() == build_id
+    assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
+    assert host.wait_ids(APP, 10), "application device did not enumerate"
+    deadline = time.monotonic() + 5
+    while not host.product().endswith(build_id) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert host.product().endswith(build_id), "the device is not this build: " + host.product()
+    return host
+
+
+def _dut_iso(dut):
+    dut.write("iso\n")
+    m = dut.expect(rb"ISO (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=5)
+    keys = ("alt", "packets", "in_buffers", "in_submitted", "in_refused", "out_intervals", "out_whole", "out_short",
+            "out_bad")
+    return dict(zip(keys, (int(g) for g in m.groups())))
+
+
+def _stream(dut, record_property, alt, direction):
+    """Select `alt`, run one transfer of intervals `direction` ("in" / "out"), return what to check."""
+    host = _ready(dut)
+    dev = host.device()
+    if dev.speed != usb.util.SPEED_SUPER:
+        pytest.skip(f"n/a: the DUT's link is not SuperSpeed (speed {dev.speed}); Mult is SuperSpeed's")
+    cfg = dev.get_active_configuration()
+    number = next(i.bInterfaceNumber for i in cfg if (i.bInterfaceClass, i.bInterfaceSubClass) == (0xFF, 0x49))
+    usb.util.dispose_resources(dev)
+    with host.claimed([number]) as dev:
+        cfg = dev.get_active_configuration()
+        itf = cfg[(number, alt)]
+        ep = next(e for e in itf if bool(e.bEndpointAddress & 0x80) == (direction == "in"))
+        burst, mult, per_interval = _companion(ep)
+        packets = (burst + 1) * (mult + 1)
+        mps = ep.wMaxPacketSize & 0x7FF
+        record_property("iso_alt", alt)
+        record_property("iso_companion", f"bMaxBurst {burst} Mult {mult} wBytesPerInterval {per_interval}")
+        assert per_interval == packets * mps, \
+            f"wBytesPerInterval {per_interval} is not (bMaxBurst + 1) x (Mult + 1) x {mps}"
+        try:
+            dev.set_interface_altsetting(interface=number, alternate_setting=alt)
+        except usb.core.USBError as e:
+            if alt in LARGE:
+                pytest.skip(f"skip: the host refused alternate setting {alt} ({per_interval} bytes every 125 us "
+                            f"each way): {e}")
+            raise
+        time.sleep(0.05)
+        served = _dut_iso(dut)
+        assert served["alt"] == alt and served["packets"] == packets, f"the DUT serves {served}"
+        if direction == "in":
+            assert served["in_buffers"] >= 1, "the DUT could not allocate an interval's buffer"
+        intervals = min(INTERVALS_MAX, TRANSFER_BYTES_MAX // per_interval)
+        statuses = []
+        if direction == "in":
+            got = iso_transfer(dev, ep.bEndpointAddress, per_interval, intervals, statuses=statuses)
+            sent = None
+        else:
+            data = bytearray(per_interval * intervals)
+            for s in range(intervals):
+                for k in range(packets):
+                    at = (s * packets + k) * mps
+                    struct.pack_into("<IH", data, at, s, k)
+                    data[at + mps - 1] = (s + k) & 0xFF
+            sent = iso_transfer(dev, ep.bEndpointAddress, per_interval, intervals, data=data, statuses=statuses)
+            got = None
+        time.sleep(0.05)
+        served = _dut_iso(dut)
+        dev.set_interface_altsetting(interface=number, alternate_setting=0)
+    record_property("iso_dut", json.dumps(served))
+    return packets, mps, intervals, got, sent, statuses, served
+
+
+@pytest.mark.parametrize("alt", [1, 2, 3, 4])
+def test_usb_ss_iso_in(dut, record_property, alt):
+    packets, mps, intervals, got, _, statuses, served = _stream(dut, record_property, alt, "in")
+    whole = empty = partial = errors = 0
+    sizes, last = {}, -1
+    disorder = []
+    for i, (p, st) in enumerate(zip(got, statuses)):
+        sizes[len(p)] = sizes.get(len(p), 0) + 1
+        if st != 0:
+            errors += 1
+            continue
+        if not p:
+            empty += 1
+            continue
+        if len(p) != packets * mps:
+            partial += 1
+            continue
+        serial = struct.unpack_from("<I", p)[0]
+        for k in range(packets):
+            s, kk = struct.unpack_from("<IH", p, k * mps)
+            if (s, kk) != (serial, k) or p[k * mps + mps - 1] != (serial + k) & 0xFF:
+                disorder.append(f"interval {i} packet {k}: ({s}, {kk}, {p[k * mps + mps - 1]})")
+                break
+        else:
+            if serial <= last:
+                disorder.append(f"interval {i}: number {serial} after {last}")
+            last = serial
+            whole += 1
+    record_property("iso_in_intervals", intervals)
+    record_property("iso_in_whole", whole)
+    record_property("iso_in_empty", empty)
+    record_property("iso_in_partial", partial)
+    record_property("iso_in_errors", errors)
+    record_property("iso_in_sizes", json.dumps(sizes))
+    assert not disorder, "packets out of place: " + "; ".join(disorder[:5])
+    assert partial <= intervals * PARTIAL_MAX, \
+        f"{partial} of {intervals} intervals came with part of their {packets} packets (sizes {sizes}): " \
+        f"the bursts after the first are not served"
+    assert whole >= intervals * WHOLE_MIN, \
+        f"only {whole} of {intervals} intervals whole (empty {empty}, errors {errors}, DUT {served})"
+
+
+@pytest.mark.parametrize("alt", [1, 2, 3, 5])
+def test_usb_ss_iso_out(dut, record_property, alt):
+    packets, mps, intervals, _, sent, statuses, served = _stream(dut, record_property, alt, "out")
+    errors = sum(1 for st in statuses if st != 0)
+    record_property("iso_out_intervals", intervals)
+    record_property("iso_out_errors", errors)
+    assert sum(sent) == intervals * packets * mps, f"the host sent {sum(sent)} bytes of {intervals * packets * mps}"
+    assert served["out_bad"] == 0, f"{served['out_bad']} intervals arrived with a packet out of place"
+    assert served["out_intervals"] <= intervals, f"the DUT counted {served['out_intervals']} of {intervals} intervals"
+    assert served["out_short"] <= intervals * PARTIAL_MAX, \
+        f"{served['out_short']} of {intervals} intervals arrived short of their {packets} packets: the bursts " \
+        f"after the first are not taken"
+    assert served["out_whole"] >= intervals * WHOLE_MIN, \
+        f"only {served['out_whole']} of {intervals} intervals arrived whole (DUT {served}, host errors {errors})"

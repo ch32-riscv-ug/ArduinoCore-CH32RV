@@ -153,7 +153,7 @@
 | 工場 ISP への入口（enterBootloader） | H41x | 2 | 自動 | PC（ch32rv isp） | docs/usb.ja.md:371, FC:115 |
 | 工場 ISP への入口（BOOT_MODE の無い系列） | V20x、V30x、V103、L103、V205、M030、V4x7 | 2 | 自動 | PC | docs/usb.ja.md:372-373, docs/upload-routes.ja.md:174 |
 | USBSS のバルクストリーム（UAS。デバイスもホストも） | H417/H416、X315 | ハードの限界（2026-11-14 の実験） | — | デバイスが MaxStreams 2 を名乗ると PC の xHCI はストリームを割り当てるが、ストリーム 1 の転送は OUT・IN とも時間切れで、カーネルは「Transfer event for unknown stream ring」。RM 27 章と EVT のヘッダーに Stream ID の欄が無い。ホストの側にも欄が無い（HCD の下書きで確認） | TODO:136-137 |
-| USBSS デバイスの等時の Mult>0（1 間隔に複数 burst） | H417/H416、X315 | 1 | 自動 | PC（libusb の等時）か H417 どうし | TODO |
+| USBSS デバイスの等時の Mult>0（1 間隔に複数 burst） | H417/H416、X315 | 実装済み（2026-11-17、ビルドのみ）。ハードに Mult の欄は無いが要らない: ホストが burst ごとに ACK TP で求め、DCD は 1 間隔を 1 つの chain（EXP_NUMP / MAX_NUMP は 8 bit、最大 48 パケット）で出し入れし、最後のパケットに LPF（TX CHAIN_ST.EOB_LPF）。EVT の SS カメラ（UVC-DVP）も bMaxBurst 15・Mult 2 で 1 間隔 32 パケットを 1 chain で送る。記述子は `CH32RVUsbDescriptorWriter::superSpeedBurst(maxBurst, mult, bytesPerInterval)` | 自動 | PC（libusb の等時）: usb-ss-iso（Mult 0/1/2、IN・OUT、1 間隔のバイト数と抜け）。6-2 で未実行 | libraries/CH32RVUsbDevice/src/CH32RVUsbDcdUsbss.cpp, tests/instrumented/usb/test_usb_ss_iso.py |
 | USBSS の U1/U2/U3 | H417/H416、X315 | 2 | 自動 | PC（Linux の LPM） | libraries/CH32RVUsbDevice/src/CH32RVUsbDcdUsbss.cpp:26,207,263 |
 | V20x の USBD と USBFS を同時に使う（2 つのデバイス） | V203/V208 | 2 | 自動 | PC の口 2 つ | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:44-45 |
 | V407 の 2 つのデバイス・デバイスとホストの同時 | V407/V467 | 2 | 自動 | PC＋周辺機器 | docs/usb.ja.md:347, EVT CH32V407 USBHS/Dual_device・Device_Host |

@@ -103,6 +103,13 @@ H417 / H416 は USBSS（`CH32RVUsbDcdUsbss.cpp`）で、SuperSpeed のホスト�
   OUT 0.7 MB/s です。Vendor クラスの `write()` は 1 バイトずつ FIFO に入れるので、ここまでは出ません。
   `writeDirect()`（16 KB のバッファ 2 つを完了の通知から交互に）で IN 194〜206 MB/s、`onRxData()` に
   32 KB の受信バッファ（当時の `setRxDataBuffer()`、今は `configure()`）を与えて OUT 52 MB/s でした（受け取った側の `memcpy` が律速）。
+- **等時のエンドポイントは、1 間隔に複数の burst（companion の Mult 1〜2）を出せます。** クラスの記述子の関数で、
+  端点の記述子の前に `w.superSpeedBurst(maxBurst, mult, bytesPerInterval)` を呼ぶと、その端点の companion が
+  bMaxBurst・Mult・wBytesPerInterval を名乗ります（SS 以外では何もしません）。1 回の `transfer()` が 1 間隔で、
+  最大 (maxBurst + 1) × (mult + 1) = 48 パケット（48 KB）。USBSS に Mult の設定は無く、ドライバは 1 間隔を
+  1 つの chain で出し入れし、最後のパケットに LPF を付けます（EVT の SS カメラも bMaxBurst 15・Mult 2）。
+  バッファは 4 バイト境界に置いてください（ずれていると 1 パケットずつになり、間隔がそろいません）。
+  試験は usb-ss-iso（2026-11-17、ビルドのみ）。
 - **USBSS にはシステムクロックの速さが要ります。** HSI の 25 MHz のまま動かしていたときは、DMA が
   リンクに追いつかず、EP0 IN の 96 バイト目以降で 32 バイトの塊が重複していました。既定の
   400 MHz（V3F と HCLK は 100 MHz）では、512 バイトまで正しく返ります（2026-10-21）。

@@ -32,7 +32,7 @@ BOARD_IDENTIFY = pathlib.Path("/run/board-identify/by-id")
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
 USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
-USB_CASES = ("usb", "usb-classes", "usb-media", "usb-power", "usb-firmware")
+USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso", "usb-power", "usb-firmware")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
@@ -369,8 +369,11 @@ def choose_cases(place, items=None, caps=None):
     device = series_has("usb", series, items, caps)
     host = series_has("usb-peer-host", series, items, caps) and part not in USB_HOST_NO_PARTS
     for case in USB_CASES:
-        out[case] = ("run" if usb.get("to") == "host" and device else
+        # A case of one controller (usb-ss-iso: USBSS) on the series that have it (coverage.toml's needs).
+        own = series_has(case, series, items, caps, part)
+        out[case] = ("run" if usb.get("to") == "host" and device and own else
                      f"skip: {part} has no USB controller" if not device else
+                     f"skip: {series} has no controller for {case}" if not own else
                      "skip: no port of the record's usb is {to: host}")
     peer = bool(peer_usb)
     not_peer = "skip: no port of the record's usb is {to: esp32-s3}, {to: esp32-p4}, {to: rp2040} or {to: ch32rv}"
