@@ -230,6 +230,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   その説は外れ。次は、休止の中の進み（何回起きたか、RTC_CNT と ALRM、EXTI・PFIC の保留）を BKP（H41x は .noinit）に
   残して、NRST のあとに読む。selfexti のイメージで「UID が読めない」は、リセット直後の BOOT_HOLD の間に読んだため
   とみられる（EXTI の部品をリンクしただけの extiuid では読める）。
+  続き（同日、.noinit に記録を残す試し F〜H）: 眠る前のカウンタと ALRM は F が 0 / 1、G が 19 / 20（どちらもスケッチの
+  アラーム = カウンタ + 2、レジスタは + 1）。眠っている間にアラームの割り込みは 1 度も来ず（ch32rv_rtc_alarm_events 0、
+  コールバック 0 回）、NRST のあとのカウンタは 2 しか進んでいない（20 秒以上たっても）。H（アラーム +60 s、休止は
+  10 s の timer）は 10 s で起き、カウンタも進む。休止の分岐を「アラームまで 2〜3 秒は stop に入らず WFI」に広げても
+  G は戻らなかった（直しは戻した）。カウンタが止まる理由（LSI、RTC の CNF / RTOFF、stop の入り方）を RM の H41x の
+  RTC と PWR の章で調べる。試しのスケッチは scratchpad の wakeB〜wakeH（セッション限り）。
 - [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso が H417 で全部落ちる（2026-11-17、core-20261117T094315Z-1be712f3）。
   Mult 0 の基準（代替設定 1、bMaxBurst 1）でも最初の転送が libusb の status 1（TRANSFER_ERROR）、以後の
   submit は -1（IO）。DUT は SS のまま切れず、カーネルに xHCI のエラーも出ない。同じ回の usb-media（UVC の等時）は
