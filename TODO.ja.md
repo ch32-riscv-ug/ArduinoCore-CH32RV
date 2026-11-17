@@ -240,14 +240,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   condition の列。生成器の SDIO_ROUTE_FIXES（V30x・V4x7 の PB14 / PB15 の D0 / D1 を外す補正）をやめ、「condition が
   周辺の有効化（XXXEN=1）だけではない default の行」を外す一般の規則にする（PB14 は SDIOEN=1&ETHMACEN=1）。
   H416RDU6 は SDIO の D0 を封装に出していない（表の抜けではない）。SD は別の周辺 SDMMC（D0 = PC8）なら使える。
-- [ ] CH32V003 の VDD の測定（ch32rv_adc_vdd_millivolts）が約 35 % 高い: 3.3 V の板で 4448〜4464 mV を答える
-  （2026-11-17、selfapi の millivolts と selfexti の pvd。ほかの 7 台は 3248〜3352 mV）。プローブが 3.3 V で High にした
-  端子を V003 は 1023 と読む（periph の test_adc）ので、VDD は 3.3 V 以下。Vrefint（チャネル 8、1.2 V、データシートの
-  確定値）の読みが約 275（3.3 V なら約 372）。サンプル時間は最長（241 サイクル、上限 500）。analogReadMilliVolts() と
-  analogContinuous の mV、PVD の試験の判定がこれでずれる。V003 の EVT の ADC の例と RM で、Vrefint の読み方（変換の
-  前の待ち、校正の経路 ch32rv_adc_convert の補正）を比べ、実機で生の値・校正の有無・待ち時間を変えて切り分ける。
-  あわせて selfapi の millivolts の試験は「端子の読み ≒ DUT の測った VDD」の相対の判定だけで、これを見逃した:
-  プローブが 3.3 V で駆動した端子の mV を、プローブの出す電圧と比べる絶対の判定を足す（periph か signals）。
+- [x] CH32V003 の VDD の測定が約 35 % 高かった（3.3 V の板で 4448〜4464 mV）。ADC の初期化が CTLR1 = 0 と書き、
+  CALVOLSELECT（26:25、リセット値 01 = VDDA × 2/4、00 は無効）を消した状態で自己校正していたため、校正が約 100
+  カウント低く残っていた（Vrefint 277 / 1023、VDDA/2 が 410。直して 378・511・767、VDD 3256 mV）。CTLR1 を書く
+  所はすべて CH32RV_ADC_CTLR1_RESET（V003 は 1 << 25）を入れる。selfapi・selfexti・periph が V003 で通る
+  （2026-11-17、core-20261117T113312Z-1e9ba3eb）。残り: selfapi の millivolts は相対の判定だけでこれを見逃した。
+  プローブが High にした端子を満点で読んだのに DUT の VDD がプローブの電圧より高すぎる、の食い違いを判定に足す。
+- [ ] CH32X315 の ADC: コアの初期化が CTLR2 を丸ごと書き、CAL_AUTO（ビット 6、リセット値 1 = ハードの自動校正）を
+  0 にしている（CH32X315RM の ADC_CTLR2）。X315 の Vrefint・VDD の読みが正しいかを測り、要るなら CAL_AUTO を保つ。
 - [ ] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
   8 KB 刻みで進み、範囲の確認も 8 KB 揃えを求める（半分を消し残す）。2026-11-17、ファームウェア更新の実装中に
   コードを読んで見つけた。更新は読み返しで止まるので壊れないが、480K モードでは flash の書き込み・更新が使えない。

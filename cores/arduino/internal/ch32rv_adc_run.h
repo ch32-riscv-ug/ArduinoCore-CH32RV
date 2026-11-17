@@ -235,7 +235,7 @@ CH32RV_ADC_RUN_STATIC uint32_t ch32rv_adc_timed_run(uint16_t n)
  * set-up and longest sample times (wiring_analog.c). */
 CH32RV_ADC_RUN_STATIC void ch32rv_adc_restore(void)
 {
-    CH32RV_ADC_CTLR1 = 0;
+    CH32RV_ADC_CTLR1 = CH32RV_ADC_CTLR1_RESET;
     ch32rv_adc_restart(CH32RV_ADC_CTLR2_EXTSEL_SWSTART | CH32RV_ADC_CTLR2_EXTTRIG);
     CH32RV_ADC_SAMPTR1 = 0x00FFFFFFu;
     CH32RV_ADC_SAMPTR2 = 0x3FFFFFFFu;

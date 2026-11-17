@@ -111,7 +111,7 @@ static void sequence(uint8_t count, uint8_t step)
     }
     CH32RV_ADC_SAMPTR1 = smpr1;
     CH32RV_ADC_SAMPTR2 = smpr2;
-    CH32RV_ADC_CTLR1 = count > 1u ? CH32RV_ADC_CTLR1_SCAN : 0u;
+    CH32RV_ADC_CTLR1 = (count > 1u ? CH32RV_ADC_CTLR1_SCAN : 0u) | CH32RV_ADC_CTLR1_RESET;
 }
 
 /* Rounds per second free-running at `step`, from two runs (what both pay

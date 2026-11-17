@@ -528,6 +528,16 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #define CH32RV_ADC_CTLR2_EXTSEL_SWSTART (7u << 17)
 #endif
 #define CH32RV_ADC_CTLR2_EXTTRIG (1u << 20)
+/* What ADC_CTLR1 holds besides the fields the core sets. CH32V003: CALVOLSELECT
+ * (26:25) at its reset value 01, VDDA x 2 / 4 - 00 is "invalid" (CH32V003RM
+ * ADC_CTLR1), and a CTLR1 of 0 left the calibration about 100 counts low:
+ * Vrefint read 277 of 1023 on a 3.3 V board (VDD reported as 4.45 V), VDDA / 2
+ * read 410; calibrated again with it set, 378 and 511 (2026-11-17). */
+#if defined(CH32RV_SERIES_CH32V003)
+#define CH32RV_ADC_CTLR1_RESET (1u << 25)
+#else
+#define CH32RV_ADC_CTLR1_RESET 0u
+#endif
 #define CH32RV_ADC_CTLR2_SWSTART (1u << 22)
 /* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8 (the families that have it; the
  * ceiling ADCCLK must stay under is CH32RV_ADC_MAX_HZ from boards.txt). */

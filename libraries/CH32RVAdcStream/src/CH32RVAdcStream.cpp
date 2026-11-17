@@ -89,7 +89,7 @@ bool CH32RVAdcStream::configure(uint8_t step)
     CH32RV_ADC_RSQR3 = sq;
     CH32RV_ADC_RSQR2 = 0;
     CH32RV_ADC_RSQR1 = (uint32_t)(_count - 1u) << 20;
-    CH32RV_ADC_CTLR1 = _count > 1 ? CH32RV_ADC_CTLR1_SCAN : 0u;
+    CH32RV_ADC_CTLR1 = (_count > 1 ? CH32RV_ADC_CTLR1_SCAN : 0u) | CH32RV_ADC_CTLR1_RESET;
     return true;
 }
 

@@ -126,7 +126,7 @@ static void ch32rv_adc_begin(uint8_t index)
      * and high source impedance is the norm on a breadboard. */
     CH32RV_ADC_SAMPTR1_AT(base) = 0x00FFFFFFu;
     CH32RV_ADC_SAMPTR2_AT(base) = 0x3FFFFFFFu;
-    CH32RV_ADC_CTLR1_AT(base) = 0;
+    CH32RV_ADC_CTLR1_AT(base) = CH32RV_ADC_CTLR1_RESET;
     /* Software trigger: EXTSEL = SWSTART, with the external trigger enabled. */
     CH32RV_ADC_CTLR2_AT(base) = CH32RV_ADC_CTLR2_EXTSEL_SWSTART |
                               CH32RV_ADC_CTLR2_EXTTRIG;
