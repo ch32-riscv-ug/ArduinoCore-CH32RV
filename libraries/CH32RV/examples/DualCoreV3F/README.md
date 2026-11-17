@@ -20,7 +20,7 @@ Once a second the V5F prints how many primes the V3F has found and the last one;
 
 ## Adapting the example
 
-On the V3F: no `Serial`, no interrupts, no peripheral the V5F uses; `millis()`, `micros()`, `delay()` and `delayMicroseconds()` work (`delay()` there does not run USB and the other system services). Both cores use the same instruction set (rv32imafc with B), so any function of the sketch can run on either. A function that never returns keeps the V3F until a reset: nothing stops it from outside yet.
+A function on the V3F runs with interrupts on and may use a peripheral the V5F does not (`Serial1` and the like) with its interrupts; not `Serial` (the V5F's), the system services such as USB, or the heap (`String` and the like). `millis()`, `micros()`, `delay()` and `delayMicroseconds()` work (`delay()` there does not run USB and the other system services). The whole set of rules is in the [CH32RV README](../../README.md) under "H41x's two cores"; messages and a semaphore between the cores are in the example [DualCoreMessages](../DualCoreMessages/README.md). Both cores use the same instruction set (rv32imafc with B), so any function of the sketch can run on either. A function that never returns keeps the V3F until a reset: nothing stops it from outside yet.
 
 ## Related documentation
 

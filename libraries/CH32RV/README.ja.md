@@ -178,6 +178,47 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
   そのドライバーを呼びません。`noInterrupts()` はすべてのレベルを止めます。H41x はコアごとに別です。HPE の無い
   V103 は EVT のとおり PFIC で入れ子にしますが、実機ではまだ確かめていません。
 
+### H41x の 2 つのコア（V5F と V3F）
+
+CPU Core = V5F（既定）では、スケッチは V5F で動き、V3F を 2 つ目のコアとして使えます（`setup1()` / `loop1()`、
+`CH32RV.startV3F()`、例 [DualCoreV3F](examples/DualCoreV3F/README.ja.md)）。2 つのコアの間の排他と通知は次の API です
+（C の関数は `ch32rv_multicore.h`）。どちらのコアからも同じ呼び方です。
+
+```cpp
+CH32RV.hsemTake(0);                 // ハードウェアのセマフォ（HSEM）のチャネル 0 を取る（待つ）
+shared.a = 1; shared.b = 2;          // 2 つのコアで共有するもの
+CH32RV.hsemRelease(0);              // 離す
+if (CH32RV.hsemTryTake(1)) { ... }  // 待たずに試す
+
+CH32RV.ipcOnReceive(onMessage);     // このコアに届いたメッセージで onMessage(uint32_t) が割り込みで動く
+CH32RV.ipcSend(42);                 // 相手のコアへ（前のメッセージが取られるまで待つ）
+uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
+```
+
+- **HSEM**（`hsemCount()` = 31。チャネル 31 はコアが使う）: 取ったコアだけが離せます。相手のコアのチャネルを
+  `hsemRelease()` しても false で、取られたままです。チャネルはコアのもので、同じコアの割り込み処理は、そのコアの
+  ループが持つチャネルを取れません（`hsemTryTake()` が false。割り込みの中で待たないこと）。`hsemTake(ch, ms)` は
+  `ms` で諦め（既定は無期限）、このコアが既に持つチャネルにはすぐ false です。
+- **IPC**: 向きごとに 32 ビットのメッセージ 1 つ（IPC のチャネル 0 が V5F へ、1 が V3F へ。2 と 3 はスケッチに
+  残しています）。`ipcSend(msg, ms)` は前のメッセージが取られるまで `ms` 待ち（既定は無期限、割り込みの中では 0）、
+  入れば true。コールバックはそれを登録したコアの IPC の割り込み（V5F は IPC_CH0、V3F は IPC_CH1）で動きます。
+  相手がまだ動いていなくても、メッセージは届くまで待ちます。CPU Core = V3F では V5F が眠ったままなので、IPC の 3 つは
+  false です（HSEM はそのまま使えます）。
+- **V3F で使えるもの:** V3F に渡した関数は、割り込みを有効にして動きます。V3F で有効にした割り込みは V3F で
+  受けます（下位 32 本はコアごと、それより上は有効にしたコアへ移る。RM 4.7.5.45）。V3F で `begin()` した
+  `Serial1` などの周辺、`pinMode()` / `digitalWrite()`、`attachInterrupt()`、タイマーのコールバック、`millis()` /
+  `delay()` が使えます。優先度は V3F の 2 レベル（bit 7）です。
+- **約束:** 1 つの周辺（USART・タイマー・SPI・I2C・ADC など）は 1 つのコアだけが使います。V5F の `Serial`
+  （と `printf`、コアのコンソール）は V5F のもので、V3F は別のもの（`Serial1` など）を使います。1 本の端子、
+  1 つの EXTI のベクタのグループ（EXTI9_5、EXTI15_10）も 1 つのコアのものです。複数のドライバーが共有するレジスタ
+  （RCC のクロック許可、ポートの設定、AFIO、EXTI）は、コアがロック（HSEM のチャネル 31）の中で書くので、同じ
+  ポートの別の端子を 2 つのコアで分けてかまいません。
+- **V3F で使わないもの:** システムのサービス（USB、IP のスタック、USB PD）、休止・`restart()`・ウォッチドッグ・
+  RTC・フラッシュ（`CH32RV.*`）、命令の数で時間を作るもの（`rgbLedWrite()`：`F_CPU` は V5F の 400 MHz）、ヒープ
+  （`malloc`・`new`・`String`。picolibc の malloc にロックが無い）。
+- 例: [DualCoreMessages](examples/DualCoreMessages/README.ja.md)。試験は selfapi の `test_cores_hsem`・
+  `test_cores_ipc`・`test_cores_v3f_serial`（1 つのイメージに両方のコアのコードが入るので、書き込みは 1 回）。
+
 オブジェクト、examples、逃げ道が同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
 配れない**ことと、ライブラリには最低1つヘッダが要ることです。
 他のコアがこの用途に空のダミーを置いているのに対し、
@@ -220,6 +261,7 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
 | [TimerResource](examples/TimerResource/README.ja.md) | タイマーの取得・設定・所有権を扱う上級例 |
 | [PinCapabilities](examples/PinCapabilities/README.ja.md) | このチップに実在するpad |
 | [DualCoreV3F](examples/DualCoreV3F/README.ja.md) | CH32H417: 2 つ目のコアでの `setup1()` / `loop1()` と `CH32RV.startV3F()` |
+| [DualCoreMessages](examples/DualCoreMessages/README.ja.md) | CH32H417: 2 つのコアの間の `CH32RV.ipcSend()` と `CH32RV.hsemTake()`、V3F の `Serial1` |
 
 **知らないboardで最初に走らせるべきはPinCapabilities**です。
 CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、

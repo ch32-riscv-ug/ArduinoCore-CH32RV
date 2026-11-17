@@ -205,6 +205,48 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
   a handler that can interrupt a driver's handler must not call that driver. `noInterrupts()` masks every level.
   On H41x each core has its own. V103 (no HPE) nests by the PFIC as the EVT says; not yet checked on the board.
 
+### H41x's two cores (V5F and V3F)
+
+With CPU Core = V5F (the default) the sketch runs on the V5F and the V3F is a second core (`setup1()` / `loop1()`,
+`CH32RV.startV3F()`, example [DualCoreV3F](examples/DualCoreV3F/README.md)). Exclusion and notification between the
+two, called the same way from either core (the C functions are in `ch32rv_multicore.h`):
+
+```cpp
+CH32RV.hsemTake(0);                 // take hardware semaphore (HSEM) channel 0, waiting for it
+shared.a = 1; shared.b = 2;          // what the two cores share
+CH32RV.hsemRelease(0);              // give it back
+if (CH32RV.hsemTryTake(1)) { ... }  // try without waiting
+
+CH32RV.ipcOnReceive(onMessage);     // onMessage(uint32_t) runs in an interrupt for each message to this core
+CH32RV.ipcSend(42);                 // to the other core (waits while its last message has not been taken)
+uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
+```
+
+- **HSEM** (`hsemCount()` = 31; channel 31 is the core's): only the core that took a channel can release it -
+  `hsemRelease()` of the other core's returns false and leaves it taken. A channel belongs to a core: an interrupt
+  handler cannot take what its own core's loop holds (`hsemTryTake()` is false; never wait for it there).
+  `hsemTake(ch, ms)` gives up after `ms` (no limit by default) and returns false at once for a channel this core
+  holds.
+- **IPC**: one 32-bit message at a time in each direction (the IPC's channel 0 to the V5F, 1 to the V3F; 2 and 3
+  are left to the sketch). `ipcSend(msg, ms)` waits up to `ms` for the last one to be taken (no limit by default; 0
+  in an interrupt handler) and returns whether it went in. The callback runs in the IPC interrupt of the core that
+  set it (IPC_CH0 on the V5F, IPC_CH1 on the V3F). A message waits for a core that is not running yet. With CPU
+  Core = V3F the V5F stays asleep: the three IPC calls return false (the HSEM works as ever).
+- **What the V3F can use:** a function handed to the V3F runs with interrupts on, and an interrupt enabled from the
+  V3F is taken there (the low 32 are each core's own, a shared one moves to the core that enables it, RM 4.7.5.45):
+  `Serial1` and the like begun on the V3F, `pinMode()` / `digitalWrite()`, `attachInterrupt()`, a timer's callback,
+  `millis()` / `delay()`. Priorities are the V3F's two levels (bit 7).
+- **The rules:** a peripheral (a USART, timer, SPI, I2C, ADC, ...) is used from one core. The V5F's `Serial` (and
+  `printf`, and the core's console) is the V5F's; the V3F takes another (`Serial1`, ...). A pin and an EXTI vector
+  group (EXTI9_5, EXTI15_10) belong to one core too. The registers several drivers share - RCC's clock enables, a
+  port's configuration, AFIO, EXTI - are written by the core under a lock (HSEM channel 31), so the pins of one port
+  may be split between the cores.
+- **Not on the V3F:** the system services (USB, the IP stack, USB PD), sleep, `restart()`, the watchdogs, the RTC
+  and the flash (`CH32RV.*`), anything timed by counting instructions (`rgbLedWrite()`: `F_CPU` is the V5F's 400
+  MHz), and the heap (`malloc`, `new`, `String`: picolibc's malloc has no lock).
+- Example: [DualCoreMessages](examples/DualCoreMessages/README.md). Tests: selfapi's `test_cores_hsem`,
+  `test_cores_ipc` and `test_cores_v3f_serial` (one image holds both cores' code, so one write).
+
 The object, the examples and the escape hatch share a library because an
 Arduino platform can only ship examples through one, and a library needs at
 least one header to be well formed. Rather than the empty placeholder other
@@ -248,6 +290,7 @@ to any library, so their examples are here. Every one of them:
 | [TimerResource](examples/TimerResource/README.md) | Advanced timer acquisition, setup and ownership |
 | [PinCapabilities](examples/PinCapabilities/README.md) | which pads this chip actually has |
 | [DualCoreV3F](examples/DualCoreV3F/README.md) | CH32H417: `setup1()` / `loop1()` and `CH32RV.startV3F()` on the second core |
+| [DualCoreMessages](examples/DualCoreMessages/README.md) | CH32H417: `CH32RV.ipcSend()` and `CH32RV.hsemTake()` between the cores, `Serial1` on the V3F |
 
 **PinCapabilities is the one to run first on a board you do not know.** CH32 pin
 numbers are `((port + 2) << 5) | bit`, so they are sparse: PA0 is 64, PB0 is 96,

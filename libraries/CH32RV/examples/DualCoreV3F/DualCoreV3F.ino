@@ -2,8 +2,8 @@
 // en: (started before setup()), and CH32RV.startV3F() hands it one function at a time when they are not used.
 // ja: CH32H417 の CPU Core = V5F(既定)で、V3F を 2 つ目のコアとして使う。setup1() / loop1() は V3F で動く
 // ja: (setup() の前に始まる)。使わないときは CH32RV.startV3F() で関数を 1 つずつ渡せる。
-// en: On the V3F: no Serial, no interrupts, no peripheral the V5F uses; millis() / delay() work.
-// ja: V3F では Serial・割り込み・V5F が使うペリフェラルは使わない。millis() / delay() は使える。
+// en: On the V3F: interrupts and a peripheral the V5F does not use (Serial1 ...); not Serial, not the heap.
+// ja: V3F では割り込みと、V5F が使わないペリフェラル（Serial1 など）が使える。Serial とヒープは使わない。
 /* board: CH32H417 */
 
 #include <CH32RV.h>

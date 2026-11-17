@@ -23,7 +23,16 @@ with the slow one a preemption level less urgent (CH32RV_IRQ_PRIORITY(1)), at le
 interrupted by the fast one (nesting); at the same level, and with the slow one more urgent, none is. At least 15
 slow handlers ran in each 50 ms (one every 2 ms). n/a where the sketch found fewer than two free timers.
 
-A board whose record loses gpio-drive (CH32M030's motor board) skips millivolts."""
+selfapi.cores-hsem / cores-ipc / cores-v3f-serial (CH32H41x; n/a elsewhere): with CPU Core = V5F one image holds
+both cores' code and the V3F runs the sketch's functions (CH32RV.startV3F()). HSEM: what one core holds the other
+can neither take nor release, released it can, the holder cannot take it twice, hsemTake(20 ms) gives up after 20-40
+ms, and 20000 additions by each core under one channel lose none. IPC: 1000 round trips V5F -> V3F -> V5F all come
+back, each handler in its own core's IPC interrupt (mcause 0x80000011 on core 0, 0x80000010 on core 1), at most 50 us
+a round trip, and one message taken by polling. A USART begun on the V3F: its interrupt allocated to the V3F
+(PFIC_IALLOCR), 64 bytes out at 115200 within selfcheck's band, 16 bytes in at 9600 from its own RX pad. With CPU
+Core = V3F: the HSEM on one core, the IPC refusing (no other core).
+
+A board whose record loses gpio-drive (CH32M030's motor board) skips millivolts and cores-v3f-serial."""
 import json
 import pathlib
 import secrets
@@ -158,3 +167,135 @@ def test_priorities(dut, ready, record_property):
     wrong += [f"{n}: {seen[n]['nested']} slow handlers interrupted" for n in names[1:] if seen[n]["nested"]]
     assert not wrong, f"{levels} preemption levels: " + " | ".join(wrong)
 
+
+
+# CH32H41x's two cores (selfapi.cores-*): the HSEM, the IPC and a USART used from the V3F, all from one image with
+# CPU Core = V5F - the V3F runs functions of the same sketch (CH32RV.startV3F()), so one write puts both cores' code
+# on the chip. With CPU Core = V3F the V5F stays asleep: hsem runs on one core and ipc must refuse.
+def cores(dut):
+    m = ask(dut, "cores", rb"CORES (V5F (\d+)|V3F|NONE)")
+    mode = m.group(1).decode().split()[0]
+    if mode == "NONE":
+        pytest.skip("n/a: one core (CH32H41x only)")
+    return mode, int(m.group(2) or 0)
+
+
+def test_cores_hsem(dut, ready, record_property):
+    mode, _ = cores(dut)
+    if mode == "V3F":
+        m = ask(dut, "hsem", rb"HSEM V3F (\d) (\d) (\d) (\d) (\d) ([0-9a-f]{8})")
+        got = [int(x) for x in m.groups()[:5]]
+        record_property("hsem", json.dumps(dict(mode=mode, steps=got, raw=m.group(6).decode())))
+        # take, take again (this core holds it), release, release again (not held), take(20 ms) of a free one
+        assert got == [1, 0, 1, 0, 1], f"one core: take/again/release/again/take gave {got}, want [1, 0, 1, 0, 1]"
+        return
+    m = ask(dut, "hsem", rb"HSEM V5F (?:(BUSY)|" + rb" ".join([rb"(\d+)"] * 13) + rb" ([0-9a-f]{8}))", timeout=15)
+    assert not m.group(1), "the V3F was busy: startV3F() refused"
+    a, b, c, d, e, f, g, h, waited, j, i, count, expected = (int(x) for x in m.groups()[1:14])
+    record_property("hsem", json.dumps(dict(mode=mode, steps=[a, b, c, d, e, f, g, h, j, i], waited_ms=waited,
+                                            count=count, expected=expected, raw=m.group(15).decode())))
+    want = dict(v5f_take=(a, 1), v5f_again=(b, 0), v3f_take_while_held=(c, 0), v3f_release_not_its=(d, 0),
+                v5f_release=(e, 1), v3f_take_after=(f, 1), v5f_try_while_v3f=(g, 0), v5f_take_20ms=(h, 0),
+                v3f_release=(j, 1), v5f_take_after=(i, 1))
+    wrong = [f"{k} {v[0]}, want {v[1]}" for k, v in want.items() if v[0] != v[1]]
+    # take(20 ms) must have waited its time: at least 20 ms (millis() granularity 1 ms), and not run on - 40 ms is
+    # twice the limit, far above the 70-280 ns a try costs (docs/h417-multicore.ja.md).
+    if not 20 <= waited <= 40:
+        wrong.append(f"take(20 ms) of a held channel returned after {waited} ms")
+    # Both cores add 1 to a plain shared word under one channel, 20000 times each: exclusion holds only if none is
+    # lost (without it 25 % were, docs/h417-multicore.ja.md).
+    if count != expected:
+        wrong.append(f"the count under the semaphore is {count}, {expected} expected")
+    assert not wrong, " | ".join(wrong)
+
+
+def test_cores_ipc(dut, ready, record_property):
+    mode, _ = cores(dut)
+    n = 1000
+    if mode == "V3F":
+        m = ask(dut, f"ipc {n}", rb"IPC V3F (\d) (\d) (\d)")
+        got = [int(x) for x in m.groups()]
+        record_property("ipc", json.dumps(dict(mode=mode, results=got)))
+        assert got == [0, 0, 0], f"CPU Core = V3F (no other core): send/onReceive/receive gave {got}, want 0 0 0"
+        return
+    m = ask(dut, f"ipc {n}", rb"IPC V5F (?:(BUSY)|(\d+) (\d+) (\d+) ([0-9a-f]{8}) (\d+) ([0-9a-f]{8}) (\d+) (\d+) "
+                             rb"([0-9a-f]{8}))", timeout=20)
+    assert not m.group(1), "the V3F was busy: startV3F() refused"
+    asked, ok, us = (int(x) for x in m.groups()[1:4])
+    v3f_cause, v3f_core = int(m.group(5), 16), int(m.group(6))
+    v5f_cause, v5f_core = int(m.group(7), 16), int(m.group(8))
+    runs, polled = int(m.group(9)), int(m.group(10), 16)
+    per = us / ok if ok else None
+    record_property("ipc", json.dumps(dict(mode=mode, asked=asked, answered=ok, us=us, us_per_round_trip=per,
+                                           v3f_mcause=hex(v3f_cause), v5f_mcause=hex(v5f_cause),
+                                           v3f_runs=runs, polled=hex(polled))))
+    wrong = []
+    if ok != asked or runs != asked:
+        wrong.append(f"{ok} of {asked} round trips answered, the V3F's handler ran {runs} times")
+    # The handlers run in each core's own IPC interrupt: mcause is an interrupt (bit 31) with IPC_CH1's number (17)
+    # on the V3F (core 0) and IPC_CH0's (16) on the V5F (core 1) - RX_CID routes them, RM 4.4.
+    if (v3f_cause, v3f_core) != (0x80000011, 0):
+        wrong.append(f"the V3F's handler: mcause {v3f_cause:#x} on core {v3f_core}, want 0x80000011 on core 0")
+    if (v5f_cause, v5f_core) != (0x80000010, 1):
+        wrong.append(f"the V5F's handler: mcause {v5f_cause:#x} on core {v5f_core}, want 0x80000010 on core 1")
+    if polled != 0x5A5A1234:
+        wrong.append(f"ipcReceive() polled {polled:#x}, 0x5a5a1234 sent")
+    # A round trip is two interrupt entries, a V3F handler at 100 MHz and the V5F's wait loop (2 us steps): a few
+    # microseconds. 50 us leaves a factor of ten for the V5F's ISR and its pauses; above it, something waits for a
+    # timeout or a poll instead of the interrupt.
+    if per is not None and per > 50:
+        wrong.append(f"{per:.1f} us a round trip ({us} us for {ok})")
+    assert not wrong, " | ".join(wrong)
+
+
+def test_cores_v3f_serial(dut, ready, record_property):
+    mode, count = cores(dut)
+    if mode != "V5F":
+        pytest.skip("n/a: CPU Core = V3F runs the whole sketch on the V3F (the other cases cover its Serial)")
+    for d in ready.get("record", {}).get("defects", []):
+        if "gpio-drive" in d.get("lose", []):
+            pytest.skip(f"the board's pads are not driven: defect {d.get('id')}")
+    off = ready.get("gpio_keep_off")
+    if off is None:
+        pytest.skip("ch32-device-data is not fetched: no list of the pads to keep off")
+    off = set(off)
+    results, wrong, left = {}, [], []
+    for k in range(count):
+        number, pin = (int(x) for x in ask(dut, f"v3fport {k}", rb"V3FPORT (\d+) (-?\d+)").groups())
+        if not number:
+            left.append(f"port {k} (closed)")
+            continue
+        if pin >= 0 and pad(pin) in off:
+            left.append(f"USART{number} ({pad(pin)}: kept off)")
+            continue
+        m = ask(dut, f"v3fser {k}", rb"V3FSER (\d+) (?:(CLOSED|BUSY)|(\d+) (\d+) (\d+) (?:(HELD)|(\d+) (\d+) "
+                                    rb"([0-9a-f]+)))", timeout=15)
+        assert m.group(2) != b"BUSY", "the V3F did not start or return"
+        if m.group(2):
+            left.append(f"USART{number} (closed)")
+            continue
+        sent, took, alloc = (int(x) for x in m.groups()[2:5])
+        ideal = 64 * 10 * 1e6 / 115200
+        entry = dict(sent=sent, us=took, ialloc=alloc)
+        # selfcheck's transmit band: 64 bytes at 115200 within 4 % and 200 us of the line's time - the TXE
+        # interrupt, on the V3F, keeps the line busy.
+        if sent != 64 or not 0.96 * ideal <= took <= 1.04 * ideal + 200:
+            wrong.append(f"USART{number}: sent {sent} of 64 in {took} us, {ideal:.0f} at 115200")
+        # PFIC_IALLOCR: enabling a shared interrupt gives it to the enabling core - 0 is the V3F (RM 4.7.5.45).
+        if alloc != 0:
+            wrong.append(f"USART{number}: its interrupt is allocated to core {alloc}, the V3F (0) began it")
+        if m.group(6):
+            entry["rx"] = "held"
+        else:
+            received, matching, errors = int(m.group(7)), int(m.group(8)), int(m.group(9), 16)
+            entry.update(received=received, matching=matching, errors=errors)
+            # selfcheck's receive: all 16 bytes, in order, no error - the RXNE interrupt taken on the V3F.
+            if received != 16 or matching != 16 or errors:
+                wrong.append(f"USART{number}: received {received}, {matching} in order of 16, errors {errors:#x}")
+        results[f"USART{number}"] = entry
+    record_property("ports", json.dumps(results))
+    if left:
+        record_property("left", ", ".join(left))
+    assert results, "no port could be used: " + ", ".join(left)
+    assert any("received" in r for r in results.values()), "no port's RX pad could be driven: " + json.dumps(results)
+    assert not wrong, " | ".join(wrong)

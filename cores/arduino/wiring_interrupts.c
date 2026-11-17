@@ -59,6 +59,9 @@ static void ch32rv_exti_set(pin_size_t pin, PinStatus mode,
     const uint32_t shift = (bit % CH32RV_EXTICR_FIELDS_PER_REG) * CH32RV_EXTICR_FIELD_BITS;
     const uint32_t field_mask = (1u << CH32RV_EXTICR_FIELD_BITS) - 1u;
     volatile uint32_t *cr = &CH32RV_AFIO_EXTICR(bit / CH32RV_EXTICR_FIELDS_PER_REG);
+    /* EXTICR and EXTI's registers hold every line: the cores' lock keeps the
+     * other core's lines (H41x, internal/ch32rv_cores.h; nothing elsewhere). */
+    const uint32_t lock = ch32rv_cores_lock();
     *cr = (*cr & ~(field_mask << shift)) | ((uint32_t)port << shift);
 
     const uint32_t mask = 1u << bit;
@@ -74,6 +77,7 @@ static void ch32rv_exti_set(pin_size_t pin, PinStatus mode,
     }
     CH32RV_EXTI_INTFR = mask;          /* drop anything pending from setup */
     CH32RV_EXTI_INTENR |= mask;
+    ch32rv_cores_unlock(lock);
 
     /* Enable whichever vector covers this line. */
 #define CH32RV_EXTI_ENABLE(handler, group_mask, irqn) \
@@ -118,10 +122,12 @@ void detachInterrupt(pin_size_t pin)
         return;
     }
     const uint32_t mask = 1u << bit;
+    const uint32_t lock = ch32rv_cores_lock();
     CH32RV_EXTI_INTENR &= ~mask;
     CH32RV_EXTI_RTENR &= ~mask;
     CH32RV_EXTI_FTENR &= ~mask;
     CH32RV_EXTI_INTFR = mask;
+    ch32rv_cores_unlock(lock);
     ch32rv_exti_callback[bit] = 0;
     ch32rv_exti_param[bit] = 0;
 }

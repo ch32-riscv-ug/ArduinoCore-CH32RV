@@ -67,7 +67,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | PMP (メモリ保護) | 未実装 | - |  |  |  | ○ |  | ○ | ○ | ○ |  | ○ |  | ○ |  |
 | FPU | 実装済 | float/double |  |  |  |  |  | ● |  |  |  |  | ● | ● | 単精度のFPU。`-march`のfでコンパイラが使う |
 | ICache | 実装済 | - |  |  |  |  |  |  |  |  |  |  |  | ● | 起動時にEVTと同じCORECFGRを書く |
-| V5F (2つ目のコア)/HSEM/IPC | 一部実装 | CPU Core menu, setup1()/loop1(), CH32RV.startV3F() |  |  |  |  |  |  |  |  |  |  |  | ◐ | H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F)。HSEM・IPCの公開APIは未実装(docs/h417-multicore.ja.md) |
+| V5F (2つ目のコア)/HSEM/IPC | 実装済 | CPU Core menu, setup1()/loop1(), CH32RV.startV3F(), CH32RV.hsem*()/ipc*() |  |  |  |  |  |  |  |  |  |  |  | ● | H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F・DualCoreMessages)。V3Fは割り込みとV5Fの使わない周辺(Serial1など)を使える。HSEM・IPCの公開API(2026-11-17、ビルドのみ)。V3Fのヒープ、V3Fを外から止める仕組みは未 |
 | RAM実行 | 実装済 | CH32RV_RAMFUNC | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 関数に付けるとRAMに置く(.highcode、起動時に.dataと一緒に写す)。その大きさ分のRAMを使う。H41xは全部RAMで動く |
 | AWU (自動起床) | 実装済 | CH32RV.enableTimerWakeup | ● | ● |  |  |  |  |  |  | ● | ● |  |  | 休止からのタイマー起床に使う(V003・V00x・M030はPWRの中、X035は別のブロック)。LSIで動くもの(V00x・M030)は起動後最初の休止で速さを測る。M030は分周が51000固定で約150 ms単位 |
 | オプションバイト | 未実装 | - | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | ○ | 読み出し保護、NRSTの端子をGPIOにする設定など。書き込みツール(ch32rv)の範囲とも重なる |

@@ -134,7 +134,11 @@ _start:
     addi    t1, t1, %lo(_vector_base)
     ori     t1, t1, CH32RV_MTVEC_MODE
     csrw    mtvec, t1
-    li      t1, 0x6000                 /* FPU on, interrupts off */
+/* FPU on, interrupts on (MIE, and MPIE for the handlers' mret): what the
+ * function enables in the PFIC - private interrupts in the V3F's own, shared
+ * ones moved to the V3F by enabling them there (PFIC_IALLOCR, RM 4.7.5.45) -
+ * is taken here. Nothing is enabled for the V3F before it does. */
+    li      t1, 0x6088
     csrw    mstatus, t1
     jalr    t0
     csrci   mstatus, 8

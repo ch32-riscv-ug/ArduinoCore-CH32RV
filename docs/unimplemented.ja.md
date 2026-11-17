@@ -246,8 +246,8 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| HSEM・IPC の公開 API | H417/H416 | 1 | 自動 | 自己 | PS:66, PM:269-271 |
-| V3F から使える周辺（Serial など） | H41x | 1 | 自動 | 自己 | libraries/CH32RV/src/CH32RVSystem.h:201-202 |
+| HSEM・IPC の公開 API | H417/H416 | 実装済み（2026-11-17、ビルドのみ。`CH32RV.hsemTake/TryTake/Release()`・`ipcSend/Receive/OnReceive()`、C は ch32rv_multicore.h。CPU Core = V3F では IPC は false） | 自動 | 自己（selfapi::test_cores_hsem・test_cores_ipc） | PS:66, PM:269-271 |
+| V3F から使える周辺（Serial など） | H41x | 実装済み（2026-11-17、ビルドのみ。V3F の関数は割り込み有効で動き、V3F で始めた周辺の割り込みは V3F へ。共有のレジスタ（RCC・GPIO の設定・AFIO・EXTI）はコアのロック。約束は internal/ch32rv_v3f.h と CH32RV の README。V3F のヒープは未対応） | 自動 | 自己（selfapi::test_cores_v3f_serial） | libraries/CH32RV/src/CH32RVSystem.h:201-202 |
 | V5F で休止・restart・WDT・フラッシュ、DFU の BOOT 域からの V5F | H41x | 2 | 自動 | 自己＋PC（DFU） | TODO:165-166 |
 | H41x の休止で V5F・V3F を分けて止める | H41x | 2 | 単発 | 電流計 | libraries/CH32RV/README.ja.md:71 |
 

@@ -564,6 +564,32 @@ test = "selfapi::test_priorities"
 scope = "series"
 kind = "self"
 
+# CH32H41x's two cores. No clock enable names the HSEM / IPC (core-private blocks): `needs` names none, `also` the
+# series. Each a question of its own: exclusion, notification, a peripheral driven from the V3F.
+[[item]]
+id = "selfapi-cores-hsem"   # HSEM: held by one core the other cannot take or release it; released it can; no add lost
+test = "selfapi::test_cores_hsem"
+scope = "series"
+needs = ["HSEM"]
+also = ["CH32H415", "CH32H416", "CH32H417"]
+kind = "self"
+
+[[item]]
+id = "selfapi-cores-ipc"    # IPC: a message raises the other core's own interrupt, round trips, a polled message
+test = "selfapi::test_cores_ipc"
+scope = "series"
+needs = ["HSEM"]
+also = ["CH32H415", "CH32H416", "CH32H417"]
+kind = "self"
+
+[[item]]
+id = "selfapi-cores-v3f-serial"  # a USART begun on the V3F: its interrupt allocated there, TX and RX through it
+test = "selfapi::test_cores_v3f_serial"
+scope = "series"
+needs = ["HSEM"]
+also = ["CH32H415", "CH32H416", "CH32H417"]
+kind = "self"
+
 
 [[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference

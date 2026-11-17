@@ -284,9 +284,12 @@ STATUS = {
                                       "双方向。SerialSDIと同時使用不可"),
     "DMSEQ console (debug出力)": ("実装済", "SerialDMSeq(library)",
                                     "双方向。通し番号とCRC-8を使用"),
-    "V5F (2つ目のコア)/HSEM/IPC": ("一部実装", "CPU Core menu, setup1()/loop1(), CH32RV.startV3F()",
-                                  "H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F)。"
-                                  "HSEM・IPCの公開APIは未実装(docs/h417-multicore.ja.md)"),
+    "V5F (2つ目のコア)/HSEM/IPC": ("実装済", "CPU Core menu, setup1()/loop1(), CH32RV.startV3F(), "
+                                  "CH32RV.hsem*()/ipc*()",
+                                  "H417。スケッチはV5Fで動き、V3Fを2つ目のコアとして使える(例DualCoreV3F・"
+                                  "DualCoreMessages)。V3Fは割り込みとV5Fの使わない周辺(Serial1など)を使える。"
+                                  "HSEM・IPCの公開API(2026-11-17、ビルドのみ)。V3Fのヒープ、V3Fを外から止める"
+                                  "仕組みは未"),
     "FreeRTOS": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
     "RT-Thread": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
     "HarmonyOS": ("未実装", "-", "coreはbare metal(ADR-0006)。portはcoreと独立したlibraryとして作る"),
@@ -356,7 +359,7 @@ CELLS = {
     "FLASH (自己書き換え)": {ALL: "●"},
     "RAM実行": {ALL: "●"},
     "HSADC (高速ADC)": {"H415/H416/H417": "◐"},
-    "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "◐"},
+    "V5F (2つ目のコア)/HSEM/IPC": {"H415/H416/H417": "●"},
     "ADC 連続・DMA・トリガ": {ALL: "◐"},
     # ch32-device-data lists a DAC block for V103, but no V103 part has one (parts.csv; asked upstream).
     "DAC": {"V103": ""},

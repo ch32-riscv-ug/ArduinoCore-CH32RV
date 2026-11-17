@@ -23,8 +23,7 @@ static inline void ch32rv_gpio_clock_enable(uint8_t port)
 {
     /* One register, PA at CH32RV_CLKEN_GPIO_BIT0 and the ports contiguous
      * after it - true of every family in clock_enables.csv. */
-    CH32RV_REG32(CH32RV_CLKEN_GPIO_ADDR) |= 1u << (CH32RV_CLKEN_GPIO_BIT0 + (port));
-    CH32RV_CLKEN_SETTLE(CH32RV_CLKEN_GPIO_ADDR);   /* ch32rv_registers.h */
+    ch32rv_clock_enable_at(CH32RV_CLKEN_GPIO_ADDR, 1u << (CH32RV_CLKEN_GPIO_BIT0 + (port)));
 }
 
 /* Write the 4-bit configuration nibble for one pin. */
@@ -49,7 +48,11 @@ static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cf
     } else {
         return;   /* not a pin on this family */
     }
+    /* A port's register holds eight pads: the cores' lock keeps another
+     * core's pad in it (H41x, internal/ch32rv_cores.h). */
+    const uint32_t lock = ch32rv_cores_lock();
     *reg = (*reg & ~(0xFu << shift)) | ((cfg & 0xFu) << shift);
+    ch32rv_cores_unlock(lock);
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
     /* errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY pads. With
      * AFIO_CTLR.USB_PHY_V33 set (reset default 0x45) a GPIO or AF open-drain
@@ -89,7 +92,9 @@ static inline void ch32rv_pin_set_af(uint8_t pin, uint32_t af)
     volatile uint32_t *reg = &CH32RV_REG32(CH32RV_AFIO_BASE + CH32RV_AFIO_AFLR_OFFSET + port * 8u +
                                            (bit >= 8u ? 4u : 0u));
     const uint32_t shift = (bit & 7u) * 4u;
+    const uint32_t lock = ch32rv_cores_lock();
     *reg = (*reg & ~(0xFu << shift)) | ((af & 0xFu) << shift);
+    ch32rv_cores_unlock(lock);
 #else
     (void)pin;
     (void)af;

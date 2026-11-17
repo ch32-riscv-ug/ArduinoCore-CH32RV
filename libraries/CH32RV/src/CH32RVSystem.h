@@ -122,6 +122,7 @@
 
 #include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
 #include "ch32rv_crc.h"
+#include "ch32rv_multicore.h"
 #include <time.h>
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
@@ -302,10 +303,12 @@ public:
 #if defined(CH32RV_RUN_V5F)
     /* CH32H41x with CPU Core = V5F: the V3F as a second core. fn(arg) runs
      * there on `stack` (its size in bytes; the stack grows down from its end)
-     * with interrupts off; when it returns the V3F waits for the next. false
+     * with interrupts on; when it returns the V3F waits for the next. false
      * while the V3F is busy or when called on the V3F. setup1() / loop1() in
-     * the sketch start it before setup() instead. What the V3F may call:
-     * internal/ch32rv_v3f.h (no Serial, no peripheral the V5F uses). */
+     * the sketch start it before setup() instead. What the V3F may use - a
+     * peripheral the V5F does not (Serial1 and the like, pins, timers, their
+     * interrupts), never the system services (USB, the IP stack) - is in
+     * internal/ch32rv_v3f.h. */
 #define CH32RV_HAS_V3F 1
     bool startV3F(void (*fn)(void *), void *arg, void *stack, uint32_t size)
     {
@@ -315,6 +318,36 @@ public:
     bool isV3FRunning() { return ch32rv_v3f_running() != 0; }
     /* Which core is running this (true on the V3F). */
     bool onV3F() { return ch32rv_on_v3f() != 0; }
+#endif
+
+#if defined(CH32RV_HAS_HSEM)
+    /* CH32H41x: the hardware semaphore between the V5F and the V3F, channels 0 to hsemCount() - 1 (31 is the
+     * core's). hsemTryTake() takes a free channel or returns false at once; hsemTake() tries until it has it or
+     * timeoutMs has passed (CH32RV_WAIT_FOREVER: no limit), false at once when this core holds it already;
+     * hsemRelease() gives back a channel this core holds (false for one it does not: the other core's stay
+     * taken). A channel belongs to a core: an interrupt handler cannot take what its own core's loop holds.
+     * Details: ch32rv_multicore.h. */
+    bool hsemTryTake(uint8_t channel) { return ch32rv_hsem_try_take(channel) != 0; }
+    bool hsemTake(uint8_t channel, uint32_t timeoutMs = CH32RV_WAIT_FOREVER)
+    {
+        return ch32rv_hsem_take(channel, timeoutMs) != 0;
+    }
+    bool hsemRelease(uint8_t channel) { return ch32rv_hsem_release(channel) != 0; }
+    uint8_t hsemCount() { return (uint8_t)CH32RV_HSEM_USER_CHANNELS; }
+#endif
+
+#if defined(CH32RV_HAS_IPC)
+    /* CH32H41x: one 32-bit message at a time to the other core. ipcSend() waits while the last one has not been
+     * taken (up to timeoutMs; 0 from an interrupt handler) and returns whether it went in; ipcOnReceive(cb)
+     * runs cb(message) in this core's IPC interrupt for each message to it (nullptr: no more); ipcReceive()
+     * takes one without a callback. With CPU Core = V3F the V5F stays asleep: all three return false. Details:
+     * ch32rv_multicore.h. */
+    bool ipcSend(uint32_t message, uint32_t timeoutMs = CH32RV_WAIT_FOREVER)
+    {
+        return ch32rv_ipc_send(message, timeoutMs) != 0;
+    }
+    bool ipcReceive(uint32_t &message) { return ch32rv_ipc_receive(&message) != 0; }
+    bool ipcOnReceive(void (*callback)(uint32_t message)) { return ch32rv_ipc_on_receive(callback) != 0; }
 #endif
 
 private:

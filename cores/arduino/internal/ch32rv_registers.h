@@ -38,6 +38,8 @@
 #define CH32RV_GENERATED_(s) CH32RV_STRINGIFY_(internal/s)
 #include CH32RV_GENERATED_(CH32RV_IRQNS)
 #include CH32RV_GENERATED_(CH32RV_EXTIS)
+/* The cores' lock (CH32H41x), around the shared read-modify-writes below. */
+#include "internal/ch32rv_cores.h"
 
 #define CH32RV_REG32(addr) (*(volatile uint32_t *)(uintptr_t)(addr))
 #define CH32RV_REG16(addr) (*(volatile uint16_t *)(uintptr_t)(addr))
@@ -112,18 +114,26 @@
 #else
 #define CH32RV_CLKEN_SETTLE(addr) ((void)0)
 #endif
-#define ch32rv_clock_enable(name) \
-    (CH32RV_CLKEN_(name, |=), CH32RV_CLKEN_SETTLE(CH32RV_CLKEN_##name##_ADDR))
-#define ch32rv_clock_disable(name) CH32RV_CLKEN_(name, &= ~)
+/* The enable registers are one per bus, shared by every driver: on H41x with
+ * the sketch on the V5F the V3F may write them too, and the read-modify-write
+ * goes under the cores' lock (internal/ch32rv_cores.h; nothing elsewhere). */
 static inline void ch32rv_clock_enable_at(uint32_t addr, uint32_t mask)
 {
+    const uint32_t lock = ch32rv_cores_lock();
     CH32RV_REG32(addr) |= mask;
     CH32RV_CLKEN_SETTLE(addr);
+    ch32rv_cores_unlock(lock);
 }
 static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 {
+    const uint32_t lock = ch32rv_cores_lock();
     CH32RV_REG32(addr) &= ~mask;
+    ch32rv_cores_unlock(lock);
 }
+#define ch32rv_clock_enable(name) \
+    ch32rv_clock_enable_at(CH32RV_CLKEN_##name##_ADDR, CH32RV_CLKEN_##name##_MASK)
+#define ch32rv_clock_disable(name) \
+    ch32rv_clock_disable_at(CH32RV_CLKEN_##name##_ADDR, CH32RV_CLKEN_##name##_MASK)
 /* APB1 */
 
 /* ------------------------------------------------------------------ I2C */

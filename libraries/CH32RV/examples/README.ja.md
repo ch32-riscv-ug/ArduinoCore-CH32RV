@@ -37,6 +37,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [PinInterrupt](PinInterrupt/README.ja.md) | GPIO のエッジを割り込みで数え、表示を `loop()` へ分けます。 |
 | [CriticalSection](CriticalSection/README.ja.md) | 割り込みと共有する値を、短い割り込み禁止区間でコピーする書き方を示します。 |
 | [DualCoreV3F](DualCoreV3F/README.ja.md) | CH32H417: スケッチを V5F で動かしたまま、`setup1()` / `loop1()` を V3F で動かします。 |
+| [DualCoreMessages](DualCoreMessages/README.ja.md) | CH32H417: V5F と V3F がメッセージ（IPC）とハードウェアのセマフォ（HSEM）でやり取りします。 |
 | [PinCapabilities](PinCapabilities/README.ja.md) | variant が定義する端子の有無と ADC の対応を調べます。 |
 | [PrintFormatting](PrintFormatting/README.ja.md) | 整数・小数・文字列の表示と、生バイト送信の違いを確かめます。 |
 | [PulseIn](PulseIn/README.ja.md) | トリガーを出力し、入力パルスの High の継続時間を測ります。 |

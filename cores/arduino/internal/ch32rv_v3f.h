@@ -4,15 +4,34 @@
  *
  *   - One image: the function is any function of the sketch, with the
  *     instruction set both cores share (rv32imafc + B; -march is that).
- *   - It runs with interrupts off, on the stack given. When it returns the V3F
- *     waits again and can be given the next one.
+ *   - It runs in machine mode with interrupts on, on the stack given. When it
+ *     returns the V3F masks them and waits again, and can be given the next.
+ *   - Interrupts: an interrupt enabled from the V3F is taken on the V3F - the
+ *     low 32 (IPC, HSEM, SysTick0) are each core's own, and enabling a shared
+ *     one moves it to the enabling core (PFIC_IALLOCR, RM 4.7.5.45). So a
+ *     driver begun on the V3F (Serial1.begin(), attachInterrupt(), a timer's
+ *     callback) has its handler run there. Priorities are the V3F's two levels
+ *     (bit 7); CH32RV_IRQ_PRIORITY() counts the V5F's eight.
  *   - millis(), micros(), delay() and delayMicroseconds() work there (the
  *     V5F's SysTick counts). delay() on the V3F does not run the system
- *     services (USB, the IP stack): those are the V5F's.
- *   - What else it may call is what touches no peripheral the V5F uses and no
- *     interrupt: Serial, Wire, SPI and the rest stay on the V5F. Data between
- *     the two through volatile variables or the A extension's atomics (the
- *     shared SRAM has no cache on either side).
+ *     services (USB, the IP stack, USB PD): those are the V5F's.
+ *   - Peripherals: one core per peripheral. Each USART, timer, SPI, I2C and
+ *     ADC is used from one core only - the V5F's Serial (and printf, and the
+ *     core's console) stays the V5F's, the V3F takes another (Serial1, ...).
+ *     The registers several drivers share - RCC's clock enables, a port's
+ *     configuration, AFIO's pin functions, EXTICR and EXTI - are written under
+ *     the cores' lock (internal/ch32rv_cores.h), so pins of one port and the
+ *     EXTI lines may be split between the cores; one pin, or one EXTI vector
+ *     group (EXTI9_5, EXTI15_10), belongs to one core.
+ *   - Not on the V3F: the system services and what drives them (USB, the IP
+ *     stack, USB PD), sleep, restart, the watchdogs, the RTC and the flash
+ *     (CH32RV.*), and anything that times itself by counting instructions at
+ *     F_CPU (rgbLedWrite() / neopixelWrite(): F_CPU is the V5F's 400 MHz).
+ *   - The heap: malloc, new and String are the V5F's (picolibc's malloc has
+ *     no lock); the V3F uses static or stack memory.
+ *   - Data between the two: volatile variables, the A extension's atomics
+ *     (the shared SRAM has no cache on either side), the HSEM and the IPC
+ *     (ch32rv_multicore.h).
  *   - Nothing stops it from outside: a function that never returns keeps the
  *     V3F until a reset.
  *

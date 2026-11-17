@@ -3,8 +3,9 @@
  * started before setup(), on a stack of its own (CH32RV_V3F_STACK_SIZE,
  * 4 KB unless the build defines it), taken from the heap then: a static
  * array stayed in every V5F build, the weak test not folding at link time. The V3F's rules are
- * internal/ch32rv_v3f.h's: no Serial, no interrupts, no peripheral the V5F
- * uses. A sketch without them links none of this. */
+ * internal/ch32rv_v3f.h's: interrupts on, a peripheral the V5F does not use
+ * (Serial1 rather than Serial), no heap. A sketch without them links none of
+ * this. */
 #include "Arduino.h"
 #include "internal/ch32rv_v3f.h"
 

@@ -11,6 +11,10 @@ extern volatile uint32_t ch32rv_v3f_mailbox[4];
 #define PFIC_SCTLR      (*(volatile uint32_t *)0xE000ED10u)
 #define SCTLR_SETEVENT  (1u << 5)
 
+/* ch32rv_ipc.c, when the sketch uses the IPC: its channels set up before the
+ * V3F runs anything that could send or listen. */
+void ch32rv_ipc_init(void) __attribute__((weak));
+
 int ch32rv_v3f_running(void)
 {
     return ch32rv_v3f_mailbox[0] != 0u || ch32rv_v3f_mailbox[3] != 0u;
@@ -20,6 +24,9 @@ int ch32rv_v3f_launch(void (*fn)(void *), void *arg, void *stack_top)
 {
     if (!fn || !stack_top || ch32rv_on_v3f() || ch32rv_v3f_running()) {
         return 0;
+    }
+    if (ch32rv_ipc_init) {
+        ch32rv_ipc_init();
     }
     ch32rv_v3f_mailbox[1] = (uint32_t)(uintptr_t)arg;
     ch32rv_v3f_mailbox[2] = (uint32_t)(uintptr_t)stack_top & ~15u;
