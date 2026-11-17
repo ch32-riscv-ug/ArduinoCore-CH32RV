@@ -218,6 +218,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] CH32V003 の VDD の測定（ch32rv_adc_vdd_millivolts）が約 35 % 高い: 3.3 V の板で 4448〜4464 mV を答える
+  （2026-11-17、selfapi の millivolts と selfexti の pvd。ほかの 7 台は 3248〜3352 mV）。プローブが 3.3 V で High にした
+  端子を V003 は 1023 と読む（periph の test_adc）ので、VDD は 3.3 V 以下。Vrefint（チャネル 8、1.2 V、データシートの
+  確定値）の読みが約 275（3.3 V なら約 372）。サンプル時間は最長（241 サイクル、上限 500）。analogReadMilliVolts() と
+  analogContinuous の mV、PVD の試験の判定がこれでずれる。V003 の EVT の ADC の例と RM で、Vrefint の読み方（変換の
+  前の待ち、校正の経路 ch32rv_adc_convert の補正）を比べ、実機で生の値・校正の有無・待ち時間を変えて切り分ける。
+  あわせて selfapi の millivolts の試験は「端子の読み ≒ DUT の測った VDD」の相対の判定だけで、これを見逃した:
+  プローブが 3.3 V で駆動した端子の mV を、プローブの出す電圧と比べる絶対の判定を足す（periph か signals）。
 - [ ] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
   8 KB 刻みで進み、範囲の確認も 8 KB 揃えを求める（半分を消し残す）。2026-11-17、ファームウェア更新の実装中に
   コードを読んで見つけた。更新は読み返しで止まるので壊れないが、480K モードでは flash の書き込み・更新が使えない。

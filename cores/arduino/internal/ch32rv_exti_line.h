@@ -163,7 +163,7 @@
 #define CH32RV_EXTI_LINE_VECTORS(X) \
     X(PVD, 1u << 16) \
     X(USBHSWakeup, 1u << 17) \
-    X(USBPDWakeUP, 1u << 18) \
+    X(USBPDWakeUp, 1u << 18) \
     X(USBSSWakeup, 1u << 19) \
     X(USART_WKUP, 1u << 21)
 
