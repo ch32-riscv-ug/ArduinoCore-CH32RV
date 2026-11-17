@@ -112,7 +112,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 - **Supported families.**
   - V003, V00x, M030 and X033/X035, woken by the AWU. M030's AWU counts LSI / 51000, about 150 ms a count (no prescaler): a remainder under that is slept in a plain WFI, and the first sleep of a boot is up to 300 ms longer while it measures the LSI.
   - V20x, V205, V30x, V4x7, L103/M103, X305/X315 and H41x, woken by the RTC alarm; they sleep in stop. H41x's stop takes both cores: the V3F waits in it while the V5F runs the sketch (and with the V3F build, the V5F is never started); its regulator stays in normal mode, as does X305/X315's. Its pin wakeup is not yet checked on a board.
-  - V103 does not sleep yet (`CH32RV_SLEEP_UNSUPPORTED`): with its alarm fixed (2026-11-15) the alarm, `setAlarm()` and the backup registers work, but its first `lightSleep(200 ms)` still never returned from stop, and neither the probe nor NRST reached it (2026-11-17, TODO). H41x, V20x, V205, V30x and V407 were run; X305/X315 and M030 are built and not yet run.
+  - V103 sleeps since 2026-11-18: its first `lightSleep(200 ms)` never returned because a plain WFI is not ended by SysTick on QingKe V3A, so the part under a second is waited out awake there (a trial sketch: 200 ms four times, 1.5 s once; the test cases wait for the probe's upload speed fix). H41x, V20x, V205, V30x and V407 were run; X305/X315 and M030 are built and not yet run.
   - `CH32RV_SLEEP_UNSUPPORTED` remains for a family added later without its sleep.
 - **On the RTC families `time()` is the RTC.**
   - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.

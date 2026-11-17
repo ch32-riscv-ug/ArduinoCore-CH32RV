@@ -272,15 +272,7 @@ static uint32_t awu_longest_us(void)
 
 int ch32rv_power_supported(void)
 {
-#if defined(CH32RV_SERIES_CH32V103)
-    /* V103 does not come back from lightSleep()'s stop: with the alarm
-     * written as V103 counts it (2026-11-15) its alarm callback, setAlarm()
-     * and deepSleep()'s wake-up work, but the first lightSleep(200 ms) still
-     * never returns, the probe cannot attach while it sleeps and NRST does not
-     * bring it back (it came back by itself minutes later). Unsupported until
-     * that is found (TODO). */
-    return 0;
-#elif POWER_AWU || POWER_RTC
+#if POWER_AWU || POWER_RTC
     return 1;
 #else
     return 0;
@@ -551,8 +543,13 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             }
         }
         if (have_alarm && alarm <= s) {
-            /* Under a second to go: a plain WFI, SysTick wakes it each ms. */
+            /* Under a second to go: a plain WFI, SysTick wakes it each ms -
+             * but not on V103 (QingKe V3A), where SysTick does not end a WFI:
+             * a lone wfi with SysTick running never came back (2026-11-18,
+             * the IWDG reset it). There the rest is waited out awake. */
+#if !defined(CH32RV_SERIES_CH32V103)
             __asm__ volatile ("wfi");
+#endif
         } else {
             if (have_alarm) {
                 ch32rv_rtc_alarm_arm(alarm);
