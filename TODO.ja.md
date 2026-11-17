@@ -253,11 +253,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
   8 KB 刻みで進み、範囲の確認も 8 KB 揃えを求める（半分を消し残す）。2026-11-17、ファームウェア更新の実装中に
   コードを読んで見つけた。更新は読み返しで止まるので壊れないが、480K モードでは flash の書き込み・更新が使えない。
-- [ ] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、400 MHz の PLL を HPRE で 1/2）で、selfsys の window watchdog の
-  early（窓の前に給餌）がリセットにならない（2026-11-17、core=v5f・v3f とも 3 回。400・25 MHz は通る）。late は
-  window_watchdog で戻る。early の後の起動は RSTSCKR が 00000000（フラグなし: WWDG のリセットでなく、止まった DUT を
-  デバッガーが戻した）。早すぎる給餌の判定が HCLK 50 MHz のときだけ効いていない。PCLK1 の分周・WWDG の CFGR の
-  W と T の書き方・クロックの許可の後の待ち（CH32RV_CLKEN_SETTLE）を、200 の組で RM と比べて調べる。
+- [ ] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、400 MHz の PLL を HPRE で 1/2。EVT に無い設定）で、window watchdog の
+  早すぎる給餌のリセットが原因のフラグを残さない（resetReason() が unknown、RSTSCKR 00000000）。2026-11-17 に試しの
+  スケッチ（BOOT_HOLD 付き）で確かめた: 200 でも早い給餌でリセットはかかる（次の起動が来る）。400（PCLK1 100 MHz）では
+  window_watchdog と出る。200 の late（窓を過ぎて切れる）は window_watchdog と出る。25 MHz も正しい。コアの読み方の
+  誤りではなく、石がこの組で早い給餌のリセットにフラグを立てない。EVT の設定（SetSYSCLK_*）にある組だけを
+  メニューに出すか、200 の項目は selfsys の early を「既知の差」として記録にするかを決める（ユーザーと）。
 - [ ] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出している（tests/instrumented/uart）。
   BRR を数えるのは USART の APB のクロックなので、F_CPU と違う石（H41x の V5F: F_CPU 400 MHz、PCLK 100 MHz。PPRE を
   分ける系列）では式が違う。丸めがほぼ同じなので今は通る。DUT が USART のクロック（または BRR から出した実際の
