@@ -60,11 +60,26 @@
 #ifdef CH32RV_USBHS2_UNITS
 
 #include <Arduino.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "internal/CH32RVUsbHcd.h"
 
 namespace {
+
+/* V205 and H41x's class buffers are full speed's 64 bytes (their default port
+ * is USBFS, and a sketch on it carries no more); on this port a high-speed
+ * endpoint's come from the heap. X3x5 and V4x7 have them at 512 already. */
+#if defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || \
+    defined(CH32RV_SERIES_CH32H415)
+void *buffer_alloc(unsigned bytes) { return malloc(bytes); }
+void buffer_free(void *buffer) { free(buffer); }
+#define USBHS2_BUFFER_ALLOC buffer_alloc
+#define USBHS2_BUFFER_FREE  buffer_free
+#else
+#define USBHS2_BUFFER_ALLOC nullptr
+#define USBHS2_BUFFER_FREE  nullptr
+#endif
 
 /* Host registers, from the controller's base + 0x100. */
 enum : uint32_t {
@@ -749,7 +764,7 @@ struct Hcd {
     {
         return {name, PACKET_MAX, open, close, connected, port_reset, port_reset_end, port_disable,
                 ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll,
-                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+                nullptr, nullptr, nullptr, nullptr, nullptr, USBHS2_BUFFER_ALLOC, USBHS2_BUFFER_FREE};
     }
 };
 

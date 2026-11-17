@@ -73,6 +73,7 @@
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
 
 #include <Arduino.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "internal/ch32rv_registers.h"
@@ -1361,11 +1362,16 @@ bool hcd_port_suspend(bool on)
 
 }  // namespace
 
+/* The classes' buffers are full speed's 64 bytes (H417 / H416's default port
+ * is USBFS); a SuperSpeed endpoint's (up to 1024) come from the heap. */
+static void *buffer_alloc(unsigned bytes) { return malloc(bytes); }
+static void buffer_free(void *buffer) { free(buffer); }
+
 const CH32RVUsbHcd ch32rv_usb_hcd_usbss = {
     "USBSS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    hcd_poll, hcd_device_at, hcd_link_allow, hcd_port_suspend, nullptr, nullptr, nullptr, nullptr,
+    hcd_poll, hcd_device_at, hcd_link_allow, hcd_port_suspend, nullptr, nullptr, buffer_alloc, buffer_free,
 };
 
 #endif

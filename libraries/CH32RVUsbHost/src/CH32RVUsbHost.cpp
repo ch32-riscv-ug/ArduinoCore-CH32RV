@@ -84,7 +84,9 @@ Device devs[CH32RV_USB_HOST_DEVICES + 1];   /* by address; 0 is the one being en
  * with its device. The pool holds one device's three longest possible
  * strings and the usual short ones of the others; when it is full a string
  * is cut to the room left. */
-#if CH32RV_USB_HOST_MAX_PACKET > 64
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
+    defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) ||   \
+    defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
 #define STRING_POOL 1024
 #else
 #define STRING_POOL 512

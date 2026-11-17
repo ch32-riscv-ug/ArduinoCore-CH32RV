@@ -65,8 +65,14 @@ usb.begin(config);                               // a port the part lacks: Unsup
 On the second-generation USBHS (V407 / V467, X305 / X315, V205, H41x) a
 high-speed device runs at high speed, and full- and low-speed devices at
 theirs when attached directly; `CH32RVUsbHostDeviceInfo::speed` is
-`CH32RV_USB_HOST_SPEED_HIGH` (2). The receive buffers hold a 512-byte packet
-(`CH32RV_USB_HOST_MAX_PACKET`; the default rings grow with it).
+`CH32RV_USB_HOST_SPEED_HIGH` (2). On the series whose default port is high
+speed (V407 / V467, X305 / X315) the receive buffers hold a 512-byte packet
+(`CH32RV_USB_HOST_MAX_PACKET`; the default rings grow with it). Where the
+default is full speed (V205, H41x, V30x) they stay full speed's 64 bytes, so
+a sketch on that port grows by nothing; only when a sketch picks the high-speed
+(or H416 / H417's SuperSpeed) port does that port's driver take heap buffers
+for endpoints with larger packets (CDC, MIDI, vendor, CCID; 1024 bytes at
+SuperSpeed; HID reports stay within 64 bytes).
 
 - High speed needs the crystal (HSE); the driver starts it and keeps HSI only
   on a board without one (then only short packets get through).
@@ -102,8 +108,9 @@ On H416 / H417, `SUPER_SPEED` runs the USBSS controller as a SuperSpeed
 takes SuperSpeed only: a USB 2.0 device, or the USB 2.0 half of a USB 3 hub,
 on the same connector belongs to the USBHS controller (`HIGH_SPEED`), a host
 of its own; the two do not run together yet. `speed` is
-`CH32RV_USB_HOST_SPEED_SUPER` (3), and the receive buffers hold a 1024-byte
-packet (`CH32RV_USB_HOST_MAX_PACKET` is 1024 on H416 / H417, with any port).
+`CH32RV_USB_HOST_SPEED_SUPER` (3), and the USBSS driver takes heap buffers
+for endpoints with 1024-byte packets (`CH32RV_USB_HOST_MAX_PACKET` stays full
+speed's 64, so a sketch on the full-speed port grows by nothing).
 
 - Control, bulk, interrupt and isochronous (Mult included) endpoints, one
   packet per transaction for now; SuperSpeed hubs (route strings, hub depth);

@@ -128,17 +128,17 @@ struct CH32RVUsbHostConfig {
  * terminator: CH32RVUsbHostDeviceInfo keeps the strings whole, and a buffer
  * this long takes any getStringDescriptor(). */
 #define CH32RV_USB_HOST_STRING_MAX 127
-/* The largest bulk or interrupt packet a class's static buffers take: 512 on
- * the series with a high-speed host, 1024 with a SuperSpeed one (H417 / H416);
- * V30x keeps full speed's 64 - its high-speed host (the first-generation
- * USBHS, linked only when a sketch picks HIGH_SPEED) gives the classes heap
- * buffers for larger packets (a HID report stays within 64 there). Where it
- * is larger, the receive buffers below grow to hold more than one such packet
- * (an IN is armed only with room for a whole one). */
-#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
-#define CH32RV_USB_HOST_MAX_PACKET 1024
-#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || \
-    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+/* The largest bulk or interrupt packet a class's static buffers take: full
+ * speed's 64 where the default port is full speed, 512 where it is high speed
+ * (X305 / X315, V407 / V467). A series whose default is full speed reaches its
+ * high- or SuperSpeed port by a driver that is linked only when a sketch picks
+ * it (V30x's and V205 / H41x's HIGH_SPEED, H417 / H416's SUPER_SPEED); that
+ * driver gives the classes heap buffers for its larger packets (512, 1024 at
+ * SuperSpeed - CH32RVUsbHcd::bufferAlloc), and a HID report stays within 64
+ * there. Where it is larger, the receive buffers below grow to hold more than
+ * one such packet (an IN is armed only with room for a whole one). */
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || \
+    defined(CH32RV_SERIES_CH32V467)
 #define CH32RV_USB_HOST_MAX_PACKET 512
 #else
 #define CH32RV_USB_HOST_MAX_PACKET 64
