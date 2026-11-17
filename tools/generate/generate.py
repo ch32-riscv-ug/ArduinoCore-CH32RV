@@ -1568,18 +1568,19 @@ SDIO_SIGNALS = ("CK", "CMD", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7")
 # ch32rv_dma.c settles a clash at run time: SD_MMC then moves the FIFO by the
 # CPU.
 DMAMUX_SDIO = (2, 4)
-# Pads pinout.csv lists on a route the core cannot select by it: the
-# datasheets' "default" column on V30x and V4x7 names PB14 / PB15 for D0 / D1
-# too, which is where those two go by themselves while the Ethernet MAC is
-# clocked (RCC HBPCENR ETHMACEN = 1 with SDIOEN; CH32V20x_30xDS0 notes 7 / 8,
-# CH32FV2x_V3xRM table 10-44 and CH32V407RM table 10-43, "SDIOEN=1 &
-# ETHMACEN=1"; on V30x only some lots). The core does not clock the MAC to
-# move SDIO, so route 0 leaves them out; V4x7's remap 1 keeps them.
-# family -> {(route, signal): pads to drop}
-SDIO_ROUTE_FIXES = {
-    "CH32V307": {("default", "D0"): {("B", 14)}, ("default", "D1"): {("B", 15)}},
-    "CH32V407": {("default", "D0"): {("B", 14)}, ("default", "D1"): {("B", 15)}},
-}
+# A default route the core selects by itself: one of the pad's conditions
+# (pinout.csv's condition column, '|' between alternatives) needs no more than
+# the peripheral's own clock (<PERIPHERAL>EN=1) and remaps left at 0 (..._RM=0).
+# A default that also needs another block - V30x / V4x7's PB14 / PB15 as SDIO
+# D0 / D1 only while the Ethernet MAC is clocked ("SDIOEN=1&ETHMACEN=1";
+# CH32V20x_30xDS0 notes 7 / 8, CH32FV2x_V3xRM table 10-44, CH32V407RM table
+# 10-43) - is not one: the core does not clock the MAC to move SDIO.
+def default_route_selectable(peripheral: str, condition: str) -> bool:
+    if not condition:
+        return True
+    own = f"{peripheral}EN=1"
+    return any(all(term == own or re.fullmatch(r"\w+_RM=0", term) for term in alt.split("&"))
+               for alt in condition.split("|"))
 
 
 def load_sdio(tables: pathlib.Path) -> dict:
@@ -1629,7 +1630,7 @@ def load_sdio(tables: pathlib.Path) -> dict:
         if not m:
             continue
         pad = (m.group(1), int(m.group(2)))
-        if pad in SDIO_ROUTE_FIXES.get(r["family"], {}).get((r["route"], sig[5:]), ()):
+        if r["route"] == "default" and not default_route_selectable("SDIO", r.get("condition", "")):
             continue
         info["pads"].setdefault(r["part_number"], set()).add((pad, SDIO_SIGNALS.index(sig[5:]), r["route"]))
     return out
