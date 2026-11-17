@@ -6,7 +6,7 @@
 
 | 種類 | 中身 |
 |---|---|
-| Arduino の API | `Arduino.h`（ArduinoCore-API 1.5.2 と、このコアが足したもの: `HardwareSerial::setPins()` / `setRoute()`、ESP32 の `onReceiveError()`・`analogReadMilliVolts()`・`rgbLedWrite()` / `rgbLedWriteOrdered()`（`neopixelWrite()` は非推奨の別名）、チェーンを 1 つのフレームで送る `ch32rv_rgb_led_write()`など、各 README に書いたもの） |
+| Arduino の API | `Arduino.h`（ArduinoCore-API 1.5.2 と、このコアが足したもの: `HardwareSerial::setPins()` / `setRoute()`、ESP32 の `onReceiveError()`・`analogReadMilliVolts()`・`rgbLedWrite()` / `rgbLedWriteOrdered()`（`neopixelWrite()` は非推奨の別名）、チェーンを 1 つのフレームで送る `ch32rv_rgb_led_write()`、それが ARGB のブロックで送る端子かを答える `ch32rv_rgb_led_is_hardware()`など、各 README に書いたもの） |
 | 同梱のライブラリ | 各ライブラリの README に書いたクラス、関数、型、定数。ヘッダーは `src/` の直下のもの（`src/internal/` は内部） |
 | チップの機能 | `CH32RV.h` の `CH32RV` オブジェクト（`restart()`、`resetReason()`、`getUniqueId()`、休止、WDT など） |
 | フラッシュ | `ch32rv_flash.h`（`CH32RV_FLASH_STORE()`、`ch32rv_flash_*()`、`CH32RV_FLASH_ERASE_SIZE` などの大きさ。[flash-store.ja.md](flash-store.ja.md)） |
