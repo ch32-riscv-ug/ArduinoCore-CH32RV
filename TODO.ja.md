@@ -220,14 +220,16 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
-- [ ] H417 で selfexti の test_wake（RTC アラームの EXTI の線を enableExtiLineWakeup で起床元にして lightSleep、保険に
-  10 秒の timer）から戻らない（2026-11-17、2 回とも。core-20261117T100310Z-8e655f51）。10 秒の timer でも起きず、
-  デバッガーも届かない。NRST（--connect-under-reset で reset）で戻る。同じ main の selfsys（test_light_sleep、
-  test_rtc_alarm を含む）は通る（core-20261117T100542Z-d7652d64）ので、H41x の IALLOCR の変更ではなく、EXTI の線を
-  起床元にする経路（ch32rv_power_wake_lines、ch32rv_power_exti.c）が H41x で止まる。もう 1 つ: selfexti のイメージが
-  走っている間は、休止の前でも、ふつうの接続（connect-under-reset なし）の target info で UID が読めず、次の case の
-  前の照合で「another board is on the port」になる（selfsys のイメージでは読める）。戻し方: --connect-under-reset で
-  reset、それでも読めなければ --yes --connect-under-reset erase --all。試すときは CH32_TEST_BOOT_HOLD_MS=1000。
+- [ ] H417 で setAlarm() を設定したまま lightSleep() すると戻らない（2026-11-17、selfexti の test_wake で見つかった）。
+  10 秒の timer でも起きず、デバッガーも届かない。NRST（--connect-under-reset で reset か flash）で戻る。BOOT_HOLD 付きの
+  試しのスケッチ（4 秒後に眠り、起きたら WAKE を DMSeq に出す）で切り分けた:
+  B timer 10 s だけ → 10 s で起きる。E attachExtiLine(RTC 線) + timer → 起きる。D setAlarm(+2 s) + timer（attach なし）
+  → 戻らない。C と、selfexti の線を起床元にした形も戻らない。selfsys（enableAlarmWakeup で起床元にする形）は通る。
+  つまり「スケッチのアラームが休止より先に来て、休止がその途中でアラームを書き直す」流れで止まる（V203・V205・V407 は
+  通る）。H41x を V103 と同じ「値に達して立つ」扱い（ch32rv_rtc_alarm の sec-- を外す）にしても D は戻らなかったので、
+  その説は外れ。次は、休止の中の進み（何回起きたか、RTC_CNT と ALRM、EXTI・PFIC の保留）を BKP（H41x は .noinit）に
+  残して、NRST のあとに読む。selfexti のイメージで「UID が読めない」は、リセット直後の BOOT_HOLD の間に読んだため
+  とみられる（EXTI の部品をリンクしただけの extiuid では読める）。
 - [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso が H417 で全部落ちる（2026-11-17、core-20261117T094315Z-1be712f3）。
   Mult 0 の基準（代替設定 1、bMaxBurst 1）でも最初の転送が libusb の status 1（TRANSFER_ERROR）、以後の
   submit は -1（IO）。DUT は SS のまま切れず、カーネルに xHCI のエラーも出ない。同じ回の usb-media（UVC の等時）は
