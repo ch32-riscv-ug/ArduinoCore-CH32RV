@@ -220,22 +220,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
-- [ ] H417 で setAlarm() を設定したまま lightSleep() すると戻らない（2026-11-17、selfexti の test_wake で見つかった）。
-  10 秒の timer でも起きず、デバッガーも届かない。NRST（--connect-under-reset で reset か flash）で戻る。BOOT_HOLD 付きの
-  試しのスケッチ（4 秒後に眠り、起きたら WAKE を DMSeq に出す）で切り分けた:
-  B timer 10 s だけ → 10 s で起きる。E attachExtiLine(RTC 線) + timer → 起きる。D setAlarm(+2 s) + timer（attach なし）
-  → 戻らない。C と、selfexti の線を起床元にした形も戻らない。selfsys（enableAlarmWakeup で起床元にする形）は通る。
-  つまり「スケッチのアラームが休止より先に来て、休止がその途中でアラームを書き直す」流れで止まる（V203・V205・V407 は
-  通る）。H41x を V103 と同じ「値に達して立つ」扱い（ch32rv_rtc_alarm の sec-- を外す）にしても D は戻らなかったので、
-  その説は外れ。次は、休止の中の進み（何回起きたか、RTC_CNT と ALRM、EXTI・PFIC の保留）を BKP（H41x は .noinit）に
-  残して、NRST のあとに読む。selfexti のイメージで「UID が読めない」は、リセット直後の BOOT_HOLD の間に読んだため
-  とみられる（EXTI の部品をリンクしただけの extiuid では読める）。
-  続き（同日、.noinit に記録を残す試し F〜H）: 眠る前のカウンタと ALRM は F が 0 / 1、G が 19 / 20（どちらもスケッチの
-  アラーム = カウンタ + 2、レジスタは + 1）。眠っている間にアラームの割り込みは 1 度も来ず（ch32rv_rtc_alarm_events 0、
-  コールバック 0 回）、NRST のあとのカウンタは 2 しか進んでいない（20 秒以上たっても）。H（アラーム +60 s、休止は
-  10 s の timer）は 10 s で起き、カウンタも進む。休止の分岐を「アラームまで 2〜3 秒は stop に入らず WFI」に広げても
-  G は戻らなかった（直しは戻した）。カウンタが止まる理由（LSI、RTC の CNF / RTOFF、stop の入り方）を RM の H41x の
-  RTC と PWR の章で調べる。試しのスケッチは scratchpad の wakeB〜wakeH（セッション限り）。
+- [x] H417 で setAlarm() を設定したまま lightSleep() すると戻らなかった（2026-11-17）。stop から起きた直後の RTC の
+  読みは RSF が立つまで古い（RM「special read-write」）。RTCAlarm の割り込みが古いカウンタでスケッチのアラームを
+  「まだ早い」と見て、休止が同じアラームを過ぎたカウントに書き直し、二度と鳴らなかった。休止中にスケッチの
+  アラームがあるときは、割り込みの中で ch32rv_rtc_resync() してから比べる。試しのスケッチ B〜H（タイマーだけ・
+  +60 s は起き、+2 s は戻らない）で絞った。selfexti は H417・V203・V205・V407、H417 の selfsys が通る
+  （core-20261117T112525Z-2256aada、core-20261117T112730Z-023d555f）。
 - [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso が H417 で全部落ちる（2026-11-17、core-20261117T094315Z-1be712f3）。
   Mult 0 の基準（代替設定 1、bMaxBurst 1）でも最初の転送が libusb の status 1（TRANSFER_ERROR）、以後の
   submit は -1（IO）。DUT は SS のまま切れず、カーネルに xHCI のエラーも出ない。同じ回の usb-media（UVC の等時）は
