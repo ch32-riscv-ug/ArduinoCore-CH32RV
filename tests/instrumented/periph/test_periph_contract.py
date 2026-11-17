@@ -398,7 +398,7 @@ def test_adc_timer_trigger(dut, oep_host, ws_run, record_property):
                     wait(0.02)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [wave], rate=100_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [wave], rate=1_000_000, steps=steps)
     finally:
         pwm.stop(0)
         core.plan_release(host, [pwm.fn])
@@ -424,6 +424,7 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
       of the first 64 high."""
     from oep_client import core
     from oep_client.fixture import Gpio, Pwm
+    from oep_client.host import Unavailable
     from wireskein.runlog import becomes, pulses
     case = settings(__file__)
     ready(dut, case)
@@ -496,9 +497,12 @@ def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
                     wrong.append(f"rate: the ADC pad held high read {levels}")
 
     try:
-        ws_capture.stream(ws_run, oep_host, [trigger, adc], rate=100_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [trigger, adc], rate=1_000_000, steps=steps)
     finally:
-        pwm.stop(0)
+        try:
+            pwm.stop(0)
+        except Unavailable:      # the PWM was never assigned (the capture failed before the rate section)
+            pass
         for fn in (pwm.fn, gpio.fn):
             try:
                 core.plan_release(host, [fn])
@@ -561,7 +565,7 @@ def test_analog_continuous(dut, oep_host, ws_run, record_property):
                     wait(0.02)
 
     try:
-        ws_capture.stream(ws_run, oep_host, [line], rate=100_000, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [line], rate=1_000_000, steps=steps)
     finally:
         gpio.configure(line["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
