@@ -1471,6 +1471,81 @@ def load_pin_tables(tables: pathlib.Path):
     return pads, adc, adc_all, unresolved
 
 
+# CH32H41x has no fixed DMA requests: any of its sixteen channels (DMA1 and DMA2,
+# eight each, behind DMAMUX channels 1..16) takes any request (dma.csv: "DMAMUX:
+# any channel can take this request"). The USARTs' receive and transmit get
+# channels by this table, chosen here so that the libraries' fixed channels
+# stay theirs: CH32RVAdcStream's DMA1 channel 1 and CH32RVLogicCapture's DMA2
+# channel 8 go to USART8, the last; USART1..7 take the other fourteen in order
+# (RX before TX). The claim in ch32rv_dma.c settles a clash at run time.
+DMAMUX_UART_CHANNELS = [(1, c) for c in range(2, 9)] + [(2, c) for c in range(1, 8)]
+DMAMUX_UART8 = {"RX": (2, 8), "TX": (1, 1)}
+
+
+def load_uart_dma(tables: pathlib.Path) -> dict:
+    """family -> {USART number: {"RX" | "TX": (dma, channel, channel registers,
+    flag register, flag shift, DMAMUX request or 0)}}, from index/dma.csv and
+    register_blocks.csv. HardwareSerial's DMA buffers (setRxBufferSize() /
+    setTxBufferSize()) run on these.
+
+    The flags: channels 1..8 at the regular 0x14 stride keep theirs in INTFR,
+    four bits each from bit 0. The rest (V30x / V4x7's channels from 8 on, at a
+    0x10 stride, and X3x5's 9..11) have them in DMAx_EXTEN's INTFR, four bits
+    each from the first such channel (ch32v30x_dma.h DMA2_FLAG_GL8 0x20000001,
+    ch32v4x7_dma.h DMA1_FLAG_GL8 0x40000001, ch32x3x5_dma.h DMA1_FLAG_GL9
+    0xA0000001)."""
+    blocks: dict = {}
+    for r in read_table(tables, "register_blocks.csv", ("family", "block", "base_address")):
+        blocks.setdefault(r["family"], {})[r["block"]] = int(r["base_address"], 16)
+
+    def line(family: str, dma: int, ch: int, request: int) -> tuple:
+        b = blocks.get(family, {})
+        base, cbase = b.get(f"DMA{dma}"), b.get(f"DMA{dma}_Channel{ch}")
+        if base is None or cbase is None:
+            raise SystemExit(f"ERROR: {family}: register_blocks.csv has no DMA{dma} / "
+                             f"DMA{dma}_Channel{ch}, which dma.csv names for a USART")
+
+        def extended(c: int) -> bool:
+            cb = b.get(f"DMA{dma}_Channel{c}")
+            return c > 8 or cb != base + 0x08 + (c - 1) * 0x14
+
+        if not extended(ch):
+            return (dma, ch, cbase, base, 4 * (ch - 1), request)
+        first = min(c for c in range(1, 17) if f"DMA{dma}_Channel{c}" in b and extended(c))
+        exten = b.get(f"DMA{dma}_EXTEN")
+        if exten is None:
+            raise SystemExit(f"ERROR: {family}: DMA{dma} channel {ch} keeps its flags in "
+                             f"DMA{dma}_EXTEN, which register_blocks.csv does not have")
+        return (dma, ch, cbase, exten, 4 * (ch - first), request)
+
+    found: dict = {}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id",
+                                             "peripheral", "request", "remap")):
+        m = re.match(r"^U(?:S)?ART(\d+)_(RX|TX)$", r["request"])
+        p = re.match(r"^U(?:S)?ART(\d+)$", r["peripheral"])
+        if not (m and p) or r["remap"] not in ("", "default"):
+            continue       # X3x5's "remap" rows are another channel map, not the reset one
+        key = (r["family"], int(m.group(1)), m.group(2))
+        if r["dma"]:
+            got = (int(r["dma"].removeprefix("DMA")), int(r["channel"]), 0)
+        else:
+            got = (0, 0, int(r["request_id"]))
+        prev = found.setdefault(key, got)
+        if prev != got:
+            raise SystemExit(f"ERROR: dma.csv gives {key} both {prev} and {got} "
+                             f"(a die variant's rows differ: choose by evt variant here)")
+    out: dict = {}
+    for (family, index, role), (dma, ch, request) in found.items():
+        if request:
+            dma, ch = (DMAMUX_UART8[role] if index == 8 else
+                       DMAMUX_UART_CHANNELS[2 * (index - 1) + (role == "TX")])
+        out.setdefault(family, {}).setdefault(index, {})[role] = line(family, dma, ch, request)
+    for family, b in blocks.items():
+        if "DMAMUX" in b and family in out:
+            out[family]["mux"] = b["DMAMUX"]
+    return out
+
+
 def load_adc_bases(tables: pathlib.Path) -> dict:
     """family -> {instance: base address}, from index/register_blocks.csv.
 
@@ -3656,7 +3731,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
              esig: dict = {}, timer_pads: dict = {},
-             timer_remaps: dict = {}) -> str:
+             timer_remaps: dict = {}, uart_dma: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -4033,6 +4108,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     with_default = dict(chosen)
     chosen.update(without_default(series, parts, uarts, remap, "usart", ("TX", "RX"),
                                   chosen, {i for i in SERIAL_BASES if i in handler_of}))
+    dma_lines: dict = {}
+    for family in sorted({r.get("family", "") for r in rows}):
+        dma_lines = {k: v for k, v in uart_dma.get(family, {}).items() if k != "mux"}
+        if "mux" in uart_dma.get(family, {}) and chosen:
+            out.append("/* DMAMUX: which request each DMA channel takes (CH32H41x). */")
+            out.append(f"#define CH32RV_DMAMUX_BASE {uart_dma[family]['mux']:#010x}u")
+            out.append("")
     if series in PER_PIN_AF_SERIES:
         out.append("/* Pads take their alternate function one by one (AFIO GPIOx_AFLR /")
         out.append(" * AFHR); a route's value below is that function number. */")
@@ -4070,6 +4152,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                                      f"USART{index}", f"UART{index}"))
             out.append(f"#define CH32RV_SERIAL{index}_IRQ "
                        f"CH32RV_IRQN_{name.removesuffix('_IRQHandler')}")
+            # The DMA channels of its receive and transmit (device-data
+            # dma.csv; H41x: DMAMUX_UART_CHANNELS): HardwareSerial's buffers
+            # of setRxBufferSize() / setTxBufferSize() (internal/ch32rv_dma.h).
+            for role, spec in sorted(dma_lines.get(index, {}).items()):
+                dma, ch, cbase, flags, shift, request = spec
+                out.append(f"#define CH32RV_SERIAL{index}_DMA_{role} CH32RV_DMA_LINE({dma}, {ch}, "
+                           f"{cbase:#010x}u, {flags:#010x}u, {shift}u, {request}u)")
             value = route_remap_value(route) if route else 0
             bits = remap.get((series, "usart", index))
             if series in PER_PIN_AF_SERIES:
@@ -4866,6 +4955,7 @@ def main() -> int:
     pwm = load_pwm_pins(args.tables)
     timer_pads = load_timer_pads(args.tables)
     timer_remaps = load_timer_remap_fields(args.tables)
+    uart_dma = load_uart_dma(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
@@ -4923,7 +5013,7 @@ def main() -> int:
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,
                                 route_alts, wide_timers, timer_capabilities, forbidden,
                                 clock_enables, adc_all, adc_bases, cores, esig,
-                                timer_pads, timer_remaps)
+                                timer_pads, timer_remaps, uart_dma)
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
                         {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,
