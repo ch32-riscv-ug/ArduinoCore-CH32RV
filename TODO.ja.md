@@ -218,6 +218,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] uart の試験は、DUT の実際のボーレートを `f_cpu / round(f_cpu / baud)` で出している（tests/instrumented/uart）。
+  BRR を数えるのは USART の APB のクロックなので、F_CPU と違う石（H41x の V5F: F_CPU 400 MHz、PCLK 100 MHz。PPRE を
+  分ける系列）では式が違う。丸めがほぼ同じなので今は通る。DUT が USART のクロック（または BRR から出した実際の
+  ボーレート）を答え、ホストはそれを使う形にする（試験のホストは石の値を知らない）。
 - [ ] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
   core-20261117T034033Z-6f14bd0b）。X035 の SoftWire target は SDA を SCL の立ち上がりの約 1.5 µs 前に変える（規格の
   setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した
