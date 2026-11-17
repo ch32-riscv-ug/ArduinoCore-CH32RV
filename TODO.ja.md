@@ -226,6 +226,13 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   アラームがあるときは、割り込みの中で ch32rv_rtc_resync() してから比べる。試しのスケッチ B〜H（タイマーだけ・
   +60 s は起き、+2 s は戻らない）で絞った。selfexti は H417・V203・V205・V407、H417 の selfsys が通る
   （core-20261117T112525Z-2256aada、core-20261117T112730Z-023d555f）。
+- [ ] suspend・resume・リモートウェイクアップの試験をピアで作る（2026-11-17、ユーザー: 実転送以外の試験はすべてピア）。
+  PC 相手の usb-power はやめた（power/control に root が要り、udev のルールが要った）。サスペンドをかけられるピアが要る:
+  Pico の TinyUSB はホストの suspend が TODO のまま、EspUsbHost にも無い。CH32RVUsbHost の HCD の portSuspend は USBSS
+  にしか無いので、USBFS（3 つの配置）・USBHS1・USBHS2 に足す（RM の R8_UHOST_CTRL: SOF_EN を止めて TX_BUS_SUSPEND、
+  TX_BUS_RESUME で 30 ms の K、REMOTE_WKUP と UIF_SUSPEND で相手のウェイクアップを受ける）。スタックに suspend() /
+  resume() と onRemoteWakeup の API（EspUsbHost に合わせる名前を先に調べる）。DUT 側は tests/sketch_support/usb_power。
+  CH32RV どうしの対向の配線（TEST_PLAN「USB の網羅の軸」）で usb-peer-power の case にする。
 - [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso: Mult 0・1・2（bMaxBurst 1）の IN と OUT の 6 つは H417 で通った
   （2026-11-17、core-20261117T113755Z-a6e137fd、どの間隔もそろった）ので、Mult>0 はハードで動く。48 パケットの代替設定は
   usbfs の ENOMEM（1 回 8 MiB）で、試験を 1 回 2 MiB に直した。残り: 同じ試験が通る回と全部落ちる回がある。落ちる回は

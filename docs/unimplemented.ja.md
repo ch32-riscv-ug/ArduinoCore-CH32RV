@@ -160,7 +160,7 @@
 | USBSS の口の USB 2.0 側（同じコネクタの HS への切り替え） | H417/H416 | 2 | 自動 | PC、SWD を外す部品 | libraries/CH32RVUsbDevice/src/CH32RVUsbDcdUsbss.cpp:29-33, TODO:135-136 |
 | EspUsbDevice との差（複数リスナー、キュー、64 bit LBA、CCID の追加 API、Info の例、例 30 本ほど） | 全 USB 系列 | 2 | 自動 | PC、ESP32-S3 | TODO:468 |
 | USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md:94 |
-| suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 実装済み（2026-11-17、ビルドのみ。usb-power の case。USBFS の OTG の配置と V103 のリモートウェイクアップを足した） | 自動 | PC（Linux のランタイム PM。power/control を書ける udev のルールが要る: docs/usb.ja.md「サスペンド・レジューム・リモートウェイクアップ」） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125, TC:139 |
+| suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 1（デバイスの側は実装済み、2026-11-17、ビルドのみ。試験はピア待ち） | 自動 | ピアのホストが要る: CH32RVUsbHost の FS / HS の HCD に portSuspend（suspend・resume）とリモートウェイクアップの受け取りを足し、CH32RV どうしで流す。Pico（TinyUSB）と EspUsbHost にはホストの suspend が無い。PC 相手はやめた（実転送以外はピア） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125 |
 
 ## USB ホスト
 

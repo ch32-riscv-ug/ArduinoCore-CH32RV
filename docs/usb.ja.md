@@ -391,18 +391,10 @@ SET_FEATURE(DEVICE_REMOTE_WAKEUP) で許可したとき（`remoteWakeupEnabled()
 | 第 2 世代 USBHS | WAKE_CTRL |
 | USBSS | U3 からの復帰（LINK_TX_UX_EXIT） |
 
-試験は usb-power（[tests/README.ja.md](../tests/README.ja.md)）です。相手は Linux の PC で、ランタイム PM
-（`/sys/bus/usb/devices/<dev>/power/control` を `auto`、`autosuspend_delay_ms` を短く）でサスペンドを起こします。
-CDC の tty を開いていると cdc-acm がリモートウェイクアップを求めるので、カーネルはサスペンドの前に許可を送ります。
-この 2 つのファイルは root のものなので、試験のユーザーが書けるようにする udev のルールが要ります（無ければ試験は
-理由を出して飛ばします）:
-
-```
-SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1209", ATTR{idProduct}=="0001", RUN+="/bin/sh -c 'cd /sys%p/power && chgrp plugdev control autosuspend_delay_ms && chmod g+w control autosuspend_delay_ms'"
-```
-
-一度だけなら、そのときのデバイスに `sudo chgrp plugdev .../power/{control,autosuspend_delay_ms}` と
-`sudo chmod g+w ...` をします（次に列挙し直すと元に戻ります）。
+試験は、バスの手順そのもの（suspend・resume・リモートウェイクアップ）なので、PC ではなくピアを相手にします
+（実転送の試験だけを PC 相手にする方針、2026-11-17）。サスペンドをかけられるピアは、今は CH32RVUsbHost だけで、
+その FS / HS のホスト（USBFS、USBHS1、USBHS2）に suspend・resume とリモートウェイクアップの受け取りを足すのが先です
+（TODO）。DUT の側のスケッチは tests/sketch_support/usb_power（CDC とリモートウェイクアップの宣言）。
 
 ## PD（CH32RVUsbPd）
 

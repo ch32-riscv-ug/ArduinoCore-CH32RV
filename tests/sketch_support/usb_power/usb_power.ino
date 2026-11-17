@@ -1,8 +1,8 @@
-/* USB suspend, resume and remote wakeup (tests/instrumented/usb,
- * test_usb_power_contract.py). The DUT is a CDC port that declares remote
- * wakeup; the host is this PC, which suspends it through Linux's runtime
- * power management (power/control = auto) and resumes it by itself or is
- * woken by the DUT.
+/* USB suspend, resume and remote wakeup: the device side of a peer test to
+ * come (TODO: a CH32RVUsbHost peer that suspends the bus; the PC case was
+ * dropped - only real transfers go against the PC). The DUT is a CDC port
+ * that declares remote wakeup; the host suspends it, resumes it, or is woken
+ * by the DUT.
  *
  *   ready <nonce>   READY <nonce> <build id> <USB started 0/1> <last error>
  *   pm              PM <Suspended events> <Resumed events> <suspended() 0/1>
