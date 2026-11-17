@@ -208,6 +208,14 @@
 #define CH32RV_ADC_VREFINT_CHANNEL 15
 #define CH32RV_ADC_VREFINT_MV 1200
 
+/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,
+ *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
+#define CH32RV_PVD_LEVELS 4
+#define CH32RV_PVD_FALL_MV {2100u, 2300u, 3000u, 4000u}   /* VDD falling below, by PLS */
+#define CH32RV_PVD_PLS_MASK 0x60u
+#define CH32RV_PVD_PVDE 0   /* PWR_CTLR bit 4 (none: always on) */
+#define CH32RV_PVD_PVDO_BIT 2   /* in PWR_CSR */
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u

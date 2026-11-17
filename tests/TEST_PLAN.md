@@ -25,4 +25,7 @@ Keep separate coverage and results for each role, with control logs independent 
 Enable USB only after both sides are prepared. A cheaper CH32X035 peer does not replace independent interoperability evidence.
 TinyUSB vendoring is not Arduino USB integration.
 
+The EXTI lines that are not pins (selfexti) are an automatic self-check with no wiring; a real fall of VDD below
+the PVD threshold is a single, manual test with a variable supply (the Japanese plan, "実機待ち・落ちている試験").
+
 The [README](README.ja.md) describes board-free checks and the opt-in hardware workflow.

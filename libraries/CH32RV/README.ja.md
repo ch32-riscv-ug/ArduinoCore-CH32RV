@@ -93,7 +93,8 @@ CH32RV.enablePinWakeup(PA1, LOW);          // または PA1 が LOW になった
 CH32RV.lightSleep();                       // 起きたら戻る。RAMと端子の状態は残る
 CH32RV.deepSleep();                        // 起きたら setup() から（ソフトで再起動）
 CH32RV.enableAlarmWakeup();                // または setAlarm() の時刻に（RTC の系列）
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _UNDEFINED
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_PVD); // またはピンでない EXTI の線で（下）
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
 CH32RV.timeDomain();                       // 測れない時間を飛ばすたびに増える
 ```
 
@@ -106,6 +107,41 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
 - 使わなければ0 B。タイマーの休止で約1.4 KB、端子での起床を足すと約0.65 KB増えます（V003）。
 
 設計と実測は [A の機能の全体設計](../../docs/peripheral-a-design.ja.md) の 4.3 と 5.1 にあります。
+
+### ピンでない EXTI の線と PVD
+
+PVD、RTC のアラーム、USB・ETH・LPTIM・コンパレータの起床など、`attachInterrupt()` が届かない EXTI の線です。
+arduino-esp32 に同じものが無いので、形はこのコアのもの（`setAlarm()` と同じ）にしています。
+
+```cpp
+CH32RV.attachExtiLine(CH32RV_EXTI_USBFS_WAKEUP, onWake);   // RISING（か FALLING / CHANGE）
+CH32RV.triggerExtiLine(CH32RV_EXTI_USBFS_WAKEUP);          // 同じ割込みをソフトウェアから（SWIEVR）
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // 休止もこの線で終わる（CH32RV_WAKEUP_EXTI_LINE）
+CH32RV.detachExtiLine(CH32RV_EXTI_USBFS_WAKEUP);
+CH32RV.setLowVoltageDetect(3000, onLow);                   // VDD が 3000 mV 以上の最も低い閾値を下回った
+CH32RV.isLowVoltage();                                     // 今その下にある
+```
+
+- **名前。** `CH32RV_EXTI_<名前>` は線の番号で、系列にその線とベクタがあるときだけ定義されます。
+  `#ifdef CH32RV_EXTI_PVD` で分かり、無い線はコンパイルできません: `PVD`、`RTC_ALARM`、`USBD_WAKEUP`（V20x）、
+  `USBFS_WAKEUP`、`USBHS_WAKEUP`、`USBHS2_WAKEUP`（V4x7）、`USBPD_WAKEUP`、`USBPD1_WAKEUP`（M030）、`USBSS_WAKEUP`、
+  `ETH_WAKEUP`、`OSC32K_WAKEUP`（V20x の D8 / D8W）、`LPTIM_WAKEUP`、`LPTIM2_WAKEUP`（H41x）、`COMP_WAKEUP`、
+  `LVDS_WAKEUP`（V205）、`I3C_WAKEUP`、`SWPMI_WAKEUP`、`USART_WAKEUP`。系列ごとの表は `internal/ch32rv_exti_line.h`
+  で、RM と EVT から書いています（ch32-device-data にはまだ EXTI の線の表が無い）。AWU の線は休止のものなので出しません。
+- **コールバック**は線の割込みの中で、エッジごとに呼ばれます。EXTI にレベルは無いので `LOW` / `HIGH` は断ります。
+  フラグは呼ぶ前に消すので、その間のエッジも失いません。
+- **RTC のアラームの線**は `setAlarm()` と休止が共有します。コールバックには `setAlarm()` のアラーム（とほかのアラーム）
+  が届き、休止が自分のために設定するアラームは届きません。それらの要る立ち上がりは残し、`detachExtiLine()` しても
+  それらが使う間は線を止めません。
+- **`enableExtiLineWakeup()`** は線のコールバックをそのまま（無ければ無しで）、与えたエッジで付けます。線で起こす
+  `deepSleep()` は、端子と同じく休止のあとの再起動です。
+- **PVD**（`setLowVoltageDetect(mv, cb)`）: `mv` 以上で最も低い閾値（`mv` がすべてより上なら最も高いもの）を選び、
+  その mV を返します。VDD がそれを下回るたびにコールバックが呼ばれ、すでに下にあればすぐに 1 回呼ばれます。
+  段はデータシートの下がるときの代表値（`lowVoltageLevel(i)`。ch32-device-data から生成）: V003 2.7〜4.2 V、
+  V103 2.5〜4.18 V、V20x / V30x 2.31〜3.21 V、V205 1.68〜2.97 V、V00x 1.85〜2.59 V、V4x7 2.81〜3.1 V、
+  L103 1.7〜2.46 V、X035 2.1〜4.0 V、X305 / X315 2.77〜3.07 V。ESP32 のブラウンアウトのリセットではなく知らせで、
+  チップは動き続けます。H41x（PVD の割込みが無い）、M030（PVD が無い）、V004 / V007 / M007（データに段が無い）では 0。
+- 使わなければ 0 B。ビルドのみ（2026-11-17）。自己検査は `tests/instrumented/selfexti`。
 
 ### 道具: CRC・乱数・ミリボルト・RGB LED・割り込みの優先度
 
@@ -251,6 +287,7 @@ uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
 | [Fade](examples/Fade/README.ja.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.ja.md) | `tone`・`noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |
+| [LowVoltageDetect](examples/LowVoltageDetect/README.ja.md) | `CH32RV.setLowVoltageDetect`、`triggerExtiLine`（PVDのEXTIの線） |
 | [ShiftOut](examples/ShiftOut/README.ja.md) | 74HC595への`shiftOut` |
 | [PulseIn](examples/PulseIn/README.ja.md) | `pulseIn`・`delayMicroseconds` |
 | [TimerAlarm](examples/TimerAlarm/README.ja.md) | `timerBegin`・`timerAttachInterrupt`・`timerAlarm`（arduino-esp32 のタイマー API） |

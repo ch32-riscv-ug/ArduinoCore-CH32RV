@@ -4,6 +4,7 @@
 CASES = {"runtime", "uart", "uart-dma", "gpio", "hid", "power", "usb", "usb-classes", "usb-media", "eth", "logic", "pd", "synckit",
          "flash", "wire", "softwire", "softspi", "spi", "sd", "periph", "signals", "system",
          "console-rtt", "console-dmdata", "console-sdi", "analog", "selfcheck", "selfbus", "selfsys", "selfapi",
+         "selfexti",
          "usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs",
          "usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input",
          "usb-peer-host-storage", "usb-peer-input"}

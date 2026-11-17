@@ -174,8 +174,11 @@ EVT_FAMILY = [
 # Everything is to be built (the user, 2026-11-14): only the user excludes a feature, never "not provided".
 STATUS = {
     "GPIO": ("実装済", "pinMode/digitalWrite/digitalRead", ""),
-    "EXTI (外部割込み)": ("実装済", "attachInterrupt",
-                          "GPIOの線はX033/X035・X305/X315が24本、他は16本。PVD・RTC・USB起床などGPIO以外の線は未対応"),
+    "EXTI (外部割込み)": ("実装済", "attachInterrupt / `CH32RV.attachExtiLine`",
+                          "GPIOの線はX033/X035・X305/X315が24本、他は16本。PVD・RTCのアラーム・USB/ETH/LPTIM/CMPの起床など"
+                          "GPIO以外の線は`CH32RV.attachExtiLine(CH32RV_EXTI_<名前>, cb, edge)`、`triggerExtiLine()`"
+                          "(SWIEVR)、`enableExtiLineWakeup()`(休止から起きる)。RTCのアラームの線はsetAlarm()と共有、"
+                          "AWUの線は休止のもので出さない。ビルドのみ(2026-11-17)。イベントモード(EVENR)は未対応"),
     "PFIC (割込みコントローラ)": ("実装済", "`ch32rv_irq_set_priority`",
         "優先度は`ch32rv_priority.h`の`ch32rv_irq_set_priority()`(PFICのIPRIOR、WCHの`NVIC_SetPriority()`と同じバイト)。割り込みのレベルはV30x・M030が4、H41xのV5Fが8、ほかは2。コアは優先度を書かず、自分の割り込みも0(一番急ぎ)のまま。下げた割り込みにはコアの割り込みが割り込む(契約はCH32RVのREADME)。selfapiの試験はビルドのみ(2026-11-17)。VTF・ベクタのRAM化は未実装"),
     "SysTick": ("実装済", "millis/micros/delay", ""),
@@ -308,8 +311,10 @@ STATUS = {
         "ADC1とADC2の同時・交互変換"),
     "コンパレータ": ("未実装", "-",
         "OPAの中の比較器(CMP)。割込み・タイマーのブレーキ・起床に使える"),
-    "PVD (電圧検出)": ("未実装", "-",
-        "電源電圧の低下の割込み・起床"),
+    "PVD (電圧検出)": ("一部実装", "`CH32RV.setLowVoltageDetect` / `isLowVoltage`",
+        "VDDが閾値(データシートの下がるときの代表値、系列ごとに4〜8段)を下回るとコールバック。休止からの起床は"
+        "`enableExtiLineWakeup(CH32RV_EXTI_PVD)`。ビルドのみ(2026-11-17)。H41xはPVDの割込みが無く未対応、"
+        "V004/V007/M007はdevice-dataに段が無く未対応"),
     "MCO (クロック出力)": ("未実装", "-",
         "クロックを端子に出す。ベンチでクロックを測るのにも使える"),
     "HSE (外部水晶)": ("一部実装", "Clock Sourceメニュー",
@@ -346,6 +351,9 @@ ALL = "*"
 CELLS = {
     "GPIO": {ALL: "●"},
     "EXTI (外部割込み)": {ALL: "●"},
+    "PVD (電圧検出)": {"V003": "●", "V00x/M007": "◐", "V103": "●", "V203/V208": "●", "V205": "●",
+                       "V303/305/307/317": "●", "V407/V467": "●", "L103/M103": "●", "X033/X035": "●",
+                       "X305/X315": "●", "H415/H416/H417": "○"},
     "PFIC (割込みコントローラ)": {ALL: "●"},
     "SysTick": {ALL: "●"},
     "RCC (クロック)": {ALL: "◐"},

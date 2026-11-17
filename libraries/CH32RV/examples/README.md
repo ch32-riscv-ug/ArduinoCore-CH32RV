@@ -31,6 +31,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [AnalogResolution](AnalogResolution/README.md) | Change the numeric scales used by ADC and PWM APIs. |
 | [Fade](Fade/README.md) | Vary PWM duty to fade an LED up and down. |
 | [PinInterrupt](PinInterrupt/README.md) | Count GPIO edges in an interrupt and defer printing to `loop()`. |
+| [LowVoltageDetect](LowVoltageDetect/README.md) | Warn when the supply falls below a threshold (the PVD's EXTI line), and raise the line from software. |
 | [CriticalSection](CriticalSection/README.md) | Demonstrate copying interrupt-shared values inside a short interrupt-disabled section. |
 | [DualCoreV3F](DualCoreV3F/README.md) | CH32H417: run `setup1()` / `loop1()` on the V3F while the sketch runs on the V5F. |
 | [DualCoreMessages](DualCoreMessages/README.md) | CH32H417: the V5F and the V3F talk through messages (IPC) and a hardware semaphore (HSEM). |

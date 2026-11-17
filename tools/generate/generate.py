@@ -1640,6 +1640,84 @@ def adc_internal_defines(info: dict, family: str = "") -> list:
     return out
 
 
+def load_pvd(tables: pathlib.Path) -> dict:
+    """series -> the programmable voltage detector, for CH32RV.setLowVoltageDetect()
+    (ch32rv_pvd.c): the falling-edge threshold of each PLS value in mV (datasheet
+    V_PVD rows of operating_conditions.csv) and, per family, PWR_CTLR's PLS mask,
+    whether there is a PVDE bit (CH32X033 / X035 have none: their PVD is always on)
+    and PWR_CSR's PVDO bit (registers.csv).
+
+    A series gets the rows that name it alone when there are any (CH32V203 has its
+    own sheet's and the CH32V205 sheet's, which covers the V203 parts on the V205
+    die), else the rows it shares. A PLS value without a row (CH32L103 lists five
+    of eight) is left out at the top; a hole below the last is an error. Series
+    without rows (CH32H41x, CH32M030, CH32V004 / V007 / M007) get nothing."""
+    fields: dict = {}
+    for r in read_table(tables, "registers.csv",
+                        ("family", "type", "register", "field", "bits", "kind")):
+        if r["type"] != "PWR" or r["register"] not in ("CTLR", "CSR"):
+            continue
+        fields[(r["family"], r["register"], r["field"])] = r["bits"]
+    per_family: dict = {}
+    for (family, reg, field), bits in fields.items():
+        if reg == "CTLR" and field == "PLS" and bits:
+            hi, lo = (int(x) for x in bits.split(":"))
+            if lo != 5:
+                raise SystemExit(f"ERROR: {family}: PWR_CTLR.PLS is at bits {bits}, "
+                                 "not from bit 5 as ch32rv_pvd.c writes it")
+            per_family.setdefault(family, {})["pls_mask"] = ((1 << (hi - lo + 1)) - 1) << lo
+    for family, info in per_family.items():
+        info["pvde"] = (family, "CTLR", "PVDE") in fields
+        pvdo = fields.get((family, "CSR", "PVDO"))
+        if not pvdo:
+            raise SystemExit(f"ERROR: {family}: PWR_CTLR has PLS but PWR_CSR no PVDO")
+        info["pvdo_bit"] = int(pvdo)
+    fam_of_series = {s: f for f, ss in _family_series(tables).items() for s in ss}
+    rows: dict = {}
+    for r in read_table(tables, "operating_conditions.csv",
+                        ("series", "symbol", "condition", "typ", "unit")):
+        if r["symbol"] != "V_PVD" or not r["typ"] or r["unit"] != "V":
+            continue
+        m = re.search(r"PLS\[\d:0\]\s*=\s*([01]+)\s*\(?\s*(falling|rising)",
+                      r["condition"], re.IGNORECASE)
+        if not m or m.group(2).lower() != "falling":
+            continue
+        names = r["series"].split(";")
+        for s in names:
+            rows.setdefault(s, {}).setdefault(len(names) == 1, {})[int(m.group(1), 2)] = \
+                int(round(float(r["typ"]) * 1000))
+    out: dict = {}
+    for series, by_kind in rows.items():
+        levels = by_kind.get(True) or by_kind.get(False)
+        family = fam_of_series.get(series)
+        if family not in per_family:
+            continue
+        n = max(levels) + 1
+        if sorted(levels) != list(range(n)):
+            raise SystemExit(f"ERROR: {series}: V_PVD rows for PLS {sorted(levels)}, a hole below the top")
+        if n > (per_family[family]["pls_mask"] >> 5) + 1:
+            raise SystemExit(f"ERROR: {series}: {n} V_PVD levels for a narrower PLS")
+        out[series] = dict(per_family[family], fall_mv=[levels[i] for i in range(n)])
+    return out
+
+
+def pvd_defines(info: dict) -> list:
+    """The variant lines for CH32RV.setLowVoltageDetect() (ch32rv_pvd.c)."""
+    if not info:
+        return []
+    return [
+        "/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,",
+        " *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */",
+        f"#define CH32RV_PVD_LEVELS {len(info['fall_mv'])}",
+        "#define CH32RV_PVD_FALL_MV {" + ", ".join(f"{mv}u" for mv in info["fall_mv"])
+        + "}   /* VDD falling below, by PLS */",
+        f"#define CH32RV_PVD_PLS_MASK 0x{info['pls_mask']:02x}u",
+        f"#define CH32RV_PVD_PVDE {1 if info['pvde'] else 0}   /* PWR_CTLR bit 4 (none: always on) */",
+        f"#define CH32RV_PVD_PVDO_BIT {info['pvdo_bit']}   /* in PWR_CSR */",
+        "",
+    ]
+
+
 def load_esig(tables: pathlib.Path) -> dict:
     """family -> {register: address} from index/esig.csv (R-35): FLACAP (16 bit,
     KiB) and UNIID1..3 (32 bit each, UNIID1 the low word)."""
@@ -3059,6 +3137,8 @@ def route_table(series: str, parts: list, pins: dict, remap: dict, kind: str,
 
 # Set by main(): family -> internal ADC channels (load_adc_internal).
 ADC_INTERNAL: dict = {}
+# series -> PVD levels and register layout (load_pvd).
+PVD: dict = {}
 
 # Set by main(): the USARTs' CTS / RTS pads, shaped like the uarts dict
 # (load_uart_flow_pins).
@@ -4063,6 +4143,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         fam_count[r.get("family", "")] = fam_count.get(r.get("family", ""), 0) + 1
     main_family = max(fam_count, key=fam_count.get) if fam_count else ""
     out.extend(adc_internal_defines(ADC_INTERNAL.get(main_family, {}), main_family))
+    out.extend(pvd_defines(PVD.get(series, {})))
     sigs = {tuple(sorted(esig.get(r.get("family", ""), {}).items())) for r in rows}
     if len(sigs) == 1 and sigs != {()}:
         regs = dict(sigs.pop())
@@ -5023,6 +5104,7 @@ def main() -> int:
     adc_bases = load_adc_bases(args.tables)
     esig = load_esig(args.tables)
     ADC_INTERNAL.update(load_adc_internal(args.tables))
+    PVD.update(load_pvd(args.tables))
     cores = {r["series"]: r["core"]
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
     SERIES_XW.update(load_series_xw(args.tables))

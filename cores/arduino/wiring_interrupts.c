@@ -21,9 +21,8 @@
 static voidFuncPtrParam ch32rv_exti_callback[CH32RV_EXTI_LINES];
 static void *ch32rv_exti_param[CH32RV_EXTI_LINES];
 
-/* Every line that has fired, for the low-power code: a pin wakeup is a line
- * configured here, and the sleep loop asks whether it came (ch32rv_power.c). */
-volatile uint32_t ch32rv_exti_seen;
+/* Every line that has fired, for the low-power code (ch32rv_exti_seen.c). */
+extern volatile uint32_t ch32rv_exti_seen;
 
 /* A plain voidFuncPtr is stored in the same table by wrapping it: the wrapper
  * receives the function pointer itself as its parameter. */

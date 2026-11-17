@@ -86,6 +86,7 @@ CH32RVWakeupCause CH32RVSystem::wakeupCause()
     return ch32rv_wake_cause == CH32RV_POWER_WOKE_TIMER ? CH32RV_WAKEUP_TIMER
          : ch32rv_wake_cause == CH32RV_POWER_WOKE_PIN ? CH32RV_WAKEUP_PIN
          : ch32rv_wake_cause == CH32RV_POWER_WOKE_ALARM ? CH32RV_WAKEUP_ALARM
+         : ch32rv_wake_cause == CH32RV_POWER_WOKE_EXTI ? CH32RV_WAKEUP_EXTI_LINE
          : CH32RV_WAKEUP_UNDEFINED;
 }
 

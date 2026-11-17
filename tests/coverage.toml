@@ -598,6 +598,41 @@ needs = ["HSEM"]
 also = ["CH32H415", "CH32H416", "CH32H417"]
 kind = "self"
 
+# The EXTI lines that are not pins (CH32RV.attachExtiLine(), ch32rv_exti_line.h): every series has some - M030 its
+# USB wake-ups only. The RTC alarm's line on the RTC series, the PVD where the data gives its levels: H41x has no PVD
+# interrupt and V004 / V007 / M007 no levels in device-data (missing), M030 no PVD.
+[[item]]
+id = "selfexti-swi"         # every non-pin EXTI line's callback from a software trigger (SWIEVR), none detached
+test = "selfexti::test_software_trigger"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfexti-rtc-line"    # attachExtiLine() on the RTC alarm's line beside setAlarm(), which keeps the line
+test = "selfexti::test_rtc_alarm_line"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfexti-wake"        # lightSleep() ended by an EXTI line (enableExtiLineWakeup(); the RTC alarm's line)
+test = "selfexti::test_wake"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfexti-pvd"         # setLowVoltageDetect() above and below VDD: the callback and isLowVoltage()
+test = "selfexti::test_pvd"
+scope = "series"
+kind = "self"
+not_on = ["CH32M030"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V004", "CH32V007", "CH32M007"]
+
+[[item]]
+id = "pvd-fall"             # a real fall below the PVD threshold (a variable supply; single, TEST_PLAN.ja.md)
+scope = "series"
+not_on = ["CH32M030"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V004", "CH32V007", "CH32M007"]
+
 
 [[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference

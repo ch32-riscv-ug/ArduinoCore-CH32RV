@@ -7,8 +7,9 @@
  *     well), stop on the RTC families. Every family sleeps now
  *     (ch32rv_power_supported()).
  *   - Wake sources: the AWU (a timer: LSI on V00x, measured against the
- *     system clock once per boot; HSI / 1024 on X035) and EXTI lines set up
- *     by ch32rv_exti_configure() (pins).
+ *     system clock once per boot; HSI / 1024 on X035), EXTI lines set up
+ *     by ch32rv_exti_configure() (pins) and the other EXTI lines
+ *     (ch32rv_exti_line.h: the PVD, USB wake-ups, the RTC alarm).
  *   - millis() stops while asleep; the time the AWU measured is added back.
  *     A wake whose sleep length is not known (a pin, part-way through an AWU
  *     period) advances ch32rv_time_domain instead of guessing.
@@ -28,6 +29,7 @@ typedef enum {
     CH32RV_POWER_WOKE_TIMER = 1,
     CH32RV_POWER_WOKE_PIN = 2,
     CH32RV_POWER_WOKE_ALARM = 3,    /* the sketch's RTC alarm (enableAlarmWakeup()) */
+    CH32RV_POWER_WOKE_EXTI = 4,     /* an attachExtiLine() line (enableExtiLineWakeup()) */
 } CH32RVPowerWake;
 
 /* Bumped by every wake whose sleep length is not known: millis() then left
@@ -47,6 +49,7 @@ struct ch32rv_power_wake {
     uint8_t alarm;                  /* the sketch's RTC alarm wakes it too */
     int16_t pin[4];
     uint8_t level[4];
+    uint32_t lines;                 /* EXTI lines that are not pins (ch32rv_power_exti.c) */
 };
 extern struct ch32rv_power_wake ch32rv_power_wake;
 
@@ -57,6 +60,10 @@ int ch32rv_power_add_pin(int pin, int level);
 /* The sketch's RTC alarm (ch32rv_rtc_user_alarm()) as a wake source; 0 where
  * the family wakes on the AWU (no RTC). */
 int ch32rv_power_set_alarm(void);
+/* An attachExtiLine() line (ch32rv_exti_line.h) as a wake source, its edge as
+ * mode says (RISING / FALLING / CHANGE), keeping its callback; 0 where the
+ * family cannot sleep or the series has no such line. */
+int ch32rv_power_add_line(uint8_t line, int mode);
 void ch32rv_power_clear(void);
 
 /* lightSleep(): 0 slept and woke, 1 nothing to wake on, 2 not on this

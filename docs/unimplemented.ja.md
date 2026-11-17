@@ -27,7 +27,7 @@
 | H41x・X305 の CPU Clock メニュー | H415/H416/H417、X305 | 実装済み（2026-11-17、ビルドのみ。H41x は V5F / V3F の組で 400/100（既定）・200/50・25/25 MHz、F_CPU は CPU Core で決まる。X305 は X315 と同じ 240 / 20 MHz） | 自動 | 自己（selfcheck） | PS:40, TODO:504 |
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 2 | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |
 | LSE（32 kHz 水晶） | RTC のある系列 | 2 | 単発→自動 | LSE の載った板。自己 | PS:53 |
-| PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 2 | 単発 | 可変電源（VDD を下げる）。ベンチでは電源を動かせないので手作業 | PS:60, PM:290 |
+| PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 実装済み（2026-11-17、ビルドのみ。`CH32RV.setLowVoltageDetect(mV, cb)` / `clearLowVoltageDetect()` / `isLowVoltage()` / `lowVoltageLevel()`、起床は `enableExtiLineWakeup(CH32RV_EXTI_PVD)`。H41x は PVD の割込み（EXTI の線）が無く、V004 / V007 / M007 は device-data に段が無いので未対応のまま） | 単発→自動 | 自己（selfexti::test_pvd: 閾値を VDD の上と下に。3.3 V の板で上にできるのは V003・V103・X035）。本当の低下は可変電源（VDD を下げる。単発） | PS:60, PM:290 |
 | 休止（lightSleep / deepSleep）の残りの系列 | V103、M030、X315（X305）、V407/V467 | 実装済み（2026-11-15、ビルドのみ。V103・V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は以前最初の休止から起きなかった件を実機で最初に確かめる） | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep。V103 の復旧手段（uhubctl） | libraries/CH32RV/README.ja.md |
 | 周辺を動かしたままの休止 | 全系列 | 2 | 自動 | プローブ | FC:31 |
 | Standby の RAM 保持・低電圧の形 | V20x、V205、V30x、V407、L103 | 2 | 単発→自動 | プローブ（起床）＋電流計 | PS:41, EVT PWR/Standby_RAM_Mode・Standby_RAM_LV_Mode・Standby_RAM_Application |
@@ -52,7 +52,7 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| GPIO 以外の EXTI の線（PVD・USB 起床など。RTC のアラームは `CH32RV.setAlarm()` が使う） | 全系列 | 1 | 単発→自動 | 自己（RTC アラームの線）、PVD は可変電源 | PS:37, FC:36 |
+| GPIO 以外の EXTI の線（PVD・USB 起床など。RTC のアラームは `CH32RV.setAlarm()` が使う） | 全系列 | 実装済み（2026-11-17、ビルドのみ。`CH32RV.attachExtiLine()` / `detachExtiLine()` / `triggerExtiLine()` / `enableExtiLineWakeup()`、線の名前は `CH32RV_EXTI_<NAME>`（internal/ch32rv_exti_line.h。device-data に EXTI の線の表が無いので RM と EVT から手で）。RTC アラームの線は setAlarm() と共有。PVD は `setLowVoltageDetect()` / `isLowVoltage()`、段は生成（operating_conditions の V_PVD）。H41x は PVD の割込みが無く、V004 / V007 / M007 は段のデータが無い。AWU の線は休止のもので出さない） | 単発→自動 | 自己（selfexti: 全線の SWIEVR、RTC アラームの線、その線での起床、PVD の上下）、PVD の本当の低下は可変電源（単発） | PS:37, FC:36 |
 | EXTI のイベントモード（割込みでなく起床イベント） | 全系列 | 2 | 自動 | プローブ | PS:37 |
 | GPIO の速さ・駆動力の設定 | 全系列 | 2 | 自動 | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
 | PWM の remap 先・CHxN の端子 | TIM のある全系列 | 実装済み（2026-11-17、`analogWrite()` が variant の `CH32RV_TIMER_PADS` のどの端子でも。ベンチ未確認） | 自動 | プローブ。signals::test_pwm_route、test_pwm_complementary | cores/arduino/wiring_pwm.c, PS:48, FC:70 |

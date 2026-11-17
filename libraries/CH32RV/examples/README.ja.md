@@ -35,6 +35,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [AnalogResolution](AnalogResolution/README.ja.md) | ADC と PWM の数値のスケールを変える使い方を示します。 |
 | [Fade](Fade/README.ja.md) | PWM の duty を変えて LED の明るさを連続的に変えます。 |
 | [PinInterrupt](PinInterrupt/README.ja.md) | GPIO のエッジを割り込みで数え、表示を `loop()` へ分けます。 |
+| [LowVoltageDetect](LowVoltageDetect/README.ja.md) | 電源が閾値を下回ったら知らせ（PVDのEXTIの線）、線をソフトウェアから起こしてもみます。 |
 | [CriticalSection](CriticalSection/README.ja.md) | 割り込みと共有する値を、短い割り込み禁止区間でコピーする書き方を示します。 |
 | [DualCoreV3F](DualCoreV3F/README.ja.md) | CH32H417: スケッチを V5F で動かしたまま、`setup1()` / `loop1()` を V3F で動かします。 |
 | [DualCoreMessages](DualCoreMessages/README.ja.md) | CH32H417: V5F と V3F がメッセージ（IPC）とハードウェアのセマフォ（HSEM）でやり取りします。 |

@@ -104,7 +104,8 @@ CH32RV.enablePinWakeup(PA1, LOW);          // or when PA1 reads LOW (set the pin
 CH32RV.lightSleep();                       // returns on waking; RAM and pin states kept
 CH32RV.deepSleep();                        // starts again from setup() (a software restart)
 CH32RV.enableAlarmWakeup();                // or at setAlarm()'s time (RTC families)
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _UNDEFINED
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_PVD); // or on an EXTI line that is not a pin (below)
+CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
 CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
 ```
 
@@ -130,6 +131,44 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 
 The design and the measurements are in sections 4.3 and 5.1 of
 [the design of the A features](../../docs/peripheral-a-design.ja.md) (Japanese).
+
+### EXTI lines that are not pins, and the PVD
+
+The PVD, the RTC alarm, the USB / ETH / LPTIM / comparator wake-ups: the EXTI lines
+`attachInterrupt()` does not reach. arduino-esp32 has nothing like them, so the shape is this
+core's (`setAlarm()`'s).
+
+```cpp
+CH32RV.attachExtiLine(CH32RV_EXTI_USBFS_WAKEUP, onWake);   // RISING (or FALLING / CHANGE)
+CH32RV.triggerExtiLine(CH32RV_EXTI_USBFS_WAKEUP);          // the same interrupt from software (SWIEVR)
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // and it ends a sleep (CH32RV_WAKEUP_EXTI_LINE)
+CH32RV.detachExtiLine(CH32RV_EXTI_USBFS_WAKEUP);
+CH32RV.setLowVoltageDetect(3000, onLow);                   // VDD fell below the threshold at or above 3000 mV
+CH32RV.isLowVoltage();                                     // below it now
+```
+
+- **The names.** `CH32RV_EXTI_<NAME>` is the line's number, defined only where the series has the line
+  and a vector for it, so `#ifdef CH32RV_EXTI_PVD` tells and a line the series lacks does not compile:
+  `PVD`, `RTC_ALARM`, `USBD_WAKEUP` (V20x), `USBFS_WAKEUP`, `USBHS_WAKEUP`, `USBHS2_WAKEUP` (V4x7),
+  `USBPD_WAKEUP`, `USBPD1_WAKEUP` (M030), `USBSS_WAKEUP`, `ETH_WAKEUP`, `OSC32K_WAKEUP` (V20x D8 / D8W),
+  `LPTIM_WAKEUP`, `LPTIM2_WAKEUP` (H41x), `COMP_WAKEUP`, `LVDS_WAKEUP` (V205), `I3C_WAKEUP`, `SWPMI_WAKEUP`,
+  `USART_WAKEUP`. The table per series is `internal/ch32rv_exti_line.h`, from the reference manuals and the
+  EVT (ch32-device-data has no EXTI line table yet). The AWU's line is the sleeps' own and is not offered.
+- **The callback** runs in the line's interrupt on each edge; EXTI has no levels (`LOW` / `HIGH` are
+  refused). The flag is cleared before it runs, so an edge meanwhile is not lost.
+- **The RTC alarm's line** is shared with `setAlarm()` and the sleeps: the callback sees `setAlarm()`'s
+  alarm (and any other), not the alarms a sleep sets for itself. The rising edge they need stays, and
+  `detachExtiLine()` leaves the line on while they use it.
+- **`enableExtiLineWakeup()`** keeps the line's callback (or attaches it without one) with the edge given.
+  `deepSleep()` with a line is a light sleep and a restart, as with a pin.
+- **The PVD** (`setLowVoltageDetect(mv, cb)`): the lowest threshold at or above `mv`, the highest when `mv`
+  is above them all; it returns the threshold in mV. The callback runs on each fall below it - once at
+  once when VDD already is. The levels are the datasheet's typical falling-edge values
+  (`lowVoltageLevel(i)`, generated from ch32-device-data): V003 2.7-4.2 V, V103 2.5-4.18 V, V20x / V30x
+  2.31-3.21 V, V205 1.68-2.97 V, V00x 1.85-2.59 V, V4x7 2.81-3.1 V, L103 1.7-2.46 V, X035 2.1-4.0 V,
+  X305 / X315 2.77-3.07 V. A warning, not ESP32's brownout reset: the chip keeps running. 0 (no PVD) on
+  H41x (no PVD interrupt), M030 (no PVD) and V004 / V007 / M007 (no levels in the data).
+- **Size.** 0 B unless used. Built only (2026-11-17); the self-test is `tests/instrumented/selfexti`.
 
 ### Utilities: CRC, random words, millivolts, RGB LEDs, interrupt priorities
 
@@ -280,6 +319,7 @@ to any library, so their examples are here. Every one of them:
 | [Fade](examples/Fade/README.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.md) | `tone`, `noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |
+| [LowVoltageDetect](examples/LowVoltageDetect/README.md) | `CH32RV.setLowVoltageDetect`, `triggerExtiLine` (the PVD's EXTI line) |
 | [ShiftOut](examples/ShiftOut/README.md) | `shiftOut` into a 74HC595 |
 | [PulseIn](examples/PulseIn/README.md) | `pulseIn`, `delayMicroseconds` |
 | [TimerAlarm](examples/TimerAlarm/README.md) | `timerBegin`, `timerAttachInterrupt`, `timerAlarm` (arduino-esp32's timer API) |

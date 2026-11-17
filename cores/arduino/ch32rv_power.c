@@ -6,6 +6,7 @@
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
 #include "internal/ch32rv_interrupt.h"
+#include "internal/ch32rv_exti_line.h"
 
 volatile uint32_t ch32rv_time_domain;
 volatile uint8_t ch32rv_wake_cause;
@@ -576,8 +577,7 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             break;
         }
     }
-    ch32rv_irq_disable(CH32RV_IRQN_RTCAlarm);
-    CH32RV_EXTI_INTENR &= ~(1u << ALARM_LINE);
+    ch32rv_rtc_alarm_lines_off();               /* kept on for attachExtiLine() */
     ch32rv_rtc_alarm_in_sleep = 0;
     ch32rv_rtc_alarm_restore();                 /* the sketch's alarm back in the register */
     known_ms = (uint32_t)millis() - start_millis;
@@ -619,6 +619,7 @@ void ch32rv_power_clear(void)
     ch32rv_power_wake.timer_ms = 0;
     ch32rv_power_wake.pins = 0;
     ch32rv_power_wake.alarm = 0;
+    ch32rv_power_wake.lines = 0;
 }
 
 int ch32rv_power_set_alarm(void)
@@ -654,10 +655,10 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
         }
     }
 #endif
-    if (!timer_ms && !w->pins) {
+    if (!timer_ms && !w->pins && !w->lines) {
         return 1;
     }
-    uint32_t lines = 0;
+    uint32_t lines = w->lines;
     for (uint8_t i = 0; i < w->pins; i++) {
         /* Woken by a level, as ESP32's ext0: one already there is a wake. */
         if (digitalRead(w->pin[i]) == w->level[i]) {
@@ -669,6 +670,10 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
     int woke = ch32rv_power_light_sleep(timer_ms, lines, wdt_slice_us, 0);
     if (!woke) {
         woke = CH32RV_POWER_WOKE_TIMER;
+    }
+    /* w->lines is set only with ch32rv_exti_line.c, which brings the flags. */
+    if (woke == CH32RV_POWER_WOKE_PIN && w->lines && (ch32rv_exti_seen & w->lines)) {
+        woke = CH32RV_POWER_WOKE_EXTI;
     }
     if (woke == CH32RV_POWER_WOKE_TIMER && alarm_first) {
         woke = CH32RV_POWER_WOKE_ALARM;
@@ -715,7 +720,7 @@ int ch32rv_power_can_standby(void)
 {
 #if POWER_RTC && !POWER_NO_STANDBY
     const int alarm = ch32rv_power_wake.alarm && ch32rv_rtc_user_alarm_at();
-    return (ch32rv_power_wake.timer_ms || alarm) && !ch32rv_power_wake.pins;
+    return (ch32rv_power_wake.timer_ms || alarm) && !ch32rv_power_wake.pins && !ch32rv_power_wake.lines;
 #else
     return 0;
 #endif

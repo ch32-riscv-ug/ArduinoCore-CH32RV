@@ -305,6 +305,8 @@ Type-C（OTG）。
 | wire.repeated-start（ハードの Wire、H417） | 6-2 で落ちる（H417 の SDA の保持とプローブの入力）。SoftWire は通る | TODO |
 | USBSS の対向 | 試験が無い | ホストの実装と対向の配線。TODO |
 | hid | 常駐ベンチでは流していない | UIAPduino の台 |
+| selfexti（ピンでない EXTI の線と PVD） | ビルドのみ（2026-11-17）。自動の自己検査で、配線なし。wake は休止するので CH32_TEST_BOOT_HOLD_MS を付けて流す | 常駐ベンチの各系列 |
+| PVD の本当の低下（単発） | 試験が無い。自己検査（selfexti.pvd）は閾値を VDD の上と下に置くだけで、VDD が下がる道は見ない。3.3 V の板で閾値を VDD の上に置けるのは V003・V103・X035 だけ | 可変電源で DUT の VDD を閾値の上から下へ（例: 3.3 V → 2.6 V。系列の動作範囲の中で）。`LowVoltageDetect` の例で `Low voltage #1` が出る電圧と、戻すときの電圧（ヒステリシス）を記録し、日付と条件を libraries/CH32RV/README に書く。AWU の系列（V00x・X035・M030）の線での起床も、ここで PVD を `enableExtiLineWakeup()` にして見る |
 
 V103にDACは無い（RMのF103との比較表）。analogはV103でスキップのままでよい。
 

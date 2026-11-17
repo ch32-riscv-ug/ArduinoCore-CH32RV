@@ -250,6 +250,14 @@
 #define CH32RV_ADC_TEMP_RISES 1   /* the voltage goes up with temperature */
 #define CH32RV_ADC_INTERNAL_ENABLE (1u << 23)   /* CTLR2.TSVREFE */
 
+/* ---- programmable voltage detector (device-data operating_conditions.csv V_PVD,
+ *      registers.csv PWR): CH32RV.setLowVoltageDetect() ---- */
+#define CH32RV_PVD_LEVELS 8
+#define CH32RV_PVD_FALL_MV {2500u, 2700u, 2890u, 3080u, 3270u, 3550u, 3840u, 4180u}   /* VDD falling below, by PLS */
+#define CH32RV_PVD_PLS_MASK 0xe0u
+#define CH32RV_PVD_PVDE 1   /* PWR_CTLR bit 4 (none: always on) */
+#define CH32RV_PVD_PVDO_BIT 2   /* in PWR_CSR */
+
 /* ---- electronic signature (device-data esig.csv): CH32RV.getFlashChipSize()
  *      reads FLACAP (KiB), getUniqueId() UNIID1|UNIID2 (UNIID3 is not unique) ---- */
 #define CH32RV_ESIG_FLACAP_ADDR 0x1ffff7e0u
@@ -333,16 +341,14 @@
     { 1, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* SERIAL3_CTS routes for setRoute()/setPins(): route number, then CTS */
-#define CH32RV_SERIAL3_CTS_ROUTE_COUNT 2
+#define CH32RV_SERIAL3_CTS_ROUTE_COUNT 1
 #define CH32RV_SERIAL3_CTS_ROUTES { \
     { 0, { PB13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
-    { 1, { PB13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* SERIAL3_RTS routes for setRoute()/setPins(): route number, then RTS */
-#define CH32RV_SERIAL3_RTS_ROUTE_COUNT 2
+#define CH32RV_SERIAL3_RTS_ROUTE_COUNT 1
 #define CH32RV_SERIAL3_RTS_ROUTES { \
     { 0, { PB14, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
-    { 1, { PB14, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
@@ -475,48 +481,34 @@
  * 0), route: the value of the timer's AFIO remap field.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 48
+#define CH32RV_TIMER_PAD_COUNT 34
 #define CH32RV_TIMER_PADS { \
     { PA0, 2, 0x01, 0 }, \
-    { PA0, 2, 0x01, 2 }, \
     { PA1, 2, 0x02, 0 }, \
-    { PA1, 2, 0x02, 2 }, \
     { PA2, 2, 0x03, 0 }, \
-    { PA2, 2, 0x03, 1 }, \
     { PA3, 2, 0x04, 0 }, \
-    { PA3, 2, 0x04, 1 }, \
     { PA6, 3, 0x01, 0 }, \
     { PA6, 1, 0x20, 1 }, \
     { PA7, 3, 0x02, 0 }, \
     { PA7, 1, 0x11, 1 }, \
     { PA8, 1, 0x01, 0 }, \
-    { PA8, 1, 0x01, 1 }, \
     { PA9, 1, 0x02, 0 }, \
-    { PA9, 1, 0x02, 1 }, \
     { PA10, 1, 0x03, 0 }, \
-    { PA10, 1, 0x03, 1 }, \
     { PA11, 1, 0x04, 0 }, \
-    { PA11, 1, 0x04, 1 }, \
     { PA15, 2, 0x01, 1 }, \
-    { PA15, 2, 0x01, 3 }, \
     { PB0, 3, 0x03, 0 }, \
-    { PB0, 3, 0x03, 2 }, \
     { PB0, 1, 0x12, 1 }, \
     { PB1, 3, 0x04, 0 }, \
-    { PB1, 3, 0x04, 2 }, \
     { PB1, 1, 0x13, 1 }, \
     { PB3, 2, 0x02, 1 }, \
-    { PB3, 2, 0x02, 3 }, \
     { PB4, 3, 0x01, 2 }, \
     { PB5, 3, 0x02, 2 }, \
     { PB6, 4, 0x01, 0 }, \
     { PB7, 4, 0x02, 0 }, \
     { PB8, 4, 0x03, 0 }, \
     { PB9, 4, 0x04, 0 }, \
-    { PB10, 2, 0x03, 2 }, \
-    { PB10, 2, 0x03, 3 }, \
-    { PB11, 2, 0x04, 2 }, \
-    { PB11, 2, 0x04, 3 }, \
+    { PB10, 2, 0x03, 1 }, \
+    { PB11, 2, 0x04, 1 }, \
     { PB12, 1, 0x20, 0 }, \
     { PB13, 1, 0x11, 0 }, \
     { PB14, 1, 0x12, 0 }, \

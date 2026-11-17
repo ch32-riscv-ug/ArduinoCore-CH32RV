@@ -90,6 +90,35 @@
  *    X315 and H41x, which have none); the callback does not run after a
  *    standby (RAM is lost) - wakeupCause() says why it started.
  *
+ * The EXTI lines that are not pins - the PVD, the RTC alarm, the USB / ETH /
+ * LPTIM / comparator wake-ups - by name (no arduino-esp32 counterpart):
+ *
+ *     CH32RV.attachExtiLine(CH32RV_EXTI_USBFS_WAKEUP, onWake);   // RISING
+ *     CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);    // ends a sleep too
+ *     CH32RV.setLowVoltageDetect(3000, onLow);                  // VDD fell below ~3 V
+ *
+ *  - CH32RV_EXTI_<NAME> is the line's number, defined only where the series
+ *    has the line and a vector for it (`#ifdef CH32RV_EXTI_PVD`); the list per
+ *    series is in internal/ch32rv_exti_line.h. Another number is refused.
+ *  - The callback runs in the line's interrupt on each edge (RISING, FALLING
+ *    or CHANGE; EXTI has no levels). triggerExtiLine() raises it from
+ *    software (SWIEVR) as an edge would.
+ *  - CH32RV_EXTI_RTC_ALARM shares its vector with setAlarm() and the sleeps:
+ *    the callback sees setAlarm()'s alarm (and any other), not the alarms a
+ *    sleep sets for itself; it keeps the rising edge they need, and
+ *    detachExtiLine() leaves the line on for them.
+ *  - enableExtiLineWakeup(): lightSleep() / deepSleep() end on the line's
+ *    edge too (CH32RV_WAKEUP_EXTI_LINE); deepSleep() is then a light sleep and
+ *    a restart, as with a pin. The AWU's line is the sleeps' own and not
+ *    offered.
+ *  - setLowVoltageDetect(mv, cb): the PVD at the lowest threshold at or above
+ *    mv (the highest when mv is above them all: the datasheet's typical
+ *    falling-edge values, a few per series), cb on each fall below it - at
+ *    once when VDD already is. Returns the threshold in mV, 0 where there is
+ *    no PVD interrupt (CH32H41x, CH32M030; V004 / V007 / M007 have no levels
+ *    in the data). It is a warning, not ESP32's brownout reset: the chip
+ *    keeps running. isLowVoltage() reads the PVD's output now.
+ *
  * CRC-32 over a buffer, the CRC block's (CRC-32/MPEG-2):
  *
  *     uint32_t crc = CH32RV.crc32(buf, len);
@@ -119,6 +148,7 @@
 #include "pins_arduino.h"   /* CH32RV_ESIG_* decide which members exist */
 #include "internal/ch32rv_vio18.h"
 #include "internal/ch32rv_v3f.h"
+#include "internal/ch32rv_exti_line.h"   /* CH32RV_EXTI_<line>: attachExtiLine()'s names */
 
 #include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
 #include "ch32rv_crc.h"
@@ -149,6 +179,7 @@ typedef enum {
     CH32RV_WAKEUP_TIMER,
     CH32RV_WAKEUP_PIN,
     CH32RV_WAKEUP_ALARM,             /* the RTC alarm (enableAlarmWakeup()) */
+    CH32RV_WAKEUP_EXTI_LINE,         /* an EXTI line (enableExtiLineWakeup()) */
 } CH32RVWakeupCause;
 
 /* Where SYSCLK comes from. */
@@ -209,6 +240,22 @@ public:
     /* The alarm still to come, or 0 (none, or it has run). */
     time_t getAlarm();
 
+    /* An EXTI line that is not a pin (CH32RV_EXTI_*, above): callback (may be
+     * nullptr) on its edges. False for a line this series does not have or a
+     * level mode. */
+    bool attachExtiLine(uint8_t line, void (*callback)(), PinStatus mode = RISING);
+    void detachExtiLine(uint8_t line);
+    /* The line's interrupt from software, as an edge (EXTI_SWIEVR). */
+    void triggerExtiLine(uint8_t line);
+    /* The PVD: callback when VDD falls below the threshold nearest above
+     * millivolts. Returns the threshold (mV), 0 where there is none. */
+    uint32_t setLowVoltageDetect(uint32_t millivolts, void (*callback)() = nullptr);
+    void clearLowVoltageDetect();
+    /* VDD is below setLowVoltageDetect()'s threshold now. */
+    bool isLowVoltage();
+    /* The threshold of each PVD level from 0, lowest first; 0 past the last. */
+    uint32_t lowVoltageLevel(uint8_t index);
+
     /* HSE when the Clock Source menu chose the crystal and it started; HSI
      * otherwise - also when the crystal was chosen and did not start, in
      * which case the same CPU Clock runs off HSI (F_CPU is unchanged, its
@@ -226,6 +273,10 @@ public:
     /* setAlarm()'s alarm ends a sleep too (CH32RV_WAKEUP_ALARM). False where
      * there is no RTC. */
     bool enableAlarmWakeup();
+    /* An EXTI line that is not a pin (attachExtiLine()'s; its callback kept)
+     * ends a sleep on its edge too. False where the family cannot sleep or
+     * the series has no such line. */
+    bool enableExtiLineWakeup(uint8_t line, PinStatus mode = RISING);
     void disableWakeup();
     CH32RVSleepResult lightSleep();
     /* Returns only when it cannot sleep: otherwise the chip restarts. */
