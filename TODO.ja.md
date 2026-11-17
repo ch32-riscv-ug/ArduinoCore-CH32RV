@@ -220,6 +220,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso が H417 で全部落ちる（2026-11-17、core-20261117T094315Z-1be712f3）。
+  Mult 0 の基準（代替設定 1、bMaxBurst 1）でも最初の転送が libusb の status 1（TRANSFER_ERROR）、以後の
+  submit は -1（IO）。DUT は SS のまま切れず、カーネルに xHCI のエラーも出ない。同じ回の usb-media（UVC の等時）は
+  通る。代替設定の切り替え（SET_INTERFACE で DCD がエンドポイントを開き直すか）、chain の積み方（ISO_CHAIN_MAX、
+  EOB_LPF）、試験の libusb の使い方（usb_iso.py）を順に切り分ける。usbmon で SET_INTERFACE と最初の等時の URB を見る。
 - [ ] ch32-device-data cb02bca（2026-11-17、push 待ち）の取り込み: push のあと lock を上げ、コアに手で書いた表を生成に
   移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（conflict は V103 の値 6、V205 の注入の値 6）。
   exti_lines.csv → internal/ch32rv_exti_line.h の線の表（V407 は線 18 = USBHS1・ベクタ 58、線 20 = USBHS2・84 で
