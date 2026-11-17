@@ -215,11 +215,13 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] V407 と P4（ホスト）の usb-peer で、DUT の `end()` のあと P4 が「S3 DISCONNECTED」を出さないことが 3 回に 1 回
   （2026-11-17、core-20261116T225416Z-463912b5。P4 のログは「USB HOST: EP command error: ESP_ERR_INVALID_STATE」）。HID の既定を
   1 ms にした直後の回。EspUsbHost の切断の扱いか DUT か切り分ける。
-- [ ] ch32-device-data の V103 の TIM2 の remap: eb3ca58（2026-11-17）で値 1 の PB10・PB11 の誤りは直り、lock を上げた。
-  ただし、部分 remap で位置の変わらない端子（値 1 の PA2・PA3、値 2 の PA0・PA1）と、値 3 の PA15・PB3 がまだ無い
-  （V203 の TIM2 は 12 通りすべてある）。[data] に依頼済み。足りるまで tools/generate/generate.py の TIMER_ROUTE_FIXES の
-  V103 の行は残す（eb3ca58 と合わせた生成物は e556ac35 のときと同じ）。直ったら行を外し、生成物が変わらないことと、
-  v103r8t6-evt の signals（pwm_route）を確かめる。
+- [ ] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
+  外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
+  増えた）。残りは v103r8t6-evt の signals（pwm_route）での確認。
+- [ ] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
+  core-20261117T034033Z-6f14bd0b）。X035 の SoftWire target は SDA を SCL の立ち上がりの約 1.5 µs 前に変える（規格の
+  setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した
+  （未リリース）。リリースが出たら上げ、X035 の softwire を流し直す。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、

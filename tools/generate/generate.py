@@ -3304,23 +3304,11 @@ TIMER_PAD_CH, TIMER_PAD_CHN, TIMER_PAD_BKIN = 0, 1, 2
 
 # Where device-data's timer routes are wrong, measured and checked against the
 # EVT headers; each is to go upstream and leave here when device-data has it.
-# CH32V103 TIM2: the EVT (ch32v10x_gpio.h GPIO_PartialRemap1_TIM2 0x100,
-# PartialRemap2 0x200, FullRemap 0x300) has the F1 layout: 1 moves CH1 / CH2 to
-# PA15 / PB3, 2 moves CH3 / CH4 to PB10 / PB11, 3 both; PCFR1 TIM2_RM = 1 left
-# PB10 silent on the bench (2026-11-17, signals::test_pwm_route). device-data
-# eb3ca58 has PB10 / PB11 on 2 and 3 and PA15 / PB3 on 1, but not the pads a
-# partial remap leaves in place (PA2 / PA3 on 1, PA0 / PA1 on 2) nor PA15 / PB3
-# on 3 - asked of [data] 2026-11-17 (CH32V203's rows have the whole grid).
+# None now: CH32V103 TIM2's remap 1 / 2 / 3 (the F1 layout, PCFR1 TIM2_RM = 1
+# left PB10 silent on the bench) is device-data's since 1af6898 (2026-11-17).
 # series -> timer -> {((port, bit), channel): routes}; the series' rows of that
 # timer off the default route are replaced by these.
-TIMER_ROUTE_FIXES = {
-    "CH32V103": {2: {
-        (("A", 15), 1): ("remap-1", "remap-3"), (("B", 3), 2): ("remap-1", "remap-3"),
-        (("A", 2), 3): ("remap-1",), (("A", 3), 4): ("remap-1",),
-        (("A", 0), 1): ("remap-2",), (("A", 1), 2): ("remap-2",),
-        (("B", 10), 3): ("remap-2", "remap-3"), (("B", 11), 4): ("remap-2", "remap-3"),
-    }},
-}
+TIMER_ROUTE_FIXES: dict = {}
 
 
 def load_timer_pads(tables: pathlib.Path) -> dict:

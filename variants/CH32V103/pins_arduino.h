@@ -327,14 +327,16 @@
     { 1, { PC10, PC11, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* SERIAL3_CTS routes for setRoute()/setPins(): route number, then CTS */
-#define CH32RV_SERIAL3_CTS_ROUTE_COUNT 1
+#define CH32RV_SERIAL3_CTS_ROUTE_COUNT 2
 #define CH32RV_SERIAL3_CTS_ROUTES { \
     { 0, { PB13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* SERIAL3_RTS routes for setRoute()/setPins(): route number, then RTS */
-#define CH32RV_SERIAL3_RTS_ROUTE_COUNT 1
+#define CH32RV_SERIAL3_RTS_ROUTE_COUNT 2
 #define CH32RV_SERIAL3_RTS_ROUTES { \
     { 0, { PB14, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB14, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000010u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
@@ -467,7 +469,7 @@
  * 0), route: the value of the timer's AFIO remap field.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 42
+#define CH32RV_TIMER_PAD_COUNT 48
 #define CH32RV_TIMER_PADS { \
     { PA0, 2, 0x01, 0 }, \
     { PA0, 2, 0x01, 2 }, \
@@ -482,14 +484,20 @@
     { PA7, 3, 0x02, 0 }, \
     { PA7, 1, 0x11, 1 }, \
     { PA8, 1, 0x01, 0 }, \
+    { PA8, 1, 0x01, 1 }, \
     { PA9, 1, 0x02, 0 }, \
+    { PA9, 1, 0x02, 1 }, \
     { PA10, 1, 0x03, 0 }, \
+    { PA10, 1, 0x03, 1 }, \
     { PA11, 1, 0x04, 0 }, \
+    { PA11, 1, 0x04, 1 }, \
     { PA15, 2, 0x01, 1 }, \
     { PA15, 2, 0x01, 3 }, \
     { PB0, 3, 0x03, 0 }, \
+    { PB0, 3, 0x03, 2 }, \
     { PB0, 1, 0x12, 1 }, \
     { PB1, 3, 0x04, 0 }, \
+    { PB1, 3, 0x04, 2 }, \
     { PB1, 1, 0x13, 1 }, \
     { PB3, 2, 0x02, 1 }, \
     { PB3, 2, 0x02, 3 }, \
