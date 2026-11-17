@@ -239,7 +239,7 @@ uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
 - **The rules:** a peripheral (a USART, timer, SPI, I2C, ADC, ...) is used from one core. The V5F's `Serial` (and
   `printf`, and the core's console) is the V5F's; the V3F takes another (`Serial1`, ...). A pin and an EXTI vector
   group (EXTI9_5, EXTI15_10) belong to one core too. The registers several drivers share - RCC's clock enables, a
-  port's configuration, AFIO, EXTI - are written by the core under a lock (HSEM channel 31), so the pins of one port
+  port's configuration, AFIO, EXTI - are written by the core under a lock (HSEM channel 31) once the V3F has been started (a sketch that never starts it has none of this), so the pins of one port
   may be split between the cores.
 - **Not on the V3F:** the system services (USB, the IP stack, USB PD), sleep, `restart()`, the watchdogs, the RTC
   and the flash (`CH32RV.*`), anything timed by counting instructions (`rgbLedWrite()`: `F_CPU` is the V5F's 400

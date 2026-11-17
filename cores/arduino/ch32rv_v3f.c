@@ -1,5 +1,6 @@
 /* The V3F as a second core (internal/ch32rv_v3f.h). */
 #include "internal/ch32rv_v3f.h"
+#include "internal/ch32rv_registers.h"
 
 #if defined(CH32RV_RUN_V5F)
 
@@ -28,6 +29,9 @@ int ch32rv_v3f_launch(void (*fn)(void *), void *arg, void *stack_top)
     if (ch32rv_ipc_init) {
         ch32rv_ipc_init();
     }
+    /* From here on the shared registers are written under the cores' lock
+     * (internal/ch32rv_cores.h), the V5F's writes too. */
+    ch32rv_cores_shared = 1u;
     ch32rv_v3f_mailbox[1] = (uint32_t)(uintptr_t)arg;
     ch32rv_v3f_mailbox[2] = (uint32_t)(uintptr_t)stack_top & ~15u;
     __asm__ volatile ("fence w, w" ::: "memory");

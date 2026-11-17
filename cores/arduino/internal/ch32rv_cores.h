@@ -61,10 +61,29 @@ static inline void ch32rv_hsem_unlock(uint32_t channel)
 #endif
 
 #if defined(CH32RV_IRQN_HSEM) && defined(CH32RV_RUN_V5F)
-/* Out of line (ch32rv_cores.c): every clock enable and pin setting calls them, and inlined they cost a V5F
- * build 200-360 bytes. */
-uint32_t ch32rv_cores_lock(void);
-void ch32rv_cores_unlock(uint32_t irq);
+/* Taken only once the V3F has been given a function: ch32rv_v3f_launch() sets ch32rv_cores_shared before the
+ * V3F runs any (until then the V5F alone writes these registers). A sketch that never starts the V3F - no
+ * startV3F(), no setup1() / loop1() - has no store to it at all, so with LTO it is the constant 0 and every lock
+ * below folds away: such a sketch is the size it was without the lock. The lock itself is out of line
+ * (ch32rv_cores.c). Not volatile on purpose (the folding needs a plain load); it changes once, in the V5F's own
+ * thread, before the V3F starts. */
+extern uint8_t ch32rv_cores_shared;
+uint32_t ch32rv_cores_lock_taken(void);
+void ch32rv_cores_unlock_taken(uint32_t irq);
+
+/* Both test the flag, always inlined: at -Oz an outlined copy kept the test of the token alive. A pair never
+ * spans the flag's change (it is set in ch32rv_v3f_launch(), called from the V5F's thread, never inside a pair). */
+static inline __attribute__((always_inline)) uint32_t ch32rv_cores_lock(void)
+{
+    return ch32rv_cores_shared ? ch32rv_cores_lock_taken() : 0u;
+}
+
+static inline __attribute__((always_inline)) void ch32rv_cores_unlock(uint32_t irq)
+{
+    if (ch32rv_cores_shared) {
+        ch32rv_cores_unlock_taken(irq);
+    }
+}
 #else
 static inline uint32_t ch32rv_cores_lock(void)
 {

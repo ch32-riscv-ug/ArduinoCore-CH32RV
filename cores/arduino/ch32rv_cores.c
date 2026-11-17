@@ -4,7 +4,9 @@
 
 #if defined(CH32RV_IRQN_HSEM) && defined(CH32RV_RUN_V5F)
 
-uint32_t ch32rv_cores_lock(void)
+uint8_t ch32rv_cores_shared;
+
+uint32_t ch32rv_cores_lock_taken(void)
 {
     const uint32_t irq = ch32rv_irq_save();
     /* The HSEM's register, not the shared SRAM: polling it back to back starves no bank (wiring_time.c). */
@@ -14,7 +16,7 @@ uint32_t ch32rv_cores_lock(void)
     return irq;
 }
 
-void ch32rv_cores_unlock(uint32_t irq)
+void ch32rv_cores_unlock_taken(uint32_t irq)
 {
     ch32rv_hsem_unlock(CH32RV_HSEM_CORE_CHANNEL);
     ch32rv_irq_restore(irq);

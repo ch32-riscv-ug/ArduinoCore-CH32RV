@@ -39,9 +39,15 @@ extern "C" size_t deliverEvents(void) __attribute__((weak));
 
 #if defined(CH32RV_RUN_V5F)
 /* The sketch's setup1() / loop1(), when it has them, on the V3F
- * (ch32rv_v3f_sketch.cpp). */
-void setup1(void) __attribute__((weak));
-void loop1(void) __attribute__((weak));
+ * (ch32rv_v3f_sketch.cpp). Weak definitions aliased to empty functions here,
+ * not weak declarations: with LTO the test below then folds - a sketch
+ * without them links none of the V3F's start, and the cores' lock
+ * (internal/ch32rv_cores.h) folds away with it. A test of a weak undefined
+ * symbol stayed in every V5F build. */
+extern "C" void ch32rv_no_setup1(void) {}
+extern "C" void ch32rv_no_loop1(void) {}
+void setup1(void) __attribute__((weak, alias("ch32rv_no_setup1")));
+void loop1(void) __attribute__((weak, alias("ch32rv_no_loop1")));
 void ch32rv_v3f_sketch_start(void);
 #endif
 
@@ -98,7 +104,7 @@ int main(void)
 #endif
     initVariant();
 #if defined(CH32RV_RUN_V5F)
-    if (setup1 || loop1) {
+    if (setup1 != ch32rv_no_setup1 || loop1 != ch32rv_no_loop1) {
         ch32rv_v3f_sketch_start();
     }
 #endif
