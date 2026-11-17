@@ -341,11 +341,6 @@ test = "periph::test_planned[i2s]"
 scope = "once"
 
 [[item]]
-id = "argb"
-test = "periph::test_planned[argb]"
-scope = "once"
-
-[[item]]
 id = "rs485"
 test = "periph::test_planned[rs485]"
 scope = "once"
@@ -360,6 +355,19 @@ scope = "once"
 id = "rgb-led"              # rgbLedWrite(): the WS2812 bytes and timing on the line (WireSkein rgb_led, 60 MS/s)
 test = "signals::test_rgb_led"
 scope = "series"
+
+[[item]]
+id = "argb"                 # the same frames by the WS2812 block and its DMA, on its pads (V4x7, X3x5)
+test = "signals::test_rgb_led_hardware"
+scope = "series"
+needs = ["ARGB"]
+
+[[item]]
+id = "argb-irq"             # interrupts run while the block sends (the DUT counts a timer's alarms; no wiring)
+test = "selfsys::test_rgb_led_irq"
+scope = "series"
+needs = ["ARGB"]
+kind = "self"
 
 [[item]]
 id = "interrupt"            # attachInterrupt (EXTI, AFIO's EXTICR per series)

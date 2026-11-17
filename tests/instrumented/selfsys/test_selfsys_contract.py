@@ -44,7 +44,12 @@ A channel the board's record loses ("adc:3", X035's errata lot) is recorded, not
 selfsys.rtc: on the RTC families (V20x, V205, V30x, L103 / M103) gettimeofday() moves with the host's clock over
 3 s, within 10 % (LSI, measured once against the system clock).
 
-A board whose record loses gpio-drive (CH32M030's motor board) skips tone, servo and adc_pads."""
+selfsys.rgb_led_irq: on the series with the WS2812 block (V4x7, X3x5), ch32rv_rgb_led_write() of 100 LEDs on the
+first free pad of the block leaves interrupts on - a hardware timer's 100 us alarm runs at least half of the 30 times
+the 3 ms frame holds - while the same frame on a free pad the block does not reach (the CPU's, interrupts off)
+counts 2 at most: the count itself tells blocked interrupts from running ones. Skips where the series has no block.
+
+A board whose record loses gpio-drive (CH32M030's motor board) skips tone, servo, adc_pads and rgb_led_irq."""
 import json
 import pathlib
 import secrets
@@ -213,6 +218,56 @@ def test_tone(dut, ready, record_property):
     edges, samples = (int(x) for x in ask(dut, f"tone {pin_of(name)} 1000", rb"TONE (\d+) (\d+)").groups())
     record_property("tone", json.dumps(dict(pad=name, edges=edges, samples=samples)))
     assert abs(edges - 100) <= 3, f"tone(1000) on {name}: {edges} periods in 100 ms"
+
+
+# rgb_led_irq: 100 LEDs (300 bytes, 2400 bits of 1.25 us: 3 ms) while a 100 us timer alarm
+# counts its interrupts. The block's frame should see about 30 of them; half (15) leaves the timer's own clock error
+# (HSI, a few %) and an interrupt's entry and exit far behind, and is still ten times what a frame sent with
+# interrupts off can show (the one alarm left pending when they come back on, 2 at most counting one that lands on
+# the edge). The CPU's frame on another free pad is the control: the count really sees blocked interrupts.
+RGB_LEDS, RGB_ALARM_US = 100, 100
+
+
+def test_rgb_led_irq(dut, ready, record_property):
+    for d in ready.get("record", {}).get("defects", []):
+        if "gpio-drive" in d.get("lose", []):
+            pytest.skip(f"the board's pads are not driven: defect {d.get('id')}")
+    off = set(ready.get("gpio_keep_off") or [])
+    hw = soft = None
+    for name in ready.get("selfsys_pins") or []:
+        if hw and soft:
+            break
+        if name in off:
+            continue
+        is_hw = int(ask(dut, f"rgbhw {pin_of(name)}", rb"RGBHW -?\d+ (\d)").group(1))
+        if (hw if is_hw else soft) is not None:
+            continue
+        if int(ask(dut, f"pad {pin_of(name)}", rb"PAD -?\d+ (\d)").group(1)):
+            continue
+        if is_hw:
+            hw = name
+        else:
+            soft = name
+    if hw is None:
+        pytest.skip("no free pad of the WS2812 block (the series has none, or the board holds it)")
+    frame_us = RGB_LEDS * 24 * 1.25
+    want = frame_us / RGB_ALARM_US / 2
+    seen = {}
+    for name, block in ((hw, 1), (soft, 0)):
+        if name is None:
+            continue
+        m = ask(dut, f"rgbirq {pin_of(name)} {RGB_LEDS}", rb"RGBIRQ (NONE|\d \d+ \d+)")
+        if m.group(1) == b"NONE":
+            pytest.skip("no hardware timer for the count")
+        got_hw, irqs, us = (int(x) for x in m.group(1).split())
+        seen[name] = dict(hardware=got_hw, irqs=irqs, us=us)
+        assert got_hw == block, f"{name}: ch32rv_rgb_led_is_hardware() {got_hw}"
+    record_property("rgb_led_irq", json.dumps(seen))
+    assert seen[hw]["irqs"] >= want, \
+        f"{hw}: {seen[hw]['irqs']} timer interrupts during a {frame_us:.0f} us frame by the block, {want:.0f} wanted"
+    if soft is not None:
+        assert seen[soft]["irqs"] <= 2, \
+            f"{soft}: {seen[soft]['irqs']} interrupts during the CPU's frame, which has them off (the count is wrong)"
 
 
 def test_servo(dut, ready, record_property):

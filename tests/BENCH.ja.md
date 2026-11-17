@@ -110,7 +110,7 @@
 | SDIO の SD カード | `sdio_ck`、`sdio_cmd`、`sdio_d0` | `sdio_d1`〜`sdio_d3`（4 本で試す） | あり（カード） | sd |
 | CAN | `can_tx`、`can_rx` | | あり（トランシーバー） | periph（未実装なので失敗する） |
 | I2S | `i2s_ck`、`i2s_ws` | `i2s_sdo`、`i2s_sdi`、`i2s_mck` | あり | periph（未実装なので失敗する） |
-| ARGB（WS2812 など） | `argb` | | あり（LED） | periph（未実装なので失敗する） |
+| ARGB（WS2812 など） | `argb` | | あり（LED） | signals（rgb-led-hardware。V4x7・X3x5 の ARGB の端子に。プローブは読むだけ） |
 | RS485 | `rs485_tx`、`rs485_rx`、`rs485_de` | `rs485_re` | あり（トランシーバー） | periph（未実装なので失敗する） |
 | QSPI | `qspi_sck`、`qspi_cs`、`qspi_io0`、`qspi_io1` | `qspi_io2`、`qspi_io3` | あり | periph（未実装なので失敗する） |
 

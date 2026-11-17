@@ -63,7 +63,6 @@
 | PSRAM(チップ内 4〜8 MB、600 MB/s) | V467 だけ | 専用 DMA、アドレスでそのまま読める。MCU では珍しい |
 | GPHA(2D の DMA) | H417 | 塗りつぶし、コピー、形式変換 |
 | SWPMI | H417 | NFC/UICC の SWP master |
-| ARGB(WS2812 型 LED) | V407/V467、X305/X315 | DMA あり |
 | BLE 5.3 | V208 だけ | 閉じたライブラリ |
 | USB | USBHS の host(全系列)、USB PD(V205、L103、M030、X305/X315。コアは X035 だけ) | — |
 

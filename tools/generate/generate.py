@@ -1649,6 +1649,42 @@ def load_esig(tables: pathlib.Path) -> dict:
     return out
 
 
+# The ARGB block's output signal, as pinout.csv spells it: ARGB_OUT on
+# CH32V407 (one pad, the default route), ARGB_TX on CH32X315 (three pads,
+# alternate function 5 each).
+ARGB_SIGNALS = ("ARGB_OUT", "ARGB_TX")
+
+
+def load_argb(tables: pathlib.Path) -> dict:
+    """family -> {"base": ARGB CTLR address, "dma": (controller, channel,
+    the channel's CFGR address), "pads": {part: {(port, bit): route}}} for the
+    families with the WS2812 block (register_map.csv ARGB, dma.csv's ARGB
+    request, pinout.csv's ARGB output). A family missing its DMA channel or
+    its pads gets nothing: the core then sends by the CPU, as everywhere."""
+    regs = {(r["family"], r["block"], r["register"]): int(r["address"], 16)
+            for r in read_table(tables, "register_map.csv", ("family", "block", "register", "address"))}
+    out: dict = {}
+    for (family, block, register), address in regs.items():
+        if block == "ARGB" and register == "CTLR":
+            out[family] = {"base": address, "pads": {}}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "peripheral")):
+        if r["peripheral"] != "ARGB" or r["family"] not in out or not r["channel"]:
+            continue
+        cfgr = regs.get((r["family"], f"{r['dma']}_Channel{r['channel']}", "CFGR"))
+        if cfgr is None:
+            raise SystemExit(f"ERROR: {r['family']}: dma.csv puts ARGB on {r['dma']} channel {r['channel']}, "
+                             f"which register_map.csv does not have")
+        out[r["family"]]["dma"] = (r["dma"], int(r["channel"]), cfgr)
+    _, functions = load_pin_functions(tables)
+    for r in functions:
+        if r["signal"] not in ARGB_SIGNALS or r["family"] not in out:
+            continue
+        m = PAD_PORT_RE.match(r["pad"])
+        if m:
+            out[r["family"]]["pads"].setdefault(r["part_number"], {})[(m.group(1), int(m.group(2)))] = r["route"]
+    return {family: info for family, info in out.items() if "dma" in info and info["pads"]}
+
+
 def load_errata_ids(tables: pathlib.Path) -> set:
     return {r["id"] for r in read_table(tables, "errata.csv")}
 
@@ -3731,7 +3767,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
              esig: dict = {}, timer_pads: dict = {},
-             timer_remaps: dict = {}, uart_dma: dict = {}) -> str:
+             timer_remaps: dict = {}, uart_dma: dict = {}, argb: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -4476,6 +4512,44 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32RV_DAC{channel}_PIN {pad_name(*pad)}")
         out.append("")
 
+    # --- ARGB ---
+    # rgbLedWrite() / ch32rv_rgb_led_write() send by the WS2812 block and its
+    # DMA channel on these pads (ch32rv_rgb_led.c), by the CPU elsewhere. A
+    # pad's value is what selects the block there: the alternate function
+    # number on the per-pin families, 0 for a default route (nothing to set).
+    families = sorted({r.get("family", "") for r in rows} & set(argb))
+    if len(families) > 1:
+        raise SystemExit(f"{series}: two families with an ARGB block: {families}")
+    if families:
+        info = argb[families[0]]
+        pads_af: dict = {}
+        for part in parts:
+            for pad, route in info["pads"].get(part, {}).items():
+                if series in PER_PIN_AF_SERIES:
+                    value = route_af_value(route)
+                elif route == "default":
+                    value = 0
+                else:
+                    value = None   # a remap the core does not set for this block
+                if value is None:
+                    raise SystemExit(f"{series}: ARGB on {pad_name(*pad)} by route {route}, which the core cannot select")
+                if pads_af.setdefault(pad, value) != value:
+                    raise SystemExit(f"{series}: parts disagree on the ARGB function of {pad_name(*pad)}")
+        dma, channel, cfgr = info["dma"]
+        ordered = sorted(pads_af.items())
+        out.append(f"/* ---- ARGB: the WS2812 block (rgbLedWrite(), ch32rv_rgb_led_write()) on "
+                   f"{len(ordered)} pad{'s' if len(ordered) > 1 else ''},")
+        out.append(f" *      fed by {dma} channel {channel}; on any other pad the CPU sends ---- */")
+        out.append("#define CH32RV_HAS_ARGB 1")
+        out.append(f"#define CH32RV_ARGB_BASE 0x{info['base']:08x}u")
+        out.append(f"#define CH32RV_ARGB_DMA_CHANNEL_BASE 0x{cfgr:08x}u   /* the channel's CFGR */")
+        out.append("/* The pad's function number for the block, -1 where it has none. */")
+        out.append("#define CH32RV_ARGB_PIN_TO_AF(p) ( \\")
+        for pad, value in ordered:
+            out.append(f"    (p) == {pad_name(*pad)} ? {value} : \\")
+        out.append("    -1)")
+        out.append("")
+
     # --- Timer capabilities, tone() and Servo timers ---
     # Both need a timer whose *update* interrupt has a vector of its own. Their
     # preferred timers must differ: sounding a buzzer while a servo moves is
@@ -4956,6 +5030,7 @@ def main() -> int:
     timer_pads = load_timer_pads(args.tables)
     timer_remaps = load_timer_remap_fields(args.tables)
     uart_dma = load_uart_dma(args.tables)
+    argb = load_argb(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
@@ -5013,7 +5088,7 @@ def main() -> int:
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,
                                 route_alts, wide_timers, timer_capabilities, forbidden,
                                 clock_enables, adc_all, adc_bases, cores, esig,
-                                timer_pads, timer_remaps, uart_dma)
+                                timer_pads, timer_remaps, uart_dma, argb)
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
                         {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,

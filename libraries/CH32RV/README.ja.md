@@ -160,8 +160,12 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
   （8 MHz ではループそのものが長く 1 ビット 1.625 µs。36 MHz 未満では、次のバイトを読む各バイトの最後のビットが最大
   4 サイクル長い）。どちらもラッチは待ちません。そのあと線を LED のリセットの時間（WS2812 で 50 µs、WS2812B-V5 など
   新しい部品で 280 µs）Low に保ちます。実測（2026-11-17、WireSkein の rgb_led、60 MS/s、LED 1 個）: V003・V006・V103・
-  V203・V205・X035・H417 で T0H 333〜433 ns、T1H 767〜900 ns、1 ビット 1.22〜1.43 µs。V4x7 / X3x5 の ARGB の
-  ハードウェアは、あとで足す速い道です。
+  V203・V205・X035・H417 で T0H 333〜433 ns、T1H 767〜900 ns、1 ビット 1.22〜1.43 µs。
+  **V4x7 と X3x5 では、ARGB の端子（V4x7 は PA15、X3x5 は PA15・PD3・PD4）で WS2812 のブロック（ARGB）が送ります。**
+  DMA で送り、割り込みは止めません（ESP32 の `rgbLedWrite()` が RMT を使うのと同じ）。関数も目標の時間（HCLK の数で）も
+  同じで、チェーンは 65535 バイトまで（それより長いものはソフトで送る）。戻るのは最後のビットが出てからです（戻れば
+  バッファーを書き換えてよく、フレームは呼んだ順に出る）。非同期の呼び出しはありません。どちらで送るかは
+  `ch32rv_rgb_led_is_hardware(pin)` で分かります。2026-11-17、ビルドのみ。
 - **割り込みの優先度**（`#include <ch32rv_priority.h>`）: `ch32rv_irq_set_priority(irqn, priority)` /
   `ch32rv_irq_get_priority(irqn)` は PFIC の優先度のバイトで、WCH の `NVIC_SetPriority()` と同じく小さいほど
   急ぎです。`CH32RV_IRQ_PRIORITY(level)` は割り込みのレベル（0 から `CH32RV_IRQ_PREEMPT_LEVELS - 1`）のバイトです。

@@ -30,7 +30,12 @@ path over the network moves by up to about 230 ms).
   frame, no gap between LEDs), captured at 60 MS/s - T = T0H,
   0.35 us: 20 / T is 57 MS/s (tests/README.ja.md, 取り込みの速さ). WireSkein's rgb_led judges the bytes (GRB) and
   every T0H, T1H and bit period within WS2812B's windows (0.25-0.55, 0.65-0.95 and 0.65-1.85 us) and the latch low
-  after the frame (50 us at least).
+  after the frame (50 us at least). On a pad of the WS2812 block (V4x7, X3x5: the DUT says, rgbhw) the frames are
+  the block's and judged the same; which way it went is recorded.
+- signals.rgb-led-hardware: the same on a pad of the WS2812 block - a `<port>.argb@<pad>` line first, else any
+  `<port>@<pad>` line the DUT names as one - with eight LEDs in one call besides three (the DMA feeding the block
+  across many bytes). Skips where no labelled line is such a pad. That interrupts stay on while the block sends is
+  selfsys.rgb_led_irq's (the DUT counts them itself, no wiring).
 
 The timer features (2026-11-17). The DUT says which ways each line has to a timer (`pad`: its variant's
 CH32RV_TIMER_PADS - channel, complementary output or break input, on which route) and what its build holds (`has`:
@@ -70,6 +75,7 @@ import pexpect
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py, ws_capture.py are staged beside the test
+import bench_lines
 from bench_lines import gpio_lines
 import ws_capture
 from wireskein.runlog import becomes, dead_time, ends, level, only_moving, pulses, rgb_led, trim
@@ -349,21 +355,59 @@ def test_capture_after_pwm(dut, oep_host, record_property):
     ask(dut, f"input {pin}", rb"INPUT")
 
 
-def test_rgb_led(dut, oep_host, ws_run):
+def rgb_conditions(pad, pin, chains=(3,)):
+    """test_rgb_led's conditions: one LED, the same again, and each of `chains` LEDs in one call."""
+    one = "a5123c"                                  # green, red, blue of LED 0
+    conditions = [("one LED", f"rgb {pin} 1", rb"RGB (\d+)", [rgb_led(pad, data=[one])], 0.02),
+                  ("one LED again", f"rgb {pin} 1", rb"RGB (\d+)", [rgb_led(pad, data=[one])], 0.02)]
+    # A chain is one ch32rv_rgb_led_write(): one frame, every bit judged as the single LEDs'.
+    # A chain of separate rgbLedWrite() calls leaves the line low for the call between LEDs (13 us
+    # on V006 at 24 MHz, 2026-11-17): not a promise of the core, not judged here.
+    for n in chains:
+        chain = "".join(f"a5{0x12 + i:02x}{0x3c ^ i:02x}" for i in range(n))
+        conditions.append((f"{n} LEDs in one call", f"rgbbuf {pin} {n}", rb"RGB (\d+)",
+                           [rgb_led(pad, data=[chain])], 0.02))
+    return conditions
+
+
+def rgb_hardware(dut, pin):
+    return ask(dut, f"rgbhw {pin}", rb"RGBHW (\d)").group(1) == b"1"
+
+
+def test_rgb_led(dut, oep_host, ws_run, record_property):
     case = settings(__file__)
     line = first_line(oep_host, case)
     ready(dut, case)
     pad, pin = line["pad"], line["pin"]
-    one = "a5123c"                                  # green, red, blue of LED 0
-    chain = "".join(f"a5{0x12 + i:02x}{0x3c ^ i:02x}" for i in range(3))
-    conditions = [("one LED", f"rgb {pin} 1", rb"RGB (\d+)", [rgb_led(pad, data=[one])], 0.02),
-                  ("one LED again", f"rgb {pin} 1", rb"RGB (\d+)", [rgb_led(pad, data=[one])], 0.02),
-                  # A chain is one ch32rv_rgb_led_write(): one frame, every bit judged as the single LEDs'.
-                  # A chain of separate rgbLedWrite() calls leaves the line low for the call between LEDs (13 us
-                  # on V006 at 24 MHz, 2026-11-17): not a promise of the core, not judged here.
-                  ("three LEDs in one call", f"rgbbuf {pin} 3", rb"RGB (\d+)", [rgb_led(pad, data=[chain])], 0.02)]
+    # The CPU's frame on most pads; on a pad of the WS2812 block (V4x7, X3x5) the block's, judged the same.
+    record_property("hardware", int(rgb_hardware(dut, pin)))
     try:
-        sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"rgb {pad}", conditions,
+        sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"rgb {pad}", rgb_conditions(pad, pin),
+              rate=60_000_000)
+    finally:
+        ask(dut, f"input {pin}", rb"INPUT")
+
+
+def test_rgb_led_hardware(dut, oep_host, ws_run):
+    """test_rgb_led on a pad of the WS2812 block (ARGB: the DUT says which), its frames by the block and its DMA:
+    the same windows, and eight LEDs in one call besides three. The line is a plain `<port>@<pad>` one or the
+    `<port>.argb@<pad>` role (an LED on it as well: the probe only reads it here)."""
+    case = settings(__file__)
+    candidates = gpio_lines(oep_host, case["target"])
+    found, _ = bench_lines.lines(oep_host, case["target"], "argb")
+    if "argb" in found:
+        candidates = [found["argb"]] + [c for c in candidates if c["pad"] != found["argb"]["pad"]]
+    if not candidates:
+        pytest.skip("the probe labels no <port>@<pad> or <port>.argb@<pad> line")
+    ready(dut, case)
+    line = next((c for c in candidates if rgb_hardware(dut, c["pin"])), None)
+    if line is None:
+        pytest.skip("no labelled line is a pad of the WS2812 block (ch32rv_rgb_led_is_hardware()): "
+                    + ", ".join(c["pad"] for c in candidates))
+    pad, pin = line["pad"], line["pin"]
+    lines = [line] + [p for p in gpio_lines(oep_host, case["target"]) if p["pad"] != pad][:2]
+    try:
+        sweep(dut, ws_run, oep_host, lines, f"rgb hardware {pad}", rgb_conditions(pad, pin, chains=(3, 8)),
               rate=60_000_000)
     finally:
         ask(dut, f"input {pin}", rb"INPUT")

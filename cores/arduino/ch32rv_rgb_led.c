@@ -33,6 +33,23 @@
  *    there are not enough of them, and that bit is up to 4 cycles longer:
  *    1.42 us at 24 MHz).
  *
+ * On the series with the WS2812 block (ARGB: V4x7 on PA15, X3x5 on PA15,
+ * PD3 and PD4 - the variant's CH32RV_ARGB_PIN_TO_AF) the same calls on those
+ * pads hand the frame to the block and its DMA channel instead, with
+ * interrupts left on: the block makes every bit from HCLK counts (T0H, T1H
+ * and the bit period are its CCRL, CCRH and DAT_ARR, worked out below from
+ * the same targets), and the DMA feeds it a byte at a time, so an interrupt
+ * during the frame changes nothing on the line. That is what arduino-esp32
+ * does under the same name (rgbLedWrite() is its RMT there). The call still
+ * returns when the last bit is out, as the CPU's frame does and as ESP32's
+ * rgbLedWrite() does (it waits for the RMT): the caller's buffer is free
+ * again on return, and a frame and the next one are in the order they were
+ * called. A call that returned at once would have to say when the buffer
+ * may change and how to wait for it - a second API for a 30 us LED, which
+ * only a long chain would want; while it waits here interrupts run, which
+ * is the point of the block. Every other pad, and a frame longer than the
+ * DMA's 65535 bytes, goes the CPU's way.
+ *
  * The constants below are what the signals test (rgb-led, WireSkein's
  * rgb_led) judges on each series; a core whose stores or branches take
  * longer shows there first. */
@@ -171,6 +188,102 @@ static __attribute__((noinline)) void rgb_pad_setup(pin_size_t pin, uint8_t port
     ch32rv_gpio_set_config(port, bit, RGB_CFG_OUT_PP_FAST);
 }
 
+#if CH32RV_HAS_ARGB
+/* The WS2812 block (RM: CH32V407 chapter 28, CH32X315 chapter 4; the same
+ * registers at the same base on both). */
+#define ARGB_REG(off)  CH32RV_REG32(CH32RV_ARGB_BASE + (off))
+#define ARGB_CTLR      ARGB_REG(0x00u)
+#define ARGB_DAT_ARR   ARGB_REG(0x04u)   /* the bit period, HCLK cycles */
+#define ARGB_RST_ARR   ARGB_REG(0x08u)   /* the reset code, HCLK cycles */
+#define ARGB_CCRL      ARGB_REG(0x0Cu)   /* T0H */
+#define ARGB_CCRH      ARGB_REG(0x10u)   /* T1H */
+#define ARGB_DAT_CYC   ARGB_REG(0x14u)   /* bytes in the frame, minus one */
+#define ARGB_DATAR     ARGB_REG(0x18u)
+#define ARGB_STATR     ARGB_REG(0x1Cu)
+#define ARGB_TE        0x1u
+#define ARGB_DMAEN     0x2u
+#define ARGB_DATA_FIRST 0x4u             /* MODE: the data, then the reset code */
+#define ARGB_FRHIF     0x01u
+#define ARGB_RSTIF     0x02u
+#define ARGB_TCIF      0x04u
+#define ARGB_FLAGS     0x1Fu             /* FRHIF..HALFIF, cleared by writing 1 */
+#define ARGB_STATE_DATA 0x40u            /* STATE = 01: sending the data */
+#define ARGB_STATE_MASK 0xC0u
+#define ARGB_RST_MAX   0x1FFFFu
+
+/* The block's DMA channel (dma.csv): the usual CFGR / CNTR / PADDR / MADDR. */
+#define ARGB_DMA_CFGR  CH32RV_REG32(CH32RV_ARGB_DMA_CHANNEL_BASE + 0x0u)
+#define ARGB_DMA_CNTR  CH32RV_REG32(CH32RV_ARGB_DMA_CHANNEL_BASE + 0x4u)
+#define ARGB_DMA_PADDR CH32RV_REG32(CH32RV_ARGB_DMA_CHANNEL_BASE + 0x8u)
+#define ARGB_DMA_MADDR CH32RV_REG32(CH32RV_ARGB_DMA_CHANNEL_BASE + 0xCu)
+#define DMA_CFGR_EN    0x0001u
+#define DMA_CFGR_DIR   0x0010u           /* memory to the peripheral */
+#define DMA_CFGR_MINC  0x0080u
+#define DMA_CFGR_PL_HIGH 0x2000u         /* bytes both sides: PSIZE = MSIZE = 0 */
+#define ARGB_MAX_LEN   65535u            /* the channel's CNTR (DAT_CYC takes 65536) */
+
+/* HCLK cycles, rounded: the block counts HCLK (RM: "system clock cycle";
+ * EVT works its values out from SystemCoreClock, which is HCLK). At 20 MHz
+ * T0H is 8 (400 ns), T1H 16, the bit 25; at 240 MHz 90, 192, 300. Whether a
+ * register of n gives n cycles or n + 1 the RM does not say; one cycle is
+ * 50 ns at 20 MHz, inside every window from these targets. */
+#define ARGB_CYCLES(ns) ((((uint32_t)(CH32RV_HCLK_HZ / 1000u)) * (ns) + 500000u) / 1000000u)
+/* DAT_ARR, CCRL and CCRH are 10 bits on CH32V407 (12 on CH32X315). */
+_Static_assert(ARGB_CYCLES(RGB_BIT_NS) <= 0x3FFu, "HCLK too fast for the ARGB block's 10-bit bit period");
+_Static_assert(ARGB_CYCLES(RGB_T0H_NS) >= 1u, "HCLK too slow for the ARGB block");
+
+/* The frame by the block. The pad is a GPIO output, low (rgb_pad_setup());
+ * it is the block's only while the data goes out and returns to the GPIO
+ * low in the reset code, so between frames it is an ordinary output as the
+ * CPU's frames leave it. Interrupts stay on throughout. */
+static void rgb_send_argb(pin_size_t pin, uint8_t port, uint8_t bit, uint32_t af, const uint8_t *data,
+                          size_t len)
+{
+    ch32rv_clock_enable(ARGB);
+    ch32rv_clock_enable(DMA1);
+    ARGB_CTLR = 0u;                               /* stopped: a frame left over is cut here */
+    ARGB_DMA_CFGR = 0u;
+    ARGB_STATR = ARGB_FLAGS;
+    ARGB_CCRL = ARGB_CYCLES(RGB_T0H_NS);
+    ARGB_CCRH = ARGB_CYCLES(RGB_T1H_NS);
+    ARGB_DAT_ARR = ARGB_CYCLES(RGB_BIT_NS);
+    /* Data first and the longest reset code after it: in DMA mode the block
+     * goes round frame after frame while TE is on, and the reset code
+     * (655 us at 200 MHz, 6.5 ms at 20 MHz) is the time an interrupt may take
+     * before the wait below turns it off. */
+    ARGB_RST_ARR = ARGB_RST_MAX;
+    ARGB_DAT_CYC = (uint32_t)(len - 1u);
+    ARGB_DMA_PADDR = (uint32_t)(uintptr_t)&ARGB_DATAR;
+    ARGB_DMA_MADDR = (uint32_t)(uintptr_t)data;
+    ARGB_DMA_CNTR = (uint32_t)len;
+    __asm__ volatile("fence rw, rw" ::: "memory");   /* the caller's bytes before the DMA reads them */
+    ARGB_DMA_CFGR = DMA_CFGR_DIR | DMA_CFGR_MINC | DMA_CFGR_PL_HIGH | DMA_CFGR_EN;
+    ARGB_CTLR = ARGB_DATA_FIRST | ARGB_DMAEN;     /* the DMA puts the first byte in DATAR */
+    ch32rv_gpio_clear(port, bit);                 /* the GPIO's level after the frame: low */
+    ch32rv_pin_set_af(pin, af);
+    ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_AF_PP_50M);
+    ARGB_CTLR = ARGB_DATA_FIRST | ARGB_DMAEN | ARGB_TE;
+    /* Until the last bit is out: TCIF (sticky) with the block past its data
+     * phase, or the reset code begun or done. Twice the frame and a
+     * millisecond at most, should the block never start. */
+    const uint32_t start = ch32rv_ticks();
+    const uint32_t bit_ticks = ((CH32RV_SYSTICK_HZ / 1000u) * RGB_BIT_NS + 999999u) / 1000000u;
+    const uint32_t limit = (uint32_t)len * 16u * bit_ticks + CH32RV_SYSTICK_HZ / 1000u;
+    for (;;) {
+        const uint32_t s = ARGB_STATR;
+        if (((s & ARGB_TCIF) && (s & ARGB_STATE_MASK) != ARGB_STATE_DATA) || (s & (ARGB_RSTIF | ARGB_FRHIF))) {
+            break;
+        }
+        if (ch32rv_ticks() - start > limit) {
+            break;
+        }
+    }
+    ch32rv_gpio_set_config(port, bit, RGB_CFG_OUT_PP_FAST);   /* the GPIO's low, as the reset code is */
+    ARGB_CTLR = 0u;
+    ARGB_DMA_CFGR = 0u;
+}
+#endif
+
 void ch32rv_rgb_led_write(pin_size_t pin, const uint8_t *data, size_t len)
 {
     pin = CH32RV_PIN_RESOLVE(pin);
@@ -181,6 +294,13 @@ void ch32rv_rgb_led_write(pin_size_t pin, const uint8_t *data, size_t len)
     if (rgb_pad_config(port, bit) != RGB_CFG_OUT_PP_FAST) {
         rgb_pad_setup(pin, port, bit);
     }
+#if CH32RV_HAS_ARGB
+    const int af = CH32RV_ARGB_PIN_TO_AF(pin);
+    if (af >= 0 && len <= ARGB_MAX_LEN) {
+        rgb_send_argb(pin, port, bit, (uint32_t)af, data, len);
+        return;
+    }
+#endif
 #if CH32RV_GPIO_PORT_WIDTH > 16
     volatile uint32_t *set = bit >= 16u ? &CH32RV_GPIO_BSXR(port) : &CH32RV_GPIO_BSHR(port);
     const uint32_t set_mask = 1u << (bit & 15u);

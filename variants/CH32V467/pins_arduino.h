@@ -842,6 +842,16 @@
 /* DAC2: on every part */
 #define CH32RV_DAC2_PIN PA5
 
+/* ---- ARGB: the WS2812 block (rgbLedWrite(), ch32rv_rgb_led_write()) on 1 pad,
+ *      fed by DMA1 channel 10; on any other pad the CPU sends ---- */
+#define CH32RV_HAS_ARGB 1
+#define CH32RV_ARGB_BASE 0x40025000u
+#define CH32RV_ARGB_DMA_CHANNEL_BASE 0x400200b0u   /* the channel's CFGR */
+/* The pad's function number for the block, -1 where it has none. */
+#define CH32RV_ARGB_PIN_TO_AF(p) ( \
+    (p) == PA15 ? 0 : \
+    -1)
+
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */

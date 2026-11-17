@@ -31,6 +31,8 @@
  *                          line), then 300 us low for the latch
  *   rgbbuf <pin> <n>       RGB <n>: the same n LEDs (n <= 8) in one
  *                          ch32rv_rgb_led_write(): one frame
+ *   rgbhw <pin>            RGBHW <1 / 0>: the two above go by the WS2812
+ *                          block there (ch32rv_rgb_led_is_hardware())
  *
  * The timer features (timer_reply; V003's build leaves out what `has` does
  * not list):
@@ -392,6 +394,8 @@ static void reply(char *command)
         ch32rv_rgb_led_write(pin, grb, (size_t)(3 * n));
         delayMicroseconds(300);
         say("RGB", 1, n);
+    } else if (!strcmp(argv[0], "rgbhw") && argc == 2) {
+        say("RGBHW", 1, ch32rv_rgb_led_is_hardware(pin) ? 1 : 0);
     } else if (timer_reply(argc, argv, pin)) {
     } else {
         SerialDMSeq.print("UNKNOWN ");

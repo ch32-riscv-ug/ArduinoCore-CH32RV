@@ -18,7 +18,7 @@ gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §
   names as the ADC's trigger pad, the probe pulsing it (test_adc_external_trigger).
 - periph.analog-continuous: arduino-esp32's analogContinuous() on such a pad (test_analog_continuous).
 - periph.hsadc: CH32RVHsAdc on an HSADC pad on VDDIO (PF8-PF10), the probe's PWM on it (test_hsadc).
-- periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
+- periph.can / i2s / rs485 / qspi: not implemented in the core (argb is signals.rgb-led-hardware now). With their lines labelled the test fails,
   saying so; that is the reminder that the bench is ready for them."""
 import json
 import pathlib
@@ -657,7 +657,7 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
-@pytest.mark.parametrize("feature", ["can", "i2s", "argb", "rs485", "qspi"])
+@pytest.mark.parametrize("feature", ["can", "i2s", "rs485", "qspi"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""
     case = settings(__file__)

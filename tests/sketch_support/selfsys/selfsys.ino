@@ -15,6 +15,10 @@
  *                             ADC <pin> <channel> <at 1> <at 0> <full scale>, ADC <pin> HELD / NONE
  *   rtc                       RTC <gettimeofday() seconds> <microseconds> on the RTC families, else RTC NONE
  *   pad <pin>                 PAD <pin> <1 when the board holds it: the pulls do not move it>
+ *   rgbhw <pin>               RGBHW <pin> <1 when rgbLedWrite() sends there by the WS2812 block>
+ *   rgbirq <pin> <leds>       ch32rv_rgb_led_write() of leds (<= 100) LEDs while a hardware timer's 100 us
+ *                             alarm counts interrupts: RGBIRQ <hardware 1 / 0> <interrupts during the call>
+ *                             <the call's us>, or RGBIRQ NONE (no WS2812 block in the series, or no timer)
  *   tone <pin> <hz>           tone(pin, hz), the pad read for 100 ms: TONE <rising edges> <samples>
  *   servo <pin> <us>          a Servo on pin at us, pulseIn() three times: SERVO <width> <width> <width>
  *   wwdg <early|late>         the window watchdog, T = min(wwdgMaxTimeoutUs(), 40 ms), window T / 2:
@@ -188,6 +192,47 @@ static void adc_pad(int pin)
 }
 #endif
 
+#if CH32RV_HAS_ARGB
+/* Whether interrupts run while ch32rv_rgb_led_write() sends: a hardware
+ * timer's 100 us alarm counts its interrupts across the call. The series
+ * with the WS2812 block only (V003's 16 KB has no room for the timer). */
+static volatile uint32_t rgb_irqs;
+
+static void rgb_tick()
+{
+    rgb_irqs++;
+}
+
+static void rgb_irq(pin_size_t p, int leds)
+{
+    static uint8_t frame[3 * 100];
+    if (leds < 1 || leds > 100) {
+        leds = 100;
+    }
+    for (int i = 0; i < 3 * leds; i++) {
+        frame[i] = (uint8_t)(0x5A ^ i);
+    }
+    hw_timer_t *t = timerBegin(1000000);
+    if (t == nullptr) {
+        SerialDMSeq.printf("RGBIRQ NONE\r\n");
+        return;
+    }
+    timerAttachInterrupt(t, rgb_tick);
+    timerAlarm(t, 100, true, 0);
+    delay(2);
+    const uint32_t n0 = rgb_irqs;
+    const uint32_t t0 = micros();
+    ch32rv_rgb_led_write(p, frame, (size_t)(3 * leds));
+    const uint32_t us = micros() - t0;
+    const uint32_t n = rgb_irqs - n0;
+    timerEnd(t);
+    delayMicroseconds(300);
+    pinMode(p, INPUT);
+    SerialDMSeq.printf("RGBIRQ %d %lu %lu\r\n", ch32rv_rgb_led_is_hardware(p) ? 1 : 0, (unsigned long)n,
+                       (unsigned long)us);
+}
+#endif
+
 static void reply(char *command)
 {
     char whole[sizeof line];
@@ -279,6 +324,15 @@ static void reply(char *command)
 #endif
     } else if (!strcmp(argv[0], "pad") && argc == 2) {
         SerialDMSeq.printf("PAD %d %d\r\n", atoi(argv[1]), held((pin_size_t)atoi(argv[1])) ? 1 : 0);
+    } else if (!strcmp(argv[0], "rgbhw") && argc == 2) {
+        SerialDMSeq.printf("RGBHW %d %d\r\n", atoi(argv[1]),
+                           ch32rv_rgb_led_is_hardware((pin_size_t)atoi(argv[1])) ? 1 : 0);
+    } else if (!strcmp(argv[0], "rgbirq") && argc == 3) {
+#if CH32RV_HAS_ARGB
+        rgb_irq((pin_size_t)atoi(argv[1]), atoi(argv[2]));
+#else
+        SerialDMSeq.printf("RGBIRQ NONE\r\n");
+#endif
     } else if (!strcmp(argv[0], "tone") && argc == 3) {
         const pin_size_t p = (pin_size_t)atoi(argv[1]);
         tone(p, (unsigned int)(uint32_t)atol(argv[2]));

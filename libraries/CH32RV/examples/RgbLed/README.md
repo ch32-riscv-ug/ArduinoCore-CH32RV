@@ -18,7 +18,7 @@ The chain cycles red, green, blue and off every half second; each LED down the c
 
 ## Adapting the example
 
-Interrupts are off for 30 us per LED for the whole chain (100 LEDs: 3 ms). For many LEDs, a library that drives the line with SPI or DMA keeps interrupts on. The timing is in software; check it on a new board with a logic analyzer if the colours look wrong.
+Interrupts are off for 30 us per LED for the whole chain (100 LEDs: 3 ms). On CH32V4x7 and CH32X3x5, set `LED_PIN` to a pad of the WS2812 block (PA15; on X3x5 also PD3 or PD4): the same calls then send by the block and DMA with interrupts on (`ch32rv_rgb_led_is_hardware(LED_PIN)` says so). Elsewhere, for many LEDs, a library that drives the line with SPI or DMA keeps interrupts on. The timing is in software; check it on a new board with a logic analyzer if the colours look wrong.
 
 ## Related documentation
 

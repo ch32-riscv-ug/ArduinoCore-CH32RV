@@ -187,8 +187,12 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
   36 MHz the last bit of each byte, which loads the next one, is up to 4 cycles longer). Neither call waits for
   the latch: the line must then stay low for the LED's reset time (50 us on WS2812, 280 us on WS2812B-V5 and
   many newer parts). Measured 2026-11-17 (WireSkein's rgb_led, 60 MS/s, one LED): T0H 333-433 ns, T1H
-  767-900 ns, the bit 1.22-1.43 us on V003, V006, V103, V203, V205, X035 and H417. The ARGB hardware of V4x7 /
-  X3x5 is a later, faster path.
+  767-900 ns, the bit 1.22-1.43 us on V003, V006, V103, V203, V205, X035 and H417.
+  **On V4x7 and X3x5 the WS2812 block (ARGB) sends instead** on its pads - PA15 on V4x7; PA15, PD3 and PD4 on
+  X3x5 - fed by DMA, with interrupts left on, as ESP32's `rgbLedWrite()` uses its RMT: the same calls, the same
+  targets in HCLK counts, any chain up to 65535 bytes (a longer one goes the CPU's way). They still return when the
+  last bit is out (the buffer is free again, frames go out in call order); there is no asynchronous call.
+  `ch32rv_rgb_led_is_hardware(pin)` says which way a pad goes. Built only, 2026-11-17.
 - **Interrupt priorities** (`#include <ch32rv_priority.h>`): `ch32rv_irq_set_priority(irqn, priority)` /
   `ch32rv_irq_get_priority(irqn)` on the PFIC's byte, smaller more urgent, as WCH's `NVIC_SetPriority()`.
   `CH32RV_IRQ_PRIORITY(level)` is the byte of a preemption level, 0 to `CH32RV_IRQ_PREEMPT_LEVELS - 1`: 2 levels on

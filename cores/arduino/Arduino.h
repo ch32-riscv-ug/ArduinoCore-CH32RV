@@ -290,7 +290,10 @@ void ch32rv_fill_random(void *buf, size_t len);
 
 /* arduino-esp32's RGB LED output: one WS2812 / SK6812-type LED (24 bits, its
  * colour order) on any pad, in software with interrupts off for the 30 us of
- * the frame (ch32rv_rgb_led.c). It does not wait for the LED to latch: the
+ * the frame (ch32rv_rgb_led.c) - or, on the pads of the WS2812 block (ARGB:
+ * V4x7's PA15, X3x5's PA15 / PD3 / PD4; ch32rv_rgb_led_is_hardware()), by the
+ * block and its DMA with interrupts on, as ESP32 sends it by its RMT. Either
+ * way it returns once the last bit is out. It does not wait for the LED to latch: the
  * line has to stay low for the LED's reset time (50 us on WS2812, 280 us on
  * WS2812B-V5 and the like) before the colour shows. For a chain,
  * ch32rv_rgb_led_write() below. */
@@ -311,8 +314,22 @@ void rgbLedWrite(pin_size_t pin, uint8_t red_val, uint8_t green_val, uint8_t blu
  * of it (30 us an LED) and no gap between LEDs - a chain of rgbLedWrite()
  * calls leaves the line low between them for the call itself, which at low
  * clocks is past the LEDs' latch (13 us on V006 at 24 MHz). Not ESP32's:
- * arduino-esp32 has no chain call (Adafruit_NeoPixel's show() is this). */
+ * arduino-esp32 has no chain call (Adafruit_NeoPixel's show() is this).
+ * On a pad of the WS2812 block the frame goes by DMA with interrupts on,
+ * up to 65535 bytes (longer ones by the CPU). */
 void ch32rv_rgb_led_write(pin_size_t pin, const uint8_t *data, size_t len);
+/* Whether the two calls above send on `pin` by the WS2812 block, leaving
+ * interrupts on (the variant's CH32RV_ARGB_PIN_TO_AF), or by the CPU with
+ * them off. A constant where `pin` is. */
+static inline bool ch32rv_rgb_led_is_hardware(pin_size_t pin)
+{
+#if CH32RV_HAS_ARGB
+    return CH32RV_ARGB_PIN_TO_AF(CH32RV_PIN_RESOLVE(pin)) >= 0;
+#else
+    (void)pin;
+    return false;
+#endif
+}
 /* The name before arduino-esp32 3.0, deprecated there as here. */
 __attribute__((deprecated("Use rgbLedWrite() instead.")))
 static inline void neopixelWrite(pin_size_t pin, uint8_t red_val, uint8_t green_val, uint8_t blue_val)
