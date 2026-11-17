@@ -218,6 +218,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
+  8 KB 刻みで進み、範囲の確認も 8 KB 揃えを求める（半分を消し残す）。2026-11-17、ファームウェア更新の実装中に
+  コードを読んで見つけた。更新は読み返しで止まるので壊れないが、480K モードでは flash の書き込み・更新が使えない。
 - [ ] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、400 MHz の PLL を HPRE で 1/2）で、selfsys の window watchdog の
   early（窓の前に給餌）がリセットにならない（2026-11-17、core=v5f・v3f とも 3 回。400・25 MHz は通る）。late は
   window_watchdog で戻る。early の後の起動は RSTSCKR が 00000000（フラグなし: WWDG のリセットでなく、止まった DUT を
