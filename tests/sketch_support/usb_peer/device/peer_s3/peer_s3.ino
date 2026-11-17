@@ -58,7 +58,7 @@ EspUsbHostCdcSerial cdcPort0(usb), cdcPort1(usb);   /* by port, for usb-peer-inp
 static EspUsbHostCdcSerial *const cdcPorts[2] = {&cdcPort0, &cdcPort1};
 EspUsbHostMscFS msc;
 
-static char line[400];
+static char line[1200];   /* fwput: 512 bytes of hex a line */
 static size_t used;
 
 static volatile uint32_t netFrames, netOurs;
@@ -443,6 +443,179 @@ static void cmdDfu()
   Serial.println("S3 DFU 0 0");
 }
 
+/* Firmware update (usb-peer-firmware): the image arrives in hex lines (fwclr, fwput) and goes to the DUT by DFU 1.1
+ * on its DFU-mode interface, or as sectors on its drive. EspUsbHost has no public SCSI command for an eject (START
+ * STOP UNIT): mscej answers 0, and the test leaves the raw-drive install to the Pico peer. */
+static uint8_t fwImage[96 * 1024];
+static uint32_t fwLength;
+
+static void cmdFwPut(const char *arg)
+{
+  char *hex = nullptr;
+  const uint32_t at = strtoul(arg, &hex, 10);
+  while (hex && *hex == ' ') hex++;
+  const size_t n = at < sizeof fwImage ? parseHex(hex ? hex : "", fwImage + at, sizeof fwImage - at) : 0;
+  if (n && at + n > fwLength) fwLength = at + n;
+  Serial.printf("S3 FWPUT %u %lu\n", n ? 1 : 0, (unsigned long)fwLength);
+}
+
+/* The DFU-mode interface (0xFE / 1 / protocol 2) and its functional descriptor's wTransferSize, from the
+ * configuration descriptor read by GET_DESCRIPTOR. */
+static int dfuMode(uint8_t a, uint16_t *transfer)
+{
+  static uint8_t cfg[512];
+  size_t got = 0;
+  *transfer = 0;
+  if (!usb.vendorControlTransfer(0x80, 0x06, 0x0200, 0, cfg, 9, &got, a) || got < 4) return -1;
+  size_t total = (size_t)(cfg[2] | cfg[3] << 8);
+  if (total > sizeof cfg) total = sizeof cfg;
+  if (!usb.vendorControlTransfer(0x80, 0x06, 0x0200, 0, cfg, total, &got, a)) return -1;
+  int found = -1;
+  bool in = false;
+  for (size_t i = 0; i + 2 <= got && cfg[i] >= 2; i += cfg[i])
+  {
+    const uint8_t *d = cfg + i;
+    if (d[1] == 0x04)
+    {
+      in = d[3] == 0 && d[5] == 0xFE && d[6] == 0x01 && d[7] == 0x02;
+      if (in) found = d[2];
+    }
+    else if (in && d[1] == 0x21 && d[0] >= 7)
+    {
+      *transfer = (uint16_t)(d[5] | d[6] << 8);
+      break;
+    }
+  }
+  return found;
+}
+
+static bool dfuStatus(uint8_t a, int itf, uint8_t *status, uint8_t *state)
+{
+  uint8_t s[6];
+  size_t got = 0;
+  if (!usb.vendorControlTransfer(0xA1, 0x03, 0, (uint16_t)itf, s, 6, &got, a, 5000) || got != 6) return false;
+  *status = s[0];
+  *state = s[4];
+  delay((uint32_t)s[1] | (uint32_t)s[2] << 8 | (uint32_t)s[3] << 16);
+  return true;
+}
+
+static void cmdDfuInfo()
+{
+  uint16_t transfer = 0;
+  const int itf = dfuMode(firstAddress(), &transfer);
+  Serial.printf("S3 DFUINFO %d %u\n", itf, transfer);
+}
+
+static void cmdDfuDn(const char *arg)
+{
+  unsigned block = 0;
+  unsigned long at = 0, len = 0;
+  sscanf(arg, "%u %lu %lu", &block, &at, &len);
+  const uint8_t a = firstAddress();
+  uint16_t transfer = 0;
+  const int itf = dfuMode(a, &transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  bool ok = itf >= 0 && at + len <= sizeof fwImage &&
+            usb.vendorControlTransfer(0x21, 0x01, (uint16_t)block, (uint16_t)itf, len ? fwImage + at : nullptr, len,
+                                      nullptr, a, 5000);
+  ok = ok && dfuStatus(a, itf, &status, &state);
+  Serial.printf("S3 DFUDN %u %u %u\n", ok ? 1 : 0, status, state);
+}
+
+static void cmdDfuSimple(const char *what)
+{
+  const uint8_t a = firstAddress();
+  uint16_t transfer = 0;
+  const int itf = dfuMode(a, &transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  bool ok = itf >= 0;
+  if (ok && !strcmp(what, "st")) ok = dfuStatus(a, itf, &status, &state);
+  else if (ok && !strcmp(what, "clr")) ok = usb.vendorControlTransfer(0x21, 0x04, 0, (uint16_t)itf, nullptr, 0, nullptr, a);
+  else if (ok) ok = usb.vendorControlTransfer(0x21, 0x06, 0, (uint16_t)itf, nullptr, 0, nullptr, a);
+  Serial.printf("S3 DFU%s %u %u %u\n", !strcmp(what, "st") ? "ST" : !strcmp(what, "clr") ? "CLR" : "ABORT", ok ? 1 : 0,
+                status, state);
+}
+
+static void cmdMscW(const char *arg)
+{
+  unsigned long lba = 0, at = 0, count = 0;
+  sscanf(arg, "%lu %lu %lu", &lba, &at, &count);
+  const bool fits = count && at + count * 512u <= sizeof fwImage;
+  const bool ok = fits && usb.mscWriteBlocks((uint32_t)lba, fwImage + at, (uint32_t)count, firstAddress());
+  Serial.printf("S3 MSCW %u %u\n", ok ? 1 : 0, ok ? 0 : 1);
+}
+
+
+static bool s3MscWrite(uint32_t lba, const uint8_t *data, uint32_t count)
+{
+  return usb.mscWriteBlocks(lba, data, count, firstAddress());
+}
+
+/* The whole buffer by DFU: wTransferSize blocks, then the zero-length DNLOAD; stops at the first block whose
+ * GETSTATUS is not OK / dfuDNLOAD-IDLE. */
+static void cmdDfuAll()
+{
+  const uint8_t a = firstAddress();
+  uint16_t transfer = 0;
+  const int itf = dfuMode(a, &transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  unsigned blocks = 0;
+  bool ok = itf >= 0 && transfer;
+  for (uint32_t at = 0; ok && at < fwLength; at += transfer, blocks++)
+  {
+    const uint32_t n = fwLength - at < transfer ? fwLength - at : transfer;
+    ok = usb.vendorControlTransfer(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, fwImage + at, n, nullptr, a, 5000) && dfuStatus(a, itf, &status, &state) && status == 0 && state == 5;
+  }
+  if (ok) ok = usb.vendorControlTransfer(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, nullptr, 0, nullptr, a, 5000) && dfuStatus(a, itf, &status, &state);
+  Serial.printf("S3 DFUALL %u %u %u %u\n", ok ? 1 : 0, blocks, status, state);
+}
+
+/* UF2 blocks made here from the buffer's raw image (uf2conv.py's layout: 256 bytes a block at 0x08000000 + n x 256,
+ * the family in the header, the last padded with 0xFF), written one a sector from `lba`: `count` of them (0: all),
+ * last first when `reverse`. Stops at the first refused one. */
+static void cmdUf2W(const char *arg)
+{
+  unsigned long lba = 0, family = 0, count = 0, reverse = 0;
+  sscanf(arg, "%lu %lx %lu %lu", &lba, &family, &count, &reverse);
+  const uint32_t total = (fwLength + 255u) / 256u;
+  if (!count || count > total) count = total;
+  static uint8_t b[512];
+  unsigned written = 0;
+  bool ok = total > 0;
+  for (uint32_t k = 0; ok && k < count; k++)
+  {
+    const uint32_t n = reverse ? total - 1u - k : k;
+    memset(b, 0, sizeof b);
+    const uint32_t head[8] = {0x0A324655u, 0x9E5D5157u, 0x00002000u, 0x08000000u + n * 256u, 256u, n, total,
+                              (uint32_t)family};
+    memcpy(b, head, sizeof head);
+    memset(b + 32, 0xFF, 256);
+    const uint32_t at = n * 256u, left = fwLength - at;
+    memcpy(b + 32, fwImage + at, left < 256u ? left : 256u);
+    const uint32_t tail = 0x0AB16F30u;
+    memcpy(b + 508, &tail, 4);
+    ok = s3MscWrite((uint32_t)(lba + k), b, 1);
+    if (ok) written++;
+  }
+  Serial.printf("S3 UF2W %u %u %lu\n", ok ? 1 : 0, written, (unsigned long)total);
+}
+
+/* The buffer as it is, padded to whole sectors with 0xFF, from `lba` in 4 KiB writes. */
+static void cmdRawAll(const char *arg)
+{
+  const uint32_t lba = strtoul(arg, nullptr, 10);
+  uint32_t length = (fwLength + 511u) & ~511u;
+  bool ok = length && length <= sizeof fwImage;
+  if (ok) memset(fwImage + fwLength, 0xFF, length - fwLength);
+  for (uint32_t at = 0; ok && at < length; at += 4096u)
+  {
+    const uint32_t n = length - at < 4096u ? length - at : 4096u;
+    ok = s3MscWrite(lba + at / 512u, fwImage + at, (uint16_t)(n / 512u));
+  }
+  Serial.printf("S3 RAWALL %u\n", ok ? 1 : 0);
+}
+
 static void cmdCdcN(const char *arg)
 {
   char *end;
@@ -534,6 +707,18 @@ static void run(char *cmd)
     cmdVend(arg);
   }
   else if (!strcmp(cmd, "hididle")) cmdHidIdle(arg);
+  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; Serial.println("S3 FWCLR"); }
+  else if (!strcmp(cmd, "fwput")) cmdFwPut(arg);
+  else if (!strcmp(cmd, "dfuinfo")) cmdDfuInfo();
+  else if (!strcmp(cmd, "dfudn")) cmdDfuDn(arg);
+  else if (!strcmp(cmd, "dfust")) cmdDfuSimple("st");
+  else if (!strcmp(cmd, "dfuclr")) cmdDfuSimple("clr");
+  else if (!strcmp(cmd, "dfuabort")) cmdDfuSimple("abort");
+  else if (!strcmp(cmd, "mscw")) cmdMscW(arg);
+  else if (!strcmp(cmd, "mscej")) Serial.println("S3 MSCEJ 0 255");
+  else if (!strcmp(cmd, "dfuall")) cmdDfuAll();
+  else if (!strcmp(cmd, "uf2w")) cmdUf2W(arg);
+  else if (!strcmp(cmd, "rawall")) cmdRawAll(arg);
   else if (!strcmp(cmd, "vreq"))
   {
     char buf[16] = {};
@@ -574,9 +759,9 @@ static void run(char *cmd)
 
 void setup()
 {
-  /* A command line holds up to 399 characters; the P4's USB-Serial/JTAG keeps 256 by default and drops the
-   * rest, newline included. */
-  Serial.setRxBufferSize(1024);
+  /* A command line holds up to 1199 characters (fwput's 512 bytes in hex); the P4's USB-Serial/JTAG keeps 256 by
+   * default and drops the rest, newline included. */
+  Serial.setRxBufferSize(4096);
   Serial.begin(115200);
   usb.onDeviceConnected([](const EspUsbHostDeviceInfo &d)
                         { Serial.printf("S3 CONNECTED %u %04x %04x %s\n", d.address, d.vid, d.pid, d.product); });

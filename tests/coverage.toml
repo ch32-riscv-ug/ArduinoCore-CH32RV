@@ -279,8 +279,8 @@ scope = "once"
 needs = ["SDIO"]
 
 [[item]]
-id = "usb-firmware"         # DFU download and the UF2 / .bin drive install a new image; what is no image is refused
-test = "usb-firmware"
+id = "usb-peer-firmware"    # DFU download and the UF2 / .bin drive install a new image; what is no image is refused
+test = "usb-peer-firmware"
 scope = "series"            # the staging and the copy over the program use each series' flash
 any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
 

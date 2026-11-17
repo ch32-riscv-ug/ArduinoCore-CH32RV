@@ -48,6 +48,7 @@
  * video). The RP2040's host controller driver has no isochronous transfers. */
 #include <Adafruit_TinyUSB.h>
 #include <RTTStream.h>
+#include <SEGGER_RTT.h>   /* SEGGER_RTT_ConfigDownBuffer(): a larger console input buffer (setup()) */
 #include "peer_fat.h"
 #include "peer_pico.h"
 
@@ -845,8 +846,182 @@ static void cmdDfu()
   say("P DFU 1 %u\n", r == XFER_RESULT_SUCCESS || r == XFER_RESULT_INVALID ? 1 : 0);
 }
 
+/* ------------------------------------------------------------ firmware update (usb-peer-firmware)
+ * The test host sends an image in hex lines (fwclr, fwput) and the peer hands it to the DUT: by DFU 1.1 on its
+ * DFU-mode interface (class 0xFE / 1 / protocol 2), or as sectors on its drive (WRITE(10)), the drive ended by an
+ * eject (START STOP UNIT, LoEj). */
+static uint8_t fwImage[96 * 1024];
+static uint32_t fwLength;
+
+static void cmdFwPut(const char *arg)
+{
+  char *hex = nullptr;
+  const uint32_t at = strtoul(arg, &hex, 10);
+  while (hex && *hex == ' ') hex++;
+  const size_t n = at < sizeof fwImage ? parseHex(hex ? hex : "", fwImage + at, sizeof fwImage - at) : 0;
+  if (n && at + n > fwLength) fwLength = at + n;
+  say("P FWPUT %u %lu\n", n ? 1 : 0, (unsigned long)fwLength);
+}
+
+/* The DFU-mode interface and its functional descriptor's wTransferSize. */
+static int dfuMode(uint16_t *transfer)
+{
+  int found = -1;
+  bool in = false;
+  *transfer = 0;
+  walkConfig(config, configLength, [&](const uint8_t *d)
+       {
+         if (d[1] == TUSB_DESC_INTERFACE)
+         {
+           in = d[3] == 0 && d[5] == 0xFE && d[6] == 0x01 && d[7] == 0x02;
+           if (in) found = d[2];
+         }
+         else if (in && d[1] == 0x21 && d[0] >= 7)
+         {
+           *transfer = (uint16_t)(d[5] | d[6] << 8);
+           return false;
+         }
+         return true; });
+  return found;
+}
+
+/* GETSTATUS: bStatus, bState; waits the bwPollTimeout it asks for. false when the request failed. */
+static bool dfuStatus(int itf, uint8_t *status, uint8_t *state)
+{
+  static uint8_t s[6];
+  uint32_t actual = 0;
+  if (control(0xA1, 0x03, 0, (uint16_t)itf, s, 6, &actual, 5000) != XFER_RESULT_SUCCESS || actual != 6) return false;
+  *status = s[0];
+  *state = s[4];
+  pause((uint32_t)s[1] | (uint32_t)s[2] << 8 | (uint32_t)s[3] << 16);
+  return true;
+}
+
+static void cmdDfuInfo()
+{
+  uint16_t transfer = 0;
+  const int itf = dfuMode(&transfer);
+  say("P DFUINFO %d %u\n", itf, transfer);
+}
+
+static void cmdDfuDn(const char *arg)
+{
+  unsigned block = 0;
+  unsigned long at = 0, len = 0;
+  sscanf(arg, "%u %lu %lu", &block, &at, &len);
+  uint16_t transfer = 0;
+  const int itf = dfuMode(&transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  bool ok = itf >= 0 && at + len <= sizeof fwImage &&
+            control(0x21, 0x01, (uint16_t)block, (uint16_t)itf, len ? fwImage + at : nullptr, (uint16_t)len, nullptr,
+                    5000) == XFER_RESULT_SUCCESS;
+  ok = ok && dfuStatus(itf, &status, &state);
+  say("P DFUDN %u %u %u\n", ok ? 1 : 0, status, state);
+}
+
+static void cmdDfuSimple(const char *what)
+{
+  uint16_t transfer = 0;
+  const int itf = dfuMode(&transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  bool ok = itf >= 0;
+  if (ok && !strcmp(what, "st")) ok = dfuStatus(itf, &status, &state);
+  else if (ok && !strcmp(what, "clr")) ok = control(0x21, 0x04, 0, (uint16_t)itf, nullptr, 0) == XFER_RESULT_SUCCESS;
+  else if (ok) ok = control(0x21, 0x06, 0, (uint16_t)itf, nullptr, 0) == XFER_RESULT_SUCCESS;   /* abort */
+  say("P DFU%s %u %u %u\n", !strcmp(what, "st") ? "ST" : !strcmp(what, "clr") ? "CLR" : "ABORT", ok ? 1 : 0, status,
+      state);
+}
+
+static void cmdMscW(const char *arg)
+{
+  unsigned long lba = 0, at = 0, count = 0;
+  sscanf(arg, "%lu %lu %lu", &lba, &at, &count);
+  const bool fits = count && at + count * 512u <= sizeof fwImage;
+  const bool ok = fits && mscWrite((uint32_t)lba, fwImage + at, (uint16_t)count);
+  say("P MSCW %u %u\n", ok ? 1 : 0, mscStatus);
+}
+
+static void cmdMscEject()
+{
+  static msc_cbw_t cbw;
+  memset(&cbw, 0, sizeof cbw);
+  cbw.signature = MSC_CBW_SIGNATURE;
+  cbw.tag = 0x54474A45;
+  cbw.cmd_len = 6;
+  cbw.command[0] = 0x1B;            /* START STOP UNIT */
+  cbw.command[4] = 0x02;            /* LoEj, stop */
+  mscStart();
+  const bool ok = mscFinish(mscIdle() && tuh_msc_scsi_command(dev.address, &cbw, nullptr, mscDone, 0));
+  say("P MSCEJ %u %u\n", ok ? 1 : 0, mscStatus);
+}
+
+
+/* The whole buffer by DFU: wTransferSize blocks, then the zero-length DNLOAD; stops at the first block whose
+ * GETSTATUS is not OK / dfuDNLOAD-IDLE. */
+static void cmdDfuAll()
+{
+  
+  uint16_t transfer = 0;
+  const int itf = dfuMode(&transfer);
+  uint8_t status = 0xFF, state = 0xFF;
+  unsigned blocks = 0;
+  bool ok = itf >= 0 && transfer;
+  for (uint32_t at = 0; ok && at < fwLength; at += transfer, blocks++)
+  {
+    const uint32_t n = fwLength - at < transfer ? fwLength - at : transfer;
+    ok = control(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, fwImage + at, (uint16_t)n, nullptr, 5000) == XFER_RESULT_SUCCESS && dfuStatus(itf, &status, &state) && status == 0 && state == 5;
+  }
+  if (ok) ok = control(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, nullptr, 0, nullptr, 5000) == XFER_RESULT_SUCCESS && dfuStatus(itf, &status, &state);
+  say("P DFUALL %u %u %u %u\n", ok ? 1 : 0, blocks, status, state);
+}
+
+/* UF2 blocks made here from the buffer's raw image (uf2conv.py's layout: 256 bytes a block at 0x08000000 + n x 256,
+ * the family in the header, the last padded with 0xFF), written one a sector from `lba`: `count` of them (0: all),
+ * last first when `reverse`. Stops at the first refused one. */
+static void cmdUf2W(const char *arg)
+{
+  unsigned long lba = 0, family = 0, count = 0, reverse = 0;
+  sscanf(arg, "%lu %lx %lu %lu", &lba, &family, &count, &reverse);
+  const uint32_t total = (fwLength + 255u) / 256u;
+  if (!count || count > total) count = total;
+  static uint8_t b[512];
+  unsigned written = 0;
+  bool ok = total > 0;
+  for (uint32_t k = 0; ok && k < count; k++)
+  {
+    const uint32_t n = reverse ? total - 1u - k : k;
+    memset(b, 0, sizeof b);
+    const uint32_t head[8] = {0x0A324655u, 0x9E5D5157u, 0x00002000u, 0x08000000u + n * 256u, 256u, n, total,
+                              (uint32_t)family};
+    memcpy(b, head, sizeof head);
+    memset(b + 32, 0xFF, 256);
+    const uint32_t at = n * 256u, left = fwLength - at;
+    memcpy(b + 32, fwImage + at, left < 256u ? left : 256u);
+    const uint32_t tail = 0x0AB16F30u;
+    memcpy(b + 508, &tail, 4);
+    ok = mscWrite((uint32_t)(lba + k), b, 1);
+    if (ok) written++;
+  }
+  say("P UF2W %u %u %lu\n", ok ? 1 : 0, written, (unsigned long)total);
+}
+
+/* The buffer as it is, padded to whole sectors with 0xFF, from `lba` in 4 KiB writes. */
+static void cmdRawAll(const char *arg)
+{
+  const uint32_t lba = strtoul(arg, nullptr, 10);
+  uint32_t length = (fwLength + 511u) & ~511u;
+  bool ok = length && length <= sizeof fwImage;
+  if (ok) memset(fwImage + fwLength, 0xFF, length - fwLength);
+  for (uint32_t at = 0; ok && at < length; at += 4096u)
+  {
+    const uint32_t n = length - at < 4096u ? length - at : 4096u;
+    ok = mscWrite(lba + at / 512u, fwImage + at, (uint16_t)(n / 512u));
+  }
+  say("P RAWALL %u\n", ok ? 1 : 0);
+}
+
 /* ------------------------------------------------------------ commands */
-static char line[400];
+static char line[1200];   /* fwput: 512 bytes of hex a line */
 static size_t used;
 
 static void run(char *cmd)
@@ -885,6 +1060,18 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
   else if (!strcmp(cmd, "dfu")) cmdDfu();
+  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; rtt.println("P FWCLR"); }
+  else if (!strcmp(cmd, "fwput")) cmdFwPut(arg);
+  else if (!strcmp(cmd, "dfuinfo")) cmdDfuInfo();
+  else if (!strcmp(cmd, "dfudn")) cmdDfuDn(arg);
+  else if (!strcmp(cmd, "dfust")) cmdDfuSimple("st");
+  else if (!strcmp(cmd, "dfuclr")) cmdDfuSimple("clr");
+  else if (!strcmp(cmd, "dfuabort")) cmdDfuSimple("abort");
+  else if (!strcmp(cmd, "mscw")) cmdMscW(arg);
+  else if (!strcmp(cmd, "mscej")) cmdMscEject();
+  else if (!strcmp(cmd, "dfuall")) cmdDfuAll();
+  else if (!strcmp(cmd, "uf2w")) cmdUf2W(arg);
+  else if (!strcmp(cmd, "rawall")) cmdRawAll(arg);
   else if (!strcmp(cmd, "cdcports"))
   {
     unsigned n = 0;
@@ -902,8 +1089,13 @@ static void run(char *cmd)
   else say("P UNKNOWN %s\n", cmd);
 }
 
+/* The console's input from the host: RTT Stream's default down buffer is 16 bytes, which took the firmware case's
+ * 512-byte fwput lines at about 100 bytes a second (2026-11-17). */
+static char rttDown[2048];
+
 void setup()
 {
+  SEGGER_RTT_ConfigDownBuffer(0, "Terminal", rttDown, sizeof rttDown, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
   USBHost.begin(0);
   cdc.begin(115200);
   rtt.println("P READY");

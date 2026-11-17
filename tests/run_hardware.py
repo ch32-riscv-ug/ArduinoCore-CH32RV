@@ -37,7 +37,6 @@ MODULES = {
     "usb-classes": TESTS / "instrumented/usb/test_usb_classes_contract.py",
     "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
     "usb-ss-iso": TESTS / "instrumented/usb/test_usb_ss_iso.py",
-    "usb-firmware": TESTS / "instrumented/usb/test_usb_firmware_contract.py",
     "eth": TESTS / "instrumented/eth/test_eth_contract.py",
     "logic": TESTS / "instrumented/logic/test_logic_contract.py",
     "pd": TESTS / "instrumented/pd/test_pd_contract.py",
@@ -65,6 +64,7 @@ MODULES = {
     "usb-peer-media": TESTS / "peer/usb/device/test_usb_peer_media.py",
     "usb-peer-net": TESTS / "peer/usb/device/test_usb_peer_net.py",
     "usb-peer-fs": TESTS / "peer/usb/device/test_usb_peer_fs.py",
+    "usb-peer-firmware": TESTS / "peer/usb/device/test_usb_peer_firmware.py",
     "usb-peer-input": TESTS / "peer/usb/device/test_usb_peer_input.py",
     "usb-peer-host": TESTS / "peer/usb/host/hid/test_usb_peer_host.py",
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
@@ -80,7 +80,6 @@ SKETCHES = {
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-ss-iso": TESTS / "sketch_support/usb_ss_iso/usb_ss_iso.ino",
-    "usb-firmware": TESTS / "sketch_support/usb_firmware/usb_firmware.ino",
     "eth": TESTS / "sketch_support/eth/eth.ino",
     "logic": TESTS / "sketch_support/logic/logic.ino",
     "pd": TESTS / "sketch_support/pd/pd.ino",
@@ -110,6 +109,7 @@ SKETCHES = {
     "usb-peer-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-peer-net": TESTS / "sketch_support/usb_net/usb_net.ino",
     "usb-peer-fs": TESTS / "sketch_support/usb_fs/usb_fs.ino",
+    "usb-peer-firmware": TESTS / "sketch_support/usb_firmware/usb_firmware.ino",
     "usb-peer-input": TESTS / "sketch_support/usb_input/usb_input.ino",
     "usb-peer-host": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
@@ -129,7 +129,7 @@ BUILD_OPTS = {
     # X035 (a small series) has no format() by default; the test formats.
     "usb-peer-fs": "-DFF_USE_MKFS=1\n",
     # Rewrites the whole program flash: a part-written image stays reachable from the probe.
-    "usb-firmware": "-DCH32RV_BOOT_HOLD_MS=1000\n",
+    "usb-peer-firmware": "-DCH32RV_BOOT_HOLD_MS=1000\n",
 }
 # The peer sketch directory staged beside a case's test (pytest-embedded-arduino-cli's peer_<name>/).
 PEERS = {
@@ -138,6 +138,7 @@ PEERS = {
     "usb-peer-media": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_s3",
+    "usb-peer-firmware": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_s3",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
@@ -149,6 +150,7 @@ PICO_PEERS = {
     "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_pico",
+    "usb-peer-firmware": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_pico",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_pico",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_pico",
@@ -182,7 +184,6 @@ HELPERS = {
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
     "usb-ss-iso": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
-    "usb-firmware": [TESTS / "instrumented/usb/usb_host.py"],
     "gpio": [TESTS / "instrumented/bench_lines.py"],
     "uart": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "uart-dma": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
@@ -199,6 +200,7 @@ HELPERS = {
     "usb-peer-media": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-net": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-fs": [TESTS / "peer/usb/device/device_peer.py"],
+    "usb-peer-firmware": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-input": [TESTS / "peer/usb/device/device_peer.py"],
     "usb-peer-host": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],

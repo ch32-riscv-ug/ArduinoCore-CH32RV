@@ -32,8 +32,8 @@ BOARD_IDENTIFY = pathlib.Path("/run/board-identify/by-id")
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
 USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
-USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso", "usb-firmware")
-PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-input")
+USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
+PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
 # own port to this host, an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT, or another CH32RV board
@@ -56,6 +56,7 @@ CH32RV_PEER_LACKS = {
     "usb-peer-media": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no isochronous transfers (the speaker, "
                       "microphone and camera streams)",
     "usb-peer-net": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no USB networking (CDC-NCM)",
+    "usb-peer-firmware": "skip: the CH32RV peer's sketch has no firmware-update commands yet (fwput, dfudn, mscw)",
 }
 # The speed a controller of the record's usb runs at (USB 2.0: 1 full, 2 high; 3 SuperSpeed), as CH32RVUsbHost numbers it.
 USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 2, "super_speed": 3}
