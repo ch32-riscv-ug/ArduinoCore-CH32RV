@@ -17,8 +17,9 @@
  *   pad <pin>                 PAD <pin> <1 when the board holds it: the pulls do not move it>
  *   rgbhw <pin>               RGBHW <pin> <1 when rgbLedWrite() sends there by the WS2812 block>
  *   rgbirq <pin> <leds>       ch32rv_rgb_led_write() of leds (<= 100) LEDs while a hardware timer's 100 us
- *                             alarm counts interrupts: RGBIRQ <hardware 1 / 0> <interrupts during the call>
- *                             <the call's us>, or RGBIRQ NONE (no WS2812 block in the series, or no timer)
+ *                             alarm stamps its interrupts: RGBIRQ <hardware 1 / 0> <interrupts during the call>
+ *                             <the longest gap between them, us> <the call's us>, or RGBIRQ NONE (no WS2812
+ *                             block in the series, or no timer)
  *   tone <pin> <hz>           tone(pin, hz), the pad read for 100 ms: TONE <rising edges> <samples>
  *   servo <pin> <us>          a Servo on pin at us, pulseIn() three times: SERVO <width> <width> <width>
  *   wwdg <early|late>         the window watchdog, T = min(wwdgMaxTimeoutUs(), 40 ms), window T / 2:
@@ -50,6 +51,7 @@
 #include "internal/ch32rv_pins.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_ticks.h"
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -194,13 +196,27 @@ static void adc_pad(int pin)
 
 #if CH32RV_HAS_ARGB
 /* Whether interrupts run while ch32rv_rgb_led_write() sends: a hardware
- * timer's 100 us alarm counts its interrupts across the call. The series
- * with the WS2812 block only (V003's 16 KB has no room for the timer). */
-static volatile uint32_t rgb_irqs;
+ * timer's 100 us alarm, each interrupt stamped with SysTick. The count alone
+ * cannot tell: alarms held off by masked interrupts are not lost but caught
+ * up (ch32rv_hw_timer.c raises an overdue alarm again at once), so a frame
+ * with interrupts off counts the same 30 - all in a burst after it. The
+ * longest gap between interrupts (from the call's start to its end) can:
+ * about the alarm's 100 us while they run, the whole frame while they are
+ * held. The series with the WS2812 block only (V003's 16 KB has no room for
+ * the timer). */
+static volatile uint32_t rgb_irqs, rgb_last, rgb_gap;
+static volatile bool rgb_timing;
 
 static void rgb_tick()
 {
-    rgb_irqs++;
+    const uint32_t now = ch32rv_ticks();
+    if (rgb_timing) {
+        if (now - rgb_last > rgb_gap) {
+            rgb_gap = now - rgb_last;
+        }
+        rgb_last = now;
+        rgb_irqs++;
+    }
 }
 
 static void rgb_irq(pin_size_t p, int leds)
@@ -220,16 +236,29 @@ static void rgb_irq(pin_size_t p, int leds)
     timerAttachInterrupt(t, rgb_tick);
     timerAlarm(t, 100, true, 0);
     delay(2);
-    const uint32_t n0 = rgb_irqs;
-    const uint32_t t0 = micros();
+    /* Stamps from the call's start; the interrupts are counted until the
+     * call has returned (the catch-up burst of a masked frame lands inside
+     * the call, at its end, and is counted: the gap is what tells). */
+    const uint32_t start = ch32rv_ticks();
+    noInterrupts();
+    rgb_irqs = 0;
+    rgb_gap = 0;
+    rgb_last = start;
+    rgb_timing = true;
+    interrupts();
     ch32rv_rgb_led_write(p, frame, (size_t)(3 * leds));
-    const uint32_t us = micros() - t0;
-    const uint32_t n = rgb_irqs - n0;
+    const uint32_t end = ch32rv_ticks();
+    noInterrupts();
+    rgb_timing = false;
+    const uint32_t n = rgb_irqs;
+    const uint32_t gap = end - rgb_last > rgb_gap ? end - rgb_last : rgb_gap;
+    interrupts();
     timerEnd(t);
     delayMicroseconds(300);
     pinMode(p, INPUT);
-    SerialDMSeq.printf("RGBIRQ %d %lu %lu\r\n", ch32rv_rgb_led_is_hardware(p) ? 1 : 0, (unsigned long)n,
-                       (unsigned long)us);
+    const uint32_t per_us = CH32RV_SYSTICK_HZ / 1000000u;
+    SerialDMSeq.printf("RGBIRQ %d %lu %lu %lu\r\n", ch32rv_rgb_led_is_hardware(p) ? 1 : 0, (unsigned long)n,
+                       (unsigned long)(gap / per_us), (unsigned long)((end - start) / per_us));
 }
 #endif
 

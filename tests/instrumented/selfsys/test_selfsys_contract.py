@@ -45,9 +45,11 @@ selfsys.rtc: on the RTC families (V20x, V205, V30x, L103 / M103) gettimeofday() 
 3 s, within 10 % (LSI, measured once against the system clock).
 
 selfsys.rgb_led_irq: on the series with the WS2812 block (V4x7, X3x5), ch32rv_rgb_led_write() of 100 LEDs on the
-first free pad of the block leaves interrupts on - a hardware timer's 100 us alarm runs at least half of the 30 times
-the 3 ms frame holds - while the same frame on a free pad the block does not reach (the CPU's, interrupts off)
-counts 2 at most: the count itself tells blocked interrupts from running ones. Skips where the series has no block.
+first free pad of the block leaves interrupts on - a hardware timer's 100 us alarm, stamped by SysTick, never waits
+more than 500 us between interrupts during the 3 ms frame and runs at least half of its 30 times - while the same
+frame on a free pad the block does not reach (the CPU's, interrupts off) shows a gap of half the frame at least: the
+control that the measurement sees held interrupts (their count does not: held alarms are caught up in a burst).
+Skips where the series has no block.
 
 A board whose record loses gpio-drive (CH32M030's motor board) skips tone, servo, adc_pads and rgb_led_irq."""
 import json
@@ -220,11 +222,13 @@ def test_tone(dut, ready, record_property):
     assert abs(edges - 100) <= 3, f"tone(1000) on {name}: {edges} periods in 100 ms"
 
 
-# rgb_led_irq: 100 LEDs (300 bytes, 2400 bits of 1.25 us: 3 ms) while a 100 us timer alarm
-# counts its interrupts. The block's frame should see about 30 of them; half (15) leaves the timer's own clock error
-# (HSI, a few %) and an interrupt's entry and exit far behind, and is still ten times what a frame sent with
-# interrupts off can show (the one alarm left pending when they come back on, 2 at most counting one that lands on
-# the edge). The CPU's frame on another free pad is the control: the count really sees blocked interrupts.
+# rgb_led_irq: 100 LEDs (300 bytes, 2400 bits of 1.25 us: 3 ms) while a 100 us timer alarm stamps its interrupts
+# (SysTick). The count alone does not tell: an alarm held off is caught up, not lost (the hw timer raises an overdue
+# alarm again at once), so a frame with interrupts off counted 30 as well, all in a burst at its end (V407 and X315,
+# 2026-11-17). The longest gap between interrupts from the call's start to its end does: with them on it is the
+# alarm's 100 us plus an entry's latency; 5 alarms (500 us) leaves that far behind and is still a sixth of the frame.
+# With them off it is the frame itself; the control on a CPU pad must show at least half of it (1500 us), else the
+# measurement cannot see a held frame. The block's frame also counts half the 30 alarms at least (HSI, a few %).
 RGB_LEDS, RGB_ALARM_US = 100, 100
 
 
@@ -256,18 +260,21 @@ def test_rgb_led_irq(dut, ready, record_property):
     for name, block in ((hw, 1), (soft, 0)):
         if name is None:
             continue
-        m = ask(dut, f"rgbirq {pin_of(name)} {RGB_LEDS}", rb"RGBIRQ (NONE|\d \d+ \d+)")
+        m = ask(dut, f"rgbirq {pin_of(name)} {RGB_LEDS}", rb"RGBIRQ (NONE|\d \d+ \d+ \d+)")
         if m.group(1) == b"NONE":
             pytest.skip("no hardware timer for the count")
-        got_hw, irqs, us = (int(x) for x in m.group(1).split())
-        seen[name] = dict(hardware=got_hw, irqs=irqs, us=us)
+        got_hw, irqs, gap, us = (int(x) for x in m.group(1).split())
+        seen[name] = dict(hardware=got_hw, irqs=irqs, gap_us=gap, us=us)
         assert got_hw == block, f"{name}: ch32rv_rgb_led_is_hardware() {got_hw}"
     record_property("rgb_led_irq", json.dumps(seen))
+    if soft is not None:
+        assert seen[soft]["gap_us"] >= frame_us / 2, \
+            f"{soft}: the longest gap {seen[soft]['gap_us']} us during the CPU's frame, which holds interrupts for " \
+            f"{frame_us:.0f} us (the measurement does not see a held frame)"
+    assert seen[hw]["gap_us"] <= 5 * RGB_ALARM_US, \
+        f"{hw}: interrupts held {seen[hw]['gap_us']} us during a {frame_us:.0f} us frame by the block"
     assert seen[hw]["irqs"] >= want, \
         f"{hw}: {seen[hw]['irqs']} timer interrupts during a {frame_us:.0f} us frame by the block, {want:.0f} wanted"
-    if soft is not None:
-        assert seen[soft]["irqs"] <= 2, \
-            f"{soft}: {seen[soft]['irqs']} interrupts during the CPU's frame, which has them off (the count is wrong)"
 
 
 def test_servo(dut, ready, record_property):
