@@ -168,12 +168,12 @@
 |---|---|---|---|---|---|
 | V103 の USB（旧 IP）のホスト | V103 | 1 | 自動 | Pico か ESP32-S3（usb-peer-host） | COV:179-188,196,204,212, TODO:473 |
 | 第 1 世代 USBHS のホスト | V305/V307/V317 | 1 | 単発→自動 | ESP32-P4（HS のデバイス）、HSE の板 | libraries/CH32RVUsbHost/src/CH32RVUsbHostPort.h:17, libraries/CH32RVUsbHost/README.ja.md:47-48 |
-| USBSS のホスト（全部: リンク・制御・バルク・ERDY・burst・割込み・等時・SS ハブ・warm reset、ストリーム、Mult>0、U1〜U3） | H417/H416（X315 はシリコンがデバイスのみ） | 1 | 単発→自動 | H417 どうしの直結（片方 DCD）、USB 3.0 メモリ（手作業） | docs/usb.ja.md:367, PS:91 |
+| USBSS のホスト（リンク・制御・バルク・ERDY・burst・割込み・等時の Mult・SS ハブ・warm reset・U1〜U3 の許可） | H417/H416（X315 はシリコンがデバイスのみ） | 実装済み（2026-11-14、ビルドのみ。ストリームはハードの限界: 上の USBSS のバルクストリームの行） | 単発→自動 | H417 どうしの直結（片方 DCD）、USB 3.0 メモリ（手作業）。TEST_PLAN の「USB の網羅の軸」の 3 台の H417 の配線待ち | libraries/CH32RVUsbHost/src/CH32RVUsbHcdUsbss.cpp |
 | HS ハブの先の FS・LS（split トランザクション） | 第 2 世代 USBHS のホスト（V205、V4x7、X3x5、H41x） | 1 | 自動 | HS ハブ＋FS の Pico | libraries/CH32RVUsbHost/README.ja.md:66, docs/usb.ja.md:344 |
 | ハブ越しの LS 機器（PRE PID）の確認 | USBFS のホスト | 2 | 単発 | FS ハブ＋LS の機器 | TODO:472-473 |
 | ホストのアイソクロナス（オーディオ・ビデオ） | 全ホスト | 1 | 自動 | ESP32-S3 / P4 の UAC・UVC デバイス | libraries/CH32RVUsbHost/README.ja.md:99, libraries/CH32RVUsbHost/src/CH32RVUsbHost.h:31 |
 | ホストの USB ネットワーク（NCM / ECM） | 全ホスト | 1 | 自動 | ESP32-S3 の NCM か USB の LAN アダプタ | FC:113, TODO:472 |
-| ホストの MSC のファイルシステム（マウント） | 全ホスト | 1 | 自動 | libraries/CH32RVUsbHost/README.ja.md:100、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 | まだ無い』 |
+| ホストの MSC のファイルシステム（マウント） | 全ホスト | 1 | 自動 | USB メモリか、MSC デバイスの対向（ESP32-S3・Pico・CH32RV） | libraries/CH32RVUsbHost/README.ja.md:100、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 |
 | ホストの USB シリアルの `setRxBufferSize()` | 全ホスト | 2 | 自動 | Pico | libraries/CH32RVUsbHost/README.ja.md:102 |
 | H41x の USBHS ホスト（SWD と兼用、口の 2.0 側） | H41x | 1 | 自動 | ESP32-P4、SWD を外す部品 | docs/usb.ja.md:341, TODO:457 |
 | ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 2 | 自動 | ESP32-S3 / P4 | TODO:468 |
