@@ -932,6 +932,67 @@
     X(3, 2, 16, 4, 0, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler) \
     X(4, 2, 32, 4, 0, CH32RV_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32RV_IRQN_TIM4, TIM4_IRQHandler)
 
+/* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
+ * timer reaches, on every route the core can select. Fields: pad,
+ * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel
+ * 0), route: the pad's alternate-function number.
+ * A pad's entries are in the order analogWrite() tries them: its
+ * default PWM first. ---- */
+#define CH32RV_TIMER_PAD_COUNT 46
+#define CH32RV_TIMER_PADS { \
+    { PA0, 1, 0x11, 6 }, \
+    { PA1, 1, 0x12, 6 }, \
+    { PA2, 1, 0x13, 6 }, \
+    { PA4, 2, 0x01, 6 }, \
+    { PA5, 2, 0x02, 6 }, \
+    { PA6, 2, 0x03, 6 }, \
+    { PA7, 2, 0x04, 6 }, \
+    { PA8, 1, 0x12, 6 }, \
+    { PA9, 1, 0x13, 6 }, \
+    { PA10, 1, 0x01, 6 }, \
+    { PA11, 1, 0x02, 6 }, \
+    { PA12, 1, 0x03, 6 }, \
+    { PA13, 1, 0x11, 6 }, \
+    { PA14, 1, 0x12, 6 }, \
+    { PA15, 3, 0x04, 7 }, \
+    { PA15, 1, 0x13, 6 }, \
+    { PB4, 2, 0x01, 6 }, \
+    { PB5, 2, 0x02, 6 }, \
+    { PB6, 2, 0x03, 6 }, \
+    { PB7, 2, 0x04, 6 }, \
+    { PB8, 1, 0x01, 6 }, \
+    { PB9, 1, 0x02, 6 }, \
+    { PB10, 1, 0x03, 6 }, \
+    { PB11, 1, 0x04, 6 }, \
+    { PC4, 1, 0x01, 6 }, \
+    { PC4, 4, 0x01, 7 }, \
+    { PC5, 1, 0x02, 6 }, \
+    { PC5, 4, 0x02, 7 }, \
+    { PC6, 1, 0x03, 6 }, \
+    { PC6, 4, 0x03, 7 }, \
+    { PC7, 1, 0x04, 6 }, \
+    { PC7, 4, 0x04, 7 }, \
+    { PC8, 3, 0x01, 7 }, \
+    { PC9, 3, 0x02, 7 }, \
+    { PC10, 3, 0x03, 7 }, \
+    { PC11, 3, 0x04, 7 }, \
+    { PD3, 3, 0x01, 7 }, \
+    { PD3, 1, 0x20, 6 }, \
+    { PD4, 3, 0x02, 7 }, \
+    { PD4, 1, 0x04, 6 }, \
+    { PD5, 3, 0x03, 7 }, \
+    { PD10, 4, 0x01, 7 }, \
+    { PD11, 4, 0x02, 7 }, \
+    { PD12, 4, 0x03, 7 }, \
+    { PD13, 4, 0x04, 7 }, \
+    { PD13, 1, 0x11, 6 }, \
+}
+#define CH32RV_PWM_TIMER_MASK 0xeu
+/* Capture / compare vectors apart from the update one:
+ * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */
+#define CH32RV_TIMER_CC_TABLE(X) \
+    X(1, CH32RV_IRQN_TIM1_CC, TIM1_CC_IRQHandler)
+
 /* ---- tone(): preferred TIM4, free of PWM pads. ---- */
 #define CH32RV_TONE_TIMER 4
 #define CH32RV_TONE_TIMER_BASE CH32RV_TIM4_BASE

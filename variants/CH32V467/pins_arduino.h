@@ -837,6 +837,111 @@
     X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler) \
     X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x40021018u, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler)
 
+/* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
+ * timer reaches, on every route the core can select. Fields: pad,
+ * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel
+ * 0), route: the value of the timer's AFIO remap field.
+ * A pad's entries are in the order analogWrite() tries them: its
+ * default PWM first. ---- */
+#define CH32RV_TIMER_PAD_COUNT 79
+#define CH32RV_TIMER_PADS { \
+    { PA0, 2, 0x01, 0 }, \
+    { PA0, 5, 0x01, 0 }, \
+    { PA0, 2, 0x01, 2 }, \
+    { PA1, 2, 0x02, 0 }, \
+    { PA1, 5, 0x02, 0 }, \
+    { PA1, 2, 0x02, 2 }, \
+    { PA2, 2, 0x03, 0 }, \
+    { PA2, 5, 0x03, 0 }, \
+    { PA2, 2, 0x03, 1 }, \
+    { PA3, 2, 0x04, 0 }, \
+    { PA3, 5, 0x04, 0 }, \
+    { PA3, 2, 0x04, 1 }, \
+    { PA6, 3, 0x01, 0 }, \
+    { PA6, 8, 0x20, 0 }, \
+    { PA6, 1, 0x20, 1 }, \
+    { PA7, 3, 0x02, 0 }, \
+    { PA7, 8, 0x11, 0 }, \
+    { PA7, 1, 0x04, 3 }, \
+    { PA7, 1, 0x11, 1 }, \
+    { PA8, 1, 0x01, 0 }, \
+    { PA8, 1, 0x01, 1 }, \
+    { PA9, 1, 0x02, 0 }, \
+    { PA9, 1, 0x02, 1 }, \
+    { PA10, 1, 0x03, 0 }, \
+    { PA10, 1, 0x03, 1 }, \
+    { PA11, 1, 0x04, 0 }, \
+    { PA11, 1, 0x04, 1 }, \
+    { PA13, 8, 0x11, 1 }, \
+    { PA14, 8, 0x12, 1 }, \
+    { PA15, 2, 0x01, 1 }, \
+    { PA15, 2, 0x01, 3 }, \
+    { PA15, 8, 0x13, 1 }, \
+    { PB0, 3, 0x03, 0 }, \
+    { PB0, 8, 0x12, 0 }, \
+    { PB0, 3, 0x03, 2 }, \
+    { PB0, 1, 0x12, 1 }, \
+    { PB1, 3, 0x04, 0 }, \
+    { PB1, 8, 0x13, 0 }, \
+    { PB1, 3, 0x04, 2 }, \
+    { PB1, 1, 0x13, 1 }, \
+    { PB3, 2, 0x02, 1 }, \
+    { PB3, 2, 0x02, 3 }, \
+    { PB4, 3, 0x01, 2 }, \
+    { PB5, 3, 0x02, 2 }, \
+    { PB6, 4, 0x01, 0 }, \
+    { PB6, 8, 0x01, 1 }, \
+    { PB7, 4, 0x02, 0 }, \
+    { PB7, 8, 0x02, 1 }, \
+    { PB8, 4, 0x03, 0 }, \
+    { PB8, 1, 0x03, 3 }, \
+    { PB8, 8, 0x03, 1 }, \
+    { PB9, 4, 0x04, 0 }, \
+    { PB9, 8, 0x20, 1 }, \
+    { PB10, 2, 0x03, 2 }, \
+    { PB10, 2, 0x03, 3 }, \
+    { PB10, 1, 0x20, 3 }, \
+    { PB11, 2, 0x04, 2 }, \
+    { PB11, 2, 0x04, 3 }, \
+    { PB12, 1, 0x20, 0 }, \
+    { PB13, 1, 0x11, 0 }, \
+    { PB14, 1, 0x12, 0 }, \
+    { PB15, 1, 0x13, 0 }, \
+    { PC6, 8, 0x01, 0 }, \
+    { PC6, 3, 0x01, 3 }, \
+    { PC7, 8, 0x02, 0 }, \
+    { PC7, 3, 0x02, 3 }, \
+    { PC8, 8, 0x03, 0 }, \
+    { PC8, 3, 0x03, 3 }, \
+    { PC9, 8, 0x04, 0 }, \
+    { PC9, 3, 0x04, 3 }, \
+    { PC13, 8, 0x04, 1 }, \
+    { PD12, 4, 0x01, 1 }, \
+    { PD13, 4, 0x02, 1 }, \
+    { PD14, 4, 0x03, 1 }, \
+    { PD15, 4, 0x04, 1 }, \
+    { PE8, 1, 0x11, 3 }, \
+    { PE10, 1, 0x12, 3 }, \
+    { PE11, 1, 0x02, 3 }, \
+    { PE12, 1, 0x13, 3 }, \
+}
+#define CH32RV_PWM_TIMER_MASK 0x13eu
+/* The AFIO field each timer's route is written to: PCFR1 bit n,
+ * 0x80 | n for PCFR2, least significant bit first; 0xff unused. */
+#define CH32RV_TIMER_REMAP_COUNT 5
+#define CH32RV_TIMER_REMAPS { \
+    { 1, { 0x06, 0x07, 0xff, 0xff } }, \
+    { 2, { 0x08, 0x09, 0xff, 0xff } }, \
+    { 3, { 0x0a, 0x0b, 0xff, 0xff } }, \
+    { 4, { 0x0c, 0xff, 0xff, 0xff } }, \
+    { 8, { 0x82, 0xff, 0xff, 0xff } }, \
+}
+/* Capture / compare vectors apart from the update one:
+ * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */
+#define CH32RV_TIMER_CC_TABLE(X) \
+    X(1, CH32RV_IRQN_TIM1_CC, TIM1_CC_IRQHandler) \
+    X(8, CH32RV_IRQN_TIM8_CC, TIM8_CC_IRQHandler)
+
 /* ---- tone(): preferred TIM7, free of PWM pads. ---- */
 #define CH32RV_TONE_TIMER 7
 #define CH32RV_TONE_TIMER_BASE CH32RV_TIM7_BASE

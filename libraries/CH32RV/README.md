@@ -32,6 +32,7 @@ CH32RV.getSketchSize();                  // flash used, and what is left of the 
 CH32RV.getFreeSketchSpace();
 CH32RV.getFlashChipSize();               // the silicon's flash, from its signature
 CH32RV.getUniqueId();                    // 64 bits of the chip's unique ID
+CH32RV.crc32(buf, len);                  // CRC-32/MPEG-2, on the CRC block where there is one
 analogReadTemp();                        // die temperature (°C), NAN without a sensor (core)
 analogReadVref();                        // the internal reference, on analogRead()'s scale (core)
 ```
@@ -130,6 +131,80 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
 The design and the measurements are in sections 4.3 and 5.1 of
 [the design of the A features](../../docs/peripheral-a-design.ja.md) (Japanese).
 
+### Utilities: CRC, random words, millivolts, RGB LEDs, interrupt priorities
+
+```cpp
+CH32RV.crc32(buf, len);                  // CRC-32/MPEG-2; ch32rv_crc32() in ch32rv_crc.h
+ch32rv_random();                         // arduino-esp32's esp_random(): a 32-bit random word
+ch32rv_fill_random(buf, len);            // and esp_fill_random()
+analogReadMilliVolts(A1);                // arduino-esp32's: the pad's voltage in mV
+rgbLedWrite(PA1, r, g, b);               // arduino-esp32's: one WS2812 / SK6812 LED on any pad
+ch32rv_rgb_led_write(PA1, grb, n * 3);   // a chain of them in one frame
+ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
+```
+
+- **CRC.** `CH32RV.crc32(data, len[, crc])` is the CRC block's CRC-32: polynomial 0x04C11DB7, from 0xFFFFFFFF,
+  most significant bit first, no final XOR - the catalogue's CRC-32/MPEG-2 (`0x0376E6E7` for "123456789"; EVT
+  CRC_Calculation's 32 words give `0x199AC3CA`). It is not zlib's / Ethernet's CRC-32 (`0xCBF43926`). Pass the
+  last result as `crc` to go on with more data; any length and alignment. The block computes whole words on V103,
+  V20x, V205, V30x, V4x7, L103 / M103, X305 / X315 and H41x (`CH32RV_HAS_CRC_HARDWARE`), 64 words at a time with
+  interrupts masked so a handler may use it too; the tail and the other series go through a 16-entry table, with
+  the same results. On H41x one core at a time. About 140 bytes on V003 when used.
+- **Random words.** `ch32rv_random()` / `ch32rv_fill_random(buf, len)` are arduino-esp32's `esp_random()` /
+  `esp_fill_random()` under this core's names (no `esp_` symbols here). On V30x, V4x7 and H41x (`CH32RV_RNG_BASE`)
+  they come from the hardware generator, four of its raw words folded into each one (its raw words repeated
+  and leaned to byte patterns on V307 and H417; `ch32rv_rng_read()` stays raw for Mbed TLS, which conditions it
+  itself). Elsewhere - and if the generator ever reports an error that does not clear -
+  they are a software mix of the chip's unique ID and the SysTick count at each call: different from chip to chip
+  and run to run, but predictable, **not cryptographic** (`ch32rv_rng_read()` is the call that says false instead).
+  `random()` / `randomSeed()` are left as Arduino defines them: without `randomSeed()` the sequence is the same every
+  run, and `randomSeed(n)` repeats it - the Arduino reference documents both, and the series would otherwise differ
+  in behaviour by whether they have a generator. arduino-esp32 instead feeds `random()` from the hardware until
+  `randomSeed()` is called; here `randomSeed(ch32rv_random())` gets a different sequence each run on every series.
+- **`analogReadMilliVolts(pin)`** (arduino-esp32's name). **The supply is measured on every call**: right before
+  the pad is converted, the ADC converts its internal reference (Vrefint), and mV = Vrefint's typical mV x the
+  pad's reading / Vrefint's reading - the same as working VDD out from Vrefint and scaling the reading by it, so
+  VDD is never assumed. The only exception is M030, which has no Vrefint in the data: there VDD is taken as
+  3300 mV. The reading carries the family's offset correction, as `analogReadCalibrated()`.
+  - **Time per call: four conversions** (Vrefint twice and the pad twice: the first after a channel switch is
+    thrown away) where `analogRead()` does one, each at the longest sample time - about 250 ADC clocks, so about
+    85 us per call at a 12 MHz ADC clock (V20x / V30x at 96 MHz), 4 x `analogRead()` in general. CH32V103 adds
+    20 us: its reference is switched on for each call and off after it (with it on, the pads read wrong there).
+    About 300 bytes more than `analogRead()` on V003.
+  - **Accuracy is not measured yet**: the error is Vrefint's spread around its typical (the datasheets' min /
+    max, a few percent) plus the converter's offset and gain; the automatic test only checks a driven pad within
+    80-110 % of the supply at 1 and under 10 % at 0. The characteristic is for the manual test with an outside
+    voltage source.
+- **`rgbLedWrite(pin, r, g, b)`** sends one WS2812 / SK6812-type LED's 24 bits (GRB) on any pad and returns;
+  `rgbLedWriteOrdered(pin, LED_COLOR_ORDER_RGB, ...)` takes another order, `neopixelWrite()` is the deprecated old
+  name - arduino-esp32's three. **A chain is `ch32rv_rgb_led_write(pin, bytes, len)`**: every LED's bytes, in the
+  order they go out (GRB for WS2812B, four bytes for RGBW parts), in one frame with interrupts off for all of it
+  (about 30 us an LED). It is this core's own (arduino-esp32 has no chain call; the shape is Adafruit_NeoPixel's
+  `show()`), because separate `rgbLedWrite()` calls leave the line low between LEDs for the call itself: 2-5 us
+  on most boards, 13 us on V006 at 24 MHz (bench, 2026-11-17), where the LEDs latched there and the chain broke.
+  The targets are T0H 375 ns, T1H 800 ns and a 1.25 us bit; from 72 MHz up every edge is timed on SysTick,
+  below that by counted instructions from RAM (at 8 MHz the bit is 1.625 us: the loop itself is longer; below
+  36 MHz the last bit of each byte, which loads the next one, is up to 4 cycles longer). Neither call waits for
+  the latch: the line must then stay low for the LED's reset time (50 us on WS2812, 280 us on WS2812B-V5 and
+  many newer parts). Measured 2026-11-17 (WireSkein's rgb_led, 60 MS/s, one LED): T0H 333-433 ns, T1H
+  767-900 ns, the bit 1.22-1.43 us on V003, V006, V103, V203, V205, X035 and H417. The ARGB hardware of V4x7 /
+  X3x5 is a later, faster path.
+- **Interrupt priorities** (`#include <ch32rv_priority.h>`): `ch32rv_irq_set_priority(irqn, priority)` /
+  `ch32rv_irq_get_priority(irqn)` on the PFIC's byte, smaller more urgent, as WCH's `NVIC_SetPriority()`.
+  `CH32RV_IRQ_PRIORITY(level)` is the byte of a preemption level, 0 to `CH32RV_IRQ_PREEMPT_LEVELS - 1`: 2 levels on
+  V003, V00x, V103, V20x, V205, V4x7, X035, L103 / M103, X305 / X315 and H41x's V3F; 4 on V30x and M030; 8 on H41x's
+  V5F (the startup's INTSYSCR, the EVTs' core_riscv.h). A more urgent level interrupts a less urgent handler, as
+  deep as the hardware register stack allows (V30x: 4 levels, 3 deep). Interrupt numbers: `CH32RV_IRQN_<name>`
+  (the EVTs' names), a timer capability's `update_irq`, `ch32rv_pin_irqn(pin)` (the pin's EXTI vector, shared by
+  its group), `CH32RV_IRQN_CORE_SYSTICK`. **The contract with the core's interrupts:** the core never writes a
+  priority, so every interrupt - SysTick (millis()), the USARTs, the timers of tone() / Servo, EXTI, USB, the RTC
+  alarm, the WWDG's early warning - stays at 0, the most urgent level, and nothing nests until a sketch sets
+  something. A handler set less urgent is interrupted by the core's (millis() and Serial keep running through
+  it): the use the core is built for. The core's own may be made less urgent too; its thread-side code guards what
+  it shares with its handlers by masking every interrupt, which holds at any level, but no driver is re-entrant -
+  a handler that can interrupt a driver's handler must not call that driver. `noInterrupts()` masks every level.
+  On H41x each core has its own. V103 (no HPE) nests by the PFIC as the EVT says; not yet checked on the board.
+
 The object, the examples and the escape hatch share a library because an
 Arduino platform can only ship examples through one, and a library needs at
 least one header to be well formed. Rather than the empty placeholder other
@@ -154,14 +229,18 @@ to any library, so their examples are here. Every one of them:
 |---|---|
 | [Blink](examples/Blink/README.md) | `pinMode`, `digitalWrite`, `delay` |
 | [SerialEcho](examples/SerialEcho/README.md) | `Serial` in and out |
-| [AnalogRead](examples/AnalogRead/README.md) | `analogRead` |
+| [AnalogRead](examples/AnalogRead/README.md) | `analogRead`, `analogReadMilliVolts` |
 | [Fade](examples/Fade/README.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.md) | `tone`, `noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |
 | [ShiftOut](examples/ShiftOut/README.md) | `shiftOut` into a 74HC595 |
 | [PulseIn](examples/PulseIn/README.md) | `pulseIn`, `delayMicroseconds` |
+| [TimerAlarm](examples/TimerAlarm/README.md) | `timerBegin`, `timerAttachInterrupt`, `timerAlarm` (arduino-esp32's timer API) |
 | [Timing](examples/Timing/README.md) | `millis`, `micros`, and how they wrap |
-| [RandomNumbers](examples/RandomNumbers/README.md) | `random`, `randomSeed` |
+| [RandomNumbers](examples/RandomNumbers/README.md) | `random`, `randomSeed`, `ch32rv_random`, `ch32rv_fill_random` |
+| [Crc32](examples/Crc32/README.md) | `CH32RV.crc32`, in one call and in pieces |
+| [RgbLed](examples/RgbLed/README.md) | `rgbLedWrite` for one LED, `ch32rv_rgb_led_write` for a chain |
+| [InterruptPriority](examples/InterruptPriority/README.md) | `ch32rv_irq_set_priority`, nesting under the core's SysTick |
 | [AnalogResolution](examples/AnalogResolution/README.md) | `analogReadResolution`, `analogWriteResolution` |
 | [CriticalSection](examples/CriticalSection/README.md) | `interrupts`, `noInterrupts`, `volatile` |
 | [PrintFormatting](examples/PrintFormatting/README.md) | `Print`, `String`, `dtostrf` |

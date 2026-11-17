@@ -6,12 +6,14 @@
 
 | 種類 | 中身 |
 |---|---|
-| Arduino の API | `Arduino.h`（ArduinoCore-API 1.5.2 と、このコアが足したもの: `HardwareSerial::setPins()` / `setRoute()`、ESP32 の `onReceiveError()` など、各 README に書いたもの） |
+| Arduino の API | `Arduino.h`（ArduinoCore-API 1.5.2 と、このコアが足したもの: `HardwareSerial::setPins()` / `setRoute()`、ESP32 の `onReceiveError()`・`analogReadMilliVolts()`・`rgbLedWrite()` / `rgbLedWriteOrdered()`（`neopixelWrite()` は非推奨の別名）、チェーンを 1 つのフレームで送る `ch32rv_rgb_led_write()`など、各 README に書いたもの） |
 | 同梱のライブラリ | 各ライブラリの README に書いたクラス、関数、型、定数。ヘッダーは `src/` の直下のもの（`src/internal/` は内部） |
 | チップの機能 | `CH32RV.h` の `CH32RV` オブジェクト（`restart()`、`resetReason()`、`getUniqueId()`、休止、WDT など） |
 | フラッシュ | `ch32rv_flash.h`（`CH32RV_FLASH_STORE()`、`ch32rv_flash_*()`、`CH32RV_FLASH_ERASE_SIZE` などの大きさ。[flash-store.ja.md](flash-store.ja.md)） |
 | タイマー | `CH32RVTimer.h`（`ch32rv_timer_*()` と `CH32RVTimer*` の型、`CH32RV_TIMER_ANY` などの定数） |
-| 乱数 | `ch32rv_rng.h` の `ch32rv_rng_read()`（ハードウェアの乱数のある系列。`CH32RV_RNG_BASE` で調べる） |
+| 乱数 | `Arduino.h` の `ch32rv_random()` / `ch32rv_fill_random()`（arduino-esp32 の `esp_random()` / `esp_fill_random()`。回路の無い系列では暗号に使えないソフトの値）と、`ch32rv_rng.h` の `ch32rv_rng_read()`（ハードウェアの乱数のある系列。`CH32RV_RNG_BASE` で調べる。失敗を false で返す） |
+| CRC | `ch32rv_crc.h` の `ch32rv_crc32()` / `ch32rv_crc32_update()`、`CH32RV_CRC32_INIT`（CRC-32/MPEG-2。`CH32RV.crc32()` と同じ） |
+| 割り込みの優先度 | `ch32rv_priority.h` の `ch32rv_irq_set_priority()` / `ch32rv_irq_get_priority()`、`ch32rv_pin_irqn()`、`CH32RV_IRQ_PRIORITY()`、`CH32RV_IRQ_PREEMPT_BITS` / `_LEVELS`、`CH32RV_IRQ_PRIORITY_CORE`、`CH32RV_IRQN_CORE_SYSTICK`、割り込みの番号 `CH32RV_IRQN_<名前>`（EVT の名前。コアの割り込みとの約束は CH32RV の README） |
 | ピンの対応 | `pins_arduino.h`（Arduino.h から入る）の端子名（`PA0` など）、`CH32RV_PORT_COUNT`、`CH32RV_PIN_BIT()`、`CH32RV_PIN_RESOLVE()`、`CH32RV_PWM_PIN_TO_TIMER()`、`CH32RV_PWM_PIN_TO_CHANNEL()`、各インスタンスの既定の端子（`CH32RV_SPI1_SCK` など） |
 | lwIP | Network の README の「lwIP を直接呼ぶとき」に書いた呼び方だけ。lwIP の版と `lwipopts.h` は保たない |
 
@@ -21,7 +23,7 @@
 |---|---|
 | 版と板 | `ARDUINO_ARCH_CH32RV`、`ARDUINO_<board>`、`CH32RV_SERIES_<series>`、`CH32RV_PART_<part>`、`CH32RV_VERSION`、`CH32RV_VERSION_VAL()` |
 | メニューで決まるもの | `CH32RV_RAMSPLIT_RAM_KB`（Flash / RAM Split の RAM の KB）、`F_CPU`（スケッチを動かすコアのクロック）、`CH32RV_HCLK_HZ`（周辺の回路とタイマーが数える HCLK。CH32H41x の V5F では F_CPU 400 MHz に対して 100 MHz、ほかでは F_CPU と同じ）、`CH32RV_RUN_V5F`（CH32H41x の CPU Core が V5F のとき 1） |
-| 機能を調べる | `CH32RV_HAS_UNIQUE_ID`、`CH32RV_HAS_VIO18`、`CH32RV_RNG_BASE`、`CH32RV_USBPD_BASE`、`CH32RV_SLEEP_UNSUPPORTED` |
+| 機能を調べる | `CH32RV_HAS_UNIQUE_ID`、`CH32RV_HAS_VIO18`、`CH32RV_HAS_CRC_HARDWARE`、`CH32RV_RNG_BASE`、`CH32RV_USBPD_BASE`、`CH32RV_SLEEP_UNSUPPORTED` |
 | 利用者が決める大きさや時間 | 各 README に書いたもの（`CH32RV_WIRE_BUFFER_SIZE`、`CH32RV_WIRE_TIMEOUT_US`、`CH32RV_DMSEQ_RX_SIZE`、`CH32RV_DMDATA_RX_SIZE` など）。スケッチより前に定義する（`build_opt.h`、ADR-0007） |
 | ライブラリの定数 | 各ライブラリの README に書いたもの（`CH32RV_USB_HID_KEY_*` など） |
 

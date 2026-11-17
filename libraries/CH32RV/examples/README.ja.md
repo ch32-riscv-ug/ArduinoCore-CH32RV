@@ -29,7 +29,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 |---|---|
 | [Blink](Blink/README.ja.md) | GPIO を High/Low に切り替え、スケッチが実行されることを LED で確認します。 |
 | [SerialEcho](SerialEcho/README.ja.md) | ハードウェア UART で行を受け取り、前後の空白を除いて返信します。 |
-| [AnalogRead](AnalogRead/README.ja.md) | アナログ入力の生値を UART で観察します。 |
+| [AnalogRead](AnalogRead/README.ja.md) | アナログ入力の生値と mV 単位の電圧を UART で観察します。 |
 | [InternalAnalogRead](InternalAnalogRead/README.ja.md) | 内部の基準電圧・電源電圧・チップの温度を読みます。 |
 | [AnalogResolution](AnalogResolution/README.ja.md) | ADC と PWM の数値のスケールを変える使い方を示します。 |
 | [Fade](Fade/README.ja.md) | PWM の duty を変えて LED の明るさを連続的に変えます。 |
@@ -39,7 +39,11 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [PinCapabilities](PinCapabilities/README.ja.md) | variant が定義する端子の有無と ADC の対応を調べます。 |
 | [PrintFormatting](PrintFormatting/README.ja.md) | 整数・小数・文字列の表示と、生バイト送信の違いを確かめます。 |
 | [PulseIn](PulseIn/README.ja.md) | トリガーを出力し、入力パルスの High の継続時間を測ります。 |
-| [RandomNumbers](RandomNumbers/README.ja.md) | 同じ seed による疑似乱数の再現と、seed を変えた場合の違いを確かめます。 |
+| [TimerAlarm](TimerAlarm/README.ja.md) | arduino-esp32 のタイマー API（`timerBegin()`・`timerAlarm()`）で、毎秒関数を動かします。 |
+| [RandomNumbers](RandomNumbers/README.ja.md) | 同じ seed による疑似乱数の再現と、`ch32rv_random()` を seed にした場合の違いを確かめます。 |
+| [Crc32](Crc32/README.ja.md) | `CH32RV.crc32()` でデータを検査します（1 回でも分けても）。 |
+| [RgbLed](RgbLed/README.ja.md) | `rgbLedWrite()` で WS2812 / SK6812 の RGB LED をどの端子でも光らせます。 |
+| [InterruptPriority](InterruptPriority/README.ja.md) | 遅いタイマー割り込みを下げ、その処理中も `millis()` を進めます。 |
 | [ShiftOut](ShiftOut/README.ja.md) | シフトレジスタへ1 byteずつ送り、出力を順番に切り替えます。 |
 | [Timing](Timing/README.ja.md) | `millis()`・`micros()` と、桁あふれをまたげる時刻の引き算を示します。 |
 | [ToneMelody](ToneMelody/README.ja.md) | 周波数と長さを指定して受動ブザーで音階を鳴らします。 |

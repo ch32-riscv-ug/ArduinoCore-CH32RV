@@ -28,7 +28,9 @@
 | USB-C 電源の交渉 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.ja.md) | ListProfiles / CycleVoltages |
 | ADC の連続取り込み | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.ja.md) | AdcStreamStats |
 | 高速 ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.ja.md) | HsAdcRead → HsAdcStream |
-| タイマーの入力（周期・パルス幅、エンコーダ） | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.ja.md) | PulseMeasure / RotaryEncoder |
+| タイマーの入力（周期・パルス幅、エンコーダ、エッジの時刻） | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.ja.md) | PulseMeasure / RotaryEncoder / EdgeTimes |
+| タイマーの出力（相補 PWM・デッドタイム・ブレーキ、ワンパルス、出力比較） | [CH32RVTimerOutput](../libraries/CH32RVTimerOutput/README.ja.md) | HalfBridge / OnePulse |
+| 周期・単発の呼び出し | [Ticker](../libraries/Ticker/README.ja.md) | Blinker |
 | GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicPulseDecode(全系列)/ LogicBurst → LogicStream(H41x) / LogicUhsif(H41x、UHSIF で 200 MS/s) |
 | UHSIF の状態機械 | [CH32RVUhsif](../libraries/CH32RVUhsif/README.ja.md) | UhsifStates、UhsifTrigger(H41x) |
 | デバッグ接続の文字出力 | [SerialSDI](../libraries/SerialSDI/README.ja.md) | HelloSDI / PrintfToSDI |

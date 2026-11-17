@@ -162,7 +162,7 @@ def ch32_target(request):
     target["build_id"] = item.stash[_BUILD_ID]
     target["profile"] = item.stash[_PROFILE]
     case = case_of(item)
-    if case in ("selfcheck", "selfbus", "selfsys"):
+    if case in ("selfcheck", "selfbus", "selfsys", "selfapi"):
         target["gpio_keep_off"] = places.gpio_keep_off(target["chip"])
     if case == "selfsys":
         target["selfsys_pins"] = places.gpio_pads(target["chip"])

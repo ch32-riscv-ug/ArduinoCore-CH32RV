@@ -19,15 +19,32 @@ void setup()
     }
     Serial.println();
 
-    // en: Mix input noise and timing to vary the sequence; this does not guarantee secure randomness.
-    // ja: 入力の揺れと時刻を混ぜて列を変える。暗号用の乱数が保証されるわけではない。
-    randomSeed((unsigned long)analogRead(A1) ^ micros());
-    Serial.print("seeded from noise: ");
+    // en: Seed from ch32rv_random() (arduino-esp32's esp_random()) so each run differs: the hardware generator
+    //     on V30x, V4x7 and H41x; elsewhere a software mix of the chip's ID and the time, not for secrets.
+    // ja: ch32rv_random()（arduino-esp32のesp_random()）でseedを取り、実行ごとに列を変える。V30x・V4x7・H41xは
+    //     ハードウェアの乱数、ほかは石のIDと時刻を混ぜたソフトの値で、秘密には使えない。
+    randomSeed(ch32rv_random());
+    Serial.print("seeded from ch32rv_random(): ");
     for (int i = 0; i < 5; i++) {
         Serial.print(random(100));
         Serial.print(' ');
     }
     Serial.println();
+
+    // en: Random bytes straight from the source, for an ID or a key where the hardware generator exists.
+    // ja: 乱数の元から直接バイト列を取る。ハードウェアの乱数がある石なら、IDや鍵に使える。
+    uint8_t bytes[8];
+    ch32rv_fill_random(bytes, sizeof bytes);
+    Serial.print("ch32rv_fill_random(): ");
+    for (unsigned i = 0; i < sizeof bytes; i++) {
+        Serial.print(bytes[i] >> 4, HEX);
+        Serial.print(bytes[i] & 15, HEX);
+    }
+#ifdef CH32RV_RNG_BASE
+    Serial.println(" (hardware generator)");
+#else
+    Serial.println(" (software: not cryptographic)");
+#endif
 }
 
 void loop()

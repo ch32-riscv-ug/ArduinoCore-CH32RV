@@ -57,6 +57,13 @@ __attribute__((weak)) bool ch32rv_timer_update_owned(size_t index)
     return false;
 }
 
+/* The same for the capture / compare interrupt (ch32rv_timer_cc.c). */
+__attribute__((weak)) void ch32rv_timer_channel_forget(size_t index, const void *identity)
+{
+    (void)index;
+    (void)identity;
+}
+
 static uint16_t next_generation(uint16_t value)
 {
     value++;
@@ -136,6 +143,7 @@ static void invalidate_channel(size_t index, uint8_t channel)
         next_generation(state->channel[channel - 1u].generation);
     if (old) {
         ch32rv_timer_update_forget(index, old->identity);
+        ch32rv_timer_channel_forget(index, old->identity);
     }
     call_quiesce(old, cap->number, channel);
 }
@@ -177,6 +185,7 @@ static void invalidate_all(size_t index)
             next_generation(state->channel[i].generation);
     }
     ch32rv_timer_update_forget(index, 0);
+    ch32rv_timer_channel_forget(index, 0);
     state->configured = false;
     state->base_generation = next_generation(state->base_generation);
     state->applied_generation = 0;
@@ -395,6 +404,7 @@ void ch32rv_timer_release(CH32RVTimerLease *lease)
         stop_hardware(cap);
         state->whole_owner = 0;
         ch32rv_timer_update_forget((size_t)index, 0);
+        ch32rv_timer_channel_forget((size_t)index, 0);
         state->configured = false;
         state->base_generation = next_generation(state->base_generation);
         state->applied_generation = 0;

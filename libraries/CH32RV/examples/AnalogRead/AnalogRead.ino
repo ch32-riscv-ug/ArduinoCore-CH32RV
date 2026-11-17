@@ -1,5 +1,5 @@
-// en: Read an analog input and print its raw value and estimated voltage.
-// ja: アナログ入力の生値と、おおよその電圧を表示する。
+// en: Read an analog input and print its raw value and its voltage in mV.
+// ja: アナログ入力の生値と、mV単位の電圧を表示する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
@@ -22,10 +22,11 @@ void loop()
 
     Serial.print(raw);
     Serial.print("  ");
-    // en: Match this 12-bit voltage estimate to the configured read scale.
-    // ja: 12 bit前提の電圧換算なので、読み取り分解能と分母をそろえる。
-    Serial.print((raw * 3.3) / 4095.0, 3);
-    Serial.println(" V (assuming 12-bit)");
+    // en: The voltage in mV: the reading scaled by the supply the chip measures against its internal reference.
+    //     A few percent either way, not a precision measurement.
+    // ja: mV単位の電圧。内部の基準電圧で測った電源電圧で読み取りを換算する。数 %の幅があり、精密な測定ではない。
+    Serial.print(analogReadMilliVolts(SENSOR));
+    Serial.println(" mV");
     // en: Slow the display so readings are easy to follow; sampling is not continuous here.
     // ja: 値を追いやすいよう表示間隔を空ける。連続取り込みを行う例ではない。
     delay(500);

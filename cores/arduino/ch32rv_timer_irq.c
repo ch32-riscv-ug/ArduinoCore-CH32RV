@@ -76,6 +76,19 @@ void ch32rv_timer_detach_update_interrupt(const CH32RVTimerLease *lease)
     ch32rv_irq_restore(irq_state);
 }
 
+/* Called by ch32rv_timer_cc.c to link this file, whose vectors its general
+ * timers share: a weak definition elsewhere would satisfy any other name. */
+void ch32rv_timer_irq_link(void)
+{
+}
+
+/* The capture / compare interrupt, where a timer's channels share this
+ * vector; ch32rv_timer_cc.c has the real one when a sketch attaches it. */
+__attribute__((weak)) void ch32rv_timer_channel_dispatch(size_t index)
+{
+    (void)index;
+}
+
 static void timer_irq_dispatch(uint8_t timer)
 {
     int index = ch32rv_timer_index(timer);
@@ -83,6 +96,7 @@ static void timer_irq_dispatch(uint8_t timer)
         return;
     }
     const CH32RVTimerCapability *cap = &ch32rv_timer_caps[index];
+    ch32rv_timer_channel_dispatch((size_t)index);
     if ((CH32RV_TIM_INTFR(cap->register_base) & CH32RV_TIM_INT_UIE) == 0u) {
         return;
     }

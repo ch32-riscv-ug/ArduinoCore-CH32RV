@@ -18,6 +18,7 @@ hardware peripheral の代わりを GPIO で実装する library は、次を満
 | `SoftSPISlave` | slave（CS で区切る） | 端子変化の割込み。1 ビット 1 回、縁から半周期のうちに処理する必要がある。SCK と CS は別の EXTI の線 |
 | `SoftWire` | controller、target | open-drain GPIO を使用。clock stretching と timeout を扱う。target は端子変化の割込みで追い、処理の間 SCL を握る。SDA と SCL は別の EXTI の線 |
 | `SoftwareSerial` | 送受信（Arduino の SoftwareSerial の API、`begin(speed, config)` で 5〜8 ビット・パリティ・ストップ 2） | 受信はスタートビットの端子変化の割込みでフレームを読む（SysTick で各ビットの中央、割込みの遅れは `listen()` で測って差し引く）。送信は 1 フレームの間割込みを止める。AVR と同じ半二重、listen できるのは 1 つ。RX は別のビット番号の EXTI と共存。2026-11-17、ベンチ未確認 |
+| `rgbLedWrite()`（コアの関数、arduino-esp32 の名前）と `ch32rv_rgb_led_write()`（チェーン） | WS2812 / SK6812 型の LED 1 個分の 24 ビット（GRB、`rgbLedWriteOrdered()` でほかの順）、またはバイト列を 1 つのフレームで | フレームの間（LED 1 個につき約 30 µs）割り込みを止める。72 MHz 以上は SysTick で縁の時刻を決め、それ未満は RAM に置いた命令の数で作る（8 MHz では 1 ビット 1.625 µs）。ラッチは待たない。別々の呼び出しのチェーンは間が延びる（V006 の 24 MHz で 13 µs）ので、チェーンはバイト列の関数で。LED 1 個の波形は 7 系列でベンチ確認（2026-11-17） |
 | SoftPWM | 未実装 | timer resource manager と hardware PWM の競合を増やすため独立 API にしない |
 
 `SoftSPI` は `SPIClass`（SPI ライブラリ）、`SoftWire` は `TwoWire`（Wire ライブラリ）、`SoftwareSerial`（SoftwareSerial ライブラリ）は `Stream` を継承し、対応する Arduino API を受け取る library へ

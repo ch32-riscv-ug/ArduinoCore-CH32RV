@@ -27,7 +27,9 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Type-C power negotiation | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.md) | ListProfiles / CycleVoltages |
 | Continuous ADC capture | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.md) | AdcStreamStats |
 | High-speed ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.md) | HsAdcRead → HsAdcStream |
-| Timer inputs (period, pulse width, encoders) | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.md) | PulseMeasure / RotaryEncoder |
+| Timer inputs (period, pulse width, encoders, edge times) | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.md) | PulseMeasure / RotaryEncoder / EdgeTimes |
+| Timer outputs (complementary PWM, dead time, break, one pulse, output compare) | [CH32RVTimerOutput](../libraries/CH32RVTimerOutput/README.md) | HalfBridge / OnePulse |
+| Periodic and one-shot calls | [Ticker](../libraries/Ticker/README.md) | Blinker |
 | GPIO capture | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.md) | LogicPulseDecode (every family) / LogicBurst → LogicStream (H41x) / LogicUhsif (H41x, the UHSIF at 200 MS/s) |
 | UHSIF state machine | [CH32RVUhsif](../libraries/CH32RVUhsif/README.md) | UhsifStates, UhsifTrigger (H41x) |
 | Debug text output | [SerialSDI](../libraries/SerialSDI/README.md) | HelloSDI / PrintfToSDI |

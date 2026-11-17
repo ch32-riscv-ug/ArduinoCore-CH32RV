@@ -1,16 +1,26 @@
-/* analogWrite() on TIM1..TIM5.
+/* analogWrite() on a pad with a default PWM, and what every analogWrite()
+ * shares; the pad table's analogWrite() is wiring_pwm_any.c.
  *
- * The variant says which timer and channel a pad reaches on its default route
- * (generated from device-data) - on the per-pin families (V205, X305, X315)
- * also the alternate-function number that connects the pad to it. TIM4/TIM5
- * pads are listed only where tone() and Servo do not want that timer. Pads
- * with no PWM fall back to a plain digital level, which is what the AVR core
- * does for non-PWM pins.
+ * The variant lists every pad a timer reaches, on every route device-data
+ * gives (CH32RV_TIMER_PADS, ch32rv_timer_pad.c): a channel's own pad, the
+ * pads a remap moves it to, and the complementary outputs (CHxN) of the
+ * advanced timers. A pad's default PWM (the variant's CH32RV_PWM_PIN_TO_*,
+ * generated from device-data) comes first; another route is taken when the
+ * pad has no default PWM. TIM4/TIM5 are left out where tone() and Servo want
+ * them (CH32RV_PWM_TIMER_MASK). Pads with no PWM fall back to a plain digital
+ * level, which is what the AVR core does for non-PWM pins.
+ *
+ * One AFIO field moves all of a timer's pads on most families: a pad on
+ * another route of a timer that already drives PWM elsewhere takes the timer
+ * over, and the timer's pads on the old route stop (low, as analogWrite() of
+ * 0). Likewise a channel moving to another pad leaves the old one low.
  */
 #include "Arduino.h"
 #include "CH32RVTimer.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_timer_internal.h"
+#include "internal/ch32rv_pwm.h"
 
 #include <stdbool.h>
 
@@ -20,50 +30,41 @@
 #define CH32RV_PWM_HZ    1000u
 
 #ifndef CH32RV_PWM_PIN_COUNT
-/* A series with no timer channel on any pad: every pin falls through to the
- * digital path below. */
+/* A series with no default PWM pad. */
 #define CH32RV_PWM_PIN_TO_TIMER(p)   ((void)(p), 0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ((void)(p), 0)
 #endif
+#ifndef CH32RV_PWM_TIMER_MASK
+#define CH32RV_PWM_TIMER_MASK 0u
+#endif
 
-static uint8_t ch32rv_pwm_write_bits = 8;
+uint8_t ch32rv_pwm_write_bits = 8;
 static uint32_t ch32rv_pwm_hz = CH32RV_PWM_HZ;
 
-void analogWriteFrequency(pin_size_t pin, uint32_t frequency)
-{
-    const uint32_t top = ch32rv_timer_clock_hz((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin)) / CH32RV_PWM_STEPS;
-    if (frequency == 0u) {
-        return;
-    }
-    ch32rv_pwm_hz = frequency > top ? top : frequency;
-}
 static const uint8_t ch32rv_pwm_owner_identity;
 static const CH32RVTimerOwner ch32rv_pwm_owner = {
     &ch32rv_pwm_owner_identity, 0, 0
 };
 
-/* Each pad's PWM holds its timer channel through a lease kept here, so the pad
- * gives the channel back when its PWM stops: analogWrite() of 0 or full scale
- * (a plain level, as the AVR core does), pinMode() or digitalWrite() on the
- * pad. The timer stops when none of its channels is held
- * (ch32rv_timer_release), and tone(), Servo or a capture can take it again.
- * Until 2026-11-05 a lease was never given back: one analogWrite() kept the
- * timer from them until a reset. A slot's timer 0 is an empty slot. */
-static CH32RVTimerLease ch32rv_pwm_lease[CH32RV_TIMER_COUNT][4];
+/* Each pad's PWM holds its timer channel through a lease kept here, with the
+ * pad and route it drives, so the pad gives the channel back when its PWM
+ * stops: analogWrite() of 0 or full scale (a plain level, as the AVR core
+ * does), pinMode() or digitalWrite() on the pad. The timer stops when none of
+ * its channels is held (ch32rv_timer_release), and tone(), Servo or a capture
+ * can take it again. Until 2026-11-05 a lease was never given back: one
+ * analogWrite() kept the timer from them until a reset. A slot's timer 0 is
+ * an empty slot. */
+CH32RVTimerLease ch32rv_pwm_lease[CH32RV_TIMER_COUNT][4];
 static uint8_t ch32rv_pwm_held;
 
-static CH32RVTimerLease *ch32rv_pwm_slot(uint8_t timer, uint8_t channel)
+/* The slot of the pad's PWM: its default timer channel. wiring_pwm_any.c,
+ * where pads have PWM on other routes too, replaces this with a search of
+ * the pads it records. */
+__attribute__((weak)) CH32RVTimerLease *ch32rv_pwm_slot_of(pin_size_t pin)
 {
-    if (channel == 0u || channel > 4u) {
-        return 0;
-    }
-    for (size_t i = 0; i < CH32RV_TIMER_COUNT; i++) {
-        const CH32RVTimerCapability *cap = ch32rv_timer_capability(i);
-        if (cap && cap->number == timer) {
-            return &ch32rv_pwm_lease[i][channel - 1u];
-        }
-    }
-    return 0;
+    const uint8_t channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
+    const int index = ch32rv_timer_index((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin));
+    return index >= 0 && channel != 0u ? &ch32rv_pwm_lease[index][channel - 1u] : 0;
 }
 
 bool ch32rv_pwm_stop(pin_size_t pin)
@@ -71,15 +72,46 @@ bool ch32rv_pwm_stop(pin_size_t pin)
     if (ch32rv_pwm_held == 0u) {
         return false;      /* the common case, cheap for digitalWrite() */
     }
-    CH32RVTimerLease *slot = ch32rv_pwm_slot((uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin),
-                                             (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin));
-    if (!slot || slot->timer == 0u) {
+    CH32RVTimerLease *lease = ch32rv_pwm_slot_of(pin);
+    if (!lease || lease->timer == 0u) {
         return false;
     }
     /* A lease another owner took over is only forgotten here. */
-    ch32rv_timer_release(slot);
+    ch32rv_timer_release(lease);
     ch32rv_pwm_held--;
     return true;
+}
+
+/* A plain level, as analogWrite() of 0 or full scale (and the pad whose PWM
+ * another pad takes, wiring_pwm_any.c). */
+void ch32rv_pwm_level(pin_size_t pin, int high)
+{
+    ch32rv_pwm_stop(pin);
+    digitalWrite(pin, high ? HIGH : LOW);
+    pinMode(pin, OUTPUT);
+}
+
+/* The timer of a pad with no default PWM, from the pad table: weak here,
+ * ch32rv_timer_pad.c's where analogWrite() on such a pad links it. Without
+ * the table no such pad has PWM, and any timer's clock will do. */
+__attribute__((weak)) uint8_t ch32rv_timer_pad_first_timer(uint32_t pin)
+{
+    (void)pin;
+    return 0;
+}
+
+void analogWriteFrequency(pin_size_t pin, uint32_t frequency)
+{
+    pin = CH32RV_PIN_RESOLVE(pin);
+    uint8_t timer = (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin);
+    if (timer == 0u) {
+        timer = ch32rv_timer_pad_first_timer(pin);
+    }
+    const uint32_t top = ch32rv_timer_clock_hz(timer) / CH32RV_PWM_STEPS;
+    if (frequency == 0u) {
+        return;
+    }
+    ch32rv_pwm_hz = frequency > top ? top : frequency;
 }
 
 void analogWriteResolution(int bits)
@@ -125,37 +157,53 @@ static bool dac_write(pin_size_t pin, uint32_t value12)
 }
 #endif
 
-void analogWrite(pin_size_t pin, int value)
+/* The DAC's pads: true when the value went to the converter. */
+bool ch32rv_pwm_dac(pin_size_t pin, int value)
 {
-    pin = CH32RV_PIN_RESOLVE(pin);
 #if defined(CH32RV_DAC1_PIN) || defined(CH32RV_DAC2_PIN)
-    {
-        /* Scale the caller's range onto the converter's 12 bits before the
-         * PWM path gets a chance to treat the pad as an ordinary pin. */
-        const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
-        uint32_t level = (value <= 0) ? 0u : (uint32_t)value;
-        if (level > full) {
-            level = full;
-        }
-        level = (level * 0x0FFFu) / full;
-        if (dac_write(pin, level)) {
-            return;
-        }
-    }
-#endif
-    const uint8_t timer = (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin);
-    const uint8_t channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
-    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
-
+    /* Scale the caller's range onto the converter's 12 bits before the PWM
+     * path gets a chance to treat the pad as an ordinary pin. */
     const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
-    if (!cap || channel == 0u || value <= 0 || (uint32_t)value >= full) {
-        /* No PWM here, or 0 / full scale: a plain level, as the AVR core does.
-         * A PWM running on the pad stops and its timer channel is given back. */
-        ch32rv_pwm_stop(pin);
-        digitalWrite(pin, value > 0 ? HIGH : LOW);
-        pinMode(pin, OUTPUT);
-        return;
+    uint32_t level = (value <= 0) ? 0u : (uint32_t)value;
+    if (level > full) {
+        level = full;
     }
+    level = (level * 0x0FFFu) / full;
+    return dac_write(pin, level);
+#else
+    (void)pin;
+    (void)value;
+    return false;
+#endif
+}
+
+/* The timer channel's route on the families with one AFIO field per timer.
+ * Only ch32rv_timer_pad.c writes the field, and it replaces this weak one:
+ * where it is not linked nothing has moved a timer off its reset route (0),
+ * which is where analogWrite()'s default pads are (ch32rv_pwm_default). */
+__attribute__((weak)) void ch32rv_timer_route_set(uint8_t timer, uint8_t route)
+{
+    (void)timer;
+    (void)route;
+}
+
+/* Room for `pad` on its timer: wiring_pwm.c's own, linked with the pad
+ * table, stops the pads it moves off the timer. Here, where only the default
+ * pads have PWM, there are none: each default pad has a channel of its own
+ * on the timer's reset route. */
+__attribute__((weak)) void ch32rv_pwm_make_room(const CH32RVTimerPad *pad, int index)
+{
+    (void)pad;
+    (void)index;
+}
+
+/* PWM of `value` (0 < value < full scale) on `pad`, the timer at `index`. */
+void ch32rv_pwm_start(pin_size_t pin, int value, const CH32RVTimerPad *padp, int index)
+{
+    const CH32RVTimerPad pad = *padp;
+    const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability((size_t)index);
+    const uint8_t channel = pad.channel;
 
     /* The period in timer ticks, split into the smallest prescaler that fits
      * the 16-bit counter and a counter length rounded to the frequency. A
@@ -181,16 +229,10 @@ void analogWrite(pin_size_t pin, int value)
      * under 2^32, so no 64-bit multiply (114 B of __muldi3 on V003). */
     const uint32_t duty = ((uint32_t)value * steps) / (full + 1u);
 
-    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin);
-    ch32rv_gpio_clock_enable(port);
-    ch32rv_gpio_set_config(port, (uint8_t)CH32RV_PIN_BIT(pin),
-                         CH32RV_GPIO_CFG_AF_PP_50M);
-#ifdef CH32RV_PWM_PIN_TO_AF
-    ch32rv_pin_set_af((uint8_t)pin, (uint32_t)CH32RV_PWM_PIN_TO_AF(pin));
-#endif
+    ch32rv_pwm_make_room(&pad, index);
 
     const CH32RVTimerRequest request = {
-        timer,
+        pad.timer,
         channel,
         {(uint16_t)(prescale - 1u), (uint16_t)(steps - 1u),
          CH32RV_TIM_CTLR1_ARPE}
@@ -199,13 +241,20 @@ void analogWrite(pin_size_t pin, int value)
     if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease)) {
         return;
     }
-    CH32RVTimerLease *slot = ch32rv_pwm_slot(timer, channel);
-    if (slot) {
-        if (slot->timer == 0u) {
-            ch32rv_pwm_held++;
-        }
-        *slot = lease;
+    if (ch32rv_pwm_lease[index][channel - 1u].timer == 0u) {
+        ch32rv_pwm_held++;
     }
+    ch32rv_pwm_lease[index][channel - 1u] = lease;
+    /* The pad to the channel: its alternate function (per-pin families) or
+     * the timer's route, then an alternate-function output. */
+    ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(pin));
+#if CH32RV_GPIO_PER_PIN_AF
+    ch32rv_pin_set_af((uint8_t)pin, pad.route);
+#else
+    ch32rv_timer_route_set(pad.timer, pad.route);
+#endif
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
+                           CH32RV_GPIO_CFG_AF_PP_50M);
     const uint32_t base = cap->register_base;
 
     /* Channels 1 and 2 share CHCTLR1, 3 and 4 share CHCTLR2; even channels sit
@@ -225,10 +274,42 @@ void analogWrite(pin_size_t pin, int value)
     } else {
         CH32RV_TIM_CHCVR(base, channel) = (uint16_t)(duty > 65535u ? 65535u : duty);
     }
-    CH32RV_TIM_CCER(base) |= (uint16_t)(1u << ((channel - 1u) * 4u));
+    /* CCxE drives the channel's pad, CCxNE its complementary one: alone,
+     * CHxN follows the reference as CHx would (not inverted). */
+    const uint32_t ccer_shift = (channel - 1u) * 4u;
+    uint16_t ccer = CH32RV_TIM_CCER(base) & (uint16_t)~(0xFu << ccer_shift);
+    ccer |= (uint16_t)((pad.role == CH32RV_TIMER_PAD_CHN ? 4u : 1u) << ccer_shift);
+    CH32RV_TIM_CCER(base) = ccer;
     if (cap->kind == CH32RV_TIMER_KIND_ADVANCED) {
         /* Advanced timers keep every channel output gated behind MOE. */
         CH32RV_TIM_BDTR(base) |= CH32RV_TIM_BDTR_MOE;
     }
     ch32rv_timer_start(&lease);
+}
+
+/* analogWrite() on a pad with a default PWM (the variant's
+ * CH32RV_PWM_PIN_TO_*: the timer's reset route, or the pad's alternate
+ * function on the per-pin families), with no pad table. */
+void ch32rv_pwm_default(pin_size_t pin, int value)
+{
+    pin = CH32RV_PIN_RESOLVE(pin);
+    if (ch32rv_pwm_dac(pin, value)) {
+        return;
+    }
+    const uint32_t full = (1u << ch32rv_pwm_write_bits) - 1u;
+    const CH32RVTimerPad pad = {
+        (uint8_t)pin, (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin), (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin),
+        CH32RV_TIMER_PAD_CH,
+#ifdef CH32RV_PWM_PIN_TO_AF
+        (uint8_t)CH32RV_PWM_PIN_TO_AF(pin)
+#else
+        0
+#endif
+    };
+    const int index = ch32rv_timer_index(pad.timer);
+    if (value <= 0 || (uint32_t)value >= full || index < 0 || pad.channel == 0u) {
+        ch32rv_pwm_level(pin, value > 0);
+        return;
+    }
+    ch32rv_pwm_start(pin, value, &pad, index);
 }

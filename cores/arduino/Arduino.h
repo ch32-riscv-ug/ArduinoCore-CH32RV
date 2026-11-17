@@ -27,9 +27,11 @@ extern "C" {
 #ifdef EXTENDED_PIN_MODE
 int analogRead(uint32_t pinNumber) CH32RV_ADC_UNAVAILABLE;
 int analogReadCalibrated(uint32_t pin) CH32RV_ADC_UNAVAILABLE;
+uint32_t analogReadMilliVolts(uint32_t pin) CH32RV_ADC_UNAVAILABLE;
 #else
 int analogRead(uint8_t pinNumber) CH32RV_ADC_UNAVAILABLE;
 int analogReadCalibrated(uint8_t pin) CH32RV_ADC_UNAVAILABLE;
+uint32_t analogReadMilliVolts(uint8_t pin) CH32RV_ADC_UNAVAILABLE;
 #endif
 int analogReadVref(void) CH32RV_ADC_UNAVAILABLE;
 float analogReadTemp(void) CH32RV_ADC_UNAVAILABLE;
@@ -163,6 +165,10 @@ static inline uint32_t getApbFrequency(void) { return (uint32_t)CH32RV_PCLK1_HZ;
  * delay() (ch32rv_deliver.h). */
 #include "internal/ch32rv_deliver.h"
 
+/* timerBegin() / timerAlarm() and the rest of arduino-esp32's timer API,
+ * declared as the ESP32 core does without an include of the sketch's. */
+#include "CH32RVHwTimer.h"
+
 /* api/Common.h declares these two but leaves them to the core.
  *
  * noInterrupts() does not nest: a second call still leaves one interrupts()
@@ -211,6 +217,13 @@ int analogReadVref(void);
  * estimates it from Vrefint, a few percent either way). */
 int analogReadCalibrated(pin_size_t pin);
 float analogReadTemp(void);
+/* arduino-esp32's: the pad's voltage in mV - the reading (as
+ * analogReadCalibrated()) scaled by the supply measured against Vrefint just
+ * before it, on every call: four conversions where analogRead() does one. Vrefint's typical is the reference, so
+ * the answer is within that reference's spread plus the converter's error,
+ * a few percent (not measured: libraries/CH32RV/README). 3300 mV is taken as
+ * the supply where Vrefint is unknown (CH32M030). 0 for a pad without ADC. */
+uint32_t analogReadMilliVolts(pin_size_t pin);
 /* arduino-esp32's: the TouchKey's raw count on an analog pin. It moves with
  * the pin's capacitance, so a finger on a pad changes it; an unconnected pad
  * reads near mid-scale. 0 where the family or the pin has no TouchKey (so far
@@ -229,6 +242,47 @@ uint32_t ch32rv_adc_vdd_millivolts(void);
  * on an ESP32. Clamped to what the timer can make at 256 steps
  * (F_CPU / 256 at most). The pin is accepted for the signature's sake. */
 void analogWriteFrequency(pin_size_t pin, uint32_t frequency);
+
+/* Random words: arduino-esp32's esp_random() / esp_fill_random() under this
+ * core's names. From the hardware generator where the series has one
+ * (CH32RV_RNG_BASE: V30x, V4x7, H41x); elsewhere - and should the generator
+ * fail - a software mix of the unique ID and the time of the call, which is
+ * NOT cryptographic (ch32rv_random.c). random() stays Arduino's repeatable
+ * sequence; randomSeed(ch32rv_random()) makes it differ from run to run. */
+uint32_t ch32rv_random(void);
+void ch32rv_fill_random(void *buf, size_t len);
+
+/* arduino-esp32's RGB LED output: one WS2812 / SK6812-type LED (24 bits, its
+ * colour order) on any pad, in software with interrupts off for the 30 us of
+ * the frame (ch32rv_rgb_led.c). It does not wait for the LED to latch: the
+ * line has to stay low for the LED's reset time (50 us on WS2812, 280 us on
+ * WS2812B-V5 and the like) before the colour shows. For a chain,
+ * ch32rv_rgb_led_write() below. */
+typedef enum {
+    LED_COLOR_ORDER_RGB,
+    LED_COLOR_ORDER_BGR,
+    LED_COLOR_ORDER_BRG,
+    LED_COLOR_ORDER_RBG,
+    LED_COLOR_ORDER_GBR,
+    LED_COLOR_ORDER_GRB,
+} rgb_led_color_order_t;
+void rgbLedWriteOrdered(pin_size_t pin, rgb_led_color_order_t order, uint8_t red_val, uint8_t green_val,
+                        uint8_t blue_val);
+/* GRB, the WS2812B's order. */
+void rgbLedWrite(pin_size_t pin, uint8_t red_val, uint8_t green_val, uint8_t blue_val);
+/* Several LEDs in one frame: `len` bytes in the LEDs' own order (GRB, GRB,
+ * ... for WS2812B; four a LED for RGBW parts), with interrupts off for all
+ * of it (30 us an LED) and no gap between LEDs - a chain of rgbLedWrite()
+ * calls leaves the line low between them for the call itself, which at low
+ * clocks is past the LEDs' latch (13 us on V006 at 24 MHz). Not ESP32's:
+ * arduino-esp32 has no chain call (Adafruit_NeoPixel's show() is this). */
+void ch32rv_rgb_led_write(pin_size_t pin, const uint8_t *data, size_t len);
+/* The name before arduino-esp32 3.0, deprecated there as here. */
+__attribute__((deprecated("Use rgbLedWrite() instead.")))
+static inline void neopixelWrite(pin_size_t pin, uint8_t red_val, uint8_t green_val, uint8_t blue_val)
+{
+    rgbLedWrite(pin, red_val, green_val, blue_val);
+}
 #ifdef __cplusplus
 }
 #endif
@@ -258,3 +312,34 @@ static inline void attachInterruptArg(pin_size_t pin, void (*callback)(void *), 
 void setup(void);
 void loop(void);
 #endif
+
+/* ---- analogWrite() of a pin known at compile time ----
+ * A sketch pays only for what its pins need. analogWrite() on a pad with a
+ * default PWM (CH32RV_PWM_PIN_TO_*) goes straight to that timer channel
+ * (ch32rv_pwm_default, wiring_pwm.c); the pad table, the remap routes and the
+ * complementary outputs (wiring_pwm_any.c) are linked only where a pin needs
+ * them or is chosen at run time. Same results either way. A function-like
+ * macro, so &analogWrite is still the function. */
+#ifdef __cplusplus
+extern "C" {
+#endif
+void ch32rv_pwm_default(pin_size_t pin, int value);
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef CH32RV_PWM_PIN_COUNT
+#define CH32RV_PIN_DEFAULT_PWM(pad) (CH32RV_PWM_PIN_TO_TIMER(pad) != 0)
+#else
+#define CH32RV_PIN_DEFAULT_PWM(pad) 0
+#endif
+
+static inline __attribute__((always_inline)) void ch32rv_analog_write(pin_size_t pin, int value)
+{
+    if (__builtin_constant_p(CH32RV_PIN_RESOLVE(pin)) && CH32RV_PIN_DEFAULT_PWM(CH32RV_PIN_RESOLVE(pin))) {
+        ch32rv_pwm_default(pin, value);
+    } else {
+        (analogWrite)(pin, value);
+    }
+}
+#define analogWrite(pin, value) ch32rv_analog_write((pin), (value))

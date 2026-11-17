@@ -25,7 +25,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 |---|---|
 | [Blink](Blink/README.md) | Toggle a GPIO to confirm sketch execution with an LED. |
 | [SerialEcho](SerialEcho/README.md) | Receive a line over hardware UART and echo it with surrounding whitespace removed. |
-| [AnalogRead](AnalogRead/README.md) | Observe raw analog input readings on UART. |
+| [AnalogRead](AnalogRead/README.md) | Observe raw analog input readings and their voltage in mV on UART. |
 | [InternalAnalogRead](InternalAnalogRead/README.md) | Read the internal reference, the supply voltage and the die temperature. |
 | [AnalogResolution](AnalogResolution/README.md) | Change the numeric scales used by ADC and PWM APIs. |
 | [Fade](Fade/README.md) | Vary PWM duty to fade an LED up and down. |
@@ -35,7 +35,11 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [PinCapabilities](PinCapabilities/README.md) | Inspect variant-defined pins and their ADC mappings. |
 | [PrintFormatting](PrintFormatting/README.md) | Compare integer, floating-point and string formatting with raw byte output. |
 | [PulseIn](PulseIn/README.md) | Generate a trigger and measure the duration of a High input pulse. |
-| [RandomNumbers](RandomNumbers/README.md) | Compare reproducible pseudorandom sequences with a changing seed. |
+| [TimerAlarm](TimerAlarm/README.md) | Run a function every second with arduino-esp32's timer API (`timerBegin()`, `timerAlarm()`). |
+| [RandomNumbers](RandomNumbers/README.md) | Compare reproducible pseudorandom sequences with one seeded from `ch32rv_random()`. |
+| [Crc32](Crc32/README.md) | Check data with `CH32RV.crc32()`, in one call or in pieces. |
+| [RgbLed](RgbLed/README.md) | Light WS2812 / SK6812 RGB LEDs on any pin with `rgbLedWrite()`. |
+| [InterruptPriority](InterruptPriority/README.md) | Make a slow timer interrupt less urgent so `millis()` keeps counting through it. |
 | [ShiftOut](ShiftOut/README.md) | Send bytes to a shift register and activate its outputs in sequence. |
 | [Timing](Timing/README.md) | Demonstrate `millis()`, `micros()` and elapsed-time subtraction across wraparound. |
 | [ToneMelody](ToneMelody/README.md) | Play a scale on a passive buzzer by specifying frequency and duration. |

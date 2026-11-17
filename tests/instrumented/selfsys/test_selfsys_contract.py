@@ -23,7 +23,8 @@ backupRegisterCount() is 0 (no RTC domain: V003, V00x, M030, X033 / X035).
 
 selfsys.rtc_alarm: setAlarm(time() + 2) runs its callback 0.95-3.1 s later (the RTC's whole second at or after the
 time asked) and getAlarm() is 0 after it; lightSleep() with enableAlarmWakeup() returns CH32RV_WAKEUP_ALARM with
-millis() moved as long. n/a where setAlarm() refuses (no RTC).
+millis() moved as long. n/a where setAlarm() refuses (no RTC); the sleep half is n/a (recorded, the callback still
+judged) where lightSleep() answers CH32RV_SLEEP_UNSUPPORTED (V103 for now).
 
 selfsys.light_sleep: lightSleep() with a timer wake after 200 ms returns CH32RV_SLEEP_OK, wakeupCause() is
 CH32RV_WAKEUP_TIMER and millis() moved 150-400 ms across it; a family that cannot sleep says
@@ -107,7 +108,12 @@ def test_temperature(dut, ready, record_property):
 def after_reset(dut, timeout=15):
     """The reset reason once the sketch is back: the STARTUP line's arrival (its first bytes may be lost while the
     probe's console comes back after the reset - "watchdog 0" was all of it once on the V103 EVT), then `why`."""
-    dut.expect(rb"(?:STARTUP )?\S* ?\d+\r?\n", timeout=timeout)
+    try:
+        dut.expect(rb"(?:STARTUP )?\S* ?\d+\r?\n", timeout=timeout)
+    except pexpect.TIMEOUT:
+        # The line's tail can stay behind in the console until the next answer: "STARTU" and nothing more for 15 s
+        # on the V103 EVT after restart() (2026-11-17). `why` asks again; a DUT that is not back fails there.
+        pass
     t = time.monotonic()
     dut.write("why\n")
     return t, dut.expect(rb"WHY (\S+) (\d+)\r?\n", timeout=5).group(1).decode()
@@ -282,6 +288,10 @@ def test_rtc_alarm(dut, ready, record_property):
     assert after == 0, f"getAlarm() {after} after the alarm ran"
     assert not m.group(1), "enableAlarmWakeup() refused where setAlarm() did not"
     r, cause, slept = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    if r == SLEEP_UNSUPPORTED:
+        # The alarm and its callback are checked above; the sleep half is the family's sleep (V103's is off for now).
+        record_property("asleep_skipped", "n/a: lightSleep() unsupported on this family (CH32RV_SLEEP_UNSUPPORTED)")
+        return
     assert r == SLEEP_OK and cause == WAKEUP_ALARM, f"lightSleep() {r}, wakeupCause() {cause}"
     assert 900 <= slept <= 3200, f"millis() moved {slept} ms across a sleep to an alarm 2 s on"
 

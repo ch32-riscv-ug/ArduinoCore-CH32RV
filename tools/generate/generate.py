@@ -3294,6 +3294,101 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
     return out
 
 
+# Every way a pad reaches a timer, on every route (CH32RV_TIMER_PADS, the core's
+# ch32rv_timer_pad_find): a channel (CH<k>, CH<k>_ETR counts as CH<k>), its
+# complementary output (CH<k>N) and the break input (BKIN; BK on the per-pin
+# families). ETR alone and BKIN2 are not listed: nothing in the core drives them.
+TIMER_PAD_ROLE_RE = re.compile(r"^(?:CH(\d)(N)?(?:_ETR)?|(BKIN|BK))$")
+TIMER_PAD_CH, TIMER_PAD_CHN, TIMER_PAD_BKIN = 0, 1, 2
+
+
+# Where device-data's timer routes are wrong, measured and checked against the
+# EVT headers; each is to go upstream and leave here when device-data has it.
+# CH32V103 TIM2: the EVT (ch32v10x_gpio.h GPIO_PartialRemap1_TIM2 0x100,
+# PartialRemap2 0x200, FullRemap 0x300) has the F1 layout: 1 moves CH1 / CH2 to
+# PA15 / PB3, 2 moves CH3 / CH4 to PB10 / PB11, 3 both; PCFR1 TIM2_RM = 1 left
+# PB10 silent on the bench (2026-11-17, signals::test_pwm_route). device-data
+# eb3ca58 has PB10 / PB11 on 2 and 3 and PA15 / PB3 on 1, but not the pads a
+# partial remap leaves in place (PA2 / PA3 on 1, PA0 / PA1 on 2) nor PA15 / PB3
+# on 3 - asked of [data] 2026-11-17 (CH32V203's rows have the whole grid).
+# series -> timer -> {((port, bit), channel): routes}; the series' rows of that
+# timer off the default route are replaced by these.
+TIMER_ROUTE_FIXES = {
+    "CH32V103": {2: {
+        (("A", 15), 1): ("remap-1", "remap-3"), (("B", 3), 2): ("remap-1", "remap-3"),
+        (("A", 2), 3): ("remap-1",), (("A", 3), 4): ("remap-1",),
+        (("A", 0), 1): ("remap-2",), (("A", 1), 2): ("remap-2",),
+        (("B", 10), 3): ("remap-2", "remap-3"), (("B", 11), 4): ("remap-2", "remap-3"),
+    }},
+}
+
+
+def load_timer_pads(tables: pathlib.Path) -> dict:
+    """part -> {((port, bit), timer, channel, role, route)}, every route as
+    pinout.csv names it (default, remap-N, af-N). channel is 0 for BKIN."""
+    _, functions = load_pin_functions(tables)
+    out: dict = {}
+    for r in functions:
+        pm_ = PWM_PERIPHERAL_RE.match(r.get("peripheral", ""))
+        rm_ = TIMER_PAD_ROLE_RE.match(r.get("role", ""))
+        if not (pm_ and rm_):
+            continue
+        timer = int(pm_.group(1))
+        if timer not in PWM_TIMERS:
+            continue
+        if rm_.group(3):
+            channel, role = 0, TIMER_PAD_BKIN
+        else:
+            channel = int(rm_.group(1))
+            role = TIMER_PAD_CHN if rm_.group(2) else TIMER_PAD_CH
+            if not 1 <= channel <= 4:
+                continue
+        pm = PAD_PORT_RE.match(r["pad"])
+        if not pm:
+            continue
+        key = (pm.group(1), int(pm.group(2)))
+        fixes = TIMER_ROUTE_FIXES.get(r.get("series", ""), {}).get(timer)
+        if fixes is not None and r["route"] != "default":
+            if role == TIMER_PAD_CH:
+                for route in fixes.get((key, channel), ()):
+                    out.setdefault(r["part_number"], set()).add(
+                        (key, timer, channel, role, route))
+            continue
+        out.setdefault(r["part_number"], set()).add(
+            (key, timer, channel, role, r["route"]))
+        if fixes is not None and role == TIMER_PAD_CH:
+            for route in fixes.get((key, channel), ()):
+                out[r["part_number"]].add((key, timer, channel, role, route))
+    return out
+
+
+TIMER_REMAP_SELECTOR_RE = re.compile(r"^afio-tim(\d+)-(?:rm|remap)$")
+
+
+def load_timer_remap_fields(tables: pathlib.Path) -> dict:
+    """(series, timer) -> [(register, bit)], LSB first: the AFIO field that
+    moves a timer's pads (routes.csv), as load_remap_fields() reads the
+    serial ones."""
+    out: dict = {}
+    for r in read_table(tables, "routes.csv",
+                        ("series", "selector", "controller", "bits")):
+        m = TIMER_REMAP_SELECTOR_RE.match(r["selector"])
+        if not m or r["controller"] != "afio":
+            continue
+        key = (r["series"], int(m.group(1)))
+        bits = []
+        for entry in r["bits"].split(";"):
+            if not entry:
+                continue
+            register, _, bit = entry.partition(":")
+            bits.append((register, int(bit)))
+        if key in out and out[key] != bits:
+            raise SystemExit(f"{r['series']} {r['selector']}: routes.csv gives "
+                             f"the selector two bit layouts")
+        out[key] = bits
+    return out
+
+
 # AFIO_EXTICR layout per startup variant: (bits per EXTI field, fields per register).
 # ch32-data afio_x0 / afio_v003 / afio_v00x and the CH32M030 EVT header have 2-bit
 # fields (16 per 32-bit register); the L1/V1/V3 families have the STM32-F1 style
@@ -3361,6 +3456,119 @@ def gen_exti(variant: str, entries: list) -> str:
     return "\n".join(out) + "\n"
 
 
+def timer_pad_block(series: str, parts: list, union: list, timer_pads: dict,
+                    timer_remaps: dict, timer_caps: dict, candidates: dict,
+                    handlers: list, pwm_pads: dict, reserved: set) -> list:
+    """CH32RV_TIMER_PADS and its companions (CH32RVTimer.h, ch32rv_timer_pad.c).
+
+    Every pad a managed timer reaches, on every route the core can select: an
+    AFIO remap value of the timer (one field moves all of a timer's pads), or
+    on the per-pin families the pad's function number. Like the default PWM
+    table, one header serves the whole series: a (timer, channel, role,
+    route) whose pads differ between part numbers - beyond a package simply
+    not bonding one - is left out, so a sketch built for ANY never lands on
+    another pad by package."""
+    per_pin = series in PER_PIN_AF_SERIES
+    present = set(union)
+    by_key: dict = {}          # (timer, channel, role, route value) -> part -> pads
+    for pn in parts:
+        for pad, timer, channel, role, route in timer_pads.get(pn, ()):
+            value = route_af_value(route) if per_pin else route_remap_value(route)
+            if value is None or pad not in present or timer not in timer_caps:
+                continue
+            cap = timer_caps[timer]
+            if role == TIMER_PAD_CHN and not cap["complementary"]:
+                continue
+            if role == TIMER_PAD_BKIN and cap["kind"] != "advanced":
+                continue
+            if role != TIMER_PAD_BKIN and channel > cap["channels"]:
+                continue
+            if not per_pin and value and (series, timer) not in timer_remaps:
+                continue          # a remap the core has no field for
+            by_key.setdefault((timer, channel, role, value), {}).setdefault(
+                pn, set()).add(pad)
+    entries = set()
+    for key, per_part in by_key.items():
+        sets = [s for s in per_part.values() if s]
+        if any(not (a <= b or b <= a) for a in sets for b in sets):
+            continue              # the route moves to other pads by package
+        for pad in set().union(*sets):
+            entries.add((pad,) + key)
+
+    def pin_of(pad):
+        port, bit = pad
+        return ((PORTS.index(port) + PIN_PORT_FIRST) << 5) | bit
+
+    def preference(e):
+        pad, timer, channel, role, value = e
+        default = pwm_pads.get(pad)
+        first = (default is not None and role == TIMER_PAD_CH and
+                 (default[0], default[1]) == (timer, channel) and
+                 (value == default[2] if per_pin else value == 0))
+        # analogWrite()'s pad first, then: no remap (the timer's other pads
+        # stay), a channel before its complementary output, the lower timer.
+        return (pin_of(pad), not first, value != 0 and not per_pin, role, timer,
+                channel, value)
+
+    ordered = sorted(entries, key=preference)
+    out = []
+    if not ordered:
+        return out
+    out.append("/* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a")
+    out.append(" * timer reaches, on every route the core can select. Fields: pad,")
+    out.append(" * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel")
+    out.append(" * 0), route: " + ("the pad's alternate-function number." if per_pin else
+                                  "the value of the timer's AFIO remap field."))
+    out.append(" * A pad's entries are in the order analogWrite() tries them: its")
+    out.append(" * default PWM first. ---- */")
+    out.append(f"#define CH32RV_TIMER_PAD_COUNT {len(ordered)}")
+    out.append("#define CH32RV_TIMER_PADS { \\")
+    for pad, timer, channel, role, value in ordered:
+        out.append(f"    {{ {pad_name(*pad)}, {timer}, {channel | role << 4:#04x}, {value} }}, \\")
+    out.append("}")
+    # The timers analogWrite() may take: not the TIM4 / TIM5 kept for tone()
+    # and Servo (the default PWM table leaves them out the same way).
+    pwm_mask = sum(1 << t for t in timer_caps if t not in reserved)
+    out.append(f"#define CH32RV_PWM_TIMER_MASK {pwm_mask:#x}u")
+    if not per_pin:
+        fields = sorted((t, bits) for (s, t), bits in timer_remaps.items()
+                        if s == series and t in timer_caps)
+        if fields:
+            out.append("/* The AFIO field each timer's route is written to: PCFR1 bit n,")
+            out.append(" * 0x80 | n for PCFR2, least significant bit first; 0xff unused. */")
+            out.append(f"#define CH32RV_TIMER_REMAP_COUNT {len(fields)}")
+            out.append("#define CH32RV_TIMER_REMAPS { \\")
+            for timer, bits in fields:
+                if len(bits) > 4:
+                    raise SystemExit(f"{series}: TIM{timer}'s remap field has "
+                                     f"{len(bits)} bits, the table holds 4")
+                codes = [(0x80 if reg == "PCFR2" else 0) | bit for reg, bit in bits]
+                if any(reg not in ("PCFR1", "PCFR2") for reg, _ in bits):
+                    raise SystemExit(f"{series}: TIM{timer}'s remap field is "
+                                     f"outside PCFR1 / PCFR2")
+                codes += [0xFF] * (4 - len(codes))
+                out.append(f"    {{ {timer}, {{ " + ", ".join(f"{c:#04x}" for c in codes)
+                           + " } }, \\")
+            out.append("}")
+    # The capture / compare vector of the timers whose update interrupt has a
+    # vector of its own (the advanced ones); the others share one vector.
+    cc = []
+    for timer in sorted(timer_caps):
+        if candidates[timer].endswith("_UP_IRQHandler"):
+            handler = f"TIM{timer}_CC_IRQHandler"
+            if handler in handlers:
+                cc.append((timer, handler))
+    if cc:
+        out.append("/* Capture / compare vectors apart from the update one:")
+        out.append(" * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */")
+        out.append("#define CH32RV_TIMER_CC_TABLE(X) \\")
+        for i, (timer, handler) in enumerate(cc):
+            suffix = " \\" if i + 1 < len(cc) else ""
+            out.append(f"    X({timer}, CH32RV_IRQN_TIM{timer}_CC, {handler}){suffix}")
+    out.append("")
+    return out
+
+
 def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              i2cs: dict, spis: dict, dacs: dict, pwm: dict, handlers: list,
              remap: dict, route_alts: dict = None,
@@ -3368,7 +3576,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              timers_by_family: dict = {},
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
-             esig: dict = {}) -> str:
+             esig: dict = {}, timer_pads: dict = {},
+             timer_remaps: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -4181,6 +4390,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     else:
         out.append("#define CH32RV_TIMER_TABLE(X) /* no managed TIM */")
     out.append("")
+    out.extend(timer_pad_block(series, parts, union, timer_pads, timer_remaps,
+                               timer_caps, candidates, handlers, pwm_pads,
+                               reserved))
 
     def pick(pool):
         """Highest-numbered, preferring one no PWM pad uses."""
@@ -4570,6 +4782,8 @@ def main() -> int:
              for r in read_table(args.tables, "series.csv", ("series", "core"))}
     SERIES_XW.update(load_series_xw(args.tables))
     pwm = load_pwm_pins(args.tables)
+    timer_pads = load_timer_pads(args.tables)
+    timer_remaps = load_timer_remap_fields(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
@@ -4626,7 +4840,8 @@ def main() -> int:
         variant_text = gen_pins(series, rows, pads, adc, uarts, i2cs, spis, dacs, pwm,
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,
                                 route_alts, wide_timers, timer_capabilities, forbidden,
-                                clock_enables, adc_all, adc_bases, cores, esig)
+                                clock_enables, adc_all, adc_bases, cores, esig,
+                                timer_pads, timer_remaps)
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
                         {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,

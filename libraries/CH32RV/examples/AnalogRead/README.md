@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Observe raw analog input readings on UART.
+Observe raw analog input readings, and the voltage in mV, on UART.
 
 ## Hardware and connections
 
@@ -14,11 +14,11 @@ Turn the potentiometer and check continuously changing raw values. A floating in
 
 ## API and processing flow
 
-`analogRead(pin)` returns an integer at the configured resolution. `analogReadResolution(bits)` selects the result width. Analog aliases depend on the variant.
+`analogRead(pin)` returns an integer at the configured resolution. `analogReadResolution(bits)` selects the result width. `analogReadMilliVolts(pin)` (arduino-esp32's name) returns the voltage: the ADC's reference is the supply, which the chip measures against its internal reference just before each reading, so it does not assume 3.3 V. Analog aliases depend on the variant.
 
 ## Adapting the example
 
-The voltage display assumes 12-bit readings and a 3.3 V reference, as its label states. Call `analogReadResolution(12)` before reading, or match the divisor to the chosen resolution. Check the reference supply too; this display is not a precision voltage measurement.
+The mV value is within the internal reference's spread plus the converter's error, a few percent; it is not a precision measurement (the CH32RV library README says what has been measured). CH32M030 has no internal reference in the data and assumes a 3.3 V supply.
 
 ## Related documentation
 

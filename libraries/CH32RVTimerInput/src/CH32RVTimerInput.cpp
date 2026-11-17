@@ -4,11 +4,6 @@
 #include "internal/ch32rv_irq.h"
 #include "internal/ch32rv_registers.h"
 
-#ifndef CH32RV_PWM_PIN_COUNT
-#define CH32RV_PWM_PIN_TO_TIMER(p)   ((void)(p), 0)
-#define CH32RV_PWM_PIN_TO_CHANNEL(p) ((void)(p), 0)
-#endif
-
 namespace {
 
 constexpr uint16_t UIF = CH32RV_TIM_INT_UIE;     /* same bit in INTFR */
@@ -25,24 +20,24 @@ constexpr uint16_t CC1E = 0x0001, CC1P = 0x0002, CC2E = 0x0010, CC2P = 0x0020;
 constexpr uint16_t TS_TI1FP1 = 5u << 4, TS_TI2FP2 = 6u << 4;
 constexpr uint16_t SMS_ENCODER_TI2 = 1, SMS_ENCODER_TI1 = 2, SMS_ENCODER_BOTH = 3, SMS_RESET = 4;
 
-/* The timer and channel (1 or 2) a pad reaches on its default route. */
-bool timerPad(int pin, uint8_t &timer, uint8_t &channel)
+/* The n-th way `pin` reaches channel 1 or 2 of a timer, on any route. */
+bool channelPad(int pin, uint8_t n, CH32RVTimerPad &pad)
 {
-    pin = CH32RV_PIN_RESOLVE(pin);
-    timer = (uint8_t)CH32RV_PWM_PIN_TO_TIMER(pin);
-    channel = (uint8_t)CH32RV_PWM_PIN_TO_CHANNEL(pin);
-    return timer != 0 && (channel == 1 || channel == 2) && ch32rv_timer_capability_for(timer);
+    uint8_t seen = 0;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &pad); i++) {
+        if ((pad.channel == 1 || pad.channel == 2) && ch32rv_timer_capability_for(pad.timer) && seen++ == n) {
+            return true;
+        }
+    }
+    return false;
 }
 
-/* An input that the timer channel listens to. On the per-pin families the
- * pad also has to be switched to the timer's alternate function. */
-void inputPin(int pin, uint8_t mode)
+/* An input that the timer channel listens to: the pad's mode, then its
+ * route (the timer's remap, or the pad's alternate function). */
+void inputPin(const CH32RVTimerPad &pad, uint8_t mode)
 {
-    pinMode(pin, mode);
-#ifdef CH32RV_PWM_PIN_TO_AF
-    pin = CH32RV_PIN_RESOLVE(pin);
-    ch32rv_pin_set_af((uint8_t)pin, (uint32_t)CH32RV_PWM_PIN_TO_AF(pin));
-#endif
+    pinMode(pad.pin, mode);
+    ch32rv_timer_pad_connect(&pad, false);
 }
 
 /* The input filter closest to `cycles` without going over: ICxF settings 1-3
@@ -77,6 +72,22 @@ void quiet(uint32_t base)
     CH32RV_TIM_SMCFGR(base) = 0;
     CH32RV_TIM_CCER(base) = 0;
     CH32RV_TIM_CHCTLR1(base) = 0;
+    CH32RV_TIM_CHCTLR2(base) = 0;
+}
+
+/* Channel ch's half of its CHCTLR (channels 1-2 share one, 3-4 the other;
+ * the even channel in the high byte): CCxS (where ICx comes from: 1 its own
+ * input, 2 its pair's) and ICxF (the filter). */
+void captureFrom(uint32_t base, uint8_t ch, uint8_t source, uint8_t icf)
+{
+    volatile uint16_t &reg = ch <= 2 ? CH32RV_TIM_CHCTLR1(base) : CH32RV_TIM_CHCTLR2(base);
+    const unsigned shift = ((ch - 1u) & 1u) * 8u;
+    reg = (uint16_t)((reg & ~(0xFFu << shift)) | ((source | (icf << 4)) << shift));
+}
+
+uint32_t captured(uint32_t base, uint8_t ch, bool wide)
+{
+    return wide ? CH32RV_TIM_CHCVR32(base, ch) : CH32RV_TIM_CHCVR(base, ch);
 }
 
 }  // namespace
@@ -86,15 +97,23 @@ void quiet(uint32_t base)
 bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
 {
     end();
-    uint8_t timer, channel;
-    if (!timerPad(pin, timer, channel)) {
-        return false;
-    }
-    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
-    _wide = cap->counter_bits == 32u;
     if (minHz == 0u) {
         minHz = 1u;
     }
+    CH32RVTimerPad pad;
+    for (uint8_t n = 0; channelPad(pin, n, pad); n++) {
+        if (begin(pad, minHz, mode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPulseCapture::begin(const CH32RVTimerPad &pad, uint32_t minHz, uint8_t mode)
+{
+    const uint8_t timer = pad.timer, channel = pad.channel;
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
+    _wide = cap->counter_bits == 32u;
     /* The smallest prescaler that lets one period of minHz fit the counter. */
     const uint64_t span = (uint64_t)minHz << (_wide ? 32 : 16);
     const uint32_t clock = ch32rv_timer_clock_hz(timer);
@@ -116,7 +135,7 @@ bool CH32RVPulseCapture::begin(int pin, uint32_t minHz, uint8_t mode)
         ch32rv_timer_release(&_lease);
         return false;
     }
-    inputPin(pin, mode);
+    inputPin(pad, mode);
     _base = cap->register_base;
     _tickHz = (uint32_t)(clock / prescale);
 
@@ -231,11 +250,20 @@ bool CH32RVEncoder::attachSingleEdge(int aPin, int bPin) { return attach(aPin, b
 bool CH32RVEncoder::attach(int aPin, int bPin, uint8_t edges)
 {
     detach();
-    uint8_t timer, channelA, timerB, channelB;
-    if (!timerPad(aPin, timer, channelA) || !timerPad(bPin, timerB, channelB) ||
-        timer != timerB || channelA == channelB) {
-        return false;
+    CH32RVTimerPad a, b;
+    for (uint8_t i = 0; channelPad(aPin, i, a); i++) {
+        for (uint8_t j = 0; channelPad(bPin, j, b); j++) {
+            if (a.channel != b.channel && ch32rv_timer_pads_together(&a, &b) && attach(a, b, edges)) {
+                return true;
+            }
+        }
     }
+    return false;
+}
+
+bool CH32RVEncoder::attach(const CH32RVTimerPad &a, const CH32RVTimerPad &b, uint8_t edges)
+{
+    const uint8_t timer = a.timer, channelA = a.channel;
     const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(timer);
     _wide = cap->counter_bits == 32u;
     const CH32RVTimerRequest request = {
@@ -247,8 +275,8 @@ bool CH32RVEncoder::attach(int aPin, int bPin, uint8_t edges)
         ch32rv_timer_release(&_lease);
         return false;
     }
-    inputPin(aPin, _pull);
-    inputPin(bPin, _pull);
+    inputPin(a, _pull);
+    inputPin(b, _pull);
     _base = cap->register_base;
 
     /* The timer counts up when TI1 leads TI2. With A on channel 2 that is B
@@ -358,4 +386,203 @@ void CH32RVEncoder::setFilter(uint16_t cycles)
     if (ch32rv_timer_lease_valid(&_lease)) {
         applyFilter(_base, _filter, _ckd);
     }
+}
+
+/* ---- CH32RVInputCapture ---- */
+
+bool CH32RVInputCapture::begin(int pin, int edge, uint32_t tickHz, uint8_t mode)
+{
+    end();
+    CH32RVTimerPad pad;
+    for (uint8_t n = 0; ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), n, &pad); n++) {
+        if (begin(pad, edge, tickHz, mode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVInputCapture::begin(const CH32RVTimerPad &pad, int edge, uint32_t tickHz, uint8_t mode)
+{
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
+    const uint8_t pair = (uint8_t)(((pad.channel - 1u) ^ 1u) + 1u);
+    const uint32_t clock = ch32rv_timer_clock_hz(pad.timer);
+    if (!cap || tickHz == 0u || tickHz > clock || (edge == CHANGE && pair > cap->channels)) {
+        return false;
+    }
+    const uint32_t prescale = (clock + tickHz / 2u) / tickHz;
+    if (prescale > 65536u) {
+        return false;
+    }
+    _wide = cap->counter_bits == 32u;
+    const CH32RVTimerRequest request = {
+        pad.timer, CH32RV_TIMER_WHOLE,
+        {(uint16_t)(prescale - 1u), _wide ? 0xFFFFFFFFu : 0xFFFFu,
+         (uint16_t)(CH32RV_TIM_CTLR1_URS | (_ckd << CKD_SHIFT))}
+    };
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
+    inputPin(pad, mode);
+    _base = cap->register_base;
+    _tickHz = clock / prescale;
+    _own = pad.channel;
+    _pair = edge == CHANGE ? pair : 0;
+    _ownRising = edge != FALLING;
+    _wraps = 0;
+    _head = _tail = 0;
+    _lost = 0;
+
+    /* The channel latches its own input on the edge asked for (rising for
+     * CHANGE); for CHANGE its pair latches the same input's falling edges. */
+    quiet(_base);
+    captureFrom(_base, _own, 1, _filter);
+    uint16_t ccer = (uint16_t)((_ownRising ? 1u : 3u) << ((_own - 1u) * 4u));
+    uint16_t enable = (uint16_t)(1u << _own);
+    if (_pair) {
+        captureFrom(_base, _pair, 2, _filter);
+        ccer |= (uint16_t)(3u << ((_pair - 1u) * 4u));
+        enable |= (uint16_t)(1u << _pair);
+    }
+    CH32RV_TIM_INTFR(_base) = 0;
+    CH32RV_TIM_DMAINTENR(_base) |= enable;
+    if (!ch32rv_timer_attach_update_interrupt(&_lease, onUpdate, this) ||
+        !ch32rv_timer_attach_channel_interrupt(&_lease, onInterrupt, this)) {
+        quiet(_base);
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
+    /* The counter first, the captures after: an edge latched while it stood
+     * still had the count of before it started (X035's first falling edge
+     * came 23 us early, 2026-11-17 bench). */
+    ch32rv_timer_start(&_lease);
+    CH32RV_TIM_CCER(_base) = ccer;
+    return true;
+}
+
+void CH32RVInputCapture::end()
+{
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        ch32rv_timer_detach_channel_interrupt(&_lease);
+        ch32rv_timer_detach_update_interrupt(&_lease);
+        ch32rv_timer_stop(&_lease);
+        quiet(_base);
+    }
+    ch32rv_timer_release(&_lease);
+    _tickHz = 0;
+}
+
+void CH32RVInputCapture::onInterrupt(void *self) { static_cast<CH32RVInputCapture *>(self)->service(false); }
+void CH32RVInputCapture::onUpdate(void *self) { static_cast<CH32RVInputCapture *>(self)->service(true); }
+
+/* The captures first, then the overflow: an overflow flagged by the time
+ * the captures are read came after any capture in the counter's upper half
+ * and before any in its lower half (the interrupt runs well within half a
+ * turn of the counter). `wrapped`: the update vector's dispatch took the
+ * overflow's flag already. */
+void CH32RVInputCapture::service(bool wrapped)
+{
+    const uint16_t flags = CH32RV_TIM_INTFR(_base);
+    const bool ownIn = (flags & (1u << _own)) != 0u;
+    const bool pairIn = _pair && (flags & (1u << _pair)) != 0u;
+    const uint32_t own = ownIn ? captured(_base, _own, _wide) : 0u;
+    const uint32_t pair = pairIn ? captured(_base, _pair, _wide) : 0u;
+    /* Cleared by hand as well: X035's TIM3 kept its capture flag through the
+     * read and the interrupt never ended (2026-11-17 bench). */
+    const uint16_t taken = (uint16_t)((ownIn ? 1u << _own : 0u) | (pairIn ? 1u << _pair : 0u));
+    if (taken) {
+        CH32RV_TIM_INTFR(_base) = (uint16_t)~taken;
+    }
+    const uint16_t over = (uint16_t)(flags & ((1u << (_own + 8u)) | (_pair ? 1u << (_pair + 8u) : 0u)));
+    if (over) {
+        CH32RV_TIM_INTFR(_base) = (uint16_t)~over;
+        _lost = _lost + 1u;
+    }
+    if (!wrapped && (CH32RV_TIM_INTFR(_base) & CH32RV_TIM_INT_UIE)) {
+        CH32RV_TIM_INTFR(_base) = (uint16_t)~CH32RV_TIM_INT_UIE;
+        wrapped = true;
+    }
+    const uint32_t half = _wide ? 0x80000000u : 0x8000u;
+    const unsigned bits = _wide ? 32u : 16u;
+    Edge a = {((_wraps + (wrapped && own < half ? 1u : 0u)) << bits) | own, _ownRising};
+    Edge b = {((_wraps + (wrapped && pair < half ? 1u : 0u)) << bits) | pair, false};
+    if (wrapped) {
+        _wraps = _wraps + 1u;
+    }
+    if (ownIn && pairIn && b.ticks < a.ticks) {
+        deliver(b);
+        deliver(a);
+    } else {
+        if (ownIn) {
+            deliver(a);
+        }
+        if (pairIn) {
+            deliver(b);
+        }
+    }
+}
+
+void CH32RVInputCapture::deliver(const Edge &e)
+{
+    if (_callback) {
+        _callback(e);
+        return;
+    }
+    const uint8_t next = (uint8_t)((_head + 1u) % (QUEUE + 1u));
+    if (next == _tail) {
+        _lost = _lost + 1u;
+        return;
+    }
+    _queue[_head] = e;
+    _head = next;
+}
+
+void CH32RVInputCapture::onEdge(Callback callback)
+{
+    const uint32_t irq = ch32rv_irq_save();
+    _callback = callback;
+    ch32rv_irq_restore(irq);
+}
+
+int CH32RVInputCapture::available()
+{
+    return (int)((_head + QUEUE + 1u - _tail) % (QUEUE + 1u));
+}
+
+bool CH32RVInputCapture::read(Edge &out)
+{
+    const uint32_t irq = ch32rv_irq_save();
+    const bool any = _head != _tail;
+    if (any) {
+        out = _queue[_tail];
+        _tail = (uint8_t)((_tail + 1u) % (QUEUE + 1u));
+    }
+    ch32rv_irq_restore(irq);
+    return any;
+}
+
+uint64_t CH32RVInputCapture::now()
+{
+    if (!ch32rv_timer_lease_valid(&_lease)) {
+        return 0;
+    }
+    const uint32_t irq = ch32rv_irq_save();
+    uint32_t count;
+    uint16_t pending, again;
+    do {
+        pending = CH32RV_TIM_INTFR(_base) & CH32RV_TIM_INT_UIE;
+        count = _wide ? CH32RV_TIM_CNT32(_base) : CH32RV_TIM_CNT(_base);
+        again = CH32RV_TIM_INTFR(_base) & CH32RV_TIM_INT_UIE;
+    } while (pending != again);
+    const uint32_t half = _wide ? 0x80000000u : 0x8000u;
+    const uint64_t wraps = _wraps + (pending && count < half ? 1u : 0u);
+    ch32rv_irq_restore(irq);
+    return (wraps << (_wide ? 32u : 16u)) | count;
+}
+
+void CH32RVInputCapture::setFilter(uint16_t cycles)
+{
+    filterFor(cycles, _filter, _ckd);
 }

@@ -64,7 +64,7 @@ USB_HOST_CONTROLLERS = ("full_speed", "high_speed", "high_speed_2", "super_speed
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
 ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
-          "analog", "selfcheck", "selfbus", "selfsys")
+          "analog", "selfcheck", "selfbus", "selfsys", "selfapi")
 # A defect's `lose` names a feature; these are the cases that test it.
 # "gpio-drive": the board's pads must not be driven by a test at all (a motor stage's gate drivers on CH32M030's
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and

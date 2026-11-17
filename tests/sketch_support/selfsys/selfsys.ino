@@ -51,6 +51,9 @@
 #error BENCH_BUILD_ID must identify this compilation
 #endif
 
+/* Numbers are read with atol() / atoi() only (the host sends decimal): strtoul() beside them cost V003 262
+ * bytes, and the sketch overflowed its 16 KB when pulseIn() took a timer's capture (2026-11-17). */
+
 static char line[64];
 static uint8_t used;
 
@@ -223,7 +226,7 @@ static void reply(char *command)
         delay(50);
         CH32RV.restart();
     } else if (!strcmp(argv[0], "wdt") && argc == 2) {
-        if (!CH32RV.wdtEnable(strtoul(argv[1], nullptr, 10))) {
+        if (!CH32RV.wdtEnable((uint32_t)atol(argv[1]))) {
             SerialDMSeq.printf("WDT REFUSED\r\n");
             return;
         }
@@ -236,7 +239,7 @@ static void reply(char *command)
         for (;;) {
         }
     } else if (!strcmp(argv[0], "sleep") && argc == 2) {
-        CH32RV.enableTimerWakeup((uint64_t)strtoul(argv[1], nullptr, 10) * 1000u);
+        CH32RV.enableTimerWakeup((uint64_t)(uint32_t)atol(argv[1]) * 1000u);
         const uint32_t t0 = millis();
         const CH32RVSleepResult r = CH32RV.lightSleep();
         const uint32_t took = millis() - t0;
@@ -273,7 +276,7 @@ static void reply(char *command)
         SerialDMSeq.printf("PAD %d %d\r\n", atoi(argv[1]), held((pin_size_t)atoi(argv[1])) ? 1 : 0);
     } else if (!strcmp(argv[0], "tone") && argc == 3) {
         const pin_size_t p = (pin_size_t)atoi(argv[1]);
-        tone(p, (unsigned int)strtoul(argv[2], nullptr, 10));
+        tone(p, (unsigned int)(uint32_t)atol(argv[2]));
         delay(5);
         uint32_t edges = 0, samples = 0;
         int prev = digitalRead(p);
@@ -331,14 +334,14 @@ static void reply(char *command)
         SerialDMSeq.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
 #ifdef CH32RV_HAS_RTC
     } else if (!strcmp(argv[0], "bkpw") && argc == 2) {
-        const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
+        const uint16_t seed = (uint16_t)(uint32_t)atol(argv[1]);
         const uint8_t n = CH32RV.backupRegisterCount();
         for (uint8_t i = 0; i < n; i++) {
             CH32RV.setBackupRegister(i, (uint16_t)(seed + 257u * i));
         }
         SerialDMSeq.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
     } else if (!strcmp(argv[0], "bkpr") && argc == 2) {
-        const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
+        const uint16_t seed = (uint16_t)(uint32_t)atol(argv[1]);
         const uint8_t n = CH32RV.backupRegisterCount();
         int same = 0;
         for (uint8_t i = 0; i < n; i++) {
@@ -346,7 +349,7 @@ static void reply(char *command)
         }
         SerialDMSeq.printf("BKPR %d %d\r\n", n, same);
     } else if (!strcmp(argv[0], "alarm") && argc == 2) {
-        const uint32_t s = strtoul(argv[1], nullptr, 10);
+        const uint32_t s = (uint32_t)atol(argv[1]);
         alarm_fired = false;
         const uint32_t t0 = millis();
         if (!CH32RV.setAlarm(time(nullptr) + (time_t)s, on_alarm)) {
@@ -358,7 +361,7 @@ static void reply(char *command)
         SerialDMSeq.printf("ALARM 1 %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
                            (long)CH32RV.getAlarm());
     } else if (!strcmp(argv[0], "asleep") && argc == 2) {
-        const uint32_t s = strtoul(argv[1], nullptr, 10);
+        const uint32_t s = (uint32_t)atol(argv[1]);
         CH32RV.disableWakeup();
         if (!CH32RV.setAlarm(time(nullptr) + (time_t)s) || !CH32RV.enableAlarmWakeup()) {
             SerialDMSeq.printf("ASLEEP REFUSED\r\n");

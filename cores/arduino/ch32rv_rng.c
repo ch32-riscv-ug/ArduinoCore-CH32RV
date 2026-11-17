@@ -18,28 +18,37 @@
 #define RNG_SR_SEIS 0x40u  /* seed error, latched */
 
 static bool started;
+/* The word read last. A word equal to it is dropped, as the continuous test
+ * of FIPS 140-2 drops it: a stuck generator then answers false (no new word
+ * in 2 ms) instead of the same word again. */
+static uint32_t last_word;
+
+static bool read_word(uint32_t *word);
 
 static void start(void)
 {
     ch32rv_clock_enable(RNG);
     RNG_CR |= RNG_CR_RNGEN;
     started = true;
+    /* The first word after the generator starts is not one: V307 gave 0. */
+    uint32_t first;
+    (void)read_word(&first);
 }
 
 /* One fresh word, or false. A seed error is cleared by restarting the
  * generator and discarding what it had (as the reference manual describes);
- * a clock error that persists means no usable output. */
+ * a clock error that persists, or no new word within 2 ms, means no usable
+ * output. */
 static bool read_word(uint32_t *word)
 {
-    for (int attempt = 0; attempt < 4; attempt++) {
-        const uint32_t t0 = micros();
-        uint32_t sr;
-        while (!((sr = RNG_SR) & (RNG_SR_DRDY | RNG_SR_SECS | RNG_SR_CECS))) {
-            if ((uint32_t)(micros() - t0) > 2000u) {
+    const uint32_t t0 = micros();
+    int restarts = 0;
+    while ((uint32_t)(micros() - t0) <= 2000u) {
+        const uint32_t sr = RNG_SR;
+        if (sr & (RNG_SR_SECS | RNG_SR_SEIS)) {
+            if (++restarts > 4) {
                 return false;
             }
-        }
-        if (sr & (RNG_SR_SECS | RNG_SR_SEIS)) {
             RNG_SR = ~RNG_SR_SEIS;
             RNG_CR &= ~RNG_CR_RNGEN;
             RNG_CR |= RNG_CR_RNGEN;
@@ -49,7 +58,15 @@ static bool read_word(uint32_t *word)
             RNG_SR = ~RNG_SR_CEIS;
             continue;
         }
-        *word = RNG_DR;
+        if (!(sr & RNG_SR_DRDY)) {
+            continue;
+        }
+        const uint32_t w = RNG_DR;
+        if (w == last_word) {
+            continue;              /* the last word again: wait for a new one */
+        }
+        last_word = w;
+        *word = w;
         return true;
     }
     return false;

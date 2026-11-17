@@ -25,11 +25,54 @@
  *   cap <pin>              CAP <ok>: CH32RVPulseCapture on pin (10 Hz up)
  *   capread                PULSE <period ticks> <high ticks> <tick Hz>, or
  *                          PULSE NONE
- *   capoff                 CAPOFF */
+ *   capoff                 CAPOFF
+ *   rgb <pin> <n>          RGB <n>: rgbLedWrite() n times in a row (LED i: red
+ *                          0x12 + i, green 0xA5, blue 0x3C ^ i; GRB on the
+ *                          line), then 300 us low for the latch
+ *   rgbbuf <pin> <n>       RGB <n>: the same n LEDs (n <= 8) in one
+ *                          ch32rv_rgb_led_write(): one frame
+ *
+ * The timer features (timer_reply; V003's build leaves out what `has` does
+ * not list):
+ *   has                    HAS <bits>: 1 timer outputs, 2 edge capture, 4
+ *                          Ticker and the timer API
+ *   pad <pin> <n>          PAD <timer> <channel> <role> <route> <pwm>: the pad's
+ *                          n-th way to a timer (CH32RVTimer.h; role 0 CHx, 1
+ *                          CHxN, 2 BKIN; pwm 1 where analogWrite() may take the
+ *                          timer, not tone()'s / Servo's TIM4 / TIM5), 0 0 0 0 0
+ *                          past the last
+ *   route <timer>          ROUTE <value>: the timer's AFIO remap now
+ *   now                    NOW <micros()>: the DUT's timebase, for a test to
+ *                          measure against the host's clock
+ *   tpulsein <pin> <state> <timeout us>  TPULSEIN <us>: timerPulseIn()
+ *                          (CH32RVTimerInput, the timer's capture)
+ *   comp <pin> <pinN> <hz> <duty of 256> <dead ns>  COMP <ok> <dead ns set>
+ *   brk <pin> <level>      BRK <ok>: the bridge's break input, active at level
+ *   brkstate <brk pin>     BRKSTATE <latched> <the pad's level>
+ *   resume                 RESUME <ok>
+ *   compoff                COMPOFF
+ *   shot <pin> <delay us> <width us>  SHOT <ok>: one pulse, started now
+ *   shotoff                SHOTOFF
+ *   oc <pin> <period us> <at us> <mode>  OC <ok>: output compare (mode as
+ *                          CH32RVOutputCompare::Mode)
+ *   ocoff                  OCOFF
+ *   icap <pin> <edge>      ICAP <ok>: CH32RVInputCapture at 1 MHz, edge 1
+ *                          RISING, 2 FALLING, 3 CHANGE
+ *   icread                 EDGES <n> <lost> <tick Hz> <first rising> <ticks
+ *                          from each edge to the next>...
+ *   icoff                  ICOFF
+ *   tick <pin> <us> <once> TICK <active>: a Ticker toggling pin every us, or
+ *                          (once 1) pin high now and low after us
+ *   tickoff                TICKOFF
+ *   htimer <pin> <us> <once>  HTIMER <ok> <Hz>: timerBegin(1 MHz) and
+ *                          timerAlarm(us) the same way
+ *   htimeroff              HTIMEROFF */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVTimerInput.h>
+#include <CH32RVTimerOutput.h>
 #include <SerialDMSeq.h>
+#include <Ticker.h>
 #include <Servo.h>
 #include <string.h>
 
@@ -58,11 +101,193 @@ static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0)
     SerialDMSeq.print("\r\n");
 }
 
+/* ---- The timer features (2026-11-17): pads on every route, complementary
+ * PWM, one pulse, output compare, edge capture, pulseIn(), Ticker and the
+ * timer API. What V003's 16 KB cannot hold beside the rest is left out of
+ * its build; `has` says what is in. ---- */
+#if !defined(CH32RV_VARIANT_CH32V003)
+#define SIGNALS_TIMER_OUTPUT 1
+#define SIGNALS_EDGE_CAPTURE 1
+#define SIGNALS_TICKER 1
+#endif
+#define HAS_TIMER_OUTPUT 1
+#define HAS_EDGE_CAPTURE 2
+#define HAS_TICKER 4
+
+#ifdef SIGNALS_TIMER_OUTPUT
+static CH32RVComplementaryPwm bridge;
+static CH32RVOnePulse shot;
+static CH32RVOutputCompare compare;
+#endif
+#ifdef SIGNALS_EDGE_CAPTURE
+static CH32RVInputCapture edgeCapture;
+#endif
+#ifdef SIGNALS_TICKER
+static Ticker ticker;
+static hw_timer_t *userTimer;
+static volatile uint8_t tickPin;
+static void tickToggle() { digitalWrite(tickPin, digitalRead(tickPin) ? LOW : HIGH); }
+static void tickLow() { digitalWrite(tickPin, LOW); }
+#endif
+
+static bool timer_reply(int argc, char **argv, pin_size_t pin)
+{
+    const long a2 = argc > 2 ? atol(argv[2]) : 0, a3 = argc > 3 ? atol(argv[3]) : 0;
+    const long a4 = argc > 4 ? atol(argv[4]) : 0, a5 = argc > 5 ? atol(argv[5]) : 0;
+    (void)a4;
+    (void)a5;
+    if (!strcmp(argv[0], "has")) {
+        long has = 0;
+#ifdef SIGNALS_TIMER_OUTPUT
+        has |= HAS_TIMER_OUTPUT;
+#endif
+#ifdef SIGNALS_EDGE_CAPTURE
+        has |= HAS_EDGE_CAPTURE;
+#endif
+#ifdef SIGNALS_TICKER
+        has |= HAS_TICKER;
+#endif
+        say("HAS", 1, has);
+    } else if (!strcmp(argv[0], "pad") && argc == 3) {
+        /* The pad's n-th way to a timer: timer, channel, role, route. */
+        CH32RVTimerPad p = {};
+        const bool found = digitalPinIsValid(pin) && ch32rv_timer_pad_find(pin, 7, (uint8_t)a2, &p);
+        SerialDMSeq.print("PAD ");
+        SerialDMSeq.print(found ? p.timer : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(p.channel);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(p.role);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(p.route);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(found && ((CH32RV_PWM_TIMER_MASK >> p.timer) & 1u) ? 1 : 0);
+        SerialDMSeq.print("\r\n");
+    } else if (!strcmp(argv[0], "route") && argc == 2) {
+        say("ROUTE", 1, ch32rv_timer_route((uint8_t)pin));
+    } else if (!strcmp(argv[0], "now")) {
+        SerialDMSeq.print("NOW ");
+        SerialDMSeq.print((unsigned long)micros());
+        SerialDMSeq.print("\r\n");
+    } else if (!strcmp(argv[0], "tpulsein") && argc == 4) {
+        pinMode(pin, INPUT);
+        say("TPULSEIN", 1, (long)timerPulseIn(pin, (uint8_t)a2, (unsigned long)a3));
+#ifdef SIGNALS_TIMER_OUTPUT
+    } else if (!strcmp(argv[0], "comp") && argc == 6) {
+        /* comp <pin> <pinN> <hz> <duty of 256> <dead ns> */
+        bridge.setDeadTime((uint32_t)a5);
+        const bool ok = bridge.begin(pin, (int)a2, (uint32_t)a3, 8);
+        if (ok) {
+            bridge.write((uint32_t)a4);
+        }
+        say("COMP", 2, ok, (long)bridge.deadTime());
+    } else if (!strcmp(argv[0], "brk") && argc == 3) {
+        say("BRK", 1, bridge.attachBreak(pin, (int)a2, a2 ? INPUT_PULLDOWN : INPUT_PULLUP));
+    } else if (!strcmp(argv[0], "brkstate") && argc == 2) {
+        /* the latch, and the level the break pad reads */
+        say("BRKSTATE", 2, bridge.breakActive(), digitalRead(pin));
+    } else if (!strcmp(argv[0], "resume")) {
+        say("RESUME", 1, bridge.resume());
+    } else if (!strcmp(argv[0], "compoff")) {
+        bridge.end();
+        SerialDMSeq.println("COMPOFF");
+    } else if (!strcmp(argv[0], "shot") && argc == 4) {
+        /* shot <pin> <delay us> <width us>: one pulse, started now */
+        const bool ok = (shot.isAttached() || shot.begin(pin)) && shot.fire((uint32_t)a2, (uint32_t)a3);
+        say("SHOT", 1, ok);
+    } else if (!strcmp(argv[0], "shotoff")) {
+        shot.end();
+        SerialDMSeq.println("SHOTOFF");
+    } else if (!strcmp(argv[0], "oc") && argc == 5) {
+        /* oc <pin> <period us> <at us> <mode> */
+        const bool ok = (compare.isAttached() || compare.begin(pin, (uint32_t)a2)) &&
+                        compare.set((CH32RVOutputCompare::Mode)a4, (uint32_t)a3);
+        say("OC", 1, ok);
+    } else if (!strcmp(argv[0], "ocoff")) {
+        compare.end();
+        SerialDMSeq.println("OCOFF");
+#endif
+#ifdef SIGNALS_EDGE_CAPTURE
+    } else if (!strcmp(argv[0], "icap") && argc == 3) {
+        /* icap <pin> <1 RISING, 2 FALLING, 3 CHANGE> */
+        const int edge = a2 == 1 ? RISING : a2 == 2 ? FALLING : CHANGE;
+        say("ICAP", 1, edgeCapture.begin(pin, edge, 1000000));
+    } else if (!strcmp(argv[0], "icread")) {
+        /* EDGES <n> <lost> <tick Hz> <first rising> then each edge after the
+         * first as <ticks since the one before>, the queue's 8 at most */
+        CH32RVInputCapture::Edge e[8];
+        int n = 0;
+        while (n < 8 && edgeCapture.read(e[n])) {
+            n++;
+        }
+        SerialDMSeq.print("EDGES ");
+        SerialDMSeq.print(n);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(edgeCapture.lost());
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(edgeCapture.tickHz());
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(n ? (int)e[0].rising : -1);
+        for (int k = 1; k < n; k++) {
+            SerialDMSeq.print(' ');
+            SerialDMSeq.print((unsigned long)(e[k].ticks - e[k - 1].ticks));
+        }
+        SerialDMSeq.print("\r\n");
+    } else if (!strcmp(argv[0], "icoff")) {
+        edgeCapture.end();
+        SerialDMSeq.println("ICOFF");
+#endif
+#ifdef SIGNALS_TICKER
+    } else if (!strcmp(argv[0], "tick") && argc == 4) {
+        /* tick <pin> <us> <0 periodic toggle / 1 once: high now, low after us> */
+        tickPin = (uint8_t)pin;
+        digitalWrite(pin, LOW);
+        pinMode(pin, OUTPUT);
+        /* The line goes high right after the Ticker is armed: taking the
+         * timer (timerBegin) comes before, outside the pulse. */
+        if (a3) {
+            ticker.once_us((uint64_t)a2, tickLow);
+            digitalWrite(pin, HIGH);
+        } else {
+            ticker.attach_us((uint64_t)a2, tickToggle);
+        }
+        say("TICK", 1, ticker.active());
+    } else if (!strcmp(argv[0], "tickoff")) {
+        ticker.detach();
+        SerialDMSeq.println("TICKOFF");
+    } else if (!strcmp(argv[0], "htimer") && argc == 4) {
+        /* htimer <pin> <us> <0 alarm every us, toggling / 1 one alarm: high now, low at us> */
+        tickPin = (uint8_t)pin;
+        digitalWrite(pin, LOW);
+        pinMode(pin, OUTPUT);
+        if (!userTimer) {
+            userTimer = timerBegin(1000000);
+        }
+        if (userTimer) {
+            timerAttachInterrupt(userTimer, a3 ? tickLow : tickToggle);
+            timerWrite(userTimer, 0);
+            timerAlarm(userTimer, (uint64_t)a2, !a3, 0);
+            if (a3) {
+                digitalWrite(pin, HIGH);     /* right after the alarm is armed */
+            }
+        }
+        say("HTIMER", 2, userTimer != nullptr, userTimer ? (long)timerGetFrequency(userTimer) : 0);
+    } else if (!strcmp(argv[0], "htimeroff")) {
+        timerEnd(userTimer);
+        userTimer = nullptr;
+        SerialDMSeq.println("HTIMEROFF");
+#endif
+    } else {
+        return false;
+    }
+    return true;
+}
+
 static void reply(char *command)
 {
-    char *argv[4];
+    char *argv[6];
     int argc = 0;
-    for (char *t = strtok(command, " "); t && argc < 4; t = strtok(nullptr, " ")) {
+    for (char *t = strtok(command, " "); t && argc < 6; t = strtok(nullptr, " ")) {
         argv[argc++] = t;
     }
     if (!argc) {
@@ -105,7 +330,15 @@ static void reply(char *command)
         pinMode(pin, INPUT);
         SerialDMSeq.println("INPUT");
     } else if (!strcmp(argv[0], "pwm") && argc == 4) {
-        const bool ok = digitalPinIsValid(pin) && CH32RV_PWM_PIN_TO_TIMER(pin) && CH32RV_PWM_PIN_TO_CHANNEL(pin);
+        /* Any pad a timer channel or complementary output reaches, on any route. */
+        CH32RVTimerPad any;
+        bool ok = false;
+        for (uint8_t n = 0; digitalPinIsValid(pin) && !ok &&
+                            ch32rv_timer_pad_find(pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH) |
+                                                       CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CHN), n, &any);
+             n++) {
+            ok = ((CH32RV_PWM_TIMER_MASK >> any.timer) & 1u) != 0u;
+        }
         if (ok) {
             analogWriteFrequency(pin, (uint32_t)atol(argv[3]));
             analogWrite(pin, atoi(argv[2]));
@@ -141,6 +374,25 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "capoff")) {
         pulse.end();
         SerialDMSeq.println("CAPOFF");
+    } else if (!strcmp(argv[0], "rgb") && argc == 3) {
+        const int n = atoi(argv[2]);
+        for (int i = 0; i < n; i++) {
+            rgbLedWrite(pin, (uint8_t)(0x12 + i), 0xA5, (uint8_t)(0x3C ^ i));
+        }
+        delayMicroseconds(300);
+        say("RGB", 1, n);
+    } else if (!strcmp(argv[0], "rgbbuf") && argc == 3) {
+        uint8_t grb[24];
+        const int n = atoi(argv[2]) < 8 ? atoi(argv[2]) : 8;
+        for (int i = 0; i < n; i++) {
+            grb[3 * i] = 0xA5;
+            grb[3 * i + 1] = (uint8_t)(0x12 + i);
+            grb[3 * i + 2] = (uint8_t)(0x3C ^ i);
+        }
+        ch32rv_rgb_led_write(pin, grb, (size_t)(3 * n));
+        delayMicroseconds(300);
+        say("RGB", 1, n);
+    } else if (timer_reply(argc, argv, pin)) {
     } else {
         SerialDMSeq.print("UNKNOWN ");
         SerialDMSeq.print(argv[0]);

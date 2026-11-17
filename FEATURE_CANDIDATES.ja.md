@@ -34,7 +34,7 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 | SYS-06 | ウィンドウウォッチドッグ | IWDG はあり（電源投入から動かす Watchdog メニューも。2026-11-03）、WWDG は未実装 | WWDG の開始・更新・状態通知。IWDG と別機能として提供するか | 未決定 |
 | SYS-07 | バックアップレジスタ | 現行対応表では対象外 | 少量の状態保存、保持領域へのアクセス。RTC とまとめるか | 未決定 |
 | SYS-08 | GPIO 以外の EXTI | GPIO 割り込みはあり、PVD・RTC・USB 起床等は未対応 | 非 GPIO イベント、復帰要因の登録・通知。SYS-03／04 と連携 | 未決定 |
-| SYS-09 | 割り込み優先度の設定 | PFIC は使用するが優先度は reset 既定 | 利用者・ライブラリからの優先度設定、コアが使う割り込みとの契約 | 未決定 |
+| SYS-09 | 割り込み優先度の設定 | `ch32rv_priority.h` の `ch32rv_irq_set_priority()` / `CH32RV_IRQ_PRIORITY(level)`、コアの割り込みは 0 のままという約束（CH32RV の README。2026-11-17、ビルドのみ） | VTF、ベクタの RAM 化（unimplemented の優先 2） | 採用 |
 
 ## 通信クラスの動作モード
 
@@ -44,9 +44,9 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 | BUS-02 | SPI 非同期転送 | 同期・ポーリング転送 | 転送開始、完了確認・通知、中止。DMA 利用と公開 API の形は分けて判断する | 未決定 |
 | BUS-03 | SPI ハードウェア CS | CS はスケッチが GPIO として操作 | ハードウェアによる CS 制御。手動 CS と選択できる形を検討 | 未決定 |
 | BUS-04 | SPI 半二重・片方向モード | 通常の全二重転送が中心 | 3線式双方向、送信専用、受信専用。バッファを捨てる処理と物理的な通信モードを区別する | 未決定 |
-| BUS-05 | I2C マルチマスター | `Wire` はマスター／スレーブ対応、マルチマスター非対応 | バス調停、競合時の通知・復旧 | 未決定 |
-| BUS-06 | I2C マスターとスレーブの兼用 | 1インスタンスはどちらか一方 | スレーブ待受とマスター送信の併用。BUS-05 との関係を確認 | 未決定 |
-| BUS-07 | I2C 拡張アドレス・呼び出し | 通常の7bitアドレスを使用。General Call は受けない | 10bitアドレス、General Call を個別に判断 | 未決定 |
+| BUS-05 | I2C マルチマスター | `Wire` はアービトレーション負け・転送中のほかの controller の START / STOP・自分の START の前に target として呼ばれたことを見分け、バスが空くのを待って最初からやり直す（`CH32RV_WIRE_ARBITRATION_RETRIES` = 3 回まで、毎回負ければ `endTransmission()` 4 / `requestFrom()` 0。AVR・arduino-esp32 は 4 を返してやり直しはスケッチ任せ）。BUSY の残りは両方の線が 100 µs High のときだけ reset（2026-11-17、ベンチ未確認） | わざと負ける試験はプローブで作れない（START をほかの START と 1 ビット以内にそろえられない。wire.arbitration はスキップ、wire.controller-and-target は起きた衝突を数えるだけ）。SoftWire は対象外（役割は 1 つずつ） | 採用 |
+| BUS-06 | I2C マスターとスレーブの兼用 | `Wire.begin(address)` のあとも controller として使える（1 インスタンス。バスが空くのを待ち、その間の自分宛ての転送には割り込みで応え、自分の転送の間は target の割り込みを止める。2026-11-17、ベンチ未確認）。SoftWire は 1 つずつ（target の間の転送は 4 / 0） | wire.controller-and-target をベンチで | 採用 |
+| BUS-07 | I2C 拡張アドレス・呼び出し | 10 bit アドレス（アドレスに `WIRE_10BIT` を OR する、controller・target、Wire・SoftWire。`WIRE_10BIT` の名前を書いたスケッチだけに controller の 10 bit のコードがリンクされる）、General Call（`setGeneralCall(true)` で target がアドレス 0 にも応える）。2026-11-17、ベンチ未確認 | controller の 10 bit を受ける相手（プローブの i2c-target は予約アドレスを断る。ヘッダーの NACK までを試験） | 採用 |
 | BUS-08 | UART RS485 | `setMode(UART_MODE_RS485_HALF_DUPLEX)`、DE は `setPins()` の RTS に名指した任意の端子をコアが送信完了の割込みで切り替える（ESP32 の形、2026-11-17） | ベンチで確認（uart.rs485、2026-11-17） | 採用 |
 | BUS-09 | UART 1線式半二重 | `setPins(p, p)` / `begin(..., p, p)`（ESP32 の one-wire の形、HDSEL、開放ドレイン。2026-11-17） | ベンチで確認（uart.half-duplex、自分の送信は受けない）、X033/X035 の受信 | 採用 |
 | BUS-10 | UART ハードウェアフロー制御 | `setPins(rx, tx, cts, rts)`、`setHwFlowCtrlMode()`（ESP32 の形、2026-11-17） | ベンチで確認（uart.flow-control、V003・V006・V205）。ラベルの無い台 | 採用 |
@@ -55,6 +55,7 @@ ESP32 と同じハードウェア・クラス名・全 API の再現を前提に
 | BUS-13 | CAN | 現行対応表では対象外。`HardwareCAN` は抽象クラスのみ | CH32 用ドライバ、標準／拡張 ID、フィルタ、Listen-only、Loopback、エラー状態。CAN FD はハードウェア対応確認後に別判断 | 未決定 |
 | BUS-14 | I2S | 現行対応表では対象外 | 送信／受信、Master／Slave、対応データ形式・サンプルレート、連続ストリーミング | 未決定 |
 | BUS-15 | 名前の付いたバスをソフトにする | ボードメニューの I2Cn / SPIn の Software で、`Wire` / `SPI` などを SoftWire / SoftSPI にする（ハードウェアのコードはリンクされない。2026-11-03）。ソフトかハードかはクラスで決まり、自動では切り替えない | UART（BUS-12 が入ったら） | 採用 |
+| BUS-16 | I2C の SMBus PEC・DMA | PEC: `setPEC(true)` で書き込みに CRC-8 を付け、読みは PEC を確かめる（ソフトウェアで計算、Wire・SoftWire 共通、`setPEC()` を呼ぶスケッチだけにリンク。2026-11-17、ベンチ未確認）。DMA は未実装（ユーザー: 任意、2026-11-17） | target の PEC はスケッチ（`TwoWire::pec()`）。DMA | 採用（PEC） |
 
 SPI スレーブは CH32RV として検討する機能。比較した ESP32 標準 `SPIClass` にもスレーブ用公開 API はなく、
 ESP32 標準との互換性不足とは区別する。
@@ -73,7 +74,7 @@ ESP32 標準との互換性不足とは区別する。
 | TIM-08 | SoftPWM | 未実装。現行方針では独立 API にしない | ハードウェア PWM のない端子での出力。timer 資源・割り込み負荷の制約 | 未決定 |
 | ANA-01 | ADC 連続取得 | CH32RVAdcStream（自走、1〜6 本、DMA の 2 面バッファ。2026-10-27） | タイマーのトリガでの遅い一定のレート、しきい値の通知 | 一部採用 |
 | ANA-02 | ADC トリガ・監視 | 専用の利用者向け API なし | タイマートリガ、外部トリガ、しきい値監視。対応するハードウェア機能ごとに判断 | 未決定 |
-| ANA-03 | ADC 電圧換算 | Vref・VDD・温度の補助 API はあるが、外部入力の mV 取得 API なし | `analogReadMilliVolts()` 相当。推定値と校正値の扱いを決める | 未決定 |
+| ANA-03 | ADC 電圧換算 | `analogReadMilliVolts()`（arduino-esp32 の名前。直前に Vrefint で測った電源電圧で換算。2026-11-17、ビルドのみ） | 精度の特性（外部の電圧源でのマニュアル試験）、工場の校正値 | 採用 |
 | ANA-04 | DAC 連続出力 | 対応系列で `analogWrite()` の値出力あり | バッファからの波形出力、タイマートリガ、繰り返し出力 | 未決定 |
 | ANA-05 | OPA・コンパレータ | 現行対応表では対象外 | 内蔵アンプの経路・ゲイン、比較器の入力・出力・イベント。両者を個別に判断 | 未決定 |
 | ANA-06 | TouchKey | `touchRead()` / `touchSetCycles()`（arduino-esp32 の名前、2026-10-27） | しきい値・イベント | 一部採用 |
@@ -126,8 +127,8 @@ I2S、ADC、DAC、DVP 等の別機能が必要になる。
 | ID | 検討する機能 | 現状 | 追加範囲と判断点 | 採否 |
 |---|---|---|---|---|
 | HW-01 | DMA | Arduino 公開 API としては対象外 | SPI／ADC／I2S 等の内部利用と、汎用 DMA・資源管理 API の公開を別々に判断。DMA クラスは必須ではない | 未決定 |
-| HW-02 | CRC | 対象外 | ハードウェア CRC の利用 API。対応方式とソフトウェア処理との役割分担 | 未決定 |
-| HW-03 | RNG | ハードウェアの乱数のある系列で `ch32rv_rng_read()`（`ch32rv_rng.h`。`CH32RV_RNG_BASE` で調べる）。`random()` はソフトウェア実装のまま | 通常の疑似乱数 API との結び付け（`randomSeed()` の種など） | 一部採用 |
+| HW-02 | CRC | `CH32RV.crc32()` / `ch32rv_crc32()`（CRC-32/MPEG-2。CRC の回路のある系列はハードウェア、ほかは同じ値をソフトで。2026-11-17、ビルドのみ） | zlib の CRC-32 など、ほかの方式 | 採用 |
+| HW-03 | RNG | `ch32rv_random()` / `ch32rv_fill_random()`（arduino-esp32 の `esp_random()` / `esp_fill_random()`。V30x・V4x7・H41x はハードウェア、ほかは暗号に使えないソフトの値。`random()` は Arduino のとおり再現できる列のまま。2026-11-17、ビルドのみ） | — | 採用 |
 | HW-04 | PIOC・パルス列送受信 | PIOC は対象外 | プログラマブル IO、パルス列・独自通信の送受信。ESP32 RMT に似た用途をどの資源で扱うか | 未決定 |
 | HW-05 | FSMC | 対象外 | 外部メモリ・パラレルバス機器への接続。外付け機器のドライバとは分離 | 未決定 |
 | HW-06 | QSPI | 対象外 | 外付け Flash 等への複数線転送。通常 SPI と別に公開するか | 未決定 |
@@ -135,7 +136,7 @@ I2S、ADC、DAC、DVP 等の別機能が必要になる。
 | HW-08 | I3C | 対象外 | Controller／Target、列挙・転送等。ハードウェア能力に応じてモード別に判断 | 未決定 |
 | HW-09 | DVP カメラ入力 | 対象外 | フレーム取得、バッファ、完了通知、USB Video への接続 | 未決定 |
 | HW-10 | LTDC 表示出力 | 対象外 | 表示タイミング、フレームバッファ、描画ライブラリとの接続 | 未決定 |
-| HW-11 | ARGB LED 出力 | 対象外 | ESP32 と同じ `rgbLedWrite(pin, r, g, b)`（WS2812 型の LED 1 つ）を、どの端子でも動く形で入れる計画（2026-11-05）。初めの案は、LED 1 つ分（24 ビット、約 30 µs）だけ割り込みを止めたビジーループで送るブロックする関数（ESP32 の RMT 版も送り終えるまで待つ）。関数が出すのは LED 1 つ分の信号だけで、待ちも並びも持たない。複数の LED をつなぐ使い方はサンプルのスケッチで示す: `rgbLedWrite()` を LED ごとに続けて呼び（呼ぶ間はリセットの時間より短く）、最後に `delayMicroseconds()` で間を空けてラッチする（リセットの時間は WS2812 で 50 µs、WS2812B などで 280 µs。スケッチでどちらに合わせるかを書く）。判断点: CPU のクロックの下限（0 の High が 0.35 µs ± 0.15 µs。8 MHz では C で間に合わない見込み、断るかアセンブラか）、LED を多くつなぐ用途は SPI / タイマー + DMA / V407・X315 の ARGB のハードウェアで別のライブラリにするか。進め方: ほかの小さいマイコンのコア（ESP32、arduino-pico、Adafruit_NeoPixel、ch32fun）の作りとバイト数を調べ、候補を試作してフラッシュとクロックごとのタイミングを測り、波形は WireSkein の `rgb_led` で確かめる。HW-04 による実現と別に判断 | 計画（未着手） |
+| HW-11 | ARGB LED 出力 | ソフトの `rgbLedWrite()` / `rgbLedWriteOrdered()`（arduino-esp32 の名前、どの端子でも、LED 1 個分を割り込みを止めて送る）と、チェーンを 1 つのフレームで送る `ch32rv_rgb_led_write()`（別々の呼び出しでは V006 の 24 MHz で LED の間が 13 µs になりラッチした。72 MHz 以上は SysTick、それ未満は RAM の命令の数で時間を作る。2026-11-17、ビルドのみ。波形は signals の rgb-led で判定する） | V4x7・X3x5 の ARGB のハードウェア（速い道）、多数の LED を SPI / DMA で送るライブラリ | 一部採用 |
 
 ## プロジェクトの対象範囲として判断する項目
 

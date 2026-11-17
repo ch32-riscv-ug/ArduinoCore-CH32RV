@@ -90,6 +90,15 @@
  *    X315 and H41x, which have none); the callback does not run after a
  *    standby (RAM is lost) - wakeupCause() says why it started.
  *
+ * CRC-32 over a buffer, the CRC block's (CRC-32/MPEG-2):
+ *
+ *     uint32_t crc = CH32RV.crc32(buf, len);
+ *     crc = CH32RV.crc32(more, n, crc);        // the same as over both at once
+ *
+ *  - The hardware where there is a CRC block (V103, V20x, V205, V30x, V4x7,
+ *    L103 / M103, X305 / X315, H41x), a 64-byte table elsewhere: the same
+ *    numbers everywhere (ch32rv_crc.h).
+ *
  * Backup registers: 16-bit words that survive a reset and standby.
  *
  *     CH32RV.setBackupRegister(0, bootCount + 1);
@@ -112,6 +121,7 @@
 #include "internal/ch32rv_v3f.h"
 
 #include <Arduino.h>          /* ch32rv_adc_vdd_millivolts(), declared where the CPU Clock may forbid it */
+#include "ch32rv_crc.h"
 #include <time.h>
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
@@ -243,6 +253,15 @@ public:
      * value, so within a few percent); 0 where the family has none in the
      * data (CH32M030). Die temperature: analogReadTemp(). */
     uint32_t getVddMillivolts() { return ch32rv_adc_vdd_millivolts(); }
+    /* CRC-32 of len bytes (CRC-32/MPEG-2: the CRC block's polynomial
+     * 0x04C11DB7, from 0xFFFFFFFF, no reflection, no final XOR - not zlib's).
+     * The block where the series has one, the same result in software
+     * elsewhere (ch32rv_crc.h). Pass the last result as crc to go on with
+     * more data. */
+    uint32_t crc32(const void *data, size_t len, uint32_t crc = CH32RV_CRC32_INIT)
+    {
+        return ch32rv_crc32_update(crc, data, len);
+    }
     /* The series this sketch was built for ("CH32V003"). A binary only runs on
      * its own series, so this is the chip it is running on. */
     const char *getChipModel();

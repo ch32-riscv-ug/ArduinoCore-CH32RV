@@ -113,6 +113,60 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pwm-route"            # analogWrite() on a pad a timer reaches only on another route (AFIO remap / alternate function)
+test = "signals::test_pwm_route"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "pwm-complementary"    # analogWrite() on a complementary output (CHxN) alone
+test = "signals::test_pwm_complementary"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "complementary-pwm"    # CH32RVComplementaryPwm: CHx / CHxN with dead time (WireSkein dead_time, 20 MS/s), break input
+test = "signals::test_complementary"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "one-pulse"            # CH32RVOnePulse: one pulse of a set width
+test = "signals::test_one_pulse"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "output-compare"       # CH32RVOutputCompare: toggle / force on a compare
+test = "signals::test_output_compare"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "edge-capture"         # CH32RVInputCapture: each edge's time (any channel, any route) against the probe's PWM
+test = "signals::test_edge_capture"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "timer-pulse-in"       # timerPulseIn() (CH32RVTimerInput): pulseIn() by a timer's capture, opt-in
+test = "signals::test_timer_pulse_in"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "ticker"               # Ticker (arduino-esp32's API) on a timer of its own
+test = "signals::test_ticker"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "hw-timer"             # timerBegin() / timerAlarm() (arduino-esp32's timer API)
+test = "signals::test_hw_timer"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "adc"
 test = "periph::test_adc"
 scope = "series"
@@ -282,6 +336,11 @@ test = "periph::test_planned[qspi]"
 scope = "once"
 
 # The peripherals' and the libraries' own contracts.
+[[item]]
+id = "rgb-led"              # rgbLedWrite(): the WS2812 bytes and timing on the line (WireSkein rgb_led, 60 MS/s)
+test = "signals::test_rgb_led"
+scope = "series"
+
 [[item]]
 id = "interrupt"            # attachInterrupt (EXTI, AFIO's EXTICR per series)
 test = "signals::test_interrupt"
@@ -454,6 +513,31 @@ test = "selfsys::test_light_sleep"
 scope = "series"
 kind = "self"
 
+[[item]]
+id = "selfapi-crc"          # CH32RV.crc32(): known vectors, in pieces, unaligned (the CRC block or the table)
+test = "selfapi::test_crc"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfapi-rng"          # ch32rv_random() / ch32rv_fill_random(): not stuck, the bits vary (statistical sanity only)
+test = "selfapi::test_rng"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfapi-millivolts"   # analogReadMilliVolts() on its own pads driven 1 and 0 (a wide band; accuracy is manual)
+test = "selfapi::test_millivolts"
+scope = "series"
+any_of = ["ADC1", "ADC"]
+kind = "self"
+
+[[item]]
+id = "selfapi-priorities"   # interrupt priorities: two timers nest when one is less urgent, not otherwise
+test = "selfapi::test_priorities"
+scope = "series"
+kind = "self"
+
 
 [[item]]
 id = "selfcheck-vref"       # the ADC on its internal reference
@@ -474,6 +558,90 @@ id = "wire-slave"           # Wire as an I2C target (onReceive / onRequest)
 test = "wire::test_wire_slave"
 scope = "series"
 needs = ["I2C1"]
+
+[[item]]
+id = "wire-timeout"       # a target holding SCL: 5 and the flag, the bus back after it
+test = "wire::test_wire_timeout"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-clock-stretch" # a target stretching SCL after each byte
+test = "wire::test_wire_clock_stretch"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-bus-recovery"  # a target left holding SDA: cleared after one failed transfer
+test = "wire::test_wire_bus_recovery"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-data-nack"     # endTransmission() 3 (skips: the probe's i2c-target ACKs every byte)
+test = "wire::test_wire_data_nack"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-10bit"         # WIRE_10BIT as controller (the header) and target
+test = "wire::test_wire_10bit"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-general-call"  # address 0 from the controller, setGeneralCall() on the target
+test = "wire::test_wire_general_call"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-pec"           # setPEC(): a write's PEC, a read word's right and wrong PEC
+test = "wire::test_wire_pec"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-controller-and-target" # one Wire as target and controller, and with the probe at once
+test = "wire::test_wire_controller_and_target"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "wire-arbitration"   # lost arbitration on purpose (skips: the probe cannot time its START)
+test = "wire::test_wire_arbitration_lost"
+scope = "series"
+needs = ["I2C1"]
+
+[[item]]
+id = "softwire-timeout"
+test = "softwire::test_wire_timeout"
+scope = "once"
+
+[[item]]
+id = "softwire-clock-stretch"
+test = "softwire::test_wire_clock_stretch"
+scope = "once"
+
+[[item]]
+id = "softwire-bus-recovery"
+test = "softwire::test_wire_bus_recovery"
+scope = "once"
+
+[[item]]
+id = "softwire-10bit"
+test = "softwire::test_wire_10bit"
+scope = "once"
+
+[[item]]
+id = "softwire-general-call"
+test = "softwire::test_wire_general_call"
+scope = "once"
+
+[[item]]
+id = "softwire-pec"
+test = "softwire::test_wire_pec"
+scope = "once"
 
 [[item]]
 id = "spi-slave"            # CH32RVSPISlave

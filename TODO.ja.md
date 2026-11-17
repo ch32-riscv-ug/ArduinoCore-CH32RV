@@ -215,6 +215,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] V407 と P4（ホスト）の usb-peer で、DUT の `end()` のあと P4 が「S3 DISCONNECTED」を出さないことが 3 回に 1 回
   （2026-11-17、core-20261116T225416Z-463912b5。P4 のログは「USB HOST: EP command error: ESP_ERR_INVALID_STATE」）。HID の既定を
   1 ms にした直後の回。EspUsbHost の切断の扱いか DUT か切り分ける。
+- [ ] ch32-device-data の V103 の TIM2 の remap: eb3ca58（2026-11-17）で値 1 の PB10・PB11 の誤りは直り、lock を上げた。
+  ただし、部分 remap で位置の変わらない端子（値 1 の PA2・PA3、値 2 の PA0・PA1）と、値 3 の PA15・PB3 がまだ無い
+  （V203 の TIM2 は 12 通りすべてある）。[data] に依頼済み。足りるまで tools/generate/generate.py の TIMER_ROUTE_FIXES の
+  V103 の行は残す（eb3ca58 と合わせた生成物は e556ac35 のときと同じ）。直ったら行を外し、生成物が変わらないことと、
+  v103r8t6-evt の signals（pwm_route）を確かめる。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、

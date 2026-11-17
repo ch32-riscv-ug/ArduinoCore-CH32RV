@@ -258,6 +258,13 @@ static uint32_t ch32rv_adc_read_internal(uint32_t channel, int calibrated)
 #ifdef CH32RV_ADC_BUFFER_ENABLE
     CH32RV_ADC_CTLR1_AT(base) &= ~CH32RV_ADC_BUFFER_ENABLE;
 #endif
+#if defined(CH32RV_ADC_INTERNAL_ENABLE) && defined(CH32RV_SERIES_CH32V103)
+    /* CH32V103: with TSVREFE on, the pads convert wrong - a pad driven to
+     * VDD read 1468-1786 of 4095, and 4095 again once the bit was cleared
+     * (bench, 2026-11-17, V103R8T6). Off again after every internal reading,
+     * so the next one waits the 20 us start above. */
+    CH32RV_ADC_CTLR2_AT(base) &= ~CH32RV_ADC_INTERNAL_ENABLE;
+#endif
     return value;
 }
 #endif
@@ -290,6 +297,55 @@ CH32RV_ADC_ENTRY uint32_t ch32rv_adc_vdd_millivolts(void)
      * another lot gave 3.2-3.4 V in October. */
     return mv > 6000u ? 0u : mv;
 #else
+    return 0;
+#endif
+}
+
+/* arduino-esp32's analogReadMilliVolts(): the pad's voltage from the reading
+ * (with the family's offset correction, as analogReadCalibrated()) and the
+ * supply measured against Vrefint just before it - mV = Vrefint's typical mV
+ * x pad / Vrefint, so VDD itself never has to be assumed. Where the variant
+ * has no Vrefint in the data (CH32M030) or it reads as no reference
+ * (ch32rv_adc_vdd_millivolts()'s rule), VDD is taken as 3300 mV. Its error
+ * is the Vrefint's spread around its typical (the datasheet's min / max) plus
+ * the converter's own; not measured here (README). */
+#ifndef CH32RV_ADC_NOMINAL_VDD_MV
+#define CH32RV_ADC_NOMINAL_VDD_MV 3300u
+#endif
+/* The same for a channel of instance `index` as it is (the pad not set up):
+ * analogReadMilliVolts() below, and the self-check that drives a pad as an
+ * output while converting it (tests/sketch_support/selfcheck). Internal. */
+uint32_t ch32rv_adc_millivolts(uint8_t index, uint32_t channel)
+{
+    const uint32_t full = (1u << CH32RV_ADC_BITS) - 1u;
+    ch32rv_adc_begin(index);
+#if defined(CH32RV_ADC_VREFINT_CHANNEL) && defined(CH32RV_ADC_VREFINT_MV)
+    const uint32_t ref = ch32rv_adc_read_internal(CH32RV_ADC_VREFINT_CHANNEL, 1);
+    /* The channel again after the reference: the first conversion after a
+     * switch still holds the last channel's charge. */
+    (void)ch32rv_adc_convert_raw(CH32RV_ADC_BASE(index), channel);
+    const uint32_t value = ch32rv_adc_convert(CH32RV_ADC_BASE(index), channel);
+    if (ref != 0u && (CH32RV_ADC_VREFINT_MV * full + ref / 2u) / ref <= 6000u) {
+        return (CH32RV_ADC_VREFINT_MV * value + ref / 2u) / ref;
+    }
+#else
+    const uint32_t value = ch32rv_adc_convert(CH32RV_ADC_BASE(index), channel);
+#endif
+    return (CH32RV_ADC_NOMINAL_VDD_MV * value + full / 2u) / full;
+}
+
+CH32RV_ADC_ENTRY uint32_t analogReadMilliVolts(pin_size_t pin)
+{
+    CH32RV_ADC_KEEP();
+#ifdef NUM_ANALOG_INPUTS
+    uint8_t index = 0;
+    const uint32_t channel = ch32rv_adc_prepare(pin, &index);
+    if (channel == NOT_AN_ANALOG_PIN) {
+        return 0;
+    }
+    return ch32rv_adc_millivolts(index, channel);
+#else
+    (void)pin;
     return 0;
 #endif
 }

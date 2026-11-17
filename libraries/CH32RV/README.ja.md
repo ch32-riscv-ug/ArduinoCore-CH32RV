@@ -30,6 +30,7 @@ CH32RV.getSketchSize();                  // スケッチが使う flash と、�
 CH32RV.getFreeSketchSpace();
 CH32RV.getFlashChipSize();               // シリコンの flash の大きさ(電子署名から)
 CH32RV.getUniqueId();                    // チップの固有 ID の 64 ビット
+CH32RV.crc32(buf, len);                  // CRC-32/MPEG-2。CRC のハードウェアがあればそれで
 analogReadTemp();                        // チップの温度(℃)、センサが無ければNAN (core)
 analogReadVref();                        // 内部基準をanalogRead()と同じ幅で (core)
 ```
@@ -106,6 +107,77 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
 
 設計と実測は [A の機能の全体設計](../../docs/peripheral-a-design.ja.md) の 4.3 と 5.1 にあります。
 
+### 道具: CRC・乱数・ミリボルト・RGB LED・割り込みの優先度
+
+```cpp
+CH32RV.crc32(buf, len);                  // CRC-32/MPEG-2。ch32rv_crc.h の ch32rv_crc32() と同じ
+ch32rv_random();                         // arduino-esp32 の esp_random(): 32 ビットの乱数
+ch32rv_fill_random(buf, len);            // esp_fill_random()
+analogReadMilliVolts(A1);                // arduino-esp32 と同じ: 端子の電圧（mV）
+rgbLedWrite(PA1, r, g, b);               // arduino-esp32 と同じ: どの端子でも WS2812 / SK6812 の LED 1 個
+ch32rv_rgb_led_write(PA1, grb, n * 3);   // それを並べたチェーンを 1 つのフレームで
+ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
+```
+
+- **CRC。** `CH32RV.crc32(data, len[, crc])` は CRC のハードウェアの CRC-32 です。多項式 0x04C11DB7、初期値
+  0xFFFFFFFF、上位のビットから、最後の XOR なし。カタログの CRC-32/MPEG-2 で、"123456789" は `0x0376E6E7`、EVT の
+  CRC_Calculation の 32 語は `0x199AC3CA` です。zlib や Ethernet の CRC-32（`0xCBF43926`）とは違います。前の結果を
+  `crc` に渡すと続きを計算します。長さと番地の揃いは自由です。V103・V20x・V205・V30x・V4x7・L103 / M103・
+  X305 / X315・H41x（`CH32RV_HAS_CRC_HARDWARE`）では、語の部分をハードウェアで 64 語ずつ、割り込みを止めて計算する
+  ので、割り込みの中から使っても混ざりません。端数とほかの系列は 16 項目の表で、同じ値になります。H41x では一度に
+  1 つのコアだけが使います。使うと V003 で約 140 バイト。
+- **乱数。** `ch32rv_random()` / `ch32rv_fill_random(buf, len)` は arduino-esp32 の `esp_random()` /
+  `esp_fill_random()` を、このコアの名前にしたものです（`esp_` の名前は置かない）。V30x・V4x7・H41x
+  （`CH32RV_RNG_BASE`）ではハードウェアの乱数で、生の 4 語を混ぜて 1 語にします（V307 と H417 では生の語が
+  繰り返し、決まったバイトの形に偏った。`ch32rv_rng_read()` は生のままで、Mbed TLS が自分で整える）。ほかの系列と、乱数の回路が直らない誤りを返したときは、石の固有の
+  ID と呼んだときの SysTick の値を混ぜたソフトの値です。石ごと・実行ごとに変わりますが予測でき、**暗号には使えません**
+  （誤りを false で返すのは `ch32rv_rng_read()`）。`random()` / `randomSeed()` は Arduino の決まりのままです:
+  `randomSeed()` を呼ばなければ毎回同じ列、`randomSeed(n)` で同じ列の再現。Arduino のリファレンスが両方を書いて
+  おり、変えると乱数の回路の有無で系列ごとに動きが変わるためです。arduino-esp32 は `randomSeed()` を呼ぶまで
+  `random()` をハードウェアの乱数にしますが、ここでは `randomSeed(ch32rv_random())` で、どの系列でも実行ごとに
+  違う列になります。
+- **`analogReadMilliVolts(pin)`**（arduino-esp32 と同じ名前）。**電源電圧は呼ぶたびに測ります。** 端子を変換する
+  直前に ADC の内部の基準電圧（Vrefint）を変換し、mV = Vrefint の代表値（mV） x 端子の読み取り / Vrefint の読み取り
+  で求めます。Vrefint から VDD を求めて読み取りを換算するのと同じで、VDD を仮定しません。例外はデータに Vrefint の
+  無い M030 だけで、そこでは VDD を 3300 mV とします。読み取りには `analogReadCalibrated()` と同じ系列の補正が
+  かかります。
+  - **1 回の時間: 変換 4 回**（Vrefint を 2 回と端子を 2 回。チャネルを切り替えた最初の 1 回は捨てる）。
+    `analogRead()` は 1 回です。どれも一番長いサンプル時間で約 250 ADC クロックなので、ADC のクロックが 12 MHz
+    （V20x / V30x の 96 MHz）なら 1 回約 85 µs、一般に `analogRead()` の 4 回分です。CH32V103 はさらに 20 µs
+    かかります（基準電圧を毎回入れて、終わったら切る。入れたままだと、そこでは端子が正しく読めない）。V003 で
+    `analogRead()` より約 300 バイト多くなります。
+  - **精度はまだ測っていません。** 誤差は Vrefint の代表値からのばらつき（データシートの min / max、数 %）と、
+    変換器のオフセットと利得の分です。自動の試験は、駆動した端子が 1 で電源の 80〜110 %、0 で 10 % 以下かを
+    見るだけです。特性は外部の電圧源を使うマニュアルの試験で取ります。
+- **`rgbLedWrite(pin, r, g, b)`** は WS2812 / SK6812 型の LED 1 個分の 24 ビット（GRB）をどの端子にも送って戻ります。
+  ほかの色の順は `rgbLedWriteOrdered(pin, LED_COLOR_ORDER_RGB, ...)`、`neopixelWrite()` は非推奨の古い名前で、
+  3 つとも arduino-esp32 の名前です。**チェーンは `ch32rv_rgb_led_write(pin, bytes, len)`** で、全部の LED のバイトを
+  送る順に（WS2812B は GRB、RGBW の部品は 4 バイト）1 つのフレームで送り、その間ずっと割り込みを止めます（LED 1 個
+  につき約 30 µs）。このコア独自の関数です（arduino-esp32 にチェーンの呼び出しは無い。形は Adafruit_NeoPixel の
+  `show()`）。`rgbLedWrite()` を続けて呼ぶと、LED の間で線が呼び出しの間 Low になるためです。多くの板で 2〜5 µs、
+  V006 の 24 MHz では 13 µs で、そこで LED がラッチしてチェーンが切れました（ベンチ、2026-11-17）。目標は T0H
+  375 ns、T1H 800 ns、1 ビット 1.25 µs で、72 MHz 以上はどの縁も SysTick で、それ未満は RAM に置いた命令の数で作ります
+  （8 MHz ではループそのものが長く 1 ビット 1.625 µs。36 MHz 未満では、次のバイトを読む各バイトの最後のビットが最大
+  4 サイクル長い）。どちらもラッチは待ちません。そのあと線を LED のリセットの時間（WS2812 で 50 µs、WS2812B-V5 など
+  新しい部品で 280 µs）Low に保ちます。実測（2026-11-17、WireSkein の rgb_led、60 MS/s、LED 1 個）: V003・V006・V103・
+  V203・V205・X035・H417 で T0H 333〜433 ns、T1H 767〜900 ns、1 ビット 1.22〜1.43 µs。V4x7 / X3x5 の ARGB の
+  ハードウェアは、あとで足す速い道です。
+- **割り込みの優先度**（`#include <ch32rv_priority.h>`）: `ch32rv_irq_set_priority(irqn, priority)` /
+  `ch32rv_irq_get_priority(irqn)` は PFIC の優先度のバイトで、WCH の `NVIC_SetPriority()` と同じく小さいほど
+  急ぎです。`CH32RV_IRQ_PRIORITY(level)` は割り込みのレベル（0 から `CH32RV_IRQ_PREEMPT_LEVELS - 1`）のバイトです。
+  V003・V00x・V103・V20x・V205・V4x7・X035・L103 / M103・X305 / X315・H41x の V3F は 2 レベル、V30x と M030 は 4、
+  H41x の V5F は 8（スタートアップの INTSYSCR と EVT の core_riscv.h による）。急ぎのレベルの割り込みは、それより
+  遅いレベルの処理に割り込みます。深さはハードウェアのレジスタのスタックまで（V30x は 4 レベルで 3 段）。割り込みの
+  番号は `CH32RV_IRQN_<名前>`（EVT の名前）、タイマーの capability の `update_irq`、`ch32rv_pin_irqn(pin)`（端子の
+  EXTI のベクタ。グループで共有）、`CH32RV_IRQN_CORE_SYSTICK` です。**コアの割り込みとの約束:** コアは優先度を
+  書きません。SysTick（millis()）・USART・tone() / Servo のタイマー・EXTI・USB・RTC のアラーム・WWDG の早期警告の
+  割り込みはどれも 0（一番急ぎ）のままで、スケッチが設定するまで入れ子は起きません。下げた割り込み処理にはコアの
+  割り込みが割り込みます（その間も millis() と Serial が動く）。コアはこの使い方を前提に作っています。コアの割り込み
+  を下げてもかまいません。コアのスレッド側のコードは、割り込み処理と共有するものを全割り込みのマスクで守るので、
+  どのレベルでも成り立ちます。ただしドライバーは再入できないので、あるドライバーの割り込み処理に割り込める処理から
+  そのドライバーを呼びません。`noInterrupts()` はすべてのレベルを止めます。H41x はコアごとに別です。HPE の無い
+  V103 は EVT のとおり PFIC で入れ子にしますが、実機ではまだ確かめていません。
+
 オブジェクト、examples、逃げ道が同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
 配れない**ことと、ライブラリには最低1つヘッダが要ることです。
 他のコアがこの用途に空のダミーを置いているのに対し、
@@ -129,14 +201,18 @@ CH32RV.timeDomain();                       // 測れない時間を飛ばすた�
 |---|---|
 | [Blink](examples/Blink/README.ja.md) | `pinMode`・`digitalWrite`・`delay` |
 | [SerialEcho](examples/SerialEcho/README.ja.md) | `Serial`の入出力 |
-| [AnalogRead](examples/AnalogRead/README.ja.md) | `analogRead` |
+| [AnalogRead](examples/AnalogRead/README.ja.md) | `analogRead`・`analogReadMilliVolts` |
 | [Fade](examples/Fade/README.ja.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.ja.md) | `tone`・`noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |
 | [ShiftOut](examples/ShiftOut/README.ja.md) | 74HC595への`shiftOut` |
 | [PulseIn](examples/PulseIn/README.ja.md) | `pulseIn`・`delayMicroseconds` |
+| [TimerAlarm](examples/TimerAlarm/README.ja.md) | `timerBegin`・`timerAttachInterrupt`・`timerAlarm`（arduino-esp32 のタイマー API） |
 | [Timing](examples/Timing/README.ja.md) | `millis`・`micros`と、その巻き戻り |
-| [RandomNumbers](examples/RandomNumbers/README.ja.md) | `random`・`randomSeed` |
+| [RandomNumbers](examples/RandomNumbers/README.ja.md) | `random`・`randomSeed`・`ch32rv_random`・`ch32rv_fill_random` |
+| [Crc32](examples/Crc32/README.ja.md) | `CH32RV.crc32`（1 回で、分けて） |
+| [RgbLed](examples/RgbLed/README.ja.md) | 1 個は `rgbLedWrite`、チェーンは `ch32rv_rgb_led_write` |
+| [InterruptPriority](examples/InterruptPriority/README.ja.md) | `ch32rv_irq_set_priority`、コアの SysTick の下での入れ子 |
 | [AnalogResolution](examples/AnalogResolution/README.ja.md) | `analogReadResolution`・`analogWriteResolution` |
 | [CriticalSection](examples/CriticalSection/README.ja.md) | `interrupts`・`noInterrupts`・`volatile` |
 | [PrintFormatting](examples/PrintFormatting/README.ja.md) | `Print`・`String`・`dtostrf` |

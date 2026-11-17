@@ -20,3 +20,9 @@ setCount	KEYWORD2
 pauseCount	KEYWORD2
 resumeCount	KEYWORD2
 setPull	KEYWORD2
+CH32RVInputCapture	KEYWORD1
+onEdge	KEYWORD2
+available	KEYWORD2
+lost	KEYWORD2
+now	KEYWORD2
+timerPulseIn	KEYWORD2

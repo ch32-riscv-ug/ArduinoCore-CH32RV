@@ -52,6 +52,7 @@ MODULES = {
     "selfcheck": TESTS / "instrumented/selfcheck/test_selfcheck_contract.py",
     "selfbus": TESTS / "instrumented/selfbus/test_selfbus_contract.py",
     "selfsys": TESTS / "instrumented/selfsys/test_selfsys_contract.py",
+    "selfapi": TESTS / "instrumented/selfapi/test_selfapi_contract.py",
     "console-rtt": TESTS / "instrumented/console/test_console_contract.py",
     "console-dmdata": TESTS / "instrumented/console/test_console_contract.py",
     "console-sdi": TESTS / "instrumented/console/test_console_contract.py",
@@ -92,6 +93,7 @@ SKETCHES = {
     "selfcheck": TESTS / "sketch_support/selfcheck/selfcheck.ino",
     "selfbus": TESTS / "sketch_support/selfbus/selfbus.ino",
     "selfsys": TESTS / "sketch_support/selfsys/selfsys.ino",
+    "selfapi": TESTS / "sketch_support/selfapi/selfapi.ino",
     "console-rtt": TESTS / "sketch_support/console/console.ino",
     "console-dmdata": TESTS / "sketch_support/console/console.ino",
     "console-sdi": TESTS / "sketch_support/console/console.ino",
@@ -334,7 +336,7 @@ def stage_case(work, name, case, target):
         (directory / "build_opt.h").write_text(opts)
     # The probe's lines on the chip's debug pads are never test lines (bench_lines.gpio_lines).
     target = dict(target, debug_pads=places.debug_pads(target["chip"]))
-    if case in ("selfcheck", "selfbus", "selfsys"):
+    if case in ("selfcheck", "selfbus", "selfsys", "selfapi"):
         target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "selfsys":
         target = dict(target, selfsys_pins=places.gpio_pads(target["chip"]))

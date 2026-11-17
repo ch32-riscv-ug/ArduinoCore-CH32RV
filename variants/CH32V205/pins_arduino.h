@@ -922,6 +922,87 @@
     X(3, 2, 16, 4, 0, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler) \
     X(4, 2, 32, 4, 0, CH32RV_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32RV_IRQN_TIM4, TIM4_IRQHandler)
 
+/* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
+ * timer reaches, on every route the core can select. Fields: pad,
+ * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel
+ * 0), route: the pad's alternate-function number.
+ * A pad's entries are in the order analogWrite() tries them: its
+ * default PWM first. ---- */
+#define CH32RV_TIMER_PAD_COUNT 66
+#define CH32RV_TIMER_PADS { \
+    { PA0, 2, 0x01, 1 }, \
+    { PA1, 2, 0x02, 1 }, \
+    { PA2, 2, 0x03, 1 }, \
+    { PA3, 2, 0x04, 1 }, \
+    { PA6, 3, 0x01, 1 }, \
+    { PA6, 1, 0x20, 0 }, \
+    { PA7, 3, 0x02, 1 }, \
+    { PA7, 1, 0x11, 0 }, \
+    { PA8, 1, 0x01, 0 }, \
+    { PA9, 1, 0x02, 0 }, \
+    { PA10, 1, 0x03, 0 }, \
+    { PA11, 1, 0x04, 0 }, \
+    { PA13, 2, 0x03, 1 }, \
+    { PA13, 1, 0x11, 0 }, \
+    { PA14, 2, 0x04, 1 }, \
+    { PA14, 1, 0x12, 0 }, \
+    { PA15, 2, 0x01, 1 }, \
+    { PA15, 1, 0x13, 0 }, \
+    { PB0, 3, 0x03, 1 }, \
+    { PB0, 1, 0x12, 0 }, \
+    { PB1, 3, 0x04, 1 }, \
+    { PB1, 1, 0x13, 0 }, \
+    { PB3, 2, 0x02, 1 }, \
+    { PB4, 3, 0x01, 1 }, \
+    { PB5, 3, 0x02, 1 }, \
+    { PB6, 1, 0x01, 0 }, \
+    { PB6, 4, 0x01, 1 }, \
+    { PB7, 1, 0x02, 0 }, \
+    { PB7, 4, 0x02, 1 }, \
+    { PB8, 1, 0x03, 0 }, \
+    { PB8, 4, 0x03, 1 }, \
+    { PB9, 4, 0x04, 1 }, \
+    { PB9, 1, 0x20, 0 }, \
+    { PB10, 2, 0x03, 1 }, \
+    { PB11, 2, 0x04, 1 }, \
+    { PB12, 1, 0x20, 0 }, \
+    { PB13, 1, 0x11, 0 }, \
+    { PB14, 1, 0x12, 0 }, \
+    { PB15, 1, 0x13, 0 }, \
+    { PC3, 1, 0x11, 0 }, \
+    { PC4, 1, 0x12, 0 }, \
+    { PC5, 1, 0x13, 0 }, \
+    { PC6, 3, 0x01, 1 }, \
+    { PC6, 1, 0x01, 0 }, \
+    { PC7, 3, 0x02, 1 }, \
+    { PC7, 1, 0x02, 0 }, \
+    { PC8, 3, 0x03, 1 }, \
+    { PC8, 1, 0x03, 0 }, \
+    { PC9, 3, 0x04, 1 }, \
+    { PC9, 1, 0x04, 0 }, \
+    { PC10, 1, 0x01, 0 }, \
+    { PC11, 1, 0x02, 0 }, \
+    { PC12, 1, 0x03, 0 }, \
+    { PC13, 1, 0x04, 0 }, \
+    { PD12, 4, 0x01, 1 }, \
+    { PD13, 4, 0x02, 1 }, \
+    { PD14, 4, 0x03, 1 }, \
+    { PD15, 4, 0x04, 1 }, \
+    { PE8, 1, 0x11, 0 }, \
+    { PE9, 1, 0x01, 0 }, \
+    { PE10, 1, 0x12, 0 }, \
+    { PE11, 1, 0x02, 0 }, \
+    { PE12, 1, 0x13, 0 }, \
+    { PE13, 1, 0x03, 0 }, \
+    { PE14, 1, 0x04, 0 }, \
+    { PE15, 1, 0x20, 0 }, \
+}
+#define CH32RV_PWM_TIMER_MASK 0xeu
+/* Capture / compare vectors apart from the update one:
+ * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */
+#define CH32RV_TIMER_CC_TABLE(X) \
+    X(1, CH32RV_IRQN_TIM1_CC, TIM1_CC_IRQHandler)
+
 /* ---- tone(): preferred TIM4, free of PWM pads. ---- */
 #define CH32RV_TONE_TIMER 4
 #define CH32RV_TONE_TIMER_BASE CH32RV_TIM4_BASE

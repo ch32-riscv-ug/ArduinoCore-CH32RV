@@ -574,6 +574,127 @@
     X(2, 1, 16, 4, 1, CH32RV_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32RV_IRQN_TIM2_UP, TIM2_UP_IRQHandler) \
     X(3, 2, 16, 2, 0, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler)
 
+/* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
+ * timer reaches, on every route the core can select. Fields: pad,
+ * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel
+ * 0), route: the value of the timer's AFIO remap field.
+ * A pad's entries are in the order analogWrite() tries them: its
+ * default PWM first. ---- */
+#define CH32RV_TIMER_PAD_COUNT 97
+#define CH32RV_TIMER_PADS { \
+    { PA0, 2, 0x01, 0 }, \
+    { PA0, 2, 0x01, 2 }, \
+    { PA1, 2, 0x02, 0 }, \
+    { PA1, 2, 0x02, 2 }, \
+    { PA2, 2, 0x03, 0 }, \
+    { PA2, 2, 0x03, 1 }, \
+    { PA3, 2, 0x04, 0 }, \
+    { PA3, 2, 0x04, 1 }, \
+    { PA3, 3, 0x01, 3 }, \
+    { PA4, 3, 0x02, 3 }, \
+    { PA6, 3, 0x01, 0 }, \
+    { PA6, 1, 0x20, 1 }, \
+    { PA7, 3, 0x02, 0 }, \
+    { PA7, 1, 0x11, 1 }, \
+    { PA9, 2, 0x20, 1 }, \
+    { PA9, 2, 0x20, 3 }, \
+    { PA12, 2, 0x02, 5 }, \
+    { PA12, 2, 0x11, 1 }, \
+    { PA12, 2, 0x11, 3 }, \
+    { PA13, 2, 0x03, 5 }, \
+    { PA13, 2, 0x12, 1 }, \
+    { PA13, 2, 0x12, 3 }, \
+    { PA14, 2, 0x13, 1 }, \
+    { PA14, 2, 0x13, 3 }, \
+    { PA20, 2, 0x20, 0 }, \
+    { PA20, 2, 0x20, 2 }, \
+    { PA21, 2, 0x11, 0 }, \
+    { PA22, 2, 0x12, 0 }, \
+    { PA22, 2, 0x12, 2 }, \
+    { PA23, 2, 0x13, 0 }, \
+    { PA23, 2, 0x13, 2 }, \
+    { PB0, 1, 0x12, 1 }, \
+    { PB1, 1, 0x13, 1 }, \
+    { PB3, 2, 0x03, 2 }, \
+    { PB3, 2, 0x03, 3 }, \
+    { PB3, 2, 0x13, 5 }, \
+    { PB3, 2, 0x13, 6 }, \
+    { PB4, 2, 0x04, 2 }, \
+    { PB4, 2, 0x04, 3 }, \
+    { PB4, 3, 0x01, 1 }, \
+    { PB4, 2, 0x20, 5 }, \
+    { PB4, 2, 0x20, 6 }, \
+    { PB5, 1, 0x20, 0 }, \
+    { PB5, 3, 0x02, 1 }, \
+    { PB5, 1, 0x20, 2 }, \
+    { PB6, 1, 0x11, 0 }, \
+    { PB6, 1, 0x11, 2 }, \
+    { PB7, 1, 0x12, 0 }, \
+    { PB7, 1, 0x12, 2 }, \
+    { PB8, 1, 0x13, 0 }, \
+    { PB8, 1, 0x13, 2 }, \
+    { PB9, 1, 0x01, 0 }, \
+    { PB9, 1, 0x01, 1 }, \
+    { PB9, 1, 0x01, 2 }, \
+    { PB10, 1, 0x02, 0 }, \
+    { PB10, 1, 0x02, 1 }, \
+    { PB10, 1, 0x02, 2 }, \
+    { PB11, 1, 0x03, 0 }, \
+    { PB11, 1, 0x03, 1 }, \
+    { PB11, 1, 0x03, 2 }, \
+    { PB11, 2, 0x11, 6 }, \
+    { PB12, 1, 0x04, 2 }, \
+    { PB12, 2, 0x12, 5 }, \
+    { PB12, 2, 0x12, 6 }, \
+    { PB15, 2, 0x02, 1 }, \
+    { PB15, 2, 0x02, 3 }, \
+    { PB16, 2, 0x01, 4 }, \
+    { PB17, 2, 0x02, 4 }, \
+    { PB18, 2, 0x03, 4 }, \
+    { PB19, 2, 0x04, 4 }, \
+    { PB21, 2, 0x01, 1 }, \
+    { PB21, 2, 0x01, 3 }, \
+    { PC0, 1, 0x01, 3 }, \
+    { PC0, 2, 0x04, 5 }, \
+    { PC0, 2, 0x04, 6 }, \
+    { PC0, 2, 0x20, 4 }, \
+    { PC1, 1, 0x02, 3 }, \
+    { PC1, 2, 0x11, 4 }, \
+    { PC2, 1, 0x03, 3 }, \
+    { PC2, 2, 0x12, 4 }, \
+    { PC3, 1, 0x04, 3 }, \
+    { PC3, 2, 0x11, 2 }, \
+    { PC3, 2, 0x13, 4 }, \
+    { PC4, 1, 0x20, 3 }, \
+    { PC5, 1, 0x11, 3 }, \
+    { PC6, 1, 0x12, 3 }, \
+    { PC7, 1, 0x13, 3 }, \
+    { PC14, 1, 0x03, 4 }, \
+    { PC14, 2, 0x02, 6 }, \
+    { PC15, 2, 0x03, 6 }, \
+    { PC16, 1, 0x04, 0 }, \
+    { PC16, 1, 0x04, 1 }, \
+    { PC18, 3, 0x02, 2 }, \
+    { PC18, 2, 0x11, 5 }, \
+    { PC19, 2, 0x01, 5 }, \
+    { PC19, 2, 0x01, 6 }, \
+    { PC19, 3, 0x01, 2 }, \
+}
+#define CH32RV_PWM_TIMER_MASK 0xeu
+/* The AFIO field each timer's route is written to: PCFR1 bit n,
+ * 0x80 | n for PCFR2, least significant bit first; 0xff unused. */
+#define CH32RV_TIMER_REMAP_COUNT 3
+#define CH32RV_TIMER_REMAPS { \
+    { 1, { 0x0f, 0x10, 0x11, 0xff } }, \
+    { 2, { 0x12, 0x13, 0x14, 0xff } }, \
+    { 3, { 0x15, 0x16, 0xff, 0xff } }, \
+}
+/* Capture / compare vectors apart from the update one:
+ * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */
+#define CH32RV_TIMER_CC_TABLE(X) \
+    X(1, CH32RV_IRQN_TIM1_CC, TIM1_CC_IRQHandler) \
+    X(2, CH32RV_IRQN_TIM2_CC, TIM2_CC_IRQHandler)
+
 /* ---- tone(): preferred TIM3, also a PWM timer here, so
  *      analogWrite() on PA6, PA7
  *      is disturbed while a tone plays. ---- */

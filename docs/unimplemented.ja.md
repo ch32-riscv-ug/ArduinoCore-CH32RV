@@ -40,7 +40,7 @@
 | BKP の公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。`CH32RV.get/setBackupRegister()`。H41x・X3x5 は .noinit の RAM） | 自動 | 自己（リセットをまたいで読む）。system::test_backup_registers、selfsys::test_backup_registers | libraries/CH32RV/README.ja.md |
 | WWDG | 全 12 family | 実装済み（2026-11-15、ビルドのみ。`CH32RV.wwdgEnable()`） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
 | IWDG のオプションバイト（Watchdog メニュー）の残り | V103、H41x | 2 | 自動 | 自己（書き換えと戻し） | docs/adr/0017-option-byte-menus.ja.md:21 |
-| PFIC の割込み優先度の設定 | 全系列 | 1 | 自動 | 自己（タイマー 2 本で入れ子を確かめる） | PS:38, FC:37 |
+| PFIC の割込み優先度の設定 | 全系列 | 実装済み（2026-11-17、ビルドのみ。`ch32rv_priority.h` の `ch32rv_irq_set_priority()`、コアの割り込みとの約束は CH32RV の README） | 自動 | 自己（タイマー 2 本で入れ子を確かめる）。selfapi::test_priorities | libraries/CH32RV/README.ja.md |
 | VTF（高速割込み）、割込みの入れ子、ベクタを RAM へ | 全系列 | 2 | 自動 | 自己（遅延を SysTick で測る） | EVT INT/Interrupt_VTF, INT/VectorInRAM |
 | オプションバイト（読み出し保護・書き込み保護・DATA0/1・START_MODE・STANDYRST/STOPRST・USARTDLEN 等・PORCTR・RST_PIN_SEL・CFGCANM） | 全 12 family | 2 | 自動 | 自己（読み戻し）。保護は解くとフラッシュが消えるので専用チップ | PS:69, PM:308 |
 | PMP（メモリ保護） | V20x、V30x、V4x7、L103、X035、H41x | 2 | 自動 | 自己（禁止域に触れて例外） | PS:63, PM:296 |
@@ -55,7 +55,7 @@
 | GPIO 以外の EXTI の線（PVD・USB 起床など。RTC のアラームは `CH32RV.setAlarm()` が使う） | 全系列 | 1 | 単発→自動 | 自己（RTC アラームの線）、PVD は可変電源 | PS:37, FC:36 |
 | EXTI のイベントモード（割込みでなく起床イベント） | 全系列 | 2 | 自動 | プローブ | PS:37 |
 | GPIO の速さ・駆動力の設定 | 全系列 | 2 | 自動 | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
-| PWM の remap 先・CHxN の端子 | TIM のある全系列 | 1 | 自動 | プローブ | PS:48, FC:70 |
+| PWM の remap 先・CHxN の端子 | TIM のある全系列 | 実装済み（2026-11-17、`analogWrite()` が variant の `CH32RV_TIMER_PADS` のどの端子でも。ベンチ未確認） | 自動 | プローブ。signals::test_pwm_route、test_pwm_complementary | cores/arduino/wiring_pwm.c, PS:48, FC:70 |
 | TIM8〜10 の PWM の実機 | V30x、V4x7、H41x | 2 | 自動 | プローブ | PS:48 |
 | 既定以外の route の実機（X305/X315 の Wire など） | X305/X315 ほか | 2 | 自動 | プローブ＋プルアップ | TODO:498 |
 | SD_MMC の V4x7 の remap、H41x の AF の端子 | V4x7、H41x | 2 | 単発 | SD カードの口のある板 | libraries/SD_MMC/README.ja.md:52 |
@@ -64,20 +64,20 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| 相補PWM（CHxN）・デッドタイム・ブレーキ | 全 12 family | 2 | 自動 | プローブ 2〜3 本（CHx と CHxN の重なり）。ブレーキはプローブが BKIN を動かす | PS:59, PM:280 |
+| 相補PWM（CHxN）・デッドタイム・ブレーキ | 全 12 family | 実装済み（2026-11-17、CH32RVTimerOutput の `CH32RVComplementaryPwm`。ベンチ未確認） | 自動 | プローブ 2〜3 本（CHx と CHxN の重なり）。ブレーキはプローブが BKIN を動かす。signals::test_complementary | libraries/CH32RVTimerOutput, PS:59, PM:280 |
 | 非対称デッドタイム | M030、H417 | 2 | 自動 | プローブ | UNUSED:85, EVT TIM/Dead_Asymmetry |
-| ワンパルス | 全系列 | 2 | 自動 | プローブ（トリガーを入れて幅を測る） | PS:59, EVT TIM/One_Pulse |
-| 出力比較（Output Compare） | 全系列 | 2 | 自動 | プローブ | PS:59, EVT TIM/Output_Compare_Mode |
+| ワンパルス | 全系列 | 実装済み（2026-11-17、`CH32RVOnePulse`。`fire()` と CH1/CH2 のエッジでの開始。ベンチ未確認、試験は `fire()` だけ） | 自動 | プローブ（幅を測る）。signals::test_one_pulse | libraries/CH32RVTimerOutput, PS:59, EVT TIM/One_Pulse |
+| 出力比較（Output Compare） | 全系列 | 実装済み（2026-11-17、`CH32RVOutputCompare`。ベンチ未確認） | 自動 | プローブ。signals::test_output_compare | libraries/CH32RVTimerOutput, PS:59, EVT TIM/Output_Compare_Mode |
 | 6 ステップ PWM、位相シフト PWM、中央揃え、独立出力 | V003、V103、V20x、V205、V30x、V407、M030 | 2 | 自動 | プローブ | EVT TIM/PWM_6_Step, PWM_Phase-shifted |
 | タイマーの同期・連結（マスター／スレーブ、外部トリガで開始） | 全系列 | 2 | 自動 | プローブ | UNUSED:84, TODO:301 |
 | ETR（外部クロック）・外部パルスの計数 | 全系列 | 2 | 自動 | プローブ（クロックを入れる） | PS:48, FC:69 |
 | タイマーの DMA バースト | 全系列 | 2 | 自動 | プローブ | PS:48, EVT TIM/TIM_DMA |
-| 入力捕捉: エッジごとの時刻・通知 | 全系列 | 1 | 自動 | プローブ | PS:57, FC:68 |
+| 入力捕捉: エッジごとの時刻・通知 | 全系列 | 実装済み（2026-11-17、CH32RVTimerInput の `CH32RVInputCapture`、キューか callback。ベンチ未確認） | 自動 | プローブ。signals::test_edge_capture | libraries/CH32RVTimerInput, PS:57, FC:68 |
 | 両エッジの捕捉・CAPLVL（捕捉時のレベル） | M030、H417、V003、V00x、X035、V205、L103、X315 | 2 | 自動 | プローブ | UNUSED:42,85, EVT TIM/Bothedge_Capture |
-| 入力捕捉・エンコーダの CH1/CH2 以外の端子 | 全系列 | 2 | 自動 | プローブ | PS:57-58, FC:69 |
-| `pulseIn()` のハード化 | 全系列 | 1 | 自動 | プローブ | PS:57 |
-| 利用者向けタイマー API（周期・単発・時間単位） | 全系列 | 1 | 自動 | 自己 | FC:66 |
-| Ticker 相当 | 全系列 | 1 | 自動 | 自己 | FC:67 |
+| 入力捕捉・エンコーダの CH1/CH2 以外の端子 | 全系列 | 実装済み（2026-11-17、`CH32RVInputCapture` はどのチャネル・経路でも、PulseCapture とエンコーダは remap 先も。PWM 入力モードとエンコーダモードはハードが CH1/CH2 だけ。ベンチ未確認） | 自動 | プローブ。signals::test_edge_capture | libraries/CH32RVTimerInput, PS:57-58, FC:69 |
+| `pulseIn()` のハード化 | 全系列 | 実装済み（2026-11-17、選んで使う `timerPulseIn()`（CH32RVTimerInput）。`pulseIn()` は全端子で software のまま（ユーザー 2026-11-17: 大きさを増やさない）。ベンチ未確認） | 自動 | プローブ。signals::test_timer_pulse_in | libraries/CH32RVTimerInput, PS:57 |
+| 利用者向けタイマー API（周期・単発・時間単位） | 全系列 | 実装済み（2026-11-17、arduino-esp32 3.x の `timerBegin()`・`timerAlarm()` など、`CH32RVHwTimer.h`。ベンチ未確認） | 自動 | プローブ（線を取り込む）。signals::test_hw_timer | cores/arduino/ch32rv_hw_timer.c, FC:66 |
+| Ticker 相当 | 全系列 | 実装済み（2026-11-17、Ticker ライブラリ、arduino-esp32 の API。ベンチ未確認） | 自動 | プローブ（線を取り込む）。signals::test_ticker | libraries/Ticker, FC:67 |
 | ADC をタイマーで捕捉（TIM/ADC_Capture） | M030 | 2 | 自動 | プローブ | EVT CH32M030 TIM/ADC_Capture |
 | 32 bit の TIM4 | V205、X315、L103 | 2 | 自動 | 自己 | UNUSED:85 |
 | LPTIM（休止中の計時・起床、PWM・ワンパルス） | L103、H417 | 2 | 自動 | プローブ（起床・波形） | PS:49, PM:200 |
@@ -96,7 +96,7 @@
 | ADC の平均（ADC_AVG）・高速変換 | M030、L103 | 2 | 自動 | プローブ | EVT CH32M030 ADC/ADC_AVG, CH32L103 ADC/ADC_FastConvent |
 | X315 の ADC の縦続・走査出力・注入の交互 | X305/X315 | 2 | 自動 | プローブ | EVT CH32X315 ADC/ADC_Cascade・ADC_ScanOut・ADC_InjeAlter |
 | 外付け CH448 で 384 チャネル | X305/X315 | 2 | 単発 | CH448 の板 | UNUSED:75 |
-| mV を返す `analogReadMilliVolts()` | 全系列 | 1 | 単発 | 外部の電圧源（マニュアル） | PS:46, FC:76 |
+| mV を返す `analogReadMilliVolts()` | 全系列 | 実装済み（2026-11-17、ビルドのみ。直前に Vrefint で測った電源電圧で換算。精度は未測定） | 単発（精度）。自動は広い幅だけ（selfapi::test_millivolts） | 外部の電圧源（マニュアル） | libraries/CH32RV/README.ja.md |
 | ADC の工場校正値（Get_CalibrationValue） | V20x、V30x | 2 | 単発 | 外部の電圧計（マニュアル） | TODO:499 |
 | 外部の温度チャネル | V103、V20x、V30x | 2 | 単発 | 温度センサの板 | EVT ADC/Temperature_External_channel |
 | DAC の DMA 波形・タイマートリガ・三角波・ノイズ・2 ch 同時 | V30x、V4x7、H41x | 2 | 自動 | プローブ（ADC の入力）。自己なら ADC で読み戻す | UNUSED:76, FC:77 |
@@ -120,11 +120,11 @@
 | UART の IrDA（`setMode(UART_MODE_IRDA)`、今は false） | 全系列 | 2 | 自動 | IrDA のパルスを読める相手（プローブで取り込み） | EVT の USART に例なし、RM の IREN |
 | UART 同期モード（クロック出力）・スマートカード・マルチプロセッサ（アドレス起床） | 全系列（スマートカードは V20x、V205、L103、X035） | 2 | 自動 | プローブ（同期は SPI として取り込む） | EVT USART/USART_SynchronousMode・USART_SmartCard・USART_MultiProcessorCommunication |
 | SoftwareSerial | 全系列 | 実装済み（2026-11-17、ライブラリ。ベンチ未確認） | 自動 | プローブ。uart::test_uart_software_serial | libraries/SoftwareSerial, FC:54 |
-| I2C マルチマスター | 全系列 | 1 | 自動 | プローブ 2 本でもう 1 つのマスター | FC:47, libraries/Wire/src/Wire.h:22 |
-| I2C のマスターとスレーブの兼用 | 全系列 | 1 | 自動 | プローブ（i2c-controller と i2c-target） | FC:48, libraries/Wire/src/Wire.h:21 |
-| I2C の 10 bit アドレス・General Call | 全系列 | 1 | 自動 | プローブ（i2c-target / controller が 10 bit を扱えるかは [oep] に確認） | FC:49, libraries/Wire/src/Wire.h:22-23 |
-| I2C の PEC（SMBus）・DMA | 全系列 | 2 | 自動 | プローブ | TODO:307, EVT I2C/I2C_PEC・I2C_DMA |
-| Wire の NACK・timeout・回復・clock stretch の試験 | 全系列 | 1 | 自動 | プローブ（SDA を握る相手） | TODO:27, TC:81 |
+| I2C マルチマスター | 全系列 | 実装済み（2026-11-17、Wire。負けたらバスが空くのを待ってやり直し、3 回まで、毎回負ければ 4。ベンチ未確認。わざと負ける試験はプローブで作れずスキップ） | 自動 | プローブ（i2c-controller をもう 1 つのマスターに）。wire::test_wire_controller_and_target（起きた衝突を数える）、wire::test_wire_arbitration_lost（スキップ: START を 1 ビット以内にそろえる手段が要る、[oep] への依頼はまだ） | FC:47, libraries/Wire/src/Wire.h |
+| I2C のマスターとスレーブの兼用 | 全系列 | 実装済み（2026-11-17、Wire の 1 インスタンス。SoftWire は 1 つずつ。ベンチ未確認） | 自動 | プローブ（i2c-controller と i2c-target を入れ替え）。wire::test_wire_controller_and_target | FC:48, libraries/Wire/src/Wire.h |
+| I2C の 10 bit アドレス・General Call | 全系列 | 実装済み（2026-11-17、`WIRE_10BIT`・`setGeneralCall()`、Wire と SoftWire の controller・target。ベンチ未確認） | 自動 | プローブ（i2c-controller は 7 bit の欄で 0x78〜0x7B と 0 を送れる。i2c-target は予約アドレスを断るので、controller の 10 bit はヘッダーの NACK まで）。wire::test_wire_10bit・test_wire_general_call | FC:49, libraries/Wire/src/Wire10Bit.cpp |
+| I2C の PEC（SMBus）・DMA | 全系列 | PEC は実装済み（2026-11-17、`setPEC()`、ソフトウェアの CRC-8 で Wire・SoftWire 共通。ベンチ未確認）。DMA は 2（未実装。ユーザー: 任意、2026-11-17。転送はバッファの 32 バイトまでなのでポーリングと割り込みで足りている） | 自動 | プローブ（i2c-target）。wire::test_wire_pec | FC:58, libraries/Wire/src/TwoWirePec.cpp |
+| Wire の NACK・timeout・回復・clock stretch の試験 | 全系列 | 試験を追加（2026-11-17、ベンチ未確認）。データの NACK だけはプローブで作れずスキップ | 自動 | プローブ。wire::test_wire_timeout（gpio で SCL を握る、i2c-target の stretch でタイムアウト超え）・test_wire_clock_stretch・test_wire_bus_recovery（DUT が読みの途中で止めて相手に SDA を握らせる）・test_wire_data_nack（スキップ: i2c-target に指定のバイトから NACK する設定が要る、[oep] への依頼はまだ） | TODO:27, TC:92 |
 | SoftWire のスレーブ | 全系列 | 実装済み（2026-11-17、7 台で確認。100 kHz 台まで） | 自動 | プローブ（i2c-controller）。softwire::test_wire_slave | libraries/Wire/README.ja.md, TC:87 |
 | SPI ライブラリのスレーブ（`SPI_HAS_PERIPHERAL_MODE`） | 全系列 | 実装済み（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。spi・softspi::test_spi_peripheral | libraries/SPI/README.ja.md |
 | CH32RVSPISlave の残り（DMA、ハードの NSS、上限クロック、V407・H417） | 全系列 | 2 | 自動 | プローブ（速いマスター） | PS:45, libraries/CH32RVSPISlave/README.ja.md:38,48 |
@@ -225,11 +225,11 @@
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
 | DMA の公開 API（メモリ間、ダブルバッファ、周辺へ） | 全系列 | 2 | 自動 | 自己 | PS:50, PM:201 |
-| CRC の公開 API | V103、V20x、V205、V30x、V4x7、L103、X3x5、H41x | 1 | 自動 | 自己（既知のデータ） | PS:55, PM:210 |
-| RNG の公開 API（`esp_random()`、`randomSeed()` の種） | V30x、V4x7、H41x | 1 | 自動 | 自己 | PS:115, PM:260 |
+| CRC の公開 API | V103、V20x、V205、V30x、V4x7、L103、X3x5、H41x | 実装済み（2026-11-17、ビルドのみ。`CH32RV.crc32()`、ほかの系列はソフトで同じ値） | 自動 | 自己（既知のデータ）。selfapi::test_crc | libraries/CH32RV/README.ja.md |
+| RNG の公開 API（`esp_random()`、`randomSeed()` の種） | V30x、V4x7、H41x | 実装済み（2026-11-17、ビルドのみ。`ch32rv_random()` / `ch32rv_fill_random()`、ほかの系列は暗号に使えないソフトの値。`random()` は Arduino のとおり） | 自動 | 自己。selfapi::test_rng | libraries/CH32RV/README.ja.md |
 | ECDC（AES-128/192/256、SM4、ECB・CTR） | H417 | 2 | 自動 | 自己（既知のベクトル） | PS:56, PM:211 |
 | PIOC（RISC8B の 8 bit コア） | X035、V205、H41x | 保留（ユーザー、2026-11-11: 今はやらない） | — | プローブ（1-Wire・IR・UART の波形） | PS:79, PM:215 |
-| ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 1 | 自動 | プローブ（0.35 µs の High を測る） | FC:138, PLAN:44 |
+| ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 実装済み（2026-11-17。LED 1 個は 7 系列でベンチ確認。チェーンは `ch32rv_rgb_led_write()` で 1 つのフレーム。72 MHz 以上は SysTick、それ未満は RAM の命令の数で時間を作る） | 自動 | プローブ（60 MS/s、WireSkein の rgb_led）。signals::test_rgb_led | libraries/CH32RV/README.ja.md |
 | DVP（カメラ入力） | V30x（100 ピン）、V4x7、H417 | 2 | 単発→自動 | カメラ、またはプローブが PCLK・データを出す | PS:111, PM:256 |
 | LTDC（RGB の LCD 出力） | V4x7、H417 | 2 | 単発→自動 | プローブ（取り込み）か LCD | PS:112, PM:257 |
 | GPHA（2D DMA） | H417 | 2 | 自動 | 自己（メモリ間） | PS:113, PM:258 |
