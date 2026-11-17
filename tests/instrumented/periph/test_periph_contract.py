@@ -12,6 +12,11 @@ gpio_lines), and the planned features on their role labels (tests/BENCH.ja.md §
   drives it low, then high: analogRead() is under a quarter of full scale, then over three quarters (whether it works;
   the ADC's accuracy is a manual test with an external source).
 - periph.adc-stream: CH32RVAdcStream on one or two such pads, the probe's PWM on the first (test_adc_stream).
+- periph.adc-timer-trigger: CH32RVAdcStream.beginTimer() on such a pad, the probe's PWM on it
+  (test_adc_timer_trigger).
+- periph.adc-external-trigger: CH32RVAdcStream.beginExternal() on such a pad, its trigger a labelled pad the DUT
+  names as the ADC's trigger pad, the probe pulsing it (test_adc_external_trigger).
+- periph.analog-continuous: arduino-esp32's analogContinuous() on such a pad (test_analog_continuous).
 - periph.hsadc: CH32RVHsAdc on an HSADC pad on VDDIO (PF8-PF10), the probe's PWM on it (test_hsadc).
 - periph.can / i2s / argb / rs485 / qspi: not implemented in the core. With their lines labelled the test fails,
   saying so; that is the reminder that the bench is ready for them."""
@@ -279,6 +284,278 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
             gpio.configure(rest[0][0]["channel"], Gpio.INPUT)
             core.plan_release(host, [gpio.fn])
     record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
+def adc_pads(dut, oep_host, case, n, skip_pads=()):
+    """Up to n labelled lines the DUT names as ADC channels (not the record's defects', not skip_pads):
+    [(line, channel)]."""
+    lost = {int(f.split(":")[1]) for d in case["target"].get("record", {}).get("defects", [])
+            for f in d.get("lose", []) if f.startswith("adc:")}
+    found = []
+    for candidate in gpio_lines(oep_host, case["target"]):
+        if candidate["pad"] in skip_pads:
+            continue
+        channel = int(ask(dut, f"acaps {candidate['pin']}", rb"ACAPS (-?\d+)").group(1))
+        if channel >= 0 and channel not in lost:
+            found.append((candidate, channel))
+        if len(found) == n:
+            break
+    return found
+
+
+def until(dut, ws_run, wait, command, reply, seconds):
+    """Send command, record it and its reply in the run, letting the stream be read meanwhile."""
+    ws_run.command(command)
+    dut.write(command + "\n")
+    end = time.monotonic() + seconds
+    while True:
+        try:
+            m = dut.expect(reply + rb"\r?\n", timeout=0.05)
+            break
+        except Exception:
+            assert time.monotonic() < end, f"no reply to {command!r}"
+            wait(0.05)
+    ws_run.reply(m.group(0).decode())
+    return m
+
+
+def test_adc_timer_trigger(dut, oep_host, ws_run, record_property):
+    """periph.adc-timer-trigger: CH32RVAdcStream.beginTimer() - one conversion per tick of a timer the core takes from
+    the family's ADC trigger sources - on a labelled ADC pad, the probe's PWM on it at 1/40 of the rate (40 samples a
+    period), at 20 kHz and at 2 kHz (below every family's free-running floor: 47,600 a second on V307 is the lowest
+    measured, CH32RVAdcStream's README). One capture of the line, a WireSkein section per condition judging the
+    stimulus (becomes); compared here, from what the DUT reports (ATIMER):
+    - the rate the timer made (sampleRate(): its clock over its divisions) within 0.1 % of the rate asked: a timer
+      clock of 48 MHz or more divides 20 kHz into 2,400 ticks at least, so the rounding of the divisions is 0.02 %;
+    - the conversions the DUT counted (conversions()) over its own micros() between two halves' ends within 0.5 % +
+      2 conversions of that rate: both on the DUT's clock, so only the window's ends (a poll of readBuffer(), tens of
+      microseconds in at least 0.2 s) and the count's ends move it - a timer that does not trigger every round, or
+      triggers more, is far outside;
+    - the probe's wave seen in the samples: its frequency (rate x rises / rounds between the first and last rise)
+      within 3 % of the probe's (the DUT's clock against the probe's, as adc-stream), its duty within 1/40 + 0.01
+      (one sample of a period; the wave and the ticks keep nearly the same phase) of the probe's; no overrun."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import becomes
+    case = settings(__file__)
+    ready(dut, case)
+    found = adc_pads(dut, oep_host, case, 1)
+    if not found:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    (wave, wave_ch), = found
+    record_property("line", f"{wave['pad']} channel {wave_ch}")
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(wave["channel"]))
+    conditions = [(20000, 0.5, 16), (2000, 0.25, 12)]      # (rate, the wave's duty, halves read)
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"adc timer trigger {wave['pad']}"):
+            for rate, duty, halves in conditions:
+                hz = rate / 40
+                name = f"{rate} Hz, wave {hz:g} Hz duty {duty}"
+                want = [becomes(wave["pad"], freq_hz=hz, duty=duty, irregular_max=3, min_periods=20, duty_abs=0.01)]
+                with ws_run.section(2, name, expect=want):
+                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    wait(0.05)
+                    m = until(dut, ws_run, wait, f"atimer {rate} {halves} {wave['pin']}", rb"ATIMER ([\d ]+)", 8)
+                    v = [int(x) for x in m.group(1).split()]
+                    if v[0] == 0:
+                        wrong.append(f"{name}: beginTimer() refused")
+                        continue
+                    _, got, timer, step, overruns, rounds, high, low, rises, first, last, conv, us = v
+                    got_hz = got * (rises - 1) / (last - first) if rises > 1 and last > first else 0.0
+                    got_duty = high / (high + low) if high + low else 0.0
+                    dut_rate = conv * 1e6 / us if us else 0.0
+                    probe_duty = made.duty / Pwm.FULL
+                    results[name] = dict(rate=got, timer=timer, step=step, rounds=rounds, conversions=conv, us=us,
+                                         dut_rate=round(dut_rate, 2), hz=round(got_hz, 3), duty=round(got_duty, 4),
+                                         overruns=overruns, probe_hz=made.hz, probe_duty=probe_duty)
+                    if abs(got - rate) > rate * 0.001:
+                        wrong.append(f"{name}: the timer made {got} Hz")
+                    if not us or abs(dut_rate - got) > got * 0.005 + 2e6 / us:
+                        wrong.append(f"{name}: {conv} conversions in {us} us ({dut_rate:.1f} a second) at {got} Hz")
+                    if abs(got_hz / made.hz - 1) > 0.03:
+                        wrong.append(f"{name}: {got_hz:.2f} Hz from the samples, the probe makes {made.hz:.2f}")
+                    if abs(got_duty - probe_duty) > 1 / 40 + 0.01:
+                        wrong.append(f"{name}: duty {got_duty:.3f} from the samples, the probe makes {probe_duty:.3f}")
+                    if overruns:
+                        wrong.append(f"{name}: {overruns} overruns")
+                    wait(0.02)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [wave], rate=100_000, steps=steps)
+    finally:
+        pwm.stop(0)
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
+EXT_PATTERN = [1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0]
+
+
+def test_adc_external_trigger(dut, oep_host, ws_run, record_property):
+    """periph.adc-external-trigger: CH32RVAdcStream.beginExternal() - one conversion per edge of the family's
+    trigger pad (any pad of bit 11 on most families, bit 12 on X305 / X315, PD3 / PC2 on V00x, PA14 / PB6 on M030:
+    the DUT says, tcaps) - with a labelled trigger pad and a labelled ADC pad beside it. One capture of both lines,
+    a WireSkein section per condition judging the stimulus: the trigger's 16 pulses (pulses), the PWM (becomes).
+    - For RISING, FALLING and CHANGE: the probe sets the ADC pad to the next level of a 16-bit pattern, then pulses
+      the trigger (high, low), 16 times. The DUT's conversions are exactly 16 (32 for CHANGE: both edges of a
+      pulse) and their levels the pattern (each twice for CHANGE): one conversion per edge, of the level at it - an
+      edge missed, a conversion more, or one at another time shows. Over 3/4 of full scale high, under 1/4 low, as
+      adc.
+    - The probe's PWM at 1 kHz on the trigger, the ADC pad high: the conversions the DUT counts over 500 ms of its
+      micros() at the probe's frequency within 3 % (the DUT's clock against the probe's, as adc-stream), every one
+      of the first 64 high."""
+    from oep_client import core
+    from oep_client.fixture import Gpio, Pwm
+    from wireskein.runlog import becomes, pulses
+    case = settings(__file__)
+    ready(dut, case)
+    trigger = None
+    for candidate in gpio_lines(oep_host, case["target"]):
+        if ask(dut, f"tcaps {candidate['pin']}", rb"TCAPS (\d)").group(1) == b"1":
+            trigger = candidate
+            break
+    if trigger is None:
+        pytest.skip("no labelled <port>@<pad> line is the ADC's trigger pad (the DUT names none, tcaps)")
+    found = adc_pads(dut, oep_host, case, 1, skip_pads={trigger["pad"]})
+    if not found:
+        pytest.skip(f"no labelled <port>@<pad> line beside the trigger {trigger['pad']} is an ADC channel")
+    (adc, adc_ch), = found
+    record_property("lines", f"trigger {trigger['pad']}, ADC {adc['pad']} channel {adc_ch}")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, trigger["channel"]), (gpio.fn, 1, adc["channel"])])
+    gpio.configure(trigger["channel"], Gpio.OUTPUT_LOW)
+    gpio.configure(adc["channel"], Gpio.OUTPUT_LOW)
+    results, wrong = {}, []
+    pwm = Pwm(host)
+
+    def steps(wait):
+        with ws_run.section(1, f"adc external trigger {trigger['pad']} -> {adc['pad']}"):
+            for edge, name, per_pulse in ((4, "rising", 1), (3, "falling", 1), (2, "change", 2)):
+                with ws_run.section(2, name, expect=[pulses(trigger["pad"], count=len(EXT_PATTERN))]):
+                    m = until(dut, ws_run, wait, f"aext {trigger['pin']} {edge} {adc['pin']}", rb"AEXT (\d)", 5)
+                    if m.group(1) != b"1":
+                        wrong.append(f"{name}: beginExternal() refused")
+                        continue
+                    for bit in EXT_PATTERN:
+                        gpio.configure(adc["channel"], Gpio.OUTPUT_HIGH if bit else Gpio.OUTPUT_LOW)
+                        wait(0.002)
+                        gpio.configure(trigger["channel"], Gpio.OUTPUT_HIGH)
+                        wait(0.002)
+                        gpio.configure(trigger["channel"], Gpio.OUTPUT_LOW)
+                        wait(0.002)
+                    wait(0.02)
+                    m = until(dut, ws_run, wait, "aextread", rb"AEXTREAD (\d+) (\S+)", 5)
+                    until(dut, ws_run, wait, "aextstop", rb"AEXTSTOP", 5)
+                    n, levels = int(m.group(1)), m.group(2).decode()
+                    want = "".join(("H" if bit else "L") * per_pulse for bit in EXT_PATTERN)
+                    results[name] = dict(conversions=n, levels=levels, want=want)
+                    if n != len(want) or levels != want:
+                        wrong.append(f"{name}: {n} conversions reading {levels}, want {len(want)} reading {want}")
+            gpio.configure(adc["channel"], Gpio.OUTPUT_HIGH)
+            core.plan_release(host, [gpio.fn])
+            core.plan_apply(host, pwm.assignments(trigger["channel"]))
+            core.plan_apply(host, [(gpio.fn, 1, adc["channel"])])
+            gpio.configure(adc["channel"], Gpio.OUTPUT_HIGH)
+            want = [becomes(trigger["pad"], freq_hz=1000, duty=0.5, irregular_max=3, min_periods=20, duty_abs=0.02)]
+            with ws_run.section(2, "rate 1 kHz", expect=want):
+                m = until(dut, ws_run, wait, f"aext {trigger['pin']} 4 {adc['pin']} 1000", rb"AEXT (\d)", 5)
+                made = pwm.start(0, 1000, Pwm.FULL // 2)
+                wait(0.1)
+                r = until(dut, ws_run, wait, "aextrate 500", rb"AEXTRATE (\d+) (\d+)", 5)
+                lv = until(dut, ws_run, wait, "aextread", rb"AEXTREAD (\d+) (\S+)", 5)
+                until(dut, ws_run, wait, "aextstop", rb"AEXTSTOP", 5)
+                n, us = int(r.group(1)), int(r.group(2))
+                got = n * 1e6 / us if us else 0.0
+                levels = lv.group(2).decode()
+                results["rate"] = dict(conversions=n, us=us, rate=round(got, 2), probe_hz=made.hz, levels=levels)
+                if m.group(1) != b"1":
+                    wrong.append("rate: beginExternal() refused")
+                elif abs(got / made.hz - 1) > 0.03:
+                    wrong.append(f"rate: {n} conversions in {us} us ({got:.1f} a second), the probe makes {made.hz:.1f} Hz")
+                if levels.strip("H"):
+                    wrong.append(f"rate: the ADC pad held high read {levels}")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [trigger, adc], rate=100_000, steps=steps)
+    finally:
+        pwm.stop(0)
+        for fn in (pwm.fn, gpio.fn):
+            try:
+                core.plan_release(host, [fn])
+            except Exception:
+                pass
+        gpio.configure(trigger["channel"], Gpio.INPUT)
+        gpio.configure(adc["channel"], Gpio.INPUT)
+        core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
+def test_analog_continuous(dut, oep_host, ws_run, record_property):
+    """periph.analog-continuous: arduino-esp32's analogContinuous() on a labelled ADC pad at 10,000 conversions a
+    second, frames of 100 (a frame every 10 ms), 10 frames waited for, the probe holding the pad low, then high; one
+    capture of the line, a section per level (becomes: the level). Compared here, from what the DUT reports (ACONT):
+    the frames counted (the callback) at least 10; the time between the first frame's callback and the last's,
+    over the frames between them, within 0.5 % + 50 us of 10 ms (the timer's pace on the DUT's own clock: the
+    callbacks' latency is microseconds); the average under 1/4 of full scale low and over 3/4 high (as adc), and
+    its mV higher high than low (the mV's accuracy is a manual test). V003's build leaves it out (ACONT 0 there,
+    skipped)."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import becomes
+    case = settings(__file__)
+    ready(dut, case)
+    found = adc_pads(dut, oep_host, case, 1)
+    if not found:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    (line, channel), = found
+    record_property("line", f"{line['pad']} channel {channel}")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
+    gpio.configure(line["channel"], Gpio.OUTPUT_HIGH)
+    results, wrong, skipped = {}, [], []
+
+    def steps(wait):
+        with ws_run.section(1, f"analog continuous {line['pad']}"):
+            for level in (0, 1):
+                with ws_run.section(2, f"level {level}", expect=[becomes(line["pad"], level=level)]):
+                    gpio.configure(line["channel"], Gpio.OUTPUT_HIGH if level else Gpio.OUTPUT_LOW)
+                    wait(0.02)
+                    m = until(dut, ws_run, wait, f"acont 10000 100 10 {line['pin']}", rb"ACONT ([-\d ]+)", 8)
+                    v = [int(x) for x in m.group(1).split()]
+                    if v[0] == 0:
+                        skipped.append("analogContinuous() refused or not in this build")
+                        return
+                    _, frames, span, raw, mv, full = v
+                    period = span / (frames - 1) if frames > 1 else 0.0
+                    results[level] = dict(frames=frames, span_us=span, period_us=round(period, 1), raw=raw, mv=mv,
+                                          full=full)
+                    if frames < 10:
+                        wrong.append(f"level {level}: {frames} frames")
+                    elif abs(period - 10000) > 10000 * 0.005 + 50:
+                        wrong.append(f"level {level}: a frame every {period:.1f} us, want 10000")
+                    if (level and raw <= full * 3 / 4) or (not level and raw >= full / 4):
+                        wrong.append(f"level {level}: the average reads {raw} of {full}")
+                    wait(0.02)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [line], rate=100_000, steps=steps)
+    finally:
+        gpio.configure(line["channel"], Gpio.INPUT)
+        core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(results))
+    if skipped:
+        pytest.skip(skipped[0])
+    if 0 in results and 1 in results and results[1]["mv"] <= results[0]["mv"]:
+        wrong.append(f"mV high {results[1]['mv']} not above low {results[0]['mv']}")
     assert not wrong, " | ".join(wrong)
 
 

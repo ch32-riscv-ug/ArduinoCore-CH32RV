@@ -230,6 +230,7 @@ to any library, so their examples are here. Every one of them:
 | [Blink](examples/Blink/README.md) | `pinMode`, `digitalWrite`, `delay` |
 | [SerialEcho](examples/SerialEcho/README.md) | `Serial` in and out |
 | [AnalogRead](examples/AnalogRead/README.md) | `analogRead`, `analogReadMilliVolts` |
+| [AnalogContinuous](examples/AnalogContinuous/README.md) | `analogContinuous`, `analogContinuousRead` (arduino-esp32's continuous ADC API) |
 | [Fade](examples/Fade/README.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.md) | `tone`, `noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |

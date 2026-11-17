@@ -5,3 +5,8 @@ overruns	KEYWORD2
 buffersFilled	KEYWORD2
 sampleRate	KEYWORD2
 sampleTimeStep	KEYWORD2
+beginTimer	KEYWORD2
+beginExternal	KEYWORD2
+isExternalTriggerPin	KEYWORD2
+conversions	KEYWORD2
+triggerTimer	KEYWORD2

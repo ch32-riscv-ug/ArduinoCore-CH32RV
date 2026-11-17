@@ -13,3 +13,4 @@ Families whose ADC1 DMA request is DMA1 channel 1 ([library README](../README.md
 | Example | What it teaches |
 |---|---|
 | [AdcStreamStats](AdcStreamStats/README.md) | Capture one pin continuously and take each full half to summarise it. |
+| [AdcTriggered](AdcTriggered/README.md) | Convert a pin on a timer's tick, then on another pin's edge, and see each conversion land (`conversions()`). |

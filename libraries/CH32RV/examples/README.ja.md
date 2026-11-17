@@ -30,6 +30,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [Blink](Blink/README.ja.md) | GPIO を High/Low に切り替え、スケッチが実行されることを LED で確認します。 |
 | [SerialEcho](SerialEcho/README.ja.md) | ハードウェア UART で行を受け取り、前後の空白を除いて返信します。 |
 | [AnalogRead](AnalogRead/README.ja.md) | アナログ入力の生値と mV 単位の電圧を UART で観察します。 |
+| [AnalogContinuous](AnalogContinuous/README.ja.md) | arduino-esp32 の連続 ADC の API（`analogContinuous()`）で、ADC が自分で埋めるフレームごとに平均します。 |
 | [InternalAnalogRead](InternalAnalogRead/README.ja.md) | 内部の基準電圧・電源電圧・チップの温度を読みます。 |
 | [AnalogResolution](AnalogResolution/README.ja.md) | ADC と PWM の数値のスケールを変える使い方を示します。 |
 | [Fade](Fade/README.ja.md) | PWM の duty を変えて LED の明るさを連続的に変えます。 |

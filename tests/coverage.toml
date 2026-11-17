@@ -674,6 +674,24 @@ scope = "series"
 needs = ["ADC1"]
 
 [[item]]
+id = "adc-timer-trigger"    # one ADC round per tick of a timer (CH32RVAdcStream.beginTimer(): the family's trigger timers)
+test = "periph::test_adc_timer_trigger"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
+id = "adc-external-trigger" # one ADC round per edge of the family's trigger pad (CH32RVAdcStream.beginExternal())
+test = "periph::test_adc_external_trigger"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
+id = "analog-continuous"    # analogContinuous() (arduino-esp32's continuous ADC on a timer)
+test = "periph::test_analog_continuous"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
 id = "hs-adc"               # CH32RVHsAdc
 test = "periph::test_hsadc"
 scope = "series"

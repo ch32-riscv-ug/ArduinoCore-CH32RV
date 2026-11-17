@@ -13,3 +13,4 @@ ADC1 の DMA が DMA1 のチャネル 1 の系列で動きます（[ライブラ
 | 例 | 学ぶこと |
 |---|---|
 | [AdcStreamStats](AdcStreamStats/README.ja.md) | 1 本の端子を連続して取り込み、埋まった半分を受け取って集計します。 |
+| [AdcTriggered](AdcTriggered/README.ja.md) | 端子をタイマーの刻みで、次に別の端子の縁で変換し、1 回ずつの変換を見ます（`conversions()`）。 |

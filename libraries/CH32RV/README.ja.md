@@ -202,6 +202,7 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
 | [Blink](examples/Blink/README.ja.md) | `pinMode`・`digitalWrite`・`delay` |
 | [SerialEcho](examples/SerialEcho/README.ja.md) | `Serial`の入出力 |
 | [AnalogRead](examples/AnalogRead/README.ja.md) | `analogRead`・`analogReadMilliVolts` |
+| [AnalogContinuous](examples/AnalogContinuous/README.ja.md) | `analogContinuous`・`analogContinuousRead`（arduino-esp32 の連続 ADC の API） |
 | [Fade](examples/Fade/README.ja.md) | `analogWrite` |
 | [ToneMelody](examples/ToneMelody/README.ja.md) | `tone`・`noTone` |
 | [PinInterrupt](examples/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |

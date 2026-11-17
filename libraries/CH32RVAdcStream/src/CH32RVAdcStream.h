@@ -22,9 +22,21 @@
  * longest sample time, and nothing slower is possible this way - about 47,600
  * conversions per second on a CH32V307 at 96 MHz, 250,000 on a CH32X035,
  * 99,000 on a CH32V407 at 200 MHz, 198,000 on a CH32H417 (measured
- * 2026-10-27). Ask for less and
- * the slowest step is what you get; for a slow steady rate, take every n-th
- * value or use analogRead() from a timer.
+ * 2026-10-27). Ask for less and the slowest step is what you get.
+ *
+ * Triggered instead, a round waits for an event:
+ *   - beginTimer(): a timer of the family's ADC trigger sources (TIM3's TRGO,
+ *     TIM2's, a channel's compare - ch32rv_adc_trigger.h; taken through the
+ *     timer manager, so false when none is free) ticks at the rate asked for,
+ *     exact within its divisions of its clock and down to fractions of a
+ *     hertz; the sample time is the longest that converts a round in 80 % of
+ *     a tick.
+ *   - beginExternal(): each edge (RISING, FALLING or CHANGE) of a pad that is
+ *     the family's external trigger - any pad of bit 11 (bit 12 on X305 /
+ *     X315) on most families, PD3 or PC2 on V00x, PA14 or PB6 on M030
+ *     (isExternalTriggerPin()).
+ * conversions() counts the rounds done since startContinuous(), so a sketch
+ * can see each one land without waiting for a half to fill.
  *
  * Several pins (up to six) are converted in turn, one round per sample:
  * the buffer then holds pin 0, pin 1, ... pin 0, pin 1, ..., and
@@ -41,6 +53,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include "internal/ch32rv_adc_trigger.h"
 
 class CH32RVAdcStream {
 public:
@@ -51,7 +64,23 @@ public:
      * Re-callable to change pins or rate. */
     bool begin(pin_size_t pin, uint32_t rate);
     bool begin(const pin_size_t *pins, uint8_t count, uint32_t rate);
-    /* Stops a capture and gives the ADC back to analogRead(). */
+    /* One round per tick of a timer at `rate` rounds per second. False when a
+     * pin is no ADC1 input, no trigger timer is free, or none reaches the
+     * rate (0, or faster than its clock). */
+    bool beginTimer(pin_size_t pin, uint32_t rate);
+    bool beginTimer(const pin_size_t *pins, uint8_t count, uint32_t rate);
+    /* One round per edge of `triggerPin` (`edge` RISING, FALLING or CHANGE).
+     * `maxRate`: the most edges a second expected, for the sample time (the
+     * longest that converts a round in 80 % of their period); 0 takes the
+     * longest. False when a pin is no ADC1 input or `triggerPin` no trigger
+     * pad. */
+    bool beginExternal(pin_size_t pin, pin_size_t triggerPin, PinStatus edge, uint32_t maxRate = 0);
+    bool beginExternal(const pin_size_t *pins, uint8_t count, pin_size_t triggerPin, PinStatus edge,
+                       uint32_t maxRate = 0);
+    /* Whether `pin` can be beginExternal()'s trigger on this part. */
+    static bool isExternalTriggerPin(pin_size_t pin) { return ch32rv_adc_pin_trigger_valid(pin); }
+    /* Stops a capture, frees the timer or the trigger pad, and gives the ADC
+     * back to analogRead(). */
     void end();
 
     /* `buffer` holds 2 * `samples` values (with several pins, a multiple of
@@ -68,23 +97,36 @@ public:
     uint32_t overruns() const { return _overruns; }
     /* Halves filled since startContinuous(). */
     uint32_t buffersFilled() const { return _filled; }
+    /* Rounds converted since startContinuous(): round n is at
+     * buffer[(n * pins) % (2 * samples)]. */
+    uint32_t conversions() const;
 
-    /* Rounds per second at the step begin() chose (measured), 0 before. */
+    /* Rounds per second: at the step begin() chose (measured), or the
+     * timer's (its clock over its divisions, rounded); 0 before, and with an
+     * external trigger. */
     uint32_t sampleRate() const { return _rate; }
-    /* The sample-time step 0 (fastest) .. 7 begin() chose. */
+    /* The sample-time step 0 (fastest) .. 7 chosen. */
     uint8_t sampleTimeStep() const { return _step; }
-
-    /* For the interrupt handler. */
-    void isr();
+    /* The timer beginTimer() took (its number), 0 otherwise. */
+    uint8_t triggerTimer() const;
 
 private:
-    bool configure(uint8_t step);
-    uint32_t measure(uint8_t step);
+    enum : uint8_t { TRIGGER_STOP, TRIGGER_START, TRIGGER_END };
+    bool prepare(const pin_size_t *pins, uint8_t count);
+    uint8_t longestStep(uint32_t rate);
+    static void handler(void *self, uint32_t flags);
+    static void timerControl(CH32RVAdcStream *self, uint8_t op);
+    static void pinControl(CH32RVAdcStream *self, uint8_t op);
 
     uint8_t _channels[MAX_PINS] = {};
     uint8_t _count = 0, _step = 0;
     uint32_t _rate = 0;
     bool _begun = false, _running = false;
+    uint8_t _trigger = 0;               /* a triggered stream's EXTSEL value */
+    pin_size_t _triggerPin = 0;
+    /* The trigger's set-up, only where beginTimer() / beginExternal() set it:
+     * a free-running stream links none of it. */
+    void (*_control)(CH32RVAdcStream *, uint8_t) = nullptr;
     uint16_t *_buf = nullptr;
     uint16_t _samples = 0;
     volatile uint8_t _ready = 0;        /* bit n: half n full and not yet taken */

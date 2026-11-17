@@ -25,7 +25,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | A USB device connected to a PC | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/examples/README.md) | SerialUSBEcho → class examples |
 | USB peripherals connected to the board | [CH32RVUsbHost](../libraries/CH32RVUsbHost/examples/README.md) | DeviceInfo → class examples |
 | Type-C power negotiation | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.md) | ListProfiles / CycleVoltages |
-| Continuous ADC capture | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.md) | AdcStreamStats |
+| Continuous ADC capture, on a timer or a pin's edge | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.md) | AdcStreamStats → AdcTriggered |
 | High-speed ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.md) | HsAdcRead → HsAdcStream |
 | Timer inputs (period, pulse width, encoders, edge times) | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.md) | PulseMeasure / RotaryEncoder / EdgeTimes |
 | Timer outputs (complementary PWM, dead time, break, one pulse, output compare) | [CH32RVTimerOutput](../libraries/CH32RVTimerOutput/README.md) | HalfBridge / OnePulse |

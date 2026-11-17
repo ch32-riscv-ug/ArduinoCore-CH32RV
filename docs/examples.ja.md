@@ -26,7 +26,7 @@
 | PC につなぐ USB 機器 | [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/examples/README.ja.md) | SerialUSBEcho → 目的のクラス |
 | ボードへ USB 機器をつなぐ | [CH32RVUsbHost](../libraries/CH32RVUsbHost/examples/README.ja.md) | DeviceInfo → 目的のクラス |
 | USB-C 電源の交渉 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/examples/README.ja.md) | ListProfiles / CycleVoltages |
-| ADC の連続取り込み | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.ja.md) | AdcStreamStats |
+| ADC の連続取り込み、タイマー・端子の縁で | [CH32RVAdcStream](../libraries/CH32RVAdcStream/README.ja.md) | AdcStreamStats → AdcTriggered |
 | 高速 ADC | [CH32RVHsAdc](../libraries/CH32RVHsAdc/README.ja.md) | HsAdcRead → HsAdcStream |
 | タイマーの入力（周期・パルス幅、エンコーダ、エッジの時刻） | [CH32RVTimerInput](../libraries/CH32RVTimerInput/README.ja.md) | PulseMeasure / RotaryEncoder / EdgeTimes |
 | タイマーの出力（相補 PWM・デッドタイム・ブレーキ、ワンパルス、出力比較） | [CH32RVTimerOutput](../libraries/CH32RVTimerOutput/README.ja.md) | HalfBridge / OnePulse |

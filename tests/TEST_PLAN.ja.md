@@ -299,6 +299,8 @@ Type-C（OTG）。
 | 試験 | 状態 | 要るもの |
 |---|---|---|
 | periph.hsadc | H417 で流れて落ちる。常駐の H417 は HSADC の端子に線が無い | PF8〜PF10 のどれかに`<口>@<端子>`の線（PC0〜PC3 は VIO18 側なので使わない）。TODO |
+| periph.adc-timer-trigger / analog-continuous | 未実行（2026-11-17 に追加、ビルドのみ） | adc と同じ ADC の線 1 本 |
+| periph.adc-external-trigger | 未実行（2026-11-17 に追加、ビルドのみ） | ADC の線に加え、ADC のトリガの端子への`<口>@<端子>`の線（多くの系列はビット 11 の端子、X305/X315 はビット 12、V00x は PD3 か PC2、M030 は PA14 か PB6。DUT が tcaps で答える）。今のラベルにあるかは未確認 |
 | pd | どの台でも未実行 | 常駐ベンチの PD の配線。TODO |
 | wire.repeated-start（ハードの Wire、H417） | 6-2 で落ちる（H417 の SDA の保持とプローブの入力）。SoftWire は通る | TODO |
 | USBSS の対向 | 試験が無い | ホストの実装と対向の配線。TODO |

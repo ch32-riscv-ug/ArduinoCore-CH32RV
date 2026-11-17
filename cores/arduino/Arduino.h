@@ -236,6 +236,42 @@ void touchSetCycles(uint16_t measure, uint16_t sleep);
 /* The supply (VDDA) in mV, measured against Vrefint; 0 where unknown.
  * CH32RV.getVddMillivolts() is the same thing. */
 uint32_t ch32rv_adc_vdd_millivolts(void);
+/* arduino-esp32's ADC continuous mode, on ADC1 (ch32rv_adc_continuous.c):
+ * analogContinuous() sets up the pins (up to 16 ADC1 inputs), a frame of
+ * conversions_per_pin rounds and the pace - sampling_freq_hz conversions a
+ * second over all the pins, one round of them per tick of a timer the core
+ * takes (CH32RVTimer.h; false when none is free) - and the function called
+ * from the interrupt as each frame fills (or NULL).
+ * analogContinuousStart() / Stop() run and pause it; analogContinuousRead()
+ * waits up to timeout_ms for a frame and gives each pin's average over the
+ * newest one (raw at analogContinuousSetWidth()'s width, the ADC's own by
+ * default, and in mV against the supply measured at analogContinuous());
+ * analogContinuousDeinit() frees the timer and gives the ADC back to
+ * analogRead(), which must not be used in between. The ADC has no
+ * attenuator: analogContinuousSetAtten() is accepted and does nothing. For
+ * the samples themselves, a trigger on a pad's edge, or a free-running ADC,
+ * see CH32RVAdcStream. */
+typedef struct {
+    uint8_t pin;          /* ADC pin */
+    uint8_t channel;      /* ADC channel */
+    int avg_read_raw;     /* ADC average raw data */
+    int avg_read_mvolts;  /* ADC average voltage in mV */
+} adc_continuous_result_t;
+typedef enum {
+    ADC_0db,
+    ADC_2_5db,
+    ADC_6db,
+    ADC_11db,
+    ADC_ATTENDB_MAX
+} adc_attenuation_t;
+bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversions_per_pin,
+                      uint32_t sampling_freq_hz, void (*userFunc)(void));
+bool analogContinuousRead(adc_continuous_result_t **buffer, uint32_t timeout_ms);
+bool analogContinuousStart(void);
+bool analogContinuousStop(void);
+bool analogContinuousDeinit(void);
+void analogContinuousSetAtten(adc_attenuation_t attenuation);
+void analogContinuousSetWidth(uint8_t bits);
 /* arduino-esp32's: the PWM frequency analogWrite() uses from now on, in Hz
  * (default 1000). A timer is shared by its channels, so the pads on the same
  * timer follow at their next analogWrite(), as LEDC channels on one timer do
