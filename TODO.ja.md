@@ -258,10 +258,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   （2026-11-17、core-20261117T113312Z-1e9ba3eb）。見逃した試験の側も直した: periph の test_adc が、プローブが High に
   した端子を満点で読むとき、DUT の VDD（Vrefint から）が 3.3 V × 1.2 を超えないことを見る（V003 3248、V203 3334、
   H417 3350 mV で通る、core-20261117T114148Z-8b102885）。
-- [ ] CH32X315 の ADC: コアの初期化が CTLR2 を丸ごと書き、CAL_AUTO（ビット 6、リセット値 1 = ハードの自動校正）を
-  0 にしている（CH32X315RM の ADC_CTLR2）。X315 の Vrefint・VDD の読みが正しいかを測り、要るなら CAL_AUTO を保つ。
-  2026-11-17 に測った: CAL_AUTO 0 のまま Vrefint 1527〜1536 / 4095、VDD 3199〜3218 mV（LinkE の 3.3 V 給電として
-  それらしい）。V003 は VDD がそれらしく見えずに外れていたので、別の基準（プローブが駆動した既知の電圧）で確かめるまで残す。
+- [x] CH32X315 の ADC: コアの初期化が CTLR2 を丸ごと書き、CAL_AUTO（ビット 6、リセット値 1 = ハードの自動校正）を
+  0 にしていた。EVT の ADC_Init は残す（CTLR2_CLEAR_Mask）ので、V003 の CTLR1 と同じく CH32RV_ADC_CTLR2_RESET で保つ
+  （2026-11-18）。読みは変わらない: 0 のとき VDD 3199〜3218 mV、1 で 3212 mV、自分で High にした端子 3204〜3208 mV
+  （selfapi、core-20261117T222121Z-64fc1f32）。精度そのものは外の電圧源の手作業の試験（ADC の精度はマニュアル）。
 - [x] H41x の flash の 480K モード（DBMODE が立っていない）では消去の単位が 4 KB なのに、`ch32rv_flash_erase()` は
   8 KB 刻みで進み、半分を消し残していた（2026-11-17、コードを読んで見つけた）。単位はどちらのモードでも 8 KB にし、
   480K では 4 KB のセクタを 2 つ消す（erase_one）。`ch32rv_flash_erase_size()` は 8 KB を返す（480K で 4 KB を返して

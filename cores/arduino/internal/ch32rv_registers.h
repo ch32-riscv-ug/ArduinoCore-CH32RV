@@ -538,6 +538,14 @@ static inline void ch32rv_irq_disable(uint32_t irqn)
 #else
 #define CH32RV_ADC_CTLR1_RESET 0u
 #endif
+/* What ADC_CTLR2 holds besides the fields the core sets. CH32X305 / X315:
+ * CAL_AUTO (bit 6, the hardware's automatic calibration) at its reset value 1,
+ * which the EVT's ADC_Init keeps (CTLR2_CLEAR_Mask 0xFCF1F7FD). */
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_ADC_CTLR2_RESET (1u << 6)
+#else
+#define CH32RV_ADC_CTLR2_RESET 0u
+#endif
 #define CH32RV_ADC_CTLR2_SWSTART (1u << 22)
 /* RCC_CFGR0 ADCPRE: 00=/2 01=/4 10=/6 11=/8 (the families that have it; the
  * ceiling ADCCLK must stay under is CH32RV_ADC_MAX_HZ from boards.txt). */

@@ -129,7 +129,7 @@ static void ch32rv_adc_begin(uint8_t index)
     CH32RV_ADC_CTLR1_AT(base) = CH32RV_ADC_CTLR1_RESET;
     /* Software trigger: EXTSEL = SWSTART, with the external trigger enabled. */
     CH32RV_ADC_CTLR2_AT(base) = CH32RV_ADC_CTLR2_EXTSEL_SWSTART |
-                              CH32RV_ADC_CTLR2_EXTTRIG;
+                              CH32RV_ADC_CTLR2_EXTTRIG | CH32RV_ADC_CTLR2_RESET;
 
     CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_CTLR2_ADON;
     for (volatile int settle = 0; settle < 1000; settle++) {
