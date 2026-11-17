@@ -50,9 +50,11 @@
  *
  * Runs on CH32X035 R8T6 / C8T6 / G8U6 / G8R6 (USBFS, PC16/PC17; the F8U6,
  * F7P6, D8U6 and the X033 have no host in silicon), CH32V203/V208 (USBFS,
- * PB6/PB7), and CH32V303/V305/V307/V317, V205, L103/M103, M030 and H41x
- * (USBFS, PA11/PA12), and on the second-generation USBHS at high speed (CH32V407/V467: USBHS1 by default,
- * USBHS2 as HIGH_SPEED_2; X305/X315 by default; V205 and H41x as HIGH_SPEED - CH32RVUsbHostConfig::port),
+ * PB6/PB7), CH32V103 (its older USB IP, PA11/PA12), and CH32V303/V305/V307/V317, V205, L103/M103, M030 and H41x
+ * (USBFS, PA11/PA12), on the first-generation USBHS of V305/V307/V317 as HIGH_SPEED (PB6/PB7, needs HSE),
+ * and on the second-generation USBHS at high speed (CH32V407/V467: USBHS1 by default,
+ * USBHS2 as HIGH_SPEED_2; X305/X315 by default; V205 and H41x as HIGH_SPEED - CH32RVUsbHostConfig::port;
+ * full- and low-speed devices behind a high-speed hub by split transactions there),
  * and on the USBSS of H417/H416 at SuperSpeed (SUPER_SPEED; implemented, not yet tested on hardware);
  * begin() reports Unsupported elsewhere. The board supplies VBUS to the device - the chip cannot switch it.
  */
@@ -91,6 +93,8 @@ enum CH32RVUsbHostPort : uint8_t {
 struct CH32RVUsbHostConfig {
     CH32RVUsbHostPort port = CH32RV_USB_HOST_PORT_DEFAULT;
 };
+
+#include "CH32RVUsbHostPort.h"
 
 #define CH32RV_USB_HOST_MOUSE_LEFT    0x01
 #define CH32RV_USB_HOST_MOUSE_RIGHT   0x02
@@ -131,7 +135,8 @@ struct CH32RVUsbHostConfig {
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416)
 #define CH32RV_USB_HOST_MAX_PACKET 1024
 #elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32X305) || \
-    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+    defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
+    defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
 #define CH32RV_USB_HOST_MAX_PACKET 512
 #else
 #define CH32RV_USB_HOST_MAX_PACKET 64
@@ -410,8 +415,10 @@ public:
     CH32RVUsbHost();
 
     /* ---- lifecycle ---- */
-    bool begin();
-    bool begin(const CH32RVUsbHostConfig &config);
+    /* Inline: the controller's driver is picked where the port is known, so
+     * only that driver is linked (CH32RVUsbHostPort.h). */
+    bool begin() { return beginOn(ch32rv_usb_host_port_hcd(CH32RV_USB_HOST_PORT_DEFAULT)); }
+    bool begin(const CH32RVUsbHostConfig &config) { return beginOn(ch32rv_usb_host_port_hcd(config.port)); }
     void end();
     bool ready() const;            /* begun, and the port is up */
     /* What ch32rv_usb_host_task() does; call it yourself only from code that
@@ -586,6 +593,8 @@ public:
     uint8_t _ccidError = 0;
     bool _started = false;
 
+    /* begin() on that controller's driver (nullptr: the part has no such port). */
+    bool beginOn(const CH32RVUsbHcd *driver);
     /* Resolve CH32RV_USB_HOST_ANY_ADDRESS; 0 when nothing is mounted. */
     uint8_t resolve(uint8_t address) const;
     bool fail(CH32RVUsbHostError error)

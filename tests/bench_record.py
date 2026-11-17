@@ -152,7 +152,7 @@ def main(argv=None):
             s.add_argument("--port-note", help="oep.probe.memo/port's note")
             s.add_argument("--board", help="<maker>:<model>")
             s.add_argument("--supply", choices=("probe", "usb", "other"))
-            s.add_argument("--usb", help="host (host,ss_only for a SuperSpeed-only cable), esp32-s3 / esp32-p4,serial=<its port's USB serial>,mac=<mac> (either may be left out; mac alone for a bridge without a serial), rp2040,port=<port>, or ch32rv,port=<the other board's address>,controller=<its controller>")
+            s.add_argument("--usb", help="host (host,ss_only for a SuperSpeed-only cable), esp32-s3 / esp32-p4,serial=<its port's USB serial>,mac=<mac> (either may be left out; mac alone for a bridge without a serial), rp2040,port=<port>, or ch32rv,port=<the other board's address>,controller=<its controller>; a peer's with hub=fs / hs-stt / hs-mtt when a hub is between (high-speed: the peer by split transactions)")
             s.add_argument("--usb-port", help="with --usb: the DUT's controller it is about (" + " / ".join(records.USB_PORTS)
                            + "), on a part wired on several; the others' entries are kept")
             s.add_argument("--sd", help="JSON: {bus, <signal>: <pad>}")

@@ -11,7 +11,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from host_peer import Peer, device, dut_ready, host, settings, wait_device
+from host_peer import Peer, check_path, device, dut_ready, host, settings, wait_device
 
 
 def serial_rx(dut, port, want, timeout=3):
@@ -28,6 +28,7 @@ def test_usb_peer_host_input(dut, peers):
     peer = Peer(peers)
     dut_ready(dut, settings(__file__)["build_id"])
     dev = wait_device(dut, peer.id["input"])
+    check_path(dut, dev, __file__)   # on the root port, or behind the record's hub
     assert dev["vid"] == peer.id["vid"]
     device(peer, "?", rb"READY 1")
     hids = {proto: number for number, alt, cls, sub, proto in dev["itfs"] if cls == 0x03 and alt == 0}

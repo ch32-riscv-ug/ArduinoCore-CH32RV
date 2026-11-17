@@ -41,6 +41,8 @@
  *   ccidpresent          H CCIDPRESENT <present>
  *   ccidoff              H CCIDOFF <ok>
  *   ccidesc <hex>        H CCIDESC <ok> <hex>  (ccidEscape())
+ *   where <addr>         H WHERE <addr> <hub address> <hub speed> (0 0: on the root port; the hub the device
+ *                        hangs from - a high-speed one reaches a full-speed device by split transactions)
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -153,6 +155,23 @@ static void cmd_dev()
     }
     SerialDMSeq.print("H DEVEND ");
     SerialDMSeq.println((unsigned)n);
+}
+
+static void cmd_where(const char *arg)
+{
+    const uint8_t address = (uint8_t)strtoul(arg, nullptr, 10);
+    CH32RVUsbHostDeviceInfo d, hub;
+    uint8_t parent = 0, speed = 0;
+    if (usb.getDevice(address, d) && d.parentAddress && usb.getDevice(d.parentAddress, hub)) {
+        parent = d.parentAddress;
+        speed = hub.speed;
+    }
+    SerialDMSeq.print("H WHERE ");
+    SerialDMSeq.print(address);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.print(parent);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(speed);
 }
 
 static size_t collect_cdc(uint8_t *out, size_t want, uint32_t ms)
@@ -280,6 +299,8 @@ static void reply(char *cmd)
         SerialDMSeq.println(usb.lastErrorName());
     } else if (strcmp(cmd, "dev") == 0) {
         cmd_dev();
+    } else if (strcmp(cmd, "where") == 0) {
+        cmd_where(arg);
     } else if (strcmp(cmd, "cdc") == 0) {
         cmd_cdc(arg);
     } else if (strcmp(cmd, "cdcbig") == 0) {

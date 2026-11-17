@@ -1,6 +1,6 @@
 /* Host controller driver for the WCH USBFS block in host mode
- * (CH32X035/X033, and the OTG_FS of V20x, V30x, V205, L103 / M103, M030 and
- * H41x).
+ * (CH32X035/X033, the OTG_FS of V20x, V30x, V205, L103 / M103, M030 and
+ * H41x, and the older USB IP of CH32V103 - "USBHD" in its EVT).
  *
  * It began as the TinyUSB host controller driver here (TinyUSB's own
  * portable/wch/hcd_ch32_usbfs.c busy-waits, panics on surprises, retries a
@@ -36,6 +36,9 @@
 #if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
 #define CH32RV_HCD_USBFS_BASE   0x40023400u
 #define CH32RV_HCD_USBFS_LAYOUT 1
+#elif defined(CH32RV_SERIES_CH32V103)
+#define CH32RV_HCD_USBFS_BASE   0x40023400u
+#define CH32RV_HCD_USBFS_LAYOUT 3
 #else
 #include "internal/ch32rv_usbfs_otg.h"
 #ifdef CH32RV_USBFS_OTG_BASE      /* V20x, V30x, V205, L103 / M103, M030, H41x */
@@ -45,6 +48,129 @@
 #endif
 
 #ifdef CH32RV_HCD_USBFS_BASE
+
+/* ------------------------------------------------------------- the port
+ * Clock, PHY and pins for host mode per series, before the driver opens
+ * (the table's prepare / release / poll):
+ *   port_open()          false when the clock cannot feed the PHY or the part has no USBFS
+ *   port_close()
+ *   port_has_host()      whether this die has the host half
+ *   port_poll()          from the task: put back a clock taken away under it */
+#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+/* CH32X035 / X033: USBFS on PC16 (D-) / PC17 (D+). Host mode wants the 15 kOhm
+ * pull-downs (the controller's, UH_PD_DIS clear) and no pull-up, the PHY on
+ * the 3.3 V supply, and the pads handed to it (EVT USBFS_Host_Init). */
+#define X03X_AFIO_UDM_PUE_MASK 0x00000003u
+#define X03X_AFIO_UDP_PUE_MASK 0x0000000Cu
+#define X03X_AFIO_USB_PHY_V33  0x00000040u
+#define X03X_AFIO_USB_IOEN     0x00000080u
+#define USBFS_BASE_CTRL        (*(volatile uint8_t *)0x40023400u)
+
+static bool port_open(void)
+{
+    ch32rv_clock_enable(AFIO);
+    ch32rv_clock_enable(USBFS);
+    pinMode(PC16, INPUT_PULLDOWN);
+    pinMode(PC17, INPUT_PULLDOWN);
+    CH32RV_AFIO_CTLR = (CH32RV_AFIO_CTLR & ~(X03X_AFIO_UDP_PUE_MASK | X03X_AFIO_UDM_PUE_MASK)) |
+                       X03X_AFIO_USB_PHY_V33 | X03X_AFIO_USB_IOEN;
+    return true;
+}
+
+static void port_close(void)
+{
+    CH32RV_AFIO_CTLR &= ~X03X_AFIO_USB_IOEN;
+}
+
+static void port_poll(void) {}
+
+#elif defined(CH32RV_SERIES_CH32V103)
+/* CH32V103: the older USB IP on PA11 (D-) / PA12 (D+), the same as its device
+ * driver (CH32RVUsbDcdUsbV103.cpp) sets up: 48 MHz from the PLL (RCC_CFGR0
+ * USBPRE bit 22: 0 = PLL / 1.5 at 72 MHz, 1 = PLL / 1 at 48 MHz), the pads
+ * handed to the PHY (EXTEN_CTR USBFS_IO_EN, bit 2) on the 3.3 V supply
+ * (USB_5V_SEL, bit 3, clear) - EVT USBFS_RCC_Init / USBFS_Host_Init. The
+ * host's 15 kOhm pull-downs are the controller's (UHOST_CTRL.PD_DIS clear). */
+#define V103_EXTEN_CTR        CH32RV_REG32(0x40023800u)
+#define V103_EXTEN_USBFS_IO_EN 0x00000004u
+#define V103_EXTEN_USB_5V_SEL  0x00000008u
+#define USBFS_BASE_CTRL        (*(volatile uint8_t *)0x40023400u)
+
+static bool port_open(void)
+{
+#if CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 72000000
+    CH32RV_RCC_CFGR0 &= ~(1u << 22);
+#elif CH32RV_CLOCK_USE_PLL && CH32RV_CLOCK_SYSCLK_HZ == 48000000
+    CH32RV_RCC_CFGR0 |= 1u << 22;
+#else
+    return false;                                        /* no 48 MHz from this clock */
+#endif
+    pinMode(PA11, INPUT);
+    pinMode(PA12, INPUT);
+    V103_EXTEN_CTR = (V103_EXTEN_CTR & ~V103_EXTEN_USB_5V_SEL) | V103_EXTEN_USBFS_IO_EN;
+    ch32rv_clock_enable(USBFS);
+    return true;
+}
+
+static void port_close(void)
+{
+    V103_EXTEN_CTR &= ~V103_EXTEN_USBFS_IO_EN;
+    ch32rv_clock_disable(USBFS);
+}
+
+static void port_poll(void) {}
+
+#else /* the USBOTG_FS layout: V20x, V30x, V205, L103 / M103, M030, H41x */
+
+#define USBFS_BASE_CTRL        (*(volatile uint8_t *)CH32RV_USBFS_OTG_BASE)
+
+/* The 48 MHz and the pads as the device driver makes them; the host's 15 kOhm
+ * pull-downs are the controller's own (HOST_CTRL), set by the driver. */
+static bool port_open(void)
+{
+#if defined(CH32RV_PART_CH32V203F6P6) || defined(CH32RV_PART_CH32V203G6U6)
+    return false;        /* no USBFS on the part */
+#else
+    return ch32rv_usbfs_otg_clock_on();
+#endif
+}
+
+static void port_close(void)
+{
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
+    ch32rv_clock_disable(OTG_FS);
+#else
+    ch32rv_clock_disable(USBFS);
+#endif
+}
+
+/* SystemInit() run again by a debug probe turns the extra PLLs off (the
+ * device driver's dcd_poll() does the same). */
+static void port_poll(void)
+{
+    if (!ch32rv_usbfs_otg_clock_ok()) {
+        ch32rv_usbfs_otg_clock_on();
+    }
+}
+
+#endif
+
+/* Whether this die has the host half. CH32X035R8T6 / C8T6 / G8U6 / G8R6 do;
+ * F8U6, F7P6, D8U6 and CH32X033F8P6 are device-only (datasheet model table),
+ * and there BASE_CTRL.HOST_MODE does not stick - the EVT polls for it, and on
+ * an F8U6 it reads 0 however long it is given (measured 2026-10-15). So the
+ * bit is the test, which also covers a board built for "ANY". */
+static bool port_has_host(void)
+{
+    USBFS_BASE_CTRL = 0x80;
+    const uint32_t t0 = micros();
+    while (!(USBFS_BASE_CTRL & 0x80) && (uint32_t)(micros() - t0) < 2000u) {
+    }
+    const bool has = (USBFS_BASE_CTRL & 0x80) != 0;
+    USBFS_BASE_CTRL = 0;
+    return has;
+}
+
 
 /* ------------------------------------------------------------- registers */
 
@@ -59,7 +185,12 @@
  *   2  the USBOTG_FS layout (V20x, V30x, V205, L103 / M103, M030, H41x - EVT
  *      USBFSH_TypeDef compared 2026-10-22): endpoint registers from 0x30, DMA addresses
  *      32 bit, HOST_SETUP 16 bit (SOF_EN bit 2, PRE_PID_EN bit 10), both
- *      toggles in bit 2. */
+ *      toggles in bit 2;
+ *   3  CH32V103 (EVT ch32v10x_usb.h): the host registers where layout 2 has
+ *      them (HOST_SETUP 0x36 as one byte, EP_PID 0x38, RX_CTRL 0x3A, TX_LEN
+ *      0x3C 16 bit, TX_CTRL 0x3E) with layout 1's bits (SOF_EN 0x40,
+ *      PRE_PID_EN 0x80, R_TOG 0x80, T_TOG 0x40; R_RES is bit 2) and 16-bit DMA
+ *      addresses (its 20 KB of SRAM is in the low half). */
 
 #define BASE_CTRL   R8(0x00)
 #define HOST_CTRL   R8(0x01)
@@ -82,6 +213,19 @@
 #define UH_SOF_EN      0x40
 #define UH_R_TOG       0x80
 #define UH_T_TOG       0x40
+#elif CH32RV_HCD_USBFS_LAYOUT == 3
+#define SET_RX_DMA(a) (R16(0x18) = (uint16_t)(uintptr_t)(a))
+#define SET_TX_DMA(a) (R16(0x1C) = (uint16_t)(uintptr_t)(a))
+#define HOST_SETUP  R8(0x36)
+#define HOST_EP_PID R8(0x38)
+#define HOST_RX_CTRL R8(0x3A)
+#define HOST_TX_LEN R16(0x3C)
+#define HOST_TX_CTRL R8(0x3E)
+#define UH_PRE_PID_EN  0x80
+#define UH_SOF_EN      0x40
+#define UH_R_TOG       0x80
+#define UH_T_TOG       0x40
+#define UH_R_RES       0x04
 #else
 #define SET_RX_DMA(a) (R32(0x18) = (uint32_t)(uintptr_t)(a))
 #define SET_TX_DMA(a) (R32(0x1C) = (uint32_t)(uintptr_t)(a))
@@ -124,7 +268,9 @@
 
 #define UH_EP_TX_EN    0x40
 #define UH_EP_RX_EN    0x08
+#ifndef UH_R_RES
 #define UH_R_RES       0x01
+#endif
 #define UH_T_RES       0x01
 
 #define PID_OUT   0x1
@@ -702,11 +848,25 @@ static void isr(void)
     }
 }
 
+/* Clock and pads first, then whether the die has the host half (a device-only
+ * X035 is Unsupported, not Busy). */
+static bool hcd_prepare(void)
+{
+    if (!port_open()) {
+        return false;
+    }
+    if (!port_has_host()) {
+        port_close();
+        return false;
+    }
+    return true;
+}
+
 const CH32RVUsbHcd ch32rv_usb_hcd_usbfs = {
     "USBFS host", PACKET_MAX,
     hcd_open, hcd_close, hcd_connected, hcd_port_reset, hcd_port_reset_end, hcd_port_disable,
     hcd_ep_open, hcd_ep_close, hcd_device_close, hcd_xfer, hcd_setup, hcd_abort, hcd_reset_toggle, hcd_frame,
-    nullptr, nullptr, nullptr, nullptr,
+    port_poll, nullptr, nullptr, nullptr, hcd_prepare, port_close,
 };
 
 #endif

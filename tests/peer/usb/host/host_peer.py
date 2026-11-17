@@ -49,6 +49,22 @@ def link_speed(test_file):
     return target.get("usb_link_speed") or (2 if target.get("usb_peer") == "p4" else 1)
 
 
+# The hub the record puts between the DUT and the peer (records.USB_HUBS) and the speed it runs at.
+HUB_SPEEDS = {"fs": 1, "hs-stt": 2, "hs-mtt": 2}
+
+
+def check_path(dut, dev, test_file):
+    """The peer `dev` (wait_device's) hangs where the record says: from a hub of the record's kind (a high-speed one
+    reaches a full-speed peer by split transactions, a full-speed one a low-speed peer by PRE), else on the root port."""
+    hub = settings(test_file)["target"].get("usb_peer_hub")
+    m = host(dut, f"where {dev['address']}", rb"WHERE (\d+) (\d+) (\d+)")
+    parent, speed = int(m.group(2)), int(m.group(3))
+    if hub:
+        assert parent and speed == HUB_SPEEDS[hub], f"the peer is not behind the record's {hub} hub: {m.group(0)!r}"
+    else:
+        assert parent == 0, f"the record has no hub, the peer hangs from hub {parent}"
+
+
 def host(dut, line, reply, timeout=10):
     """Send `line` to the DUT, return the match of `H <reply>` (a regex, bytes)."""
     dut.write(line + "\n")

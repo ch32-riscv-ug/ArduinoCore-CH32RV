@@ -31,7 +31,8 @@ void loop() { deliverEvents(); }   // callback はここで動く。スタック
 | CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | C8T6 で ESP32-S3（EspUsbDevice）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X035 F8U6 / F7P6 / D8U6、CH32X033 | — （シリコンにホストが無い。`begin()` が `Unsupported`） | F8U6 で `Unsupported` を実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | ビルドのみ |
-| CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
+| CH32V103 | USB（旧 USBFS の IP、PA11 / PA12） | ビルドのみ。CPU Clock は 48 / 72 MHz（PLL から 48 MHz を作る） |
+| CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12）。V305 / V307 / V317 は `CH32RV_USB_HOST_PORT_HIGH_SPEED` で第 1 世代の USBHS（PB6 / PB7、HSE が要る） | ビルドのみ |
 | CH32V205、CH32M030、CH32H415 / H416 / H417 | USBFS（PA11 / PA12）。V205 と H41x は `CH32RV_USB_HOST_PORT_HIGH_SPEED` で USBHS（H41x は PB8 / PB9 で SWD と兼用） | ビルドのみ。48 MHz の作り方はデバイスと同じ（V205 と H41x は USBHS PLL、M030 は 144 MHz の PLL） |
 | CH32H416 / H417（追加） | `CH32RV_USB_HOST_PORT_SUPER_SPEED` で USBSS。USB 3（5 Gbps）だけ | 実装済み、実機では未確認 |
 | CH32V407 / V467 | USBHS1（既定、`HIGH_SPEED`）、USBHS2（`HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（EspUsbDevice、HS）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
@@ -45,8 +46,7 @@ X035 のどの型番がホストを持つかはデータシートの型番表の
 両方が通っています。
 
 **VBUS は基板が供給します。** チップには VBUS を入り切りする機能がありません。ホストを始めても、Type-C のソースの CC の回路や、
-基板の外部電源の切り替えは設定しません。V30x のホストは、チップに USBHS があっても USBFS を使います（第 1 世代の
-USBHS のホストのドライバは、まだありません）。
+基板の外部電源の切り替えは設定しません。
 
 ### ポートと速さ
 
@@ -65,10 +65,22 @@ usb.begin(config);                               // 無いポートは Unsupport
 受信の受け皿は 512 バイトのパケットが入る大きさになります（`CH32RV_USB_HOST_MAX_PACKET`、既定のリングも大きくなります）。
 
 - HS には水晶（HSE）が要ります。ドライバが HSE を起こし、無い基板では HSI のままです（短いパケットしか通りません）。
-- HS のハブの先の FS・LS の機器（split トランザクション）は、まだ扱えません。HS のハブ自体と、その先の HS の機器は
-  扱う作りですが、実機では確かめていません。
+- HS のハブの先の FS・LS の機器は、ハブのトランザクショントランスレーター（TT）を通る split トランザクションで扱います
+  （SPLIT のトークンはコントローラーが出し、開始と完了の split はドライバが組みます）。シングル TT・マルチ TT の
+  どちらのハブでも同じ形です。ハブの中で打ち切った転送の後の CLEAR_TT_BUFFER と、188 バイトを超える等時の OUT は
+  ありません。**実装済みで、実機ではまだ確かめていません。**
+- H41x の USBHS は PB8 / PB9 で、SWD と同じ端子です。`begin()` の後はデバッガがつながりません（リセットまで）。
 - X305 / X315 は、HSE が無いと HSI をホストの SOF で合わせる仕組みしか無いので、ホストには HSE が要ります。
 - OUT の後の NYET は受け付けとして扱い、PING は送りません（機器は空くまで NAK します）。
+
+第 1 世代の USBHS（V305 / V307 / V317 の `HIGH_SPEED`、PB6 / PB7）も HS のホストです。PHY の PLL は水晶からしか
+作れないので、HSE が要ります（Clock Source のメニューの水晶。HSE を選んでいないときは 8 MHz とみなします）。
+**実装済みで、実機ではまだ確かめていません。** このコントローラーの SPLIT の欄は 12 ビットで中身の説明が無いため、
+HS のハブの先の FS・LS の機器は扱いません（そのエンドポイントは開けません）。FS のハブの先の LS の機器（PRE）も
+確かめていません。
+
+どのポートでも、リンクされるのはスケッチが選んだポートのドライバだけです（`begin()` がポートを見て選ぶのは
+スケッチの側で、定数のポートなら他のドライバは入りません）。
 
 H416 / H417 の `SUPER_SPEED` は、USBSS を SuperSpeed（USB 3、5 Gbps）のホストとして動かします。**実装済みで、実機では
 まだ確かめていません。** SuperSpeed だけを扱います。同じコネクターの USB 2.0 の機器や USB 3 のハブの USB 2.0 側は

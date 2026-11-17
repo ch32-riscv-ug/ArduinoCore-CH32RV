@@ -75,6 +75,10 @@ def _parts(value, errors):
 # (CH32RVUsbController FullSpeed / HighSpeed / SuperSpeed / Usbd / HighSpeed2, CH32RV_USB_HOST_PORT_FULL_SPEED / ...),
 # in lower case.
 USB_PORTS = ("full_speed", "high_speed", "super_speed", "usbd", "high_speed_2")
+# A hub between the DUT and a USB peer (the peer's usb entry, `hub`): a full-speed one (a low-speed device behind it
+# by the PRE packet), a high-speed one with a single or a transaction translator per port (a full- or low-speed device
+# behind it by split transactions).
+USB_HUBS = ("fs", "hs-stt", "hs-mtt")
 
 
 # A CH32RV peer's address (harness/place.py's parse() takes the same; the target is optional).
@@ -109,6 +113,8 @@ def _usb(value, errors):
 
 def _usb_one(value, errors):
     to = value.get("to")
+    if "hub" in value and (to == "host" or value["hub"] not in USB_HUBS):
+        errors.append(f"usb.hub: the hub between the DUT and its peer, {' / '.join(USB_HUBS)} (a peer's entry only)")
     if to == "host":
         if "ss_only" in value and not isinstance(value["ss_only"], bool):
             errors.append("usb.ss_only: true when the cable to the host carries only the SuperSpeed pairs (the USB 2.0 "

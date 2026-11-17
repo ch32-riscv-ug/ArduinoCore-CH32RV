@@ -5,18 +5,7 @@
 #include "CH32RVUsbHost.h"
 #include "internal/CH32RVUsbHcd.h"
 
-/* The series with a host controller driver (CH32RVUsbHostPort.h). */
-#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32V203) || \
-    defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) ||  \
-    defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || defined(CH32RV_SERIES_CH32V205) ||  \
-    defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103) || defined(CH32RV_SERIES_CH32M030) ||  \
-    defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) ||  \
-    defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315) || defined(CH32RV_SERIES_CH32V407) ||  \
-    defined(CH32RV_SERIES_CH32V467)
-#define CH32RV_USB_HOST_STACK 1
-#else
-#define CH32RV_USB_HOST_STACK 0
-#endif
+/* CH32RV_USB_HOST_STACK: the series with a host controller driver (CH32RVUsbHostPort.h). */
 
 /* A SuperSpeed host (CH32RVUsbHcdUsbss.cpp): the stack's SuperSpeed
  * enumeration, hub and route code is built only where one exists. */

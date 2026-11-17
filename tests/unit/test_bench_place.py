@@ -121,9 +121,9 @@ def test_peer_cases_and_usb_host_parts():
         assert place.choose_cases(f8, items, caps)[case] == "run"
     s3 = {"usb": {"to": "esp32-s3", "serial": "x"}}
     assert place.choose_cases(dict(v307, record=s3), items, caps)["usb-peer-host"] == "run"
-    for chip in ("CH32V103R8T6",):   # the older USB: device, no host
+    for chip in ("CH32V103R8T6",):   # the older USB: device and host
         cases = place.choose_cases(dict(v307, chip=chip, record=s3), items, caps)
-        assert cases["usb-peer"] == "run" and cases["usb-peer-host"].startswith("skip:"), chip
+        assert cases["usb-peer"] == cases["usb-peer-host"] == "run", chip
     for chip in ("CH32V407WEU6", "CH32X315MCU6"):   # the second-generation USBHS: a host too
         cases = place.choose_cases(dict(v307, chip=chip, record=s3), items, caps)
         assert cases["usb-peer"] == cases["usb-peer-host"] == "run", chip
@@ -156,6 +156,15 @@ def test_an_rp2040_peer_on_the_same_probe(monkeypatch, tmp_path):
     assert p["cases"]["usb-peer-media"].startswith("skip: the RP2040's USB host has no isochronous")
     with pytest.raises(place.PlaceError, match="usb.port"):
         fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"usb": {"to": "rp2040"}})
+
+
+def test_a_hub_between_the_dut_and_its_peer(monkeypatch, tmp_path):
+    # V407's USBHS1 to a Pico through a multi-TT hub (split transactions): the host cases check the path.
+    assert records.check_core({"usb": {"high_speed": {"to": "rp2040", "port": "pico", "hub": "hs-mtt"}}}) == []
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, record={"usb": {"to": "rp2040", "port": "pico", "hub": "fs"}})
+    assert p["usb_peer_hub"] == "fs" and p["cases"]["usb-peer-host"] == "run"
+    assert records.check_core({"usb": {"to": "rp2040", "port": "pico", "hub": "usb3"}})   # not a kind of hub
+    assert records.check_core({"usb": {"to": "host", "hub": "fs"}})                     # a peer's entry only
 
 
 def test_an_rp2040_peer_on_another_probe(monkeypatch, tmp_path):

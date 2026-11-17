@@ -16,7 +16,12 @@
  *   ch32rv_usbhs2_clock_on(unit)    make it and turn the controller's clock on;
  *                                   false when it cannot be made
  *   ch32rv_usbhs2_pads_on(unit)     hand the pads over (H41x: PB8 / PB9 are
- *                                   SWCLK / SWDIO, and SDI goes off) */
+ *                                   SWCLK / SWDIO, and SDI goes off)
+ *   CH32RV_USBHS2_DMA_REACH         bytes from 0x20000000 the host's DMA
+ *                                   address registers reach: 17 bits on V205
+ *                                   and V4x7, 24 on H41x and X3x5 (RM
+ *                                   R32_UH_RX_DMA; H41x's SRAM starts at
+ *                                   0x20100000) */
 #pragma once
 
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
@@ -33,6 +38,12 @@ extern "C" {
 extern void (*volatile ch32rv_usbhs2_irq_hook[2])(void);
 #ifdef __cplusplus
 }
+#endif
+
+#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || defined(CH32RV_SERIES_CH32V205)
+#define CH32RV_USBHS2_DMA_REACH 0x00020000u
+#else
+#define CH32RV_USBHS2_DMA_REACH 0x01000000u
 #endif
 
 #if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)

@@ -23,15 +23,38 @@
  *     next one yet); the next goes as OUT again rather than PING, which a
  *     device NAKs until it has room;
  *   - packets go through one DMA buffer each way, a whole packet of the
- *     largest size (1024, isochronous) - RX_DMA keeps 17 address bits, so the
- *     receive buffer has to sit in the first 128 KB of SRAM (open() checks).
+ *     largest size (1024, isochronous) - RX_DMA keeps 17 address bits on
+ *     V205 and V4x7 (the buffer has to sit in the first 128 KB of SRAM), 24
+ *     on H41x and X3x5 (CH32RV_USBHS2_DMA_REACH; open() checks).
  *
  * Root port: the controller times the bus reset and the high-speed chirp
  * itself (PORT_CTRL.SET_PORT_RESET, PORT_CHG.RESET when done); the speed is
  * PORT_ST's HS / LS bits after it. SOF stays enabled throughout (open()). A low-speed device behind a full-speed hub
  * gets the PRE packet (CONTROL.PRE_PID_EN) when the root port is full speed.
- * Not here yet: split transactions (full- and low-speed devices behind a
- * high-speed hub; the block has SPLIT_DATA for them) and PING. */
+ *
+ * Split transactions (USB 2.0 11.17-11.21): a full- or low-speed device
+ * behind a high-speed hub (CH32RVUsbHcdEp::ttHub) is reached through the
+ * hub's transaction translator. The block sends the SPLIT token itself
+ * (CONTROL.SPLIT_VALID, its fields in SPLIT_DATA: hub address 6:0, SC 7, port
+ * 14:8, S 15, E 16, ET 18:17 - RM 22.2.2.9 of CH32V407, the same in the H41x,
+ * V205 and X315 manuals); the start and the complete split are this
+ * driver's, with the flags the EVT's Dual_device host port (usbhs1_hcp.c)
+ * sets for each:
+ *   - start split (SC 0): RX_NO_DATA (an IN's start carries no data), and
+ *     for interrupt and isochronous TX_NO_RES (no handshake to a periodic
+ *     start). Control and bulk: ACK moves on to the complete split, NAK (the
+ *     TT's buffers are full) tries the start again;
+ *   - complete split (SC 1): RX_NO_RES (the host does not hand-shake a
+ *     complete-split IN) and TX_NO_DATA. NYET: not yet, asked again the next
+ *     microframe (periodic ones from the second microframe after the start,
+ *     for up to a frame); anything else is the device's answer, taken as a
+ *     plain transaction's is (an OUT's ACK counts the bytes its start sent);
+ *     MDATA is more of an isochronous IN to come.
+ * Not here: CLEAR_TT_BUFFER after a control or bulk transfer is aborted in the
+ * TT, the TT's own budget for periodic starts (one at a time goes - the
+ * engine runs one transaction), isochronous OUT of more than 188 bytes (one
+ * start carries one microframe's part; such an endpoint is refused), and
+ * PING. */
 #include "internal/ch32rv_usbhs2.h"
 
 #ifdef CH32RV_USBHS2_UNITS
@@ -54,7 +77,8 @@ enum : uint32_t {
 constexpr uint8_t CFG_FORCE_FS = 0x40, CFG_SOF_EN = 0x20, CFG_DMA_EN = 0x10, CFG_PHY_SUSPENDM = 0x08,
                   CFG_CLR_ALL = 0x04, CFG_RST_SIE = 0x02, CFG_RST_LINK = 0x01;
 constexpr uint8_t IF_FIFO_OVER = 0x80, IF_TX_HALT = 0x40, IF_SOF_ACT = 0x20, IF_TRANSFER = 0x10;
-constexpr uint32_t CTL_RX_NO_RES = 0x800000, CTL_TX_NO_RES = 0x400000, CTL_PRE_PID_EN = 0x080000,
+constexpr uint32_t CTL_RX_NO_RES = 0x800000, CTL_TX_NO_RES = 0x400000, CTL_RX_NO_DATA = 0x200000,
+                   CTL_TX_NO_DATA = 0x100000, CTL_PRE_PID_EN = 0x080000, CTL_SPLIT_VALID = 0x040000,
                    CTL_HOST_ACTION = 0x010000, CTL_TOG1 = 0x0100;
 constexpr uint32_t PORT_SET_RESET = 0x01, PORT_CLR_EN = 0x10;
 constexpr uint8_t PORT_CFG_PD_EN = 0x80, PORT_CFG_HOST_EN = 0x01;
@@ -62,17 +86,28 @@ constexpr uint16_t PST_HS = 0x0400, PST_LS = 0x0200, PST_RESET = 0x0010, PST_CON
 constexpr uint8_t PCHG_RESET = 0x10, PCHG_EN = 0x02, PCHG_CONNECT = 0x01;
 
 constexpr uint8_t PID_OUT = 0x1, PID_IN = 0x9, PID_SETUP = 0xD, PID_ACK = 0x2, PID_NYET = 0x6, PID_NAK = 0xA,
-                  PID_STALL = 0xE, PID_DATA0 = 0x3, PID_DATA1 = 0xB;
+                  PID_STALL = 0xE, PID_DATA0 = 0x3, PID_DATA1 = 0xB, PID_MDATA = 0xF;
 
 constexpr uint16_t PACKET_MAX = 1024;
 constexpr uint8_t NO_RESPONSE_TRIES = 3;
 constexpr uint32_t CONTROL_TIMEOUT_MS = 5000;      /* USB 2.0 9.2.6.4 */
+/* A periodic complete split is asked for up to a frame (the spec's three
+ * microframes from the second after the start, with room for this driver
+ * not starting it in the microframe it is due). */
+constexpr uint8_t CSPLIT_PERIODIC_TRIES = 8;
+/* The most an isochronous OUT start split carries (USB 2.0 11.18.4: 188
+ * bytes per microframe). */
+constexpr uint16_t SPLIT_ISO_OUT_MAX = 188;
 constexpr unsigned EP_MAX = 32;
 
 enum : uint8_t { EP_FREE = 0, EP_IDLE, EP_PENDING };
 
 struct Ep {
     uint8_t state, daddr, ep_addr, type, speed, toggle, setup, tries;
+    uint8_t tt_hub, tt_port;  /* split: the high-speed hub's address and port (0: no split) */
+    uint8_t split;            /* 1: the start split is done, the complete split is next */
+    uint8_t cs_tries;         /* periodic complete splits answered NYET */
+    uint16_t split_len;       /* the bytes an OUT's start split carried */
     uint16_t mps, len, done;
     uint16_t interval;     /* ticks between interrupt / isochronous polls */
     uint8_t *buf;
@@ -158,7 +193,8 @@ struct Hcd {
         return (uint16_t)((b ? b : 1) * ticks_per_ms());
     }
 
-    static Ep *open_ep(uint8_t daddr, uint8_t ep_addr, uint16_t mps, uint8_t type, uint8_t interval, uint8_t speed)
+    static Ep *open_ep(uint8_t daddr, uint8_t ep_addr, uint16_t mps, uint8_t type, uint8_t interval, uint8_t speed,
+                       uint8_t tt_hub, uint8_t tt_port)
     {
         Ep *ep = find(daddr, ep_addr);
         if (!ep) {
@@ -183,6 +219,8 @@ struct Hcd {
         ep->mps = mps ? mps : 8;
         ep->type = type;
         ep->interval = interval_ticks(type, interval, speed);
+        ep->tt_hub = tt_hub;
+        ep->tt_port = tt_port;
         return ep;
     }
 
@@ -195,6 +233,31 @@ struct Hcd {
         ch32rv_usbh_isr_xfer(ep->daddr, address, result, length);
     }
 
+    /* Whether `ep` goes by split transactions: a full- or low-speed device
+     * behind a high-speed hub, on a high-speed root port. */
+    static bool is_split(const Ep *ep) { return ep->tt_hub && root_speed == CH32RV_USBH_HIGH; }
+
+    static bool is_periodic(const Ep *ep)
+    {
+        return ep->type == CH32RV_USBH_INTERRUPT || ep->type == CH32RV_USBH_ISOCHRONOUS;
+    }
+
+    /* The SPLIT token (RM: ET 18:17, E 16, S 15, port 14:8, SC 7, hub 6:0).
+     * ET is bmAttributes' type. S is the device's speed (1 low) and E unused
+     * for control, bulk and interrupt; an isochronous OUT start sends the
+     * whole payload at once (S = E = 1, "all"), an IN has both 0. */
+    static uint32_t split_token(const Ep *ep)
+    {
+        uint32_t s = 0, e = 0;
+        if (ep->type == CH32RV_USBH_ISOCHRONOUS) {
+            s = e = (ep->ep_addr & 0x80) ? 0u : 1u;
+        } else {
+            s = ep->speed == CH32RV_USBH_LOW ? 1u : 0u;
+        }
+        return (uint32_t)(ep->tt_hub & 0x7F) | (ep->split ? 0x80u : 0u) | ((uint32_t)(ep->tt_port & 0x7F) << 8) |
+               (s << 15) | (e << 16) | ((uint32_t)(ep->type & 3u) << 17);
+    }
+
     static void start(int16_t index)
     {
         Ep *ep = &eps[index];
@@ -203,7 +266,11 @@ struct Hcd {
         r8(H_DEV_AD) = (uint8_t)(ep->daddr & 0x7F);
         const bool iso = ep->type == CH32RV_USBH_ISOCHRONOUS;
         uint32_t ctl = CTL_HOST_ACTION | ((uint32_t)(ep->ep_addr & 0x0F) << 4);
-        if (ep->speed == CH32RV_USBH_LOW && root_speed == CH32RV_USBH_FULL) {
+        if (is_split(ep)) {
+            r32(H_SPLIT) = split_token(ep);
+            ctl |= CTL_SPLIT_VALID | (ep->split ? (CTL_RX_NO_RES | CTL_TX_NO_DATA)
+                                                : (CTL_RX_NO_DATA | (is_periodic(ep) ? CTL_TX_NO_RES : 0u)));
+        } else if (ep->speed == CH32RV_USBH_LOW && root_speed == CH32RV_USBH_FULL) {
             ctl |= CTL_PRE_PID_EN;                       /* behind a full-speed hub */
         }
         if (ep->setup) {
@@ -216,10 +283,13 @@ struct Hcd {
         } else {
             const uint16_t left = (uint16_t)(ep->len - ep->done);
             const uint16_t n = left < ep->mps ? left : ep->mps;
-            if (n) {
+            if (n && !ep->split) {
                 memcpy(tx_buf, ep->buf + ep->done, n);
             }
             r32(H_TX_LEN) = n;
+            if (!ep->split) {
+                ep->split_len = n;
+            }
             ctl |= PID_OUT | (ep->toggle ? CTL_TOG1 : 0) | (iso ? CTL_TX_NO_RES : 0);
         }
         r8(H_INT_FLAG) = IF_TRANSFER | IF_FIFO_OVER | IF_TX_HALT;
@@ -243,6 +313,70 @@ struct Hcd {
         }
     }
 
+    /* A split transaction of `ep` ended with `res`. True when that is all
+     * (the next one is set up); false when it is the device's answer at the
+     * end of a complete split, for transfer_done() to take as a plain
+     * transaction's. */
+    static bool split_step(Ep *ep, uint8_t res, bool in)
+    {
+        const bool periodic = is_periodic(ep);
+        if (!ep->split) {                                /* the start split */
+            if (periodic || res == PID_ACK) {
+                ep->split = 1;
+                ep->tries = 0;
+                ep->cs_tries = 0;
+                ep->due = ticks + (periodic ? 2u : 0u);
+            } else if (res == PID_NAK) {
+                ep->tries = 0;                           /* the TT has no room yet */
+                ep->due = ticks + 1u;
+                if (ep->type == CH32RV_USBH_CONTROL &&
+                    (uint32_t)(ticks - ep->since) > CONTROL_TIMEOUT_MS * ticks_per_ms()) {
+                    finish(ep, CH32RV_USBH_TIMEOUT);
+                }
+            } else if (++ep->tries < NO_RESPONSE_TRIES) {
+                ep->due = ticks + 1u;
+            } else {
+                finish(ep, CH32RV_USBH_FAILED);
+            }
+            return true;
+        }
+        if (res == PID_NYET) {                           /* the TT has no answer yet */
+            ep->due = ticks + 1u;
+            if (periodic && ++ep->cs_tries >= CSPLIT_PERIODIC_TRIES) {
+                ep->split = 0;                           /* lost: start again at the next interval */
+                ep->due = ticks + ep->interval;
+                if (++ep->tries >= NO_RESPONSE_TRIES) {
+                    finish(ep, CH32RV_USBH_FAILED);
+                }
+            } else if (ep->type == CH32RV_USBH_CONTROL &&
+                       (uint32_t)(ticks - ep->since) > CONTROL_TIMEOUT_MS * ticks_per_ms()) {
+                finish(ep, CH32RV_USBH_TIMEOUT);
+            }
+            return true;
+        }
+        if (in && res == PID_MDATA) {                    /* an isochronous IN with more to come */
+            const uint16_t got = (uint16_t)(r32(H_RX_LEN) & 0x7FF);
+            const uint16_t room = (uint16_t)(ep->len - ep->done);
+            const uint16_t keep = got < room ? got : room;
+            if (keep && ep->buf) {
+                memcpy(ep->buf + ep->done, rx_buf, keep);
+            }
+            ep->done = (uint16_t)(ep->done + keep);
+            ep->due = ticks + 1u;
+            return true;
+        }
+        if (res == 0 && ep->type != CH32RV_USBH_ISOCHRONOUS) {   /* no answer: ask for the complete split again */
+            if (++ep->tries < NO_RESPONSE_TRIES) {
+                ep->due = ticks + 1u;
+            } else {
+                finish(ep, CH32RV_USBH_FAILED);
+            }
+            return true;
+        }
+        ep->split = 0;
+        return false;
+    }
+
     static void transfer_done(uint8_t flags)
     {
         r8(H_INT_FLAG) = IF_TRANSFER | IF_FIFO_OVER | IF_TX_HALT;
@@ -259,6 +393,11 @@ struct Hcd {
         }
         const bool in = !ep->setup && (ep->ep_addr & 0x80);
         const bool iso = ep->type == CH32RV_USBH_ISOCHRONOUS;
+        const bool split = is_split(ep);
+        if (split && split_step(ep, res, in)) {
+            schedule();
+            return;
+        }
 
         if (flags & IF_FIFO_OVER) {                      /* more than RX_MAX_LEN: babble */
             finish(ep, CH32RV_USBH_FAILED);
@@ -291,7 +430,7 @@ struct Hcd {
                 }
                 finish(ep, CH32RV_USBH_OK);
             } else {
-                ep->done = (uint16_t)(ep->done + (r32(H_TX_LEN) & 0x7FF));
+                ep->done = (uint16_t)(ep->done + (split ? ep->split_len : (r32(H_TX_LEN) & 0x7FF)));
                 if (iso || ep->done >= ep->len) {
                     finish(ep, CH32RV_USBH_OK);
                 }
@@ -367,8 +506,8 @@ struct Hcd {
         if (ch32rv_usbhs2_irq_hook[UNIT - 1] && ch32rv_usbhs2_irq_hook[UNIT - 1] != isr) {
             return false;                                /* the device stack has the controller */
         }
-        if ((uint32_t)((uintptr_t)rx_buf - 0x20000000u) + PACKET_MAX > 0x20000u) {
-            return false;                                /* RX_DMA reaches the first 128 KB only */
+        if ((uint32_t)((uintptr_t)rx_buf - 0x20000000u) + PACKET_MAX > CH32RV_USBHS2_DMA_REACH) {
+            return false;                                /* beyond what RX_DMA reaches */
         }
         if (!ch32rv_usbhs2_clock_on(UNIT)) {
             return false;
@@ -482,17 +621,18 @@ struct Hcd {
     {
         const uint8_t address = e.address, type = e.type, interval = e.interval, speed = e.speed;
         const uint16_t mps = e.mps;
-        if (mps > PACKET_MAX) {
+        if (mps > PACKET_MAX ||
+            (e.ttHub && type == CH32RV_USBH_ISOCHRONOUS && !(address & 0x80) && mps > SPLIT_ISO_OUT_MAX)) {
             return false;
         }
         bool was;
         lock(&was);
         bool ok;
         if ((address & 0x0F) == 0) {
-            ok = open_ep(daddr, 0x00, mps, CH32RV_USBH_CONTROL, 0, speed) &&
-                 open_ep(daddr, 0x80, mps, CH32RV_USBH_CONTROL, 0, speed);
+            ok = open_ep(daddr, 0x00, mps, CH32RV_USBH_CONTROL, 0, speed, e.ttHub, e.ttPort) &&
+                 open_ep(daddr, 0x80, mps, CH32RV_USBH_CONTROL, 0, speed, e.ttHub, e.ttPort);
         } else {
-            ok = open_ep(daddr, address, mps, type, interval, speed) != nullptr;
+            ok = open_ep(daddr, address, mps, type, interval, speed, e.ttHub, e.ttPort) != nullptr;
         }
         unlock(was);
         return ok;
@@ -525,6 +665,7 @@ struct Hcd {
             ep->done = 0;
             ep->tries = 0;
             ep->setup = 0;
+            ep->split = 0;
             ep->due = ticks;
             ep->since = ticks;
             ep->state = EP_PENDING;
@@ -555,6 +696,7 @@ struct Hcd {
             ep->tries = 0;
             ep->toggle = 0;
             ep->setup = 1;
+            ep->split = 0;
             ep->due = ticks;
             ep->since = ticks;
             ep->state = EP_PENDING;
@@ -578,6 +720,7 @@ struct Hcd {
             }
             ep->state = EP_IDLE;
             ep->setup = 0;
+            ep->split = 0;
         }
         schedule();
         unlock(was);
@@ -606,7 +749,7 @@ struct Hcd {
     {
         return {name, PACKET_MAX, open, close, connected, port_reset, port_reset_end, port_disable,
                 ep_open, ep_close, device_close, xfer, setup, abort, reset_toggle, frame, poll,
-                nullptr, nullptr, nullptr};
+                nullptr, nullptr, nullptr, nullptr, nullptr};
     }
 };
 

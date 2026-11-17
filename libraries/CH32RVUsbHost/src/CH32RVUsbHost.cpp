@@ -15,8 +15,6 @@
 
 #if CH32RV_USB_HOST_STACK
 
-#include "CH32RVUsbHostPort.h"
-
 namespace {
 
 const CH32RVUsbHcd *hcd;
@@ -414,6 +412,27 @@ const uint8_t *ch32rv_usb_host_device_descriptor(uint8_t daddr)
     return daddr && daddr <= CH32RV_USB_HOST_DEVICES && devs[daddr].state != DEV_FREE ? devs[daddr].desc : nullptr;
 }
 
+/* The transaction translator a full- or low-speed device on port `port` of
+ * hub `hub` (0: the root port) is reached through: the nearest high-speed hub
+ * on the way to the root and the port of it the way goes down (USB 2.0
+ * 11.14). Left 0 for a high-speed device, one with no high-speed hub above
+ * it, and at SuperSpeed. */
+static void tt_of(uint8_t hub, uint8_t port, CH32RVUsbHcdEp &e)
+{
+    if (e.speed != CH32RV_USBH_FULL && e.speed != CH32RV_USBH_LOW) {
+        return;
+    }
+    for (uint8_t tier = 0; hub && hub <= CH32RV_USB_HOST_DEVICES && tier < 7; tier++) {
+        if (devs[hub].speed == CH32RV_USBH_HIGH) {
+            e.ttHub = hub;
+            e.ttPort = port;
+            return;
+        }
+        port = devs[hub].port;
+        hub = devs[hub].parent;
+    }
+}
+
 bool ch32rv_usb_host_ep_open(uint8_t daddr, const uint8_t *d)
 {
     if (!hcd || daddr > CH32RV_USB_HOST_DEVICES || devs[daddr].state == DEV_FREE || d[0] < 7 || d[1] != 5) {
@@ -425,6 +444,7 @@ bool ch32rv_usb_host_ep_open(uint8_t daddr, const uint8_t *d)
     e.mps = (uint16_t)((d[4] | d[5] << 8) & 0x7FF);
     e.interval = d[6];
     e.speed = devs[daddr].speed;
+    tt_of(devs[daddr].parent, devs[daddr].port, e);
     /* SuperSpeed: the endpoint companion follows (USB 3.2 9.6.7). The
      * callers hand an endpoint descriptor inside a configuration they have
      * bounds-checked; the companion is mandatory there, so it is read
@@ -438,13 +458,14 @@ bool ch32rv_usb_host_ep_open(uint8_t daddr, const uint8_t *d)
     return hcd->epOpen(daddr, e);
 }
 
-/* EP0 of `daddr` at `mps`. */
-static bool ep0_open(uint8_t daddr, uint16_t mps, uint8_t speed)
+/* EP0 of `daddr` at `mps`, a device of `speed` on port `port` of hub `hub`. */
+static bool ep0_open(uint8_t daddr, uint16_t mps, uint8_t speed, uint8_t hub, uint8_t port)
 {
     CH32RVUsbHcdEp e = {};
     e.type = CH32RV_USBH_CONTROL;
     e.mps = mps;
     e.speed = speed;
+    tt_of(hub, port, e);
     return hcd->epOpen(daddr, e);
 }
 
@@ -1171,7 +1192,7 @@ void en_step(void)
         }
 #endif
         /* SuperSpeed EP0 is 512 (bMaxPacketSize0 9); USB 2.0 starts at 8. */
-        if (!ep0_open(0, is_super(en.speed) ? 512 : 8, en.speed)) {
+        if (!ep0_open(0, is_super(en.speed) ? 512 : 8, en.speed, en.now.hub, en.now.port)) {
             en_retry();
             return;
         }
@@ -1232,7 +1253,7 @@ void en_step(void)
             hcd->deviceAt(en.address, en.route);
         }
 #endif
-        if (!ep0_open(en.address, devs[en.address].mps0, en.speed)) {
+        if (!ep0_open(en.address, devs[en.address].mps0, en.speed, en.now.hub, en.now.port)) {
             en_retry();
             return;
         }
@@ -1800,9 +1821,7 @@ extern "C" void ch32rv_usb_host_task(void)
         return;
     }
     busy = true;
-    if (port_is_usbfs(hcd)) {
-        port_poll();
-    } else if (hcd->poll) {
+    if (hcd->poll) {
         hcd->poll();
     }
     pump();
@@ -1894,12 +1913,7 @@ uint32_t CH32RVUsbHost::droppedDeviceEvents() const
     return device_dropped;
 }
 
-bool CH32RVUsbHost::begin()
-{
-    return begin(CH32RVUsbHostConfig());
-}
-
-bool CH32RVUsbHost::begin(const CH32RVUsbHostConfig &config)
+bool CH32RVUsbHost::beginOn(const CH32RVUsbHcd *driver)
 {
     if (_started) {
         return ok();
@@ -1913,21 +1927,15 @@ bool CH32RVUsbHost::begin(const CH32RVUsbHostConfig &config)
     memset(hubs, 0, sizeof hubs);
     ev_head = ev_tail = 0;
     port_changed = false;
-    const CH32RVUsbHcd *driver = port_hcd(config.port);
     if (!driver) {
         return fail(CH32RVUsbHostError::Unsupported);
     }
-    const bool usbfs = port_is_usbfs(driver);   /* the others open their own clock */
-    if (usbfs && !port_open()) {
-        return fail(CH32RVUsbHostError::Unsupported);
-    }
-    if (usbfs && !port_has_host()) {
-        port_close();
+    if (driver->prepare && !driver->prepare()) {
         return fail(CH32RVUsbHostError::Unsupported);
     }
     if (!driver->open()) {
-        if (usbfs) {
-            port_close();
+        if (driver->release) {
+            driver->release();
         }
         return fail(CH32RVUsbHostError::Busy);
     }
@@ -1955,11 +1963,11 @@ void CH32RVUsbHost::end()
             remove_device(a);
         }
     }
-    const bool usbfs = port_is_usbfs(hcd);
-    hcd->close();
+    const CH32RVUsbHcd *driver = hcd;
+    driver->close();
     hcd = nullptr;
-    if (usbfs) {
-        port_close();
+    if (driver->release) {
+        driver->release();
     }
     _started = false;
     ch32rv_service_detach(&host_service);
@@ -2166,8 +2174,7 @@ bool CH32RVUsbHost::getStringDescriptor(uint8_t address, uint8_t index, char *ou
 
 #else /* no host on this series */
 
-bool CH32RVUsbHost::begin() { return fail(CH32RVUsbHostError::Unsupported); }
-bool CH32RVUsbHost::begin(const CH32RVUsbHostConfig &) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::beginOn(const CH32RVUsbHcd *) { return fail(CH32RVUsbHostError::Unsupported); }
 void CH32RVUsbHost::end() {}
 bool CH32RVUsbHost::ready() const { return false; }
 void CH32RVUsbHost::task() {}

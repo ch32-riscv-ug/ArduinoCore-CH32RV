@@ -548,6 +548,8 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
     if peer_port:
         place["usb_peer_controller"] = peer_port
         place["usb_peer"] = PEER_KINDS[peer_usb["to"]]
+        if peer_usb.get("hub"):
+            place["usb_peer_hub"] = peer_usb["hub"]   # the host cases check the peer hangs from that kind of hub
     if peer_usb.get("to") in ESP_PEERS:
         place["usb_peer_serial"] = peer_usb.get("serial")
         place["usb_peer_mac"] = peer_usb.get("mac")

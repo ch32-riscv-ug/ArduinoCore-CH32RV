@@ -9,7 +9,7 @@ import secrets
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from host_peer import Peer, device, dut_ready, host, link_speed, settings, wait_device
+from host_peer import Peer, check_path, device, dut_ready, host, link_speed, settings, wait_device
 
 
 def test_usb_peer_host(dut, peers):
@@ -19,6 +19,7 @@ def test_usb_peer_host(dut, peers):
 
     # Enumeration, strings, the interfaces the host drivers took.
     dev = wait_device(dut, peer.id["hid"])
+    check_path(dut, dev, __file__)   # on the root port, or behind the record's hub
     # Full speed, high speed with the ESP32-P4 on the DUT's USBHS, or the speed a CH32RV peer's controllers meet at.
     speed = link_speed(__file__)
     assert dev["vid"] == peer.id["vid"] and dev["speed"] == speed

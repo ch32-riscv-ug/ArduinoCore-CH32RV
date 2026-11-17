@@ -19,12 +19,9 @@
  * a transfer interrupt is pending) and hardware toggles; SETUP is its own
  * interrupt.
  *
- * The PHY needs HSE: its PLL takes a 3, 4, 5 or 8 MHz reference divided from
- * the crystal (RM: "the clock source of USBHSPLL can only be HSE"),
- * CH32RVUsbDeviceConfig::hseHz names it. RCC_CFGR2 (+0x2C): USBHSDIV 26:24
- * (HSE / (n + 1)), USBHSPLLSRC 27 (0 = HSE), USBHSCKREF 29:28 (00 3 MHz,
- * 01 4 MHz, 10 8 MHz, 11 5 MHz), USBHSPLL_ALIVE 30. Pads PB6 / PB7 belong to
- * the PHY. Build only. */
+ * The PHY's clock (HSE only, CH32RVUsbDeviceConfig::hseHz names the crystal)
+ * and the interrupt are the core's, shared with the host driver
+ * (internal/ch32rv_usbhs1.h). Build only. */
 #if defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
 
 #include <Arduino.h>
@@ -32,6 +29,7 @@
 #include <string.h>
 
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_usbhs1.h"
 #include "internal/CH32RVUsbDcd.h"
 #include "internal/CH32RVUsbDeviceInternal.h"
 
@@ -87,12 +85,6 @@
 
 #define NEP 16
 
-#define RCC_CTLR_HSEON   (1u << 16)
-#define RCC_CTLR_HSERDY  (1u << 17)
-#define RCC_CFGR2        CH32RV_REG32(CH32RV_RCC_BASE + 0x2Cu)
-#define CFGR2_HS_MASK    0x7F000000u                      /* 30:24, not USBFSSRC 31 */
-#define CFGR2_ALIVE      (1u << 30)
-
 static uint8_t ep0_buf[64] __attribute__((aligned(4)));
 
 namespace {
@@ -110,50 +102,14 @@ static bool ep0_tog;
 static bool suspended;
 
 /* ------------------------------------------------------------ clocks */
-static uint32_t pll_bits(uint32_t hse)
-{
-    static const struct {
-        uint32_t hz;
-        uint32_t sel;
-    } refs[] = {{4000000u, 1u}, {8000000u, 2u}, {5000000u, 3u}, {3000000u, 0u}};
-    for (unsigned r = 0; r < sizeof refs / sizeof refs[0]; r++) {
-        for (uint32_t div = 1; div <= 8; div++) {
-            if (hse == refs[r].hz * div) {
-                return CFGR2_ALIVE | (refs[r].sel << 28) | ((div - 1u) << 24);
-            }
-        }
-    }
-    return 0;
-}
-
-static bool clock_ok(void)
-{
-    return (CH32RV_RCC_CTLR & RCC_CTLR_HSERDY) && (RCC_CFGR2 & CFGR2_ALIVE);
-}
-
 static bool clock_on(void)
 {
-    const uint32_t pll = pll_bits(ch32rv_usb_hse_hz);
-    if (!pll) {
-        return false;
-    }
-    if (!(CH32RV_RCC_CTLR & RCC_CTLR_HSERDY)) {
-        CH32RV_RCC_CTLR |= RCC_CTLR_HSEON;
-        for (uint32_t t0 = millis(); !(CH32RV_RCC_CTLR & RCC_CTLR_HSERDY);) {
-            if ((uint32_t)(millis() - t0) > 20u) {
-                CH32RV_RCC_CTLR &= ~RCC_CTLR_HSEON;
-                return false;                            /* no crystal */
-            }
-        }
-    }
-    RCC_CFGR2 = (RCC_CFGR2 & ~CFGR2_HS_MASK) | pll;
-    ch32rv_clock_enable(USBHS);
-    return true;
+    return ch32rv_usbhs1_clock_on(ch32rv_usb_hse_hz);
 }
 
 static void dcd_poll(void)
 {
-    if (!clock_ok()) {
+    if (!ch32rv_usbhs1_clock_ok()) {
         clock_on();                                      /* after SystemInit() ran again for a probe */
     }
 }
@@ -214,8 +170,13 @@ static void reset_endpoints(void)
 }
 
 /* ------------------------------------------------------------ table */
+static void isr(void);
+
 static bool dcd_open(void)
 {
+    if (ch32rv_usbhs1_irq_hook && ch32rv_usbhs1_irq_hook != isr) {
+        return false;                                    /* the USB host has the controller */
+    }
     if (!clock_on()) {
         return false;
     }
@@ -231,6 +192,7 @@ static bool dcd_open(void)
     reset_endpoints();
     DEV_AD = 0;
     INT_FG = 0xFF;
+    ch32rv_usbhs1_irq_hook = isr;
     ch32rv_irq_enable(CH32RV_IRQN_USBHS);
     return true;
 }
@@ -250,8 +212,10 @@ static void dcd_close(void)
         free(xout[ep].bounce);
         xin[ep].bounce = xout[ep].bounce = nullptr;
     }
-    ch32rv_clock_disable(USBHS);
-    RCC_CFGR2 &= ~CFGR2_ALIVE;
+    ch32rv_usbhs1_clock_off();
+    if (ch32rv_usbhs1_irq_hook == isr) {
+        ch32rv_usbhs1_irq_hook = nullptr;
+    }
 }
 
 static CH32RVUsbSpeed dcd_speed(void)
@@ -525,11 +489,6 @@ static void isr(void)
     } else {
         INT_FG = fg;
     }
-}
-
-extern "C" CH32RV_INTERRUPT void USBHS_IRQHandler(void)
-{
-    isr();
 }
 
 const CH32RVUsbDcd ch32rv_usb_dcd_usbhs1 = {

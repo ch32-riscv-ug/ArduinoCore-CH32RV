@@ -295,16 +295,15 @@ id = "usb-peer-fs"
 test = "usb-peer-fs"
 scope = "once"
 
-# CH32RVUsbHost drives the USBFS of the X03x and the USBOTG_FS layouts, and the second-generation USBHS
-# (CH32RVUsbHostPort.h). V103's USB has a host half the core does not drive yet: missing. The USBHS-only series are
-# listed by name (an ESP32-P4 peer on their USBHS).
+# CH32RVUsbHost drives the USBFS of the X03x and the USBOTG_FS layouts, V103's older USB, and both generations of
+# USBHS (CH32RVUsbHostPort.h). V103 and the USBHS-only series are listed by name (an ESP32-P4 peer on their USBHS).
+# Which controller and which hub between are the record's (RECORDS.ja.md 4.3: the port, usb.hub).
 [[item]]
 id = "usb-peer-host"
 test = "usb-peer-host"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
-missing = ["CH32V103"]
 
 [[item]]
 id = "usb-peer-host-classes"
@@ -312,7 +311,6 @@ test = "usb-peer-host-classes"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
-missing = ["CH32V103"]
 
 [[item]]
 id = "usb-peer-host-storage"
@@ -320,7 +318,6 @@ test = "usb-peer-host-storage"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
-missing = ["CH32V103"]
 
 [[item]]
 id = "usb-peer-host-input"
@@ -328,7 +325,6 @@ test = "usb-peer-host-input"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
-missing = ["CH32V103"]
 
 [[item]]
 id = "hid"

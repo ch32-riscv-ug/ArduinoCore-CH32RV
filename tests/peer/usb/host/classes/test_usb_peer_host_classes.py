@@ -7,13 +7,14 @@ import secrets
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from host_peer import Peer, device, dut_ready, host, settings, wait_device
+from host_peer import Peer, check_path, device, dut_ready, host, settings, wait_device
 
 
 def test_usb_peer_host_classes(dut, peers):
     peer = Peer(peers)
     dut_ready(dut, settings(__file__)["build_id"])
     dev = wait_device(dut, peer.id["classes"])
+    check_path(dut, dev, __file__)   # on the root port, or behind the record's hub
     assert dev["vid"] == peer.id["vid"]
     assert {(0x01, 0x03), (0xFF, 0x00), (0x0B, 0x00)} <= set(dev["interfaces"])
     device(peer, "?", rb"READY 1")

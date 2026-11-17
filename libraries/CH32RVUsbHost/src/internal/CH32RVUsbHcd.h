@@ -1,6 +1,7 @@
 /* What the host stack (CH32RVUsbHostCore.cpp) asks of a host controller
  * driver, the host-side twin of CH32RVUsbDevice's CH32RVUsbDcd.h. One table
- * per controller; CH32RVUsbHostPort.h picks the series'. Not for sketches.
+ * per controller; CH32RVUsbHostPort.h picks the series' (only the one a sketch's
+ * port names is linked). Not for sketches.
  *
  * A driver keeps any number of endpoints open, each with at most one transfer
  * pending, and runs them itself (NAK retries, interrupt polling intervals,
@@ -36,13 +37,19 @@
  * endpoint companion's (USB 3.2 9.6.7), 0 elsewhere: `maxBurst` bMaxBurst
  * (packets per burst - 1), `attributes` its bmAttributes (bulk: MaxStreams
  * in bits 4:0, isochronous: Mult in bits 1:0), `bytesPerInterval`
- * wBytesPerInterval (periodic endpoints). */
+ * wBytesPerInterval (periodic endpoints). `ttHub` / `ttPort`: a full- or
+ * low-speed device behind a high-speed hub is reached through that hub's
+ * transaction translator (USB 2.0 11.14) - the address of the nearest
+ * high-speed hub on the way to the root and the port of it the way goes down
+ * (split transactions, the driver's); 0 / 0 when there is none. A driver
+ * without split transactions refuses such an endpoint. */
 struct CH32RVUsbHcdEp {
     uint8_t address, type;
     uint16_t mps;
     uint8_t interval, speed;
     uint8_t maxBurst, attributes;
     uint16_t bytesPerInterval;
+    uint8_t ttHub, ttPort;
 };
 
 struct CH32RVUsbHcd {
@@ -61,7 +68,8 @@ struct CH32RVUsbHcd {
     /* An endpoint of device `daddr`: EP0 opens both directions (address 0).
      * `speed` is the device's; a low-speed device behind a full-speed hub
      * needs the PRE packet, which the driver adds when the root port runs at
-     * full speed. */
+     * full speed; one behind a high-speed hub (ttHub) goes by split
+     * transactions. */
     bool (*epOpen)(uint8_t daddr, const CH32RVUsbHcdEp &ep);
     void (*epClose)(uint8_t daddr, uint8_t address);
     void (*deviceClose)(uint8_t daddr);   /* every endpoint of it */
@@ -84,6 +92,12 @@ struct CH32RVUsbHcd {
      * U3 (suspend), false wakes it to U0; false when the link is not up. */
     void (*linkAllow)(bool u1, bool u2);
     bool (*portSuspend)(bool suspend);
+    /* Before open(): the part's clock, PHY and pins for host mode, and
+     * whether the die has the host half - false is Unsupported (open()'s
+     * false is Busy). release() undoes it after close(). nullptr: nothing
+     * (the driver opens its own clock in open()). */
+    bool (*prepare)(void);
+    void (*release)(void);
 };
 
 /* From a driver's interrupt. */
@@ -96,3 +110,4 @@ extern const CH32RVUsbHcd ch32rv_usb_hcd_usbfs;
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2;     /* the second-generation USBHS (V407 / V467: USBHS1) */
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs2_b;   /* V407 / V467: USBHS2 */
 extern const CH32RVUsbHcd ch32rv_usb_hcd_usbss;      /* H417 / H416: USBSS, SuperSpeed only */
+extern const CH32RVUsbHcd ch32rv_usb_hcd_usbhs1;     /* V305 / V307 / V317: the first-generation USBHS */

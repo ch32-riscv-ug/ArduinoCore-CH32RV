@@ -116,6 +116,13 @@ DUT の USB の口を別の CH32RV の基板の口につなぎ、記録に `usb:
 | USB のネットワーク（CDC-NCM） | CH32RVUsbHost | usb-peer-net を飛ばす（`net` などは 0 を返す） |
 | RAM（X035 は 20 KB） | 相手の石 | MSC の RAM ディスクは書いたブロックだけを持つ（2 つの LUN で 4 ブロックまで） |
 
+## 間のハブ
+
+記録の相手の形に `hub`（`fs` / `hs-stt` / `hs-mtt`、tests/RECORDS.ja.md §4.3）があると、ホストの case は列挙のあと DUT に
+`where <アドレス>` を送り、相手がその速さのハブの先にいるかを確かめます（`host_peer.check_path`）。HS のハブの先の FS の
+相手（Pico）は split トランザクションで届きます（第 2 世代 USBHS のホスト）。`hub` が無いときは、ルートの口に直結であることを
+確かめます。
+
 ## 配線と設定
 
 - DUT の USB（D+ / D- / GND）を S3 の USB OTG ポートへ。VBUS は使いません（DUT と S3 はそれぞれ給電）。

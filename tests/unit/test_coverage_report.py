@@ -68,7 +68,11 @@ def test_a_list_of_tests_not_on_and_no_test(tmp_path):
     x035 = row("CH32X035")
     assert x035["usb-device"] == "✓"              # the S3 as the host counts for the device driver
     assert x035["wire-slave"] == "" and x035["interrupt"] == "" and x035["dac"] == "n/a"
-    assert row("CH32V103")["usb-peer-host"] == "未実装" and row("CH32V307")["usb-peer-host"] == ""
+    assert row("CH32V103")["usb-peer-host"] == "" and row("CH32V307")["usb-peer-host"] == ""
+    # An item's `missing` series shows as not implemented (V103's host was, until 2026-11-17).
+    items = [dict(i, missing=["CH32V103"]) if i["id"] == "usb-peer-host" else i for i in coverage.load_items()]
+    text = coverage.report(coverage.collect([a], list(caps)), items, caps)
+    assert row("CH32V103")["usb-peer-host"] == "未実装"
     assert row("CH32M030")["watchdog"] == "n/a"
     assert "| console-sdi | not run |  |" in text and "| taskkit | not run |  |" in text and "| servo | not run |  |" in text
 

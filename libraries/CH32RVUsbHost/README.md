@@ -32,7 +32,8 @@ void loop() { deliverEvents(); }   // the callbacks run here; the stack runs aft
 | CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS (PC16 / PC17) | on a C8T6 against an ESP32-S3 (EspUsbDevice): HID, CDC, MSC, MIDI, vendor, CCID |
 | CH32X035 F8U6 / F7P6 / D8U6, CH32X033 | - (no host in silicon; `begin()` says `Unsupported`) | `Unsupported` seen on an F8U6 |
 | CH32V203 / V208 | USBFS (PB6 / PB7) | built only |
-| CH32V303 / V305 / V307 / V317 | USBFS (PA11 / PA12) | built only |
+| CH32V103 | USB (the older USBFS IP, PA11 / PA12) | built only. CPU Clock 48 / 72 MHz (48 MHz from the PLL) |
+| CH32V303 / V305 / V307 / V317 | USBFS (PA11 / PA12). V305 / V307 / V317: the first-generation USBHS with `CH32RV_USB_HOST_PORT_HIGH_SPEED` (PB6 / PB7, needs HSE) | built only |
 | CH32V205, CH32M030, CH32H415 / H416 / H417 | USBFS (PA11 / PA12). V205 and H41x: USBHS with `CH32RV_USB_HOST_PORT_HIGH_SPEED` (H41x: PB8 / PB9, shared with SWD) | built only. 48 MHz is made as for the device (V205 and H41x from the USBHS PLL, M030 from the 144 MHz PLL) |
 | CH32H416 / H417 (also) | USBSS with `CH32RV_USB_HOST_PORT_SUPER_SPEED`: USB 3 at 5 Gbit/s only | implemented, not yet tested on hardware |
 | CH32V407 / V467 | USBHS1 (default, `HIGH_SPEED`), USBHS2 (`HIGH_SPEED_2`) | on a V407's USBHS1 against an ESP32-P4 (EspUsbDevice, high speed): HID, CDC, MSC, MIDI, vendor, CCID |
@@ -48,8 +49,6 @@ ESP32-S3, and on a V407 against an ESP32-P4 at high speed.
 
 **The board supplies VBUS.** The chip cannot switch it. Starting the host does
 not set up a Type-C source's CC circuit or switch the board's external supply.
-On V30x the host uses USBFS even where the chip also has USBHS (no driver for
-the first-generation USBHS host yet).
 
 ### Ports and speed
 
@@ -71,13 +70,29 @@ theirs when attached directly; `CH32RVUsbHostDeviceInfo::speed` is
 
 - High speed needs the crystal (HSE); the driver starts it and keeps HSI only
   on a board without one (then only short packets get through).
-- Full- and low-speed devices behind a high-speed hub (split transactions) are
-  not handled yet; a high-speed hub and high-speed devices behind it should
-  be, but that is not checked on hardware.
+- Full- and low-speed devices behind a high-speed hub go through the hub's
+  transaction translator by split transactions (the controller sends the
+  SPLIT token, the driver runs the start and complete splits), with a single
+  or a multi TT alike. Not there: CLEAR_TT_BUFFER after a transfer cut off in
+  the hub, and isochronous OUT of more than 188 bytes. **Implemented, not yet
+  tested on hardware.**
+- H41x's USBHS is PB8 / PB9, the SWD pins: after `begin()` a debugger cannot
+  attach (until a reset).
 - X305 / X315 without HSE can only trim HSI to a host's SOF, so a host there
   needs HSE.
 - NYET after an OUT counts as accepted, and no PING is sent (the device NAKs
   until it has room).
+
+The first-generation USBHS (V305 / V307 / V317's `HIGH_SPEED`, PB6 / PB7) is a
+high-speed host too. Its PHY's PLL comes from the crystal only, so it needs
+HSE (the Clock Source menu's crystal; 8 MHz when HSE is not chosen there).
+**Implemented, not yet tested on hardware.** Its SPLIT register is 12 bits
+with no description of its fields, so full- and low-speed devices behind a
+high-speed hub are not handled there (their endpoints do not open); a
+low-speed device behind a full-speed hub (PRE) is not checked either.
+
+On every port only the driver of the port a sketch picks is linked (begin()
+picks it in the sketch; with a constant port the others stay out).
 
 On H416 / H417, `SUPER_SPEED` runs the USBSS controller as a SuperSpeed
 (USB 3, 5 Gbit/s) host. **Implemented, not yet tested on hardware.** It
