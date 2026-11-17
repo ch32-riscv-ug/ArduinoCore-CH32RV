@@ -142,6 +142,9 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+PROBE_HIGH_MV = 3300   # an OEP probe's GPIO high (3.3 V I/O)
+
+
 def test_adc(dut, oep_host, record_property):
     from oep_client import core
     from oep_client.fixture import Gpio
@@ -166,15 +169,22 @@ def test_adc(dut, oep_host, record_property):
         for level, mode in ((0, Gpio.OUTPUT_LOW), (1, Gpio.OUTPUT_HIGH)):
             gpio.configure(line["channel"], mode)
             time.sleep(0.01)
-            m = ask(dut, f"adc {line['pin']}", rb"ADC (\d+) (\d+)")
-            readings[level] = (int(m.group(1)), int(m.group(2)))
+            m = ask(dut, f"adc {line['pin']}", rb"ADC (\d+) (\d+) (\d+)")
+            readings[level] = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
         record_property("readings", json.dumps(readings))
-        low, full = readings[0]
-        high, _ = readings[1]
+        low, full, _ = readings[0]
+        high, _, vdd = readings[1]
         # Whether it works, not how well: the probe's levels are no reference (the ADC's own accuracy is a manual
         # test with an external source). Under a quarter / over three quarters of full scale, as adc-stream.
         assert low < full / 4, f"{line['pad']} driven low reads {low} of {full}"
         assert high > full * 3 / 4, f"{line['pad']} driven high reads {high} of {full}"
+        # Not the ADC's accuracy either: whether the DUT's own VDD (from Vrefint, what analogReadMilliVolts() scales
+        # by) agrees with a pad the probe drives at its 3.3 V reading full scale - VDD can then be no higher than the
+        # probe's level, 20 % allowed for the probe's and the reference's spread. CH32V003 once said 4.45 V on a 3.3 V
+        # board (its ADC calibrated with CALVOL invalid, 2026-11-17), which a check against VDD alone could not see.
+        if vdd and high >= full * 0.98:
+            assert vdd <= PROBE_HIGH_MV * 1.2, \
+                f"{line['pad']} driven high reads full scale ({high} of {full}), yet the DUT says VDD is {vdd} mV"
     finally:
         gpio.configure(line["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])

@@ -8,7 +8,7 @@
  *                             USART it took, 0 if none), then every byte it
  *                             receives goes back out (until `stop`)
  *   stop                      STOP <bytes echoed>
- *   adc <pin>                 ADC <reading> <full scale>
+ *   adc <pin>                 ADC <reading> <full scale> <VDD mV from Vrefint, 0 unknown>
  *   acaps <pin>               ACAPS <ADC channel of the pad, or -1>
  *   astream <rate> <halves> <pin0> [<pin1> [<pin2>]]
  *                             CH32RVAdcStream on the pins at <rate> (the first
@@ -381,7 +381,9 @@ static void reply(char *command)
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         pinMode(pin, INPUT);
         analogReadResolution(CH32RV_ADC_BITS);
-        SerialDMSeq.printf("ADC %d %d\r\n", analogRead(pin), (1 << CH32RV_ADC_BITS) - 1);
+        const int reading = analogRead(pin);
+        SerialDMSeq.printf("ADC %d %d %lu\r\n", reading, (1 << CH32RV_ADC_BITS) - 1,
+                           (unsigned long)ch32rv_adc_vdd_millivolts());
     } else if (!strcmp(argv[0], "hscaps") && argc == 2) {
 #if PERIPH_HSADC
         SerialDMSeq.printf("HSCAPS %d\r\n", CH32RVHsAdc::channelOf((pin_size_t)atoi(argv[1])));

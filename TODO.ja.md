@@ -245,8 +245,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   CALVOLSELECT（26:25、リセット値 01 = VDDA × 2/4、00 は無効）を消した状態で自己校正していたため、校正が約 100
   カウント低く残っていた（Vrefint 277 / 1023、VDDA/2 が 410。直して 378・511・767、VDD 3256 mV）。CTLR1 を書く
   所はすべて CH32RV_ADC_CTLR1_RESET（V003 は 1 << 25）を入れる。selfapi・selfexti・periph が V003 で通る
-  （2026-11-17、core-20261117T113312Z-1e9ba3eb）。残り: selfapi の millivolts は相対の判定だけでこれを見逃した。
-  プローブが High にした端子を満点で読んだのに DUT の VDD がプローブの電圧より高すぎる、の食い違いを判定に足す。
+  （2026-11-17、core-20261117T113312Z-1e9ba3eb）。見逃した試験の側も直した: periph の test_adc が、プローブが High に
+  した端子を満点で読むとき、DUT の VDD（Vrefint から）が 3.3 V × 1.2 を超えないことを見る（V003 3248、V203 3334、
+  H417 3350 mV で通る、core-20261117T114148Z-8b102885）。
 - [ ] CH32X315 の ADC: コアの初期化が CTLR2 を丸ごと書き、CAL_AUTO（ビット 6、リセット値 1 = ハードの自動校正）を
   0 にしている（CH32X315RM の ADC_CTLR2）。X315 の Vrefint・VDD の読みが正しいかを測り、要るなら CAL_AUTO を保つ。
   2026-11-17 に測った: CAL_AUTO 0 のまま Vrefint 1527〜1536 / 4095、VDD 3199〜3218 mV（LinkE の 3.3 V 給電として
