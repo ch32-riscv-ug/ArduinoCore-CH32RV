@@ -148,7 +148,7 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| ファームウェア更新のクラス（DFU の download、MSC の UF2 = MscFirmwareDisk） | 全 USB 系列 | 1 | 自動 | PC が相手（usb の case）。自動 | docs/usb.ja.md:376, libraries/CH32RVUsbDevice/README.ja.md:76 |
+| ファームウェア更新のクラス（DFU の download、MSC の UF2 = MscFirmwareDisk） | 全 USB 系列 | 実装済み（2026-11-17、ビルドのみ。`CH32RVUsbDeviceDfu`、`CH32RVUsbDeviceMscFirmwareDisk`、Update ライブラリ。スケッチの後ろの flash に置き、確かめて再起動でコピー） | 自動 | PC（usb-firmware の case。CH32RV_BOOT_HOLD_MS 付き） | docs/usb.ja.md「ファームウェア更新」, cores/arduino/ch32rv_update.h |
 | ソフトウェア USB デバイス（rv003usb） | V003（V00x） | 2 | 自動 | USB 端子の配線（D+/D- を GPIO に）＋PC | FC:116, TODO:479 |
 | 工場 ISP への入口（enterBootloader） | H41x | 2 | 自動 | PC（ch32rv isp） | docs/usb.ja.md:371, FC:115 |
 | 工場 ISP への入口（BOOT_MODE の無い系列） | V20x、V30x、V103、L103、V205、M030、V4x7 | 2 | 自動 | PC | docs/usb.ja.md:372-373, docs/upload-routes.ja.md:174 |
@@ -160,7 +160,7 @@
 | USBSS の口の USB 2.0 側（同じコネクタの HS への切り替え） | H417/H416 | 2 | 自動 | PC、SWD を外す部品 | libraries/CH32RVUsbDevice/src/CH32RVUsbDcdUsbss.cpp:29-33, TODO:135-136 |
 | EspUsbDevice との差（複数リスナー、キュー、64 bit LBA、CCID の追加 API、Info の例、例 30 本ほど） | 全 USB 系列 | 2 | 自動 | PC、ESP32-S3 | TODO:468 |
 | USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md:94 |
-| suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 1 | 自動 | PC（suspend を起こす） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125, TC:139 |
+| suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 実装済み（2026-11-17、ビルドのみ。usb-power の case。USBFS の OTG の配置と V103 のリモートウェイクアップを足した） | 自動 | PC（Linux のランタイム PM。power/control を書ける udev のルールが要る: docs/usb.ja.md「サスペンド・レジューム・リモートウェイクアップ」） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125, TC:139 |
 
 ## USB ホスト
 

@@ -82,6 +82,10 @@ static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
  * begins the device). */
 extern void (*volatile ch32rv_usb_deferred)(void);
 
+/* A firmware update through USB is accepted: `ms` from now, leave the bus and
+ * install it (CH32RVUsbDeviceFirmware.cpp). */
+void ch32rv_usb_install_after(CH32RVUsbDevice &device, uint32_t ms);
+
 /* CH32RVUsbDeviceConfig::hseHz of the device that is opening its
  * controller, for drivers whose PHY clock is divided from the crystal. */
 extern uint32_t ch32rv_usb_hse_hz;

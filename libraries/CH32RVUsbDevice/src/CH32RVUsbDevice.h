@@ -88,6 +88,8 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
  * interface working (DFU_DETACH still enters the bootloader) but takes the
  * device out of that list. */
 #define CH32RV_USB_DFU_RUNTIME_NAME "CH32RV"
+/* CH32RVUsbDeviceDfu's (DFU download): what `dfu-util -a` picks it by. */
+#define CH32RV_USB_DFU_NAME "Firmware"
 /* SCSI INQUIRY of CH32RVUsbDeviceMsc (8 / 16 / 4 characters) and the FAT RAM
  * disk's volume label (11). */
 #define CH32RV_USB_MSC_VENDOR "CH32RV"
@@ -525,6 +527,7 @@ extern CH32RVUsbDevice USBDevice;
 #include "CH32RVUsbDeviceBulkStream.h"
 #include "CH32RVUsbDeviceCdcSerial.h"
 #include "CH32RVUsbDeviceDfuRuntime.h"
+#include "CH32RVUsbDeviceDfu.h"
 #include "CH32RVUsbDeviceHid.h"
 #include "CH32RVUsbDeviceMidi.h"
 #include "CH32RVUsbDeviceVendor.h"

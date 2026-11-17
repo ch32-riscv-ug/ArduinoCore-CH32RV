@@ -52,6 +52,7 @@ static inline uint32_t len_off(uint8_t ep) { return 0x30u + 4u * ep; }
 #define UC_CLR_ALL   0x02
 #define UC_DMA_EN    0x01
 #define UD_PD_DIS    0x80
+#define UD_LOW_SPEED 0x04
 #define UD_PORT_EN   0x01
 #define UIE_SUSPEND  0x04
 #define UIE_TRANSFER 0x02
@@ -357,9 +358,18 @@ static void dcd_ep0_stall(void)
     xin[0].active = xout[0].active = false;
 }
 
-/* Remote wakeup: the EVT has no resume for this IP; not offered. */
+/* Remote wakeup: no resume bit, but switching the port to low speed swaps
+ * the idle state of D+ / D-, which the host sees as K - for 8 ms, then back:
+ * as the EVT's USBFS_Send_Resume does on the V20x / V30x USBFS, whose
+ * UDEV_CTRL is this one's (RB_UD_LOW_SPEED 0x04 in ch32v10x_usb.h). The V103
+ * EVT itself has no resume: not measured here yet. */
 static void dcd_remote_wakeup(void)
 {
+    UDEV_CTRL ^= UD_LOW_SPEED;
+    const uint32_t t0 = micros();
+    while ((uint32_t)(micros() - t0) < 8000u) {
+    }
+    UDEV_CTRL ^= UD_LOW_SPEED;
 }
 
 /* ------------------------------------------------------------ interrupt */

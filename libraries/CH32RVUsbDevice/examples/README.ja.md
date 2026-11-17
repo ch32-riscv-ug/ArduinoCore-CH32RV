@@ -140,6 +140,8 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [CustomDevice](CustomDevice/README.ja.md) | CDC、DFU runtime、Vendor HID を組み合わせ、製品名や VID/PID を設定する例です。Vendor HID の Output report は Input report として返します。 |
 | [CustomHID](CustomHID/README.ja.md) | 独自の report descriptor を渡して、8-byte Input report だけを持つ HID を作ります。 |
 | [DescriptorDump](DescriptorDump/README.ja.md) | ホストに見せている記述子（デバイス・構成・BOS・MS OS 2.0・文字列・HID）と、制御要求・バスのイベントを UART に表示します。 |
+| [FirmwareDFU](FirmwareDFU/README.ja.md) | 動いたまま DFU で新しいファームウェアを受け取り、確かめてから入れ替えます。 |
+| [FirmwareMSC](FirmwareMSC/README.ja.md) | `.uf2`（または `.bin`）をコピーすると入れ替わる USB ドライブです。 |
 | [DfuRuntime](DfuRuntime/README.ja.md) | CDC を持たない DFU runtime インターフェースで、USB から ISP への移行を試します。PA1 が Low の間は `onDetach()` が移行を拒否します。 |
 | [ButtonKeyboard](ButtonKeyboard/README.ja.md) | チャタリングを除いたスイッチでキーを押下・解放し、未送信の状態を再試行します。 |
 | [ButtonMouse](ButtonMouse/README.ja.md) | 物理スイッチで左ボタンを押下・解放します。移動は自動生成しません。 |

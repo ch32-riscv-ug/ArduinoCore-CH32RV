@@ -4,7 +4,7 @@
 
 | ライブラリ | 役割 | スケッチから |
 |---|---|---|
-| [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム） | `#include <CH32RVUsbDevice.h>` |
+| [CH32RVUsbDevice](../libraries/CH32RVUsbDevice/) | チップの USB をデバイスとして使う（CDC・HID・MIDI・ベンダー・MSC・CCID・ネットワーク・オーディオ・ビデオ・DFU ランタイム・DFU のダウンロード・UF2 のドライブ） | `#include <CH32RVUsbDevice.h>` |
 | [CH32RVUsbPd](../libraries/CH32RVUsbPd/) | USB-C の PD 充電器に電圧を頼む（シンク）、PD で電圧を出す（ソース） | `#include <CH32RVUsbPd.h>` |
 | [CH32RVUsbHost](../libraries/CH32RVUsbHost/) | チップの USB をホストとして使う（HID・CDC シリアル・MIDI・MSC・ベンダー・CCID） | `#include <CH32RVUsbHost.h>` |
 
@@ -246,6 +246,151 @@ H41x の自己書き換えに対応した構成では、DFU_DETACH 後に DFU mo
 `setup()` より前に始めても認識される時間は変わらず（0.3〜0.5 秒）、USB を使わないスケッチにも費用がかかる
 （Flash 約 11 KB、RAM 約 2.5 KB）ためです。必要になったら、ボードメニューで足せる形にしてあります。
 
+## ファームウェア更新（DFU のダウンロード・UF2 のドライブ）
+
+動いているスケッチが USB で新しいイメージを受け取り、自分を置き換えます（2026-11-17 実装、ビルドのみ）。
+工場 ISP（上の「書き込み」）と違い、スケッチは USB の身元を保ったまま受け取り、壊れたイメージなら何も変えずに動き続けます。
+
+| クラス | ホスト側 | エンドポイント | 例 |
+|---|---|---|---|
+| `CH32RVUsbDeviceDfu`（DFU 1.1、DFU mode） | `dfu-util -a Firmware -D <sketch>.ino.bin`、`ch32rv boot dfu flash` | なし（EP0 だけ） | [FirmwareDFU](../libraries/CH32RVUsbDevice/examples/FirmwareDFU/) |
+| `CH32RVUsbDeviceMscFirmwareDisk`（MSC） | ファイルマネージャで `.uf2`（または `.bin`）をドライブへコピー | バルク 1 組 | [FirmwareMSC](../libraries/CH32RVUsbDevice/examples/FirmwareMSC/) |
+| [Update](../libraries/Update/) ライブラリ（arduino-esp32 の `Update`） | 何でも（UART、CDC、ベンダーなど、スケッチが運ぶ） | — | [SerialUpdate](../libraries/Update/examples/SerialUpdate/) |
+
+どれも同じコアの部品（`ch32rv_update.h`、`ch32rv_flash.h` の staging と `ch32rv_flash_install()`）で書きます。
+
+### イメージの置き場所と入れ替え
+
+**スケッチの後ろの flash に置いて、再起動のときに先頭へコピーします。** 理由:
+
+- このコアの系列は、リセットで code flash の 0 番地（または system flash の工場ブートローダー）から起動します。
+  ESP32 の OTA のような「次に起動する区画」を切り替える仕組みも、このコアの二段目のローダーもありません。
+  ローダーを置くと、すべてのスケッチの先頭が数 KB 増え、書き込み経路（ISP・プローブ・DFU）の位置もずれます。
+- 工場ブートローダーは system flash にあり、この入れ替えでは触りません（壊れない）。ただし入口が BOOT0 の端子や
+  BOOT_MODE で、受け取るのは WCH の ISP プロトコルなので、動いているスケッチから「受け取ったイメージを書かせる」
+  ことには使えません。
+- 受け取る間は今のスケッチを一切変えません。flash の後ろ（staging）に書き、全部を確かめてから、最後の一歩として
+  コピーします。壊れたイメージ・途中で切れた転送・取り消しは、今のスケッチのまま終わります。
+
+staging は「スケッチの末尾を消去単位に切り上げた所」から「`CH32RV_FLASH_STORE` の領域の手前」までです
+（`ch32rv_flash_staging_offset()` / `ch32rv_flash_staging_size()`、`Update.capacity()`）。保存領域は更新で消えません。
+受け取れるイメージの大きさは、ほぼ「flash − 今のスケッチ」です。更新を受けるスケッチは flash の半分以下にします
+（例: V203 の ANY は 32 KB なので、USB のスケッチではほとんど入りません。品番を選んで 64 KB にします）。
+コピーは先頭から順に進み、上書きする staging の部分はコピー済みなので、staging と同じ大きさまでのイメージが入ります。
+
+**確かめること**（`ch32rv_update.h`）:
+
+1. 書いたページを読み返して一致すること（書けなければ `UPDATE_ERROR_WRITE`）。
+2. イメージの先頭がこのコアのリセットの入口（ベクタ表の 0 番の `j`、16 ビットの `c.j`、H41x の V5F のイメージの
+   `csrci`）で、跳び先がイメージの中にあること（`UPDATE_ERROR_MAGIC_BYTE`）。テキスト、ELF、`.hex`、生の UF2 を
+   イメージとして送ったものはここで断ります。最初のページで一度、終わりに実際の長さでもう一度確かめます。
+3. 順に書く場合（DFU、`Update.write()`、`.bin` のドライブ）: 長さが揃い、staging の CRC-32 が受け取ったバイト列の
+   CRC-32 と一致すること（`UPDATE_ERROR_VERIFY`）。
+4. UF2: ブロックの family ID がこの系列のものであること、ブロック番号が全部そろったこと。
+   同じブロックが 2 回来ても数えるのは 1 回で、書き込み済みのページを違う内容で上書きするものは断ります。
+
+確かめないこと: イメージが**この品番**向けか（UF2 の family ID は系列の単位で、DFU には何もありません）、誰が作ったか
+（署名）。更新の経路に届く人は誰でもイメージを入れられます。
+
+**コピー**（`ch32rv_flash_install()`）は RAM（`.highcode`、約 0.5 KB。使うスケッチだけ）から、割り込みを止めて行い、
+単位ごとに消去・書き込み・読み返しをして、合わなければ 3 回までやり直し、独立ウォッチドッグを給餌しながら進み、
+最後にリセットします。かかる時間は系列の消去・書き込みの速さで、64 KB でおよそ 1 秒です。**この間に電源が切れると、
+スケッチは書きかけになります。** 工場ブートローダー（BOOT0 / BOOT_MODE）とデバッグ線は code flash の外なので、
+そこから書き直せます。窓付きウォッチドッグ（WWDG）を動かしているスケッチは、コピーの間に給餌されずにリセットします。
+それ以外の再起動（電源、ウォッチドッグ、NRST）は、受け取ったイメージを忘れて今のスケッチで起動します。
+
+**試すときは起動待ちを付けます。** 書きかけのイメージが、プローブの接続できない状態（端子の付け替え、眠る）で
+止まることがあるので、ベンチで流すイメージには `CH32RV_BOOT_HOLD_MS` を付けます
+（[起動待ち](upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち)。試験の usb-firmware は自分で付けます）。
+
+### DFU のダウンロード（`CH32RVUsbDeviceDfu`）
+
+EspUsbDeviceDfu の Download mode にあたります。DFU mode（プロトコル 2）のインターフェースを最初から出すので、
+DETACH なしでダウンロードできます。CAN_DNLOAD と WILL_DETACH で、manifestation tolerant ではありません。
+ブロックはデータ段で書き、その後の GETSTATUS で結果を返します。空の DNLOAD の後の GETSTATUS で検査し、
+dfuMANIFEST を返し終えたら（約 20 ms 後）バスから離れてコピーし、新しいイメージで起動します。
+
+- 既定の DFU ランタイム（ch32rv の書き込み口の目印）は隣に残ります。dfu-util は DFU のインターフェースが 2 つあると
+  どちらか決められないので、名前で選びます: `dfu-util -d 1209:0001 -a Firmware -D sketch.ino.bin`。
+  `config.dfuRuntime = false` なら `-a` は要りません。`ch32rv boot dfu flash` は DFU mode の方を自分で選びます。
+- 失敗は STALL ではなく DFU の状態で返します（EspUsbDevice と同じ番号）。イメージでない最初のブロック・書けない
+  ページは errWRITE（3）、staging を超えるものは errADDRESS（8）、終わりの検査に通らないものは errVERIFY（7）。
+  どれも今のスケッチのまま dfuERROR になり、CLRSTATUS で dfuIDLE に戻ります。途中の ABORT とバスリセットは取り消しです。
+- `configure()`: `transferBytes`（wTransferSize、既定 1024、64〜4096）、`transferBuffer`（無ければ最初のダウンロードで
+  ヒープから取る）、`downloadPollMs`、`manifestPollMs`。`onProgress()`、`onError()`、`onComplete()`（false で断る）、
+  `restartWhenComplete(false)`（再起動をスケッチに任せる。`Update.restart()` か `CH32RV.restart()` で入れ替わる）。
+- H41x の DFU_DETACH からの DFU mode（上の H41x の節）は、これとは別の経路で、flash の先頭へ直接書きます
+  （staging も検査もありません）。
+
+### UF2 のドライブ（`CH32RVUsbDeviceMscFirmwareDisk`）
+
+EspUsbDeviceMscFirmwareDisk と同じ形です。小さな FAT12 のボリュームを見せ、そのデータ領域の後半は staging の flash
+そのものです。`storage`（RAM）にはブートセクタ、FAT、ルートディレクトリと、ホストが置くファイル（`System Volume
+Information`、`.fseventsd` など）のための場所だけを置きます。8 KB が目安で、4 KB が最小です。
+
+- `.uf2`: 順不同で受けます。ブロックのアドレスは `0x08000000` 起点（または 0 起点）で、イメージは flash の先頭からの
+  ものに限ります。family ID が違うブロックは最初の 1 つで断ります。全ブロックがそろったら検査して、約 0.5 秒後
+  （ホストの最後のコマンドに答えてから）再起動します。
+- `.bin`: 先頭がリセットの入口なら受け、順に書かれることを求めます（戻る書き込み・飛ばす書き込みは更新ごと失敗）。
+  終わりは、ディレクトリエントリの長さに届いたときか、ドライブを取り出したときです。
+- どちらでもないもの（誤ってコピーしたファイル、ホストのメタデータ）は無視します。
+- 失敗は `onError()` に `CH32RV_UPDATE_*`（UF2 の family 違いは `CH32RV_UPDATE_UF2_FAMILY` = 30、ブロックの配置が
+  先頭からのイメージにならないものは 31、`.bin` の順序違いは 32）で知らせ、`lastError()` にも残ります。
+
+```sh
+# UF2 を作る（microsoft/uf2 の uf2conv.py）。family は下の表、またはスケッチの uf2FamilyId()
+python3 uf2conv.py -c -b 0x08000000 -f 0x699B62EC sketch.ino.bin -o sketch.uf2
+```
+
+### UF2 の family ID
+
+[microsoft/uf2 の一覧](https://github.com/microsoft/uf2/blob/master/utils/uf2families.json)（2026-11-17 に確認）に
+WCH のものは 2 つだけです。載っている系列はその ID を使い、無い系列はこのコアで決めました（一覧の ID と重ならないことを
+確認済み。`ch32rv_flash.h` の `CH32RV_UF2_FAMILY_ID`）。
+
+| 系列 | family ID | 出どころ |
+|---|---|---|
+| V203 / V208 / V205 / V303 / V305 / V307 / V317 | `0x699B62EC` | 一覧（"WCH CH32V2xx and CH32V3xx"） |
+| V407 / V467 | `0x7B8C32A7` | 一覧（"WCH CH32V407 and CH32V467"） |
+| V103 | `0x5C1A4E6B` | このコア |
+| L103 / M103 | `0x2E97D0C3` | このコア |
+| X035 / X033 | `0x8F3B26A1` | このコア |
+| X305 / X315 | `0x46D8E15F` | このコア |
+| M030 | `0xB2709C34` | このコア |
+| H415 / H416 / H417 | `0xD5E3A87A` | このコア |
+| V002〜V007 / M007（USB なし。`Update` で UART などから） | `0x1F64C9E2` | このコア |
+
+一覧の `0x699B62EC` は V203 から V317 までをまとめているので、V203 のイメージを V307 のドライブに入れることは
+family ID では防げません（リセットの入口の確認は通ります。品番を確かめるのはスケッチの責任です）。
+
+## サスペンド・レジューム・リモートウェイクアップ
+
+ホストがバスを止める（サスペンド）と `onBusEvent()` に `Suspended`、戻すと `Resumed` が来ます（`USBDevice.suspended()`）。
+デバイスからホストを起こすには、`config.remoteWakeupSupported = true` で構成ディスクリプタに宣言し、ホストが
+SET_FEATURE(DEVICE_REMOTE_WAKEUP) で許可したとき（`remoteWakeupEnabled()`）に、サスペンド中に `remoteWakeup()` を呼びます。
+
+| コントローラ | レジュームの信号 |
+|---|---|
+| USBD（V20x） | CNTR.RESUME |
+| USBFS（X035 / X033） | プルアップを D+ から D- へ 8 ms 移す（EVT の USBFS_Send_Resume） |
+| USBFS（V20x / V30x / L103 / V205 / H41x の OTG_FS の配置）、V103 の USB | UDEV_CTRL の LOW_SPEED を 8 ms 反転する（K 状態。EVT の USBFS_Send_Resume。V103 は同じレジスタで、EVT に例が無い。2026-11-17 に追加、ビルドのみ） |
+| 第 1 世代 USBHS（V30x） | SUSPEND レジスタの DEV_REMOTE_WAKEUP |
+| 第 2 世代 USBHS | WAKE_CTRL |
+| USBSS | U3 からの復帰（LINK_TX_UX_EXIT） |
+
+試験は usb-power（[tests/README.ja.md](../tests/README.ja.md)）です。相手は Linux の PC で、ランタイム PM
+（`/sys/bus/usb/devices/<dev>/power/control` を `auto`、`autosuspend_delay_ms` を短く）でサスペンドを起こします。
+CDC の tty を開いていると cdc-acm がリモートウェイクアップを求めるので、カーネルはサスペンドの前に許可を送ります。
+この 2 つのファイルは root のものなので、試験のユーザーが書けるようにする udev のルールが要ります（無ければ試験は
+理由を出して飛ばします）:
+
+```
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="1209", ATTR{idProduct}=="0001", RUN+="/bin/sh -c 'cd /sys%p/power && chgrp plugdev control autosuspend_delay_ms && chmod g+w control autosuspend_delay_ms'"
+```
+
+一度だけなら、そのときのデバイスに `sudo chgrp plugdev .../power/{control,autosuspend_delay_ms}` と
+`sudo chmod g+w ...` をします（次に列挙し直すと元に戻ります）。
+
 ## PD（CH32RVUsbPd）
 
 USB-C の PD 充電器から、固定電圧や PPS の電圧を受け取ります（シンク、`USBPD`）。板を PD の電源にすることも
@@ -374,7 +519,8 @@ void loop() {
 - **ホスト**: 実機で確かめたのは X035（C8T6、相手は ESP32-S3 と RP2040）と V407（USBHS1、相手は ESP32-P4 の HS）です。
   V20x / V30x / V205 / L103 / M030 / H41x（USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）と、V407 の USBHS2・X305 / X315・
   V205 / H41x の USBHS はビルドだけです。V30x の第 1 世代 USBHS のホストと、HS のハブの先の split はありません。
-- **無いもの**: ホストのアイソクロナスと USB ネットワーク（オーディオ、ビデオ、NCM）、デバイスのファームウェア更新の各クラス。
+- **無いもの**: ホストのアイソクロナスと USB ネットワーク（オーディオ、ビデオ、NCM）。デバイスのファームウェア更新
+  （DFU のダウンロード、UF2 のドライブ）とリモートウェイクアップは、ビルドだけで実機では確かめていません。
 
 ## 既知の問題
 

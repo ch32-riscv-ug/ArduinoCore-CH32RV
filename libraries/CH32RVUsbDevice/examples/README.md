@@ -121,6 +121,8 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [CustomDevice](CustomDevice/README.md) | A configurable composite device combining CDC, DFU runtime and Vendor HID, with a HID output-to-input echo. |
 | [CustomHID](CustomHID/README.md) | A custom report descriptor defining an eight-byte input-only HID report. |
 | [DescriptorDump](DescriptorDump/README.md) | Prints the descriptors the host is shown (device, configuration, BOS, MS OS 2.0, strings, HID) and every control request and bus event on the UART. |
+| [FirmwareDFU](FirmwareDFU/README.md) | Takes a new firmware over DFU while running, checks it, then switches to it. |
+| [FirmwareMSC](FirmwareMSC/README.md) | A USB drive: copy a `.uf2` (or the `.bin`) onto it and the board switches to it. |
 | [DfuRuntime](DfuRuntime/README.md) | A CDC-free DFU runtime upload entry. Holding PA1 low makes `onDetach()` refuse the transition. |
 | [ButtonKeyboard](ButtonKeyboard/README.md) | Hold and release a keyboard key with a debounced switch, retrying unsent state. |
 | [ButtonMouse](ButtonMouse/README.md) | Hold and release the left mouse button with a physical switch and no generated movement. |

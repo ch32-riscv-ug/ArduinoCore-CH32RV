@@ -211,3 +211,107 @@ private:
     EjectCallback _onEject = nullptr;
     bool _ejected = false;
 };
+
+/* A drive to copy a new firmware onto (EspUsbDeviceMscFirmwareDisk): a small
+ * FAT12 volume whose data area past `storage` is the flash the core stages
+ * an update in (ch32rv_update.h). A .uf2 file (any block order; its family
+ * ID must be this series', uf2FamilyId()) or a raw .bin (in order) copied to
+ * it is written block by block as it arrives, checked, and installed by a
+ * restart. The image is never in RAM: `storage` holds the boot sector, the
+ * FATs, the root directory and a scratch area for the host's own files
+ * (8 KB is comfortable; at least 4 KB).
+ *
+ * When an update ends: a UF2 when every block number came; a .bin when the
+ * bytes reach the length in its directory entry, or the drive is ejected.
+ * A raw .bin must come in order (a jump back or a hole fails the update);
+ * one whose first word is not this core's reset entry is ignored, as is
+ * anything else that is neither (the host's metadata spilling over).
+ * Failures leave the running sketch untouched and go to onError() with the
+ * engine's error (CH32RV_UPDATE_*, or CH32RV_UPDATE_UF2_FAMILY / _UF2_LAYOUT
+ * below). Callbacks run inside the USB service while the host waits. */
+#define CH32RV_UPDATE_UF2_FAMILY 30u   /* a UF2 block for another family */
+#define CH32RV_UPDATE_UF2_LAYOUT 31u   /* blocks that do not form one image at 0 */
+#define CH32RV_UPDATE_RAW_ORDER  32u   /* a raw image not written in order */
+#define CH32RV_UPDATE_NO_MEMORY  33u
+
+class CH32RVUsbDeviceMscFirmwareDisk : public CH32RVUsbDeviceMscStorage {
+public:
+    typedef CH32RVCallback<void(void)> EjectCallback;
+    typedef CH32RVCallback<void(size_t)> ProgressCallback;
+    typedef CH32RVCallback<bool(void)> CompleteCallback;
+    typedef CH32RVCallback<void(uint8_t)> ErrorCallback;
+
+    CH32RVUsbDeviceMscFirmwareDisk(uint8_t *storage, size_t size);
+
+    /* Lay the volume out over the staging area. False when there is none
+     * (ch32rv_flash_staging_size() is 0), or `storage` is too small. */
+    bool begin(const char *volumeLabel = CH32RV_USB_MSC_VOLUME_LABEL);
+    /* Serve `msc` from it (media present, writable). Before USBDevice.begin(). */
+    bool attach(CH32RVUsbDeviceMsc &msc);
+    /* The family ID a .uf2 needs to be taken here (uf2conv.py --family). */
+    static uint32_t uf2FamilyId();
+    /* A file shown before anything is copied (in the scratch area). Between
+     * begin() and attach(). */
+    bool addTextFile(const char *name, const char *text);
+
+    void onProgress(ProgressCallback cb) { _onProgress = cb; }
+    /* The image passed its checks; false refuses it (nothing is installed). */
+    void onComplete(CompleteCallback cb) { _onComplete = cb; }
+    void onError(ErrorCallback cb) { _onError = cb; }
+    /* The host ejected the drive: from deliverEvents(). */
+    void onEject(EjectCallback cb) { _onEject = cb; }
+    /* true (the default): restart into an accepted image, half a second
+     * later (the host's last command answered first). */
+    void restartWhenComplete(bool enable) { _restart = enable; }
+
+    uint32_t blockCount() const { return _blockCount; }
+    uint16_t blockSize() const { return 512; }
+    /* Sectors in `storage`; from this one on the volume is the staging flash. */
+    uint32_t ramSectorCount() const { return _ramSectors; }
+    size_t written() const;
+    bool updating() const { return _format != 0; }
+    bool updatingUf2() const { return _format == 2; }
+    /* The last failure (CH32RV_UPDATE_*, 0 none). */
+    uint8_t lastError() const { return _lastError; }
+
+    int32_t read(uint32_t lba, uint32_t offset, void *buffer, uint32_t size) override;
+    int32_t write(uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t size) override;
+    bool startStop(uint8_t powerCondition, bool start, bool loadEject) override;
+    size_t deliver() override;
+
+private:
+    bool region(uint32_t at, const uint8_t *data, uint32_t size);
+    bool raw(uint32_t at, const uint8_t *data, uint32_t size);
+    bool uf2(const uint8_t *block);
+    void fail(uint8_t error);
+    void commit();
+    void checkLength();
+    uint8_t *rootEntry(uint16_t index) const;
+    void setFatEntry(uint16_t cluster, uint16_t value);
+    void release();
+
+    uint8_t *_storage;
+    size_t _size;
+    CH32RVUsbDeviceMsc *_msc = nullptr;
+    uint16_t _sectorsPerCluster = 1;
+    uint16_t _sectorsPerFat = 0;
+    uint16_t _rootEntryCount = 16;
+    uint32_t _dataStart = 0;      /* LBA of cluster 2 */
+    uint32_t _scratchSectors = 0;
+    uint32_t _ramSectors = 0;
+    uint32_t _blockCount = 0;
+    uint16_t _nextCluster = 2;
+    uint16_t _nextEntry = 0;
+    uint32_t _imageStart = 0;     /* the raw image's first sector, relative to the region */
+    uint32_t _uf2Total = 0, _uf2Seen = 0;
+    uint8_t *_uf2Bitmap = nullptr;
+    uint8_t _format = 0;          /* 0 none, 1 raw, 2 UF2 */
+    uint8_t _lastError = 0;
+    bool _formatted = false;
+    bool _restart = true;
+    volatile bool _ejected = false;
+    ProgressCallback _onProgress = nullptr;
+    CompleteCallback _onComplete = nullptr;
+    ErrorCallback _onError = nullptr;
+    EjectCallback _onEject = nullptr;
+};

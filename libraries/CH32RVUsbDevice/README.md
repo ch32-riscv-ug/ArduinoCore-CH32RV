@@ -88,7 +88,9 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
   MAC (V208, V307/V317, V407/V467, H41x), not the X035. Without
   `beginNetwork()` the function exchanges raw Ethernet frames. Check controller
   and networking hardware coverage in the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況).
-- **Not here**: the firmware-update classes ([docs/usb.ja.md](../../docs/usb.ja.md#確かめていない構成と無いもの), Japanese).
+- **Firmware update**: `CH32RVUsbDeviceDfu` (DFU download) and `CH32RVUsbDeviceMscFirmwareDisk` (a drive for a UF2 or
+  `.bin`). The image is staged in the flash after the sketch, checked, and copied over the sketch at the restart
+  (built only; [docs/usb.ja.md](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ), Japanese).
 - **The CDC and vendor classes' direct path (`writeDirect()`, from their shared base `CH32RVUsbDeviceBulkStream`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
   `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
@@ -134,10 +136,12 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 | `CH32RVUsbDeviceMsc` | A USB drive. `begin(blocks, size)`, `onRead()` / `onWrite()`, `mediaPresent()` (a medium put in while running is reported to the host as changed), `isWritable()`, `vendorID()` and so on. Each object is one logical unit (as arduino-esp32's USBMSC): declare two for LUN 0 and 1 on one interface (`lun()`; 8 at most). `setSense(key, asc, ascq)` inside a failing `onRead()` / `onWrite()` sets the sense the host reads for it (default 03/11/00, 03/0C/00) |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | Blocks in RAM / a FAT12 volume in RAM. `attach(msc)`, `addTextFile()`, `readFile()`, `onEject()` |
 | `CH32RVUsbDeviceCcid` | A smart card reader. `insertCard(atr)`, `removeCard()`, `onApdu()`, `onEscape()`, `onPower()`. `messageBytes` 0, the default, is 271 bytes or the chosen controller's bulk OUT packet (512 on USBHS, 1024 on USBSS), whichever is larger |
+| `CH32RVUsbDeviceMscFirmwareDisk` | A drive to copy a firmware onto (EspUsbDeviceMscFirmwareDisk): `.uf2` in any order, `.bin` in order. `begin()`, `attach(msc)`, `uf2FamilyId()`, `addTextFile()`, `onProgress()` / `onComplete()` / `onError()` / `onEject()`, `restartWhenComplete()` |
 | `CH32RVUsbDeviceMscSdCard` | An SPI SD card as the MSC's medium. `begin(cs, SPI)`, `attach(msc)` (`#include <CH32RVUsbDeviceMscSdCard.h>`) |
 | `CH32RVUsbDeviceNet` | A USB network adapter (CDC-NCM). `onFrame()`, `sendFrame()`, `macAddress()`, `linkUp()`, `configure()` (NTB sizes and buffer counts), `stats()`, `receiveGate()` / `resumeReceive()` for receive flow control. The IP layer: above |
 | `CH32RVUsbAudioFunction` | Audio (UAC1 / UAC2). `addPlaybackStream()` / `addCaptureStream()`, `addFormat()` (up to 8 rates of one shape), `read()` / `write()`, mute and volume, `pollEvent()`. A full playback ring drops the oldest frames unless `playbackOverflowPolicy` says otherwise. The capture side's `availableForWrite()` is this library's addition |
 | `CH32RVUsbDeviceVideo` | A camera (UVC). `setFormat()`, `setFrameSize()`, `sendFrame()`, `onCommit()`. `onFillPayload()` / `sendGeneratedFrame()` (making the frame without holding it) are this library's additions |
+| `CH32RVUsbDeviceDfu` | DFU download (EspUsbDeviceDfu in Download mode): takes `dfu-util -a Firmware -D` while running, checks the image and restarts into it. No endpoint. `configure()`, `onProgress()` / `onComplete()` / `onError()`, `restartWhenComplete()` |
 | `CH32RVUsbDeviceDfuRuntime` | An update entry through DFU_DETACH; the next mode depends on the series. **Included by default** (`config.dfuRuntime = false` leaves it out); declare it to decide the transition in `onDetach()`. Its interface name, "CH32RV", marks a ch32rv upload port in discovery |
 
 Every default string and ID (VID/PID, manufacturer, product, interface names,

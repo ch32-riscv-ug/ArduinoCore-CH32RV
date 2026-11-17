@@ -73,7 +73,9 @@ void loop() {
   `#include <Network.h>` も書きます。Network ライブラリは Ethernet の MAC を持つ系列（V208、V307 / V317、V407 / V467、
   H41x）向けで、X035 では使えません。`beginNetwork()` を呼ばなければ、生の Ethernet フレームを扱うだけです。
   USB controller とネットワークの実機確認範囲は [USB の対応表](../../docs/usb.ja.md#対応状況) を参照してください。
-- **無いもの**: ファームウェア更新の各クラス（[docs/usb.ja.md](../../docs/usb.ja.md#確かめていない構成と無いもの)）。
+- **ファームウェア更新**: `CH32RVUsbDeviceDfu`（DFU のダウンロード）と `CH32RVUsbDeviceMscFirmwareDisk`（UF2 / `.bin` のドライブ）。
+  イメージはスケッチの後ろの flash に置いて確かめ、再起動のときに先頭へコピーします（ビルドのみ。
+  [docs/usb.ja.md](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ)）。
 - **CDC とベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
   止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
@@ -111,10 +113,12 @@ void loop() {
 | `CH32RVUsbDeviceMsc` | USB メモリ。`begin(blocks, size)`、`onRead()` / `onWrite()`、`mediaPresent()`（稼働中に挿すとホストに媒体の交換を知らせる）、`isWritable()`、`vendorID()` など。1 つのオブジェクトが 1 つの論理ユニット（arduino-esp32 の USBMSC と同じ）で、2 つ宣言すると 1 つのインタフェースの LUN 0 と 1 になる（`lun()`。8 まで）。失敗を返す `onRead()` / `onWrite()` の中で `setSense(key, asc, ascq)` を呼ぶと、ホストが読む sense をそれにする（既定は 03/11/00、03/0C/00） |
 | `CH32RVUsbDeviceMscRamDisk` / `CH32RVUsbDeviceMscFatRamDisk` | RAM 上のブロック / FAT12 のボリューム。`attach(msc)`、`addTextFile()`、`readFile()`、`onEject()` |
 | `CH32RVUsbDeviceCcid` | スマートカードリーダー。`insertCard(atr)`、`removeCard()`、`onApdu()`、`onEscape()`、`onPower()`。メッセージの大きさ（`messageBytes`）の既定 0 は自動で、271 バイトか、選んだ controller の Bulk-OUT のパケット（USBHS 512、USBSS 1024）の大きい方 |
+| `CH32RVUsbDeviceMscFirmwareDisk` | ファームウェアを入れるドライブ（EspUsbDeviceMscFirmwareDisk）。`.uf2` は順不同、`.bin` は順に。`begin()`、`attach(msc)`、`uf2FamilyId()`、`addTextFile()`、`onProgress()` / `onComplete()` / `onError()` / `onEject()`、`restartWhenComplete()` |
 | `CH32RVUsbDeviceMscSdCard` | SPI の SD カードを MSC の中身にする。`begin(cs, SPI)`、`attach(msc)`（`#include <CH32RVUsbDeviceMscSdCard.h>`） |
 | `CH32RVUsbDeviceNet` | USB ネットワーク（CDC-NCM）。`onFrame()`、`sendFrame()`、`macAddress()`、`linkUp()`、`configure()`（NTB の大きさとバッファの数）、`stats()`、受信の流量制御の `receiveGate()` / `resumeReceive()`。IP 層は上記 |
 | `CH32RVUsbAudioFunction` | オーディオ（UAC1 / UAC2）。`addPlaybackStream()` / `addCaptureStream()`、`addFormat()`（同じ形でレート違いを 8 つまで）、`read()` / `write()`、ミュート・音量、`pollEvent()`。再生のリングがあふれたときの扱いは `playbackOverflowPolicy`（既定は古い方を捨てる）。録音側の `availableForWrite()` はこのライブラリの追加 |
 | `CH32RVUsbDeviceVideo` | カメラ（UVC）。`setFormat()`、`setFrameSize()`、`sendFrame()`、`onCommit()`。`onFillPayload()` / `sendGeneratedFrame()`（フレームを持たずに作る）はこのライブラリの追加 |
+| `CH32RVUsbDeviceDfu` | DFU のダウンロード（EspUsbDeviceDfu の Download mode）。動いたまま `dfu-util -a Firmware -D` を受け、確かめて再起動で入れ替える。エンドポイントを使わない。`configure()`、`onProgress()` / `onComplete()` / `onError()`、`restartWhenComplete()` |
 | `CH32RVUsbDeviceDfuRuntime` | DFU_DETACH による更新への入口。移行先は系列依存。**既定で付きます**（`config.dfuRuntime = false` で外す）。明示宣言は `onDetach()` で移行を判定するとき等に使用。インターフェース名 "CH32RV" は ch32rv の discovery の目印 |
 
 HID のクラスは、いくつ宣言しても1つの HID インターフェースにまとまります（EspUsbDevice と同じ）。1つだけなら
