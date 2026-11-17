@@ -1713,16 +1713,21 @@ def load_family_facts(tables: pathlib.Path, pads: dict, products: list) -> dict:
     # families, GPIOA_AFLR (one AFLR/AFHR pair per port from there). The core
     # assumes EXTICR at 0x08 and AFLR at 0x20 for PA..PE; CH32H417 has its AF
     # registers from 0x04 for PA..PF and EXTICR from 0x3C (RM AFIO list).
+    #
+    # Every offset comes from register_map.csv, one row a register: registers.csv
+    # has a kind=register row only for a register without bit definitions, so a
+    # PCFR1 whose fields device-data reads (since its header fix of 2026-11-17)
+    # has no such row there.
     afio_off: dict = {}
     afio_ports: dict = {}
-    for r in read_table(tables, "registers.csv",
-                        ("family", "type", "register", "offset", "field")):
+    for r in read_table(tables, "register_map.csv",
+                        ("family", "type", "register", "offset")):
         if r["type"] == "RCC" and r["register"] == "RSTSCKR" and r["offset"]:
             afio_off.setdefault((r["family"], "RSTSCKR"), set()).add(int(r["offset"], 16))
         if r["type"] != "AFIO" or not r["offset"]:
             continue
         reg = r["register"]
-        if reg in ("PCFR1", "PCFR2") and not r["field"]:
+        if reg in ("PCFR1", "PCFR2"):
             afio_off.setdefault((r["family"], reg), set()).add(int(r["offset"], 16))
         elif reg in ("EXTICR", "EXTICR1", "EXTICR[0]"):
             afio_off.setdefault((r["family"], "EXTICR"), set()).add(int(r["offset"], 16))
