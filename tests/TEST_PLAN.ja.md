@@ -265,6 +265,23 @@ Type-C（OTG）。
   P4（デバイス）、Pico（FS、split）、LS の機器。P4（ホスト）↔ V407（デバイス）も。V307 の第 1 世代 USBHS は P4 と。
 - ハブはどの速さにも要る（FS のハブの先の LS、HS のハブの split、SS のハブ）。
 
+### ホストのコントローラーの配線待ち（2026-11-17、ドライバはビルドのみ）
+
+case は今の usb-peer-host・-classes・-input・-storage のまま。どの口か・どの相手か・間のハブは、DUT の口の記録の `usb`
+で決まる（RECORDS 4.3。ハブは `hub`、試験は `where` で相手がそのハブの先にいるかを確かめる）。
+
+| 何を | DUT の口 | 相手 | 記録（例） | BOOT_HOLD |
+|---|---|---|---|---|
+| V103 の USB（旧 IP）のホスト | V103 の台の PA11 / PA12（USB の口） | Pico（FS）。S3 でも可 | `--usb rp2040,port=<Pico の口>` | 不要 |
+| 第 1 世代 USBHS のホスト（HS） | V307 の USBHS（PB6 / PB7、HSE の板） | ESP32-P4 の OTG HS | `--usb esp32-p4,serial=...,mac=... --usb-port high_speed` | 不要 |
+| H41x の USBHS のホスト（HS） | H417 の SS の口の USB 2.0 の線（PB8 / PB9 = SWD） | ESP32-P4 の OTG HS | `--usb esp32-p4,... --usb-port high_speed` | 要る（`begin()` で SWD が外れる。単発、常駐しない） |
+| HS ハブの先の FS（split） | V407 の USBHS1 | USB2 の PPPS ハブ（マルチ TT）→ Pico | `--usb rp2040,port=<Pico>,hub=hs-mtt --usb-port high_speed` | 不要 |
+| 同じ、シングル TT | V407 の USBHS1 | USB2 の PPPS ハブ（シングル TT）→ Pico | `hub=hs-stt` | 不要 |
+| HS ハブの先の HS（split なし、確かめの対照） | V407 の USBHS1 | 同じハブ → P4 | `--usb esp32-p4,...,hub=hs-mtt --usb-port high_speed` | 不要 |
+
+要る部品: USB2 の PPPS ハブ（マルチ TT とシングル TT、uhubctl で口ごとに切れるもの）、V103 の台の USB の口の線、V307 の
+HSE 付きの板の USBHS の口、P4 をもう 1 台か付け替え。HS の split の LS の機器（キーボード）は手作業の単発。
+
 ### 試験の段階（USB）
 
 | 段階 | 内容 | 自動か |

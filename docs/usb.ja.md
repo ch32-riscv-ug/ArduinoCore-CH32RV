@@ -486,15 +486,17 @@ void loop() {
 | CH32X035 R8T6 / C8T6 / G8U6 / G8R6 | USBFS（PC16 / PC17） | C8T6 で ESP32-S3（EspUsbDevice）相手に HID・CDC・MSC・MIDI・ベンダー・CCID を実機確認 |
 | CH32X035 F8U6 / F7P6 / D8U6、X033 | シリコンにホストが無い（データシートの型番表）。`begin()` が `Unsupported` | F8U6 で実機確認 |
 | CH32V203 / V208 | USBFS（PB6 / PB7） | V203RBT6 で RP2040（Pico）相手に実機確認（HID、classes、input、storage） |
-| CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12） | ビルドのみ |
+| CH32V103 | USB（旧 IP、PA11 / PA12） | ビルドのみ |
+| CH32V303 / V305 / V307 / V317 | USBFS（PA11 / PA12）。V305 / V307 / V317 は第 1 世代の USBHS（`CH32RV_USB_HOST_PORT_HIGH_SPEED`、PB6 / PB7、HSE が要る） | ビルドのみ |
 | CH32V407 / V467 | USBHS1（既定）、USBHS2（`CH32RV_USB_HOST_PORT_HIGH_SPEED_2`） | V407 の USBHS1 で ESP32-P4（HS）相手に実機確認 |
 | CH32X305 / X315 | USBHS（既定） | ビルドのみ |
 | CH32V205、H41x | USBFS（既定）、USBHS（`CH32RV_USB_HOST_PORT_HIGH_SPEED`） | ビルドのみ |
 | CH32H416 / H417 | 上に加えて USBSS（`CH32RV_USB_HOST_PORT_SUPER_SPEED`、SuperSpeed だけ、`CH32RVUsbHcdUsbss.cpp`） | 実装済み、実機では未確認 |
 
 - ポートは `CH32RVUsbHostConfig.port` で選びます（EspUsbHost の `EspUsbHostConfig.port` と同じ形）。第 2 世代の USBHS の
-  ホスト（`CH32RVUsbHcdUsbhs2.cpp`）は HS の機器を HS で扱います。HS のハブの先の FS・LS の機器（split）はまだ扱えません
-  （[ライブラリの README](../libraries/CH32RVUsbHost/README.ja.md#ポートと速さ)）。
+  ホスト（`CH32RVUsbHcdUsbhs2.cpp`）は HS の機器を HS で、HS のハブの先の FS・LS の機器を split トランザクションで扱います
+  （ビルドのみ。[ライブラリの README](../libraries/CH32RVUsbHost/README.ja.md#ポートと速さ)）。第 1 世代の USBHS のホスト
+  （`CH32RVUsbHcdUsbhs1.cpp`）には split がありません。リンクされるのは、スケッチが選んだポートのドライバだけです。
 - VBUS は基板が供給します（チップには入り切りの機能がありません）。
 - ホストとデバイスは同じコントローラを使うので、同時にはどちらか一方です（もう一方が動いていれば `Busy`）。
 - ホストのスタックとコントローラのドライバ（`CH32RVUsbHcdUsbfs.cpp`、`CH32RVUsbHcdUsbhs2.cpp`、`internal/CH32RVUsbHcd.h` の表）はこのコアのものです。
@@ -516,15 +518,15 @@ void loop() {
   接続できます。試すときは [起動待ち](upload-routes.ja.md#接続できなくなるイメージを試すとき起動待ち) を付けます）。V208 には、
   USB と Ethernet を同時に使えるクロックがありません（README のメニューの表）。
 - **PD**: M030 の 2 つ目のブロック（USBPD1、PA2 / PA3）は使えません。実機で確かめたのは X035 だけです。
-- **H417**: USBHS は実機で確かめていません（SWD と端子を共有）。USBSS のホストはありません。V5F は使いません。
+- **H417**: USBHS は実機で確かめていません（SWD と端子を共有。ホストの `begin()` の後はデバッガがつながりません）。V5F は使いません。
 - **USB ネットワークの IP 層**: lwIP の上にあります（`NetworkUsbNcm`、docs/network-stack.ja.md）。NCM は実機で確かめていません。
 - **工場出荷 ISP への入口**: `enterBootloader()`（DFU_DETACH、1200bps タッチ）を実機で確かめたのは X035 / X033 です。
   X305 / X315 には同じ FLASH_STATR.BOOT_MODE があるので同じ手順を入れてありますが、実機では確かめていません（ブートローダーが
   どのポートで待つかも）。H41x は BOOT_MODE がありますが、試すと起動に失敗しました（上）。V20x / V30x / V103 / L103 / V205 /
   M030 / V4x7 には BOOT_MODE が無く、ブートローダーには BOOT0 の端子でしか入れないので、普通のリセットです。
 - **ホスト**: 実機で確かめたのは X035（C8T6、相手は ESP32-S3 と RP2040）と V407（USBHS1、相手は ESP32-P4 の HS）です。
-  V20x / V30x / V205 / L103 / M030 / H41x（USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）と、V407 の USBHS2・X305 / X315・
-  V205 / H41x の USBHS はビルドだけです。V30x の第 1 世代 USBHS のホストと、HS のハブの先の split はありません。
+  V20x / V30x / V205 / L103 / M030 / H41x（USBOTG_FS の配置、`ch32rv_usbfs_otg.h`）、V103 の旧 IP、V407 の USBHS2・
+  X305 / X315・V205 / H41x の USBHS、V30x の第 1 世代 USBHS、HS のハブの先の split はビルドだけです。
 - **無いもの**: ホストのアイソクロナスと USB ネットワーク（オーディオ、ビデオ、NCM）。デバイスのファームウェア更新
   （DFU のダウンロード、UF2 のドライブ）とリモートウェイクアップは、ビルドだけで実機では確かめていません。
 

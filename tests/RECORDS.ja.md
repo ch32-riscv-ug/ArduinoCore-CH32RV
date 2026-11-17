@@ -90,6 +90,11 @@ ch32rv で読み（石の ID で型番が決まらないときは、その口の
 DUT 側の口がキーで決まっているとき、試験はつながる速さを遅い方の口から決めます（SS どうしなら 3、片方が FS なら 1）。
 相手の基板の記録の `usb` は、逆向きに DUT を指してかまいません（たどりません）。
 
+**間のハブ。** 相手（esp32-s3 / esp32-p4 / rp2040 / ch32rv）の形に `"hub": "fs" | "hs-stt" | "hs-mtt"` を足すと、DUT と
+相手の間にその種類のハブがあることを表します（`fs` は FS のハブ、`hs-stt` / `hs-mtt` は HS のハブでトランザクション
+トランスレーターが 1 つか口ごとか）。ホストの case は、相手がそのハブの先にいること（HS のハブなら FS の相手は split で
+届く）を DUT の `where` で確かめます。書かないときは、相手はルートの口に直結です。`{"to": "host"}` には書けません。
+
 今の CH32RV のライブラリで相手になれない case は、理由を付けて飛ばします（place.py の `CH32RV_PEER_LACKS`）:
 usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH32RVUsbHost に CDC-NCM が無い）。
 

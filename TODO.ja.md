@@ -251,7 +251,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、
-  USBSS デバイスのストリームと Mult>0、LPM（L1）、V103 と第 1 世代 USBHS のホスト、HS ハブの先の split。
+  USBSS デバイスのストリームと Mult>0、LPM（L1）。V103 と第 1 世代 USBHS のホスト、HS ハブの先の split、H41x の USBHS の
+  ホストは 2026-11-17 に実装した（ビルドのみ）。配線待ち: V103 の USB の口 → Pico、V307 の USBHS（HSE の板）→ P4、V407 の
+  USBHS1 → USB2 の PPPS ハブ（マルチ TT とシングル TT）→ Pico・P4（記録の `hub`）、H417 の USBHS → P4（SWD が外れるので
+  単発、起動待ちのイメージで）。表は tests/TEST_PLAN.ja.md の「ホストのコントローラーの配線待ち」。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
 - [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
@@ -585,8 +588,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
   （85f96bb で直した）。H417 では、その後の DETACH → DFU を 10 回ほど続けて通した。PC ホストの X035 で確かめれば閉じられる。
 - ホストで未対応: アイソクロナス（オーディオ・ビデオ）、USB ネットワーク（NCM / ECM）、MSC のファイルシステム、
-  ハブ越しの低速デバイス（PRE PID の実機確認）、V103（旧 USBFS）と第 1 世代 USBHS（V30x）のホスト、HS のハブの先の
-  FS・LS（split）。第 2 世代 USBHS のホストは V407 で HS を確認済み（2026-11-11）。
+  ハブ越しの低速デバイス（PRE PID の実機確認）、split の CLEAR_TT_BUFFER、第 1 世代 USBHS の split。V103（旧 USBFS）と
+  第 1 世代 USBHS（V30x）のホスト、HS のハブの先の FS・LS（split）は 2026-11-17 に実装（ビルドのみ）。第 2 世代 USBHS の
+  ホストは V407 で HS を確認済み（2026-11-11）。
 - [ ] usb-peer-host-input / -storage を ESP32-P4（HS）でも流す。EspUsbDevice 3.1.0 で GET_REPORT（`setFeatureReport()`）、
   任意のレポート記述子（`EspUsbDeviceHidCustom`）、CDC 2 ポートは入った。boot キーボードの専用インターフェース
   （`keyboard.enableOwnInterface()`）は EspUsbDevice 3.2.0 で入った（2026-11-11 時点でリリース済み）。
