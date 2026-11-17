@@ -8,8 +8,8 @@
  * `#ifdef CH32RV_EXTI_PVD`, and a line the series lacks does not compile.
  *
  * The table is written here by hand, checked against ch32-device-data's
- * index/exti_lines.csv (2026-11-18: the same lines, but V20x / V30x's line 18,
- * which the CSV lacks). Its sources are the reference manuals' "EXTI interrupt mapping"
+ * index/exti_lines.csv (68be61e, 2026-11-18: the same lines and vectors in
+ * every series). Its sources are the reference manuals' "EXTI interrupt mapping"
  * tables (CH32xRM 9-3, CH32FV2x_V3xRM, CH32V205RM, CH32V407RM, CH32L103RM,
  * CH32H417RM, CH32X315RM, CH32X035RM, CH32M030RM, CH32V003RM, CH32V00XRM) and
  * the EVT's ch32*_exti.h comments; where they disagree it says so below. The

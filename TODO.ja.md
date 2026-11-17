@@ -252,7 +252,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   condition の列は SDIO の経路の一般の規則にした（SDIO_ROUTE_FIXES をやめた）。2026-11-18 に残りの表をコアと突き合わせた:
   adc_triggers.csv は ch32rv_adc_trigger.h と値がすべて一致（値 6 の TKEY / OPA はコアが使わない）。exti_lines.csv は
   V407 の線 18 = USBHS1・20 = USBHS2 で確定し、両方のベクタを有効にする回避を外した（selfexti の swi で 18・20 とも 1 回
-  ずつ、core-20261117T221818Z-d3fa53ac）。ほかは一致、CSV に V20x / V30x の線 18 が無いのは [data] に知らせた。
+  ずつ、core-20261117T221818Z-d3fa53ac）。ほかは一致。V20x / V30x の線 18 は [data] が 68be61e で足し、一致した。
   interrupts.csv は生成器の tools/generate/interrupts/interrupts.csv と slot ごとの handler が一致（差は D8W・D8C の条件
   つきの行だけ。V30x D8 の slot 58 も USBWakeUp で同じ）。
 - [ ] EXTI の線の表（internal/ch32rv_exti_line.h）と ADC のトリガの表（internal/ch32rv_adc_trigger.h）を device-data から
