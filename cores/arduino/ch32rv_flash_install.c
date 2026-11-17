@@ -11,6 +11,7 @@
 #define CH32RV_FLASH_OP        static inline __attribute__((always_inline))
 #define CH32RV_FLASH_OP_INLINE static inline __attribute__((always_inline))
 #include "internal/ch32rv_flash_ops.h"
+#include "internal/ch32rv_irq.h"
 
 extern uint8_t _ch32rv_flash_length[], _ch32rv_image_end[], _ch32rv_store_start[];
 
@@ -63,7 +64,7 @@ bool ch32rv_flash_image_plausible(uint32_t head, uint32_t length)
 __attribute__((section(".highcode"), noinline, noreturn)) static void install_from_ram(uint32_t from, uint32_t length, uint32_t unit)
 {
     uint32_t page[CH32RV_FLASH_WRITE_SIZE / 4u];
-    __asm__ volatile("csrc mstatus, %0" ::"r"(0x88u));    /* MIE and MPIE: no interrupt from here on */
+    ch32rv_irq_disable_all();   /* gintenr or mstatus by core (ch32rv_irq.h): no interrupt from here on */
     unlock();
     for (uint32_t a = 0; a < length; a += unit) {
         for (uint32_t tries = 0; tries < 3u; tries++) {

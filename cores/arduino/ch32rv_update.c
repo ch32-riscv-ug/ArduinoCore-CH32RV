@@ -4,6 +4,7 @@
 #include "ch32rv_crc.h"
 #include "ch32rv_flash.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_irq.h"
 
 #define PAGE CH32RV_FLASH_WRITE_SIZE
 #define UNIT CH32RV_FLASH_ERASE_SIZE
@@ -258,7 +259,10 @@ uint32_t ch32rv_update_crc32(void)
 
 void ch32rv_update_restart(void)
 {
-    __asm__ volatile("csrc mstatus, %0" ::"r"(0x8u));
+    /* The core's global interrupt switch: the sketch runs in U mode on most
+     * QingKe cores, where mstatus is an illegal instruction (mcause 2 at this
+     * very line on CH32V205, 2026-11-17: the first DFU install never reset). */
+    ch32rv_irq_disable_all();
     if (u.pending) {
         ch32rv_flash_install(u.base, u.length);
     }

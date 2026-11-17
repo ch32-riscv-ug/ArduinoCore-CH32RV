@@ -108,9 +108,19 @@ bool CH32RVUsbDeviceMscFirmwareDisk::begin(const char *volumeLabel)
     const uint32_t rootSectors = (_rootEntryCount * 32u + SECTOR - 1u) / SECTOR;
     const uint32_t ramAvailable = (uint32_t)(_size / SECTOR);
     bool laidOut = false;
+    /* Twice the staging area where the RAM's FAT can hold it, else its size
+     * (a UF2 file then fits an image up to half the staging area: V407's
+     * 484 KB at twice did not fit 4 KB of RAM). */
+    for (uint32_t span = 2u; span >= 1u && !laidOut; span--)
     for (uint16_t spc = 1; spc <= 128 && !laidOut; spc = (uint16_t)(spc * 2)) {
         const uint32_t clusterBytes = spc * SECTOR;
-        const uint32_t firmwareClusters = (capacity + clusterBytes - 1u) / clusterBytes;
+        /* Room for a UF2 file: a UF2 block carries 256 bytes in a 512-byte
+         * sector, so the file is twice the image (CH32X035's 38 KB staging and
+         * a 25 KB image made a 49 KB file that ran off a region of the
+         * staging's size, 2026-11-17). Blocks are taken as they land, so the
+         * region costs no storage; a .bin past the staging size is refused by
+         * ch32rv_update_write(). */
+        const uint32_t firmwareClusters = (span * capacity + clusterBytes - 1u) / clusterBytes;
         /* The FAT's size depends on the clusters, which depend on the RAM
          * the FAT leaves for the scratch area: a few passes settle it. */
         uint16_t fatSectors = 1;
