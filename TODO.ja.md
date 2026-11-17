@@ -218,6 +218,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] ch32-device-data の V103 の remap は 1af6898（2026-11-17）で揃い、lock を上げて TIMER_ROUTE_FIXES の V103 の行を
   外した（TIM2 は補正と同じ 12 通り。TIM1 の値 1 の PA8〜PA11、TIM3 の値 2 の PB0・PB1、USART3 の値 1 の CTS・RTS が
   増えた）。v103r8t6-evt の signals（pwm_route を含む）は通った（2026-11-17、core-20261117T050059Z-0a322fc7）。
+- [ ] ch32-device-data cb02bca（2026-11-17、push 待ち）の取り込み: push のあと lock を上げ、コアに手で書いた表を生成に
+  移す。adc_triggers.csv → internal/ch32rv_adc_trigger.h の EXTSEL の表（conflict は V103 の値 6、V205 の注入の値 6）。
+  exti_lines.csv → internal/ch32rv_exti_line.h の線の表（V407 は線 18 = USBHS1・ベクタ 58、線 20 = USBHS2・84 で
+  確定。両方のベクタを有効にしている回避を外す。H417 の PVD の線は資料に無い）。pvd_levels.csv → 生成器の load_pvd
+  （L103 の 8 段、V007・M007・H417 が入る。V004・M030 はデータシートに段の表が無い。V203 は parts.csv の datasheet 列で
+  2 つの表から選ぶ）。interrupts.csv の handler 列と V30x D8 の slot 58。
 - [ ] CH32V003 の VDD の測定（ch32rv_adc_vdd_millivolts）が約 35 % 高い: 3.3 V の板で 4448〜4464 mV を答える
   （2026-11-17、selfapi の millivolts と selfexti の pvd。ほかの 7 台は 3248〜3352 mV）。プローブが 3.3 V で High にした
   端子を V003 は 1023 と読む（periph の test_adc）ので、VDD は 3.3 V 以下。Vrefint（チャネル 8、1.2 V、データシートの
