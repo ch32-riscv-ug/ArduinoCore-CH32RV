@@ -1482,11 +1482,18 @@ DMAMUX_UART_CHANNELS = [(1, c) for c in range(2, 9)] + [(2, c) for c in range(1,
 DMAMUX_UART8 = {"RX": (2, 8), "TX": (1, 1)}
 
 
-def load_uart_dma(tables: pathlib.Path) -> dict:
-    """family -> {USART number: {"RX" | "TX": (dma, channel, channel registers,
-    flag register, flag shift, DMAMUX request or 0)}}, from index/dma.csv and
-    register_blocks.csv. HardwareSerial's DMA buffers (setRxBufferSize() /
-    setTxBufferSize()) run on these.
+def load_dma_blocks(tables: pathlib.Path) -> dict:
+    """family -> {block: base address} from register_blocks.csv (the DMA
+    controllers and channels dma_line() reads)."""
+    blocks: dict = {}
+    for r in read_table(tables, "register_blocks.csv", ("family", "block", "base_address")):
+        blocks.setdefault(r["family"], {})[r["block"]] = int(r["base_address"], 16)
+    return blocks
+
+
+def dma_line(blocks: dict, family: str, dma: int, ch: int, request: int, user: str) -> tuple:
+    """(dma, channel, channel registers, flag register, flag shift, DMAMUX
+    request or 0): one CH32RV_DMA_LINE (internal/ch32rv_dma.h).
 
     The flags: channels 1..8 at the regular 0x14 stride keep theirs in INTFR,
     four bits each from bit 0. The rest (V30x / V4x7's channels from 8 on, at a
@@ -1494,29 +1501,35 @@ def load_uart_dma(tables: pathlib.Path) -> dict:
     each from the first such channel (ch32v30x_dma.h DMA2_FLAG_GL8 0x20000001,
     ch32v4x7_dma.h DMA1_FLAG_GL8 0x40000001, ch32x3x5_dma.h DMA1_FLAG_GL9
     0xA0000001)."""
-    blocks: dict = {}
-    for r in read_table(tables, "register_blocks.csv", ("family", "block", "base_address")):
-        blocks.setdefault(r["family"], {})[r["block"]] = int(r["base_address"], 16)
+    b = blocks.get(family, {})
+    base, cbase = b.get(f"DMA{dma}"), b.get(f"DMA{dma}_Channel{ch}")
+    if base is None or cbase is None:
+        raise SystemExit(f"ERROR: {family}: register_blocks.csv has no DMA{dma} / "
+                         f"DMA{dma}_Channel{ch}, which dma.csv names for {user}")
+
+    def extended(c: int) -> bool:
+        cb = b.get(f"DMA{dma}_Channel{c}")
+        return c > 8 or cb != base + 0x08 + (c - 1) * 0x14
+
+    if not extended(ch):
+        return (dma, ch, cbase, base, 4 * (ch - 1), request)
+    first = min(c for c in range(1, 17) if f"DMA{dma}_Channel{c}" in b and extended(c))
+    exten = b.get(f"DMA{dma}_EXTEN")
+    if exten is None:
+        raise SystemExit(f"ERROR: {family}: DMA{dma} channel {ch} keeps its flags in "
+                         f"DMA{dma}_EXTEN, which register_blocks.csv does not have")
+    return (dma, ch, cbase, exten, 4 * (ch - first), request)
+
+
+def load_uart_dma(tables: pathlib.Path) -> dict:
+    """family -> {USART number: {"RX" | "TX": (dma, channel, channel registers,
+    flag register, flag shift, DMAMUX request or 0)}}, from index/dma.csv and
+    register_blocks.csv. HardwareSerial's DMA buffers (setRxBufferSize() /
+    setTxBufferSize()) run on these (the flags: dma_line())."""
+    blocks = load_dma_blocks(tables)
 
     def line(family: str, dma: int, ch: int, request: int) -> tuple:
-        b = blocks.get(family, {})
-        base, cbase = b.get(f"DMA{dma}"), b.get(f"DMA{dma}_Channel{ch}")
-        if base is None or cbase is None:
-            raise SystemExit(f"ERROR: {family}: register_blocks.csv has no DMA{dma} / "
-                             f"DMA{dma}_Channel{ch}, which dma.csv names for a USART")
-
-        def extended(c: int) -> bool:
-            cb = b.get(f"DMA{dma}_Channel{c}")
-            return c > 8 or cb != base + 0x08 + (c - 1) * 0x14
-
-        if not extended(ch):
-            return (dma, ch, cbase, base, 4 * (ch - 1), request)
-        first = min(c for c in range(1, 17) if f"DMA{dma}_Channel{c}" in b and extended(c))
-        exten = b.get(f"DMA{dma}_EXTEN")
-        if exten is None:
-            raise SystemExit(f"ERROR: {family}: DMA{dma} channel {ch} keeps its flags in "
-                             f"DMA{dma}_EXTEN, which register_blocks.csv does not have")
-        return (dma, ch, cbase, exten, 4 * (ch - first), request)
+        return dma_line(blocks, family, dma, ch, request, "a USART")
 
     found: dict = {}
     for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id",
@@ -1543,6 +1556,94 @@ def load_uart_dma(tables: pathlib.Path) -> dict:
     for family, b in blocks.items():
         if "DMAMUX" in b and family in out:
             out[family]["mux"] = b["DMAMUX"]
+    return out
+
+
+# SDIO (SD_MMC, internal/ch32rv_sdio.h): the signals in the order the core's
+# pad table numbers them.
+SDIO_SIGNALS = ("CK", "CMD", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7")
+# DMAMUX (CH32H41x): any channel takes the SDIO request; this one, DMA2
+# channel 4, is the channel SDIO has fixed on V30x / V4x7 (the EVT's DMA1
+# channel 1 is UART8's transmit one here, DMAMUX_UART8). The claim in
+# ch32rv_dma.c settles a clash at run time: SD_MMC then moves the FIFO by the
+# CPU.
+DMAMUX_SDIO = (2, 4)
+# Pads pinout.csv lists on a route the core cannot select by it: the
+# datasheets' "default" column on V30x and V4x7 names PB14 / PB15 for D0 / D1
+# too, which is where those two go by themselves while the Ethernet MAC is
+# clocked (RCC HBPCENR ETHMACEN = 1 with SDIOEN; CH32V20x_30xDS0 notes 7 / 8,
+# CH32FV2x_V3xRM table 10-44 and CH32V407RM table 10-43, "SDIOEN=1 &
+# ETHMACEN=1"; on V30x only some lots). The core does not clock the MAC to
+# move SDIO, so route 0 leaves them out; V4x7's remap 1 keeps them.
+# family -> {(route, signal): pads to drop}
+SDIO_ROUTE_FIXES = {
+    "CH32V307": {("default", "D0"): {("B", 14)}, ("default", "D1"): {("B", 15)}},
+    "CH32V407": {("default", "D0"): {("B", 14)}, ("default", "D1"): {("B", 15)}},
+}
+
+
+def load_sdio(tables: pathlib.Path) -> dict:
+    """family -> {"base": SDIO's address, "dma": dma_line() tuple or None,
+    "remap": [(register, bit)] of the AFIO field or [], "pads": {part:
+    {((port, bit), signal index, route)}}} for the families with the SDIO host
+    (register_blocks.csv SDIO; dma.csv's SDIO request; pinout.csv's SDIO_*
+    signals; routes.csv's afio-sdio-remap field). route is pinout.csv's
+    (default, remap-N, af-N)."""
+    blocks = load_dma_blocks(tables)
+    out: dict = {}
+    for family, b in blocks.items():
+        if "SDIO" in b:
+            out[family] = {"base": b["SDIO"], "dma": None, "remap": [], "pads": {}}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id", "peripheral")):
+        if r["peripheral"] != "SDIO" or r["family"] not in out:
+            continue
+        if r["dma"]:
+            got = dma_line(blocks, r["family"], int(r["dma"].removeprefix("DMA")), int(r["channel"]), 0, "SDIO")
+        else:
+            got = dma_line(blocks, r["family"], *DMAMUX_SDIO, int(r["request_id"]), "SDIO")
+        prev = out[r["family"]]["dma"]
+        if prev is not None and prev != got:
+            raise SystemExit(f"ERROR: dma.csv gives {r['family']}'s SDIO both {prev} and {got}")
+        out[r["family"]]["dma"] = got
+    series_family = {}
+    for family, names in _family_series(tables).items():
+        for name in names:
+            series_family[name] = family
+    for r in read_table(tables, "routes.csv", ("series", "selector", "controller", "bits")):
+        if r["selector"] != "afio-sdio-remap" or r["controller"] != "afio":
+            continue
+        family = series_family.get(r["series"])
+        if family not in out:
+            continue
+        bits = [(reg, int(bit)) for reg, _, bit in (e.partition(":") for e in r["bits"].split(";") if e)]
+        if out[family]["remap"] and out[family]["remap"] != bits:
+            raise SystemExit(f"ERROR: routes.csv gives {family}'s SDIO remap two layouts")
+        out[family]["remap"] = bits
+    _, functions = load_pin_functions(tables)
+    for r in functions:
+        info = out.get(r["family"])
+        sig = r["signal"]
+        if info is None or not sig.startswith("SDIO_") or sig[5:] not in SDIO_SIGNALS:
+            continue
+        m = PAD_PORT_RE.match(r["pad"])
+        if not m:
+            continue
+        pad = (m.group(1), int(m.group(2)))
+        if pad in SDIO_ROUTE_FIXES.get(r["family"], {}).get((r["route"], sig[5:]), ()):
+            continue
+        info["pads"].setdefault(r["part_number"], set()).add((pad, SDIO_SIGNALS.index(sig[5:]), r["route"]))
+    return out
+
+
+def load_gpio_speed(tables: pathlib.Path) -> dict:
+    """family -> offset of GPIOx_SPEED, for the families whose pads take their
+    output speed from a register of its own (two bits a pad; CH32H417RM
+    9.3.1.8: 00 10 MHz, 01 50, 10 100, 11 180 MHz, reset 10 MHz) instead of
+    the configuration nibble's MODE."""
+    out: dict = {}
+    for r in read_table(tables, "registers.csv", ("family", "type", "register", "offset")):
+        if r["type"] == "GPIO" and r["register"] == "SPEED":
+            out[r["family"]] = int(r["offset"], 16)
     return out
 
 
@@ -3847,7 +3948,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
              forbidden: dict = {}, clock_enables: dict = {},
              adc_all: dict = {}, adc_bases: dict = {}, cores: dict = {},
              esig: dict = {}, timer_pads: dict = {},
-             timer_remaps: dict = {}, uart_dma: dict = {}, argb: dict = {}) -> str:
+             timer_remaps: dict = {}, uart_dma: dict = {}, argb: dict = {},
+             sdio: dict = {}, gpio_speed: dict = {}) -> str:
     """Variant pin map for one series (ADR-0010)."""
     parts = sorted(r["part_number"] for r in rows)
 
@@ -4232,6 +4334,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append("/* DMAMUX: which request each DMA channel takes (CH32H41x). */")
             out.append(f"#define CH32RV_DMAMUX_BASE {uart_dma[family]['mux']:#010x}u")
             out.append("")
+    speeds = {gpio_speed[f] for f in {r.get("family", "") for r in rows} if f in gpio_speed}
+    if len(speeds) > 1:
+        raise SystemExit(f"{series}: families disagree on GPIOx_SPEED's offset")
+    if speeds:
+        out.append("/* Pads take their output speed from GPIOx_SPEED, two bits a pad (00 10 MHz,")
+        out.append(" * 01 50, 10 100, 11 180 MHz; ch32rv_gpio_set_speed()). */")
+        out.append(f"#define CH32RV_GPIO_SPEED_OFFSET {speeds.pop():#04x}u")
+        out.append("")
     if series in PER_PIN_AF_SERIES:
         out.append("/* Pads take their alternate function one by one (AFIO GPIOx_AFLR /")
         out.append(" * AFHR); a route's value below is that function number. */")
@@ -4630,6 +4740,53 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"    (p) == {pad_name(*pad)} ? {value} : \\")
         out.append("    -1)")
         out.append("")
+
+    # --- SDIO ---
+    # SD_MMC on the SDIO host (internal/ch32rv_sdio.h): every pad a signal
+    # reaches, the route that puts it there, the DMA line. One header serves
+    # the series: a pad a package does not bond is simply not there.
+    families = sorted({r.get("family", "") for r in rows} & set(sdio))
+    if len(families) > 1:
+        raise SystemExit(f"{series}: two families with an SDIO host: {families}")
+    if families:
+        info = sdio[families[0]]
+        per_pin = series in PER_PIN_AF_SERIES
+        entries = set()
+        for part in parts:
+            for pad, signal, route in info["pads"].get(part, ()):
+                value = route_af_value(route) if per_pin else route_remap_value(route)
+                if value is None or (not per_pin and value and not info["remap"]):
+                    raise SystemExit(f"{series}: SDIO on {pad_name(*pad)} by route {route}, "
+                                     f"which the core cannot select")
+                entries.add((signal, value, (PORTS.index(pad[0]), pad[1]), pad))
+        have = {e[0] for e in entries}
+        if all(i in have for i in range(3)):    # CK, CMD, D0
+            ordered = sorted(entries)
+            out.append("/* ---- SDIO host (SD_MMC, internal/ch32rv_sdio.h). Pads: pad, signal")
+            out.append(" * (0 CK, 1 CMD, 2..9 D0..D7), route: " +
+                       ("the pad's alternate-function number; each pad on its own." if per_pin else
+                        "the value of the AFIO field below; all pads on one route." if info["remap"] else
+                        "0, the one route."))
+            out.append(" * A signal's first pad is its default. ---- */")
+            out.append(f"#define CH32RV_SDIO_BASE {info['base']:#010x}u")
+            if info["remap"]:
+                if len(info["remap"]) != 1 or info["remap"][0][0] not in ("PCFR1", "PCFR2"):
+                    raise SystemExit(f"{series}: SDIO's remap field {info['remap']} is not one PCFR bit")
+                reg, bit = info["remap"][0]
+                out.append(f"#define CH32RV_SDIO_REMAP_PCFR {reg[-1]}")
+                out.append(f"#define CH32RV_SDIO_REMAP_SHIFT {bit}u")
+            if info["dma"]:
+                dma, ch, cbase, flags, shift, request = info["dma"]
+                out.append(f"#define CH32RV_SDIO_DMA CH32RV_DMA_LINE({dma}, {ch}, {cbase:#010x}u, "
+                           f"{flags:#010x}u, {shift}u, {request}u)")
+                if request and "mux" not in uart_dma.get(families[0], {}):
+                    raise SystemExit(f"{series}: SDIO's DMA request goes through a DMAMUX the variant does not name")
+            out.append(f"#define CH32RV_SDIO_PAD_COUNT {len(ordered)}")
+            out.append("#define CH32RV_SDIO_PADS { \\")
+            for signal, value, _, pad in ordered:
+                out.append(f"    {{ {pad_name(*pad)}, {signal}, {value} }}, \\")
+            out.append("}")
+            out.append("")
 
     # --- Timer capabilities, tone() and Servo timers ---
     # Both need a timer whose *update* interrupt has a vector of its own. Their
@@ -5113,6 +5270,8 @@ def main() -> int:
     timer_remaps = load_timer_remap_fields(args.tables)
     uart_dma = load_uart_dma(args.tables)
     argb = load_argb(args.tables)
+    sdio = load_sdio(args.tables)
+    gpio_speed = load_gpio_speed(args.tables)
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)
@@ -5170,7 +5329,7 @@ def main() -> int:
                                 interrupts[SERIES_CONFIG[series]['vectors']], remap,
                                 route_alts, wide_timers, timer_capabilities, forbidden,
                                 clock_enables, adc_all, adc_bases, cores, esig,
-                                timer_pads, timer_remaps, uart_dma, argb)
+                                timer_pads, timer_remaps, uart_dma, argb, sdio, gpio_speed)
         block = block.rstrip("\n") + "\n" + "\n".join(
             periph_menu(series, series, parts,
                         {"usart": uarts, "i2c": i2cs, "spi": spis}, remap,

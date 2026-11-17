@@ -58,7 +58,7 @@
 | PWM の remap 先・CHxN の端子 | TIM のある全系列 | 実装済み（2026-11-17、`analogWrite()` が variant の `CH32RV_TIMER_PADS` のどの端子でも。ベンチ未確認） | 自動 | プローブ。signals::test_pwm_route、test_pwm_complementary | cores/arduino/wiring_pwm.c, PS:48, FC:70 |
 | TIM8〜10 の PWM の実機 | V30x、V4x7、H41x | 2 | 自動 | プローブ | PS:48 |
 | 既定以外の route の実機（X305/X315 の Wire など） | X305/X315 ほか | 2 | 自動 | プローブ＋プルアップ | TODO:498 |
-| SD_MMC の V4x7 の remap、H41x の AF の端子 | V4x7、H41x | 2 | 単発 | SD カードの口のある板 | libraries/SD_MMC/README.ja.md:52 |
+| SD_MMC の V4x7 の remap、H41x の AF の端子 | V4x7、H41x | 実装済み（2026-11-17、ビルドのみ。variant の `CH32RV_SDIO_PADS` から `setPins()` が選ぶ。H41x は端子ごとの AF、V4x7 は PCFR2 の SDIO_RM） | 単発 | SD カードの口のある板 | libraries/SD_MMC/README.ja.md:52 |
 
 ## タイマー・PWM
 
@@ -210,7 +210,7 @@
 
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
-| SDIO（SD_MMC）の残り: DMA、high speed、ハードのフロー制御、H41x の AF・V4x7 の remap、MMC 4/8 bit | V30x、V4x7、H41x | 1 | 自動 | SD カードの口の板（V307 評価板） | libraries/SD_MMC/README.ja.md:40,50-53, PS:101 |
+| SDIO（SD_MMC）の残り: DMA、high speed、ハードのフロー制御、H41x の AF・V4x7 の remap、MMC 4/8 bit | V30x、V4x7、H41x | 実装済み（2026-11-17、ビルドのみ。ブロックは DMA2 の 4 番（H41x は DMAMUX で同じ channel）を `ch32rv_dma_claim()` で取って、取れないときと 4 バイト境界でない buffer は CPU。SD の high speed は CMD6、MMC は CMD1・EXT_CSD・BUS_WIDTH 4/8・HS_TIMING。端子は variant の `CH32RV_SDIO_PADS`（生成、internal/ch32rv_sdio.h）。フロー制御は既定で on、`card().setFlowControl(false)` で比べる。V30x の ETHMACEN で D0/D1 が PB14/PB15 に移る道は使わない） | 自動 | SD カードの口の板（V307 評価板） | libraries/SD_MMC/README.ja.md:40,50-53, PS:101 |
 | SDMMC（eMMC、HS200/HS400、SDIO slave） | H417 | 2 | 単発 | eMMC の板 | PS:103, PM:246 |
 | FSMC / FMC（SRAM、NOR、NAND、LCD、SDRAM） | V205、V30x、V4x7、H417 | 2 | 単発 | 外部メモリの板 | PS:102, PM:245 |
 | PSRAM（チップ内 4〜8 MB） | V467 | 2 | 単発→自動 | V467 の石（自己） | PS:109, PM:254 |

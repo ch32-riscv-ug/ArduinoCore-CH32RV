@@ -14,7 +14,7 @@
  * request 0 where the request is the channel's fixed one, the DMAMUX request
  * number on H41x. ch32rv_dma_claim() keeps two users off one channel: the
  * first to claim it has it until it lets go (HardwareSerial's DMA buffers,
- * CH32RVAdcStream, CH32RVLogicCapture). ch32rv_dma.c, linked when one of them
+ * CH32RVAdcStream, CH32RVLogicCapture, SD_MMC). ch32rv_dma.c, linked when one of them
  * is. */
 #pragma once
 
@@ -50,6 +50,8 @@ typedef struct {
 #define CH32RV_DMA_CFGR_DIR  (1u << 4)    /* memory to peripheral */
 #define CH32RV_DMA_CFGR_CIRC (1u << 5)
 #define CH32RV_DMA_CFGR_MINC (1u << 7)
+#define CH32RV_DMA_CFGR_PSIZE_32 (2u << 8)   /* peripheral side a word (else a byte) */
+#define CH32RV_DMA_CFGR_MSIZE_32 (2u << 10)  /* memory side a word */
 #define CH32RV_DMA_CFGR_PL(n) ((uint32_t)(n) << 12)   /* 0 low .. 3 very high */
 
 /* A channel's flags, shifted down to bits 0..3. */

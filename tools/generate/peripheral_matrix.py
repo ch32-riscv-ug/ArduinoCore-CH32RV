@@ -261,8 +261,8 @@ STATUS = {
                  "V467・V317・V203RBはEVTから移してビルドのみ(V208/V203RBはHCLK 60/120 MHzが要り、"
                  "CPU Clock `60MHz`を選ぶ。既定の96 MHzでは`begin()`がfalse)"),
     "I2S": ("未実装", "-", ""),
-    "SDIO": ("一部実装", "SD_MMC",
-             "SD_MMC library(4 bit、20 MHz、H417で実機確認)。DMA・high speed・MMCの4/8 bit・V4x7のremapは未実装"),
+    "SDIO": ("実装済", "SD_MMC",
+             "SD_MMC library。SD(SDSC/SDHC/SDXC)は1/4 bit、high speed(CMD6、50 MHz)、MMC/eMMCは1/4/8 bit(EXT_CSDのBUS_WIDTH、HS_TIMING)。ブロックはDMA(取れないときはCPU)。端子はvariantの表(V4x7のremap、H41xのAF)。4 bit・20 MHzはH417で実機確認、DMA・high speed・MMC・remap・AFは2026-11-17に実装(ビルドのみ)。H416はdevice-dataにD0の端子が無く使えない"),
     "FSMC/FMC": ("未実装", "-", "H417のFMCはSDRAMも扱う"),
     "SDMMC": ("未実装", "-", "H417。host(HS200/HS400)とSDIO slave"),
     "SAI (音声)": ("未実装", "-", "TDM、SPDIF出力"),

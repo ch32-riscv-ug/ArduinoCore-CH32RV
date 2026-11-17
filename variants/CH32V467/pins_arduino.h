@@ -860,6 +860,37 @@
     (p) == PA15 ? 0 : \
     -1)
 
+/* ---- SDIO host (SD_MMC, internal/ch32rv_sdio.h). Pads: pad, signal
+ * (0 CK, 1 CMD, 2..9 D0..D7), route: the value of the AFIO field below; all pads on one route.
+ * A signal's first pad is its default. ---- */
+#define CH32RV_SDIO_BASE 0x40018000u
+#define CH32RV_SDIO_REMAP_PCFR 2
+#define CH32RV_SDIO_REMAP_SHIFT 12u
+#define CH32RV_SDIO_DMA CH32RV_DMA_LINE(2, 4, 0x40020444u, 0x40020400u, 12u, 0u)
+#define CH32RV_SDIO_PAD_COUNT 20
+#define CH32RV_SDIO_PADS { \
+    { PC12, 0, 0 }, \
+    { PC12, 0, 1 }, \
+    { PD2, 1, 0 }, \
+    { PD2, 1, 1 }, \
+    { PC8, 2, 0 }, \
+    { PB14, 2, 1 }, \
+    { PC9, 3, 0 }, \
+    { PB15, 3, 1 }, \
+    { PC10, 4, 0 }, \
+    { PC10, 4, 1 }, \
+    { PC11, 5, 0 }, \
+    { PC11, 5, 1 }, \
+    { PB8, 6, 0 }, \
+    { PB8, 6, 1 }, \
+    { PB9, 7, 0 }, \
+    { PB9, 7, 1 }, \
+    { PC6, 8, 0 }, \
+    { PA9, 8, 1 }, \
+    { PC7, 9, 0 }, \
+    { PA10, 9, 1 }, \
+}
+
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */

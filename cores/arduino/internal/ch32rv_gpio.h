@@ -101,6 +101,29 @@ static inline void ch32rv_pin_set_af(uint8_t pin, uint32_t af)
 #endif
 }
 
+/* The pad's output speed on the families that keep it in a register of its
+ * own (CH32H41x, X3x5: GPIOx_SPEED, two bits a pad, reset 00 = 10 MHz; the
+ * variant's CH32RV_GPIO_SPEED_OFFSET): code 0 10 MHz, 1 50, 2 100, 3 180 MHz
+ * (CH32H417RM 9.3.1.8). Elsewhere the configuration nibble's MODE is the
+ * speed and this does nothing. */
+static inline void ch32rv_gpio_set_speed(uint8_t port, uint8_t bit, uint32_t code)
+{
+#ifdef CH32RV_GPIO_SPEED_OFFSET
+    if (bit >= 16u) {
+        return;
+    }
+    volatile uint32_t *reg = &CH32RV_REG32(CH32RV_GPIO_BASE(port) + CH32RV_GPIO_SPEED_OFFSET);
+    const uint32_t shift = (uint32_t)bit * 2u;
+    const uint32_t lock = ch32rv_cores_lock();
+    *reg = (*reg & ~(3u << shift)) | ((code & 3u) << shift);
+    ch32rv_cores_unlock(lock);
+#else
+    (void)port;
+    (void)bit;
+    (void)code;
+#endif
+}
+
 static inline void ch32rv_gpio_set(uint8_t port, uint8_t bit)
 {
 #if CH32RV_GPIO_PORT_WIDTH > 16

@@ -324,6 +324,8 @@ HSE 付きの板の USBHS の口、P4 をもう 1 台か付け替え。HS の sp
 | hid | 常駐ベンチでは流していない | UIAPduino の台 |
 | selfexti（ピンでない EXTI の線と PVD） | ビルドのみ（2026-11-17）。自動の自己検査で、配線なし。wake は休止するので CH32_TEST_BOOT_HOLD_MS を付けて流す | 常駐ベンチの各系列 |
 | PVD の本当の低下（単発） | 試験が無い。自己検査（selfexti.pvd）は閾値を VDD の上と下に置くだけで、VDD が下がる道は見ない。3.3 V の板で閾値を VDD の上に置けるのは V003・V103・X035 だけ | 可変電源で DUT の VDD を閾値の上から下へ（例: 3.3 V → 2.6 V。系列の動作範囲の中で）。`LowVoltageDetect` の例で `Low voltage #1` が出る電圧と、戻すときの電圧（ヒステリシス）を記録し、日付と条件を libraries/CH32RV/README に書く。AWU の系列（V00x・X035・M030）の線での起床も、ここで PVD を `enableExtiLineWakeup()` にして見る |
+| sd.sdio の DMA・CPU・1 ビット・フロー制御なし・high speed（test_sd_sdio_transfer、test_sd_sdio_high_speed） | 未実行（2026-11-17 に追加、ビルドのみ）。1 MB を FatFS で書いて読み、CRC-32 をホストの値と比べ、DMA と CPU が動かしたブロック数と速さ（KB/s）を記録する。フロー制御なしは記録だけ | 今の sd.sdio と同じ（nanoH417 の SD の口、SDHC か SDXC のカード）。最終的には P4 プローブのダミー SD |
+| SD_MMC の MMC / eMMC（4 / 8 ビット、単発） | 試験が無い（ベンチに MMC が無い） | eMMC の板（CMD・D0〜D7 にプルアップ）を V307 の SDIO（CK PC12、CMD PD2、D0〜D3 PC8〜PC11、D4〜D7 PB8・PB9・PC6・PC7）か H417 の PB11・PB10・PE8〜PE15 に。CardInfo を `setPins(clk, cmd, d0, …, d7)` と `begin("/sdcard", false, false, 52000)` にして、`cardType()` が MMC、`card().busWidth()` が 8、`card().highSpeed()` と `clockHz()`、`numSectors()` が EXT_CSD の SEC_COUNT と合うこと、1 MB の読み書きの CRC（sd.ino の big と同じ手順）。D4〜D7 を付けない setPins（4 本）と、`begin()` の mode1bit（1 本）でも同じ。結果の日付と条件を libraries/SD_MMC/README に書く |
 
 V103にDACは無い（RMのF103との比較表）。analogはV103でスキップのままでよい。
 

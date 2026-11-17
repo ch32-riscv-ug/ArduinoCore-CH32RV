@@ -414,6 +414,10 @@
 /* DMAMUX: which request each DMA channel takes (CH32H41x). */
 #define CH32RV_DMAMUX_BASE 0x40020800u
 
+/* Pads take their output speed from GPIOx_SPEED, two bits a pad (00 10 MHz,
+ * 01 50, 10 100, 11 180 MHz; ch32rv_gpio_set_speed()). */
+#define CH32RV_GPIO_SPEED_OFFSET 0x1cu
+
 /* Pads take their alternate function one by one (AFIO GPIOx_AFLR /
  * AFHR); a route's value below is that function number. */
 #define CH32RV_GPIO_PER_PIN_AF 1
@@ -1151,6 +1155,35 @@
 #define CH32RV_DAC1_PIN PA4
 /* DAC2: on every part */
 #define CH32RV_DAC2_PIN PA5
+
+/* ---- SDIO host (SD_MMC, internal/ch32rv_sdio.h). Pads: pad, signal
+ * (0 CK, 1 CMD, 2..9 D0..D7), route: the pad's alternate-function number; each pad on its own.
+ * A signal's first pad is its default. ---- */
+#define CH32RV_SDIO_BASE 0x40018000u
+#define CH32RV_SDIO_DMA CH32RV_DMA_LINE(2, 4, 0x40020444u, 0x40020400u, 12u, 111u)
+#define CH32RV_SDIO_PAD_COUNT 20
+#define CH32RV_SDIO_PADS { \
+    { PB11, 0, 8 }, \
+    { PC1, 0, 11 }, \
+    { PB10, 1, 8 }, \
+    { PA0, 1, 9 }, \
+    { PE8, 2, 8 }, \
+    { PB14, 2, 9 }, \
+    { PE9, 3, 8 }, \
+    { PB15, 3, 9 }, \
+    { PE10, 4, 8 }, \
+    { PB3, 4, 9 }, \
+    { PE11, 5, 8 }, \
+    { PB4, 5, 9 }, \
+    { PE12, 6, 8 }, \
+    { PB8, 6, 10 }, \
+    { PE13, 7, 8 }, \
+    { PB9, 7, 10 }, \
+    { PE14, 8, 8 }, \
+    { PC6, 8, 9 }, \
+    { PE15, 9, 8 }, \
+    { PC7, 9, 9 }, \
+}
 
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,

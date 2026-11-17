@@ -714,6 +714,25 @@
 /* DAC2: on every part */
 #define CH32RV_DAC2_PIN PA5
 
+/* ---- SDIO host (SD_MMC, internal/ch32rv_sdio.h). Pads: pad, signal
+ * (0 CK, 1 CMD, 2..9 D0..D7), route: 0, the one route.
+ * A signal's first pad is its default. ---- */
+#define CH32RV_SDIO_BASE 0x40018000u
+#define CH32RV_SDIO_DMA CH32RV_DMA_LINE(2, 4, 0x40020444u, 0x40020400u, 12u, 0u)
+#define CH32RV_SDIO_PAD_COUNT 10
+#define CH32RV_SDIO_PADS { \
+    { PC12, 0, 0 }, \
+    { PD2, 1, 0 }, \
+    { PC8, 2, 0 }, \
+    { PC9, 3, 0 }, \
+    { PC10, 4, 0 }, \
+    { PC11, 5, 0 }, \
+    { PB8, 6, 0 }, \
+    { PB9, 7, 0 }, \
+    { PC6, 8, 0 }, \
+    { PC7, 9, 0 }, \
+}
+
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */

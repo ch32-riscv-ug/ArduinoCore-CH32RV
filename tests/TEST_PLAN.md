@@ -27,5 +27,7 @@ TinyUSB vendoring is not Arduino USB integration.
 
 The EXTI lines that are not pins (selfexti) are an automatic self-check with no wiring; a real fall of VDD below
 the PVD threshold is a single, manual test with a variable supply (the Japanese plan, "実機待ち・落ちている試験").
+SD_MMC's DMA / CPU / 1-bit / no-flow-control transfers and high speed run in case sd on the bench's SD slot; an
+MMC / eMMC on 4 and 8 lines is a single, manual test with an eMMC board (the Japanese plan, the same table).
 
 The [README](README.ja.md) describes board-free checks and the opt-in hardware workflow.

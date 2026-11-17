@@ -244,6 +244,41 @@ scope = "series"
 needs = ["SDIO"]
 
 [[item]]
+id = "sd-sdio-dma"           # 1 MB through FatFS by DMA, CRC-32 against the host's, the blocks counted by DMA
+test = "sd::test_sd_sdio_transfer[dma]"
+scope = "series"
+needs = ["SDIO"]
+
+[[item]]
+id = "sd-sdio-cpu"           # the same by the CPU through the FIFO (DMA off): the fallback path
+test = "sd::test_sd_sdio_transfer[cpu]"
+scope = "series"
+needs = ["SDIO"]
+
+[[item]]
+id = "sd-sdio-1bit"          # the same on D0 alone, where the slot has D1-D3 (the 4-bit run is sd-sdio-dma)
+test = "sd::test_sd_sdio_transfer[dma1bit]"
+scope = "once"
+needs = ["SDIO"]
+
+[[item]]
+id = "sd-sdio-no-flow-control"   # DMA with HWFC_EN off: recorded, whether the DMA keeps up with the FIFO
+test = "sd::test_sd_sdio_transfer[dmanofc]"
+scope = "series"
+needs = ["SDIO"]
+
+[[item]]
+id = "sd-sdio-high-speed"    # CMD6 high speed: whether the card switched (DUT), the clock, 1 MB at it
+test = "sd::test_sd_sdio_high_speed"
+scope = "series"
+needs = ["SDIO"]
+
+[[item]]
+id = "sd-sdio-mmc"           # an eMMC / MMC on 4 and 8 lines (EXT_CSD BUS_WIDTH, HS_TIMING): single-shot, no bench card
+scope = "once"
+needs = ["SDIO"]
+
+[[item]]
 id = "usb-power"            # the host suspends and resumes the device; the device wakes the host (remote wakeup)
 test = "usb-power"
 scope = "series"            # each controller's driver detects suspend and signals resume its own way

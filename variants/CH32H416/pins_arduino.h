@@ -353,6 +353,10 @@
 /* DMAMUX: which request each DMA channel takes (CH32H41x). */
 #define CH32RV_DMAMUX_BASE 0x40020800u
 
+/* Pads take their output speed from GPIOx_SPEED, two bits a pad (00 10 MHz,
+ * 01 50, 10 100, 11 180 MHz; ch32rv_gpio_set_speed()). */
+#define CH32RV_GPIO_SPEED_OFFSET 0x1cu
+
 /* Pads take their alternate function one by one (AFIO GPIOx_AFLR /
  * AFHR); a route's value below is that function number. */
 #define CH32RV_GPIO_PER_PIN_AF 1
