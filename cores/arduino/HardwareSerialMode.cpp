@@ -278,6 +278,8 @@ struct Mode {
     uint8_t cts_on, rts_on, de;
     volatile uint8_t held;     /* RTS: a byte left in the data register      */
     volatile uint8_t pending;  /* P_*, for the delivery                      */
+    /* Receive by DMA: its place at the IDLE (in the padding before idle_at). */
+    volatile uint16_t idle_pos;
     volatile uint32_t idle_at; /* micros() at the IDLE                       */
     CH32RVHardwareSerial *port;
     CH32RVCallback<void(void)> on_receive;
@@ -444,6 +446,18 @@ void CH32RVSerialMode::start(CH32RVHardwareSerial &port)
     CH32RV_USART_CTLR3(base) = ctlr3;
     CH32RV_USART_CTLR1(base) = (uint16_t)((ctlr1 & ~(CH32RV_USART_CTLR1_IDLEIE | CH32RV_USART_CTLR1_TCIE)) |
                                           ie | CH32RV_USART_CTLR1_UE);
+    /* A port on DMA (HardwareSerialDmaRx.cpp / Tx.cpp): its requests back,
+     * no interrupt per received byte, and a transmit run in flight keeps its
+     * transmit-complete interrupt. Interrupts still off: nothing saw the
+     * moment between. */
+    if (CH32RV_SERIAL_DMA_ON(port, RX)) {
+        CH32RV_USART_CTLR3(base) |= CH32RV_USART_CTLR3_DMAR;
+        CH32RV_USART_CTLR1(base) &= (uint16_t)~CH32RV_USART_CTLR1_RXNEIE;
+    }
+    if (CH32RV_SERIAL_DMA_ON(port, TX)) {
+        CH32RV_USART_CTLR3(base) |= CH32RV_USART_CTLR3_DMAT;
+        CH32RV_USART_CTLR1(base) |= (uint16_t)(ctlr1 & CH32RV_USART_CTLR1_TCIE);
+    }
     ch32rv_irq_restore(irq);
 }
 
@@ -478,12 +492,22 @@ void CH32RVSerialMode::irq(CH32RVHardwareSerial &port, uint32_t base)
         status &= ~(RX_FLAGS | CH32RV_USART_STATR_IDLE);
     }
     const bool idle = (status & CH32RV_USART_STATR_IDLE) && (ctlr1 & CH32RV_USART_CTLR1_IDLEIE);
-    if (idle && !(status & RX_FLAGS)) {
+    /* Receive by DMA: only a byte waiting for the DMA is not ours to take;
+     * an error flag stays until the next byte's read and must not keep IDLE
+     * set (the interrupt would come back at once). */
+    const uint32_t taken = CH32RV_SERIAL_DMA_ON(port, RX) ? CH32RV_USART_STATR_RXNE : RX_FLAGS;
+    if (idle && !(status & taken)) {
         /* IDLE alone is cleared by reading STATR, then DATAR. A byte that
          * came meanwhile is still taken (status read again). */
         status = CH32RV_USART_STATR(base);
-        if (!(status & RX_FLAGS)) {
+        if (!(status & taken)) {
             (void)CH32RV_USART_DATAR(base);
+            if (CH32RV_SERIAL_DMA_ON(port, RX)) {
+                /* The read cleared the last byte's error flags too, before
+                 * the DMA's reader saw them. */
+                port._errors |= (uint8_t)(status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_NE |
+                                                    CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE));
+            }
         }
     }
     port.serviceRx(base, status);
@@ -492,9 +516,13 @@ void CH32RVSerialMode::irq(CH32RVHardwareSerial &port, uint32_t base)
     }
     if (idle) {
         m.idle_at = micros();
+        if (CH32RV_SERIAL_DMA_ON(port, RX)) {
+            m.idle_pos = ch32rv_serial_dma_rx->position(port);
+        }
         m.pending |= P_IDLE;
     }
-    if (m.rts_on || m.on_receive) {
+    /* Receive by DMA: the count is the DMA's, read after loop() (deliver). */
+    if ((m.rts_on || m.on_receive) && !CH32RV_SERIAL_DMA_ON(port, RX)) {
         const int count = port._rx.available();
         if (m.on_receive && count >= full_at(m)) {
             m.pending |= P_FULL;
@@ -511,7 +539,7 @@ void CH32RVSerialMode::irq(CH32RVHardwareSerial &port, uint32_t base)
     /* RS485: the last stop bit is out (TC, read now: a byte just written
      * cleared it) and nothing waits - the driver off the bus. */
     if ((ctlr1 & CH32RV_USART_CTLR1_TCIE) && (CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TC) &&
-        port._tx.isEmpty()) {
+        port._tx.isEmpty() && !(CH32RV_SERIAL_DMA_ON(port, TX) && ch32rv_serial_dma_tx->sending(port))) {
         CH32RV_USART_CTLR1(base) &= (uint16_t)~CH32RV_USART_CTLR1_TCIE;
         if (m.de) {
             de_write(m.de, false);
@@ -608,6 +636,19 @@ size_t CH32RVSerialMode::deliver(void)
         if (!port || !m.on_receive || !*port) {
             continue;
         }
+        if (CH32RV_SERIAL_DMA_ON(*port, RX)) {
+            /* No interrupt per byte: the count is read here, and bytes that
+             * came after the IDLE make it wait for the next one. */
+            const bool full = port->available() >= full_at(m);
+            const uint32_t irq = ch32rv_irq_save();
+            if (ch32rv_serial_dma_rx->position(*port) != m.idle_pos) {
+                m.pending &= (uint8_t)~P_IDLE;
+            }
+            if (full) {
+                m.pending |= P_FULL;
+            }
+            ch32rv_irq_restore(irq);
+        }
         const uint8_t p = m.pending;
         uint8_t done = 0;
         bool fire = false;
@@ -676,6 +717,9 @@ bool CH32RVHardwareSerial::setHwFlowCtrlMode(SerialHwFlowCtrl mode, uint8_t thre
     Mode &m = modes[_number];
     if (m.mode != UART_MODE_UART && mode != UART_HW_FLOWCTRL_DISABLE) {
         return false;                  /* RS485: RTS is the driver enable */
+    }
+    if ((mode & UART_HW_FLOWCTRL_RTS) && CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        return false;                  /* the DMA empties the data register RTS follows */
     }
     uint8_t cts, rts, af;
     if (mode != UART_HW_FLOWCTRL_DISABLE && !CH32RVSerialMode::flowPads(*this, mode, cts, rts, af, af)) {

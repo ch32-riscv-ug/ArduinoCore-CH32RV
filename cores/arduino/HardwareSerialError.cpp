@@ -33,6 +33,11 @@ void deliver(void)
             {CH32RV_USART_STATR_PE, UART_PARITY_ERROR},
             {CH32RV_USART_STATR_NE, UART_NOISE_ERROR},
         };
+        if (ch32rv_serial_dma_rx) {
+            /* A receive by DMA reads its errors when it looks at the DMA's
+             * place (HardwareSerialDmaRx.cpp); available() does. */
+            (void)r.port->available();
+        }
         const uint8_t errors = r.port->takeErrors();
         for (const auto &kind : kinds) {
             if (errors & kind[0]) {

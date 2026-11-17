@@ -58,6 +58,26 @@ test = "uart::test_uart_receive_event"
 scope = "series"
 
 [[item]]
+id = "uart-dma-receive"     # setRxBufferSize(): 4096 bytes at 1 / 2 Mbaud by DMA, none lost (FNV-1a)
+test = "uart-dma::test_uart_dma_receive"
+scope = "series"
+
+[[item]]
+id = "uart-dma-interrupts-off"   # the DMA keeps receiving with interrupts off; an overrun is reported, the newest kept
+test = "uart-dma::test_uart_dma_interrupts_off"
+scope = "series"
+
+[[item]]
+id = "uart-dma-transmit"    # setTxBufferSize(): 2048 bytes at 1 / 2 Mbaud by DMA, at the line's pace, interrupts off too
+test = "uart-dma::test_uart_dma_transmit"
+scope = "series"
+
+[[item]]
+id = "uart-dma-receive-event"   # onReceive() on a DMA receive buffer: the IDLE timeout, the FIFO-full count
+test = "uart-dma::test_uart_dma_receive_event"
+scope = "series"
+
+[[item]]
 id = "software-serial"      # SoftwareSerial: 9600 / 57600 / 115200 8N1 and 8E1, 8O1, 8N2, 7E1 both ways
 test = "uart::test_uart_software_serial"
 scope = "series"

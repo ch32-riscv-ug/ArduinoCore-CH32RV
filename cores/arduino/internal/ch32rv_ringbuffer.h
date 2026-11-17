@@ -70,6 +70,10 @@ public:
 
     void clear(void) { _tail = _head; }
 
+    /* The storage itself, for a port that moves its bytes by DMA instead
+     * (HardwareSerialDmaRx.cpp, HardwareSerialDmaTx.cpp): its own indices then, these unused. */
+    uint8_t *data(void) { return _buffer; }
+
 private:
     CH32RV_RB_INLINE static uint16_t next(uint16_t i) { return (uint16_t)((i + 1u) % N); }
 

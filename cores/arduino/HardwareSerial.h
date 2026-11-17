@@ -108,6 +108,42 @@ struct CH32RVSerialModeOps {
 };
 extern const CH32RVSerialModeOps *ch32rv_serial_mode_ops;
 
+/* The buffers of setRxBufferSize() / setTxBufferSize(), moved by DMA
+ * (HardwareSerialDmaRx.cpp, HardwareSerialDmaTx.cpp). Each pointer is written
+ * only by its setter, as the modes' pointer above: a sketch that calls
+ * neither links none of it, one that calls one links that direction alone,
+ * and every test of them folds away. A port's _dma says which of its
+ * directions run so while it is open. */
+#define CH32RV_SERIAL_DMA_RX 1u
+#define CH32RV_SERIAL_DMA_TX 2u
+struct CH32RVSerialDmaRxOps {
+    void (*start)(CH32RVHardwareSerial &port);   /* end of begin(): the channel claimed and running */
+    void (*end)(CH32RVHardwareSerial &port);     /* in end(): stopped and let go */
+    int (*available)(CH32RVHardwareSerial &port);
+    int (*peek)(CH32RVHardwareSerial &port);
+    int (*read)(CH32RVHardwareSerial &port);
+    /* Where the DMA writes next: onReceive()'s timeout compares it with its
+     * place at the IDLE to see bytes that came since. */
+    uint16_t (*position)(CH32RVHardwareSerial &port);
+};
+struct CH32RVSerialDmaTxOps {
+    void (*start)(CH32RVHardwareSerial &port);
+    void (*end)(CH32RVHardwareSerial &port);
+    void (*irq)(CH32RVHardwareSerial &port, uint32_t base);   /* after the port's own interrupt */
+    void (*write)(CH32RVHardwareSerial &port, uint8_t c);
+    void (*flush)(CH32RVHardwareSerial &port);   /* until the DMA has handed every byte over */
+    int (*room)(CH32RVHardwareSerial &port);
+    bool (*sending)(CH32RVHardwareSerial &port); /* bytes not yet handed to the USART */
+};
+extern const CH32RVSerialDmaRxOps *ch32rv_serial_dma_rx;
+extern const CH32RVSerialDmaTxOps *ch32rv_serial_dma_tx;
+/* For the core's own files (the class's friends): `dir` (RX, TX) of `port`
+ * on DMA - false, and folded away, in a sketch without. */
+#define CH32RV_SERIAL_DMA_PTR_RX ch32rv_serial_dma_rx
+#define CH32RV_SERIAL_DMA_PTR_TX ch32rv_serial_dma_tx
+#define CH32RV_SERIAL_DMA_ON(port, dir) \
+    (CH32RV_SERIAL_DMA_PTR_##dir && ((port)._dma & CH32RV_SERIAL_DMA_##dir))
+
 /* One object is one port. Which USART it drives is decided in begin(), not
  * here: the object holds state only, and that state is all zero at reset, so a
  * port lives in .bss and costs nothing until begin() binds it. Each USART's
@@ -218,6 +254,43 @@ public:
      * that; 0 is refused). Default half the buffer. */
     bool setRxFIFOFull(uint8_t fifoBytes);
 
+    /* ESP32's buffer sizes, set before begin(): the port's receive / transmit
+     * buffer becomes new_size bytes (rounded down to even) and DMA moves its
+     * bytes, not an interrupt per byte. A size up to the built-in
+     * CH32RV_SERIAL_RX_BUFFER_SIZE / _TX_BUFFER_SIZE uses that storage; a
+     * larger one is taken from the heap (a constant size that fits links no
+     * heap). Returns the size, or 0 - and nothing changes - while the port is
+     * open, below 2, above 65534, or when the heap has no room.
+     *
+     * Receive: the DMA fills the buffer in a circle while the CPU does
+     * anything else, interrupts off included, so nothing is lost at any baud
+     * the USART takes as long as the sketch reads before new_size - 1 bytes
+     * wait. What it does not wait for: a byte that comes when the buffer is
+     * full overwrites the oldest (onReceiveError() reports
+     * UART_BUFFER_FULL_ERROR when read() sees it: more than one whole buffer
+     * between two reads can go unseen), and a byte with a framing or parity
+     * error is kept (the error is still reported). onReceive()'s FIFO-full
+     * count is checked after loop(), its timeout is the USART's IDLE as without
+     * DMA. Transmit: write() fills the buffer and the DMA sends what is there
+     * in one run, the next run started by the transmit-complete interrupt.
+     *
+     * Each USART has its DMA channels (device-data dma.csv; CH32H41x's are
+     * chosen in tools/generate/generate.py). A direction whose channel another
+     * user holds at begin() (CH32RVAdcStream, CH32RVLogicCapture, another
+     * port: ch32rv_dma_claim()), or receive with RTS flow control (the DMA
+     * empties the data register RTS follows), runs as without this call, on
+     * the built-in buffer. */
+    size_t setRxBufferSize(size_t new_size)
+    {
+        return __builtin_constant_p(new_size) && new_size <= CH32RV_SERIAL_RX_BUFFER_SIZE
+                   ? rxBufferBuiltin(new_size) : rxBufferHeap(new_size);
+    }
+    size_t setTxBufferSize(size_t new_size)
+    {
+        return __builtin_constant_p(new_size) && new_size <= CH32RV_SERIAL_TX_BUFFER_SIZE
+                   ? txBufferBuiltin(new_size) : txBufferHeap(new_size);
+    }
+
     /* Called after loop() (with serialEvent()), once for each kind of receive
      * error that happened since, as ESP32's onReceiveError() reports them
      * (there from its UART event task). The interrupt only marks the kinds;
@@ -235,7 +308,15 @@ public:
 
 private:
     friend struct CH32RVSerialMode;    /* HardwareSerialMode.cpp */
+    friend struct CH32RVSerialDmaRx;   /* HardwareSerialDmaRx.cpp */
+    friend struct CH32RVSerialDmaTx;   /* HardwareSerialDmaTx.cpp */
 
+    /* setRxBufferSize() / setTxBufferSize(): a size the built-in storage
+     * holds, or any (the heap for one it does not). */
+    size_t rxBufferBuiltin(size_t size);
+    size_t rxBufferHeap(size_t size);
+    size_t txBufferBuiltin(size_t size);
+    size_t txBufferHeap(size_t size);
     bool bind(uint8_t index, const ch32rv_route_t &route);
     uint32_t base(void) const;
     void start(void);
@@ -253,6 +334,9 @@ private:
     const uint8_t _number;
     /* 0 = closed; otherwise 1 + index into the USART table. */
     uint8_t _slot;
+    /* CH32RV_SERIAL_DMA_RX / _TX: the directions running on DMA while open
+     * (HardwareSerialDmaRx.cpp, HardwareSerialDmaTx.cpp; in the padding before _base, no RAM). */
+    uint8_t _dma;
 #if CH32RV_SERIAL_COUNT > 1
     /* The open USART's registers, set by bind(): the interrupt and write()
      * read it here instead of the table (an entry is 36 bytes, found by a

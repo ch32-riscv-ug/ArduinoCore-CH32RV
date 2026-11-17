@@ -511,11 +511,17 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::irq(void)
      * the test and the call: the handler stays the one below. */
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->irq(*this, base);
-        return;
+    } else {
+        const uint16_t status = CH32RV_USART_STATR(base);
+        serviceRx(base, status);       /* internal/ch32rv_serial_irq.h */
+        serviceTx(base, status);
     }
-    const uint16_t status = CH32RV_USART_STATR(base);
-    serviceRx(base, status);       /* internal/ch32rv_serial_irq.h */
-    serviceTx(base, status);
+    /* A DMA transmit's run ended (transmit complete): the next one. After the
+     * modes', whose RS485 driver enable looks at the same TC first. Folds
+     * away as the modes' pointer does. */
+    if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
+        ch32rv_serial_dma_tx->irq(*this, base);
+    }
 }
 
 extern "C" CH32RV_INTERRUPT void ch32rv_usart_irq(void)
@@ -631,6 +637,14 @@ __attribute__((always_inline)) inline void CH32RVHardwareSerial::start(void)
     CH32RV_USART_CTLR1(d.base) = ctlr1 | CH32RV_USART_CTLR1_UE;
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->start(*this);   /* the mode's bits and pads */
+    }
+    /* setRxBufferSize() / setTxBufferSize(): their DMA channels, after the
+     * modes (RTS flow control keeps the receive off DMA). */
+    if (ch32rv_serial_dma_rx) {
+        ch32rv_serial_dma_rx->start(*this);
+    }
+    if (ch32rv_serial_dma_tx) {
+        ch32rv_serial_dma_tx->start(*this);
     }
     ch32rv_irq_enable(d.irqn);
 }
@@ -748,6 +762,12 @@ void CH32RVHardwareSerial::end(void)
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->end(*this);     /* DE low, CTS / RTS let go */
     }
+    if (CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        ch32rv_serial_dma_rx->end(*this);       /* the channel stopped and let go */
+    }
+    if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
+        ch32rv_serial_dma_tx->end(*this);
+    }
     const UsartDesc &d = usarts[index_of(_slot)];
     ch32rv_irq_disable(d.irqn);
     CH32RV_USART_CTLR1(d.base) = 0;
@@ -835,23 +855,39 @@ bool CH32RVHardwareSerial::setRoute(uint8_t route)
 }
 
 /* ------------------------------------------------------- data */
+/* A direction on DMA (setRxBufferSize() / setTxBufferSize()) goes through
+ * HardwareSerialDmaRx.cpp / HardwareSerialDmaTx.cpp; every test of it folds
+ * away in a sketch without (CH32RV_SERIAL_DMA_ON). */
+
 int CH32RVHardwareSerial::available(void)
 {
+    if (CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        return ch32rv_serial_dma_rx->available(*this);
+    }
     return _rx.available();
 }
 
 int CH32RVHardwareSerial::availableForWrite(void)
 {
+    if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
+        return ch32rv_serial_dma_tx->room(*this);
+    }
     return _slot ? (int)_tx.availableForWrite() : 0;
 }
 
 int CH32RVHardwareSerial::peek(void)
 {
+    if (CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        return ch32rv_serial_dma_rx->peek(*this);
+    }
     return _rx.peek();
 }
 
 int CH32RVHardwareSerial::read(void)
 {
+    if (CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        return ch32rv_serial_dma_rx->read(*this);
+    }
     const int c = _rx.pop();
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->read(*this);   /* RTS: room again */
@@ -865,6 +901,9 @@ void CH32RVHardwareSerial::flush(void)
         return;
     }
     const uint32_t base = this->base();
+    if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
+        ch32rv_serial_dma_tx->flush(*this);
+    }
     while (!_tx.isEmpty()) {
     }
     while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TC) == 0u) {
@@ -880,22 +919,26 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->write(*this);  /* RS485: the driver on */
     }
+    if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
+        ch32rv_serial_dma_tx->write(*this, c);
+    } else {
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
-    /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
-     * a burst larger than the 63-byte ring capacity can otherwise wait here
-     * forever. Polling TXE is bounded by one character time and keeps Serial
-     * correct while the interrupt-route issue is investigated. */
-    while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TXE) == 0u) {
-    }
-    CH32RV_USART_DATAR(base) = c;
+        /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
+         * a burst larger than the 63-byte ring capacity can otherwise wait here
+         * forever. Polling TXE is bounded by one character time and keeps Serial
+         * correct while the interrupt-route issue is investigated. */
+        while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TXE) == 0u) {
+        }
+        CH32RV_USART_DATAR(base) = c;
 #else
-    /* Block until the ring has room. The TX interrupt is what drains it, so
-     * this cannot deadlock as long as interrupts are enabled. */
-    while (_tx.isFull()) {
-    }
-    _tx.push(c);
-    CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TXEIE;
+        /* Block until the ring has room. The TX interrupt is what drains it, so
+         * this cannot deadlock as long as interrupts are enabled. */
+        while (_tx.isFull()) {
+        }
+        _tx.push(c);
+        CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TXEIE;
 #endif
+    }
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->written(*this);  /* RS485: watch for the end */
     }
@@ -948,6 +991,10 @@ void (*ch32rv_serial_error_delivery)(void) = nullptr;
 
 /* Set by the modes beyond plain UART (HardwareSerialMode.cpp). */
 const CH32RVSerialModeOps *arduino::ch32rv_serial_mode_ops = nullptr;
+/* Set by setRxBufferSize() / setTxBufferSize() (HardwareSerialDmaRx.cpp,
+ * HardwareSerialDmaTx.cpp). */
+const CH32RVSerialDmaRxOps *arduino::ch32rv_serial_dma_rx = nullptr;
+const CH32RVSerialDmaTxOps *arduino::ch32rv_serial_dma_tx = nullptr;
 
 namespace arduino {
 

@@ -76,9 +76,7 @@ static bool channels_of(const uint8_t *pins, uint8_t count)
         cont.channels[i] = (uint8_t)channel;
         (void)analogRead(pins[i]);
     }
-    ch32rv_clock_enable(DMA1);
-    CH32RV_ADC_DMA_MUX();
-    return true;
+    return ch32rv_adc_dma_take();
 #else
     (void)pins;
     (void)count;
@@ -154,6 +152,7 @@ bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversi
     /* One round of the pins per trigger: sampling_freq_hz conversions a
      * second, shared by the pins as ESP-IDF's pattern shares them. */
     if (!ch32rv_adc_timer_trigger_begin(&cont.timer, sampling_freq_hz, count)) {
+        ch32rv_adc_dma_give();
         return false;
     }
     const uint32_t frame = conversions_per_pin * count;
@@ -165,6 +164,7 @@ bool analogContinuous(const uint8_t pins[], size_t pins_count, uint32_t conversi
         cont.buf = 0;
         cont.result = 0;
         ch32rv_adc_timer_trigger_end(&cont.timer);
+        ch32rv_adc_dma_give();
         return false;
     }
     for (uint8_t k = 0; k < count; k++) {
@@ -283,6 +283,7 @@ bool analogContinuousDeinit(void)
     analogContinuousStop();
     ch32rv_adc_timer_trigger_end(&cont.timer);
     ch32rv_adc_restore();
+    ch32rv_adc_dma_give();
     free(cont.buf);
     free(cont.result);
     cont.buf = 0;

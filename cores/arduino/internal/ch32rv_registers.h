@@ -344,6 +344,10 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
  * byte sent only while CTS is low. The same bits on every family's USART
  * (device-data registers.csv). */
 #define CH32RV_USART_CTLR3_HDSEL (1u << 3)
+/* The data register's requests to the DMA: a received byte (DMAR), room for
+ * the next to send (DMAT). */
+#define CH32RV_USART_CTLR3_DMAR  (1u << 6)
+#define CH32RV_USART_CTLR3_DMAT  (1u << 7)
 #define CH32RV_USART_CTLR3_RTSE  (1u << 8)
 #define CH32RV_USART_CTLR3_CTSE  (1u << 9)
 

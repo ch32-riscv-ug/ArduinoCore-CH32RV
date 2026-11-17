@@ -62,7 +62,7 @@ USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 
 # The record's usb ports a CH32RV peer can be the host on (CH32RVUsbHost's CH32RV_USB_HOST_PORT_*).
 USB_HOST_CONTROLLERS = ("full_speed", "high_speed", "high_speed_2", "super_speed")
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
-ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
+ALWAYS = ("runtime", "uart", "uart-dma", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
           "analog", "selfcheck", "selfbus", "selfsys", "selfapi")
 # A defect's `lose` names a feature; these are the cases that test it.
@@ -70,7 +70,7 @@ ALWAYS = ("runtime", "uart", "flash", "synckit", "logic", "gpio", "spi", "softsp
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
 # reference checks and skips the ones that drive pads (it reads the record itself).
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
-                 "uart": ("uart",), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",),
+                 "uart": ("uart", "uart-dma"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",),
                  "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog")}
 
 
@@ -336,10 +336,14 @@ def choose_cases(place, items=None, caps=None):
     for case in LINE_CASES:
         if not oep and out.get(case) == "run":
             out[case] = f"skip: the {case} case drives and reads the pads from an OEP probe's lines"
-    if oep and out.get("uart") == "run":
-        lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
-        if lacking:
-            out["uart"] = "skip: the probe labels no " + " / ".join(f"{place.get('port_name') or '<port>'}.{l}" for l in lacking)
+    for case in ("uart", "uart-dma"):
+        if oep and out.get(case) == "run":
+            lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
+            if lacking:
+                out[case] = "skip: the probe labels no " + " / ".join(f"{place.get('port_name') or '<port>'}.{l}" for l in lacking)
+    # uart-dma takes the probe's UART and logic capture: a WCH-Link has neither.
+    if not oep and out.get("uart-dma") == "run":
+        out["uart-dma"] = "skip: the uart-dma case needs an OEP probe's UART and lines"
     # A console the probe cannot carry (ch32rv capabilities: SDI is a WCH-LinkE's only).
     for case in [c for c in out if c.startswith("console-") and out[c] == "run"]:
         can = place.get("probe_capabilities", {}).get("monitor " + case.removeprefix("console-"))

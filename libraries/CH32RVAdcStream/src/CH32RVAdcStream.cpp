@@ -42,8 +42,9 @@ bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate
         (void)analogRead(pins[i]);
     }
     _count = count;
-    ch32rv_clock_enable(DMA1);
-    CH32RV_ADC_DMA_MUX();
+    if (!ch32rv_adc_dma_take()) {
+        return false;
+    }
 
     /* Fastest first: the first step at or below the rate is the one. */
     _step = 7;
@@ -60,6 +61,7 @@ bool CH32RVAdcStream::begin(const pin_size_t *pins, uint8_t count, uint32_t rate
         }
     }
     if (_rate == 0) {
+        ch32rv_adc_dma_give();
         return false;
     }
     configure(_step);
@@ -117,6 +119,7 @@ void CH32RVAdcStream::end()
         return;
     }
     ch32rv_adc_restore();
+    ch32rv_adc_dma_give();
     _begun = false;
 }
 

@@ -20,6 +20,7 @@
 
 #if CH32RV_LOGIC_CAPTURE
 
+#include "internal/ch32rv_dma.h"
 #include "internal/ch32rv_registers.h"
 
 #if CH32RV_LOGIC_DMAMUX
@@ -63,6 +64,7 @@
 #define DMA_INTFR    CH32RV_REG32(LC_DMA + 0x00u)
 #define DMA_INTFCR   CH32RV_REG32(LC_DMA + 0x04u)
 #define CH           (LC_DMA + 0x08u + (LC_CH - 1u) * 0x14u)
+#define LC_DMA_NUM   (LC_DMA == 0x40020400u ? 2u : 1u)
 #define CH_CFGR      CH32RV_REG32(CH + 0x00u)
 #define CH_CNTR      CH32RV_REG32(CH + 0x04u)
 #define CH_PADDR     CH32RV_REG32(CH + 0x08u)
@@ -131,6 +133,12 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
     if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
         return false;
     }
+    /* The channel for the capture alone (a Serial's DMA buffer may hold it:
+     * internal/ch32rv_dma.h). */
+    if (!ch32rv_dma_claim(LC_DMA_NUM, LC_CH)) {
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
     _port = 0x40010808u + 0x400u * (uint32_t)port;     /* GPIOx_INDR, the same on every family */
     CH32RV_REG32(CH32RV_CLKEN_GPIO_ADDR) |= 1u << (CH32RV_CLKEN_GPIO_BIT0 + (uint32_t)port);
 #if LC_DMA == 0x40020400u
@@ -152,6 +160,9 @@ void CH32RVLogicCapture::end()
     setBackend(nullptr);
     if (ch32rv_timer_lease_valid(&_lease)) {
         ch32rv_timer_release(&_lease);
+    }
+    if (_begun) {
+        ch32rv_dma_release(LC_DMA_NUM, LC_CH);
     }
     _begun = false;
     if (active == this) {

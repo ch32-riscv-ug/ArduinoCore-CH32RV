@@ -29,6 +29,7 @@ TESTS = REPO / "tests"
 MODULES = {
     "runtime": TESTS / "single/runtime/test_runtime_contract.py",
     "uart": TESTS / "instrumented/uart/test_uart_contract.py",
+    "uart-dma": TESTS / "instrumented/uart/test_uart_dma.py",
     "gpio": TESTS / "instrumented/gpio/test_gpio_contract.py",
     "hid": TESTS / "single/runtime/test_runtime_contract.py",
     "power": TESTS / "instrumented/power/test_power_contract.py",
@@ -81,6 +82,7 @@ SKETCHES = {
     "synckit": TESTS / "sketch_support/synckit/synckit.ino",
     "flash": TESTS / "sketch_support/flash/flash.ino",
     "uart": TESTS / "sketch_support/uart/uart.ino",
+    "uart-dma": TESTS / "sketch_support/uart_dma/uart_dma.ino",
     "wire": TESTS / "sketch_support/wire/wire.ino",
     "softwire": TESTS / "sketch_support/wire/wire.ino",
     "softspi": TESTS / "sketch_support/spi/spi.ino",
@@ -173,6 +175,7 @@ HELPERS = {
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
     "gpio": [TESTS / "instrumented/bench_lines.py"],
     "uart": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
+    "uart-dma": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "sd": [TESTS / "instrumented/bench_lines.py"],
     "periph": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "signals": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],

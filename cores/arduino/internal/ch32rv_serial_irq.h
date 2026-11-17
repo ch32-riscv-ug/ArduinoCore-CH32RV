@@ -40,6 +40,12 @@ struct CH32RVSerialMode {
 __attribute__((always_inline)) inline void CH32RVHardwareSerial::serviceRx(uint32_t base,
                                                                           uint16_t status)
 {
+    /* Receive by DMA: the data register is the DMA's, and reading it here
+     * would take a byte from under it (HardwareSerialDmaRx.cpp reads the
+     * errors). */
+    if (CH32RV_SERIAL_DMA_ON(*this, RX)) {
+        return;
+    }
     /* RXNEIE also raises the interrupt for the receive error flags, and those
      * are only cleared by reading STATR and then DATAR. Handling just RXNE
      * leaves an overrun asserted, the interrupt re-enters immediately and the

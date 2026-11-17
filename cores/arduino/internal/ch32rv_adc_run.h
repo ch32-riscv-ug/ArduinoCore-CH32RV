@@ -5,7 +5,8 @@
  * The DMA channel differs between families and is this file's to know, not
  * its users': DMA1 channel 1 everywhere (ch32-device-data dma.csv), channel
  * 12 on V407 / V467 (EVT ADC_DMA; its flags are in DMA1_EXTEN at 0xF0, four
- * bits per channel from channel 9 - ch32v4x7_dma.h), and on H41x DMAMUX
+ * bits per channel from channel 8 - ch32v4x7_dma.h DMA1_FLAG_GL8 0x40000001,
+ * so channel 12's from bit 16), and on H41x DMAMUX
  * channel 1, which feeds DMA1 channel 1, set to ADC1's request 120 (EVT
  * ADC_DMA writes 0x78; the register holds the number minus one).
  *
@@ -20,6 +21,7 @@
 #include <stdint.h>
 
 #include "internal/ch32rv_adc_trigger.h"
+#include "internal/ch32rv_dma.h"
 #include "internal/ch32rv_registers.h"
 
 #ifdef __cplusplus
@@ -32,6 +34,7 @@ extern "C" {
 #define CH32RV_ADC_DMA_INTFCR  CH32RV_REG32(CH32RV_ADC_DMA1_BASE + 0xF4u)
 #define CH32RV_ADC_DMA_CH_BASE (CH32RV_ADC_DMA1_BASE + 0xD0u)
 #define CH32RV_ADC_DMA_SHIFT   16u
+#define CH32RV_ADC_DMA_CHANNEL 12u
 #define CH32RV_ADC_DMA_IRQN    CH32RV_IRQN_DMA1_Channel12
 #define CH32RV_ADC_DMA_HANDLER DMA1_Channel12_IRQHandler
 #else   /* every other family, and H41x through the DMAMUX */
@@ -39,6 +42,7 @@ extern "C" {
 #define CH32RV_ADC_DMA_INTFCR  CH32RV_REG32(CH32RV_ADC_DMA1_BASE + 0x04u)
 #define CH32RV_ADC_DMA_CH_BASE (CH32RV_ADC_DMA1_BASE + 0x08u)
 #define CH32RV_ADC_DMA_SHIFT   0u
+#define CH32RV_ADC_DMA_CHANNEL 1u
 #define CH32RV_ADC_DMA_IRQN    CH32RV_IRQN_DMA1_Channel1
 #define CH32RV_ADC_DMA_HANDLER DMA1_Channel1_IRQHandler
 #endif
@@ -77,6 +81,29 @@ extern "C" {
 #define CH32RV_ADC_DMA_DONE() __asm__ volatile("fence rw, rw" ::: "memory")
 
 #define CH32RV_ADC_RUN_STATIC static __attribute__((unused))
+
+/* The DMA channel for this run's user alone, clocked and, on H41x, given
+ * ADC1's request. False, nothing touched, while another holds it. The claim
+ * goes through ch32rv_dma_claims (internal/ch32rv_dma.h): without another
+ * user of DMA channels in the sketch nothing can hold this one, and the ADC's
+ * users pay nothing for it. */
+CH32RV_ADC_RUN_STATIC bool ch32rv_adc_dma_take(void)
+{
+    if (ch32rv_dma_claims && !ch32rv_dma_claims->claim(1, CH32RV_ADC_DMA_CHANNEL)) {
+        return false;
+    }
+    ch32rv_clock_enable(DMA1);
+    CH32RV_ADC_DMA_MUX();
+    return true;
+}
+
+/* The channel let go (the run stopped already). */
+CH32RV_ADC_RUN_STATIC void ch32rv_adc_dma_give(void)
+{
+    if (ch32rv_dma_claims) {
+        ch32rv_dma_claims->release(1, CH32RV_ADC_DMA_CHANNEL);
+    }
+}
 
 /* Stopping by clearing CONT lets the conversion in flight, and with several
  * pins the rest of the sequence, finish after the stop: a result left behind,

@@ -116,7 +116,7 @@
 | RS485 の方向制御（DE/RE） | 全系列 | 実装済み（2026-11-17、`setMode(UART_MODE_RS485_HALF_DUPLEX)`、DE はコアが TC の割込みで動かす。ベンチ未確認） | 自動 | プローブ（DE の線と TX の重なり）。uart::test_uart_rs485。トランシーバーを挟んだ periph の rs485 は別 | cores/arduino/HardwareSerialMode.cpp, FC:50, COV:242-245（periph::test_planned[rs485]） |
 | UART 1 線半二重 | 全系列 | 実装済み（2026-11-17、`setPins(p, p)`。X033/X035 は開放ドレインが無く受信は未確認。ベンチ未確認） | 自動 | プローブ（プルアップ）。uart::test_uart_half_duplex | cores/arduino/HardwareSerialMode.cpp, FC:51, EVT USART/USART_HalfDuplex |
 | UART 受信イベント・エラー通知・IDLE | 全系列 | 実装済み（2026-11-17、`onReceive()`・`setRxTimeout()`・`setRxFIFOFull()`、`onReceiveError()` にノイズ。ベンチ未確認） | 自動 | プローブ。uart::test_uart_receive_event | cores/arduino/HardwareSerialMode.cpp, FC:53 |
-| UART の DMA 受信・送信 | 全系列 | 1 | 自動 | プローブ | TODO:303, EVT USART/USART_DMA |
+| UART の DMA 受信・送信 | 全系列 | 実装済み（2026-11-17、ビルドのみ。`setRxBufferSize()`・`setTxBufferSize()`（ESP32 の名前、begin() の前）のバッファを DMA が運ぶ。受信は循環の DMA、送信は TC の割り込みで次の転送。チャネルは device-data の dma.csv、H41x は生成器が選ぶ。`ch32rv_dma_claim()` で CH32RVAdcStream・CH32RVLogicCapture と取り合う） | 自動 | プローブ。uart-dma::test_uart_dma_receive・test_uart_dma_interrupts_off・test_uart_dma_transmit・test_uart_dma_receive_event | cores/arduino/HardwareSerialDmaRx.cpp, HardwareSerialDmaTx.cpp, EVT USART/USART_DMA |
 | UART の IrDA（`setMode(UART_MODE_IRDA)`、今は false） | 全系列 | 2 | 自動 | IrDA のパルスを読める相手（プローブで取り込み） | EVT の USART に例なし、RM の IREN |
 | UART 同期モード（クロック出力）・スマートカード・マルチプロセッサ（アドレス起床） | 全系列（スマートカードは V20x、V205、L103、X035） | 2 | 自動 | プローブ（同期は SPI として取り込む） | EVT USART/USART_SynchronousMode・USART_SmartCard・USART_MultiProcessorCommunication |
 | SoftwareSerial | 全系列 | 実装済み（2026-11-17、ライブラリ。ベンチ未確認） | 自動 | プローブ。uart::test_uart_software_serial | libraries/SoftwareSerial, FC:54 |

@@ -60,6 +60,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [SerialFlowControl](SerialFlowControl/README.md) | Pace a sender with RTS and hold sending with CTS (`setHwFlowCtrlMode()`). |
 | [SerialRS485](SerialRS485/README.md) | Query an RS485 bus; the core switches the transceiver's driver enable around each write. |
 | [SerialHalfDuplex](SerialHalfDuplex/README.md) | Send and receive on one open-drain wire (`setPins(p, p)`). |
+| [SerialDmaBuffers](SerialDmaBuffers/README.md) | Take a 1 Mbaud stream while `loop()` is busy: larger buffers moved by DMA (`setRxBufferSize()`). |
 | [ButtonDebounce](ButtonDebounce/README.md) | Filter switch bounce and count a new press once, without blocking waits. |
 | [AnalogInputToPwm](AnalogInputToPwm/README.md) | Convert potentiometer readings to PWM duty with explicit ADC and output scales. |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.md) | A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names. |

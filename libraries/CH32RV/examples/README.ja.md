@@ -64,6 +64,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [SerialFlowControl](SerialFlowControl/README.ja.md) | RTS で送り手を待たせ、CTS で送信を止めます（`setHwFlowCtrlMode()`）。 |
 | [SerialRS485](SerialRS485/README.ja.md) | RS485 のバスに問い合わせます。送信のたびにコアがトランシーバーの DE を切り替えます。 |
 | [SerialHalfDuplex](SerialHalfDuplex/README.ja.md) | 開放ドレインの 1 本の線で送受信します（`setPins(p, p)`）。 |
+| [SerialDmaBuffers](SerialDmaBuffers/README.ja.md) | `loop()` がほかの仕事をしている間も 1 Mbaud の流れを受け取ります（DMA が運ぶ大きいバッファ、`setRxBufferSize()`）。 |
 | [ButtonDebounce](ButtonDebounce/README.ja.md) | 待ち続けずにチャタリングを除き、新しい押下を一度ずつ数えます。 |
 | [AnalogInputToPwm](AnalogInputToPwm/README.ja.md) | 可変抵抗の読み取りを、ADCとPWMの範囲を明示してdutyへ変換します。 |
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board の端子名を明示して、各周辺機能を組み合わせる出発点です。 |
