@@ -47,6 +47,10 @@ uv run --project tests --locked --extra hardware python tests/run_hardware.py --
 
 `--probe` と `--out` は環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ち、ベンチの共通ロックは取りません。`--case` で、その相手で流せない case を求めると、理由つきの SKIP になります。
 
+新しいクロックの設定や休止など、接続できなくなるかもしれないイメージを試すときは、`CH32_TEST_BOOT_HOLD_MS=1000` を付けます。
+その回のすべてのイメージが `-DCH32RV_BOOT_HOLD_MS=1000` 付きでビルドされます（docs/upload-routes.ja.md「接続できなくなる
+イメージを試すとき」）。メニューの値は `CH32_TEST_OPTIONS`（例 `clock=200,core=v3f`）で選びます（RECORDS.ja.md）。
+
 ### 取り込みの速さ
 
 線を取り込んで WireSkein で判定する試験は、取り込みの速さを次の基準で決めます（2026-11-14、ユーザーと [oep] と決めた）。

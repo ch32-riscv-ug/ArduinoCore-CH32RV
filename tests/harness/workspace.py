@@ -83,5 +83,20 @@ def isolated_environment(work, tool, toolchain):
         f"runtime.tools.ch32rv.path={tool.parent}\n"
         f"tools.ch32rv.path={tool.parent}\n"
         "tools.ch32rv.cmd=ch32rv\n"
+        + boot_hold_lines()
     )
     return env
+
+
+def boot_hold_lines():
+    """CH32_TEST_BOOT_HOLD_MS=<ms> builds every image of the run with CH32RV_BOOT_HOLD_MS (docs/upload-routes:
+    an image that may leave the chip unattachable - a new clock, sleep, the debug pads - waits that long at
+    every reset before it switches anything, so a probe can still catch it). Through compiler.c/cpp's extra
+    flags: build_config.toml's defines are always strings, and build.extra_flags is the test plugin's."""
+    hold = os.environ.get("CH32_TEST_BOOT_HOLD_MS", "").strip()
+    if not hold:
+        return ""
+    if not hold.isdigit():
+        raise ValueError(f"CH32_TEST_BOOT_HOLD_MS={hold!r}: milliseconds, a whole number")
+    flag = f"-DCH32RV_BOOT_HOLD_MS={int(hold)}"
+    return f"compiler.c.extra_flags={flag}\ncompiler.cpp.extra_flags={flag}\n"
