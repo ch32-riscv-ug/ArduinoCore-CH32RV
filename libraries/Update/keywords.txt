@@ -1,0 +1,17 @@
+Update	KEYWORD1
+UpdateClass	KEYWORD1
+beginRandomAccess	KEYWORD2
+writeAt	KEYWORD2
+writeStream	KEYWORD2
+printError	KEYWORD2
+errorString	KEYWORD2
+getError	KEYWORD2
+hasError	KEYWORD2
+isRunning	KEYWORD2
+isFinished	KEYWORD2
+remaining	KEYWORD2
+progress	KEYWORD2
+onProgress	KEYWORD2
+capacity	KEYWORD2
+isPending	KEYWORD2
+cancelPending	KEYWORD2

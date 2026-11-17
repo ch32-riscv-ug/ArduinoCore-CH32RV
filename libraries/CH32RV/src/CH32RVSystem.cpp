@@ -57,7 +57,8 @@ uint32_t CH32RVSystem::getFreeSketchSpace()
 
 namespace arduino {
 
-void CH32RVSystem::restart()
+/* Weak: the Update library's takes its place, installing a pending update first. */
+__attribute__((weak)) void CH32RVSystem::restart()
 {
     CH32RV_SYSTEM_RESET();
     for (;;) {

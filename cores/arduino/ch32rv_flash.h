@@ -102,6 +102,62 @@ bool ch32rv_flash_write_page(uint32_t offset, const uint32_t *data);
  * bytes from data, in one go: cheaper than erase_page then write_page. */
 bool ch32rv_flash_rewrite_page(uint32_t offset, const uint32_t *data);
 
+/* Replacing the program (Update, the USB firmware classes): a new image is
+ * staged in the flash after this one, checked, then copied over offset 0 and
+ * the chip reset. The staging area runs from the first erase unit after the
+ * image to the CH32RV_FLASH_STORE areas, so they survive an update; an image
+ * as long as the area fits, since the copy runs forward and the bytes it
+ * overwrites in the area have been copied already.
+ *
+ * ch32rv_flash_install() copies `length` bytes from `from` (an offset in the
+ * staging area) to offset 0 with interrupts off, from RAM (CH32RV_RAMFUNC:
+ * the RAM it takes is linked only with it), feeding the independent watchdog
+ * as it goes, retrying a unit that does not read back, and resets. It does
+ * not return. Losing power during the copy leaves a part-written program:
+ * the factory bootloader (BOOT0 / BOOT_MODE) and the debug interface are
+ * outside the code flash and still reach the chip. */
+uint32_t ch32rv_flash_staging_offset(void);
+uint32_t ch32rv_flash_staging_size(void);
+__attribute__((noreturn)) void ch32rv_flash_install(uint32_t from, uint32_t length);
+
+/* Whether `head` (the image's first 4 bytes, little-endian) starts like an
+ * image this core links: its reset entry, a jump (32- or 16-bit) to inside
+ * the `length` bytes, or the CSR access that starts H41x's V5F image. A cheap
+ * refusal of what is not a program at all - a text file, an ELF, a UF2 or
+ * hex file sent as raw bytes; it does not tell one series' image from
+ * another's. */
+bool ch32rv_flash_image_plausible(uint32_t head, uint32_t length);
+
 #ifdef __cplusplus
 }
+#endif
+
+/* The UF2 family ID of this series (github.com/microsoft/uf2,
+ * utils/uf2families.json): the registered ones where WCH has one -
+ * CH32V2xx / CH32V3xx 0x699B62EC, CH32V407 / V467 0x7B8C32A7 - and, for the
+ * series the registry does not list, IDs this core chose (docs/usb.ja.md,
+ * "UF2"). One registered ID covers V203 to V317: it keeps a V4x7 or X035
+ * image out, not a V203 image off a V307. */
+#if defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V205) || \
+    defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || \
+    defined(CH32RV_SERIES_CH32V317)
+#define CH32RV_UF2_FAMILY_ID 0x699B62ECu
+#elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+#define CH32RV_UF2_FAMILY_ID 0x7B8C32A7u
+#elif defined(CH32RV_SERIES_CH32V103)
+#define CH32RV_UF2_FAMILY_ID 0x5C1A4E6Bu
+#elif defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103)
+#define CH32RV_UF2_FAMILY_ID 0x2E97D0C3u
+#elif defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+#define CH32RV_UF2_FAMILY_ID 0x8F3B26A1u
+#elif defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_UF2_FAMILY_ID 0x46D8E15Fu
+#elif defined(CH32RV_SERIES_CH32M030)
+#define CH32RV_UF2_FAMILY_ID 0xB2709C34u
+#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
+#define CH32RV_UF2_FAMILY_ID 0xD5E3A87Au
+#elif defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V004) || \
+    defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
+    defined(CH32RV_SERIES_CH32M007)
+#define CH32RV_UF2_FAMILY_ID 0x1F64C9E2u
 #endif
