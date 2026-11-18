@@ -245,6 +245,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   （「software で 10 ms 上げる」の読みが推定）。残り: デバイスの側（DUT の CH32RVUsbDevice が眠らされる。DUT 側は
   tests/sketch_support/usb_power）を usb-peer-power の case にする。眠らせるピアは CH32RV（CH32RVUsbHost）しかない
   （Pico の TinyUSB と EspUsbHost にはホストの suspend が無い）ので、CH32RV どうしの対向の配線（TEST_PLAN「USB の網羅の軸」）を待つ。
+  2026-11-18 に [EspUsbHost] / [EspUsbDevice] に確かめた: EspUsbHost は arduino-esp32 3.3.x（ESP-IDF 5.5.5）の公開 API に root port の
+  suspend が無く、esp-usb 1.1 / 1.2（IDF 6 系、arduino-cli では差し替えられない）で可能になる。ユーザー: いまのところ EspUsb 側では
+  対応しない。EspUsbDevice（デバイス）は suspended() / remoteWakeup() があり、usb-peer-host-power で使っている（コールバックは無い）。
 - [ ] USBSS の等時 Mult>0（3a26cf6f）の usb-ss-iso: Mult 0・1・2（bMaxBurst 1）の IN と OUT の 6 つは H417 で通った
   （2026-11-17、core-20261117T113755Z-a6e137fd、どの間隔もそろった）ので、Mult>0 はハードで動く。48 パケットの代替設定は
   usbfs の ENOMEM（1 回 8 MiB）で、試験を 1 回 2 MiB に直した。残り: 同じ試験が通る回と全部落ちる回がある。落ちる回は
