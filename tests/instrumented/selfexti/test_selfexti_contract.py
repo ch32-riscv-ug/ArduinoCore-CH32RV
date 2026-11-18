@@ -16,7 +16,7 @@ selfexti.wake: on the RTC series, the RTC alarm's line as a wake source (enableE
 enableAlarmWakeup()) ends lightSleep() at setAlarm(time() + 2): CH32RV_SLEEP_OK, CH32RV_WAKEUP_EXTI_LINE, millis()
 moved 0.9-3.2 s and the line's callback ran once. The sleep's own alarms are not shown to the callback (a wake on one
 would come at a whole second, before 2 s, or say TIMER). n/a without an RTC; the result is recorded where lightSleep()
-answers CH32RV_SLEEP_UNSUPPORTED (V103 for now). The AWU families (V00x, X035, M030) have no line the DUT can raise
+answers CH32RV_SLEEP_UNSUPPORTED (none since V103 sleeps, 2026-11-18). The AWU families (V00x, X035, M030) have no line the DUT can raise
 while it sleeps: their wake on a line is the single (manual) PVD test with a variable supply (TEST_PLAN.ja.md).
 A sleeping image: run with CH32_TEST_BOOT_HOLD_MS.
 

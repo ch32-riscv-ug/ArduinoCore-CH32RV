@@ -48,6 +48,7 @@ import ws_capture
 
 # CH32RVResetReason, CH32RVWakeupCause, CH32RVSleepResult (CH32RVSystem.h)
 RESET_POWERON, RESET_EXTERNAL, RESET_SOFTWARE, RESET_WATCHDOG, RESET_WINDOW_WATCHDOG = 1, 2, 3, 4, 5
+RESET_DEEPSLEEP = 8           # woke from deepSleep()'s standby: the pads were let go, no width to judge
 WAKEUP_TIMER, WAKEUP_PIN, WAKEUP_ALARM = 1, 2, 3
 SLEEP_OK, SLEEP_UNSUPPORTED = 0, 2
 
@@ -294,7 +295,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
             facts[name] = [reason, cause]
             if cause != WAKEUP_ALARM:
                 wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
-            if reason != RESET_POWERON:
+            if reason != RESET_DEEPSLEEP:
                 expect_high(name, 0.95, 3.1)
             wait(0.05)
 
@@ -343,10 +344,12 @@ def timed(dut, oep_host, ws_run, record_property, part):
             facts[name] = [reason, cause]
             if cause != WAKEUP_TIMER:
                 wrong.append(f"{name}: the next boot's wakeupCause() is {cause}")
-            if reason != RESET_POWERON:
+            if reason != RESET_DEEPSLEEP:
                 expect_high(name, 0.1, 0.3)
-            # else real standby (the RTC families): the pads are let go as it starts, so the pin is high only
-            # until then, and the RTC alarm counts whole seconds - no width to judge (V205 2026-11-13: 0.4 ms).
+            # else real standby (the RTC families; resetReason() says DEEPSLEEP): the pads are let go as it starts,
+            # so the pin is high only until then, and the RTC alarm counts whole seconds - no width to judge (V205
+            # 2026-11-13: 0.4 ms). The reset flags it leaves differ (V307 power-on, V203 wake-up only, V103 none):
+            # the core tells them apart, not this test.
             wait(0.05)
 
     try:

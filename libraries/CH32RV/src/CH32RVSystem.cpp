@@ -67,6 +67,10 @@ __attribute__((weak)) void CH32RVSystem::restart()
     }
 }
 
+/* Set by the sleep code's boot hook (ch32rv_power.c) when this boot is the
+ * wake from standby; weak, so a sketch that never sleeps links none of it. */
+extern "C" volatile uint8_t ch32rv_power_standby_woke __attribute__((weak));
+
 CH32RVResetReason CH32RVSystem::resetReason()
 {
     if (!_read) {
@@ -79,6 +83,11 @@ CH32RVResetReason CH32RVSystem::resetReason()
     }
     if (_panic) {
         return CH32RV_RESET_PANIC;
+    }
+    /* Standby's wake leaves the power-on flag (V307), the wake-up flag only
+     * (V203) or nothing (V103): the sleep code tells it from those. */
+    if (&ch32rv_power_standby_woke && ch32rv_power_standby_woke) {
+        return CH32RV_RESET_DEEPSLEEP;
     }
     /* Order matters: a watchdog or software reset also leaves the pin flag
      * set on some parts, and a power-up sets the pin flag too. The most
@@ -114,6 +123,7 @@ const char *CH32RVSystem::resetReasonName()
     case CH32RV_RESET_WINDOW_WATCHDOG: return "window_watchdog";
     case CH32RV_RESET_LOW_POWER:       return "low_power";
     case CH32RV_RESET_PANIC:           return "panic";
+    case CH32RV_RESET_DEEPSLEEP:       return "deepsleep";
     default:                         return "unknown";
     }
 }

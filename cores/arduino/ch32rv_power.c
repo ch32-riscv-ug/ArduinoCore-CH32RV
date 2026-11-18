@@ -687,6 +687,9 @@ int ch32rv_power_sleep(uint32_t wdt_slice_us)
     return 0;
 }
 
+/* This boot is the wake from standby (CH32RV.resetReason(): DEEPSLEEP). */
+volatile uint8_t ch32rv_power_standby_woke;
+
 void ch32rv_power_keep_cause(void)
 {
     wake_record.cause = ch32rv_wake_cause;
@@ -716,6 +719,7 @@ __attribute__((constructor)) void ch32rv_power_boot(void)
      * an alarm's standby); nothing else leaves none. */
     if ((PWR_CSR & (PWR_CSR_SBF | PWR_CSR_WUF)) && (flags == CH32RV_RST_POR || flags == 0u)) {
         ch32rv_wake_cause = ch32rv_rtc_take_alarm_standby() ? CH32RV_POWER_WOKE_ALARM : CH32RV_POWER_WOKE_TIMER;
+        ch32rv_power_standby_woke = 1;
         PWR_CTLR |= PWR_CTLR_CSBF | PWR_CTLR_CWUF;
     }
 #endif

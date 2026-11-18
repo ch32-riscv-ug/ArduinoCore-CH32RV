@@ -12,7 +12,7 @@ standard Arduino API.
 #include <CH32RV.h>
 
 CH32RV.restart();                        // software reset (does not return)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) ...
+CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) / _DEEPSLEEP (woke from deepSleep()'s standby) ...
 CH32RV.resetReasonName();                // "software" and so on, for printing
 CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
 CH32RV.wdtFeed();                        // call it in loop()

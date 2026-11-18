@@ -28,7 +28,7 @@
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 2 | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |
 | LSE（32 kHz 水晶） | RTC のある系列 | 2 | 単発→自動 | LSE の載った板。自己 | PS:53 |
 | PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 実装済み（2026-11-17、ビルドのみ。`CH32RV.setLowVoltageDetect(mV, cb)` / `clearLowVoltageDetect()` / `isLowVoltage()` / `lowVoltageLevel()`、起床は `enableExtiLineWakeup(CH32RV_EXTI_PVD)`。H41x は PVD の割込み（EXTI の線）が無く、V004 / V007 / M007 は device-data に段が無いので未対応のまま） | 単発→自動 | 自己（selfexti::test_pvd: 閾値を VDD の上と下に。3.3 V の板で上にできるのは V003・V103・X035）。本当の低下は可変電源（VDD を下げる。単発） | PS:60, PM:290 |
-| 休止（lightSleep / deepSleep）の残りの系列 | V103、M030、X315（X305）、V407/V467 | 実装済み（2026-11-15、ビルドのみ。V103・V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は以前最初の休止から起きなかった件を実機で最初に確かめる） | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep。V103 の復旧手段（uhubctl） | libraries/CH32RV/README.ja.md |
+| 休止（lightSleep / deepSleep）の残りの系列 | M030、X315（X305）、V407/V467 | 実装済み（2026-11-15、ビルドのみ。V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は 2026-11-18 に実機で通った: 1 秒未満の端数の WFI が SysTick で終わらないので起きたまま待つ。selfsys・selfexti・system） | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep | libraries/CH32RV/README.ja.md |
 | 周辺を動かしたままの休止 | 全系列 | 2 | 自動 | プローブ | FC:31 |
 | Standby の RAM 保持・低電圧の形 | V20x、V205、V30x、V407、L103 | 2 | 単発→自動 | プローブ（起床）＋電流計 | PS:41, EVT PWR/Standby_RAM_Mode・Standby_RAM_LV_Mode・Standby_RAM_Application |
 | 停止モード 3（LPDS=1、FLASH_LP） | L103/M103、V205 | 2 | 単発→自動 | 電流計、プローブ | TODO:191 |

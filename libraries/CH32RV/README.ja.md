@@ -10,7 +10,7 @@ ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全�
 #include <CH32RV.h>
 
 CH32RV.restart();                        // ソフトウェアリセット(戻らない)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）...
+CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）/ _DEEPSLEEP（deepSleep() のスタンバイから起きた）...
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ

@@ -165,6 +165,8 @@ typedef enum {
     CH32RV_RESET_WINDOW_WATCHDOG,
     CH32RV_RESET_LOW_POWER,
     CH32RV_RESET_PANIC,          /* the core reset itself: the Stack Check menu saw an overflow */
+    CH32RV_RESET_DEEPSLEEP,      /* woke from deepSleep()'s standby (ESP_RST_DEEPSLEEP); where
+                                  * deepSleep() is a light sleep and a restart, SOFTWARE */
 } CH32RVResetReason;
 
 typedef enum {

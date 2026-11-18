@@ -24,7 +24,7 @@ backupRegisterCount() is 0 (no RTC domain: V003, V00x, M030, X033 / X035).
 selfsys.rtc_alarm: setAlarm(time() + 2) runs its callback 0.95-3.1 s later (the RTC's whole second at or after the
 time asked) and getAlarm() is 0 after it; lightSleep() with enableAlarmWakeup() returns CH32RV_WAKEUP_ALARM with
 millis() moved as long. n/a where setAlarm() refuses (no RTC); the sleep half is n/a (recorded, the callback still
-judged) where lightSleep() answers CH32RV_SLEEP_UNSUPPORTED (V103 for now).
+judged) where lightSleep() answers CH32RV_SLEEP_UNSUPPORTED (none since V103 sleeps, 2026-11-18).
 
 selfsys.light_sleep: lightSleep() with a timer wake after 200 ms returns CH32RV_SLEEP_OK, wakeupCause() is
 CH32RV_WAKEUP_TIMER and millis() moved 150-400 ms across it; a family that cannot sleep says
@@ -354,7 +354,7 @@ def test_rtc_alarm(dut, ready, record_property):
     assert not m.group(1), "enableAlarmWakeup() refused where setAlarm() did not"
     r, cause, slept = int(m.group(2)), int(m.group(3)), int(m.group(4))
     if r == SLEEP_UNSUPPORTED:
-        # The alarm and its callback are checked above; the sleep half is the family's sleep (V103's is off for now).
+        # The alarm and its callback are checked above; the sleep half is the family's sleep.
         record_property("asleep_skipped", "n/a: lightSleep() unsupported on this family (CH32RV_SLEEP_UNSUPPORTED)")
         return
     assert r == SLEEP_OK and cause == WAKEUP_ALARM, f"lightSleep() {r}, wakeupCause() {cause}"
