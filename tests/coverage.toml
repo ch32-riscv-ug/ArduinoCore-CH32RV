@@ -390,11 +390,15 @@ id = "can"
 test = "periph::test_planned[can]"
 scope = "series"
 any_of = ["CAN1", "CAN"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M103", "CH32V203", "CH32V205", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467"]
 
 [[item]]
 id = "i2s"
 test = "periph::test_planned[i2s]"
-scope = "once"
+scope = "series"
+any_of = ["I2S"]            # no clock of its own (SPI2 / SPI3): the series by name
+also = ["CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H415", "CH32H416", "CH32H417"]
+missing = ["CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]
 id = "rs485"
@@ -404,7 +408,119 @@ scope = "once"
 [[item]]
 id = "qspi"
 test = "periph::test_planned[qspi]"
-scope = "once"
+scope = "series"
+any_of = ["QSPI1"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V205"]
+
+
+# Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them
+# missing. Their clocks name the series; OPA / CMP / PMP / the DMA API have none of their own, so they list them.
+
+[[item]]
+id = "i3c"                  # I3C controller / target
+scope = "series"
+any_of = ["I3C"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V407", "CH32V467"]
+
+[[item]]
+id = "swpmi"                # SWPMI (SWP master)
+scope = "series"
+any_of = ["SWPMI"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "lptim"                # LPTIM: timing and waking in a sleep, PWM
+scope = "series"
+any_of = ["LPTIM", "LPTIM1"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M103"]
+
+[[item]]
+id = "fsmc"                 # FSMC / FMC: SRAM, NOR, NAND, LCD
+scope = "series"
+any_of = ["FSMC", "FMC"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V205", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467"]
+
+[[item]]
+id = "sdmmc"                # SDMMC (eMMC, HS200 / HS400)
+scope = "series"
+any_of = ["SDMMC"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "dvp"                  # DVP camera input
+scope = "series"
+any_of = ["DVP"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467"]
+
+[[item]]
+id = "ltdc"                 # LTDC RGB LCD output
+scope = "series"
+any_of = ["LTDC"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V407", "CH32V467"]
+
+[[item]]
+id = "gpha"                 # GPHA 2D DMA
+scope = "series"
+any_of = ["GPHA"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "serdes"               # SerDes
+scope = "series"
+any_of = ["SERDES"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "ecdc"                 # ECDC (AES / SM4)
+scope = "series"
+any_of = ["ECDC"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "dfsdm"                # DFSDM (sigma-delta filter, PDM microphone)
+scope = "series"
+any_of = ["DFSDM"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "sai"                  # SAI (TDM, SPDIF)
+scope = "series"
+any_of = ["SAI"]
+missing = ["CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
+id = "psram"                # PSRAM in the package
+scope = "series"
+any_of = ["PSRAM"]
+missing = ["CH32V407", "CH32V467"]
+
+[[item]]
+id = "opa"                  # OPA (the built-in amplifier, PGA, follower)
+scope = "series"
+any_of = ["OPA"]
+also = ["CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V003", "CH32V203", "CH32V208", "CH32V205", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32L103", "CH32M030", "CH32X035", "CH32H415", "CH32H416", "CH32H417"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M030", "CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V203", "CH32V205", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32X035"]
+
+[[item]]
+id = "comparator"           # CMP: interrupt, brake, wake, timer input
+scope = "series"
+any_of = ["CMP"]
+also = ["CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V205", "CH32L103", "CH32M030", "CH32X035", "CH32H415", "CH32H416", "CH32H417"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M030", "CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V205", "CH32X035"]
+
+[[item]]
+id = "pmp"                  # PMP (memory protection)
+scope = "series"
+any_of = ["PMP"]
+also = ["CH32V203", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32L103", "CH32X035", "CH32H415", "CH32H416", "CH32H417"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32V203", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32X035"]
+
+[[item]]
+id = "dma-api"              # the public DMA API (memory to memory, double buffer, to a peripheral)
+scope = "series"
+any_of = ["DMA_API"]
+also = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M007", "CH32M030", "CH32M103", "CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V103", "CH32V203", "CH32V205", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32X033", "CH32X035", "CH32X305", "CH32X315"]
+missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M007", "CH32M030", "CH32M103", "CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V103", "CH32V203", "CH32V205", "CH32V208", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32X033", "CH32X035", "CH32X305", "CH32X315"]
 
 # The peripherals' and the libraries' own contracts.
 [[item]]
