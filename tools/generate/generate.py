@@ -2885,6 +2885,18 @@ SPI_SIGNAL_RE = [
 ]
 SPI_BASES = {1: "CH32RV_SPI1_BASE", 2: "CH32RV_SPI2_BASE", 3: "CH32RV_SPI3_BASE"}
 
+# CAN (bxCAN): RX and TX of one route. CAN1_RX on most families, CAN_RX on
+# the single-CAN ones (instance 1).
+CAN_SIGNAL_RE = [
+    (re.compile(r"^CAN(\d+)_(RX|TX)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^CAN_(RX|TX)$"),      lambda m: (1, m.group(1))),
+]
+CAN_BASES = {1: "0x40006400u", 2: "0x40006800u"}
+CAN_ROUTE_ORDER = ("default", "main") + ALL_REMAPS
+CAN_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in CAN_ROUTE_ORDER)
+# part -> {(can index, route): {"RX": .., "TX": ..}} (main(); gen_pins reads it).
+CAN_PINS: dict = {}
+
 # DAC. One pad per channel, no remap to speak of - the output is wired to a
 # fixed pin - so this is only about naming the pad analogWrite() should treat
 # as a converter rather than as a PWM pin.
@@ -2899,7 +2911,7 @@ SPI_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in SPI_ROUTE_ORDER)
 # AFIO remap. device-data gives the controlling field per series and selector;
 # the bit list can be non-contiguous (CH32V003 USART1_REMAP is bits 2 and 21),
 # so a value is spread over the listed positions, least significant bit first.
-REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi)(\d+)-(?:rm|remap)$")
+REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi|can)(\d*)-(?:rm|remap)$")
 CH32RV_AFIO_PCFR1_OFFSET = 0x04
 
 
@@ -2944,8 +2956,8 @@ def load_remap_fields(tables: pathlib.Path) -> dict:
                     "the register-qualified route schema")
             bits.append((register, int(bit)))
         if bits:
-            kind = m.group(1) if m.group(1) in ("i2c", "spi") else "usart"
-            out[(r["series"], kind, int(m.group(2)))] = bits
+            kind = m.group(1) if m.group(1) in ("i2c", "spi", "can") else "usart"
+            out[(r["series"], kind, int(m.group(2) or 1))] = bits
     return out
 
 
@@ -3192,6 +3204,11 @@ def load_spi_pins(tables: pathlib.Path, alts=None) -> dict:
     """part -> {(spi index, route): {"SCK": ..., "MISO": ..., "MOSI": ...}}."""
     return load_pin_routes(tables, SPI_SIGNAL_RE, SPI_ROUTE_ORDER,
                            "spi", alts)
+
+
+def load_can_pins(tables: pathlib.Path, alts=None) -> dict:
+    """part -> {(can index, route): {"RX": ..., "TX": ...}}."""
+    return load_pin_routes(tables, CAN_SIGNAL_RE, CAN_ROUTE_ORDER, "can", alts)
 
 
 def load_dac_pins(tables: pathlib.Path, alts=None) -> dict:
@@ -4748,6 +4765,41 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#endif")
         out.append("")
 
+    # --- CAN ---
+    # As I2C: RX and TX from one route the core can select (the HardwareCAN
+    # object in libraries/CAN). Only where the series has the block's clock.
+    cans = CAN_PINS
+    chosen_can = {i: v for i, v in choose_routes(series, parts, cans, remap, "can", ("RX", "TX"),
+                                                 CAN_ROUTE_ORDER, set(CAN_BASES), forbidden).items()
+                  if all(clock_enables.get(f, {}).get(f"CAN{i}")
+                         for f in {r.get("family", "") for r in rows})} if cans else {}
+    if chosen_can:
+        out.append("/* ---- CAN pins (device-data; one route per instance) ---- */")
+        for index, (coverage, route, pads) in sorted(chosen_can.items()):
+            out.append(f"#define CH32RV_CAN{index}_BASE {CAN_BASES[index]}")
+            if route is not None:
+                rx, tx = pads
+                where = ("on every part" if coverage == len(parts)
+                         else f"on {coverage} of {len(parts)} parts")
+                out.append(f"/* CAN{index}: route {route}, {where} */")
+                out.append(f"#define CH32RV_CAN{index}_RX {pad_name(*rx)}")
+                out.append(f"#define CH32RV_CAN{index}_TX {pad_name(*tx)}")
+            value = route_remap_value(route) if route else 0
+            bits = remap.get((series, "can", index))
+            if series in PER_PIN_AF_SERIES:
+                out.append(f"#define CH32RV_CAN{index}_REMAP_MASK 0x00000000u")
+                if route is not None:
+                    out.append(f"#define CH32RV_CAN{index}_REMAP_VAL  0x{(route_af_value(route) or 0):08x}u")
+            elif bits and value is not None:
+                for register, (mask, val) in sorted(remap_mask_value(bits, value).items()):
+                    suffix = "" if register == "PCFR1" else "2"
+                    out.append(f"#define CH32RV_CAN{index}_REMAP{suffix}_MASK 0x{mask:08x}u")
+                    out.append(f"#define CH32RV_CAN{index}_REMAP{suffix}_VAL  0x{val:08x}u")
+            emit_instance_routes(out, f"CAN{index}", ("RX", "TX"), series, parts,
+                                 cans, remap, "can", index, CAN_ROUTE_ORDER,
+                                 forbidden, route is not None)
+        out.append("")
+
     # --- PWM ---
     # Only pads every part agrees on: a sketch built for ANY must not have
     # analogWrite() land on a different timer depending on the package.
@@ -5358,6 +5410,7 @@ def main() -> int:
     i2cs = load_i2c_pins(args.tables, route_alts)
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
+    CAN_PINS.update(load_can_pins(args.tables, route_alts))
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)
@@ -5407,7 +5460,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

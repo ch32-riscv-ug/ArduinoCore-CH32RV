@@ -741,6 +741,33 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- CAN pins (device-data; one route per instance) ---- */
+#define CH32RV_CAN1_BASE 0x40006400u
+/* CAN1: route default, on every part */
+#define CH32RV_CAN1_RX PA11
+#define CH32RV_CAN1_TX PA12
+#define CH32RV_CAN1_REMAP_MASK 0x00006000u
+#define CH32RV_CAN1_REMAP_VAL  0x00000000u
+/* CAN1 routes for setRoute()/setPins(): route number, then RX, TX */
+#define CH32RV_CAN1_ROUTE_COUNT 3
+#define CH32RV_CAN1_ROUTES { \
+    { 0, { PA11, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00004000u, 0x00000000u }, \
+    { 3, { PD0, PD1, CH32RV_ROUTE_NO_PIN }, 0x00006000u, 0x00000000u }, \
+}
+#define CH32RV_CAN2_BASE 0x40006800u
+/* CAN2: route default, on every part */
+#define CH32RV_CAN2_RX PB12
+#define CH32RV_CAN2_TX PB13
+#define CH32RV_CAN2_REMAP_MASK 0x00400000u
+#define CH32RV_CAN2_REMAP_VAL  0x00000000u
+/* CAN2 routes for setRoute()/setPins(): route number, then RX, TX */
+#define CH32RV_CAN2_ROUTE_COUNT 2
+#define CH32RV_CAN2_ROUTES { \
+    { 0, { PB12, PB13, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PB5, PB6, CH32RV_ROUTE_NO_PIN }, 0x00400000u, 0x00000000u }, \
+}
+
 /* ---- PWM: 24 pads on TIM1/TIM2/TIM3/TIM4/TIM8/TIM9/TIM10, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 24
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

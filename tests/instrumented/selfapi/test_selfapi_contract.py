@@ -84,6 +84,19 @@ def test_crc(dut, ready, record_property):
     assert not wrong, ("on the CRC block: " if got["block"] else "in software: ") + " | ".join(wrong)
 
 
+@pytest.mark.parametrize("bitrate", [125000, 500000, 1000000])
+def test_can_loopback(dut, ready, bitrate, record_property):
+    """Arduino_CAN in silent loopback (no transceiver, no bus): 20 frames, standard and extended identifiers in turn
+    and 0 .. 8 data bytes, each read back whole, and no error counted."""
+    m = ask(dut, f"canlb {bitrate}", rb"CANLB (NONE|(\d) (\d+) (\d+) (\d+))", timeout=15)
+    if m.group(1) == b"NONE":
+        pytest.skip("no CAN on this series")
+    begun, right, tec, rec = (int(m.group(k)) for k in range(2, 6))
+    record_property("can", json.dumps(dict(right=right, tec=tec, rec=rec)))
+    assert begun, f"CAN.begin({bitrate}) failed"
+    assert (right, tec, rec) == (20, 0, 0), f"{right} of 20 frames back, tx errors {tec}, rx errors {rec}"
+
+
 def test_rng(dut, ready, record_property):
     words, fills, hw = [], [], None
     for _ in range(8):

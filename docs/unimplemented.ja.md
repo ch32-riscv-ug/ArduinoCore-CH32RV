@@ -133,7 +133,7 @@
 | SPI の半二重・片方向（3 線） | 全系列 | 2 | 自動 | プローブ | FC:46, EVT SPI/1Lines_half-duplex |
 | SPI の非同期・DMA 転送 | 全系列 | 実装済み（2026-11-18、`transferAsync()` / `finishedAsync()` / `abortAsync()`（arduino-pico の名前、DMA）。同期のバッファ転送は CPU のループ。V203・H417・V003 で spi::test_spi_block が通る） | 自動 | プローブ | FC:44, EVT SPI/SPI_DMA・SPI_DMA_EXT |
 | SPI の CRC | V003、V00x、V20x、V205、V30x、V4x7、L103、M030、X035 | 2 | 自動 | プローブ | EVT SPI/SPI_CRC |
-| CAN 2.0B（HardwareCAN、フィルタ、ループバック、Listen-only、バスオフ） | V20x、V205、V30x、V4x7、L103/M103、H41x（3 個、TTCAN） | 2 | 自動 | 1 台: 内部ループバックとサイレントで自己。2 台目かプローブの CAN、トランシーバーと終端 | PS:98, PM:236 |
+| CAN 2.0B（HardwareCAN、フィルタ、ループバック、Listen-only、バスオフ） | V20x、V205、V30x、V4x7、L103/M103、H41x（3 個、TTCAN） | 実装済み（2026-11-18、ライブラリ Arduino_CAN（UNO R4 などと同じ `<Arduino_CAN.h>` / `CAN`、HardwareCAN）。全部を通すフィルタ、ループバック・サイレント、エラーの数・バスオフ。受信は割込み無しで FIFO を読む。V203・V205・H417 で selfapi::test_can_loopback。実バスは未確認） | 自動 | 1 台: 内部ループバックとサイレントで自己。2 台目かプローブの CAN、トランシーバーと終端 | PS:98, PM:236 |
 | CAN の時間トリガ（TTCAN）・CAN 起床 | 上と同じ（起床は L103） | 2 | 単発 | 同上 | EVT CAN/Time-triggered, CAN/CAN_Wakeup |
 | CAN FD | L103（C8T6、K8U6） | 2 | 単発 | FD 対応トランシーバー、相手 | FC:55, UNUSED:55 |
 | CFGCANM（CAN のオプションバイト） | L103、V205 | 2 | 自動 | 自己 | docs/adr/0017-option-byte-menus.ja.md:26 |

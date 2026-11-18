@@ -598,6 +598,23 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- CAN pins (device-data; one route per instance) ---- */
+#define CH32RV_CAN1_BASE 0x40006400u
+/* CAN1: route default, on 11 of 12 parts */
+#define CH32RV_CAN1_RX PA11
+#define CH32RV_CAN1_TX PA12
+#define CH32RV_CAN1_REMAP_MASK 0x00006000u
+#define CH32RV_CAN1_REMAP_VAL  0x00000000u
+#if defined(CH32RV_PART_CH32V203F8P6)
+#define CH32RV_CAN1_ABSENT 1   /* not on this part */
+#endif
+/* CAN1 routes for setRoute()/setPins(): route number, then RX, TX */
+#define CH32RV_CAN1_ROUTE_COUNT 2
+#define CH32RV_CAN1_ROUTES { \
+    { 0, { PA11, PA12, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PB8, PB9, CH32RV_ROUTE_NO_PIN }, 0x00004000u, 0x00000000u }, \
+}
+
 /* ---- PWM: 12 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 12
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

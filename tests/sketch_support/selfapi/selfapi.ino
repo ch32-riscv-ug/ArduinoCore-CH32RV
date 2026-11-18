@@ -22,13 +22,17 @@
  *                             polls for; IPC V3F 0 0 0 with CPU Core = V3F (no other core)
  *   v3fport <k>               V3FPORT <USARTn> <RX pin>: port k (Serial, Serial1, ...)
  *   v3fser <k>                port k begun and used on the V3F: 64 bytes sent at 115200, then 16 received at 9600
- *                             from its own RX pad driven as a GPIO, its interrupt allocated to the V3F */
+ *                             from its own RX pad driven as a GPIO, its interrupt allocated to the V3F
+ *   canlb <bitrate>           CAN (Arduino_CAN) in silent loopback: 20 frames - standard and extended identifiers in
+ *                             turn, 0 .. 8 bytes - each read back: CANLB <begun 1/0> <right> <tx errors> <rx errors>,
+ *                             CANLB NONE without a CAN */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVTimer.h>
 #include <SerialDMSeq.h>
 #include <ch32rv_crc.h>
 #include <ch32rv_priority.h>
+#include <Arduino_CAN.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -737,6 +741,32 @@ static void reply(char *command)
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
         SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+    } else if (!strcmp(argv[0], "canlb") && argc == 2) {
+#if defined(CH32RV_CAN1_BASE)
+        CAN.setLoopback(true, true);
+        const bool ok = CAN.begin((uint32_t)atol(argv[1]));
+        int right = 0;
+        for (int i = 0; i < 20 && ok; i++) {
+            uint8_t d[8];
+            for (int k = 0; k < 8; k++) {
+                d[k] = (uint8_t)(i * 31 + k);
+            }
+            const uint32_t id = (i & 1) ? CanExtendedId(0x1ABCDE0u + (uint32_t)i) : CanStandardId(0x100u + (uint32_t)i);
+            const uint8_t len = (uint8_t)(i % 9);
+            CAN.write(CanMsg(id, len, d));
+            const uint32_t t0 = millis();
+            while (!CAN.available() && millis() - t0 < 50u) {
+            }
+            if (CAN.available()) {
+                const CanMsg m = CAN.read();
+                right += m.id == id && m.data_length == len && !memcmp(m.data, d, len);
+            }
+        }
+        SerialDMSeq.printf("CANLB %d %d %u %u\r\n", ok ? 1 : 0, right, CAN.txErrors(), CAN.rxErrors());
+        CAN.end();
+#else
+        SerialDMSeq.printf("CANLB NONE\r\n");
+#endif
     } else if (!strcmp(argv[0], "crc")) {
         crc_check();
     } else if (!strcmp(argv[0], "rng")) {
