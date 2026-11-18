@@ -47,12 +47,15 @@ CH32RV_INTERRUPT void RTCAlarm_IRQHandler(void)
     ch32rv_rtc_alarm_events++;
     const uint32_t when = user_when;
     int due = 0;
-    if (when && ch32rv_rtc_alarm_in_sleep) {
-        /* Out of a stop the RTC's registers are stale until RSF (the
-         * reference manuals' "special read-write" rule): an alarm read against
-         * the old count looked early, the sleep wrote the same alarm again
-         * for a count already passed and never woke (CH32H417 2026-11-17,
-         * setAlarm(+2 s) then lightSleep() with a 10 s timer). */
+    if (when) {
+        /* The count read here can be the one before the alarm's: out of a stop
+         * the RTC's registers are stale until RSF (the reference manuals'
+         * "special read-write" rule; CH32H417 2026-11-17, setAlarm(+2 s) then
+         * lightSleep() never woke), and on V103 the flag rises as the counter
+         * moves on while it still reads the alarm's value (2026-11-18, read
+         * straight after ALRF in a loop). Read against the old count the alarm
+         * looked early, was written again for a count already passed and
+         * never came. */
         ch32rv_rtc_resync();
     }
     if (when) {

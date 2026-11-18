@@ -241,13 +241,12 @@ int ch32rv_rtc_take_alarm_standby(void)
 void ch32rv_rtc_alarm(uint32_t sec)
 {
     /* The flag rises one count after the alarm value (V307 2026-10-28: a
-     * 2 s sleep took 3), so the register holds one less. Not on V103: its
-     * flag rises as the counter reaches the value, as on the F1 (2026-11-15:
-     * an alarm written one less never came for a counter already there - the
-     * first-sleep hang of 2026-10-28 - and a 2 s alarm came a second early). */
-#ifndef CH32RV_SERIES_CH32V103
+     * 2 s sleep took 3), so the register holds one less - V103 too: its flag
+     * rose ~1 s after ALR was written equal to the counter, ~2 s for one
+     * ahead (2026-11-18, read straight from the registers); written as is, a
+     * 2 s alarm came after 2.6 - 2.9 s. It had been left out (2026-11-15) for
+     * a hang that was its WFI not ending on SysTick (ch32rv_power.c). */
     sec--;
-#endif
     config_begin();
     RTC(0x20) = (uint16_t)(sec >> 16);
     RTC(0x24) = (uint16_t)sec;
