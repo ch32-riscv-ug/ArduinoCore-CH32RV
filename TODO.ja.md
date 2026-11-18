@@ -16,7 +16,9 @@
 
 - [ ] 優先の案をユーザーと決める。範囲の判断が要るもの（RTOS の port、EVT / SPL 互換、ベンダ IDE 互換、CH32F、無線 SoC
   を BLE の除外に含めるか、汎用ドライバの同梱、EVT のバイナリのライブラリ相当）はユーザーに聞く。
-- [ ] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（ただし、ユーザーが決めたもの — EEPROM.h と Preferences、
+- [x] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（2026-11-18: network-stack、upload-routes、oep-workflow、
+  project-scope（範囲の判断待ち）、peripheral-plan の C（後回し）、ADR-0017 の CFGCANM、FEATURE_CANDIDATES の注記。filesystem の
+  littlefs / SPIFFS / 内蔵 Flash の「入れない」はユーザーの決定なので残した。ほかの該当は動詞の「入れない」など別の意味）（ただし、ユーザーが決めたもの — EEPROM.h と Preferences、
   内蔵フラッシュのファイルシステム、実行中のクロック変更、PIOC の保留 — はそのまま。2026-11-17）（peripheral-plan の C、software-peripherals、
   network-stack、filesystem、FEATURE_CANDIDATES、ADR-0017、upload-routes、usb.ja.md、CH32RVUsbHost の README など。
   docs/unimplemented.ja.md の元の棚卸しの 15 章）。peripheral-support の表は直した（2026-11-14）。

@@ -50,7 +50,7 @@ wire（線。debug の線を駆動するインターフェース: `oep.wire.rvsw
 
 経路の一覧と状態は [upload-routes.ja.md](upload-routes.ja.md)。どの経路も書き込みツールは ch32rv 1 つで、IDE port の protocol
 （`serial`、`wchlink`、`oep`、`ch32rv-hid`、`ch32rv-app`、`ch32rv-isp`）で経路が決まる。factory UART ISP と独自の bootloader
-（UF2 / UART）は対応しない。ARM の SWD（`oep.wire.swd`、LinkE の DAP モード）は、この core の target には出てこない。
+（UF2 / UART）は未実装（docs/unimplemented.ja.md）。ARM の SWD（`oep.wire.swd`、LinkE の DAP モード）は、この core の target には出てこない。
 
 ### 3.2 IDE port を選ぶだけで書く
 

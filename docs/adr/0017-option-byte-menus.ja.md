@@ -23,7 +23,7 @@ option bytes の USER の項目のうち、スケッチの動きを決めるも�
 | OV_CFG | M030 | **調べてから決める** | 過電圧の扱い。RM の記述を確かめていない |
 | PORCTR | V103 | **調べてから決める** | 電源投入のリセットの時間 |
 | STANDYRST、STOPRST | 10 家系 | **扱わない** | 規則 5。`CH32RV.deepSleep()` と `lightSleep()` は、休止に入ってもリセットしない工場出荷の値に頼る |
-| CFGCANM | L103、V205 | **扱わない** | CAN のライブラリが無い。できたら、そのライブラリの設定にする |
+| CFGCANM | L103、V205 | **未実装** | CAN のライブラリが未実装（[未実装の一覧](../unimplemented.ja.md)）。できたら、そのライブラリの設定にする |
 | START_MODE、START_MD | V003、V006、X315 | **扱わない（ch32rv）** | 規則 4 |
 | USARTDLEN、USBFSDLEN、USBHSDLEN | H417、X315 | **扱わない（ch32rv）** | 規則 4 |
 | RDPR、WRPR | 全家系 | **扱わない（ch32rv）** | 規則 2 |

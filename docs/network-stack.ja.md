@@ -12,10 +12,10 @@ Network ライブラリ(lwIP の上の IPv4)と NetworkClientSecure(TLS)の範�
 | CH32V307 / V317 | 対象 | MAC 内蔵(10M の PHY 内蔵、100M / 1G は PHY 外付け) |
 | CH32V407 / V467 | 対象 | MAC + PHY 内蔵 |
 | CH32H415〜H417 | 対象 | GMAC + 10/100 の PHY 内蔵 |
-| CH32X035 ほか、MAC の無い系列 | **対象外** | USB の NCM の生フレーム(`CH32RVUsbDeviceNet`)まで |
+| CH32X035 ほか、MAC の無い系列 | **未実装** | 今は USB の NCM の生フレーム(`CH32RVUsbDeviceNet`)まで |
 
 - 対象は、Ethernet の MAC を持つ系列です。同じ系列では、USB の NCM(PC からの設定画面など)も同じスタックに載せます。
-- X035 は対象外です。X035 に USB の NIC を足してまでネットワークにつなぐなら、ESP32 を使うほうが合います。X035 でも入る見積もりでしたが(デバイスの NCM と IP スタックで Flash 約 45 KB / 62 KB)、アプリの残りが小さく、割に合いません。
+- MAC の無い系列（X035 ほか）の IP は未実装です（[未実装の一覧](unimplemented.ja.md)の「MAC の無い系列の IP（USB NCM の上）」）。X035 でも入る見積もりです(デバイスの NCM と IP スタックで Flash 約 45 KB / 62 KB)。アプリに残る量は小さくなります。
 
 ## 目標の段
 
