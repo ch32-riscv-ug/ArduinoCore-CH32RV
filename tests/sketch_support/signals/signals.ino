@@ -81,6 +81,8 @@
  *                          PCOUNT <ok> <count> <us>: CH32RVPulseCounter (edge 1
  *                          RISING, 2 FALLING, 3 CHANGE) counted over ms, the
  *                          time it took by micros()
+ *   spwm <a> <da> <b> <db> SPWM <ok>: SoftPWM, duty da / 255 on a, db on b
+ *   spwmoff                SPWMOFF
  *   tick <pin> <us> <once> TICK <active>: a Ticker toggling pin every us, or
  *                          (once 1) pin high now and low after us
  *   tickoff                TICKOFF
@@ -94,6 +96,7 @@
 #include <SerialDMSeq.h>
 #include "internal/ch32rv_irq.h"
 #include <Ticker.h>
+#include <SoftPWM.h>
 #include <Servo.h>
 #include <string.h>
 
@@ -341,6 +344,15 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
             ticker.attach_us((uint64_t)a2, tickToggle);
         }
         say("TICK", 1, ticker.active());
+    } else if (!strcmp(argv[0], "spwm") && argc == 5) {
+        /* spwm <a> <duty a of 255> <b> <duty b of 255> */
+        const bool ok = SoftPWMBegin();
+        SoftPWMSet((int)pin, (uint8_t)a2, 1);
+        SoftPWMSet((int)a3, (uint8_t)a4, 1);
+        say("SPWM", 1, ok);
+    } else if (!strcmp(argv[0], "spwmoff")) {
+        SoftPWMEnd(ALL);
+        SerialDMSeq.println("SPWMOFF");
     } else if (!strcmp(argv[0], "tickoff")) {
         ticker.detach();
         SerialDMSeq.println("TICKOFF");

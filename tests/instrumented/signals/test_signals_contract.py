@@ -746,7 +746,8 @@ def test_timer_trigger(dut, oep_host, ws_run, record_property):
             ("armed", f"pwmtrig {out['pin']} {trig['pin']} 20000", rb"PWMTRIG (\d)", [becomes(O, level=0)], 0.02),
             ("waiting", None, None, [level(O, 0)], 0.01),
             ("trigger", lambda: gpio.configure(trig["channel"], Gpio.OUTPUT_HIGH), None,
-             [becomes(O, freq_hz=20000, duty=0.5, within_s=0.05, min_periods=20)], 0.01),
+             # within the path's 0.3 s (WAVE): the probe raising the line is the host's action
+             [becomes(O, freq_hz=20000, duty=0.5, **WAVE)], 0.01),
             ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(O, level=0)], 0.005),
         ]
         replies = sweep(dut, ws_run, oep_host, [out, trig], f"timer trigger {O} by {T}", conditions,
@@ -756,6 +757,32 @@ def test_timer_trigger(dut, oep_host, ws_run, record_property):
         ask(dut, "pwmtoff", rb"PWMTOFF")
         gpio.configure(trig["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
+
+
+def test_soft_pwm(dut, oep_host, ws_run, record_property):
+    """SoftPWM (the library's API, one timer's interrupt): 64 / 255 and 191 / 255 on two plain lines, 60 Hz."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TICKER, "SoftPWM")
+    if len(lines) < 2:
+        pytest.skip("SoftPWM wants two <port>@<pad> lines")
+    a, b = lines[0], lines[1]
+    A, B = a["pad"], b["pad"]
+    record_property("lines", f"{A} {B}")
+    slow = dict(min_periods=10, within_s=0.3, duty_abs=0.01)
+    conditions = [
+        ("rest", None, None, [], 0.01),
+        ("25 % and 75 %", f"spwm {a['pin']} 64 {b['pin']} 191", rb"SPWM (\d)",
+         [becomes(A, freq_hz=60, duty=64 / 256, **slow), becomes(B, freq_hz=60, duty=191 / 256, **slow)], 0.6),
+        ("stopped", "spwmoff", rb"SPWMOFF", [becomes(A, level=0), becomes(B, level=0)], 0.05),
+    ]
+    try:
+        replies = sweep(dut, ws_run, oep_host, [a, b], f"soft pwm {A} {B}", conditions, rate=1_000_000, moving=2,
+                        quiet=[])
+        assert next(m for m in replies if m.group(0).startswith(b"SPWM ")).group(1) == b"1", "no free timer"
+    finally:
+        ask(dut, "spwmoff", rb"SPWMOFF")
 
 
 def test_six_step(dut, oep_host, ws_run, record_property):

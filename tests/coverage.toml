@@ -193,6 +193,11 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "soft-pwm"             # SoftPWM (the SoftPWM library's API): 25 % / 75 % at 60 Hz on two plain lines
+test = "signals::test_soft_pwm"
+scope = "once"
+
+[[item]]
 id = "six-step"             # CH32RVSixStep: the six steps on CH1..3 / CH1N..3N (six lines on the bridge's pads)
 test = "signals::test_six_step"
 scope = "series"

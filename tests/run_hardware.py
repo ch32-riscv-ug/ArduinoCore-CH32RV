@@ -626,9 +626,10 @@ def main(argv=None):
                     elif staged.get("upload_port"):
                         command += ["--flash-port", staged["upload_port"]]
                     # A peer case builds the ESP32 sketch inside pytest too; on a loaded
-                    # host that alone can take minutes.
+                    # host that alone can take minutes. signals streams a capture per test (two dozen of them,
+                    # 204 s on X035 with the probe busy, 2026-11-19).
                     invoke(command, module.parent / "pytest.log", env=case_env,
-                           timeout=900 if case in PEER_CASES else 300)
+                           timeout=900 if case in PEER_CASES else 600 if case == "signals" else 300)
                     result["status"] = "PASS" if args.execute else "COMPILE_PASS"
                     skips = junit_skips(module.parent / "junit.xml") if args.execute else None
                     if skips:
