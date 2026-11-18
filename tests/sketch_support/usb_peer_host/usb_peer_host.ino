@@ -7,6 +7,8 @@
  *   dev                  H DEV ... / H ITF ... per interface / H DEVEND <n>
  *   cdc <hex>            H CDC <hex echoed back within 2 s>
  *   cdcbig <n>           H CDCBIG <n> <ok> <bytes back>
+ *   cdcrx <size> <n>     setRxBufferSize(size), n bytes out unread (up to 2 s for them):
+ *                        H CDCRX <set 1/0> <rxBufferSize()> <available()> <bytes read> <wrong bytes> <sent>
  *   baud <n>             H BAUD <ok>
  *   hidv <hex>           H HIDV_SENT <ok>      (vendor output report, no ID)
  *   leds <bits>          H LEDS <ok>
@@ -242,6 +244,39 @@ static void cmd_cdcbig(size_t n)
     SerialDMSeq.println((unsigned)got);
 }
 
+/* setRxBufferSize(size) between end() and begin(), then n bytes out unread: the echo waits in the ring. */
+static void cmd_cdcrx(const char *arg)
+{
+    char *end = nullptr;
+    const size_t size = strtoul(arg, &end, 10);
+    size_t n = strtoul(end, nullptr, 10);
+    if (n > 1024) n = 1024;
+    cdc.end();
+    const bool set = cdc.setRxBufferSize(size);
+    cdc.begin(115200);
+    const uint32_t t0 = millis();
+    while (!cdc.connected() && millis() - t0 < 3000) deliverEvents();
+    while (cdc.available()) cdc.read();
+    size_t sent = 0;
+    while (sent < n && millis() - t0 < 6000) {
+        uint8_t chunk[32];
+        const size_t k = n - sent < sizeof chunk ? n - sent : sizeof chunk;
+        for (size_t i = 0; i < k; i++) chunk[i] = (uint8_t)((sent + i) * 7 + 3);
+        if (cdc.write(chunk, k) == k) sent += k;
+        deliverEvents();
+    }
+    const uint32_t t1 = millis();
+    while ((size_t)cdc.available() < sent && millis() - t1 < 2000) deliverEvents();
+    const int waiting = cdc.available();
+    size_t got = 0, bad = 0;
+    while (cdc.available()) {
+        if ((uint8_t)cdc.read() != (uint8_t)(got * 7 + 3)) bad++;
+        got++;
+    }
+    SerialDMSeq.printf("H CDCRX %d %u %d %u %u %u\n", set ? 1 : 0, (unsigned)cdc.rxBufferSize(), waiting, (unsigned)got,
+                       (unsigned)bad, (unsigned)sent);
+}
+
 static void cmd_vend(const char *arg)
 {
     uint8_t tx[160], rx[160];
@@ -397,6 +432,8 @@ static void reply(char *cmd)
         SerialDMSeq.println(wakeups);
     } else if (strcmp(cmd, "cdc") == 0) {
         cmd_cdc(arg);
+    } else if (strcmp(cmd, "cdcrx") == 0) {
+        cmd_cdcrx(arg);
     } else if (strcmp(cmd, "cdcbig") == 0) {
         cmd_cdcbig(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "baud") == 0) {

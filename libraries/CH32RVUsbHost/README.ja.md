@@ -132,7 +132,7 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
 - アイソクロナス（オーディオ・ビデオ）と USB ネットワークはありません。帯域とバッファがこのチップには足りません。
 - MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
 - ベンダーのバルクと CCID は、同時に開けるのはそれぞれ1つです。
-- USB シリアルの `setRxBufferSize()` はありません。受信の大きさは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
+- USB シリアルの受信の大きさは EspUsbHost と同じ `setRxBufferSize(size)`（ヒープから、`begin()` の前か `end()` の後、66〜65535 バイト）と `rxBufferSize()` で変えます。ヒープを使わないときは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
 - エラーは `esp_err_t` ではなく `CH32RVUsbHostError` です。ESP32 の task / PHY / channel 設定を持ち込みません。
 
 API の語彙は共有しますが、現行 EspUsbHost のすべての機能との互換を意味しません。
@@ -286,7 +286,7 @@ MSC 1、MIDI 1。構成記述子は長さを問わず（USB の上限の 65535 �
 
 | 既定 | 対象 | 差し替え |
 |---|---|---|
-| 128 | USB シリアル（Stream）の受信リング | `CH32RVUsbHostCdcSerial::setBuffer()` |
+| 128 | USB シリアル（Stream）の受信リング | `setRxBufferSize()` / `CH32RVUsbHostCdcSerial::setBuffer()` |
 | 256 | ベンダーの受信リング | `setVendorBuffer()`（`vendorOpen()` の前） |
 | 272 | CCID の受信リングと応答 | `setCcidBuffers()`（`ccidOpen()` の前） |
 

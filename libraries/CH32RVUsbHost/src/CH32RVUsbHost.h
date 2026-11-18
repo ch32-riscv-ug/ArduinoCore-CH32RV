@@ -647,6 +647,10 @@ public:
     explicit CH32RVUsbHostCdcSerial(CH32RVUsbHost &host);
     /* The sketch's receive ring instead of the port's own 128 bytes. */
     bool setBuffer(uint8_t *buffer, uint16_t size);
+    /* EspUsbHost's: a ring of `size` bytes from the heap (66 .. 65535),
+     * before begin() or after end(); false if it cannot be had. */
+    bool setRxBufferSize(size_t size);
+    size_t rxBufferSize() const;
     bool begin(uint32_t baud = 115200);
     void end();
     bool connected() const;
@@ -679,6 +683,7 @@ private:
     bool _dtr = true, _rts = true;
     uint8_t *_rxBuffer = nullptr;
     uint16_t _rxSize = 0;
+    bool _rxOwned = false;          /* _rxBuffer came from setRxBufferSize() */
 
 public:
     /* For the port it is bound to. */

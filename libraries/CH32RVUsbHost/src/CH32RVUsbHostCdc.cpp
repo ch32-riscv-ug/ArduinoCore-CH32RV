@@ -7,6 +7,7 @@
  * transfers from the task. TinyUSB's license: ../LICENSE.tinyusb. */
 #include "internal/CH32RVUsbHostInternal.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #if CH32RV_USB_HOST_STACK
@@ -891,9 +892,35 @@ bool CH32RVUsbHostCdcSerial::setBuffer(uint8_t *buffer, uint16_t size)
     if (_begun || !buffer || size < 66) {    /* a packet and one more byte at least */
         return false;
     }
+    if (_rxOwned) {
+        free(_rxBuffer);
+        _rxOwned = false;
+    }
     _rxBuffer = buffer;
     _rxSize = size;
     return true;
+}
+
+bool CH32RVUsbHostCdcSerial::setRxBufferSize(size_t size)
+{
+    if (_begun || size < 66u || size > 0xFFFFu) {
+        return false;
+    }
+    if (_rxOwned && size == _rxSize) {
+        return true;
+    }
+    uint8_t *buffer = static_cast<uint8_t *>(malloc(size));
+    if (!buffer || !setBuffer(buffer, (uint16_t)size)) {
+        free(buffer);
+        return false;
+    }
+    _rxOwned = true;
+    return true;
+}
+
+size_t CH32RVUsbHostCdcSerial::rxBufferSize() const
+{
+    return _rxBuffer ? _rxSize : CH32RV_USB_HOST_CDC_RX_BUFFER_SIZE;
 }
 
 static int bound_index(CH32RVUsbHostCdcSerial &s, uint8_t address, uint8_t port)

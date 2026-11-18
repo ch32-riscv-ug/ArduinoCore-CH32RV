@@ -32,6 +32,10 @@ def test_usb_peer_host(dut, peers):
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(28)
     assert host(dut, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
     assert host(dut, "cdcbig 2000", rb"CDCBIG 2000 (\d) (\d+)", timeout=20).group(1) == b"1"
+    # setRxBufferSize(): 600 bytes echoed with nothing read wait whole in a 1024-byte ring (the own one is smaller).
+    m = host(dut, "cdcrx 1024 600", rb"CDCRX (\d) (\d+) (-?\d+) (\d+) (\d+) (\d+)", timeout=20)
+    assert m.group(1, 2) == (b"1", b"1024"), m.group(0)
+    assert m.group(3, 4, 5, 6) == (b"600", b"600", b"0", b"600"), m.group(0)
     assert host(dut, "baud 9600", rb"BAUD (\d)").group(1) == b"1"
 
     # Keyboard, mouse, consumer control from the device.

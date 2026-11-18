@@ -165,9 +165,10 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   neither the bandwidth nor the buffers.
 - MSC's file system is `CH32RVUsbHostMscFS` (shaped as `EspUsbHostMscFS`, see MSC below). There is no ESP32 VFS, so no host `mscMount()`.
 - One vendor bulk interface and one CCID interface can be open at a time.
-- USB serial has no `setRxBufferSize()`. Replace the receive buffer with the
-  sketch's own array through `CH32RVUsbHostCdcSerial::setBuffer()` ("Sizes and
-  errors" below).
+- USB serial's receive ring is sized as EspUsbHost's, `setRxBufferSize(size)`
+  (from the heap, before `begin()` or after `end()`, 66 .. 65535 bytes) and
+  `rxBufferSize()`. Without the heap, `CH32RVUsbHostCdcSerial::setBuffer()`
+  takes the sketch's own array ("Sizes and errors" below).
 - Errors are `CH32RVUsbHostError`, not `esp_err_t`. ESP32's task / PHY /
   channel settings do not carry over.
 
@@ -353,7 +354,7 @@ instead (there are no build-time settings).
 
 | Default | Buffer | Replace with |
 |---|---|---|
-| 128 | the USB serial (Stream) receive ring | `CH32RVUsbHostCdcSerial::setBuffer()` |
+| 128 | the USB serial (Stream) receive ring | `setRxBufferSize()` / `CH32RVUsbHostCdcSerial::setBuffer()` |
 | 256 | the vendor receive ring | `setVendorBuffer()` (before `vendorOpen()`) |
 | 272 | the CCID receive ring and response | `setCcidBuffers()` (before `ccidOpen()`) |
 
