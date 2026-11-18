@@ -944,6 +944,22 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- op-amp pads (device-data): unit, role (0 P, 1 N, 2 OUT), index, pad ---- */
+#define CH32RV_OPA_PADS { \
+    { 1, 0, 0, PB0 }, \
+    { 1, 0, 1, PA6 }, \
+    { 1, 1, 0, PB1 }, \
+    { 1, 1, 1, PA7 }, \
+    { 1, 2, 0, PC4 }, \
+    { 1, 2, 1, PA5 }, \
+    { 3, 0, 0, PC2 }, \
+    { 3, 0, 1, PA2 }, \
+    { 3, 1, 0, PC3 }, \
+    { 3, 1, 1, PA3 }, \
+    { 3, 2, 0, PA0 }, \
+    { 3, 2, 1, PA4 }, \
+}
+
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u
 /* CAN1: route af-3, on every part */

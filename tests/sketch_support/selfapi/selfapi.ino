@@ -23,6 +23,10 @@
  *   v3fport <k>               V3FPORT <USARTn> <RX pin>: port k (Serial, Serial1, ...)
  *   v3fser <k>                port k begun and used on the V3F: 64 bytes sent at 115200, then 16 received at 9600
  *                             from its own RX pad driven as a GPIO, its interrupt allocated to the V3F
+ *   opapads                   CH32RVOpamp OPA1's pads: OPAPADS <role>:<pin> ... (role 0 +, 1 -, 2 output), OPAPADS NONE
+ *                             where the variant names none
+ *   opa <+> <-> <out>         OPA1 open loop on those pins, + and - driven as GPIOs (<-> g<gain>: beginPga()):
+ *                             OPA <begun 1/0> <out with + high> <out with + low> (analogRead() of the output)
  *   canlb <bitrate>           CAN (Arduino_CAN) in silent loopback: 20 frames - standard and extended identifiers in
  *                             turn, 0 .. 8 bytes - each read back: CANLB <begun 1/0> <right> <tx errors> <rx errors>,
  *                             CANLB NONE without a CAN */
@@ -33,6 +37,7 @@
 #include <ch32rv_crc.h>
 #include <ch32rv_priority.h>
 #include <Arduino_CAN.h>
+#include <CH32RVOpamp.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -731,9 +736,9 @@ static void cores_mode()
 
 static void reply(char *command)
 {
-    char *argv[3];
+    char *argv[4];
     int argc = 0;
-    for (char *t = strtok(command, " "); t && argc < 3; t = strtok(nullptr, " ")) {
+    for (char *t = strtok(command, " "); t && argc < 4; t = strtok(nullptr, " ")) {
         argv[argc++] = t;
     }
     if (!argc) {
@@ -741,6 +746,46 @@ static void reply(char *command)
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
         SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+    } else if (!strcmp(argv[0], "opapads")) {
+#if defined(CH32RV_OPA_PADS) && defined(NUM_ANALOG_INPUTS)
+        struct Pad { uint8_t unit, role, index, pin; };
+        static const Pad table[] = CH32RV_OPA_PADS;
+        SerialDMSeq.print("OPAPADS");
+        for (const Pad &e : table) {
+            if (e.unit == 1) {
+                SerialDMSeq.printf(" %d:%d", e.role, e.pin);
+            }
+        }
+        SerialDMSeq.print("\r\n");
+#else
+        SerialDMSeq.printf("OPAPADS NONE\r\n");
+#endif
+    } else if (!strcmp(argv[0], "opa") && argc == 4) {
+        /* opa <+ pin> <- pin, or g<gain> for the PGA> <out pin> */
+        const int plus = atoi(argv[1]), out = atoi(argv[3]);
+        const bool pga = argv[2][0] == 'g';
+        const int minus = pga ? -1 : atoi(argv[2]);
+        CH32RVOpamp opa(1);
+        pinMode(plus, OUTPUT);
+        if (!pga) {
+            pinMode(minus, OUTPUT);
+        }
+        const bool ok = pga ? opa.beginPga(plus, (uint8_t)atoi(argv[2] + 1), out) : opa.begin(plus, minus, out);
+        int level[2];
+        for (int k = 0; k < 2; k++) {
+            digitalWrite(plus, k ? LOW : HIGH);
+            if (!pga) {
+                digitalWrite(minus, k ? HIGH : LOW);
+            }
+            delay(2);
+            level[k] = analogRead(out);
+        }
+        opa.end();
+        pinMode(plus, INPUT);
+        if (!pga) {
+            pinMode(minus, INPUT);
+        }
+        SerialDMSeq.printf("OPA %d %d %d\r\n", ok ? 1 : 0, level[0], level[1]);
     } else if (!strcmp(argv[0], "canlb") && argc == 2) {
 #if defined(CH32RV_CAN1_BASE)
         CAN.setLoopback(true, true);

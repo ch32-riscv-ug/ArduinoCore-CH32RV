@@ -384,6 +384,17 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- op-amp pads (device-data): unit, role (0 P, 1 N, 2 OUT), index, pad ---- */
+#define CH32RV_OPA_PADS { \
+    { 1, 0, 1, PD7 }, \
+    { 1, 0, 2, PD3 }, \
+    { 1, 0, 3, PD1 }, \
+    { 1, 1, 0, PA1 }, \
+    { 1, 1, 2, PA4 }, \
+    { 1, 2, 0, PD4 }, \
+    { 1, 2, 1, PA5 }, \
+}
+
 /* ---- PWM: 7 pads on TIM1/TIM2, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 7
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

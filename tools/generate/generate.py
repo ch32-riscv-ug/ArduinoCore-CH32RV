@@ -2885,6 +2885,36 @@ SPI_SIGNAL_RE = [
 ]
 SPI_BASES = {1: "CH32RV_SPI1_BASE", 2: "CH32RV_SPI2_BASE", 3: "CH32RV_SPI3_BASE"}
 
+# The op-amps' pads (CH32RVOpamp): unit, role (P / N / OUT) and the index a
+# selection field gives it, from the families' spellings: OPA1_CH0P / _CH0N /
+# _OUT0 (V20x, V30x), OPA1_P0 / _N0 / _OUT0 (H41x), OPA1_CHP0 / _CHN0 / _OUT1
+# (V205), OPA_P0 / _N0 / _OUT0 (V00x, V407, L103's _O0), OPP0 / OPN0 / OPO (V003).
+OPA_SIGNAL_RE = [
+    (re.compile(r"^OPA(\d)_CH(\d)([PN])$"), lambda m: (int(m.group(1)), m.group(3), int(m.group(2)))),
+    (re.compile(r"^OPA(\d)_CH([PN])(\d)$"), lambda m: (int(m.group(1)), m.group(2), int(m.group(3)))),
+    (re.compile(r"^OPA(\d)_([PN])(\d)$"), lambda m: (int(m.group(1)), m.group(2), int(m.group(3)))),
+    (re.compile(r"^OPA(\d)_OUT(\d)$"), lambda m: (int(m.group(1)), "O", int(m.group(2)))),
+    (re.compile(r"^OPA_([PN])(\d)$"), lambda m: (1, m.group(1), int(m.group(2)))),
+    (re.compile(r"^OPA_(?:OUT|O)(\d)$"), lambda m: (1, "O", int(m.group(1)))),
+    (re.compile(r"^OP([PN])(\d)$"), lambda m: (1, m.group(1), int(m.group(2)))),
+    (re.compile(r"^OPO$"), lambda m: (1, "O", 0)),
+]
+# part -> {(unit, role, index): (port, bit)} (main(); gen_pins reads it).
+OPA_PINS: dict = {}
+
+
+def load_opa_pins(tables: pathlib.Path) -> dict:
+    _, functions = load_pin_functions(tables)
+    out: dict = {}
+    for r in functions:
+        for pattern, extract in OPA_SIGNAL_RE:
+            m = pattern.match(r["signal"])
+            if m:
+                out.setdefault(r["part_number"], {})[extract(m)] = (r["port"], int(r["gpio"]))
+                break
+    return out
+
+
 # CAN (bxCAN): RX and TX of one route. CAN1_RX on most families, CAN_RX on
 # the single-CAN ones (instance 1).
 CAN_SIGNAL_RE = [
@@ -4765,6 +4795,21 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#endif")
         out.append("")
 
+    # --- OPA ---
+    # Each op-amp input / output pad the series has, with the index its
+    # selection field gives it (CH32RVOpamp matches the pins it is given).
+    opa_rows: dict = {}
+    for pn in parts:
+        for key, pad in OPA_PINS.get(pn, {}).items():
+            opa_rows.setdefault(key + (pad,), None)
+    if opa_rows:
+        out.append("/* ---- op-amp pads (device-data): unit, role (0 P, 1 N, 2 OUT), index, pad ---- */")
+        out.append("#define CH32RV_OPA_PADS { \\")
+        for unit, role, index, (port, bit) in sorted(opa_rows, key=lambda k: (k[0], "PNO".index(k[1]), k[2], k[3])):
+            out.append(f"    {{ {unit}, {'PNO'.index(role)}, {index}, {pad_name(port, bit)} }}, \\")
+        out.append("}")
+        out.append("")
+
     # --- CAN ---
     # As I2C: RX and TX from one route the core can select (the HardwareCAN
     # object in libraries/CAN). Only where the series has the block's clock.
@@ -5411,6 +5456,7 @@ def main() -> int:
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
+    OPA_PINS.update(load_opa_pins(args.tables))
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)

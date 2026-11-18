@@ -100,7 +100,7 @@
 | ADC の工場校正値（Get_CalibrationValue） | V20x、V30x | 2 | 単発 | 外部の電圧計（マニュアル） | TODO:499 |
 | 外部の温度チャネル | V103、V20x、V30x | 2 | 単発 | 温度センサの板 | EVT ADC/Temperature_External_channel |
 | DAC の DMA 波形・タイマートリガ・三角波・ノイズ・2 ch 同時 | V30x、V4x7、H41x | 2 | 自動 | プローブ（ADC の入力）。自己なら ADC で読み戻す | UNUSED:76, FC:77 |
-| OPA（内蔵アンプ・PGA・電圧フォロワ） | V003、V00x、V20x、V205、V30x、V4x7、L103、M030、X035、H41x | 2 | 自動 | プローブ（入力電圧）＋ADC で自己読み | PS:75, PM:212 |
+| OPA の残り（V003・V20x・V30x・V4x7 は CH32RVOpamp で実装済み） | V00x、V205、L103、M030、X035、H41x | 2 | 自動 | 自己（+ / - を GPIO で駆動、出力を ADC） | libraries/CH32RVOpamp |
 | コンパレータ（CMP、割込み・ブレーキ・起床・TIM 入力） | V00x、V205、L103、M030、X035、H41x | 2 | 自動 | プローブ | PS:83, PM:288 |
 | TouchKey の残り | L103、V205、H41x、V103 | 2 | 単発→自動 | 自己（何もつながない端子の値）。指の向きは手作業 | PS:76, EVT TKEY/TKEY（V205 |
 | TouchKey のしきい値・イベント | TouchKey の系列 | 2 | 単発→自動 | 手作業（指）か、プローブで容量を切り替える治具 | FC:79 |
