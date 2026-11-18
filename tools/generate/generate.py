@@ -1560,6 +1560,52 @@ def load_uart_dma(tables: pathlib.Path) -> dict:
     return out
 
 
+# DMAMUX (CH32H41x): SPIn's receive and transmit channels. Every channel is
+# already some USART's (DMAMUX_UART_CHANNELS), so these share: SPI1 / SPI2 take
+# USART7's and USART5's (the USARTs a sketch reaches last), SPI3 / SPI4
+# USART4's and USART3's. The SPI claims its pair for a transfer only and moves
+# the bytes by the CPU when another holds one (libraries/SPI).
+DMAMUX_SPI_CHANNELS = {1: ((2, 6), (2, 7)), 2: ((2, 2), (2, 3)),
+                       3: ((1, 8), (2, 1)), 4: ((1, 6), (1, 7))}
+# family -> {SPI number: {"RX" | "TX": dma_line tuple}} (load_spi_dma).
+SPI_DMA: dict = {}
+
+
+def load_spi_dma(tables: pathlib.Path) -> dict:
+    """family -> {SPI number: {"RX" | "TX": (dma, channel, channel registers,
+    flag register, flag shift, DMAMUX request or 0)}}, from index/dma.csv: the
+    SPI library's DMA transfers run on these."""
+    blocks = load_dma_blocks(tables)
+    found: dict = {}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id",
+                                             "peripheral", "request", "remap")):
+        p = re.match(r"^SPI(\d+)$", r["peripheral"])
+        m = re.match(r"^SPI(?:[/_]I2S)?(\d*)_(RX|TX)$", r["request"])
+        if not (m and p) or r["remap"] not in ("", "default", "selectable"):
+            continue
+        key = (r["family"], int(p.group(1)), m.group(2))
+        if r["dma"]:
+            got = (int(r["dma"].removeprefix("DMA")), int(r["channel"]), 0)
+        else:
+            got = (0, 0, int(r["request_id"]))
+        # V205's "selectable" requests are on DMA1 or DMA2 by EXTEN_CTLR1,
+        # whose reset value (0) puts them on DMA1 (CH32V205RM 30.2.2): that row.
+        if r["remap"] == "selectable" and got[0] != 1:
+            continue
+        prev = found.setdefault(key, got)
+        if prev != got:
+            raise SystemExit(f"ERROR: dma.csv gives {key} both {prev} and {got}")
+    out: dict = {}
+    for (family, index, role), (dma, ch, request) in found.items():
+        if request:
+            if index not in DMAMUX_SPI_CHANNELS:
+                raise SystemExit(f"ERROR: {family}: no DMAMUX channels chosen for SPI{index}")
+            dma, ch = DMAMUX_SPI_CHANNELS[index][role == "TX"]
+        out.setdefault(family, {}).setdefault(index, {})[role] = dma_line(
+            blocks, family, dma, ch, request, f"SPI{index}")
+    return out
+
+
 # SDIO (SD_MMC, internal/ch32rv_sdio.h): the signals in the order the core's
 # pad table numbers them.
 SDIO_SIGNALS = ("CK", "CMD", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7")
@@ -4598,6 +4644,18 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             emit_instance_routes(out, f"SPI{index}", ("SCK", "MISO", "MOSI"), series,
                                  parts, spis, remap, "spi", index, SPI_ROUTE_ORDER,
                                  forbidden, route is not None)
+            spi_dma = {}
+            for family in sorted({r.get("family", "") for r in rows}):
+                got = SPI_DMA.get(family, {}).get(index)
+                if got and spi_dma and got != spi_dma:
+                    raise SystemExit(f"{series}: families disagree on SPI{index}'s DMA channels")
+                spi_dma = got or spi_dma
+            if "RX" in spi_dma and "TX" in spi_dma:
+                out.append(f"/* SPI{index}'s DMA requests (the SPI library's buffer transfers). */")
+                for role in ("RX", "TX"):
+                    dma, ch, cbase, flags, shift, request = spi_dma[role]
+                    out.append(f"#define CH32RV_SPI{index}_DMA_{role} CH32RV_DMA_LINE({dma}, {ch}, "
+                               f"{cbase:#010x}u, {flags:#010x}u, {shift}u, {request}u)")
         first = min(spi_with_default)
         out.append("/* Arduino's standard names for the first bus (SPI). These are")
         out.append(" * the pads of SPI%d's default route above - a fact about"
@@ -5273,6 +5331,7 @@ def main() -> int:
     timer_pads = load_timer_pads(args.tables)
     timer_remaps = load_timer_remap_fields(args.tables)
     uart_dma = load_uart_dma(args.tables)
+    SPI_DMA.update(load_spi_dma(args.tables))
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
     gpio_speed = load_gpio_speed(args.tables)

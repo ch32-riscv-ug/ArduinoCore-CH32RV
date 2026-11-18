@@ -707,6 +707,9 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 5, { PF5, PA6, PA7 }, 0x00000005u, 0x00000000u }, \
     { 5, { PF5, PB4, PA7 }, 0x00000005u, 0x00000000u }, \
 }
+/* SPI1's DMA requests (the SPI library's buffer transfers). */
+#define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(2, 6, 0x4002046cu, 0x40020400u, 20u, 64u)
+#define CH32RV_SPI1_DMA_TX CH32RV_DMA_LINE(2, 7, 0x40020480u, 0x40020400u, 24u, 63u)
 /* SPI2: route af-5, on every part */
 #define CH32RV_SPI2_SCK PD3
 #define CH32RV_SPI2_MISO PC2
@@ -761,6 +764,9 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 5, { PD3, PC2, PB15 }, 0x00000005u, 0x00000000u }, \
     { 5, { PD3, PC2, PC1 }, 0x00000005u, 0x00000000u }, \
 }
+/* SPI2's DMA requests (the SPI library's buffer transfers). */
+#define CH32RV_SPI2_DMA_RX CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 66u)
+#define CH32RV_SPI2_DMA_TX CH32RV_DMA_LINE(2, 3, 0x40020430u, 0x40020400u, 8u, 65u)
 /* SPI3: route af-6, on every part */
 #define CH32RV_SPI3_SCK PC10
 #define CH32RV_SPI3_MISO PC11
@@ -785,6 +791,9 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 6, { PB3, PC11, PC12 }, 0x00000006u, 0x00000000u }, \
     { 6, { PC10, PB4, PC12 }, 0x00000006u, 0x00000000u }, \
 }
+/* SPI3's DMA requests (the SPI library's buffer transfers). */
+#define CH32RV_SPI3_DMA_RX CH32RV_DMA_LINE(1, 8, 0x40020094u, 0x40020000u, 28u, 68u)
+#define CH32RV_SPI3_DMA_TX CH32RV_DMA_LINE(2, 1, 0x40020408u, 0x40020400u, 0u, 67u)
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */

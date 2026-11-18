@@ -110,6 +110,21 @@ public:
     void peripheral_mode(bool on);
     uint8_t peripheral_transfer(uint8_t data);
 
+    /* arduino-pico's asynchronous transfer, by DMA: transferAsync() starts
+     * it and returns at once, the sketch runs on, and finishedAsync() is true
+     * once the last byte is through (and then lets the DMA channels go).
+     * send null sends 0xFF, recv null drops what comes in; both buffers have
+     * to stay as they are until then, and the bus takes no other transfer
+     * meanwhile. false when the bus is closed or a peripheral, a transfer is
+     * already running, or another user (a HardwareSerial DMA buffer) holds
+     * one of this SPI's DMA channels. Over 65535 bytes it runs in parts, the
+     * next started by the finishedAsync() that sees one end. abortAsync()
+     * stops it after the byte on the wire. */
+    bool transferAsync(const void *send, void *recv, size_t bytes);
+    bool finishedAsync(void);
+    void abortAsync(void);
+protected:
+    void transfer_block(const uint8_t *tx, uint8_t *rx, size_t count) override;
 private:
     void apply(uint32_t clock_hz, BitOrder order, uint8_t mode);
     void pads(bool peripheral);

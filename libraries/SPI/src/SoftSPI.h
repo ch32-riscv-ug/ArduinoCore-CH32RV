@@ -72,6 +72,17 @@ public:
     uint8_t transfer(uint8_t data) override;
     using ::SPIClass::transfer;
 
+    /* The hardware bus's asynchronous transfer (SPI.h), here done before
+     * transferAsync() returns: no DMA moves a software bus's bits. A sketch
+     * written for it builds and runs unchanged with the SPI set to Software. */
+    bool transferAsync(const void *send, void *recv, size_t bytes)
+    {
+        transfer_block((const uint8_t *)send, (uint8_t *)recv, bytes);
+        return true;
+    }
+    bool finishedAsync(void) { return true; }
+    void abortAsync(void) {}
+
     /* SPI_PERIPHERAL in the settings: a peripheral until endTransaction(). */
     void beginTransaction(SPISettings settings) override;
     void endTransaction(void) override;

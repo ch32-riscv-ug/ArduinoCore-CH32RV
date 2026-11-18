@@ -14,6 +14,12 @@
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex>
  *
+ *   blk <how> <hz> <bytes>             the buffer transfers, mode 0 MSB first, CS low around one
+ *                                      call with the bytes (hex, up to 80): how w writeBytes, t
+ *                                      transferBytes, b transfer(buf, n), a transferAsync out only,
+ *                                      A transferAsync both ways (finishedAsync() polled):
+ *                                      BLK <1 / 0 started> <bytes read, hex; - for w and a>
+ *
  * A slave (the probe's spi-controller is the master): CH32RVSPISlave on the SPI's
  * default pins, or - once `pins` named SoftSPI's pins - SoftSPISlave on those:
  *
@@ -100,6 +106,63 @@ static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char 
     SerialDMSeq.println();
 }
 
+/* The buffer transfers (`blk`). The asynchronous ones are the bus object's
+ * own (SPI's DMA, or SoftSPI's done-at-once), not SPIClass's. A member of a
+ * struct, so the .ino's generated prototypes leave the template alone. */
+struct BlockCommands {
+template <typename Bus> static bool block(Bus &b, char how, uint8_t *out, uint8_t *in, size_t n)
+{
+    switch (how) {
+    case 'w': b.writeBytes(out, n); return true;
+    case 't': b.transferBytes(out, in, n); return true;
+    case 'b': memcpy(in, out, n); b.transfer(in, n); return true;
+    case 'a':
+    case 'A':
+        if (!b.transferAsync(out, how == 'A' ? in : nullptr, n)) {
+            return false;
+        }
+        while (!b.finishedAsync()) {
+        }
+        return true;
+    }
+    return false;
+}
+};
+
+static void blk(char how, uint32_t hz, const char *bytes)
+{
+    static uint8_t out[80], in[80];
+    const size_t n = unhex(bytes, out, sizeof out);
+    memset(in, 0, sizeof in);
+    if (bus == &soft) {
+        soft.setHalfPeriodUs((uint16_t)(hz ? (500000u + hz - 1u) / hz : 0u));
+    }
+    bus->beginTransaction(SPISettings(hz, MSBFIRST, SPI_MODE0));
+    digitalWrite(cs, LOW);
+    delayMicroseconds(50);
+    bool ok;
+#if defined(SPI_INTERFACES_COUNT)
+    ok = bus == &soft ? BlockCommands::block(soft, how, out, in, n)
+                      : BlockCommands::block(SPI, how, out, in, n);
+#else
+    ok = BlockCommands::block(soft, how, out, in, n);
+#endif
+    delayMicroseconds(10);
+    digitalWrite(cs, HIGH);
+    bus->endTransaction();
+    SerialDMSeq.print("BLK ");
+    SerialDMSeq.print(ok ? 1 : 0);
+    SerialDMSeq.print(' ');
+    if (how == 'w' || how == 'a') {
+        SerialDMSeq.print('-');
+    } else {
+        for (size_t i = 0; i < n; i++) {
+            hex(in[i], 2);
+        }
+    }
+    SerialDMSeq.println();
+}
+
 #if defined(SPI_INTERFACES_COUNT)
 static CH32RVSPISlave slave;
 #endif
@@ -181,7 +244,7 @@ static void peripheral(uint8_t mode, bool lsb, size_t n, const char *bytes)
     SerialDMSeq.println(n ? "" : "-");
 }
 
-static char line[64];
+static char line[176];
 static uint8_t used;
 
 void setup()
@@ -222,6 +285,14 @@ void loop()
             softPins[2] = (int)mosi;
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+        } else if (strncmp(line, "blk ", 4) == 0) {
+            const char how = line[4];
+            p += 6;
+            const uint32_t hz = strtoul(p, &p, 10);
+            while (*p == ' ') {
+                p++;
+            }
+            blk(how, hz, p);
         } else if (strcmp(line, "spipins") == 0) {
 #if defined(SPI_INTERFACES_COUNT)
             SerialDMSeq.print("SPIPINS ");

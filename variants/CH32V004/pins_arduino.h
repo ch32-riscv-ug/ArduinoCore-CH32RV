@@ -285,6 +285,9 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 1, { PC5, PC7, PC6 }, 0x00000001u, 0x00000000u }, \
     { 4, { PD4, PD5, PD6 }, 0x00000004u, 0x00000000u }, \
 }
+/* SPI1's DMA requests (the SPI library's buffer transfers). */
+#define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
+#define CH32RV_SPI1_DMA_TX CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */

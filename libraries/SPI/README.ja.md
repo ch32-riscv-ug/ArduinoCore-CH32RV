@@ -115,6 +115,46 @@ void loop() {
 `class SPIClass;`の前方宣言が通ります。`SPI`の型は`CH32RVSPIClass`なので、
 `extern SPIClass SPI;`や、ESP32の`SPIClass spi(bus)`の書き方は通りません。
 
+## バッファの転送と非同期の転送(DMA)
+
+`transfer(buf, n)`、`transferBytes(out, in, n)`、`writeBytes(out, n)`(ESP32の名前)は、
+ハードウェアのバスでは、データレジスタを直接回す1本のループで送ります。送るだけ
+(`writeBytes`、`transferBytes`の`in`がnull)のときは、次のバイトをすぐ入れるので、バイトの間が空きません。
+`SPIClass *`で受け取るライブラリ(表示器のドライバなど)にも効きます。
+
+`transferAsync()`(arduino-picoの名前)は、DMAで送ってすぐ戻ります。転送のあいだもスケッチは動きます:
+
+```cpp
+SPI.beginTransaction(SPISettings(36000000, MSBFIRST, SPI_MODE0));
+digitalWrite(CS, LOW);
+SPI.transferAsync(pixels, nullptr, sizeof pixels);   // false: 始まらなかった
+// ... 次の行を描く ...
+while (!SPI.finishedAsync()) {}                       // 終わるとDMAのチャネルを返す
+digitalWrite(CS, HIGH);
+SPI.endTransaction();
+```
+
+- `send`がnullなら`0xFF`を送り、`recv`がnullなら受けたものを捨てます。`finishedAsync()`が`true`を返すまで、
+  2つのバッファを変えず、そのバスでほかの転送をしないでください。
+- `false`になるのは、バスが閉じている・peripheralモード・転送中、または、このSPIのDMAチャネルを
+  ほかの利用者(`HardwareSerial`のDMAバッファなど)が持っているときです。V20xのSPI1はUSART3と
+  同じチャネルです。チャネルは`transferAsync()`から終わりまでだけ借ります。
+- 1回で65535バイトを超えると、何回かに分けて送ります。次の回は、前の回の終わりを見た
+  `finishedAsync()`が始めます。
+- `abortAsync()`は、線の上のバイトを送り終えたところで止めます。
+- `SoftSPI`の`transferAsync()`は、戻る前に送り終えます(DMAが無い)。メニューでSPIをSoftwareにしても、
+  同じスケッチがそのまま動きます。
+- DMAのコードは`transferAsync()`を呼ぶスケッチだけにリンクされます。
+
+V203(144 MHz)で4096バイトを送った時間(2026-11-18):
+
+| SCK | 1バイトずつ`transfer()` | `writeBytes` | `transferBytes`(送受信) | `transferAsync` |
+|---|---|---|---|---|
+| 18 MHz | 3707 µs | 1823 µs | 3018 µs | 1823 µs |
+| 36 MHz | 2802 µs | 915 µs | 2116 µs | 913 µs(送受信も同じ) |
+
+LVGLのflushは、`transferAsync()`で送り、`lv_display_set_flush_wait_cb()`で`finishedAsync()`を待つ形にできます。
+
 ## 知っておくとよいこと
 
 - **クロックは切り上げず、必ず切り下げます。** 48MHzの部品で

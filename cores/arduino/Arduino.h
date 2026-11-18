@@ -45,8 +45,11 @@ uint32_t ch32rv_adc_vdd_millivolts(void) CH32RV_ADC_UNAVAILABLE;
 #ifdef __cplusplus
 /* std::abort / std::malloc and the like. libstdc++'s <string> brings
  * <cstdlib> in; libc++'s does not, and libraries written against GCC cores
- * call std::abort with only <string> (LovyanGFX's result.hpp). */
+ * call std::abort with only <string> (LovyanGFX's result.hpp). The same for
+ * <initializer_list>, which `for (auto x : {1, 2})` needs and GCC cores
+ * bring in through Arduino.h. */
 #include <cstdlib>
+#include <initializer_list>
 #include "api/ArduinoAPI.h"
 using namespace arduino;
 #else

@@ -40,13 +40,17 @@ public:
     /* Two 8-bit frames in the bit order's direction (MSBFIRST: high byte
      * first, LSBFIRST: low byte first), as AVR's SPI does. */
     uint16_t transfer16(uint16_t data) override;
-    void transfer(void *buf, size_t count) override;
+    void transfer(void *buf, size_t count) override
+    {
+        transfer_block((const uint8_t *)buf, (uint8_t *)buf, count);
+    }
     using arduino::HardwareSPI::transfer;
     /* arduino-esp32's buffer and wide-word transfers. A word's bytes go in the
-     * bit order's direction, as transfer16() does. */
+     * bit order's direction, as transfer16() does. No data: 0xFF goes out; no
+     * out: what comes in is dropped. */
     uint32_t transfer32(uint32_t data);
-    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size);
-    void writeBytes(const uint8_t *data, uint32_t size) { transferBytes(data, nullptr, size); }
+    void transferBytes(const uint8_t *data, uint8_t *out, uint32_t size) { transfer_block(data, out, size); }
+    void writeBytes(const uint8_t *data, uint32_t size) { transfer_block(data, nullptr, size); }
     void write(uint8_t data) { (void)transfer(data); }
     void write16(uint16_t data) { (void)transfer16(data); }
     void write32(uint32_t data) { (void)transfer32(data); }
@@ -61,6 +65,11 @@ public:
     void detachInterrupt() override {}
 
 protected:
+    /* Every buffer transfer: tx null sends 0xFF, rx null drops what comes in
+     * (tx == rx is the in-place transfer(buf, n)). Byte by byte through
+     * transfer() here; the hardware bus moves the bytes itself (DMA for long
+     * ones), so a library holding a SPIClass * gets that too. */
+    virtual void transfer_block(const uint8_t *tx, uint8_t *rx, size_t count);
     BitOrder _order = MSBFIRST;
     bool _started = false;
 };

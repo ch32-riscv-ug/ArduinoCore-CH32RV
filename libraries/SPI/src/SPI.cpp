@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_dma.h"
 
 using namespace arduino;
 
@@ -182,6 +183,41 @@ constexpr uint8_t SPI_COUNT = (uint8_t)(sizeof spis / sizeof spis[0]);
 const SpiDesc spis[1] = {};
 const RouteSet route_sets[1] = {};
 constexpr uint8_t SPI_COUNT = 0;
+#endif
+
+/* Each SPI's DMA requests, in the table's order (the variant's
+ * CH32RV_SPIn_DMA_RX / _TX). Only the asynchronous transfer reads it. */
+struct SpiDma {
+    ch32rv_dma_line_t rx;
+    ch32rv_dma_line_t tx;
+};
+#define CH32RV_SPI_NO_DMA { CH32RV_DMA_LINE(0, 0, 0u, 0u, 0u, 0u), CH32RV_DMA_LINE(0, 0, 0u, 0u, 0u, 0u) },
+#if defined(CH32RV_SPI_HAS_1) || defined(CH32RV_SPI_HAS_2) || defined(CH32RV_SPI_HAS_3)
+const SpiDma spi_dma[] = {
+#ifdef CH32RV_SPI_HAS_1
+#ifdef CH32RV_SPI1_DMA_TX
+    { CH32RV_SPI1_DMA_RX, CH32RV_SPI1_DMA_TX },
+#else
+    CH32RV_SPI_NO_DMA
+#endif
+#endif
+#ifdef CH32RV_SPI_HAS_2
+#ifdef CH32RV_SPI2_DMA_TX
+    { CH32RV_SPI2_DMA_RX, CH32RV_SPI2_DMA_TX },
+#else
+    CH32RV_SPI_NO_DMA
+#endif
+#endif
+#ifdef CH32RV_SPI_HAS_3
+#ifdef CH32RV_SPI3_DMA_TX
+    { CH32RV_SPI3_DMA_RX, CH32RV_SPI3_DMA_TX },
+#else
+    CH32RV_SPI_NO_DMA
+#endif
+#endif
+};
+#else
+const SpiDma spi_dma[1] = { CH32RV_SPI_NO_DMA };
 #endif
 
 /* A board with one enabled SPI has one bus object (SPI) and one instance, so
@@ -506,6 +542,205 @@ uint8_t CH32RVSPIClass::transfer(uint8_t data)
     while ((CH32RV_SPI_STATR(_base) & CH32RV_SPI_STATR_RXNE) == 0u) {
     }
     return (uint8_t)CH32RV_SPI_DATAR(_base);
+}
+
+void CH32RVSPIClass::transfer_block(const uint8_t *tx, uint8_t *rx, size_t count)
+{
+    if (!_started || count == 0) {
+        return;
+    }
+    if (_periph) {
+        /* a peripheral, or let go by one: transfer() knows both */
+        ::SPIClass::transfer_block(tx, rx, count);
+        return;
+    }
+    /* One byte at a time. Out only (rx null), the next byte goes in as soon
+     * as the data register is free and the bytes leave back to back; what
+     * comes in is dropped, and the overrun that leaves is cleared at the end.
+     * Both ways, a byte is read before the next goes, so an interrupt between
+     * them never makes the receive side overrun. */
+    const uint32_t base = _base;
+    for (size_t i = 0; i < count; i++) {
+        while ((CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_TXE) == 0u) {
+        }
+        CH32RV_SPI_DATAR(base) = tx ? tx[i] : 0xFFu;
+        if (rx) {
+            while ((CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_RXNE) == 0u) {
+            }
+            rx[i] = (uint8_t)CH32RV_SPI_DATAR(base);
+        }
+    }
+    if (!rx) {
+        while ((CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_TXE) == 0u) {
+        }
+        while (CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_BSY) {
+        }
+        (void)CH32RV_SPI_DATAR(base);
+        (void)CH32RV_SPI_STATR(base);
+    }
+}
+
+/* ------------------------------------------------------ asynchronous */
+/* A transfer moved by DMA while the sketch runs on (transferAsync()): the
+ * transmit channel feeds the data register, the receive one (when recv is
+ * wanted) empties it. The channels are this SPI's fixed requests (on H41x the
+ * DMAMUX channels the variant chose), held from transferAsync() until
+ * finishedAsync() sees the end: another user holding one (a HardwareSerial DMA
+ * buffer on the same channel) makes transferAsync() false. A channel counts
+ * 65535 at most, so a longer one runs in parts, the next started by the
+ * finishedAsync() that sees the one before end. The state is here, not in the
+ * bus object, so a sketch that never calls transferAsync() carries none of
+ * it. */
+namespace {
+struct AsyncRun {
+    const uint8_t *tx;      /* null: 0xFF out */
+    uint8_t *rx;            /* null: what comes in is dropped */
+    size_t left;            /* not yet started */
+    uint16_t part;          /* the part running */
+    bool busy;
+};
+AsyncRun async_runs[SPI_COUNT > 0 ? SPI_COUNT : 1];
+const uint8_t async_ones = 0xFFu;
+
+void async_start(uint32_t base, const SpiDma &d, AsyncRun &run)
+{
+    const uint32_t n = run.left > 0xFFFFu ? 0xFFFFu : (uint32_t)run.left;
+    const uint32_t data = (uint32_t)(uintptr_t)&CH32RV_SPI_DATAR(base);
+    run.part = (uint16_t)n;
+    run.left -= n;
+    CH32RV_SPI_CTLR2(base) = 0;
+    if (run.rx) {
+        ch32rv_dma_close(&d.rx);
+        CH32RV_DMA_PADDR(&d.rx) = data;
+        CH32RV_DMA_MADDR(&d.rx) = (uint32_t)(uintptr_t)run.rx;
+        CH32RV_DMA_CNTR(&d.rx) = n;
+        CH32RV_DMA_CFGR(&d.rx) = CH32RV_DMA_CFGR_MINC | CH32RV_DMA_CFGR_PL(3) | CH32RV_DMA_CFGR_EN;
+    }
+    ch32rv_dma_close(&d.tx);
+    CH32RV_DMA_PADDR(&d.tx) = data;
+    CH32RV_DMA_MADDR(&d.tx) = (uint32_t)(uintptr_t)(run.tx ? run.tx : &async_ones);
+    CH32RV_DMA_CNTR(&d.tx) = n;
+    CH32RV_DMA_CFGR(&d.tx) = (run.tx ? CH32RV_DMA_CFGR_MINC : 0u) | CH32RV_DMA_CFGR_DIR |
+                             CH32RV_DMA_CFGR_PL(2) | CH32RV_DMA_CFGR_EN;
+    CH32RV_SPI_CTLR2(base) = (uint16_t)((run.rx ? CH32RV_SPI_CTLR2_RXDMAEN : 0u) | CH32RV_SPI_CTLR2_TXDMAEN);
+}
+
+/* The bus idle and nothing left in its receive side: out only leaves an
+ * overrun behind. */
+void async_settle(uint32_t base)
+{
+    while ((CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_TXE) == 0u) {
+    }
+    while (CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_BSY) {
+    }
+    CH32RV_SPI_CTLR2(base) = 0;
+    (void)CH32RV_SPI_DATAR(base);
+    (void)CH32RV_SPI_STATR(base);
+}
+
+void async_release(const SpiDma &d, AsyncRun &run)
+{
+    ch32rv_dma_close(&d.tx);
+    ch32rv_dma_release(d.tx.dma, d.tx.channel);
+    if (run.rx) {
+        ch32rv_dma_close(&d.rx);
+        ch32rv_dma_release(d.rx.dma, d.rx.channel);
+    }
+    run.busy = false;
+}
+}  // namespace
+
+bool CH32RVSPIClass::transferAsync(const void *send, void *recv, size_t bytes)
+{
+    if (!_started || _periph || SPI_COUNT == 0) {
+        return false;
+    }
+    const uint8_t index = index_of(_slot);
+    const SpiDma &d = spi_dma[index];
+    AsyncRun &run = async_runs[index];
+    if (d.tx.ch == 0u || run.busy) {
+        return false;
+    }
+    if (bytes == 0) {
+        return true;
+    }
+    if (!ch32rv_dma_claim(d.tx.dma, d.tx.channel)) {
+        return false;
+    }
+    if (recv && !ch32rv_dma_claim(d.rx.dma, d.rx.channel)) {
+        ch32rv_dma_release(d.tx.dma, d.tx.channel);
+        return false;
+    }
+    ch32rv_dma_open(&d.tx);
+    if (recv) {
+        ch32rv_dma_open(&d.rx);
+    }
+    (void)CH32RV_SPI_DATAR(_base);             /* nothing left from before */
+    (void)CH32RV_SPI_STATR(_base);
+    run.tx = (const uint8_t *)send;
+    run.rx = (uint8_t *)recv;
+    run.left = bytes;
+    run.busy = true;
+    async_start(_base, d, run);
+    return true;
+}
+
+bool CH32RVSPIClass::finishedAsync(void)
+{
+    if (SPI_COUNT == 0 || !_slot) {
+        return true;
+    }
+    const uint8_t index = index_of(_slot);
+    const SpiDma &d = spi_dma[index];
+    AsyncRun &run = async_runs[index];
+    if (!run.busy) {
+        return true;
+    }
+    /* The part is over when its last byte is in (both ways) or handed to the
+     * shift register (out only). A transfer error stops the channel: that
+     * ends it too, rather than never. */
+    const ch32rv_dma_line_t &last = run.rx ? d.rx : d.tx;
+    const uint32_t flags = (CH32RV_DMA_INTFR(&last) >> last.shift) & (CH32RV_DMA_TCIF | CH32RV_DMA_TEIF);
+    if (flags == 0u) {
+        return false;
+    }
+    if (!run.rx) {
+        async_settle(_base);
+    }
+    if (run.left && !(flags & CH32RV_DMA_TEIF)) {
+        if (run.tx) {
+            run.tx += run.part;
+        }
+        if (run.rx) {
+            run.rx += run.part;
+        }
+        async_start(_base, d, run);
+        return false;
+    }
+    CH32RV_SPI_CTLR2(_base) = 0;
+    async_release(d, run);
+    return true;
+}
+
+void CH32RVSPIClass::abortAsync(void)
+{
+    if (SPI_COUNT == 0 || !_slot) {
+        return;
+    }
+    const uint8_t index = index_of(_slot);
+    const SpiDma &d = spi_dma[index];
+    AsyncRun &run = async_runs[index];
+    if (!run.busy) {
+        return;
+    }
+    /* The channels stopped first: the byte in the shift register finishes,
+     * nothing after it starts. */
+    CH32RV_DMA_CFGR(&d.tx) = 0;
+    if (run.rx) {
+        CH32RV_DMA_CFGR(&d.rx) = 0;
+    }
+    async_settle(_base);
+    async_release(d, run);
 }
 
 static uint8_t reverse(uint8_t b)

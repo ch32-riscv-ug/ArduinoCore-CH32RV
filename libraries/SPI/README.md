@@ -124,6 +124,51 @@ hardware bus (`CH32RVSPIClass`) and `SoftSPI`. It is not ArduinoCore-API's
 compiles. `SPI`'s type is `CH32RVSPIClass`, so `extern SPIClass SPI;` and
 ESP32's `SPIClass spi(bus)` do not compile.
 
+## Buffer transfers and asynchronous transfers (DMA)
+
+`transfer(buf, n)`, `transferBytes(out, in, n)` and `writeBytes(out, n)`
+(ESP32's names) run, on the hardware bus, as one loop on the data register.
+Out only (`writeBytes`, or `transferBytes` with a null `in`) the next byte goes
+in at once, so the bytes leave back to back. Libraries that take a
+`SPIClass *` (display drivers) get this too.
+
+`transferAsync()` (arduino-pico's name) sends by DMA and returns at once; the
+sketch runs on during the transfer:
+
+```cpp
+SPI.beginTransaction(SPISettings(36000000, MSBFIRST, SPI_MODE0));
+digitalWrite(CS, LOW);
+SPI.transferAsync(pixels, nullptr, sizeof pixels);   // false: it did not start
+// ... draw the next lines ...
+while (!SPI.finishedAsync()) {}                       // gives the DMA channels back at the end
+digitalWrite(CS, HIGH);
+SPI.endTransaction();
+```
+
+- A null `send` sends `0xFF`; a null `recv` drops what comes in. Leave both
+  buffers alone, and the bus to this transfer, until `finishedAsync()` is
+  `true`.
+- `false` when the bus is closed, a peripheral or busy, or when another user
+  (a `HardwareSerial` DMA buffer) holds one of this SPI's DMA channels (V20x's
+  SPI1 shares them with USART3). The channels are held only from
+  `transferAsync()` to the end.
+- Over 65535 bytes it runs in parts, the next started by the
+  `finishedAsync()` that sees one end.
+- `abortAsync()` stops after the byte on the wire.
+- `SoftSPI`'s `transferAsync()` is done before it returns (no DMA), so the
+  same sketch runs with the SPI set to Software in the menu.
+- The DMA code is linked only into a sketch that calls `transferAsync()`.
+
+4096 bytes on V203 at 144 MHz (2026-11-18):
+
+| SCK | `transfer()` a byte at a time | `writeBytes` | `transferBytes` (both ways) | `transferAsync` |
+|---|---|---|---|---|
+| 18 MHz | 3707 µs | 1823 µs | 3018 µs | 1823 µs |
+| 36 MHz | 2802 µs | 915 µs | 2116 µs | 913 µs (both ways too) |
+
+An LVGL flush can send with `transferAsync()` and wait with
+`finishedAsync()` in `lv_display_set_flush_wait_cb()`.
+
 ## Things worth knowing
 
 - **The clock is rounded down, never up.** `SPISettings(1000000, ...)` on a

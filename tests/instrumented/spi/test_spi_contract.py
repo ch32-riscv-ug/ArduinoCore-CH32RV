@@ -216,6 +216,59 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
     assert not read_wrong, " | ".join(read_wrong)
 
 
+BLOCK_BYTES = 64                   # spi.block: over the 32 the CPU moved and DMA took in the trials (2026-11-18)
+BLOCK_HZ = 1_000_000
+BLOCK_HOWS = {"w": "writeBytes", "t": "transferBytes", "b": "transfer(buf, n)",
+              "a": "transferAsync out only", "A": "transferAsync both ways"}
+
+
+def test_spi_block(dut, oep_host, ws_run, record_property):
+    """The buffer transfers: writeBytes, transferBytes and transfer(buf, n) (the hardware bus's own loop, SPI.h),
+    and transferAsync out only and both ways (its DMA; SoftSPI does it at once). Each sends 64 random bytes in mode 0
+    MSB first, CS low around the one call, while the probe's spi-target answers 64 armed bytes: on the wire
+    (WireSkein, spi) MOSI = the bytes, MISO = the armed ones, 512 clocks; what the calls that read gave back
+    (BLK) = the armed bytes. transferAsync must start (BLK 1): the bench's sketch holds no other DMA channel."""
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
+    host = oep_host.host
+    target = SpiTarget(host)
+    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]))
+    wrong = []
+
+    def steps(wait):
+        idle = {cs: 1}
+        with ws_run.section(1, f"{'softspi' if soft else 'spi'} block {sck} {miso} {mosi} {cs}"):
+            for how, name in BLOCK_HOWS.items():
+                out = secrets.token_bytes(BLOCK_BYTES)
+                armed = secrets.token_bytes(BLOCK_BYTES)
+                want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=0, bit_order="msb",
+                            mosi_bytes=out.hex(), miso_bytes=armed.hex(), bits=8 * BLOCK_BYTES,
+                            notices={"sck_outside_cs": "ng"}),
+                        starts(idle), ends(idle)]
+                with ws_run.section(2, name, expect=want):
+                    target.configure(mode=0, bit_order=0)
+                    target.arm(BLOCK_BYTES, armed)
+                    command = f"blk {how} {BLOCK_HZ} {out.hex()}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    m = wait_reply(dut, wait, rb"BLK ([01]) (-|[0-9a-f]+)")
+                    ws_run.reply(m.group(0).decode())
+                    if m.group(1) != b"1":
+                        wrong.append(f"{name}: did not start")
+                    elif m.group(2) != b"-" and bytes.fromhex(m.group(2).decode()) != armed:
+                        wrong.append(f"{name}: read {m.group(2).decode()}, the target was armed with {armed.hex()}")
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("read", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
 SLAVE_HZ = 100_000                 # within what CH32RVSPISlave's README measured (100-200 kHz, one interrupt a byte)
 SOFT_SLAVE_HZ = 50_000             # SoftSPISlave: one interrupt a bit, each within half a period (10 us here)
 SLAVE_SETUP_NS = 20_000            # CS falling to the first clock: the CS interrupt selects the slave

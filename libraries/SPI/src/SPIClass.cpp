@@ -15,13 +15,6 @@ uint16_t SPIClass::transfer16(uint16_t data)
     return (uint16_t)((high << 8) | low);
 }
 
-void SPIClass::transfer(void *buf, size_t count)
-{
-    uint8_t *p = (uint8_t *)buf;
-    for (size_t i = 0; i < count; i++) {
-        p[i] = transfer(p[i]);
-    }
-}
 
 uint32_t SPIClass::transfer32(uint32_t data)
 {
@@ -35,12 +28,12 @@ uint32_t SPIClass::transfer32(uint32_t data)
     return (hi << 16) | lo;
 }
 
-void SPIClass::transferBytes(const uint8_t *data, uint8_t *out, uint32_t size)
+void SPIClass::transfer_block(const uint8_t *tx, uint8_t *rx, size_t count)
 {
-    for (uint32_t i = 0; i < size; i++) {
-        const uint8_t in = transfer(data ? data[i] : 0xFFu);
-        if (out) {
-            out[i] = in;
+    for (size_t i = 0; i < count; i++) {
+        const uint8_t in = transfer(tx ? tx[i] : 0xFFu);
+        if (rx) {
+            rx[i] = in;
         }
     }
 }
