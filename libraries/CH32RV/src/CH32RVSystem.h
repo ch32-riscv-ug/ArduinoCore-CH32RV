@@ -184,6 +184,13 @@ typedef enum {
     CH32RV_WAKEUP_EXTI_LINE,         /* an EXTI line (enableExtiLineWakeup()) */
 } CH32RVWakeupCause;
 
+/* What the RTC counts. */
+typedef enum {
+    CH32RV_RTC_CLOCK_NONE,       /* no RTC on this series                  */
+    CH32RV_RTC_CLOCK_LSI,        /* the internal oscillator, measured      */
+    CH32RV_RTC_CLOCK_LSE,        /* the 32.768 kHz crystal (RTC Clock menu) */
+} CH32RVRtcClock;
+
 /* Where SYSCLK comes from. */
 typedef enum {
     CH32RV_CLOCK_SOURCE_HSI,     /* the internal oscillator               */
@@ -263,6 +270,10 @@ public:
      * which case the same CPU Clock runs off HSI (F_CPU is unchanged, its
      * accuracy is HSI's). */
     CH32RVClockSource clockSource();
+    /* LSE when the RTC Clock menu chose the crystal and it started; LSI
+     * otherwise (the RTC started here if it was not yet: up to 2 s for the
+     * crystal); NONE where the series has no RTC. */
+    CH32RVRtcClock rtcClock();
 
     /* Wake after `us` microseconds (0: no timer). False where the family
      * cannot sleep yet. */

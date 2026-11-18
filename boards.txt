@@ -5,6 +5,7 @@
 menu.pnum=Part Number
 menu.clock=CPU Clock
 menu.clocksrc=Clock Source
+menu.rtcclock=RTC Clock
 menu.opt=Optimize
 menu.rtlib=Floating Point
 menu.parsefloat=parseFloat
@@ -1482,6 +1483,11 @@ CH32V103.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32V103.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V103.menu.rtcclock.lsi.build.rtc_defines=
+CH32V103.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V103.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32V103.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V103.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32V103.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -1794,6 +1800,11 @@ CH32V203.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V203.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V203.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32V203.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V203.menu.rtcclock.lsi.build.rtc_defines=
+CH32V203.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V203.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32V203.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V203.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32V203.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -2031,6 +2042,11 @@ CH32V205.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V205.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V205.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V205.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
+
+CH32V205.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V205.menu.rtcclock.lsi.build.rtc_defines=
+CH32V205.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V205.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32V205.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V205.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -2444,6 +2460,11 @@ CH32V208.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 CH32V208.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V208.menu.clocksrc.hsi.build.clock_src_defines=
 
+CH32V208.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V208.menu.rtcclock.lsi.build.rtc_defines=
+CH32V208.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V208.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32V208.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V208.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32V208.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -2694,6 +2715,11 @@ CH32V303.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V303.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V303.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V303.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
+
+CH32V303.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V303.menu.rtcclock.lsi.build.rtc_defines=
+CH32V303.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V303.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32V303.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V303.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -3025,6 +3051,11 @@ CH32V305.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V305.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V305.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32V305.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V305.menu.rtcclock.lsi.build.rtc_defines=
+CH32V305.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V305.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32V305.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V305.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32V305.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -3300,6 +3331,11 @@ CH32V307.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V307.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V307.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V307.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
+
+CH32V307.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V307.menu.rtcclock.lsi.build.rtc_defines=
+CH32V307.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V307.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32V307.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V307.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -3609,6 +3645,11 @@ CH32V317.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V317.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V317.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32V317.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
+
+CH32V317.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V317.menu.rtcclock.lsi.build.rtc_defines=
+CH32V317.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V317.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32V317.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V317.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -3925,6 +3966,11 @@ CH32V407.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V407.menu.clocksrc.hse=External crystal 25 MHz (HSE; HSI if it does not start)
 CH32V407.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32V407.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V407.menu.rtcclock.lsi.build.rtc_defines=
+CH32V407.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V407.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32V407.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V407.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32V407.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -4237,6 +4283,11 @@ CH32V467.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32V467.menu.clocksrc.hsi.build.clock_src_defines=
 CH32V467.menu.clocksrc.hse=External crystal 25 MHz (HSE; HSI if it does not start)
 CH32V467.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
+
+CH32V467.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32V467.menu.rtcclock.lsi.build.rtc_defines=
+CH32V467.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32V467.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32V467.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32V467.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -6075,6 +6126,11 @@ CH32L103.menu.clocksrc.hsi.build.clock_src_defines=
 CH32L103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32L103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32L103.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32L103.menu.rtcclock.lsi.build.rtc_defines=
+CH32L103.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32L103.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32L103.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32L103.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32L103.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -6734,6 +6790,11 @@ CH32M103.menu.clocksrc.hsi.build.clock_src_defines=
 CH32M103.menu.clocksrc.hse=External crystal 8 MHz (HSE; HSI if it does not start)
 CH32M103.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 
+CH32M103.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32M103.menu.rtcclock.lsi.build.rtc_defines=
+CH32M103.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32M103.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32M103.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32M103.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32M103.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -6927,6 +6988,11 @@ CH32H415.menu.clocksrc.hse=External crystal 25 MHz (HSE; HSI if it does not star
 CH32H415.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 CH32H415.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32H415.menu.clocksrc.hsi.build.clock_src_defines=
+
+CH32H415.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32H415.menu.rtcclock.lsi.build.rtc_defines=
+CH32H415.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32H415.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32H415.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32H415.menu.opt.ozlto.build.optimize_flags=-Oz -flto
@@ -7301,6 +7367,11 @@ CH32H416.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 CH32H416.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32H416.menu.clocksrc.hsi.build.clock_src_defines=
 
+CH32H416.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32H416.menu.rtcclock.lsi.build.rtc_defines=
+CH32H416.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32H416.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
+
 CH32H416.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32H416.menu.opt.ozlto.build.optimize_flags=-Oz -flto
 CH32H416.menu.opt.oslto=Small and faster (-Os) with LTO
@@ -7617,6 +7688,11 @@ CH32H417.menu.clocksrc.hse=External crystal 25 MHz (HSE; HSI if it does not star
 CH32H417.menu.clocksrc.hse.build.clock_src_defines={build.clock_hse_defines}
 CH32H417.menu.clocksrc.hsi=Internal oscillator (HSI)
 CH32H417.menu.clocksrc.hsi.build.clock_src_defines=
+
+CH32H417.menu.rtcclock.lsi=Internal LSI (measured at start)
+CH32H417.menu.rtcclock.lsi.build.rtc_defines=
+CH32H417.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)
+CH32H417.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1
 
 CH32H417.menu.opt.ozlto=Smallest (-Oz) with LTO (default)
 CH32H417.menu.opt.ozlto.build.optimize_flags=-Oz -flto

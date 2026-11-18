@@ -12,14 +12,26 @@
  * RTCSEL 7:6; the reference manual's 3.4.10). */
 #define RCC_BDCTLR      CH32RV_REG32(0x40021024u)
 #define BDCTLR_RTCSEL   (3u << 6)
+#define BDCTLR_LSE      (1u << 6)
 #define BDCTLR_LSI      (2u << 6)
 #define BDCTLR_RTCEN    (1u << 8)
 #elif !defined(CH32RV_RTC_X3X5)
 #define RCC_BDCTLR      CH32RV_REG32(0x40021020u)
 #define BDCTLR_RTCSEL   (3u << 8)
+#define BDCTLR_LSE      (1u << 8)
 #define BDCTLR_LSI      (2u << 8)
 #define BDCTLR_RTCEN    (1u << 15)
 #endif
+/* LSE, the 32.768 kHz crystal on OSC32_IN / OUT: on, and ready (every
+ * family with BDCTLR; the RTC Clock menu's choice, CH32RV_RTC_LSE). */
+#define BDCTLR_LSEON    (1u << 0)
+#define BDCTLR_LSERDY   (1u << 1)
+#if defined(CH32RV_RTC_LSE) && defined(CH32RV_RTC_X3X5)
+#error the RTC Clock menu has no LSE on CH32X305 / X315
+#endif
+/* How long the crystal gets to start: typically under a second; 2 s is the
+ * common worst case for a 32.768 kHz crystal at start-up. */
+#define LSE_START_MS    2000u
 #define BDCTLR_BDRST    (1u << 16)
 #define PWR_CTLR        CH32RV_REG32(0x40007000u)
 #define PWR_CTLR_DBP    (1u << 8)
@@ -45,6 +57,7 @@
 void ch32rv_rtc_alarm_rearm(void) __attribute__((weak));
 
 static uint8_t rtc_up;
+static uint8_t rtc_lse;         /* the RTC counts LSE (else LSI) */
 static uint32_t rtc_psc;        /* prescaler: RTCCLK ticks per second - 1 */
 
 static void wait_off(void)
@@ -94,43 +107,72 @@ static uint32_t measure_lsi(void)
     return ticks * 1000000u / (t1 - t0);
 }
 
+#ifdef CH32RV_RTC_X3X5
 /* Whether the RTC already counts LSI (an earlier boot started it). */
 static int rtc_on_lsi(void)
 {
-#ifdef CH32RV_RTC_X3X5
     return (RTC_CTLRL32 & (CTLRL_RTCEN | CTLRL_RTCSEL)) == CTLRL_RTCEN;
-#else
-    return (RCC_BDCTLR & (BDCTLR_RTCSEL | BDCTLR_RTCEN)) == (BDCTLR_LSI | BDCTLR_RTCEN);
-#endif
 }
 
 /* LSI as the RTC's clock, and the clock on. */
 static void rtc_clock_lsi(void)
 {
-#ifdef CH32RV_RTC_X3X5
     RTC_CTLRL32 &= ~CTLRL_RTCSEL;
     RTC_CTLRL32 |= CTLRL_RTCEN;
+}
 #else
+/* Whether the RTC already counts `sel` (an earlier boot started it). */
+static int rtc_on(uint32_t sel)
+{
+    return (RCC_BDCTLR & (BDCTLR_RTCSEL | BDCTLR_RTCEN)) == (sel | BDCTLR_RTCEN);
+}
+#define rtc_on_lsi() rtc_on(BDCTLR_LSI)
+
+/* `sel` as the RTC's clock, and the clock on. */
+static void rtc_clock(uint32_t sel)
+{
     /* The backup domain is reset only when RTCSEL holds another clock (it
      * cannot be changed otherwise): after a power-up it is 0 and written
      * as it is, so the sketch's backup words written before the RTC's
-     * first start survive it. */
-    if ((RCC_BDCTLR & BDCTLR_RTCSEL) != 0u && (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI) {
+     * first start survive it. The reset takes LSEON with it: LSE is turned
+     * on after it. */
+    if ((RCC_BDCTLR & BDCTLR_RTCSEL) != 0u && (RCC_BDCTLR & BDCTLR_RTCSEL) != sel) {
         RCC_BDCTLR |= BDCTLR_BDRST;
         RCC_BDCTLR &= ~BDCTLR_BDRST;
     }
     /* Each field read back before the next write: on CH32H417 RTCSEL written
      * right after the reset was lost (RTCEN alone stuck, the RTC had no clock;
      * its EVT waits ten NOPs between the two, 2026-11-14). */
-    for (uint32_t spin = 0; (RCC_BDCTLR & BDCTLR_RTCSEL) != BDCTLR_LSI && spin < 1000u; spin++) {
-        RCC_BDCTLR = (RCC_BDCTLR & ~BDCTLR_RTCSEL) | BDCTLR_LSI;
+    for (uint32_t spin = 0; (RCC_BDCTLR & BDCTLR_RTCSEL) != sel && spin < 1000u; spin++) {
+        RCC_BDCTLR = (RCC_BDCTLR & ~BDCTLR_RTCSEL) | sel;
     }
     RCC_BDCTLR |= BDCTLR_RTCEN;                /* a write of its own, or it does not stick */
     for (uint32_t spin = 0; !(RCC_BDCTLR & BDCTLR_RTCEN) && spin < 1000u; spin++) {
         RCC_BDCTLR |= BDCTLR_RTCEN;
     }
-#endif
 }
+#define rtc_clock_lsi() rtc_clock(BDCTLR_LSI)
+#endif
+
+#ifdef CH32RV_RTC_LSE
+/* The crystal on and running: LSERDY within LSE_START_MS. Left off when it
+ * does not start, and the RTC counts LSI instead. */
+static int lse_start(void)
+{
+    if (RCC_BDCTLR & BDCTLR_LSERDY) {
+        return 1;
+    }
+    RCC_BDCTLR |= BDCTLR_LSEON;
+    const uint32_t t0 = millis();
+    while (!(RCC_BDCTLR & BDCTLR_LSERDY)) {
+        if (millis() - t0 >= LSE_START_MS) {
+            RCC_BDCTLR &= ~BDCTLR_LSEON;
+            return 0;
+        }
+    }
+    return 1;
+}
+#endif
 
 int ch32rv_rtc_begin(void)
 {
@@ -138,20 +180,43 @@ int ch32rv_rtc_begin(void)
         return 1;
     }
     ch32rv_rtc_domain_open();
-    CH32RV_RCC_RSTSCKR |= 1u;                  /* LSION: not kept by a reset */
-    for (uint32_t spin = 0; !(CH32RV_RCC_RSTSCKR & 2u) && spin < 1000000u; spin++) {
-    }
-    if (rtc_on_lsi() && BKP_DR(1) == BKP_MARKER) {
-        /* Running since an earlier boot: leave it counting. */
+#ifdef CH32RV_RTC_LSE
+    /* The crystal: running since an earlier boot (the backup domain keeps
+     * LSE and the RTC across resets and on VBAT), or started now. */
+    if (rtc_on(BDCTLR_LSE) && (RCC_BDCTLR & BDCTLR_LSERDY) && BKP_DR(1) == BKP_MARKER) {
         rtc_psc = BKP_DR(2) | ((uint32_t)BKP_DR(3) << 16);
         ch32rv_rtc_resync();
+        rtc_lse = 1;
         rtc_up = 1;
         return 1;
     }
-    rtc_clock_lsi();
+    if (lse_start()) {
+        rtc_clock(BDCTLR_LSE);
+        /* the reset rtc_clock() may have made took LSEON: on again */
+        if (lse_start()) {
+            rtc_lse = 1;
+            rtc_psc = 32767u;
+        }
+    }
+    if (!rtc_lse)
+#endif
+    {
+        CH32RV_RCC_RSTSCKR |= 1u;              /* LSION: not kept by a reset */
+        for (uint32_t spin = 0; !(CH32RV_RCC_RSTSCKR & 2u) && spin < 1000000u; spin++) {
+        }
+        if (rtc_on_lsi() && BKP_DR(1) == BKP_MARKER) {
+            /* Running since an earlier boot: leave it counting. */
+            rtc_psc = BKP_DR(2) | ((uint32_t)BKP_DR(3) << 16);
+            ch32rv_rtc_resync();
+            rtc_up = 1;
+            return 1;
+        }
+        rtc_clock_lsi();
+        ch32rv_rtc_resync();
+        const uint32_t lsi = measure_lsi();
+        rtc_psc = (lsi ? lsi : 40000u) - 1u;
+    }
     ch32rv_rtc_resync();
-    const uint32_t lsi = measure_lsi();
-    rtc_psc = (lsi ? lsi : 40000u) - 1u;
     config_begin();
     RTC(0x08) = (uint16_t)(rtc_psc >> 16);
     RTC(0x0C) = (uint16_t)rtc_psc;
@@ -165,6 +230,11 @@ int ch32rv_rtc_begin(void)
     ch32rv_rtc_domain_seal();
     rtc_up = 1;
     return 1;
+}
+
+int ch32rv_rtc_on_lse(void)
+{
+    return rtc_lse;
 }
 
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms)
@@ -258,6 +328,11 @@ void ch32rv_rtc_alarm(uint32_t sec)
 #else
 
 int ch32rv_rtc_begin(void)
+{
+    return 0;
+}
+
+int ch32rv_rtc_on_lse(void)
 {
     return 0;
 }

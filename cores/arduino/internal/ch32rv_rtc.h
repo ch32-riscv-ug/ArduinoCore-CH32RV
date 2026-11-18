@@ -62,8 +62,12 @@ extern "C" {
 #endif
 
 /* Start the RTC if it is not already running (idempotent; the first start
- * of all measures LSI, about 50 ms). 0 where there is none. */
+ * of all measures LSI, about 50 ms; with the RTC Clock menu's LSE it starts
+ * the crystal instead, up to 2 s, and counts LSI if that does not start).
+ * 0 where there is none. */
 int ch32rv_rtc_begin(void);
+/* 1 when the running RTC counts LSE, the 32.768 kHz crystal. */
+int ch32rv_rtc_on_lse(void);
 /* The counter and the milliseconds under it - the RTC's own, without the
  * settimeofday() offset (the low-power code times sleeps with this). */
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms);

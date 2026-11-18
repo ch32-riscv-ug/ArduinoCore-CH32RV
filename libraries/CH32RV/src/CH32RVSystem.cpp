@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_stack.h"
+#include "internal/ch32rv_rtc.h"
 
 #include <stdint.h>
 
@@ -180,6 +181,14 @@ void CH32RVSystem::wdtFeed()
 #ifdef CH32RV_IWDG_BASE
     CH32RV_IWDG_CTLR = CH32RV_IWDG_KEY_FEED;
 #endif
+}
+
+CH32RVRtcClock CH32RVSystem::rtcClock()
+{
+    if (!ch32rv_rtc_begin()) {
+        return CH32RV_RTC_CLOCK_NONE;
+    }
+    return ch32rv_rtc_on_lse() ? CH32RV_RTC_CLOCK_LSE : CH32RV_RTC_CLOCK_LSI;
 }
 
 CH32RVClockSource CH32RVSystem::clockSource()

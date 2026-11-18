@@ -22,6 +22,7 @@ CH32RV.setBackupRegister(0, 42);         // 16-bit words that survive a reset (R
 CH32RV.getBackupRegister(0);
 CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s seconds or a struct tm
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
+CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE (RTC Clock menu)
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
 CH32RV.getFreeHeap();
@@ -82,6 +83,14 @@ analogReadVref();                        // the internal reference, on analogRea
 - **`clockSource()`** says HSE only when the Clock Source menu chose the crystal
   and it started. A crystal that does not start leaves the same CPU Clock on HSI
   (`F_CPU` unchanged, at HSI's accuracy).
+- **`rtcClock()`** says LSE only when the RTC Clock menu chose the 32.768 kHz
+  crystal (LSE) and it started. One that does not start within 2 s leaves the
+  RTC on the measured LSI as before. LSE drifts seconds a day at most, LSI can
+  drift minutes. Most WCH EVT boards (V103, V20x, V205, V30x, L103, H417) and
+  the nanoCH32H417 carry one on PC14 / PC15 (seen starting on the V103 EVT,
+  the V203 bench board and a nanoCH32H417, 2026-11-18). Changing the menu
+  clears the RTC's time and the BKP words (choosing the RTC's clock again
+  takes a backup domain reset). X305/X315 cannot choose LSE yet.
 - **Voltage and temperature are computed from typical values.** The internal
   reference (Vrefint) is the datasheet's typical value, within a few percent.
   The temperature is uncalibrated and can be tens of °C off on some series
@@ -115,7 +124,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - V103 sleeps since 2026-11-18: its first `lightSleep(200 ms)` never returned because a plain WFI is not ended by SysTick on QingKe V3A, so the part under a second is waited out awake there (a trial sketch: 200 ms four times, 1.5 s once; the test cases wait for the probe's upload speed fix). H41x, V20x, V205, V30x and V407 were run; X305/X315 and M030 are built and not yet run.
   - `CH32RV_SLEEP_UNSUPPORTED` remains for a family added later without its sleep.
 - **On the RTC families `time()` is the RTC.**
-  - It runs at 1 Hz from LSI, measured once, and the time survives resets and standby. After a power cut it starts again from 1970.
+  - It runs at 1 Hz from LSI, measured once (or from the LSE crystal with the RTC Clock menu), and the time survives resets and standby. After a power cut it starts again from 1970.
   - `settimeofday()` sets it, including through SNTP's `configTime()`.
   - BKP DR1-DR4 are the core's. H41x and X305/X315 have no BKP data registers: the core keeps them in RAM, which a reset keeps, so after a power cut with a VBAT battery their RTC starts again too. X305/X315 has no backup domain at all (its RTC's clock bits are in the RTC itself).
 - **Nothing sleeps by itself.** Only these calls do. `Serial` finishes sending first.

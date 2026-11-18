@@ -253,7 +253,7 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
+MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.rtcclock=RTC Clock\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
                + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
@@ -995,6 +995,29 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
             f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
             f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
             f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
+
+
+# Families whose RTC can count LSE, the 32.768 kHz crystal (clock_sources.csv's
+# RTC / LSE rows: RCC BDCTLR's RTCSEL with LSEON / LSERDY). Filled in main().
+RTC_LSE_FAMILIES: set = set()
+
+
+def load_rtc_lse_families(tables: pathlib.Path) -> set:
+    return {r["family"] for r in read_table(tables, "clock_sources.csv", ("family", "consumer", "option"))
+            if r["consumer"] == "RTC" and r["option"] == "LSE"}
+
+
+def rtcclock_menu(board: str, series: str) -> list[str]:
+    """RTC Clock: LSI measured against the system clock (the default, every
+    board), or the 32.768 kHz crystal most EVT boards carry on OSC32_IN /
+    OUT (PC14 / PC15)."""
+    if SERIES_CONFIG[series]["family"] not in RTC_LSE_FAMILIES:
+        return []
+    return [f"{board}.menu.rtcclock.lsi=Internal LSI (measured at start)",
+            f"{board}.menu.rtcclock.lsi.build.rtc_defines=",
+            f"{board}.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)",
+            f"{board}.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1",
+            ""]
 
 
 # Series -> True where every QingKe core it has carries WCH's XW compressed
@@ -5259,6 +5282,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     elif hse_series(series):
         lines += clocksrc_menu(board, series)
         lines.append("")
+    lines += rtcclock_menu(board, series)
     lines += opt_menu(board)
     lines.append("")
     lines += rtlib_menu(board, min_flash)
@@ -5331,6 +5355,7 @@ def main() -> int:
     timer_pads = load_timer_pads(args.tables)
     timer_remaps = load_timer_remap_fields(args.tables)
     uart_dma = load_uart_dma(args.tables)
+    RTC_LSE_FAMILIES.update(load_rtc_lse_families(args.tables))
     SPI_DMA.update(load_spi_dma(args.tables))
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
