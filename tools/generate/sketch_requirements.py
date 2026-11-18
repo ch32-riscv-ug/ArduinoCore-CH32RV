@@ -106,7 +106,7 @@ def series_capabilities() -> dict:
 def series_defines() -> dict:
     """series -> the names its variant header #defines (pads such as PF4,
     analog pins such as A0, default routes such as CH32RV_SPI1_SCK)."""
-    return {header.parent.name: frozenset(re.findall(r"^#define\s+(\w+)",
+    return {header.parent.name: frozenset(re.findall(r"^(?:#define\s+|static const \w+ )(\w+)",
                                                      header.read_text(encoding="utf-8"), re.M))
             for header in sorted((REPO / "variants").glob("*/pins_arduino.h"))}
 

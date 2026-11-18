@@ -9,7 +9,7 @@
 
 // en: CS is a separate GPIO; some variants have no default SS alias.
 // ja: CSは別のGPIOで指定する。SSの既定別名がないvariantもある。
-#ifdef SS
+#ifdef PIN_SPI_SS
 static const uint8_t CS_PIN = SS;
 #else
 static const uint8_t CS_PIN = PA4;

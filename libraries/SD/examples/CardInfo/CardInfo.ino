@@ -9,7 +9,7 @@
 // en: The card's chip select. SCK, MISO and MOSI are the SPI bus's (SPI.begin()).
 // ja: カードのチップセレクト。SCK・MISO・MOSIはSPIのバスのもの（SPI.begin()）。
 #ifndef SD_CS_PIN
-#ifdef SS
+#ifdef PIN_SPI_SS
 #define SD_CS_PIN SS
 #else
 #define SD_CS_PIN PA4   // en: a series without SS (X035): any free pin / ja: SSの無い系列（X035）: 空いているどのピンでも

@@ -39,7 +39,7 @@ void setup()
 
     describe(LED_BUILTIN, "LED_BUILTIN");
 #endif
-#ifdef A0
+#ifdef PIN_A0
 
     describe(A0, "A0");
 #endif

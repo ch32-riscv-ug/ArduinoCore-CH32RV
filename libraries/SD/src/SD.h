@@ -28,7 +28,7 @@ public:
      * (FSConfig.h). With format_if_empty a card with no FAT volume is
      * formatted (where format() is built in). */
     bool begin(uint8_t ssPin
-#ifdef SS
+#ifdef PIN_SPI_SS
                = SS
 #endif
                , SPIClass &spi = SPI, uint32_t frequency = 4000000, const char *mountpoint = "/sd",

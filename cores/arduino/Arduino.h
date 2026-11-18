@@ -43,11 +43,19 @@ uint32_t ch32rv_adc_vdd_millivolts(void) CH32RV_ADC_UNAVAILABLE;
 #endif
 
 #ifdef __cplusplus
+/* std::abort / std::malloc and the like. libstdc++'s <string> brings
+ * <cstdlib> in; libc++'s does not, and libraries written against GCC cores
+ * call std::abort with only <string> (LovyanGFX's result.hpp). */
+#include <cstdlib>
 #include "api/ArduinoAPI.h"
 using namespace arduino;
 #else
 #include "api/Common.h"
 #endif
+/* itoa / ltoa / utoa / ultoa, which the Arduino API declares and libraries
+ * call without an include of their own (AVR has them in stdlib.h, ESP32 in
+ * stdlib_noniso.h). picolibc has the int forms; itoa.c the long ones. */
+#include "api/itoa.h"
 
 /* Background work for the USB device stack. CH32RVUsbDevice defines it and
  * attaches it as a system service in begin() (ch32rv_service.h), so delay()

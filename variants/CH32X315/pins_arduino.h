@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include <stdint.h>   /* uint8_t: A0, SDA, MOSI and the like are constants */
 #include "internal/ch32rv_pins.h"
 
 #define CH32RV_VARIANT_CH32X315 1
@@ -214,18 +215,30 @@
 
 /* ---- ADC1 analog inputs (12 channels) ---- */
 #define NUM_ANALOG_INPUTS 12
-#define A0   PA2
-#define A1   PA3
-#define A2   PA4
-#define A3   PA5
-#define A4   PA6
-#define A5   PA7
-#define A6   PB0
-#define A7   PB1
-#define A8   PB2
-#define A9   PB3
-#define A10  PB4
-#define A11  PB5
+#define PIN_A0   PA2
+#define PIN_A1   PA3
+#define PIN_A2   PA4
+#define PIN_A3   PA5
+#define PIN_A4   PA6
+#define PIN_A5   PA7
+#define PIN_A6   PB0
+#define PIN_A7   PB1
+#define PIN_A8   PB2
+#define PIN_A9   PB3
+#define PIN_A10  PB4
+#define PIN_A11  PB5
+static const uint8_t A0 = PIN_A0;
+static const uint8_t A1 = PIN_A1;
+static const uint8_t A2 = PIN_A2;
+static const uint8_t A3 = PIN_A3;
+static const uint8_t A4 = PIN_A4;
+static const uint8_t A5 = PIN_A5;
+static const uint8_t A6 = PIN_A6;
+static const uint8_t A7 = PIN_A7;
+static const uint8_t A8 = PIN_A8;
+static const uint8_t A9 = PIN_A9;
+static const uint8_t A10 = PIN_A10;
+static const uint8_t A11 = PIN_A11;
 #define CH32RV_PIN_TO_ADC_CHANNEL(p) ( \
     (p) == PA2 ? 0 : \
     (p) == PA3 ? 1 : \
@@ -558,9 +571,9 @@
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
 #endif
-#if defined(PIN_SERIAL_TX) && !defined(TX)
-#define TX PIN_SERIAL_TX
-#define RX PIN_SERIAL_RX
+#if defined(PIN_SERIAL_TX)
+static const uint8_t TX = PIN_SERIAL_TX;
+static const uint8_t RX = PIN_SERIAL_RX;
 #endif
 
 /* ---- I2C pins (device-data; one route per instance,
@@ -663,9 +676,9 @@
 #ifndef PIN_WIRE_SCL
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
 #define PIN_WIRE_SDA CH32RV_I2C1_SDA
-#define SCL PIN_WIRE_SCL
-#define SDA PIN_WIRE_SDA
 #endif
+static const uint8_t SCL = PIN_WIRE_SCL;
+static const uint8_t SDA = PIN_WIRE_SDA;
 
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
@@ -844,11 +857,13 @@
 #define PIN_SPI_SCK CH32RV_SPI1_SCK
 #define PIN_SPI_MISO CH32RV_SPI1_MISO
 #define PIN_SPI_MOSI CH32RV_SPI1_MOSI
-#define SCK PIN_SPI_SCK
-#define MISO PIN_SPI_MISO
-#define MOSI PIN_SPI_MOSI
 #define PIN_SPI_SS PA4
-#define SS PIN_SPI_SS
+#endif
+static const uint8_t SCK = PIN_SPI_SCK;
+static const uint8_t MISO = PIN_SPI_MISO;
+static const uint8_t MOSI = PIN_SPI_MOSI;
+#if defined(PIN_SPI_SS)
+static const uint8_t SS = PIN_SPI_SS;
 #endif
 
 /* ---- PWM: 27 pads on TIM1/TIM2/TIM3, per-pin alternate function ---- */

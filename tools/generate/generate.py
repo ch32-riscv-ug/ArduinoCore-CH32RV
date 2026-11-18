@@ -4042,7 +4042,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" *")
         for line in textwrap.wrap(f"Behaviour, errata {eid}: {spec['note']}", 72):
             out.append(f" * {line}")
-    out += [" */", "#pragma once", "", '#include "internal/ch32rv_pins.h"', ""]
+    out += [" */", "#pragma once", "", '#include <stdint.h>   /* uint8_t: A0, SDA, MOSI and the like are constants */', '#include "internal/ch32rv_pins.h"', ""]
 
     out.append(f"#define CH32RV_VARIANT_{series} 1")
     out.append(f'#define CH32RV_SERIES_NAME "{series}"   /* CH32RV.getChipModel() */')
@@ -4216,9 +4216,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"/* Channels {gaps} are not bonded out in this series. */")
         note = "   /* highest channel + 1; see the gaps above */" if gaps else ""
         out.append(f"#define NUM_ANALOG_INPUTS {top}{note}")
+        # A<n> is a constant, not a macro, as on AVR and ESP32: a macro A8
+        # rewrites any library's own A8 (LovyanGFX's colour types have an
+        # A8() member). PIN_A<n> is the macro, for #ifdef.
         for ch in sorted(channels):
             port, bit = channels[ch]
-            out.append(f"#define A{ch:<3} {pad_name(port, bit)}")
+            out.append(f"#define PIN_A{ch:<3} {pad_name(port, bit)}")
+        for ch in sorted(channels):
+            out.append(f"static const uint8_t A{ch} = PIN_A{ch};")
         out.append("#define CH32RV_PIN_TO_ADC_CHANNEL(p) ( \\")
         for ch in sorted(channels):
             port, bit = channels[ch]
@@ -4441,9 +4446,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define PIN_SERIAL_TX CH32RV_SERIAL{first}_TX")
         out.append(f"#define PIN_SERIAL_RX CH32RV_SERIAL{first}_RX")
         out.append("#endif")
-        out.append("#if defined(PIN_SERIAL_TX) && !defined(TX)")
-        out.append("#define TX PIN_SERIAL_TX")
-        out.append("#define RX PIN_SERIAL_RX")
+        # TX / RX ... SS are constants, as on AVR and ESP32, not macros: a
+        # macro MOSI rewrites a library's own parameter named MOSI
+        # (Adafruit_ST7796S). The PIN_* names are the macros, for #ifdef.
+        out.append("#if defined(PIN_SERIAL_TX)")
+        out.append("static const uint8_t TX = PIN_SERIAL_TX;")
+        out.append("static const uint8_t RX = PIN_SERIAL_RX;")
         out.append("#endif")
         out.append("")
 
@@ -4523,9 +4531,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#ifndef PIN_WIRE_SCL")
         out.append(f"#define PIN_WIRE_SCL CH32RV_I2C{first}_SCL")
         out.append(f"#define PIN_WIRE_SDA CH32RV_I2C{first}_SDA")
-        out.append("#define SCL PIN_WIRE_SCL")
-        out.append("#define SDA PIN_WIRE_SDA")
         out.append("#endif")
+        out.append("static const uint8_t SCL = PIN_WIRE_SCL;")
+        out.append("static const uint8_t SDA = PIN_WIRE_SDA;")
         out.append("")
 
     # --- SPI ---
@@ -4599,9 +4607,6 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define PIN_SPI_SCK CH32RV_SPI{first}_SCK")
         out.append(f"#define PIN_SPI_MISO CH32RV_SPI{first}_MISO")
         out.append(f"#define PIN_SPI_MOSI CH32RV_SPI{first}_MOSI")
-        out.append("#define SCK PIN_SPI_SCK")
-        out.append("#define MISO PIN_SPI_MISO")
-        out.append("#define MOSI PIN_SPI_MOSI")
         # SS is the peripheral's own NSS pad on the route that was chosen. The
         # driver never uses it - chip select is a GPIO - but libraries expect
         # the name to exist, and this is the pad their wiring diagrams show.
@@ -4634,11 +4639,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append("/* No SS: device-data names no NSS pad on this route. */")
         if own:
             out.append("#endif")
-            out.append("#if defined(PIN_SPI_SS)")
-            out.append("#define SS PIN_SPI_SS")
-            out.append("#endif")
-        elif nss is not None:
-            out.append("#define SS PIN_SPI_SS")
+        out.append("#endif")
+        out.append("static const uint8_t SCK = PIN_SPI_SCK;")
+        out.append("static const uint8_t MISO = PIN_SPI_MISO;")
+        out.append("static const uint8_t MOSI = PIN_SPI_MOSI;")
+        out.append("#if defined(PIN_SPI_SS)")
+        out.append("static const uint8_t SS = PIN_SPI_SS;")
         out.append("#endif")
         out.append("")
 
