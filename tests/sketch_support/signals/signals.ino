@@ -63,6 +63,10 @@
  *   icread                 EDGES <n> <lost> <tick Hz> <first rising> <ticks
  *                          from each edge to the next>...
  *   icoff                  ICOFF
+ *   pcount <pin> <edge> <ms>
+ *                          PCOUNT <ok> <count> <us>: CH32RVPulseCounter (edge 1
+ *                          RISING, 2 FALLING, 3 CHANGE) counted over ms, the
+ *                          time it took by micros()
  *   tick <pin> <us> <once> TICK <active>: a Ticker toggling pin every us, or
  *                          (once 1) pin high now and low after us
  *   tickoff                TICKOFF
@@ -74,6 +78,7 @@
 #include <CH32RVTimerInput.h>
 #include <CH32RVTimerOutput.h>
 #include <SerialDMSeq.h>
+#include "internal/ch32rv_irq.h"
 #include <Ticker.h>
 #include <Servo.h>
 #include <string.h>
@@ -123,6 +128,7 @@ static CH32RVOutputCompare compare;
 #endif
 #ifdef SIGNALS_EDGE_CAPTURE
 static CH32RVInputCapture edgeCapture;
+static CH32RVPulseCounter pulseCounter;
 #endif
 #ifdef SIGNALS_TICKER
 static Ticker ticker;
@@ -238,6 +244,29 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "icoff")) {
         edgeCapture.end();
         SerialDMSeq.println("ICOFF");
+    } else if (!strcmp(argv[0], "pcount") && argc == 4) {
+        const int edge = a2 == 1 ? RISING : a2 == 2 ? FALLING : CHANGE;
+        const bool ok = pulseCounter.begin(pin, edge);
+        uint64_t n = 0;
+        uint32_t took = 0;
+        if (ok) {
+            const uint32_t irq = ch32rv_irq_save();
+            pulseCounter.clear();
+            const uint32_t t0 = micros();
+            ch32rv_irq_restore(irq);
+            delay((uint32_t)a3);
+            const uint32_t irq2 = ch32rv_irq_save();
+            n = pulseCounter.count();
+            took = micros() - t0;
+            ch32rv_irq_restore(irq2);
+        }
+        pulseCounter.end();
+        SerialDMSeq.print("PCOUNT ");
+        SerialDMSeq.print(ok ? 1 : 0);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print((unsigned long)n);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println((unsigned long)took);
 #endif
 #ifdef SIGNALS_TICKER
     } else if (!strcmp(argv[0], "tick") && argc == 4) {

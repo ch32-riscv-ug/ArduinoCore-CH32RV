@@ -169,6 +169,12 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pulse-counter"        # CH32RVPulseCounter: the probe's 20 kHz counted by the timer (external clock mode 1)
+test = "signals::test_pulse_counter"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "timer-pulse-in"       # timerPulseIn() (CH32RVTimerInput): pulseIn() by a timer's capture, opt-in
 test = "signals::test_timer_pulse_in"
 scope = "series"

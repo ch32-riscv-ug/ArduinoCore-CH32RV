@@ -70,7 +70,7 @@
 | 出力比較（Output Compare） | 全系列 | 実装済み（2026-11-17、`CH32RVOutputCompare`。ベンチ未確認） | 自動 | プローブ。signals::test_output_compare | libraries/CH32RVTimerOutput, PS:59, EVT TIM/Output_Compare_Mode |
 | 6 ステップ PWM、位相シフト PWM、中央揃え、独立出力 | V003、V103、V20x、V205、V30x、V407、M030 | 2 | 自動 | プローブ | EVT TIM/PWM_6_Step, PWM_Phase-shifted |
 | タイマーの同期・連結（マスター／スレーブ、外部トリガで開始） | 全系列 | 2 | 自動 | プローブ | UNUSED:84, TODO:301 |
-| ETR（外部クロック）・外部パルスの計数 | 全系列 | 2 | 自動 | プローブ（クロックを入れる） | PS:48, FC:69 |
+| ETR（外部クロック）・外部パルスの計数 | 全系列 | 一部実装（2026-11-18、`CH32RVPulseCounter`: CH1 / CH2 の端子で外部クロックモード 1、64 ビット。V203・V205・H417 で signals::test_pulse_counter。ETR の端子はコアの端子の表に無く未対応） | 自動 | プローブ（クロックを入れる） | PS:48, FC:69 |
 | タイマーの DMA バースト | 全系列 | 2 | 自動 | プローブ | PS:48, EVT TIM/TIM_DMA |
 | 入力捕捉: エッジごとの時刻・通知 | 全系列 | 実装済み（2026-11-17、CH32RVTimerInput の `CH32RVInputCapture`、キューか callback。ベンチ未確認） | 自動 | プローブ。signals::test_edge_capture | libraries/CH32RVTimerInput, PS:57, FC:68 |
 | 両エッジの捕捉・CAPLVL（捕捉時のレベル） | M030、H417、V003、V00x、X035、V205、L103、X315 | 2 | 自動 | プローブ | UNUSED:42,85, EVT TIM/Bothedge_Capture |

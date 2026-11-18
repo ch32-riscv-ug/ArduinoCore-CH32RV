@@ -17,7 +17,8 @@ constexpr uint16_t ICF_MASK = 0xF0F0;
 /* CCER: CCxE enables the capture, CCxP picks the falling edge. */
 constexpr uint16_t CC1E = 0x0001, CC1P = 0x0002, CC2E = 0x0010, CC2P = 0x0020;
 /* SMCFGR: TS (the trigger) and SMS (the slave mode). */
-constexpr uint16_t TS_TI1FP1 = 5u << 4, TS_TI2FP2 = 6u << 4;
+constexpr uint16_t TS_TI1F_ED = 4u << 4, TS_TI1FP1 = 5u << 4, TS_TI2FP2 = 6u << 4;
+constexpr uint16_t SMS_EXTERNAL1 = 7;
 constexpr uint16_t SMS_ENCODER_TI2 = 1, SMS_ENCODER_TI1 = 2, SMS_ENCODER_BOTH = 3, SMS_RESET = 4;
 
 /* The n-th way `pin` reaches channel 1 or 2 of a timer, on any route. */
@@ -381,6 +382,118 @@ bool CH32RVEncoder::resumeCount()
 }
 
 void CH32RVEncoder::setFilter(uint16_t cycles)
+{
+    filterFor(cycles, _filter, _ckd);
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        applyFilter(_base, _filter, _ckd);
+    }
+}
+
+/* ---- CH32RVPulseCounter ---- */
+
+bool CH32RVPulseCounter::begin(int pin, int edge, uint8_t mode)
+{
+    end();
+    if (edge != RISING && edge != FALLING && edge != CHANGE) {
+        return false;
+    }
+    CH32RVTimerPad pad;
+    for (uint8_t i = 0; channelPad(pin, i, pad); i++) {
+        if ((edge != CHANGE || pad.channel == 1) && begin(pad, edge, mode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPulseCounter::begin(const CH32RVTimerPad &pad, int edge, uint8_t mode)
+{
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
+    _wide = cap->counter_bits == 32u;
+    const CH32RVTimerRequest request = {
+        pad.timer, CH32RV_TIMER_WHOLE,
+        {0, _wide ? 0xFFFFFFFFu : 0xFFFFu, (uint16_t)(_ckd << CKD_SHIFT)}
+    };
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
+    inputPin(pad, mode);
+    _base = cap->register_base;
+    /* The channel an input (its own pad), its filter; TI1FP1 / TI2FP2 (the
+     * polarity bit picks the falling edge) or TI1F_ED (every edge of TI1) the
+     * counter's clock. */
+    const bool one = pad.channel == 1;
+    CH32RV_TIM_CCER(_base) = 0;
+    CH32RV_TIM_CHCTLR1(_base) = (uint16_t)(one ? (CC1S_TI1 | (_filter << 4)) : (CC2S_TI2 | (_filter << 12)));
+    CH32RV_TIM_CCER(_base) = (uint16_t)(edge == FALLING ? (one ? CC1P : CC2P) : 0u);
+    CH32RV_TIM_SMCFGR(_base) = (uint16_t)((edge == CHANGE ? TS_TI1F_ED : one ? TS_TI1FP1 : TS_TI2FP2) | SMS_EXTERNAL1);
+    if (_wide) {
+        CH32RV_TIM_CNT32(_base) = 0;
+    } else {
+        CH32RV_TIM_CNT(_base) = 0;
+    }
+    _wraps = 0;
+    _offset = 0;
+    _last = 0;
+    if (!ch32rv_timer_attach_update_interrupt(&_lease, onUpdate, this)) {
+        quiet(_base);
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
+    ch32rv_timer_start(&_lease);
+    return true;
+}
+
+void CH32RVPulseCounter::end()
+{
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        _last = count();
+        ch32rv_timer_detach_update_interrupt(&_lease);
+        ch32rv_timer_stop(&_lease);
+        quiet(_base);
+    }
+    ch32rv_timer_release(&_lease);
+}
+
+void CH32RVPulseCounter::onUpdate(void *self)
+{
+    CH32RVPulseCounter *c = static_cast<CH32RVPulseCounter *>(self);
+    c->_wraps = c->_wraps + 1u;
+}
+
+uint64_t CH32RVPulseCounter::count()
+{
+    if (!ch32rv_timer_lease_valid(&_lease)) {
+        return _last;
+    }
+    uint32_t value;
+    uint16_t pending, again;
+    const uint32_t irq = ch32rv_irq_save();
+    do {
+        pending = CH32RV_TIM_INTFR(_base) & UIF;
+        value = _wide ? CH32RV_TIM_CNT32(_base) : CH32RV_TIM_CNT(_base);
+        again = CH32RV_TIM_INTFR(_base) & UIF;
+    } while (pending != again);
+    uint64_t wraps = _wraps;
+    ch32rv_irq_restore(irq);
+    if (pending) {
+        wraps++;
+    }
+    _last = (_wide ? (wraps << 32) : (wraps << 16)) + value - _offset;
+    return _last;
+}
+
+void CH32RVPulseCounter::clear()
+{
+    if (ch32rv_timer_lease_valid(&_lease)) {
+        _offset += count();
+    }
+    _last = 0;
+}
+
+void CH32RVPulseCounter::setFilter(uint16_t cycles)
 {
     filterFor(cycles, _filter, _ckd);
     if (ch32rv_timer_lease_valid(&_lease)) {

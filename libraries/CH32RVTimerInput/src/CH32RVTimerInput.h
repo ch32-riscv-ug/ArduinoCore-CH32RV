@@ -154,6 +154,37 @@ private:
     uint8_t _filter = 0, _ckd = 0;
 };
 
+/* Pulses counted by a timer: the edges of a signal on channel 1 or 2 clock
+ * the counter itself (the timer's external clock mode 1), so no interrupt
+ * runs per edge and pulses come as fast as the timer's clock can sample
+ * them (about half of it). count() is 64 bits: the overflow is carried by the
+ * update interrupt, as CH32RVEncoder's. Count over a known time for a
+ * frequency. RISING or FALLING; CHANGE (both edges) on channel 1 only. */
+class CH32RVPulseCounter {
+public:
+    bool begin(int pin, int edge = RISING, uint8_t mode = INPUT);
+    void end();
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
+
+    uint64_t count();
+    void clear();
+    /* Ignore pulses shorter than about this many F_CPU cycles (0 .. 1024). */
+    void setFilter(uint16_t cycles);
+
+private:
+    bool begin(const CH32RVTimerPad &pad, int edge, uint8_t mode);
+    static void onUpdate(void *self);
+
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};
+    CH32RVTimerLease _lease = {};
+    uint32_t _base = 0;
+    volatile uint32_t _wraps = 0;
+    uint64_t _offset = 0;
+    uint64_t _last = 0;
+    bool _wide = false;
+    uint8_t _filter = 0, _ckd = 0;
+};
+
 /* Each edge of a signal and its time, on any channel of a timer: the
  * capture latches the timer's count at the edge in hardware, and the
  * interrupt extends it to 64 bits and queues it (or hands it to a callback).

@@ -2,11 +2,12 @@
 
 [日本語](README.ja.md)
 
-Timers as inputs, in three classes:
+Timers as inputs, in four classes:
 
 - **`CH32RVPulseCapture`** measures a signal's period and high time (pulse width).
 - **`CH32RVEncoder`** counts a quadrature rotary encoder.
 - **`CH32RVInputCapture`** gives each edge of a signal with its time.
+- **`CH32RVPulseCounter`** counts a signal's pulses (the timer's external clock mode 1).
 
 In the first two the timer does the counting and the sketch reads the result when it wants to. No interrupt calls into the sketch, and the hardware keeps counting whether or not anything is read. `CH32RVInputCapture` keeps every edge: its interrupt queues them, or hands each to a callback.
 
@@ -89,6 +90,22 @@ The timer runs in encoder mode. The names are ESP32Encoder's.
 - **Start.** `attach*()` starts counting at 0.
 - **Beyond 16 bits.** Counts past the 16-bit counter are carried by the timer's update interrupt, inside the library.
 - **Fast back-and-forth at the counter's end.** If the count crosses the end (0 / 65535) and comes back faster than that interrupt can run (twice within a few µs), the count can slip by 65536. Use `setFilter()` on bouncing contacts.
+
+## CH32RVPulseCounter
+
+```cpp
+CH32RVPulseCounter pulses;
+pulses.begin(PA0);                 // a channel 1 or 2 pad; RISING (default), FALLING, CHANGE (channel 1 only)
+pulses.clear();
+delay(1000);
+uint64_t hz = pulses.count();      // counted in a second
+```
+
+The signal's edges clock the timer's counter itself (external clock mode 1: TI1FP1, TI2FP2 or TI1F_ED), so no
+interrupt runs per edge and pulses up to about half the timer's clock are counted. `count()` is 64 bits; the
+counter's overflow is carried by the update interrupt, as the encoder's. `setFilter()` drops short pulses. The ETR
+pad is not usable yet (the core's pad table has no ETR). Seen counting the probe's 20 kHz within 1 % over 200 ms on
+V203, V205 and H417 (2026-11-18, signals::test_pulse_counter).
 
 ## CH32RVInputCapture
 

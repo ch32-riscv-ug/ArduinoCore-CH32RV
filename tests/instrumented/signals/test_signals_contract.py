@@ -708,6 +708,38 @@ def test_edge_capture(dut, oep_host, record_property):
         ask(dut, "icoff", rb"ICOFF")
 
 
+def test_pulse_counter(dut, oep_host, record_property):
+    """CH32RVPulseCounter: the probe's PWM (20 kHz) on a channel 1 or 2 pad clocks the timer itself (external clock
+    mode 1). Over 200 ms of the DUT's micros(), RISING and FALLING count the probe's frequency and CHANGE twice it,
+    within 2 % (the DUT's clock may be HSI) and a count."""
+    from oep_client.fixture import Pwm
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_EDGE_CAPTURE, "CH32RVPulseCounter")
+    line, ways = channel_line(dut, lines, prefer=lambda line, ways: ways[0][1] == 1)
+    if line is None or not any(c in (1, 2) for _, c, _, _ in ways):
+        pytest.skip("no labelled line is a channel 1 or 2 pad of a timer")
+    record_property("line", f"{line['pad']} " + " ".join(f"TIM{t} CH{c} route {r}" for t, c, _, r in ways))
+    pin = line["pin"]
+    channel_one = any(c == 1 for _, c, _, _ in ways)
+    pwm = probe_pwm(oep_host, line)
+    try:
+        made = pwm.start(0, 20000, round(0.5 * Pwm.FULL))
+        record_property("made_hz", round(made.hz, 3))
+        for edge, name, per in ((1, "rising", 1), (2, "falling", 1), (3, "change", 2)):
+            if edge == 3 and not channel_one:
+                continue
+            m = ask(dut, f"pcount {pin} {edge} 200", rb"PCOUNT (\d) (\d+) (\d+)", timeout=5)
+            assert m.group(1) == b"1", f"{name}: begin() refused {line['pad']}"
+            n, us = int(m.group(2)), int(m.group(3))
+            want = made.hz * per * us / 1e6
+            record_property(f"{name}_count", n)
+            assert abs(n - want) <= want * 0.02 + 1, f"{name}: {n} counts in {us} us, want {want:.0f}"
+    finally:
+        release_pwm(oep_host, pwm)
+
+
 def dut_stamp(dut):
     """(host time at the reply's midpoint, DUT micros(), the round trip in s)."""
     sent = time.monotonic()

@@ -26,3 +26,6 @@ available	KEYWORD2
 lost	KEYWORD2
 now	KEYWORD2
 timerPulseIn	KEYWORD2
+CH32RVPulseCounter	KEYWORD1
+count	KEYWORD2
+clear	KEYWORD2
