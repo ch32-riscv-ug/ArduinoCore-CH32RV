@@ -25,7 +25,7 @@
 - [x] tools/generate/peripheral_matrix.py の STATUS が文書の手直しより古かった（2026-11-18）: 文書の表から STATUS を書き直し、
   HSE の欄（V4x7・M030・X3x5・H41x）を CELLS に、EVT の新しい GUI のフォルダを IGNORED に足した。生成すると
   docs/peripheral-support.ja.md と同じになる。文書の RCC の行の H41x の 200/50・25/25 MHz（外した項目）も直した。
-- [x] coverage.toml に未実装の機能の項目を足す（`missing` の系列で「未実装」と出す）。2026-11-18: 周辺ブロックの単位で 14 項目
+- [x] coverage.toml に未実装の機能の項目を足す（`missing` の系列で「未実装」と出す）。2026-11-18: 周辺ブロックの単位で 17 項目
   （I3C・SWPMI・LPTIM・FSMC/FMC・SDMMC・DVP・LTDC・GPHA・SerDes・ECDC・DFSDM・SAI・PSRAM・OPA・CMP・PMP・DMA の公開 API）を足し、
   既存の CAN・I2S・QSPI に missing を入れた（I2S・QSPI は series に）。系列はクロックの名前から、OPA・CMP・PMP・DMA は
   未実装の一覧の系列を also で。周辺の中の機能（ADC の注入など）は未実装の一覧に任せる。
