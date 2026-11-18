@@ -158,6 +158,10 @@ typedef struct {
 #define CH32RV_TIMER_ROLE(role) (1u << (role))
 bool ch32rv_timer_pad_find(uint32_t pin, uint8_t roles, uint8_t n,
                            CH32RVTimerPad *out);
+/* The ITRx (0 .. 3) through which `slave` sees `master`'s trigger output
+ * (TRGO), for SMCFGR.TS; -1 where the chip joins them by none (the
+ * variant's CH32RV_TIMER_ITR, from the reference manuals). */
+int ch32rv_timer_trigger_from(uint8_t slave, uint8_t master);
 /* The route the timer's AFIO field is set to now; 0 on the per-pin families,
  * where a timer has no route of its own. */
 uint8_t ch32rv_timer_route(uint8_t timer);

@@ -668,6 +668,96 @@ def test_phase_shift(dut, oep_host, ws_run, record_property):
         ask(dut, "phsoff", rb"PHSOFF")
 
 
+def test_timer_sync(dut, oep_host, ws_run, record_property):
+    """CH32RVPwmTimer.startWith(): two timers the chip joins by an internal trigger, 20 kHz 50 % each; started
+    together, their rises stay together (WireSkein skew)."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPwmTimer.startWith")
+    first = {line["pad"]: next(iter(pads(dut, line["pin"])), None) for line in lines}
+    found = None
+    for a in lines:
+        for b in lines:
+            wa, wb = first[a["pad"]], first[b["pad"]]
+            if b is a or not wa or not wb or wa[2] != ROLE_CH or wb[2] != ROLE_CH or wa[0] == wb[0]:
+                continue
+            if int(ask(dut, f"itr {wb[0]} {wa[0]}", rb"ITR (-?\d+)").group(1)) >= 0:
+                found = (a, b, wa[0], wb[0])
+                break
+        if found:
+            break
+    if found is None:
+        pytest.skip("no two labelled lines are channels of two timers joined by an internal trigger")
+    a, b, ta, tb = found
+    A, B = a["pad"], b["pad"]
+    record_property("pair", f"{A} TIM{ta} master, {B} TIM{tb} slave")
+    waves = [becomes(A, freq_hz=20000, duty=0.5, irregular_max=3, **WAVE),
+             becomes(B, freq_hz=20000, duty=0.5, irregular_max=3, **WAVE)]
+    conditions = [
+        ("rest", None, None, [], 0.005),
+        ("started together", f"pwmsync {a['pin']} {b['pin']} 20000", rb"PWMSYNC (\d) (\d+) (\d+)", waves, 0.01),
+        ("locked", None, None, [skew(A, B, delay_abs_s=0.2e-6, edge="rise")], 0.02),
+        ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(A, level=0), becomes(B, level=0)], 0.005),
+    ]
+    try:
+        replies = sweep(dut, ws_run, oep_host, [a, b], f"timer sync {A} {B}", conditions, rate=10_000_000, moving=2,
+                        quiet=[])
+        m = next(m for m in replies if m.group(0).startswith(b"PWMSYNC"))
+        assert m.group(1) == b"1", "begin() or startWith() refused"
+        assert (int(m.group(2)), int(m.group(3))) == (ta, tb), f"the DUT took TIM{m.group(2)} / TIM{m.group(3)}"
+    finally:
+        ask(dut, "pwmtoff", rb"PWMTOFF")
+
+
+def test_timer_trigger(dut, oep_host, ws_run, record_property):
+    """CH32RVPwmTimer.startOn(): the output waits, low, until the probe raises the timer's channel 1 or 2 pad, then
+    runs (20 kHz 50 %)."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPwmTimer.startOn")
+    ways = {line["pad"]: pads(dut, line["pin"]) for line in lines}
+    found = None
+    for out in lines:
+        w = next(iter(ways[out["pad"]]), None)
+        if not w or w[2] != ROLE_CH:
+            continue
+        t, c, _, r = w
+        trig = next((x for x in lines if x is not out and any(v[0] == t and v[1] in (1, 2) and v[1] != c and
+                                                               v[2] == ROLE_CH and v[3] == r for v in ways[x["pad"]])),
+                    None)
+        if trig:
+            found = (out, trig, t)
+            break
+    if found is None:
+        pytest.skip("no labelled line is a timer output with another labelled line on its channel 1 or 2")
+    out, trig, timer = found
+    O, T = out["pad"], trig["pad"]
+    record_property("lines", f"{O} out, {T} trigger, TIM{timer}")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, trig["channel"])])
+    try:
+        gpio.configure(trig["channel"], Gpio.OUTPUT_LOW)
+        conditions = [
+            ("armed", f"pwmtrig {out['pin']} {trig['pin']} 20000", rb"PWMTRIG (\d)", [becomes(O, level=0)], 0.02),
+            ("waiting", None, None, [level(O, 0)], 0.01),
+            ("trigger", lambda: gpio.configure(trig["channel"], Gpio.OUTPUT_HIGH), None,
+             [becomes(O, freq_hz=20000, duty=0.5, within_s=0.05, min_periods=20)], 0.01),
+            ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(O, level=0)], 0.005),
+        ]
+        replies = sweep(dut, ws_run, oep_host, [out, trig], f"timer trigger {O} by {T}", conditions,
+                        rate=10_000_000, moving=2, quiet=[])
+        assert next(m for m in replies if m.group(0).startswith(b"PWMTRIG")).group(1) == b"1", "startOn() refused"
+    finally:
+        ask(dut, "pwmtoff", rb"PWMTOFF")
+        gpio.configure(trig["channel"], Gpio.INPUT)
+        core.plan_release(host, [gpio.fn])
+
+
 def test_six_step(dut, oep_host, ws_run, record_property):
     """CH32RVSixStep on six labelled lines (CH1..CH3 and CH1N..CH3N of one advanced timer and route): in each step
     the PWM high side and the low side that is on as the table says, the third phase low."""

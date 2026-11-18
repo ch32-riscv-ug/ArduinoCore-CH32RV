@@ -74,7 +74,11 @@ void loop() {
 | `begin(pin, frequency, resolution = 8, align = EDGE)` | `pin`（CHx か CHxN）のタイマーと経路で始める。`CENTER` はカウンタが上下して、どのチャネルのパルスも同じ時刻を中心にする |
 | `attach(pin)` | 同じタイマー・経路の別の端子（デューティ 0 から） |
 | `write(pin, duty)` | `duty / 2^resolution` を High。CHxN の端子はそのチャネルの反転なので、チャネルの値を書くことになる |
+| `startWith(master)` | このタイマーを `master` の開始で始める（master の TRGO をカウンタの有効に、こちらはトリガモード）。両方のカウンタを 0 から始め直し、周期の頭がそろう。チップが内部トリガでつないでいない組では false |
+| `startOn(pin, edge = RISING)` | カウンタを止め、`pin`（このタイマーの CH1 か CH2 の端子、出力に使っていないもの）のエッジを待って 0 から動かす |
 | `timer()`、`end()`、`isAttached()` | |
+
+どのタイマーがどのタイマーに従えるか（ITR の表）は各系列の RM から作った `tools/generate/timer/itr.csv` で、variant の `CH32RV_TIMER_ITR` になり、コアの `ch32rv_timer_trigger_from(slave, master)` が引きます。
 
 ## CH32RVPhaseShift
 
@@ -98,7 +102,7 @@ void loop() {
 
 ## 状態
 
-全系列でビルドできます（2026-11-17）。tests/instrumented/signals がプローブの取り込みで確かめます: `test_complementary`（WireSkein の dead_time で 100 MS/s のデッドタイム、BKIN に線があればブレーキ）、`test_one_pulse`、`test_output_compare`、`test_pwm_timer`（端揃えは立ち上がりの一致、中央揃えは 75 % と 25 % の位相 90 度）、`test_phase_shift`（90・270 度）。`test_six_step` は 6 本の線がある台で動き、今のベンチには無いので、V203 で DUT 自身が 6 端子を読んで表どおりを確認しました（2026-11-19）。非対称デッドタイム（M030、H417）は未実装です。
+全系列でビルドできます（2026-11-17）。tests/instrumented/signals がプローブの取り込みで確かめます: `test_complementary`（WireSkein の dead_time で 100 MS/s のデッドタイム、BKIN に線があればブレーキ）、`test_one_pulse`、`test_output_compare`、`test_pwm_timer`（端揃えは立ち上がりの一致、中央揃えは 75 % と 25 % の位相 90 度）、`test_phase_shift`（90・270 度）、`test_timer_sync`（2 つのタイマーの立ち上がりの一致）、`test_timer_trigger`（プローブのエッジで出力が始まる）。`test_six_step` は 6 本の線がある台で動き、今のベンチには無いので、V203 で DUT 自身が 6 端子を読んで表どおりを確認しました（2026-11-19）。非対称デッドタイム（M030、H417）は未実装です。
 
 ## 例
 

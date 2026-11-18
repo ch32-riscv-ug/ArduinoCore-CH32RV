@@ -12,6 +12,7 @@ constexpr uint16_t CTLR1_CMS_CENTER1 = 1u << 5;   /* up and down; compare flags 
 constexpr uint16_t CTLR2_CCPC = 1u << 0;          /* CCxE, CCxNE, OCxM preloaded, moved at COM */
 constexpr uint16_t SWEVGR_COMG = 1u << 5;
 constexpr uint8_t OCM_TOGGLE = 3, OCM_FORCE_ACTIVE = 5;
+constexpr uint16_t MMS_ENABLE = 1u << 4;          /* CTLR2: TRGO is the counter's enable */
 
 /* Sets (or clears) one bit of a channel's CCER nibble: 0 CCxE, 1 CCxP, 2 CCxNE. */
 void ccerBit(uint32_t base, uint8_t ch, unsigned bit, bool on)
@@ -148,10 +149,68 @@ bool CH32RVPwmTimer::write(int pin, uint32_t duty)
     return true;
 }
 
+/* Stopped at 0, the slave mode off. UG for the prescaler and the preloads, and the counter written as well: a
+ * stopped counter took no UG (V203: CNT stayed where it stopped). */
+void CH32RVPwmTimer::restartCounter()
+{
+    ch32rv_timer_stop(&_lease);
+    CH32RV_TIM_SMCFGR(_base) = 0;
+    CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+    if (_wide) {
+        CH32RV_TIM_CNT32(_base) = 0;
+    } else {
+        CH32RV_TIM_CNT(_base) = 0;
+    }
+}
+
+bool CH32RVPwmTimer::startWith(CH32RVPwmTimer &master)
+{
+    if (!isAttached() || !master.isAttached() || &master == this) {
+        return false;
+    }
+    const int itr = ch32rv_timer_trigger_from(_timer, master._timer);
+    if (itr < 0) {
+        return false;
+    }
+    master.restartCounter();
+    restartCounter();
+    TIM_CTLR2(master._base) = (uint16_t)((TIM_CTLR2(master._base) & ~(7u << 4)) | MMS_ENABLE);
+    CH32RV_TIM_SMCFGR(_base) = (uint16_t)((unsigned)itr << 4 | SMS_TRIGGER);
+    ch32rv_timer_start(&master._lease);     /* its enable starts this one */
+    return true;
+}
+
+bool CH32RVPwmTimer::startOn(int pin, int edge)
+{
+    if (!isAttached() || find(pin)) {
+        return false;
+    }
+    CH32RVTimerPad t;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &t); i++) {
+        bool used = false;
+        for (uint8_t k = 0; k < _count; k++) {
+            used |= _pads[k].channel == t.channel;
+        }
+        if (used || t.timer != _timer || (t.channel != 1 && t.channel != 2) || !ch32rv_timer_pads_together(&_pads[0], &t)) {
+            continue;
+        }
+        restartCounter();
+        channelMode(_base, t.channel, 1);                      /* CCxS: its own input */
+        ccerBit(_base, t.channel, 1u, edge == FALLING);
+        pinMode(t.pin, INPUT);
+        ch32rv_timer_pad_connect(&t, false);
+        CH32RV_TIM_SMCFGR(_base) = (uint16_t)((t.channel == 1 ? TS_TI1FP1 : TS_TI2FP2) | SMS_TRIGGER);
+        return true;                                           /* the edge sets CEN */
+    }
+    return false;
+}
+
 void CH32RVPwmTimer::end()
 {
     if (isAttached()) {
         ch32rv_timer_stop(&_lease);
+        CH32RV_TIM_SMCFGR(_base) = 0;
+        TIM_CTLR2(_base) &= (uint16_t)~(7u << 4);
         CH32RV_TIM_CCER(_base) = 0;
         if (_advanced) {
             CH32RV_TIM_BDTR(_base) = 0;

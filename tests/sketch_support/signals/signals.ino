@@ -55,7 +55,12 @@
  *   compoff                COMPOFF
  *   pwmt <a> <b> <hz> <align> <duty a> <duty b>  PWMT <ok>: CH32RVPwmTimer on
  *                          two pads of one timer, 10 bits, align 0 edge 1 center
- *   pwmtoff                PWMTOFF
+ *   pwmtoff                PWMTOFF (also pwmsync's and pwmtrig's)
+ *   itr <slave> <master>   ITR <n>: ch32rv_timer_trigger_from(), -1 for none
+ *   pwmsync <a> <b> <hz>   PWMSYNC <ok> <a's timer> <b's timer>: 50 % on each,
+ *                          b's timer started with a's (startWith)
+ *   pwmtrig <out> <trig> <hz>  PWMTRIG <ok>: 50 % on out, waiting for a rising
+ *                          edge on trig (startOn)
  *   phs <a> <b> <hz> <deg> PHS <ok>: CH32RVPhaseShift, a at 0, b at deg
  *   phsoff                 PHSOFF
  *   six <uh> <ul> <vh> <vl> <wh> <wl> <hz> <duty of 256>  SIX <ok>: CH32RVSixStep,
@@ -134,7 +139,7 @@ static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0)
 static CH32RVComplementaryPwm bridge;
 static CH32RVOnePulse shot;
 static CH32RVOutputCompare compare;
-static CH32RVPwmTimer pwmTimer;
+static CH32RVPwmTimer pwmTimer, pwmTimer2;
 static CH32RVPhaseShift phaseShift;
 static CH32RVSixStep sixStep;
 #endif
@@ -218,8 +223,23 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
                         pwmTimer.write((int)a2, (uint32_t)atol(argv[6]));
         say("PWMT", 1, ok);
     } else if (!strcmp(argv[0], "pwmtoff")) {
+        pwmTimer2.end();
         pwmTimer.end();
         SerialDMSeq.println("PWMTOFF");
+    } else if (!strcmp(argv[0], "itr") && argc == 3) {
+        /* itr <slave timer> <master timer> */
+        say("ITR", 1, ch32rv_timer_trigger_from((uint8_t)pin, (uint8_t)a2));
+    } else if (!strcmp(argv[0], "pwmsync") && argc == 4) {
+        /* pwmsync <a> <b> <hz>: 50 % on each, b's timer started with a's */
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10) && pwmTimer.write(pin, 512) &&
+                        pwmTimer2.begin((int)a2, (uint32_t)a3, 10) && pwmTimer2.write((int)a2, 512) &&
+                        pwmTimer2.startWith(pwmTimer);
+        say("PWMSYNC", 3, ok, pwmTimer.timer(), pwmTimer2.timer());
+    } else if (!strcmp(argv[0], "pwmtrig") && argc == 4) {
+        /* pwmtrig <out> <trigger> <hz>: 50 % on out, started by a rising edge on trigger */
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10) && pwmTimer.write(pin, 512) &&
+                        pwmTimer.startOn((int)a2, RISING);
+        say("PWMTRIG", 1, ok);
     } else if (!strcmp(argv[0], "phs") && argc == 5) {
         /* phs <a> <b> <hz> <b's degrees> */
         const bool ok = phaseShift.begin(pin, (uint32_t)a3) && phaseShift.attach((int)a2, (uint16_t)a4);

@@ -184,9 +184,20 @@ public:
     bool write(int pin, uint32_t duty);
     uint8_t timer() const { return _timer; }
 
+    /* This timer starts when `master` does (master's trigger output on its
+     * counter's enable, this one in trigger mode): the two run locked, their
+     * periods starting together. Both counters restart from 0 now. False
+     * where the chip joins the two timers by no internal trigger. */
+    bool startWith(CH32RVPwmTimer &master);
+    /* The counter stops and waits for an edge (RISING or FALLING) on `pin`,
+     * this timer's channel 1 or 2 pad (not one of its outputs), then runs
+     * from 0: the outputs start in step with an outside event. */
+    bool startOn(int pin, int edge = RISING);
+
 private:
     bool begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, Align align);
     bool connect(const CH32RVTimerPad &pad);
+    void restartCounter();
     const CH32RVTimerPad *find(int pin) const;
 
     const CH32RVTimerOwner _owner = {this, nullptr, nullptr};

@@ -972,6 +972,8 @@ static const uint8_t SS = PIN_SPI_SS;
     X(6, 2, 16, 0, 0, CH32RV_TIM6_BASE, 0x4002101cu, 0x00000010u, CH32RV_IRQN_TIM6, TIM6_IRQHandler) \
     X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler) \
     X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x40021018u, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler)
+/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
+#define CH32RV_TIMER_ITR { {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4} }
 
 /* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
  * timer reaches, on every route the core can select. Fields: pad,

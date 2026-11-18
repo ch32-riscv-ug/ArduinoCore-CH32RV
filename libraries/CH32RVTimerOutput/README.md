@@ -74,7 +74,11 @@ Both outputs are active high. On a break and after `end()` both are low.
 | `begin(pin, frequency, resolution = 8, align = EDGE)` | starts on `pin`'s (CHx or CHxN) timer and route. `CENTER`: the counter runs up and down, every channel's pulse centred on the same instant |
 | `attach(pin)` | another pad of the same timer and route (at duty 0) |
 | `write(pin, duty)` | `duty / 2^resolution` high. A CHxN pad is its channel inverted, so this sets the channel |
+| `startWith(master)` | this timer starts when `master` does (master's TRGO on its counter's enable, this one in trigger mode); both counters restart from 0 and their periods start together. False where the chip joins the two timers by no internal trigger |
+| `startOn(pin, edge = RISING)` | the counter stops and waits for an edge on `pin` (this timer's channel 1 or 2 pad, not one of its outputs), then runs from 0 |
 | `timer()`, `end()`, `isAttached()` | |
+
+Which timer can follow which (the ITR table) comes from each family's reference manual, `tools/generate/timer/itr.csv`, as the variant's `CH32RV_TIMER_ITR`; the core's `ch32rv_timer_trigger_from(slave, master)` looks it up.
 
 ## CH32RVPhaseShift
 
@@ -98,7 +102,7 @@ Steps: 0 = U PWM and V's low side on, 1 = U and W, 2 = V and W, 3 = V and U, 4 =
 
 ## Status
 
-Built for every series (2026-11-17). tests/instrumented/signals checks them on the probe's capture: `test_complementary` (the dead time with WireSkein's dead_time at 100 MS/s, the break where a line reaches BKIN), `test_one_pulse`, `test_output_compare`, `test_pwm_timer` (edge-aligned: the rises together; center-aligned: 75 % and 25 % 90 degrees apart) and `test_phase_shift` (90 and 270 degrees). `test_six_step` runs where six lines reach the bridge's pads, which no bench has yet: on V203 the DUT read its six pads back and found each step as the table says (2026-11-19). Not yet built: the asymmetric dead time (M030, H417).
+Built for every series (2026-11-17). tests/instrumented/signals checks them on the probe's capture: `test_complementary` (the dead time with WireSkein's dead_time at 100 MS/s, the break where a line reaches BKIN), `test_one_pulse`, `test_output_compare`, `test_pwm_timer` (edge-aligned: the rises together; center-aligned: 75 % and 25 % 90 degrees apart) and `test_phase_shift` (90 and 270 degrees), `test_timer_sync` (two timers' rises together) and `test_timer_trigger` (the output starting at the probe's edge). `test_six_step` runs where six lines reach the bridge's pads, which no bench has yet: on V203 the DUT read its six pads back and found each step as the table says (2026-11-19). Not yet built: the asymmetric dead time (M030, H417).
 
 ## Examples
 

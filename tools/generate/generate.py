@@ -2907,6 +2907,7 @@ OPA_SIGNAL_RE = [
 # Series not listed (V20x, V30x: the manual says CH0P / CH1P, OUT0 / OUT1)
 # take the datasheet's number.
 OPA_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "opa_select.csv"
+TIMER_ITR_CSV = pathlib.Path(__file__).parent / "timer" / "itr.csv"
 
 
 # The comparators the same way, from the reference manuals only (device-data
@@ -5124,6 +5125,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 f"{handler}){suffix}")
     else:
         out.append("#define CH32RV_TIMER_TABLE(X) /* no managed TIM */")
+    # Which timer's TRGO reaches which slave's ITRx (timer/itr.csv, from the reference manuals): the slave's
+    # SMCFGR.TS for following another timer (CH32RVTimer.h ch32rv_timer_trigger_from).
+    with open(TIMER_ITR_CSV, newline="", encoding="utf-8") as f:
+        itr = [(int(r["slave"]), int(r["itr"]), int(r["master"])) for r in csv.DictReader(f)
+               if r["series"] == series and int(r["slave"]) in timer_caps and int(r["master"]) in timer_caps]
+    if itr:
+        out.append("/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */")
+        out.append("#define CH32RV_TIMER_ITR { " + ", ".join(f"{{{s}, {i}, {m}}}" for s, i, m in sorted(itr)) + " }")
     out.append("")
     out.extend(timer_pad_block(series, parts, union, timer_pads, timer_remaps,
                                timer_caps, candidates, handlers, pwm_pads,

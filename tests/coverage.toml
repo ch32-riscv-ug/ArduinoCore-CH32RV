@@ -181,6 +181,18 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "timer-sync"           # CH32RVPwmTimer.startWith(): two timers joined by an internal trigger start together (WireSkein skew)
+test = "signals::test_timer_sync"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "timer-trigger"        # CH32RVPwmTimer.startOn(): the output starts at an edge the probe drives
+test = "signals::test_timer_trigger"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "six-step"             # CH32RVSixStep: the six steps on CH1..3 / CH1N..3N (six lines on the bridge's pads)
 test = "signals::test_six_step"
 scope = "series"

@@ -481,3 +481,19 @@ bool ch32rv_timer_stop(const CH32RVTimerLease *lease)
     CH32RV_TIM_CTLR1(cap->register_base) &= (uint16_t)~CH32RV_TIM_CTLR1_CEN;
     return true;
 }
+
+int ch32rv_timer_trigger_from(uint8_t slave, uint8_t master)
+{
+#ifdef CH32RV_TIMER_ITR
+    static const uint8_t links[][3] = CH32RV_TIMER_ITR;
+    for (size_t i = 0; i < sizeof links / sizeof links[0]; i++) {
+        if (links[i][0] == slave && links[i][2] == master) {
+            return links[i][1];
+        }
+    }
+#else
+    (void)slave;
+    (void)master;
+#endif
+    return -1;
+}
