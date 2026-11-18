@@ -6,13 +6,15 @@
  * With no feedback wired it compares + with - (open loop): the output goes to
  * the rail of whichever is higher. Wire the output to - for a follower, or
  * through resistors for a gain. beginPga() uses the internal gain where the
- * chip has one (V4x7: 4, 8, 16, 32). An input pad is left as the sketch set it
- * (an analog input, or a GPIO driving it); the output pad becomes the op-amp's.
+ * chip has one (four, doubling: x4 .. x32 on V00x, V4x7, X035 and V205's
+ * OPA2; x8 .. x64 on L103, H41x and V205's OPA1). An input pad is left as the
+ * sketch set it (an analog input, or a GPIO driving it); the output pad
+ * becomes the op-amp's.
  *
- * V003 (one, its output fixed on PD4), V20x / V30x (two / four), V4x7 (one).
- * begin() is false for pads that are not that op-amp's, and on the families
- * whose selection registers this library does not set yet (V00x, V205, L103,
- * H41x, X035, M030: their pads are in CH32RV_OPA_PADS all the same). */
+ * V003, V00x (V005 .. V007, M007), V20x / V30x, V205, V4x7, L103 / M103,
+ * X035 / X033, H41x. begin() is false for pads that are not that op-amp's
+ * (the variant's CH32RV_OPA_PADS: each pad with its selection value, from
+ * the reference manual). M030's op-amps (the motor stage's) are not here. */
 #pragma once
 
 #include <Arduino.h>
@@ -23,8 +25,9 @@ public:
 
     /* outPin -1: the op-amp's first output pad. */
     bool begin(int positivePin, int negativePin, int outPin = -1);
-    /* + from positivePin, the gain internal (no - pad): false where there is
-     * no programmable gain or for a gain it does not have. */
+    /* + from positivePin, the gain internal (no - pad, the divider's foot on
+     * GND): false where there is no programmable gain or for a gain it does
+     * not have. */
     bool beginPga(int positivePin, uint8_t gain, int outPin = -1);
     void end();
     bool isBegun() const { return _begun; }

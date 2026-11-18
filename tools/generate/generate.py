@@ -2898,7 +2898,26 @@ OPA_SIGNAL_RE = [
     (re.compile(r"^OPA_(?:OUT|O)(\d)$"), lambda m: (1, "O", int(m.group(1)))),
     (re.compile(r"^OP([PN])(\d)$"), lambda m: (1, m.group(1), int(m.group(2)))),
     (re.compile(r"^OPO$"), lambda m: (1, "O", 0)),
+    (re.compile(r"^O(\d)([PN])(\d)$"), lambda m: (int(m.group(1)), m.group(2), int(m.group(3)))),
+    (re.compile(r"^O(\d)O(\d)$"), lambda m: (int(m.group(1)), "O", int(m.group(2)))),
 ]
+# The value each pad has in its op-amp's selection field, by series, where the
+# reference manual names the pads: the datasheet's numbering (OUT1 / OUT2,
+# CHP0 / CHP1) is not always that value (V4x7's MODE1 0 is PB1, its OUT2).
+# Series not listed (V20x, V30x: the manual says CH0P / CH1P, OUT0 / OUT1)
+# take the datasheet's number.
+OPA_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "opa_select.csv"
+
+
+def load_opa_select() -> dict:
+    """series -> [(unit, role 'P' / 'N' / 'O', value, (port, bit))]."""
+    out: dict = {}
+    with open(OPA_SELECT_CSV, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            role = {"P": "P", "N": "N", "OUT": "O"}[r["role"]]
+            out.setdefault(r["series"], []).append(
+                (int(r["unit"]), role, int(r["value"]), (r["pad"][1], int(r["pad"][2:]))))
+    return out
 # part -> {(unit, role, index): (port, bit)} (main(); gen_pins reads it).
 OPA_PINS: dict = {}
 
@@ -4796,18 +4815,32 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("")
 
     # --- OPA ---
-    # Each op-amp input / output pad the series has, with the index its
-    # selection field gives it (CH32RVOpamp matches the pins it is given).
+    # Each op-amp input / output pad the series has, with the value its
+    # selection field takes for it (CH32RVOpamp matches the pins it is given):
+    # opa/opa_select.csv where the reference manual names the pads, which
+    # also drops the datasheet's pads that are no plain selection (the PGA's
+    # feedback pad); else the datasheet's number.
     opa_rows: dict = {}
-    for pn in parts:
-        for key, pad in OPA_PINS.get(pn, {}).items():
-            opa_rows.setdefault(key + (pad,), None)
+    selected = load_opa_select().get(series)
+    if selected is not None:
+        have = set().union(*per_part)
+        source = "reference manual: tools/generate/opa/opa_select.csv"
+        for unit, role, value, pad in selected:
+            if pad in have:
+                opa_rows.setdefault((unit, role, value, pad), None)
+    else:
+        source = "device-data"
+        for pn in parts:
+            for key, pad in OPA_PINS.get(pn, {}).items():
+                opa_rows.setdefault(key + (pad,), None)
     if opa_rows:
-        out.append("/* ---- op-amp pads (device-data): unit, role (0 P, 1 N, 2 OUT), index, pad ---- */")
+        out.append(f"/* ---- op-amp pads ({source}): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */")
         out.append("#define CH32RV_OPA_PADS { \\")
         for unit, role, index, (port, bit) in sorted(opa_rows, key=lambda k: (k[0], "PNO".index(k[1]), k[2], k[3])):
             out.append(f"    {{ {unit}, {'PNO'.index(role)}, {index}, {pad_name(port, bit)} }}, \\")
         out.append("}")
+        if "OPCM" in clken:                    # H41x: the op-amps' own clock
+            out.extend(clken_defines("CH32RV_OPA", "OPCM"))
         out.append("")
 
     # --- CAN ---

@@ -87,7 +87,7 @@ def test_crc(dut, ready, record_property):
 def test_opamp(dut, ready, record_property):
     """CH32RVOpamp: OPA1 open loop, its + and - pads driven as GPIOs, on the first pads of each role that are not
     among the board's pads to keep off. The output (analogRead) is over 3/4 of full scale with + high and - low,
-    under 1/4 the other way. Where beginPga() is there (the variant's op-amp has a PGA), gain 4 the same way."""
+    under 1/4 the other way. Where beginPga() is there (the op-amp has a PGA), its lowest gain (4 or 8) the same way."""
     for d in ready.get("record", {}).get("defects", []):
         if "gpio-drive" in d.get("lose", []):
             pytest.skip(f"the board's pads are not driven: defect {d.get('id')}")
@@ -111,14 +111,15 @@ def test_opamp(dut, ready, record_property):
     if not ok:
         record_property("opa", json.dumps(found))
         pytest.skip("CH32RVOpamp.begin() false: this family's selection registers are not set yet")
-    g = ask(dut, f"opa {plus} g4 {out}", rb"OPA (\d) (\d+) (\d+)")
-    pga = [int(v) for v in g.groups()]
-    if pga[0]:
-        found.update(pga_hi=pga[1], pga_lo=pga[2])
+    for gain in (4, 8):                 # the lowest gain each family has
+        pga = [int(v) for v in ask(dut, f"opa {plus} g{gain} {out}", rb"OPA (\d) (\d+) (\d+)").groups()]
+        if pga[0]:
+            found.update(pga_gain=gain, pga_hi=pga[1], pga_lo=pga[2])
+            break
     record_property("opa", json.dumps(found))
     assert hi > full * 3 // 4 and lo < full // 4, f"output {hi} with + high, {lo} with - high (full scale {full})"
     if pga[0]:
-        assert pga[1] > full * 3 // 4 and pga[2] < full // 4, f"PGA x4: {pga[1]} with + high, {pga[2]} with + low"
+        assert pga[1] > full * 3 // 4 and pga[2] < full // 4, f"PGA x{gain}: {pga[1]} with + high, {pga[2]} with + low"
 
 
 @pytest.mark.parametrize("bitrate", [125000, 500000, 1000000])

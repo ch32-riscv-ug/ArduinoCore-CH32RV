@@ -838,14 +838,14 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
-/* ---- op-amp pads (device-data): unit, role (0 P, 1 N, 2 OUT), index, pad ---- */
+/* ---- op-amp pads (reference manual: tools/generate/opa/opa_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
 #define CH32RV_OPA_PADS { \
-    { 1, 0, 1, PB12 }, \
-    { 1, 0, 2, PA6 }, \
-    { 1, 1, 1, PB13 }, \
-    { 1, 1, 2, PA5 }, \
+    { 1, 0, 0, PB12 }, \
+    { 1, 0, 1, PA6 }, \
+    { 1, 1, 0, PB13 }, \
+    { 1, 1, 1, PA5 }, \
+    { 1, 2, 0, PB1 }, \
     { 1, 2, 1, PA7 }, \
-    { 1, 2, 2, PB1 }, \
 }
 
 /* ---- CAN pins (device-data; one route per instance) ---- */

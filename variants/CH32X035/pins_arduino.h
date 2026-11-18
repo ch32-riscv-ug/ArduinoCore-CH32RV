@@ -574,6 +574,24 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- op-amp pads (reference manual: tools/generate/opa/opa_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
+#define CH32RV_OPA_PADS { \
+    { 1, 0, 0, PB0 }, \
+    { 1, 0, 1, PB8 }, \
+    { 1, 0, 2, PB4 }, \
+    { 1, 1, 0, PA6 }, \
+    { 1, 1, 1, PB6 }, \
+    { 1, 2, 0, PA3 }, \
+    { 1, 2, 1, PB5 }, \
+    { 2, 0, 0, PA7 }, \
+    { 2, 0, 1, PB3 }, \
+    { 2, 0, 2, PB7 }, \
+    { 2, 1, 0, PA5 }, \
+    { 2, 1, 1, PB1 }, \
+    { 2, 2, 0, PA4 }, \
+    { 2, 2, 1, PA2 }, \
+}
+
 /* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 10
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

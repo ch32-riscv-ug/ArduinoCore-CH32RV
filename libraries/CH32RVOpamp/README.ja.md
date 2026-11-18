@@ -24,16 +24,23 @@ void setup() {
 
 ## 対象
 
-| 系列 | OPA | 端子 |
-|---|---|---|
-| V003 | 1 | + PA2 / PD7、- PA1 / PD0、出力 PD4 |
-| V20x / V30x | 2 / 4 | 各 OPA に + / - / 出力が 2 つずつ |
-| V4x7 | 1 | + PB12 / PA6、- PB13 / PA5、出力 PB1 / PA7。PGA あり |
+| 系列 | OPA | 端子（+ / - / 出力） | PGA |
+|---|---|---|---|
+| V003 | 1 | PA2・PD7 / PA1・PD0 / PD4 | なし |
+| V00x（V005〜V007・M007） | 1 | PA2・PD7・PD3・PD1 / PA1・PD0 / PD4・PA5 | 4〜32 倍 |
+| V20x / V30x | 2 / 4 | 各 OPA に 2 つずつ（CH0P・CH1P など） | なし |
+| V205 | 2 | OPA1: PB5・PB0・PB12 / PB11・PA6 / PB1・PA3、OPA2: PB14・PA7 / PB10・PA5 / PA4・PA2 | OPA1 8〜64 倍、OPA2 4〜32 倍 |
+| V4x7 | 1 | PB12・PA6 / PB13・PA5 / PB1・PA7 | 4〜32 倍 |
+| L103 / M103 | 1 | PB15・PB0・PB14・PA7・PA0・PA6 / PB11・PA6・PB10・PA5・PA1・PA7 / PA3・PB1・PA2・PA4・PB0 | 8〜64 倍 |
+| X035 / X033 | 2 | OPA1: PB0・PB8・PB4 / PA6・PB6 / PA3・PB5、OPA2: PA7・PB3・PB7 / PA5・PB1 / PA4・PA2 | 4〜32 倍 |
+| H41x | 3 | OPA1: PB0・PA6 / PB1・PA7 / PC4・PA5、OPA2: PE9・PF11 / PE8・PF12 / PB1・PE7、OPA3: PC2・PA2 / PC3・PA3 / PA4・PA0 | 8〜64 倍 |
 
-V00x・V205・L103・M030・X035・H41x にも OPA があり、端子は CH32RV_OPA_PADS に入っていますが、
-選択レジスタをまだ設定しないので `begin()` は false です。
+端子と選択の値は各系列の RM から（tools/generate/opa/opa_select.csv。V20x / V30x は device-data の番号）。
+小さいパッケージに無い端子は、その variant の CH32RV_OPA_PADS に入りません。M030 の OPA（モーター段の電流検出）は
+対象外です。
 
 ## 試験
 
-selfapi::test_opamp: + と - を GPIO で駆動し、開ループの出力を analogRead で読む（V203・V407 で確認。
-V407 は PGA 4 倍も）。
+selfapi::test_opamp: 板の触らない端子を除いた最初の + / - / 出力で、+ と - を GPIO で駆動し、開ループの出力を
+analogRead で読む。PGA のある系列は最低の倍率でも同じく。V003（試験用の板では + の端子が全部触らない端子）と
+L103 以外の、V006・V203・V205・V407・X035・H417 で確認。
