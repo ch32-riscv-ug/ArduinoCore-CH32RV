@@ -186,7 +186,7 @@ SPI.endTransaction();                                              // high once 
 - Only the route's NSS pad (the variant's `CH32RV_SPIn_NSS_PADS`). With `ss` another pad, or on a series whose routes
   have no NSS (X033 / X035), it does not take and `hwCs()` is `false`.
 - The code links only into a sketch that calls `setHwCs()`; the bus keeps a test and the pad's number (an SPI
-  sketch on V003 grows by 24 B). Checked on V203's PA4 against the probe's spi-target (2026-11-18,
+  sketch on V003 grows by 24 B). Checked on V203's PA4 and V003's PC1 against the probe's spi-target (2026-11-18,
   spi::test_spi_hw_cs).
 
 ## Things worth knowing

@@ -767,188 +767,188 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 4, { PB1, PD14, PB2 }, 0x00000004u, 0x00000000u }, \
     { 4, { PB1, PD14, PD2 }, 0x00000004u, 0x00000000u }, \
 }
-/* SPI1's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI1's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI1_NSS_PADS { \
-    { PA5, PA7, PA6, PA4 }, \
-    { PA5, PA7, PA6, PA12 }, \
-    { PA5, PA7, PA6, PB0 }, \
-    { PA5, PA7, PA14, PA4 }, \
-    { PA5, PA7, PA14, PA12 }, \
-    { PA5, PA7, PA14, PB0 }, \
-    { PA5, PA7, PB2, PA4 }, \
-    { PA5, PA7, PB2, PA12 }, \
-    { PA5, PA7, PB2, PB0 }, \
-    { PA5, PA7, PD2, PA4 }, \
-    { PA5, PA7, PD2, PA12 }, \
-    { PA5, PA7, PD2, PB0 }, \
-    { PA5, PA15, PA6, PA4 }, \
-    { PA5, PA15, PA6, PA12 }, \
-    { PA5, PA15, PA6, PB0 }, \
-    { PA5, PA15, PA14, PA4 }, \
-    { PA5, PA15, PA14, PA12 }, \
-    { PA5, PA15, PA14, PB0 }, \
-    { PA5, PA15, PB2, PA4 }, \
-    { PA5, PA15, PB2, PA12 }, \
-    { PA5, PA15, PB2, PB0 }, \
-    { PA5, PA15, PD2, PA4 }, \
-    { PA5, PA15, PD2, PA12 }, \
-    { PA5, PA15, PD2, PB0 }, \
-    { PA5, PB3, PA6, PA4 }, \
-    { PA5, PB3, PA6, PA12 }, \
-    { PA5, PB3, PA6, PB0 }, \
-    { PA5, PB3, PA14, PA4 }, \
-    { PA5, PB3, PA14, PA12 }, \
-    { PA5, PB3, PA14, PB0 }, \
-    { PA5, PB3, PB2, PA4 }, \
-    { PA5, PB3, PB2, PA12 }, \
-    { PA5, PB3, PB2, PB0 }, \
-    { PA5, PB3, PD2, PA4 }, \
-    { PA5, PB3, PD2, PA12 }, \
-    { PA5, PB3, PD2, PB0 }, \
-    { PA5, PD3, PA6, PA4 }, \
-    { PA5, PD3, PA6, PA12 }, \
-    { PA5, PD3, PA6, PB0 }, \
-    { PA5, PD3, PA14, PA4 }, \
-    { PA5, PD3, PA14, PA12 }, \
-    { PA5, PD3, PA14, PB0 }, \
-    { PA5, PD3, PB2, PA4 }, \
-    { PA5, PD3, PB2, PA12 }, \
-    { PA5, PD3, PB2, PB0 }, \
-    { PA5, PD3, PD2, PA4 }, \
-    { PA5, PD3, PD2, PA12 }, \
-    { PA5, PD3, PD2, PB0 }, \
-    { PA5, PD14, PA6, PA4 }, \
-    { PA5, PD14, PA6, PA12 }, \
-    { PA5, PD14, PA6, PB0 }, \
-    { PA5, PD14, PA14, PA4 }, \
-    { PA5, PD14, PA14, PA12 }, \
-    { PA5, PD14, PA14, PB0 }, \
-    { PA5, PD14, PB2, PA4 }, \
-    { PA5, PD14, PB2, PA12 }, \
-    { PA5, PD14, PB2, PB0 }, \
-    { PA5, PD14, PD2, PA4 }, \
-    { PA5, PD14, PD2, PA12 }, \
-    { PA5, PD14, PD2, PB0 }, \
-    { PA13, PA7, PA6, PA4 }, \
-    { PA13, PA7, PA6, PA12 }, \
-    { PA13, PA7, PA6, PB0 }, \
-    { PA13, PA7, PA14, PA4 }, \
-    { PA13, PA7, PA14, PA12 }, \
-    { PA13, PA7, PA14, PB0 }, \
-    { PA13, PA7, PB2, PA4 }, \
-    { PA13, PA7, PB2, PA12 }, \
-    { PA13, PA7, PB2, PB0 }, \
-    { PA13, PA7, PD2, PA4 }, \
-    { PA13, PA7, PD2, PA12 }, \
-    { PA13, PA7, PD2, PB0 }, \
-    { PA13, PA15, PA6, PA4 }, \
-    { PA13, PA15, PA6, PA12 }, \
-    { PA13, PA15, PA6, PB0 }, \
-    { PA13, PA15, PA14, PA4 }, \
-    { PA13, PA15, PA14, PA12 }, \
-    { PA13, PA15, PA14, PB0 }, \
-    { PA13, PA15, PB2, PA4 }, \
-    { PA13, PA15, PB2, PA12 }, \
-    { PA13, PA15, PB2, PB0 }, \
-    { PA13, PA15, PD2, PA4 }, \
-    { PA13, PA15, PD2, PA12 }, \
-    { PA13, PA15, PD2, PB0 }, \
-    { PA13, PB3, PA6, PA4 }, \
-    { PA13, PB3, PA6, PA12 }, \
-    { PA13, PB3, PA6, PB0 }, \
-    { PA13, PB3, PA14, PA4 }, \
-    { PA13, PB3, PA14, PA12 }, \
-    { PA13, PB3, PA14, PB0 }, \
-    { PA13, PB3, PB2, PA4 }, \
-    { PA13, PB3, PB2, PA12 }, \
-    { PA13, PB3, PB2, PB0 }, \
-    { PA13, PB3, PD2, PA4 }, \
-    { PA13, PB3, PD2, PA12 }, \
-    { PA13, PB3, PD2, PB0 }, \
-    { PA13, PD3, PA6, PA4 }, \
-    { PA13, PD3, PA6, PA12 }, \
-    { PA13, PD3, PA6, PB0 }, \
-    { PA13, PD3, PA14, PA4 }, \
-    { PA13, PD3, PA14, PA12 }, \
-    { PA13, PD3, PA14, PB0 }, \
-    { PA13, PD3, PB2, PA4 }, \
-    { PA13, PD3, PB2, PA12 }, \
-    { PA13, PD3, PB2, PB0 }, \
-    { PA13, PD3, PD2, PA4 }, \
-    { PA13, PD3, PD2, PA12 }, \
-    { PA13, PD3, PD2, PB0 }, \
-    { PA13, PD14, PA6, PA4 }, \
-    { PA13, PD14, PA6, PA12 }, \
-    { PA13, PD14, PA6, PB0 }, \
-    { PA13, PD14, PA14, PA4 }, \
-    { PA13, PD14, PA14, PA12 }, \
-    { PA13, PD14, PA14, PB0 }, \
-    { PA13, PD14, PB2, PA4 }, \
-    { PA13, PD14, PB2, PA12 }, \
-    { PA13, PD14, PB2, PB0 }, \
-    { PA13, PD14, PD2, PA4 }, \
-    { PA13, PD14, PD2, PA12 }, \
-    { PA13, PD14, PD2, PB0 }, \
-    { PB1, PA7, PA6, PA4 }, \
-    { PB1, PA7, PA6, PA12 }, \
-    { PB1, PA7, PA6, PB0 }, \
-    { PB1, PA7, PA14, PA4 }, \
-    { PB1, PA7, PA14, PA12 }, \
-    { PB1, PA7, PA14, PB0 }, \
-    { PB1, PA7, PB2, PA4 }, \
-    { PB1, PA7, PB2, PA12 }, \
-    { PB1, PA7, PB2, PB0 }, \
-    { PB1, PA7, PD2, PA4 }, \
-    { PB1, PA7, PD2, PA12 }, \
-    { PB1, PA7, PD2, PB0 }, \
-    { PB1, PA15, PA6, PA4 }, \
-    { PB1, PA15, PA6, PA12 }, \
-    { PB1, PA15, PA6, PB0 }, \
-    { PB1, PA15, PA14, PA4 }, \
-    { PB1, PA15, PA14, PA12 }, \
-    { PB1, PA15, PA14, PB0 }, \
-    { PB1, PA15, PB2, PA4 }, \
-    { PB1, PA15, PB2, PA12 }, \
-    { PB1, PA15, PB2, PB0 }, \
-    { PB1, PA15, PD2, PA4 }, \
-    { PB1, PA15, PD2, PA12 }, \
-    { PB1, PA15, PD2, PB0 }, \
-    { PB1, PB3, PA6, PA4 }, \
-    { PB1, PB3, PA6, PA12 }, \
-    { PB1, PB3, PA6, PB0 }, \
-    { PB1, PB3, PA14, PA4 }, \
-    { PB1, PB3, PA14, PA12 }, \
-    { PB1, PB3, PA14, PB0 }, \
-    { PB1, PB3, PB2, PA4 }, \
-    { PB1, PB3, PB2, PA12 }, \
-    { PB1, PB3, PB2, PB0 }, \
-    { PB1, PB3, PD2, PA4 }, \
-    { PB1, PB3, PD2, PA12 }, \
-    { PB1, PB3, PD2, PB0 }, \
-    { PB1, PD3, PA6, PA4 }, \
-    { PB1, PD3, PA6, PA12 }, \
-    { PB1, PD3, PA6, PB0 }, \
-    { PB1, PD3, PA14, PA4 }, \
-    { PB1, PD3, PA14, PA12 }, \
-    { PB1, PD3, PA14, PB0 }, \
-    { PB1, PD3, PB2, PA4 }, \
-    { PB1, PD3, PB2, PA12 }, \
-    { PB1, PD3, PB2, PB0 }, \
-    { PB1, PD3, PD2, PA4 }, \
-    { PB1, PD3, PD2, PA12 }, \
-    { PB1, PD3, PD2, PB0 }, \
-    { PB1, PD14, PA6, PA4 }, \
-    { PB1, PD14, PA6, PA12 }, \
-    { PB1, PD14, PA6, PB0 }, \
-    { PB1, PD14, PA14, PA4 }, \
-    { PB1, PD14, PA14, PA12 }, \
-    { PB1, PD14, PA14, PB0 }, \
-    { PB1, PD14, PB2, PA4 }, \
-    { PB1, PD14, PB2, PA12 }, \
-    { PB1, PD14, PB2, PB0 }, \
-    { PB1, PD14, PD2, PA4 }, \
-    { PB1, PD14, PD2, PA12 }, \
-    { PB1, PD14, PD2, PB0 }, \
+    { 0x00000004u, { PA5, PA7, PA6, PA4 } }, \
+    { 0x00000004u, { PA5, PA7, PA6, PA12 } }, \
+    { 0x00000004u, { PA5, PA7, PA6, PB0 } }, \
+    { 0x00000004u, { PA5, PA7, PA14, PA4 } }, \
+    { 0x00000004u, { PA5, PA7, PA14, PA12 } }, \
+    { 0x00000004u, { PA5, PA7, PA14, PB0 } }, \
+    { 0x00000004u, { PA5, PA7, PB2, PA4 } }, \
+    { 0x00000004u, { PA5, PA7, PB2, PA12 } }, \
+    { 0x00000004u, { PA5, PA7, PB2, PB0 } }, \
+    { 0x00000004u, { PA5, PA7, PD2, PA4 } }, \
+    { 0x00000004u, { PA5, PA7, PD2, PA12 } }, \
+    { 0x00000004u, { PA5, PA7, PD2, PB0 } }, \
+    { 0x00000004u, { PA5, PA15, PA6, PA4 } }, \
+    { 0x00000004u, { PA5, PA15, PA6, PA12 } }, \
+    { 0x00000004u, { PA5, PA15, PA6, PB0 } }, \
+    { 0x00000004u, { PA5, PA15, PA14, PA4 } }, \
+    { 0x00000004u, { PA5, PA15, PA14, PA12 } }, \
+    { 0x00000004u, { PA5, PA15, PA14, PB0 } }, \
+    { 0x00000004u, { PA5, PA15, PB2, PA4 } }, \
+    { 0x00000004u, { PA5, PA15, PB2, PA12 } }, \
+    { 0x00000004u, { PA5, PA15, PB2, PB0 } }, \
+    { 0x00000004u, { PA5, PA15, PD2, PA4 } }, \
+    { 0x00000004u, { PA5, PA15, PD2, PA12 } }, \
+    { 0x00000004u, { PA5, PA15, PD2, PB0 } }, \
+    { 0x00000004u, { PA5, PB3, PA6, PA4 } }, \
+    { 0x00000004u, { PA5, PB3, PA6, PA12 } }, \
+    { 0x00000004u, { PA5, PB3, PA6, PB0 } }, \
+    { 0x00000004u, { PA5, PB3, PA14, PA4 } }, \
+    { 0x00000004u, { PA5, PB3, PA14, PA12 } }, \
+    { 0x00000004u, { PA5, PB3, PA14, PB0 } }, \
+    { 0x00000004u, { PA5, PB3, PB2, PA4 } }, \
+    { 0x00000004u, { PA5, PB3, PB2, PA12 } }, \
+    { 0x00000004u, { PA5, PB3, PB2, PB0 } }, \
+    { 0x00000004u, { PA5, PB3, PD2, PA4 } }, \
+    { 0x00000004u, { PA5, PB3, PD2, PA12 } }, \
+    { 0x00000004u, { PA5, PB3, PD2, PB0 } }, \
+    { 0x00000004u, { PA5, PD3, PA6, PA4 } }, \
+    { 0x00000004u, { PA5, PD3, PA6, PA12 } }, \
+    { 0x00000004u, { PA5, PD3, PA6, PB0 } }, \
+    { 0x00000004u, { PA5, PD3, PA14, PA4 } }, \
+    { 0x00000004u, { PA5, PD3, PA14, PA12 } }, \
+    { 0x00000004u, { PA5, PD3, PA14, PB0 } }, \
+    { 0x00000004u, { PA5, PD3, PB2, PA4 } }, \
+    { 0x00000004u, { PA5, PD3, PB2, PA12 } }, \
+    { 0x00000004u, { PA5, PD3, PB2, PB0 } }, \
+    { 0x00000004u, { PA5, PD3, PD2, PA4 } }, \
+    { 0x00000004u, { PA5, PD3, PD2, PA12 } }, \
+    { 0x00000004u, { PA5, PD3, PD2, PB0 } }, \
+    { 0x00000004u, { PA5, PD14, PA6, PA4 } }, \
+    { 0x00000004u, { PA5, PD14, PA6, PA12 } }, \
+    { 0x00000004u, { PA5, PD14, PA6, PB0 } }, \
+    { 0x00000004u, { PA5, PD14, PA14, PA4 } }, \
+    { 0x00000004u, { PA5, PD14, PA14, PA12 } }, \
+    { 0x00000004u, { PA5, PD14, PA14, PB0 } }, \
+    { 0x00000004u, { PA5, PD14, PB2, PA4 } }, \
+    { 0x00000004u, { PA5, PD14, PB2, PA12 } }, \
+    { 0x00000004u, { PA5, PD14, PB2, PB0 } }, \
+    { 0x00000004u, { PA5, PD14, PD2, PA4 } }, \
+    { 0x00000004u, { PA5, PD14, PD2, PA12 } }, \
+    { 0x00000004u, { PA5, PD14, PD2, PB0 } }, \
+    { 0x00000004u, { PA13, PA7, PA6, PA4 } }, \
+    { 0x00000004u, { PA13, PA7, PA6, PA12 } }, \
+    { 0x00000004u, { PA13, PA7, PA6, PB0 } }, \
+    { 0x00000004u, { PA13, PA7, PA14, PA4 } }, \
+    { 0x00000004u, { PA13, PA7, PA14, PA12 } }, \
+    { 0x00000004u, { PA13, PA7, PA14, PB0 } }, \
+    { 0x00000004u, { PA13, PA7, PB2, PA4 } }, \
+    { 0x00000004u, { PA13, PA7, PB2, PA12 } }, \
+    { 0x00000004u, { PA13, PA7, PB2, PB0 } }, \
+    { 0x00000004u, { PA13, PA7, PD2, PA4 } }, \
+    { 0x00000004u, { PA13, PA7, PD2, PA12 } }, \
+    { 0x00000004u, { PA13, PA7, PD2, PB0 } }, \
+    { 0x00000004u, { PA13, PA15, PA6, PA4 } }, \
+    { 0x00000004u, { PA13, PA15, PA6, PA12 } }, \
+    { 0x00000004u, { PA13, PA15, PA6, PB0 } }, \
+    { 0x00000004u, { PA13, PA15, PA14, PA4 } }, \
+    { 0x00000004u, { PA13, PA15, PA14, PA12 } }, \
+    { 0x00000004u, { PA13, PA15, PA14, PB0 } }, \
+    { 0x00000004u, { PA13, PA15, PB2, PA4 } }, \
+    { 0x00000004u, { PA13, PA15, PB2, PA12 } }, \
+    { 0x00000004u, { PA13, PA15, PB2, PB0 } }, \
+    { 0x00000004u, { PA13, PA15, PD2, PA4 } }, \
+    { 0x00000004u, { PA13, PA15, PD2, PA12 } }, \
+    { 0x00000004u, { PA13, PA15, PD2, PB0 } }, \
+    { 0x00000004u, { PA13, PB3, PA6, PA4 } }, \
+    { 0x00000004u, { PA13, PB3, PA6, PA12 } }, \
+    { 0x00000004u, { PA13, PB3, PA6, PB0 } }, \
+    { 0x00000004u, { PA13, PB3, PA14, PA4 } }, \
+    { 0x00000004u, { PA13, PB3, PA14, PA12 } }, \
+    { 0x00000004u, { PA13, PB3, PA14, PB0 } }, \
+    { 0x00000004u, { PA13, PB3, PB2, PA4 } }, \
+    { 0x00000004u, { PA13, PB3, PB2, PA12 } }, \
+    { 0x00000004u, { PA13, PB3, PB2, PB0 } }, \
+    { 0x00000004u, { PA13, PB3, PD2, PA4 } }, \
+    { 0x00000004u, { PA13, PB3, PD2, PA12 } }, \
+    { 0x00000004u, { PA13, PB3, PD2, PB0 } }, \
+    { 0x00000004u, { PA13, PD3, PA6, PA4 } }, \
+    { 0x00000004u, { PA13, PD3, PA6, PA12 } }, \
+    { 0x00000004u, { PA13, PD3, PA6, PB0 } }, \
+    { 0x00000004u, { PA13, PD3, PA14, PA4 } }, \
+    { 0x00000004u, { PA13, PD3, PA14, PA12 } }, \
+    { 0x00000004u, { PA13, PD3, PA14, PB0 } }, \
+    { 0x00000004u, { PA13, PD3, PB2, PA4 } }, \
+    { 0x00000004u, { PA13, PD3, PB2, PA12 } }, \
+    { 0x00000004u, { PA13, PD3, PB2, PB0 } }, \
+    { 0x00000004u, { PA13, PD3, PD2, PA4 } }, \
+    { 0x00000004u, { PA13, PD3, PD2, PA12 } }, \
+    { 0x00000004u, { PA13, PD3, PD2, PB0 } }, \
+    { 0x00000004u, { PA13, PD14, PA6, PA4 } }, \
+    { 0x00000004u, { PA13, PD14, PA6, PA12 } }, \
+    { 0x00000004u, { PA13, PD14, PA6, PB0 } }, \
+    { 0x00000004u, { PA13, PD14, PA14, PA4 } }, \
+    { 0x00000004u, { PA13, PD14, PA14, PA12 } }, \
+    { 0x00000004u, { PA13, PD14, PA14, PB0 } }, \
+    { 0x00000004u, { PA13, PD14, PB2, PA4 } }, \
+    { 0x00000004u, { PA13, PD14, PB2, PA12 } }, \
+    { 0x00000004u, { PA13, PD14, PB2, PB0 } }, \
+    { 0x00000004u, { PA13, PD14, PD2, PA4 } }, \
+    { 0x00000004u, { PA13, PD14, PD2, PA12 } }, \
+    { 0x00000004u, { PA13, PD14, PD2, PB0 } }, \
+    { 0x00000004u, { PB1, PA7, PA6, PA4 } }, \
+    { 0x00000004u, { PB1, PA7, PA6, PA12 } }, \
+    { 0x00000004u, { PB1, PA7, PA6, PB0 } }, \
+    { 0x00000004u, { PB1, PA7, PA14, PA4 } }, \
+    { 0x00000004u, { PB1, PA7, PA14, PA12 } }, \
+    { 0x00000004u, { PB1, PA7, PA14, PB0 } }, \
+    { 0x00000004u, { PB1, PA7, PB2, PA4 } }, \
+    { 0x00000004u, { PB1, PA7, PB2, PA12 } }, \
+    { 0x00000004u, { PB1, PA7, PB2, PB0 } }, \
+    { 0x00000004u, { PB1, PA7, PD2, PA4 } }, \
+    { 0x00000004u, { PB1, PA7, PD2, PA12 } }, \
+    { 0x00000004u, { PB1, PA7, PD2, PB0 } }, \
+    { 0x00000004u, { PB1, PA15, PA6, PA4 } }, \
+    { 0x00000004u, { PB1, PA15, PA6, PA12 } }, \
+    { 0x00000004u, { PB1, PA15, PA6, PB0 } }, \
+    { 0x00000004u, { PB1, PA15, PA14, PA4 } }, \
+    { 0x00000004u, { PB1, PA15, PA14, PA12 } }, \
+    { 0x00000004u, { PB1, PA15, PA14, PB0 } }, \
+    { 0x00000004u, { PB1, PA15, PB2, PA4 } }, \
+    { 0x00000004u, { PB1, PA15, PB2, PA12 } }, \
+    { 0x00000004u, { PB1, PA15, PB2, PB0 } }, \
+    { 0x00000004u, { PB1, PA15, PD2, PA4 } }, \
+    { 0x00000004u, { PB1, PA15, PD2, PA12 } }, \
+    { 0x00000004u, { PB1, PA15, PD2, PB0 } }, \
+    { 0x00000004u, { PB1, PB3, PA6, PA4 } }, \
+    { 0x00000004u, { PB1, PB3, PA6, PA12 } }, \
+    { 0x00000004u, { PB1, PB3, PA6, PB0 } }, \
+    { 0x00000004u, { PB1, PB3, PA14, PA4 } }, \
+    { 0x00000004u, { PB1, PB3, PA14, PA12 } }, \
+    { 0x00000004u, { PB1, PB3, PA14, PB0 } }, \
+    { 0x00000004u, { PB1, PB3, PB2, PA4 } }, \
+    { 0x00000004u, { PB1, PB3, PB2, PA12 } }, \
+    { 0x00000004u, { PB1, PB3, PB2, PB0 } }, \
+    { 0x00000004u, { PB1, PB3, PD2, PA4 } }, \
+    { 0x00000004u, { PB1, PB3, PD2, PA12 } }, \
+    { 0x00000004u, { PB1, PB3, PD2, PB0 } }, \
+    { 0x00000004u, { PB1, PD3, PA6, PA4 } }, \
+    { 0x00000004u, { PB1, PD3, PA6, PA12 } }, \
+    { 0x00000004u, { PB1, PD3, PA6, PB0 } }, \
+    { 0x00000004u, { PB1, PD3, PA14, PA4 } }, \
+    { 0x00000004u, { PB1, PD3, PA14, PA12 } }, \
+    { 0x00000004u, { PB1, PD3, PA14, PB0 } }, \
+    { 0x00000004u, { PB1, PD3, PB2, PA4 } }, \
+    { 0x00000004u, { PB1, PD3, PB2, PA12 } }, \
+    { 0x00000004u, { PB1, PD3, PB2, PB0 } }, \
+    { 0x00000004u, { PB1, PD3, PD2, PA4 } }, \
+    { 0x00000004u, { PB1, PD3, PD2, PA12 } }, \
+    { 0x00000004u, { PB1, PD3, PD2, PB0 } }, \
+    { 0x00000004u, { PB1, PD14, PA6, PA4 } }, \
+    { 0x00000004u, { PB1, PD14, PA6, PA12 } }, \
+    { 0x00000004u, { PB1, PD14, PA6, PB0 } }, \
+    { 0x00000004u, { PB1, PD14, PA14, PA4 } }, \
+    { 0x00000004u, { PB1, PD14, PA14, PA12 } }, \
+    { 0x00000004u, { PB1, PD14, PA14, PB0 } }, \
+    { 0x00000004u, { PB1, PD14, PB2, PA4 } }, \
+    { 0x00000004u, { PB1, PD14, PB2, PA12 } }, \
+    { 0x00000004u, { PB1, PD14, PB2, PB0 } }, \
+    { 0x00000004u, { PB1, PD14, PD2, PA4 } }, \
+    { 0x00000004u, { PB1, PD14, PD2, PA12 } }, \
+    { 0x00000004u, { PB1, PD14, PD2, PB0 } }, \
 }
 /* SPI1's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
@@ -985,24 +985,24 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 4, { PB13, PB15, PB6 }, 0x00000004u, 0x00000000u }, \
     { 4, { PB13, PB15, PB14 }, 0x00000004u, 0x00000000u }, \
 }
-/* SPI2's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI2's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI2_NSS_PADS { \
-    { PB5, PB7, PB6, PB4 }, \
-    { PB5, PB7, PB6, PB12 }, \
-    { PB5, PB7, PB14, PB4 }, \
-    { PB5, PB7, PB14, PB12 }, \
-    { PB5, PB15, PB6, PB4 }, \
-    { PB5, PB15, PB6, PB12 }, \
-    { PB5, PB15, PB14, PB4 }, \
-    { PB5, PB15, PB14, PB12 }, \
-    { PB13, PB7, PB6, PB4 }, \
-    { PB13, PB7, PB6, PB12 }, \
-    { PB13, PB7, PB14, PB4 }, \
-    { PB13, PB7, PB14, PB12 }, \
-    { PB13, PB15, PB6, PB4 }, \
-    { PB13, PB15, PB6, PB12 }, \
-    { PB13, PB15, PB14, PB4 }, \
-    { PB13, PB15, PB14, PB12 }, \
+    { 0x00000004u, { PB5, PB7, PB6, PB4 } }, \
+    { 0x00000004u, { PB5, PB7, PB6, PB12 } }, \
+    { 0x00000004u, { PB5, PB7, PB14, PB4 } }, \
+    { 0x00000004u, { PB5, PB7, PB14, PB12 } }, \
+    { 0x00000004u, { PB5, PB15, PB6, PB4 } }, \
+    { 0x00000004u, { PB5, PB15, PB6, PB12 } }, \
+    { 0x00000004u, { PB5, PB15, PB14, PB4 } }, \
+    { 0x00000004u, { PB5, PB15, PB14, PB12 } }, \
+    { 0x00000004u, { PB13, PB7, PB6, PB4 } }, \
+    { 0x00000004u, { PB13, PB7, PB6, PB12 } }, \
+    { 0x00000004u, { PB13, PB7, PB14, PB4 } }, \
+    { 0x00000004u, { PB13, PB7, PB14, PB12 } }, \
+    { 0x00000004u, { PB13, PB15, PB6, PB4 } }, \
+    { 0x00000004u, { PB13, PB15, PB6, PB12 } }, \
+    { 0x00000004u, { PB13, PB15, PB14, PB4 } }, \
+    { 0x00000004u, { PB13, PB15, PB14, PB12 } }, \
 }
 /* SPI2's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI2_DMA_RX CH32RV_DMA_LINE(1, 4, 0x40020044u, 0x40020000u, 12u, 0u)
@@ -1058,89 +1058,89 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 4, { PD11, PD13, PC10 }, 0x00000004u, 0x00000000u }, \
     { 4, { PD11, PD13, PD12 }, 0x00000004u, 0x00000000u }, \
 }
-/* SPI3's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI3's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI3_NSS_PADS { \
-    { PC5, PC7, PC6, PC4 }, \
-    { PC5, PC7, PC6, PC8 }, \
-    { PC5, PC7, PC6, PD10 }, \
-    { PC5, PC7, PC10, PC4 }, \
-    { PC5, PC7, PC10, PC8 }, \
-    { PC5, PC7, PC10, PD10 }, \
-    { PC5, PC7, PD12, PC4 }, \
-    { PC5, PC7, PD12, PC8 }, \
-    { PC5, PC7, PD12, PD10 }, \
-    { PC5, PC11, PC6, PC4 }, \
-    { PC5, PC11, PC6, PC8 }, \
-    { PC5, PC11, PC6, PD10 }, \
-    { PC5, PC11, PC10, PC4 }, \
-    { PC5, PC11, PC10, PC8 }, \
-    { PC5, PC11, PC10, PD10 }, \
-    { PC5, PC11, PD12, PC4 }, \
-    { PC5, PC11, PD12, PC8 }, \
-    { PC5, PC11, PD12, PD10 }, \
-    { PC5, PD13, PC6, PC4 }, \
-    { PC5, PD13, PC6, PC8 }, \
-    { PC5, PD13, PC6, PD10 }, \
-    { PC5, PD13, PC10, PC4 }, \
-    { PC5, PD13, PC10, PC8 }, \
-    { PC5, PD13, PC10, PD10 }, \
-    { PC5, PD13, PD12, PC4 }, \
-    { PC5, PD13, PD12, PC8 }, \
-    { PC5, PD13, PD12, PD10 }, \
-    { PC9, PC7, PC6, PC4 }, \
-    { PC9, PC7, PC6, PC8 }, \
-    { PC9, PC7, PC6, PD10 }, \
-    { PC9, PC7, PC10, PC4 }, \
-    { PC9, PC7, PC10, PC8 }, \
-    { PC9, PC7, PC10, PD10 }, \
-    { PC9, PC7, PD12, PC4 }, \
-    { PC9, PC7, PD12, PC8 }, \
-    { PC9, PC7, PD12, PD10 }, \
-    { PC9, PC11, PC6, PC4 }, \
-    { PC9, PC11, PC6, PC8 }, \
-    { PC9, PC11, PC6, PD10 }, \
-    { PC9, PC11, PC10, PC4 }, \
-    { PC9, PC11, PC10, PC8 }, \
-    { PC9, PC11, PC10, PD10 }, \
-    { PC9, PC11, PD12, PC4 }, \
-    { PC9, PC11, PD12, PC8 }, \
-    { PC9, PC11, PD12, PD10 }, \
-    { PC9, PD13, PC6, PC4 }, \
-    { PC9, PD13, PC6, PC8 }, \
-    { PC9, PD13, PC6, PD10 }, \
-    { PC9, PD13, PC10, PC4 }, \
-    { PC9, PD13, PC10, PC8 }, \
-    { PC9, PD13, PC10, PD10 }, \
-    { PC9, PD13, PD12, PC4 }, \
-    { PC9, PD13, PD12, PC8 }, \
-    { PC9, PD13, PD12, PD10 }, \
-    { PD11, PC7, PC6, PC4 }, \
-    { PD11, PC7, PC6, PC8 }, \
-    { PD11, PC7, PC6, PD10 }, \
-    { PD11, PC7, PC10, PC4 }, \
-    { PD11, PC7, PC10, PC8 }, \
-    { PD11, PC7, PC10, PD10 }, \
-    { PD11, PC7, PD12, PC4 }, \
-    { PD11, PC7, PD12, PC8 }, \
-    { PD11, PC7, PD12, PD10 }, \
-    { PD11, PC11, PC6, PC4 }, \
-    { PD11, PC11, PC6, PC8 }, \
-    { PD11, PC11, PC6, PD10 }, \
-    { PD11, PC11, PC10, PC4 }, \
-    { PD11, PC11, PC10, PC8 }, \
-    { PD11, PC11, PC10, PD10 }, \
-    { PD11, PC11, PD12, PC4 }, \
-    { PD11, PC11, PD12, PC8 }, \
-    { PD11, PC11, PD12, PD10 }, \
-    { PD11, PD13, PC6, PC4 }, \
-    { PD11, PD13, PC6, PC8 }, \
-    { PD11, PD13, PC6, PD10 }, \
-    { PD11, PD13, PC10, PC4 }, \
-    { PD11, PD13, PC10, PC8 }, \
-    { PD11, PD13, PC10, PD10 }, \
-    { PD11, PD13, PD12, PC4 }, \
-    { PD11, PD13, PD12, PC8 }, \
-    { PD11, PD13, PD12, PD10 }, \
+    { 0x00000004u, { PC5, PC7, PC6, PC4 } }, \
+    { 0x00000004u, { PC5, PC7, PC6, PC8 } }, \
+    { 0x00000004u, { PC5, PC7, PC6, PD10 } }, \
+    { 0x00000004u, { PC5, PC7, PC10, PC4 } }, \
+    { 0x00000004u, { PC5, PC7, PC10, PC8 } }, \
+    { 0x00000004u, { PC5, PC7, PC10, PD10 } }, \
+    { 0x00000004u, { PC5, PC7, PD12, PC4 } }, \
+    { 0x00000004u, { PC5, PC7, PD12, PC8 } }, \
+    { 0x00000004u, { PC5, PC7, PD12, PD10 } }, \
+    { 0x00000004u, { PC5, PC11, PC6, PC4 } }, \
+    { 0x00000004u, { PC5, PC11, PC6, PC8 } }, \
+    { 0x00000004u, { PC5, PC11, PC6, PD10 } }, \
+    { 0x00000004u, { PC5, PC11, PC10, PC4 } }, \
+    { 0x00000004u, { PC5, PC11, PC10, PC8 } }, \
+    { 0x00000004u, { PC5, PC11, PC10, PD10 } }, \
+    { 0x00000004u, { PC5, PC11, PD12, PC4 } }, \
+    { 0x00000004u, { PC5, PC11, PD12, PC8 } }, \
+    { 0x00000004u, { PC5, PC11, PD12, PD10 } }, \
+    { 0x00000004u, { PC5, PD13, PC6, PC4 } }, \
+    { 0x00000004u, { PC5, PD13, PC6, PC8 } }, \
+    { 0x00000004u, { PC5, PD13, PC6, PD10 } }, \
+    { 0x00000004u, { PC5, PD13, PC10, PC4 } }, \
+    { 0x00000004u, { PC5, PD13, PC10, PC8 } }, \
+    { 0x00000004u, { PC5, PD13, PC10, PD10 } }, \
+    { 0x00000004u, { PC5, PD13, PD12, PC4 } }, \
+    { 0x00000004u, { PC5, PD13, PD12, PC8 } }, \
+    { 0x00000004u, { PC5, PD13, PD12, PD10 } }, \
+    { 0x00000004u, { PC9, PC7, PC6, PC4 } }, \
+    { 0x00000004u, { PC9, PC7, PC6, PC8 } }, \
+    { 0x00000004u, { PC9, PC7, PC6, PD10 } }, \
+    { 0x00000004u, { PC9, PC7, PC10, PC4 } }, \
+    { 0x00000004u, { PC9, PC7, PC10, PC8 } }, \
+    { 0x00000004u, { PC9, PC7, PC10, PD10 } }, \
+    { 0x00000004u, { PC9, PC7, PD12, PC4 } }, \
+    { 0x00000004u, { PC9, PC7, PD12, PC8 } }, \
+    { 0x00000004u, { PC9, PC7, PD12, PD10 } }, \
+    { 0x00000004u, { PC9, PC11, PC6, PC4 } }, \
+    { 0x00000004u, { PC9, PC11, PC6, PC8 } }, \
+    { 0x00000004u, { PC9, PC11, PC6, PD10 } }, \
+    { 0x00000004u, { PC9, PC11, PC10, PC4 } }, \
+    { 0x00000004u, { PC9, PC11, PC10, PC8 } }, \
+    { 0x00000004u, { PC9, PC11, PC10, PD10 } }, \
+    { 0x00000004u, { PC9, PC11, PD12, PC4 } }, \
+    { 0x00000004u, { PC9, PC11, PD12, PC8 } }, \
+    { 0x00000004u, { PC9, PC11, PD12, PD10 } }, \
+    { 0x00000004u, { PC9, PD13, PC6, PC4 } }, \
+    { 0x00000004u, { PC9, PD13, PC6, PC8 } }, \
+    { 0x00000004u, { PC9, PD13, PC6, PD10 } }, \
+    { 0x00000004u, { PC9, PD13, PC10, PC4 } }, \
+    { 0x00000004u, { PC9, PD13, PC10, PC8 } }, \
+    { 0x00000004u, { PC9, PD13, PC10, PD10 } }, \
+    { 0x00000004u, { PC9, PD13, PD12, PC4 } }, \
+    { 0x00000004u, { PC9, PD13, PD12, PC8 } }, \
+    { 0x00000004u, { PC9, PD13, PD12, PD10 } }, \
+    { 0x00000004u, { PD11, PC7, PC6, PC4 } }, \
+    { 0x00000004u, { PD11, PC7, PC6, PC8 } }, \
+    { 0x00000004u, { PD11, PC7, PC6, PD10 } }, \
+    { 0x00000004u, { PD11, PC7, PC10, PC4 } }, \
+    { 0x00000004u, { PD11, PC7, PC10, PC8 } }, \
+    { 0x00000004u, { PD11, PC7, PC10, PD10 } }, \
+    { 0x00000004u, { PD11, PC7, PD12, PC4 } }, \
+    { 0x00000004u, { PD11, PC7, PD12, PC8 } }, \
+    { 0x00000004u, { PD11, PC7, PD12, PD10 } }, \
+    { 0x00000004u, { PD11, PC11, PC6, PC4 } }, \
+    { 0x00000004u, { PD11, PC11, PC6, PC8 } }, \
+    { 0x00000004u, { PD11, PC11, PC6, PD10 } }, \
+    { 0x00000004u, { PD11, PC11, PC10, PC4 } }, \
+    { 0x00000004u, { PD11, PC11, PC10, PC8 } }, \
+    { 0x00000004u, { PD11, PC11, PC10, PD10 } }, \
+    { 0x00000004u, { PD11, PC11, PD12, PC4 } }, \
+    { 0x00000004u, { PD11, PC11, PD12, PC8 } }, \
+    { 0x00000004u, { PD11, PC11, PD12, PD10 } }, \
+    { 0x00000004u, { PD11, PD13, PC6, PC4 } }, \
+    { 0x00000004u, { PD11, PD13, PC6, PC8 } }, \
+    { 0x00000004u, { PD11, PD13, PC6, PD10 } }, \
+    { 0x00000004u, { PD11, PD13, PC10, PC4 } }, \
+    { 0x00000004u, { PD11, PD13, PC10, PC8 } }, \
+    { 0x00000004u, { PD11, PD13, PC10, PD10 } }, \
+    { 0x00000004u, { PD11, PD13, PD12, PC4 } }, \
+    { 0x00000004u, { PD11, PD13, PD12, PC8 } }, \
+    { 0x00000004u, { PD11, PD13, PD12, PD10 } }, \
 }
 /* SPI3's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI3_DMA_RX CH32RV_DMA_LINE(1, 8, 0x40020094u, 0x40020000u, 28u, 0u)

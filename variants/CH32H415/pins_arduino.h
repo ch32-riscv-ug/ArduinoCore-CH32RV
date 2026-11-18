@@ -707,35 +707,35 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 5, { PF5, PA6, PA7 }, 0x00000005u, 0x00000000u }, \
     { 5, { PF5, PB4, PA7 }, 0x00000005u, 0x00000000u }, \
 }
-/* SPI1's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI1's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI1_NSS_PADS { \
-    { PA5, PA6, PA7, PA4 }, \
-    { PA5, PA6, PA7, PA15 }, \
-    { PA5, PA6, PA7, PF4 }, \
-    { PA5, PB4, PA7, PA4 }, \
-    { PA5, PB4, PA7, PA15 }, \
-    { PA5, PB4, PA7, PF4 }, \
-    { PA5, PF3, PA7, PA4 }, \
-    { PA5, PF3, PA7, PA15 }, \
-    { PA5, PF3, PA7, PF4 }, \
-    { PB3, PA6, PA7, PA4 }, \
-    { PB3, PA6, PA7, PA15 }, \
-    { PB3, PA6, PA7, PF4 }, \
-    { PB3, PB4, PA7, PA4 }, \
-    { PB3, PB4, PA7, PA15 }, \
-    { PB3, PB4, PA7, PF4 }, \
-    { PB3, PF3, PA7, PA4 }, \
-    { PB3, PF3, PA7, PA15 }, \
-    { PB3, PF3, PA7, PF4 }, \
-    { PF5, PA6, PA7, PA4 }, \
-    { PF5, PA6, PA7, PA15 }, \
-    { PF5, PA6, PA7, PF4 }, \
-    { PF5, PB4, PA7, PA4 }, \
-    { PF5, PB4, PA7, PA15 }, \
-    { PF5, PB4, PA7, PF4 }, \
-    { PF5, PF3, PA7, PA4 }, \
-    { PF5, PF3, PA7, PA15 }, \
-    { PF5, PF3, PA7, PF4 }, \
+    { 0x00000005u, { PA5, PA6, PA7, PA4 } }, \
+    { 0x00000005u, { PA5, PA6, PA7, PA15 } }, \
+    { 0x00000005u, { PA5, PA6, PA7, PF4 } }, \
+    { 0x00000005u, { PA5, PB4, PA7, PA4 } }, \
+    { 0x00000005u, { PA5, PB4, PA7, PA15 } }, \
+    { 0x00000005u, { PA5, PB4, PA7, PF4 } }, \
+    { 0x00000005u, { PA5, PF3, PA7, PA4 } }, \
+    { 0x00000005u, { PA5, PF3, PA7, PA15 } }, \
+    { 0x00000005u, { PA5, PF3, PA7, PF4 } }, \
+    { 0x00000005u, { PB3, PA6, PA7, PA4 } }, \
+    { 0x00000005u, { PB3, PA6, PA7, PA15 } }, \
+    { 0x00000005u, { PB3, PA6, PA7, PF4 } }, \
+    { 0x00000005u, { PB3, PB4, PA7, PA4 } }, \
+    { 0x00000005u, { PB3, PB4, PA7, PA15 } }, \
+    { 0x00000005u, { PB3, PB4, PA7, PF4 } }, \
+    { 0x00000005u, { PB3, PF3, PA7, PA4 } }, \
+    { 0x00000005u, { PB3, PF3, PA7, PA15 } }, \
+    { 0x00000005u, { PB3, PF3, PA7, PF4 } }, \
+    { 0x00000005u, { PF5, PA6, PA7, PA4 } }, \
+    { 0x00000005u, { PF5, PA6, PA7, PA15 } }, \
+    { 0x00000005u, { PF5, PA6, PA7, PF4 } }, \
+    { 0x00000005u, { PF5, PB4, PA7, PA4 } }, \
+    { 0x00000005u, { PF5, PB4, PA7, PA15 } }, \
+    { 0x00000005u, { PF5, PB4, PA7, PF4 } }, \
+    { 0x00000005u, { PF5, PF3, PA7, PA4 } }, \
+    { 0x00000005u, { PF5, PF3, PA7, PA15 } }, \
+    { 0x00000005u, { PF5, PF3, PA7, PF4 } }, \
 }
 /* SPI1's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(2, 6, 0x4002046cu, 0x40020400u, 20u, 64u)
@@ -794,98 +794,98 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 5, { PD3, PC2, PB15 }, 0x00000005u, 0x00000000u }, \
     { 5, { PD3, PC2, PC1 }, 0x00000005u, 0x00000000u }, \
 }
-/* SPI2's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI2's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI2_NSS_PADS { \
-    { PA9, PB14, PB15, PA11 }, \
-    { PA9, PB14, PB15, PB9 }, \
-    { PA9, PB14, PB15, PB12 }, \
-    { PA9, PB14, PC1, PA11 }, \
-    { PA9, PB14, PC1, PB9 }, \
-    { PA9, PB14, PC1, PB12 }, \
-    { PA9, PB14, PC3, PA11 }, \
-    { PA9, PB14, PC3, PB9 }, \
-    { PA9, PB14, PC3, PB12 }, \
-    { PA9, PC2, PB15, PA11 }, \
-    { PA9, PC2, PB15, PB9 }, \
-    { PA9, PC2, PB15, PB12 }, \
-    { PA9, PC2, PC1, PA11 }, \
-    { PA9, PC2, PC1, PB9 }, \
-    { PA9, PC2, PC1, PB12 }, \
-    { PA9, PC2, PC3, PA11 }, \
-    { PA9, PC2, PC3, PB9 }, \
-    { PA9, PC2, PC3, PB12 }, \
-    { PA12, PB14, PB15, PA11 }, \
-    { PA12, PB14, PB15, PB9 }, \
-    { PA12, PB14, PB15, PB12 }, \
-    { PA12, PB14, PC1, PA11 }, \
-    { PA12, PB14, PC1, PB9 }, \
-    { PA12, PB14, PC1, PB12 }, \
-    { PA12, PB14, PC3, PA11 }, \
-    { PA12, PB14, PC3, PB9 }, \
-    { PA12, PB14, PC3, PB12 }, \
-    { PA12, PC2, PB15, PA11 }, \
-    { PA12, PC2, PB15, PB9 }, \
-    { PA12, PC2, PB15, PB12 }, \
-    { PA12, PC2, PC1, PA11 }, \
-    { PA12, PC2, PC1, PB9 }, \
-    { PA12, PC2, PC1, PB12 }, \
-    { PA12, PC2, PC3, PA11 }, \
-    { PA12, PC2, PC3, PB9 }, \
-    { PA12, PC2, PC3, PB12 }, \
-    { PB10, PB14, PB15, PA11 }, \
-    { PB10, PB14, PB15, PB9 }, \
-    { PB10, PB14, PB15, PB12 }, \
-    { PB10, PB14, PC1, PA11 }, \
-    { PB10, PB14, PC1, PB9 }, \
-    { PB10, PB14, PC1, PB12 }, \
-    { PB10, PB14, PC3, PA11 }, \
-    { PB10, PB14, PC3, PB9 }, \
-    { PB10, PB14, PC3, PB12 }, \
-    { PB10, PC2, PB15, PA11 }, \
-    { PB10, PC2, PB15, PB9 }, \
-    { PB10, PC2, PB15, PB12 }, \
-    { PB10, PC2, PC1, PA11 }, \
-    { PB10, PC2, PC1, PB9 }, \
-    { PB10, PC2, PC1, PB12 }, \
-    { PB10, PC2, PC3, PA11 }, \
-    { PB10, PC2, PC3, PB9 }, \
-    { PB10, PC2, PC3, PB12 }, \
-    { PB13, PB14, PB15, PA11 }, \
-    { PB13, PB14, PB15, PB9 }, \
-    { PB13, PB14, PB15, PB12 }, \
-    { PB13, PB14, PC1, PA11 }, \
-    { PB13, PB14, PC1, PB9 }, \
-    { PB13, PB14, PC1, PB12 }, \
-    { PB13, PB14, PC3, PA11 }, \
-    { PB13, PB14, PC3, PB9 }, \
-    { PB13, PB14, PC3, PB12 }, \
-    { PB13, PC2, PB15, PA11 }, \
-    { PB13, PC2, PB15, PB9 }, \
-    { PB13, PC2, PB15, PB12 }, \
-    { PB13, PC2, PC1, PA11 }, \
-    { PB13, PC2, PC1, PB9 }, \
-    { PB13, PC2, PC1, PB12 }, \
-    { PB13, PC2, PC3, PA11 }, \
-    { PB13, PC2, PC3, PB9 }, \
-    { PB13, PC2, PC3, PB12 }, \
-    { PD3, PB14, PB15, PA11 }, \
-    { PD3, PB14, PB15, PB9 }, \
-    { PD3, PB14, PB15, PB12 }, \
-    { PD3, PB14, PC1, PA11 }, \
-    { PD3, PB14, PC1, PB9 }, \
-    { PD3, PB14, PC1, PB12 }, \
-    { PD3, PB14, PC3, PA11 }, \
-    { PD3, PB14, PC3, PB9 }, \
-    { PD3, PB14, PC3, PB12 }, \
-    { PD3, PC2, PB15, PA11 }, \
-    { PD3, PC2, PB15, PB9 }, \
-    { PD3, PC2, PB15, PB12 }, \
-    { PD3, PC2, PC1, PA11 }, \
-    { PD3, PC2, PC1, PB9 }, \
-    { PD3, PC2, PC1, PB12 }, \
-    { PD3, PC2, PC3, PA11 }, \
-    { PD3, PC2, PC3, PB9 }, \
-    { PD3, PC2, PC3, PB12 }, \
+    { 0x00000005u, { PA9, PB14, PB15, PA11 } }, \
+    { 0x00000005u, { PA9, PB14, PB15, PB9 } }, \
+    { 0x00000005u, { PA9, PB14, PB15, PB12 } }, \
+    { 0x00000005u, { PA9, PB14, PC1, PA11 } }, \
+    { 0x00000005u, { PA9, PB14, PC1, PB9 } }, \
+    { 0x00000005u, { PA9, PB14, PC1, PB12 } }, \
+    { 0x00000005u, { PA9, PB14, PC3, PA11 } }, \
+    { 0x00000005u, { PA9, PB14, PC3, PB9 } }, \
+    { 0x00000005u, { PA9, PB14, PC3, PB12 } }, \
+    { 0x00000005u, { PA9, PC2, PB15, PA11 } }, \
+    { 0x00000005u, { PA9, PC2, PB15, PB9 } }, \
+    { 0x00000005u, { PA9, PC2, PB15, PB12 } }, \
+    { 0x00000005u, { PA9, PC2, PC1, PA11 } }, \
+    { 0x00000005u, { PA9, PC2, PC1, PB9 } }, \
+    { 0x00000005u, { PA9, PC2, PC1, PB12 } }, \
+    { 0x00000005u, { PA9, PC2, PC3, PA11 } }, \
+    { 0x00000005u, { PA9, PC2, PC3, PB9 } }, \
+    { 0x00000005u, { PA9, PC2, PC3, PB12 } }, \
+    { 0x00000005u, { PA12, PB14, PB15, PA11 } }, \
+    { 0x00000005u, { PA12, PB14, PB15, PB9 } }, \
+    { 0x00000005u, { PA12, PB14, PB15, PB12 } }, \
+    { 0x00000005u, { PA12, PB14, PC1, PA11 } }, \
+    { 0x00000005u, { PA12, PB14, PC1, PB9 } }, \
+    { 0x00000005u, { PA12, PB14, PC1, PB12 } }, \
+    { 0x00000005u, { PA12, PB14, PC3, PA11 } }, \
+    { 0x00000005u, { PA12, PB14, PC3, PB9 } }, \
+    { 0x00000005u, { PA12, PB14, PC3, PB12 } }, \
+    { 0x00000005u, { PA12, PC2, PB15, PA11 } }, \
+    { 0x00000005u, { PA12, PC2, PB15, PB9 } }, \
+    { 0x00000005u, { PA12, PC2, PB15, PB12 } }, \
+    { 0x00000005u, { PA12, PC2, PC1, PA11 } }, \
+    { 0x00000005u, { PA12, PC2, PC1, PB9 } }, \
+    { 0x00000005u, { PA12, PC2, PC1, PB12 } }, \
+    { 0x00000005u, { PA12, PC2, PC3, PA11 } }, \
+    { 0x00000005u, { PA12, PC2, PC3, PB9 } }, \
+    { 0x00000005u, { PA12, PC2, PC3, PB12 } }, \
+    { 0x00000005u, { PB10, PB14, PB15, PA11 } }, \
+    { 0x00000005u, { PB10, PB14, PB15, PB9 } }, \
+    { 0x00000005u, { PB10, PB14, PB15, PB12 } }, \
+    { 0x00000005u, { PB10, PB14, PC1, PA11 } }, \
+    { 0x00000005u, { PB10, PB14, PC1, PB9 } }, \
+    { 0x00000005u, { PB10, PB14, PC1, PB12 } }, \
+    { 0x00000005u, { PB10, PB14, PC3, PA11 } }, \
+    { 0x00000005u, { PB10, PB14, PC3, PB9 } }, \
+    { 0x00000005u, { PB10, PB14, PC3, PB12 } }, \
+    { 0x00000005u, { PB10, PC2, PB15, PA11 } }, \
+    { 0x00000005u, { PB10, PC2, PB15, PB9 } }, \
+    { 0x00000005u, { PB10, PC2, PB15, PB12 } }, \
+    { 0x00000005u, { PB10, PC2, PC1, PA11 } }, \
+    { 0x00000005u, { PB10, PC2, PC1, PB9 } }, \
+    { 0x00000005u, { PB10, PC2, PC1, PB12 } }, \
+    { 0x00000005u, { PB10, PC2, PC3, PA11 } }, \
+    { 0x00000005u, { PB10, PC2, PC3, PB9 } }, \
+    { 0x00000005u, { PB10, PC2, PC3, PB12 } }, \
+    { 0x00000005u, { PB13, PB14, PB15, PA11 } }, \
+    { 0x00000005u, { PB13, PB14, PB15, PB9 } }, \
+    { 0x00000005u, { PB13, PB14, PB15, PB12 } }, \
+    { 0x00000005u, { PB13, PB14, PC1, PA11 } }, \
+    { 0x00000005u, { PB13, PB14, PC1, PB9 } }, \
+    { 0x00000005u, { PB13, PB14, PC1, PB12 } }, \
+    { 0x00000005u, { PB13, PB14, PC3, PA11 } }, \
+    { 0x00000005u, { PB13, PB14, PC3, PB9 } }, \
+    { 0x00000005u, { PB13, PB14, PC3, PB12 } }, \
+    { 0x00000005u, { PB13, PC2, PB15, PA11 } }, \
+    { 0x00000005u, { PB13, PC2, PB15, PB9 } }, \
+    { 0x00000005u, { PB13, PC2, PB15, PB12 } }, \
+    { 0x00000005u, { PB13, PC2, PC1, PA11 } }, \
+    { 0x00000005u, { PB13, PC2, PC1, PB9 } }, \
+    { 0x00000005u, { PB13, PC2, PC1, PB12 } }, \
+    { 0x00000005u, { PB13, PC2, PC3, PA11 } }, \
+    { 0x00000005u, { PB13, PC2, PC3, PB9 } }, \
+    { 0x00000005u, { PB13, PC2, PC3, PB12 } }, \
+    { 0x00000005u, { PD3, PB14, PB15, PA11 } }, \
+    { 0x00000005u, { PD3, PB14, PB15, PB9 } }, \
+    { 0x00000005u, { PD3, PB14, PB15, PB12 } }, \
+    { 0x00000005u, { PD3, PB14, PC1, PA11 } }, \
+    { 0x00000005u, { PD3, PB14, PC1, PB9 } }, \
+    { 0x00000005u, { PD3, PB14, PC1, PB12 } }, \
+    { 0x00000005u, { PD3, PB14, PC3, PA11 } }, \
+    { 0x00000005u, { PD3, PB14, PC3, PB9 } }, \
+    { 0x00000005u, { PD3, PB14, PC3, PB12 } }, \
+    { 0x00000005u, { PD3, PC2, PB15, PA11 } }, \
+    { 0x00000005u, { PD3, PC2, PB15, PB9 } }, \
+    { 0x00000005u, { PD3, PC2, PB15, PB12 } }, \
+    { 0x00000005u, { PD3, PC2, PC1, PA11 } }, \
+    { 0x00000005u, { PD3, PC2, PC1, PB9 } }, \
+    { 0x00000005u, { PD3, PC2, PC1, PB12 } }, \
+    { 0x00000005u, { PD3, PC2, PC3, PA11 } }, \
+    { 0x00000005u, { PD3, PC2, PC3, PB9 } }, \
+    { 0x00000005u, { PD3, PC2, PC3, PB12 } }, \
 }
 /* SPI2's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI2_DMA_RX CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 66u)
@@ -914,16 +914,16 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 6, { PB3, PC11, PC12 }, 0x00000006u, 0x00000000u }, \
     { 6, { PC10, PB4, PC12 }, 0x00000006u, 0x00000000u }, \
 }
-/* SPI3's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+/* SPI3's NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */
 #define CH32RV_SPI3_NSS_PADS { \
-    { PB3, PB4, PC12, PA4 }, \
-    { PB3, PB4, PC12, PA15 }, \
-    { PB3, PC11, PC12, PA4 }, \
-    { PB3, PC11, PC12, PA15 }, \
-    { PC10, PB4, PC12, PA4 }, \
-    { PC10, PB4, PC12, PA15 }, \
-    { PC10, PC11, PC12, PA4 }, \
-    { PC10, PC11, PC12, PA15 }, \
+    { 0x00000006u, { PB3, PB4, PC12, PA4 } }, \
+    { 0x00000006u, { PB3, PB4, PC12, PA15 } }, \
+    { 0x00000006u, { PB3, PC11, PC12, PA4 } }, \
+    { 0x00000006u, { PB3, PC11, PC12, PA15 } }, \
+    { 0x00000006u, { PC10, PB4, PC12, PA4 } }, \
+    { 0x00000006u, { PC10, PB4, PC12, PA15 } }, \
+    { 0x00000006u, { PC10, PC11, PC12, PA4 } }, \
+    { 0x00000006u, { PC10, PC11, PC12, PA15 } }, \
 }
 /* SPI3's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI3_DMA_RX CH32RV_DMA_LINE(1, 8, 0x40020094u, 0x40020000u, 28u, 68u)

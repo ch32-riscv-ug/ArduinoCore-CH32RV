@@ -172,7 +172,7 @@ SPI.endTransaction();                                              // 最後のb
 - 使えるのは経路のNSSの端子だけです(variantの`CH32RV_SPIn_NSS_PADS`)。`ss`が別の端子のときや、経路にNSSが無い
   系列(X033 / X035)では効かず、`hwCs()`が`false`です。
 - コードは`setHwCs()`を呼ぶスケッチだけにリンクされます。バスに残るのは判定と端子の番号だけです(V003でSPIを使う
-  スケッチが24 B増える)。V203のPA4で、プローブのspi-targetを相手に確かめました(2026-11-18、spi::test_spi_hw_cs)。
+  スケッチが24 B増える)。V203のPA4とV003のPC1で、プローブのspi-targetを相手に確かめました(2026-11-18、spi::test_spi_hw_cs)。
 
 ## 知っておくとよいこと
 

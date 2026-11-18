@@ -23,25 +23,29 @@ namespace {
 
 /* Each SPI's NSS pad on each route (the variant's CH32RV_SPIn_NSS_PADS:
  * SCK, MISO, MOSI, NSS). Only setHwCs() reads it. */
+struct NssRow {
+    uint32_t value;            /* the route's value (route_value()) */
+    uint8_t pins[4];           /* SCK, MISO, MOSI, NSS */
+};
 struct SpiNss {
-    const uint8_t (*rows)[4];
+    const NssRow *rows;
     uint8_t count;
 };
 #define CH32RV_SPI_NSS_SET(n) { spi##n##_nss, (uint8_t)(sizeof spi##n##_nss / sizeof spi##n##_nss[0]) },
 #if defined(CH32RV_SPI_HAS_1) && defined(CH32RV_SPI1_NSS_PADS)
-const uint8_t spi1_nss[][4] = CH32RV_SPI1_NSS_PADS;
+const NssRow spi1_nss[] = CH32RV_SPI1_NSS_PADS;
 #define CH32RV_SPI_NSS_1 CH32RV_SPI_NSS_SET(1)
 #else
 #define CH32RV_SPI_NSS_1 { nullptr, 0 },
 #endif
 #if defined(CH32RV_SPI_HAS_2) && defined(CH32RV_SPI2_NSS_PADS)
-const uint8_t spi2_nss[][4] = CH32RV_SPI2_NSS_PADS;
+const NssRow spi2_nss[] = CH32RV_SPI2_NSS_PADS;
 #define CH32RV_SPI_NSS_2 CH32RV_SPI_NSS_SET(2)
 #else
 #define CH32RV_SPI_NSS_2 { nullptr, 0 },
 #endif
 #if defined(CH32RV_SPI_HAS_3) && defined(CH32RV_SPI3_NSS_PADS)
-const uint8_t spi3_nss[][4] = CH32RV_SPI3_NSS_PADS;
+const NssRow spi3_nss[] = CH32RV_SPI3_NSS_PADS;
 #define CH32RV_SPI_NSS_3 CH32RV_SPI_NSS_SET(3)
 #else
 #define CH32RV_SPI_NSS_3 { nullptr, 0 },
@@ -89,8 +93,8 @@ bool CH32RVSPIClass::nss_pad(uint8_t &pin)
     }
     const SpiNss &set = spi_nss[slot_index()];
     for (uint8_t i = 0; i < set.count; i++) {
-        const uint8_t *r = set.rows[i];
-        if (r[0] == _sck_pin && r[1] == _miso_pin && r[2] == _mosi_pin &&
+        const uint8_t *r = set.rows[i].pins;
+        if (r[0] == _sck_pin && r[1] == _miso_pin && r[2] == _mosi_pin && set.rows[i].value == route_value() &&
             (!_ss1 || (uint8_t)CH32RV_PIN_RESOLVE(_ss1 - 1) == r[3])) {
             pin = r[3];
             return true;

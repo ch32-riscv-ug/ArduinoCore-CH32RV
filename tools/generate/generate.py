@@ -4670,18 +4670,21 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             # Each route's NSS pad, for setHwCs(): rows of SCK, MISO, MOSI,
             # NSS, matched on the first three (only setHwCs() reads them).
             nss_roles = ("SCK", "MISO", "MOSI", "NSS")
-            nss_rows = {pads for _v, pads, _a, _b in
+            # the route's value as the route table has it (PCFR1's, or the
+            # pads' AF number): two routes may share SCK / MISO / MOSI and
+            # differ in NSS alone (V003 SPI1, PC0 / PC1)
+            nss_rows = {(v1, pads) for _v, pads, v1, _b in
                         route_table(series, parts, spis, remap, "spi", nss_roles, index)}
             if not nss_rows and route is not None:
                 for pn in parts:
                     entry = spis.get(pn, {}).get((index, route))
                     if entry and set(nss_roles) <= set(entry):
-                        nss_rows.add(tuple(entry[r] for r in nss_roles))
+                        nss_rows.add((0, tuple(entry[r] for r in nss_roles)))
             if nss_rows:
-                out.append(f"/* SPI{index}'s NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */")
+                out.append(f"/* SPI{index}'s NSS pad on each route (setHwCs()): the route's value, SCK, MISO, MOSI, NSS. */")
                 out.append(f"#define CH32RV_SPI{index}_NSS_PADS {{ \\")
-                for pads in sorted(nss_rows):
-                    out.append("    { " + ", ".join(pad_name(*pd) for pd in pads) + " }, \\")
+                for v1, pads in sorted(nss_rows):
+                    out.append(f"    {{ 0x{v1:08x}u, {{ " + ", ".join(pad_name(*pd) for pd in pads) + " } }, \\")
                 out.append("}")
             spi_dma = {}
             for family in sorted({r.get("family", "") for r in rows}):
