@@ -67,6 +67,10 @@ PROTOCOL_HZ = 20_000      # wire.repeated-start: the transactions, where the ben
 # clock_restored), so the bench's 10-190 ns bounces are no longer counted as clocks; captured without a glitch
 # filter or hysteresis, as its docs/capturing section 2 advises for slow I2C.
 RATE = 100_000_000
+# The other cases' clocks are 100 kHz at most (PROTOCOL_HZ, SOFT_SLAVE_HZ, SOFT_EXT_HZ): 40 MS/s is 200 / T there
+# and still two samples of a 50 ns spike, at 10 MB/s for two lines - 2.5 times the probe's room of 100 MS/s, whose
+# buffers last only a few hundred ms when the reader stalls ([oep], 2026-11-18).
+PROTOCOL_RATE = 40_000_000
 
 
 def settings(test_file):
@@ -142,7 +146,10 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                 with ws_run.section(2, "rest", expect=[starts(idle), ends(idle)]):
                     wait(0.02)
                 for hz in SPEEDS_HZ:
-                    ask(dut, f"clock {hz}", rb"CLOCK (\d+)")
+                    # dut.write and wait_reply, not ask(): a plain expect stops reading the stream, and at
+                    # 25 MB/s the probe's buffers last a few hundred ms ([oep], 2026-11-18)
+                    dut.write(f"clock {hz}\n")
+                    wait_reply(dut, wait, rb"CLOCK (\d+)")
                     for address in (ADDRESS, 0x13):
                         # Above PROMISED_HZ the transfer is recorded, not required: no expectation on the wire
                         # there (the SCL that comes out is judged by judge_clocks all the same).
@@ -259,7 +266,7 @@ def test_wire_repeated_start(dut, oep_host, ws_run, record_property):
                                 pass
                             wait(0.01)
 
-        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     finally:
         core.plan_release(host, [target.fn])
     record_property("results", json.dumps(wrong) if wrong else "ok")
@@ -369,7 +376,7 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
                 wrong.append(f"another address: result {done.result}, callbacks {before} -> {after[:2]}")
 
     try:
-        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     finally:
         end_target(dut)
         core.plan_release(host, [ctrl.fn])
@@ -430,13 +437,50 @@ def drain(target):
             return frames
 
 
-def test_wire_data_nack(dut, oep_host):
-    """wire.data-nack: endTransmission() 3 when the target NACKs a data byte. Not producible: the probe's i2c-target
-    ACKs every byte of a write (oep-if-fixture §3: past max_length it drops the bytes but still ACKs), and nothing else
-    on the bench answers the DUT."""
-    pytest.skip("the probe's i2c-target ACKs every data byte (oep-if-fixture §3); a data NACK needs an option to NACK "
-                "from a given byte of a write (e.g. a nack_from op, or NACKing past max_length) - asked of [oep] "
-                "2026-11-17, awaiting its decision")
+NACK_DATA = bytes((0x11, 0x22, 0x33, 0x44))
+
+
+def test_wire_data_nack(dut, oep_host, ws_run, record_property):
+    """wire.data-nack: endTransmission() 3 when the target NACKs a data byte. The probe's i2c-target NACKs a write
+    from its n-th data byte (configure(nack_from=n), oep-client 0.0.57 and later; a probe that does not declare it
+    skips). The DUT writes 4 bytes for n = 1..4 and with no nack_from: 3 for every n, 0 without; on the line (WireSkein)
+    the address ACKed, the bytes up to the n-th - that one NACKed - and the STOP, or all 4 ACKed."""
+    from wireskein.runlog import ends, i2c, starts
+    case = settings(__file__)
+    lines, sda, scl, soft = open_bus(dut, oep_host, case, record_property)
+    host = oep_host.host
+    target = I2cTarget(host)
+    if not target.nack_from:
+        pytest.skip("the probe's i2c-target cannot NACK a data byte (no nack_from declared)")
+    core.plan_apply(host, target.assignments(lines[sda]["channel"], lines[scl]["channel"]))
+    wrong, seen = [], {}
+    try:
+        ask(dut, f"clock {PROTOCOL_HZ}", rb"CLOCK (\d+)")
+
+        def steps(wait):
+            idle = {sda: 1, scl: 1}
+            with ws_run.section(1, f"{'softwire' if soft else 'wire'} data nack {sda} {scl} at 0x{ADDRESS:02x}"):
+                for n in (None, 1, 2, 3, 4):
+                    target.configure(ADDRESS, nack_from=n)
+                    sent = NACK_DATA[:n] if n else NACK_DATA
+                    t = {"addr": ADDRESS, "rw": "write", "bytes": list(sent), "ack": True, "start": "S", "end": "P"}
+                    if n:
+                        t["nack_at"] = n - 1
+                    name = f"nack_from {n}" if n else "no nack_from"
+                    with ws_run.section(2, name, expect=[i2c(scl, sda, transactions=[t]), starts(idle), ends(idle)]):
+                        seen[name] = w(ws_run, dut, wait, ADDRESS, NACK_DATA)[0]
+                        wait(0.01)
+                    while target.read_rx()[0]:          # what the target took in: the wire is WireSkein's
+                        pass
+                    want = 3 if n else 0
+                    if seen[name] != want:
+                        wrong.append(f"{name}: endTransmission {seen[name]}, want {want}")
+
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("results", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
 
 
 def test_wire_timeout(dut, oep_host, ws_run, record_property):
@@ -523,7 +567,7 @@ def test_wire_timeout(dut, oep_host, ws_run, record_property):
             if seen["clean"][0] != 0 or frames != [b"\x30"]:
                 wrong.append(f"after the stretch: endTransmission {seen['clean'][0]}, the target got {frames}")
 
-    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     record_property("results", json.dumps(seen))
     assert not wrong, " | ".join(wrong)
 
@@ -574,7 +618,7 @@ def test_wire_clock_stretch(dut, oep_host, ws_run, record_property):
                 if seen["read"] != (2, reply):
                     wrong.append(f"read 2: {seen['read']}, the target sent {reply.hex()}")
 
-        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     finally:
         core.plan_release(host, [target.fn])
     record_property("results", json.dumps({k: [v[0], v[1].hex() if isinstance(v[1], bytes) else v[1]]
@@ -622,7 +666,7 @@ def test_wire_bus_recovery(dut, oep_host, ws_run, record_property):
                     wait(0.01)
                     seen["frames"] = [f.hex() for f in drain(target)]
 
-        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     finally:
         core.plan_release(host, [target.fn])
     record_property("results", json.dumps(seen))
@@ -748,7 +792,7 @@ def test_wire_10bit(dut, oep_host, ws_run, record_property):
                 end_target(dut)
                 core.plan_release(host, [ctrl.fn])
 
-    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
 
@@ -818,7 +862,7 @@ def test_wire_general_call(dut, oep_host, ws_run, record_property):
                 end_target(dut)
                 core.plan_release(host, [ctrl.fn])
 
-    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
 
@@ -877,7 +921,7 @@ def test_wire_pec(dut, oep_host, ws_run, record_property):
                                      f"want {want[0]} {want[1].hex()}")
                 say(ws_run, dut, wait, "pec 0", rb"PEC 0")
 
-        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+        ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     finally:
         core.plan_release(host, [target.fn])
     record_property("results", json.dumps(seen))
@@ -1001,7 +1045,7 @@ def test_wire_controller_and_target(dut, oep_host, ws_run, record_property):
             if seen["after"][0] != 2:
                 wrong.append(f"after the contention: endTransmission {seen['after'][0]} to an absent address (want 2)")
 
-    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=RATE, steps=steps)
+    ws_capture.stream(ws_run, oep_host, [lines[sda], lines[scl]], rate=PROTOCOL_RATE, steps=steps)
     record_property("results", json.dumps(seen))
     record_property("collisions", json.dumps({"probe_lost": seen.get("probe", {}).get(str(I2cController.BUS_ERROR), 0),
                                               "dut_gave_up": seen.get("dut", {}).get("4", 0)}))
