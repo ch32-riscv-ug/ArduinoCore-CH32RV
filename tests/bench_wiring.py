@@ -35,7 +35,7 @@ BENCH = [
     ("CH32V208WBU6", "30eda0e31451", "v208wbu6"),
     ("CH32V307VCT6", None, None),
     ("CH32V407WEU6", "30eda0ea068b", "v407weu6-p4"),
-    ("CH32L103C8T6", None, None),
+    ("CH32L103C8T6", "e8f60ae84dc6", "l103c8t6-pico"),
     ("CH32X035C8T6", "80f1b2d835d6", "x035c8t6-pico"),
     ("CH32X315MCU6", None, None),
     ("CH32H417QEU6", "e8f60ae84dc2", "h417qeu6-pico"),
@@ -58,22 +58,45 @@ def read_labels():
     return out
 
 
+RESERVED = ("swio", "swdio", "swclk", "nrst", "rx", "tx")
+
+
 def port_pads(labels, unit, port):
-    """{pad: role or None} the probe labels for the port, and its console pads (rx / tx)."""
+    """{pad: role or None} of the port's test lines, its console pads (rx / tx), and {role: pad or ""} of its
+    debug / reset / console labels (a label may name no pad: `<port>.nrst`)."""
     from_label = re.compile(r"^([^.@]+)(?:\.([^@]+))?(?:@(p[a-k]\d{1,2}))?$", re.I)
-    pads, console = {}, set()
+    pads, console, reserved = {}, set(), {}
     for _, text in labels.get(unit, []):
         m = from_label.match(text.strip())
-        if not m or m.group(1).lower() != (port or "").lower() or not m.group(3):
+        if not m or m.group(1).lower() != (port or "").lower():
             continue
-        pad, role = m.group(3).upper(), (m.group(2) or "").lower() or None
-        if role in ("rx", "tx"):
-            console.add(pad)
-        elif role in ("swio", "swdio", "swclk", "nrst", "boot1") or (role or "").startswith("power"):
+        pad, role = (m.group(3) or "").upper(), (m.group(2) or "").lower() or None
+        if role in RESERVED:
+            reserved[role] = pad
+            if role in ("rx", "tx") and pad:
+                console.add(pad)
+        elif not pad or role == "boot1" or (role or "").startswith("power"):
             continue
         else:
             pads[pad] = role
-    return pads, console
+    return pads, console, reserved
+
+
+def system_pads(part):
+    """{"swdio" / "swclk" / "swio" / "nrst": pad} from device-data (NRST: "NRST" where it is no GPIO)."""
+    out = {}
+    with open(PINOUT, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["part_number"] != part:
+                continue
+            pad = f"P{r['port']}{int(r['gpio'])}" if r["port"] and r["gpio"] else r["pad"]
+            if r["peripheral"] == "SDI":
+                out["swio" if r["signal"] == "SWIO" else r["role"].lower()] = pad
+            elif r["peripheral"] == "SYS" and r["role"] == "NRST":
+                out["nrst"] = pad
+    if "swclk" not in out and "swdio" in out:
+        out.setdefault("swio", out.pop("swdio"))
+    return out
 
 
 def pinout(part):
@@ -103,7 +126,7 @@ def bit(pad):
     return int(pad[2:])
 
 
-def plan(part, labels_now, console):
+def plan(part, labels_now, console, reserved):
     rows = pinout(part)
     series = rows[0]["series"] if rows else part[:8]
     keep = set(place.gpio_keep_off(part) or []) | set(place.debug_pads(part) or [])
@@ -112,7 +135,25 @@ def plan(part, labels_now, console):
         console = {p for p in (d["PIN_SERIAL_TX"], d["PIN_SERIAL_RX"]) if p}
     usable = lambda pad: pad not in keep and pad not in console           # noqa: E731
     have = set(labels_now)
-    out = []          # (condition, tests, ok, pads to add, note)
+    out = []          # (condition, tests, ok, lines to add, note): a line "PA8", or "PA13 (swdio)" with its role
+
+    # The lines every DUT has (BENCH.ja.md §5): debug, reset, console. A role labelled on another pad (or on
+    # none, as `.nrst`) counts.
+    sysp = system_pads(part)
+    debug_roles = ("swdio", "swclk") if "swclk" in sysp else ("swio",)
+    tx, rx = d["PIN_SERIAL_TX"], d["PIN_SERIAL_RX"]
+    for cond, tests, roles in (
+            ("デバッグ（" + "・".join(r.upper() for r in debug_roles) + "）", "書き込み・デバッガ（run_hardware）",
+             {r: sysp.get(r) for r in debug_roles}),
+            ("リセット（NRST）", "書き込み、periph（リセットの理由）", {"nrst": sysp.get("nrst")}),
+            ("コンソールの UART（rx は DUT の TX、tx は DUT の RX）", "すべての試験の READY と応答",
+             {"rx": tx, "tx": rx})):
+        missing = [f"{pad} ({role})" for role, pad in roles.items() if role not in reserved and pad]
+        absent = [role for role, pad in roles.items() if role not in reserved and not pad]
+        if not missing and not absent:
+            out.append((cond, tests, True, [], ""))
+        else:
+            out.append((cond, tests, False, missing, ("端子が device-data に無い: " + ", ".join(absent)) if absent else ""))
 
     debug = set(place.debug_pads(part) or [])
 
@@ -121,7 +162,7 @@ def plan(part, labels_now, console):
         move (a peripheral's default pins), taken even where selfcheck keeps off (a USB pad the board leaves free)."""
         ok = (lambda p: p not in debug and p not in console) if fixed else usable
         given = [c for c in choices if c]
-        choices = [c for c in given if all(ok(p) or p in have for p in c)]
+        choices = [c for c in given if all((ok(p) or p in have) and p not in console for p in c)]
         if given and not choices and not note:
             held = sorted({p for c in given for p in c if not ok(p) and p not in have})
             note = "候補は触らない端子かコンソールだけ: " + ", ".join(held)
@@ -222,32 +263,57 @@ def render(results, labels_known):
              "- 線はすべて `<口>@<端子>`（役割の要らない普通の線）で足せます。役割のある線（SD、CAN など）は",
              "  [BENCH.ja.md](BENCH.ja.md) §5 の表です。配線の規則（RVSWD・UART・NRST は + 近く、GND 固定の BOOT は触らない）も",
              "  そちらに従います。",
-             "- 「足す端子」は条件ごとの最小の候補で、ほかの条件の候補と重なるものは 1 本で両方を満たします。",
-             "  **太字** は複数の条件に出てくる端子です。",
+             "- 「足す端子」は条件ごとの最小の候補で、ほかの条件の候補と重なるものは 1 本で両方を満たします。台ごとに",
+             "  重ねずにまとめた一覧が先頭の「足す線の一覧」です。",
+             "- デバッグ（2 線の系列は SWDIO・SWCLK、V003 は SWIO）・リセット（NRST）・コンソールの線は、役割のラベル",
+             "  （`.swdio@<端子>` など）で付いていれば済とします（NRST は端子の書かれていない `.nrst` でも）。",
              "- OPA・コンパレータ・CAN のループバックは DUT の自己試験なので線は要りません（端子が触らない端子でなければ動く）。",
              "- 1 台の P4 で約 16 本が目安（BENCH.ja.md §5）。足りないときは、上の行（多くの試験が使う条件）から引きます。",
              ""]
     if not labels_known:
         lines += ["> プローブのラベルを読めなかったので、すべて未配線として計算しています。", ""]
-    for part, unit, port, series, now, console, keep, rows in results:
+    def key(line):
+        """Port and bit order; a pad of no GPIO (NRST) last."""
+        pad = line.split()[0]
+        return (0, pad[1], int(pad[2:])) if re.fullmatch(r"P[A-K]\d{1,2}", pad) else (1, pad, 0)
+
+    def label(port, line):
+        """The probe label for the line: `<port>@<pad>`, or `<port>.<role>@<pad>` (a pad of no GPIO: `<port>.<role>`)."""
+        pad, _, role = line.partition(" (")
+        role = role.rstrip(")")
+        tail = f"@{pad.lower()}" if re.fullmatch(r"P[A-K]\d{1,2}", pad) else ""
+        return f"`{port or '<口>'}{'.' + role if role else ''}{tail}`"
+
+    summary = ["## 足す線の一覧（端子順）", "",
+               "条件ごとの表の「足す端子」を台ごとに重ねずにまとめ、端子の順に並べたものです。ラベルの形で書いています",
+               "（役割の付く線はデバッグ・リセット・コンソールだけ。ほかは普通の線）。", "",
+               "「ラベルを直す線」は、線はもう引いてあって役割のラベル（`.swclk@` など）が付いていないものです。",
+               "いまの 1 線のデバッグ（`.swio@`）は、2 線の系列では SWDIO として数えません（RVSWD の 2 本を引く）。", "",
+               "| 台 | 足す線 | ラベルを直す線 |", "|---|---|---|"]
+    sections = []
+    for part, unit, port, series, now, console, keep, rows, reserved in results:
+        every = sorted({line for _, _, _, pads, _ in rows for line in pads}, key=key)
+        wired = set(now) | {p for p in reserved.values() if p}       # pads a line reaches now, any label
+        relabel = [x for x in every if " (" in x and x.split()[0] in wired]
+        todo = [x for x in every if x not in relabel]
+        summary.append(f"| {part} | {len(todo)} 本: {', '.join(label(port, x) for x in todo) or 'なし'} | "
+                       f"{', '.join(label(port, x) for x in relabel) or 'なし'} |")
         where = f"`oep://{unit}/{port}`" if unit else "OEP 未接続（WCH-Link のみ）"
-        lines += [f"## {part}（{series}）", "", f"- 口: {where}"]
-        lines.append(f"- いまの線: {', '.join(sorted(now)) or 'なし'}")
-        lines.append(f"- コンソール（rx / tx）: {', '.join(sorted(console)) or '不明'}" + ("" if now else "（未配線: Serial の既定の端子）"))
-        lines.append(f"- 触らない端子: {', '.join(sorted(keep)) or 'なし'}")
-        add = {}
-        for _, _, ok, pads, _ in rows:
-            for p in pads:
-                add[p] = add.get(p, 0) + 1
-        todo = sorted(add, key=lambda p: (-add[p], p))
-        lines.append(f"- 足すとよい端子（{len(todo)} 本）: " +
-                     (", ".join(f"**{p}**" if add[p] > 1 else p for p in todo) or "なし"))
-        lines += ["", "| 条件 | 使う試験 | いま | 足す端子 |", "|---|---|---|---|"]
+        sections += [f"## {part}（{series}）", "", f"- 口: {where}"]
+        sections.append(f"- いまの線: {', '.join(sorted(now, key=key)) or 'なし'}")
+        sections.append(f"- コンソール（rx / tx）: {', '.join(sorted(console, key=key)) or '不明'}" +
+                        ("" if now else "（未配線: Serial の既定の端子）"))
+        sections.append(f"- 触らない端子: {', '.join(sorted(keep, key=key)) or 'なし'}")
+        sections.append(f"- 足す線（{len(todo)} 本、端子順）: " + (", ".join(label(port, x) for x in todo) or "なし"))
+        if relabel:
+            sections.append("- ラベルを直す線: " + ", ".join(label(port, x) for x in relabel))
+        sections += ["", "| 条件 | 使う試験 | いま | 足す端子 |", "|---|---|---|---|"]
         for cond, tests, ok, pads, note in rows:
             state = "済" if ok else ("該当なし" if ok is None else "未")
-            cell = ", ".join(f"**{p}**" if add.get(p, 0) > 1 else p for p in pads) or (note if ok is None else "")
-            lines.append(f"| {cond} | {tests} | {state} | {cell} |")
-        lines.append("")
+            cell = ", ".join(pads) or (note if ok is None or not ok else "")
+            sections.append(f"| {cond} | {tests} | {state} | {cell} |")
+        sections.append("")
+    lines += summary + [""] + sections
     lines += ["## M030", "",
               "CH32M030G8R7 の板はモーター基板で、端子を出力にしません（defect m030-motor-stage）。GPIO を動かす試験の配線は",
               "しません。", ""]
@@ -268,9 +334,9 @@ def main():
         pathlib.Path(a.save_labels).write_text(json.dumps(labels))
     results = []
     for part, unit, port in BENCH:
-        now, console = port_pads(labels, unit, port) if unit else ({}, set())
-        series, keep, rows, console = plan(part, now, console)
-        results.append((part, unit, port, series, now, console, keep, rows))
+        now, console, reserved = port_pads(labels, unit, port) if unit else ({}, set(), {})
+        series, keep, rows, console = plan(part, now, console, reserved)
+        results.append((part, unit, port, series, now, console, keep, rows, reserved))
     pathlib.Path(a.out).write_text(render(results, bool(labels)) + "\n")
     print(f"wrote {a.out}")
 
