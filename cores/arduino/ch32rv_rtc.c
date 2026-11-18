@@ -4,6 +4,7 @@
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_rtc.h"
 #include "internal/ch32rv_backup.h"
+#include "internal/ch32rv_irq.h"
 
 #ifdef CH32RV_HAS_RTC
 
@@ -237,6 +238,101 @@ int ch32rv_rtc_on_lse(void)
     return rtc_lse;
 }
 
+/* The RTC's own calibration (BKP_OCTLR on the families with a BKP block:
+ * CAL takes `cal` of every 2^20 RTC clocks away, CCO puts out the RTC clock
+ * / 64, ASOE / ASOS the alarm or the second pulse, all on the TAMPER pad;
+ * X305 / X315 keep the three outputs in RTC_CTLRL, and no CAL; H41x has
+ * neither). */
+#if defined(CH32RV_RTC_X3X5)
+#define RTC_OUT_REG     RTC_CTLRL32
+#define RTC_OUT_SHIFT   8u
+#elif !defined(CH32RV_RTC_STORE_RAM)
+#define BKP_OCTLR       CH32RV_REG16(0x40006C2Cu)
+#define RTC_OUT_REG     BKP_OCTLR
+#define RTC_OUT_SHIFT   7u
+/* CH32V103's CAL reads back as written and slows nothing (127 over three 40 s
+ * windows against the crystal, 2026-11-18; V203 slows by the manual's
+ * 0.95 ppm a unit): the prescaler alone there. */
+#if !defined(CH32RV_SERIES_CH32V103)
+#define RTC_HAS_CAL     1
+#endif
+#endif
+
+int ch32rv_rtc_calibrate(int32_t ppm)
+{
+    if (!ch32rv_rtc_begin() || !rtc_lse || ppm > 500000 || ppm < -500000) {
+        return 0;
+    }
+    /* A prescaler a step over 32767 slows the RTC by 10^6 / 32768 ppm; CAL
+     * slows it by 10^6 / 2^20 ppm a unit, up to 127. The prescaler takes
+     * what CAL cannot (all of it where there is no CAL), CAL the rest. */
+    const int64_t micro = (int64_t)ppm * 32768;          /* in 10^-6 prescaler steps */
+    int32_t steps;
+    uint32_t cal = 0;
+#ifdef RTC_HAS_CAL
+    if (ppm >= 0) {
+        const int64_t over = micro - (int64_t)127 * 1000000 / 32;   /* CAL's 127 units, in the same scale */
+        steps = over > 0 ? (int32_t)((over + 999999) / 1000000) : 0;
+    } else {
+        steps = -(int32_t)((-micro + 999999) / 1000000);
+    }
+    /* what is left, in CAL units: (ppm - steps x 10^6 / 32768) x 2^20 / 10^6 */
+    const int64_t left = ((int64_t)ppm * 32768 - (int64_t)steps * 1000000) * 32;
+    cal = (uint32_t)((left + 500000) / 1000000);
+    if (cal > 127u) {
+        cal = 127u;
+    }
+#else
+    steps = (int32_t)((micro >= 0 ? micro + 500000 : micro - 500000) / 1000000);
+#endif
+    ch32rv_rtc_domain_open();
+    const uint32_t psc = (uint32_t)(32767 + steps);
+    if (psc != rtc_psc) {
+        /* Writing the prescaler starts the divider over without a count: the
+         * part of the second gone so far would be lost. Written just after
+         * the counter moves, that part is a few LSE periods (up to 1 s of
+         * waiting here). */
+        const uint32_t c0 = RTC(0x1C);
+        const uint32_t t0 = millis();
+        while (RTC(0x1C) == c0 && millis() - t0 < 1100u) {
+        }
+        const uint32_t irq = ch32rv_irq_save();
+        rtc_psc = psc;
+        config_begin();
+        RTC(0x08) = (uint16_t)(rtc_psc >> 16);
+        RTC(0x0C) = (uint16_t)rtc_psc;
+        config_end();
+        ch32rv_irq_restore(irq);
+        BKP_DR(2) = (uint16_t)rtc_psc;
+        BKP_DR(3) = (uint16_t)(rtc_psc >> 16);
+    }
+#ifdef RTC_HAS_CAL
+    BKP_OCTLR = (uint16_t)((BKP_OCTLR & ~0x7Fu) | cal);
+#else
+    (void)cal;
+#endif
+    ch32rv_rtc_domain_seal();
+    return 1;
+}
+
+int ch32rv_rtc_output(int mode)
+{
+#ifdef RTC_OUT_REG
+    if (mode < 0 || mode > 3 || !ch32rv_rtc_begin()) {
+        return 0;
+    }
+    ch32rv_rtc_domain_open();
+    /* bits from RTC_OUT_SHIFT: CCO, ASOE, ASOS */
+    static const uint32_t bits[4] = {0u, 1u, 2u, 2u | 4u};
+    RTC_OUT_REG = (RTC_OUT_REG & ~(7u << RTC_OUT_SHIFT)) | (bits[mode] << RTC_OUT_SHIFT);
+    ch32rv_rtc_domain_seal();
+    return 1;
+#else
+    (void)mode;
+    return 0;
+#endif
+}
+
 uint64_t ch32rv_rtc_lse_ticks(void)
 {
     if (!rtc_lse) {
@@ -248,6 +344,17 @@ uint64_t ch32rv_rtc_lse_ticks(void)
         d = read_div();
     } while (s != (((uint32_t)RTC(0x18) << 16) | RTC(0x1C)));
     return (uint64_t)s * (rtc_psc + 1u) + (rtc_psc - (d > rtc_psc ? rtc_psc : d));
+}
+
+void ch32rv_rtc_raw_us(uint32_t *sec, uint32_t *us)
+{
+    uint32_t s, d;
+    do {
+        s = ((uint32_t)RTC(0x18) << 16) | RTC(0x1C);
+        d = read_div();
+    } while (s != (((uint32_t)RTC(0x18) << 16) | RTC(0x1C)));
+    *sec = s;
+    *us = (uint32_t)((uint64_t)(rtc_psc - (d > rtc_psc ? rtc_psc : d)) * 1000000u / (rtc_psc + 1u));
 }
 
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms)
@@ -352,6 +459,18 @@ int ch32rv_rtc_on_lse(void)
 
 uint64_t ch32rv_rtc_lse_ticks(void)
 {
+    return 0;
+}
+
+int ch32rv_rtc_calibrate(int32_t ppm)
+{
+    (void)ppm;
+    return 0;
+}
+
+int ch32rv_rtc_output(int mode)
+{
+    (void)mode;
     return 0;
 }
 

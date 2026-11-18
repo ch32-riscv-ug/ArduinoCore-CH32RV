@@ -24,6 +24,7 @@ CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s sec
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
 CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE (RTC Clock menu)
 CH32RV.calibrateHsi(&ppm);               // HSI against the LSE, HSITRIM set (also hsiTrim() / setHsiTrim())
+CH32RV.setRtcCalibration(20);            // the LSE RTC 20 ppm slower (faster when negative); setRtcOutput(): 512 Hz on TAMPER
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
 CH32RV.getFreeHeap();
@@ -91,6 +92,17 @@ analogReadVref();                        // the internal reference, on analogRea
   HSE) or the RTC does not count LSE (RTC Clock menu). X305 / X315 have no
   HSITRIM. LSI has no calibration call: the RTC measures it at its start and
   sets its prescaler.
+- **`setRtcCalibration(ppm)`** makes the LSE RTC `ppm` slower (faster when
+  negative): the prescaler in 30.5 ppm steps, BKP's CAL the rest in 0.95 ppm
+  units (up to 121 ppm). CAL acts once every 2^20 pulses (32 s), so a short
+  measurement may not show it. H41x, X305/X315 and V103 (whose CAL slows
+  nothing, measured 2026-11-18) use the prescaler alone. Kept across resets.
+  False when the RTC is on LSI (measured at its start instead).
+  `setRtcOutput(CH32RV_RTC_OUTPUT_CLOCK)` puts the RTC clock / 64 (512 Hz from
+  the LSE) on the TAMPER pad (PC13); ALARM and SECOND the alarm or second
+  pulse. Measure the error there and give it to `setRtcCalibration()`. H41x
+  has none. Checked against an HSE crystal on V203 (CAL and prescaler), V103
+  and H417 (prescaler).
 - **`rtcClock()`** says LSE only when the RTC Clock menu chose the 32.768 kHz
   crystal (LSE) and it started. One that does not start within 2 s leaves the
   RTC on the measured LSI as before. LSE drifts seconds a day at most, LSI can

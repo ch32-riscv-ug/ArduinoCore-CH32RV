@@ -287,6 +287,16 @@ bool CH32RVSystem::calibrateHsi(int32_t *errorPpm)
 #endif
 }
 
+bool CH32RVSystem::setRtcCalibration(int32_t ppm)
+{
+    return ch32rv_rtc_calibrate(ppm) != 0;
+}
+
+bool CH32RVSystem::setRtcOutput(CH32RVRtcOutput what)
+{
+    return ch32rv_rtc_output((int)what) != 0;
+}
+
 CH32RVClockSource CH32RVSystem::clockSource()
 {
 #ifdef CH32RV_CLOCK_HSE_HZ

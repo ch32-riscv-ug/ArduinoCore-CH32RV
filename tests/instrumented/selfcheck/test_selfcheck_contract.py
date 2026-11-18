@@ -182,6 +182,48 @@ def test_hsi_calibration(dut, ready, record_property):
         f"trim {trim} leaves {err} ppm, its neighbours {below} / {above} ppm"
 
 
+def test_rtc_calibration(dut, ready, record_property):
+    """(CH32_TEST_OPTIONS=rtcclock=lse,clocksrc=hse: both clocks crystals.) setRtcCalibration(ppm) slows the LSE RTC by that much (speeds it when negative): against micros() over 32 s each
+    (CAL skips its pulses at once every 2^20 LSE periods, 32 s: a shorter window holds that moment or not),
+    the RTC's rate moves from setRtcCalibration(0)'s by -ppm within 50 ppm (the RTC read to its prescaler period,
+    30.5 us, and micros() to 1 us: about 1 ppm in 32 s; the system clock's own drift between the windows is the rest). 120 is CAL alone
+    on the series that have it, -1000 and 1000 move the prescaler too. Calibration 0 is left at the end."""
+    asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
+    if not asked or clock != 2:
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+    on_hse = int(ask(dut, "source", rb"SOURCE \d (\d) \d \d \d").group(1))
+    if not on_hse:
+        pytest.skip("needs a crystal for micros() too (clocksrc=hse): HSI drifts by hundreds of ppm between windows")
+    rates = {}
+    try:
+        for ppm in (0, 120, -1000, 1000):
+            ok, rate = (int(x) for x in ask(dut, f"rtccal {ppm} 32000", rb"RTCCAL (\d) (-?\d+)", timeout=45).groups())
+            assert ok, f"setRtcCalibration({ppm}) false with the RTC on LSE"
+            rates[ppm] = rate
+    finally:
+        ask(dut, "rtccal 0 10", rb"RTCCAL \d -?\d+")
+    record_property("rtc_calibration", json.dumps(rates))
+    for ppm in (120, -1000, 1000):
+        moved = rates[0] - rates[ppm]
+        assert abs(moved - ppm) <= 50, f"setRtcCalibration({ppm}) moved the RTC by {moved} ppm"
+
+
+def test_rtc_output(dut, ready, record_property):
+    """setRtcOutput(CLOCK) puts the RTC clock / 64 on the TAMPER pad: from the LSE 512 Hz, counted on the pad itself
+    (PC13, an input) for a second of micros() - the system clock's own error (HSI: up to 1-2 %) on top of it. H41x
+    has no such output (false)."""
+    asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
+    if not asked or clock != 2:
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+    ok, edges = (int(x) for x in ask(dut, "rtcout", rb"RTCOUT (\d) (-?\d+)", timeout=10).groups())
+    record_property("rtc_output_edges", edges)
+    if not ok:
+        pytest.skip("no RTC clock output on this series (H41x)")
+    if edges < 0:
+        pytest.skip("the variant names no PC13 to read the TAMPER pad back on")
+    assert abs(edges - 512) <= 11, f"{edges} rising edges in a second on PC13, want 512 (LSE / 64) within 2 %"
+
+
 @pytest.mark.parametrize("baud", [115200, 1000000])
 def test_serial_transmit(dut, ready, baud, record_property):
     count = int(ask(dut, "ports", rb"PORTS (\d+)").group(1))

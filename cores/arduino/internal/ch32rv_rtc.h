@@ -70,9 +70,18 @@ int ch32rv_rtc_begin(void);
 int ch32rv_rtc_on_lse(void);
 /* LSE periods the running RTC has counted (32768 a second); 0 when it is not on LSE. */
 uint64_t ch32rv_rtc_lse_ticks(void);
+/* The LSE RTC slowed by `ppm` (sped up when negative) against its 32768 Hz:
+ * the prescaler and, where there is one, BKP's CAL. 0 when the RTC is not on
+ * LSE. */
+int ch32rv_rtc_calibrate(int32_t ppm);
+/* On the TAMPER pad: 0 nothing, 1 the RTC clock / 64, 2 the alarm pulse,
+ * 3 the second pulse. 0 where the series has no such output (H41x). */
+int ch32rv_rtc_output(int mode);
 /* The counter and the milliseconds under it - the RTC's own, without the
  * settimeofday() offset (the low-power code times sleeps with this). */
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms);
+/* The same in microseconds under the second (a prescaler period: 30.5 us on LSE). */
+void ch32rv_rtc_raw_us(uint32_t *sec, uint32_t *us);
 /* Wall time: the counter plus the offset. */
 void ch32rv_rtc_get(uint32_t *sec, uint32_t *ms);
 void ch32rv_rtc_set(uint32_t sec, uint32_t ms);

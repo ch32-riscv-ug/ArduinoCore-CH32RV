@@ -191,6 +191,14 @@ typedef enum {
     CH32RV_RTC_CLOCK_LSE,        /* the 32.768 kHz crystal (RTC Clock menu) */
 } CH32RVRtcClock;
 
+/* What the RTC puts out on the TAMPER pad (PC13 on most series). */
+typedef enum {
+    CH32RV_RTC_OUTPUT_NONE,      /* the pad is a GPIO again                 */
+    CH32RV_RTC_OUTPUT_CLOCK,     /* the RTC clock / 64: 512 Hz from the LSE */
+    CH32RV_RTC_OUTPUT_ALARM,     /* a pulse at the alarm                    */
+    CH32RV_RTC_OUTPUT_SECOND,    /* a pulse each second                     */
+} CH32RVRtcOutput;
+
 /* Where SYSCLK comes from. */
 typedef enum {
     CH32RV_CLOCK_SOURCE_HSI,     /* the internal oscillator               */
@@ -287,6 +295,18 @@ public:
      * Clock menu's LSE, started) - there is nothing to measure against - and
      * on X305 / X315. */
     bool calibrateHsi(int32_t *errorPpm = nullptr);
+    /* The LSE RTC made `ppm` slower (faster when negative): measured fast by
+     * 20 ppm, setRtcCalibration(20). The prescaler moves in 30.5 ppm steps
+     * and, on the series with BKP_OCTLR's CAL, CAL takes the rest in 0.95 ppm
+     * units (H41x, X305 / X315 and V103, whose CAL slows nothing: the
+     * prescaler alone). Kept across resets
+     * with the RTC. False when the RTC does not count LSE (an LSI RTC is
+     * measured at its start instead) or for more than 500000 ppm. */
+    bool setRtcCalibration(int32_t ppm);
+    /* The RTC clock / 64, the alarm or the second pulse on the TAMPER pad
+     * (512 Hz from the LSE: what setRtcCalibration() is measured against).
+     * False where there is no such output (H41x) or no RTC. */
+    bool setRtcOutput(CH32RVRtcOutput what);
 
     /* Wake after `us` microseconds (0: no timer). False where the family
      * cannot sleep yet. */

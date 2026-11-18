@@ -509,6 +509,49 @@ static void reply(char *command)
         }
         CH32RV.setHsiTrim(trim);
         SerialDMSeq.printf("HSICAL %d %u %ld %ld %ld\r\n", ok ? 1 : 0, trim, (long)err, (long)side[0], (long)side[1]);
+    } else if (!strcmp(argv[0], "rtccal") && argc == 3) {
+        /* setRtcCalibration(ppm), then the RTC against micros() over ms:
+         * RTCCAL <ok> <ppm the RTC runs off micros()> */
+        const bool ok = CH32RV.setRtcCalibration((int32_t)atol(argv[1]));
+        uint32_t s0, u0, s1, u1;
+        /* A new prescaler counts from the next second on: two go by first. */
+        ch32rv_rtc_raw_us(&s0, &u0);
+        for (const uint32_t start = s0, t = millis(); s0 < start + 2u && millis() - t < 3000u;) {
+            ch32rv_rtc_raw_us(&s0, &u0);
+        }
+        uint32_t irq = ch32rv_irq_save();
+        ch32rv_rtc_raw_us(&s0, &u0);
+        const uint32_t t0 = micros();
+        ch32rv_irq_restore(irq);
+        while (micros() - t0 < (uint32_t)atol(argv[2]) * 1000u) {
+        }
+        irq = ch32rv_irq_save();
+        ch32rv_rtc_raw_us(&s1, &u1);
+        const uint32_t t1 = micros();
+        ch32rv_irq_restore(irq);
+        const int64_t rtc_us = (int64_t)(s1 - s0) * 1000000 + ((int32_t)u1 - (int32_t)u0);
+        const int64_t dt = (int64_t)(t1 - t0);
+        SerialDMSeq.printf("RTCCAL %d %ld\r\n", ok ? 1 : 0, (long)((rtc_us - dt) * 1000000 / dt));
+    } else if (!strcmp(argv[0], "rtcout")) {
+        /* The RTC clock / 64 on the TAMPER pad (PC13), its rising edges read
+         * back from the pad for one second: RTCOUT <ok> <edges> */
+        int edges = -1;
+        const bool ok = CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_CLOCK);
+#ifdef PC13
+        if (ok) {
+            pinMode(PC13, INPUT);
+            edges = 0;
+            int last = digitalRead(PC13);
+            const uint32_t t0 = micros();
+            while (micros() - t0 < 1000000u) {
+                const int now = digitalRead(PC13);
+                edges += now && !last;
+                last = now;
+            }
+        }
+#endif
+        CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_NONE);
+        SerialDMSeq.printf("RTCOUT %d %d\r\n", ok ? 1 : 0, edges);
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {

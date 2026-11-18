@@ -36,7 +36,7 @@
 | 過電圧保護（OVP）の設定 | M030 | 2 | 単発 | 可変電源（壊す試験に近い。専用チップ） | docs/adr/0017-option-byte-menus.ja.md:23, EVT CH32M030 PWR/PWR_OVP |
 | RTC の残りの系列 | H41x、V4x7、X315、V103 | 実装済み（H41x は 2026-11-14。V4x7・X3x5・V103 は 2026-11-15、ビルドのみ） | 自動 | 自己（selfsys::test_rtc） | PS:53 |
 | RTC のカレンダー・アラームの公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。暦は POSIX、`CH32RV.setAlarm()`・`enableAlarmWakeup()`） | 自動 | 自己＋プローブ。system::test_rtc_alarm、selfsys::test_rtc_alarm | libraries/CH32RV/README.ja.md |
-| RTC の校正・校正クロック出力 | V103、V20x、V205、V30x、V407、H417、X315 | 2 | 自動 | プローブ（1 Hz / 512 Hz を測る） | EVT RTC/RTC_Calibrations, RTC/RTC_OutputCalibrateClock（V205） |
+| RTC の校正・校正クロック出力 | V103、V20x、V205、V30x、V407、H417、X315 | 実装済み（2026-11-18、`setRtcCalibration(ppm)`（分周＋CAL、V103・H41x・X3x5 は分周だけ）と `setRtcOutput()`（TAMPER に ÷64・アラーム・秒）。selfcheck::test_rtc_calibration / test_rtc_output を V203・V103・H417 で（rtcclock=lse,clocksrc=hse）） | 自動 | プローブ（1 Hz / 512 Hz を測る） | EVT RTC/RTC_Calibrations, RTC/RTC_OutputCalibrateClock（V205） |
 | BKP の公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。`CH32RV.get/setBackupRegister()`。H41x・X3x5 は .noinit の RAM） | 自動 | 自己（リセットをまたいで読む）。system::test_backup_registers、selfsys::test_backup_registers | libraries/CH32RV/README.ja.md |
 | WWDG | 全 12 family | 実装済み（2026-11-15、ビルドのみ。`CH32RV.wwdgEnable()`） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
 | IWDG のオプションバイト（Watchdog メニュー）の残り | V103、H41x | 2 | 自動 | 自己（書き換えと戻し） | docs/adr/0017-option-byte-menus.ja.md:21 |

@@ -629,6 +629,18 @@ scope = "series"
 kind = "self"
 
 [[item]]
+id = "selfcheck-rtc-calibration"  # setRtcCalibration() moves the LSE RTC by the ppm asked (rtcclock=lse)
+test = "selfcheck::test_rtc_calibration"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfcheck-rtc-output"  # setRtcOutput(CLOCK): 512 Hz on the TAMPER pad from the LSE (rtcclock=lse)
+test = "selfcheck::test_rtc_output"
+scope = "series"
+kind = "self"
+
+[[item]]
 id = "selfcheck-serial"    # every Serial: BRR on its own bus and the real baud; its receiver fed from its own RX pad
 test = ["selfcheck::test_serial_transmit", "selfcheck::test_serial_receive"]
 scope = "series"
