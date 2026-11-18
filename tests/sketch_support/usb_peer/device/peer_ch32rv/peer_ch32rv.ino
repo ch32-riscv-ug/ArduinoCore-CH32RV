@@ -40,6 +40,7 @@
  *   dfuall               C DFUALL <ok> <blocks> <bStatus> <bState>   (the whole buffer, then the empty DNLOAD)
  *   uf2w <lba> <family hex> <count> <reverse>   C UF2W <ok> <written> <total>
  *   rawall <lba>         C RAWALL <ok>       (the buffer as sectors)
+ *   mscw <lba> <at> <n>  C MSCW <ok> <CH32RVUsbHostError>   (n sectors of the buffer from at)
  *   mscej                C MSCEJ <ok> <CH32RVUsbHostError>   (mscEject())
  *
  * Events: C CONNECTED <addr> <vid> <pid> <product> / C DISCONNECTED <addr> <vid> <pid> / C KEY <p|r> <keycode>
@@ -616,6 +617,17 @@ static void cmdUf2W(const char *arg)
     say("C UF2W %u %u %lu\n", ok ? 1 : 0, written, (unsigned long)total);
 }
 
+/* `count` sectors of the buffer from `at`, to the drive at `lba`; the answer's second number is the library's
+ * error (peer_pico's is the CSW status). */
+static void cmdMscW(const char *arg)
+{
+    unsigned long lba = 0, at = 0, count = 0;
+    sscanf(arg, "%lu %lu %lu", &lba, &at, &count);
+    const bool fits = count && at + count * 512u <= sizeof fwImage;
+    const bool ok = fits && usb.mscWriteBlocks((uint32_t)lba, fwImage + at, (uint32_t)count, dev.address);
+    say("C MSCW %u %u\n", ok ? 1 : 0, (unsigned)usb.lastError());
+}
+
 /* The buffer as it is, padded to whole sectors with 0xFF, from `lba` in 4 KiB writes. */
 static void cmdRawAll(const char *arg)
 {
@@ -652,6 +664,7 @@ static void run(char *cmd)
     else if (!strcmp(cmd, "dfuall")) cmdDfuAll();
     else if (!strcmp(cmd, "uf2w")) cmdUf2W(arg);
     else if (!strcmp(cmd, "rawall")) cmdRawAll(arg);
+    else if (!strcmp(cmd, "mscw")) cmdMscW(arg);
     else if (!strcmp(cmd, "mscej")) say("C MSCEJ %u %u\n", usb.mscEject(dev.address) ? 1 : 0, (unsigned)usb.lastError());
     else if (!strcmp(cmd, "dev")) cmdDev();
     else if (!strcmp(cmd, "cdc")) cmdCdc(arg);
