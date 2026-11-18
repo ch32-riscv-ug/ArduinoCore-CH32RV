@@ -22,8 +22,9 @@
   内蔵フラッシュのファイルシステム、実行中のクロック変更、PIOC の保留 — はそのまま。2026-11-17）（peripheral-plan の C、software-peripherals、
   network-stack、filesystem、FEATURE_CANDIDATES、ADR-0017、upload-routes、usb.ja.md、CH32RVUsbHost の README など。
   docs/unimplemented.ja.md の元の棚卸しの 15 章）。peripheral-support の表は直した（2026-11-14）。
-- [ ] tools/generate/peripheral_matrix.py の STATUS が文書の手直しより古い（RCC・PWR・ADC・UHSIF の備考、H41x の HSE の欄）。
-  文書から STATUS に戻してから、生成で作り直せるようにする。
+- [x] tools/generate/peripheral_matrix.py の STATUS が文書の手直しより古かった（2026-11-18）: 文書の表から STATUS を書き直し、
+  HSE の欄（V4x7・M030・X3x5・H41x）を CELLS に、EVT の新しい GUI のフォルダを IGNORED に足した。生成すると
+  docs/peripheral-support.ja.md と同じになる。文書の RCC の行の H41x の 200/50・25/25 MHz（外した項目）も直した。
 - [ ] coverage.toml に未実装の機能の項目を足す（`missing` の系列で「未実装」と出す）。
 
 ## テスト計画
