@@ -15,6 +15,7 @@ import re
 import os
 import pathlib
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -220,13 +221,30 @@ PLUGINS = ["pytest_embedded.plugin",
 
 
 def invoke(command, log, *, env=None, timeout=180):
+    """Run `command` in a process group of its own and take the whole group down when it times out or this runner
+    stops (an exception, or SIGTERM / SIGHUP made one by main()): a pytest left behind holds its probe and kept
+    running for hours after an outer `timeout` ended the runner (2026-11-18)."""
     log.parent.mkdir(parents=True, exist_ok=True)
     log.with_suffix(".command.json").write_text(json.dumps(command, indent=2))
     with log.open("w") as stream:
-        result = subprocess.run(command, env=env, stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
-    if result.returncode:
-        raise RuntimeError(f"exit {result.returncode}: see {log}")
+        process = subprocess.Popen(command, env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            returncode = process.wait(timeout=timeout)
+        except BaseException:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+            raise
+    if returncode:
+        raise RuntimeError(f"exit {returncode}: see {log}")
     return log.read_text()
+
+
+def _stop_on_signal(signum, _frame):
+    """SIGTERM / SIGHUP as an exception, so invoke() takes its process group down on the way out."""
+    raise SystemExit(128 + signum)
 
 
 def junit_skips(path):
@@ -629,4 +647,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, _stop_on_signal)
+    signal.signal(signal.SIGHUP, _stop_on_signal)
     raise SystemExit(main())
