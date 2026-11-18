@@ -71,6 +71,7 @@ Network ライブラリ(lwIP の上の IPv4)と NetworkClientSecure(TLS)の範�
 
      - 相手は、Python で書いた最小限の MQTT のブローカーと、HTTP(S) のサーバーです。
      - 試験は作業用の場所で行い、リポジトリには入れていません。外部のライブラリに依存させないためです。
+     - 実機（2026-11-18）: case `eth-libs`（tests/instrumented/eth/test_eth_libs.py）が、PubSubClient・ArduinoMqttClient の購読と配信の往復、ArduinoHttpClient の GET（200 KiB）と POST、aWOT の GET と POST を、V407 と V208 の Ethernet で確かめる。ライブラリの版は run_hardware.py の `CASE_LIBRARIES` で固定し、試験のときだけ入れる（リポジトリは依存しない）。TLS の組み合わせは PC の試験のまま。
    - TLS でつなぐときは、IP アドレスではなくホスト名で接続します。証明書の名前と照らし合わせるためで、ESP32 と同じです。
    - `NetworkClient::read()` と `peek()` は、データが無いときにスタックを 1 回回します。`Stream` の待ち付きの読み出し(`readStringUntil()` など。aWOT が使う)は、これが無いと時間切れまで受信できません。
 
