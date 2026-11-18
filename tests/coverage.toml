@@ -47,6 +47,12 @@ id = "uart-rs485"           # setMode(UART_MODE_RS485_HALF_DUPLEX): DE high arou
 test = "uart::test_uart_rs485"
 scope = "series"
 
+
+[[item]]
+id = "uart-irda"            # setMode(UART_MODE_IRDA): one 3/16-bit pulse per 0 bit on TX
+test = "uart::test_uart_irda"
+scope = "series"
+
 [[item]]
 id = "uart-half-duplex"     # setPins(tx, tx): single wire (HDSEL), the echo, receiving on the TX pad
 test = "uart::test_uart_half_duplex"

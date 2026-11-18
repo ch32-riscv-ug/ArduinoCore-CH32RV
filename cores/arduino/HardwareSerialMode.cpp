@@ -423,6 +423,13 @@ void CH32RVSerialMode::start(CH32RVHardwareSerial &port)
         }
     }
 
+    /* IrDA (normal mode): each 0 bit a pulse of 3/16 of a bit, a 1 nothing;
+     * the line idles low. PSC must be 1 outside the low-power mode. */
+    if (m.mode == UART_MODE_IRDA) {
+        ctlr3 |= CH32RV_USART_CTLR3_IREN;
+        CH32RV_USART_GPR(base) = (uint16_t)((CH32RV_USART_GPR(base) & 0xFF00u) | 1u);
+    }
+
     m.de = 0;
     if (m.mode == UART_MODE_RS485_HALF_DUPLEX && m.rts) {
         const uint8_t p = (uint8_t)CH32RV_PIN_PORT(m.rts), b = (uint8_t)CH32RV_PIN_BIT(m.rts);
@@ -745,8 +752,8 @@ bool CH32RVHardwareSerial::setMode(SerialMode mode)
         if (!m.rts) {
             return false;              /* setPins(-1, -1, -1, de) first */
         }
-    } else if (mode != UART_MODE_UART) {
-        return false;                  /* IrDA and the RS485 test modes: not here */
+    } else if (mode != UART_MODE_UART && mode != UART_MODE_IRDA) {
+        return false;                  /* the RS485 test modes: not here */
     }
     install();
     if (_slot) {

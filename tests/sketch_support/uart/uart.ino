@@ -5,6 +5,7 @@
  *   uart, stdio, ucfg, upins, usend, urecv, uerr, uhold, uoff   Serial itself
  *   uwrite, uflow, urts                                          flow control
  *   u485, ude                                                    RS485's DE
+ *   uirda                                                        IrDA (setMode)
  *   uhd, uavail                                                  single wire
  *   uevt, uevq                                                   onReceive()
  *   ssbegin, sssend, ssrecv, ssend                               SoftwareSerial
@@ -210,6 +211,11 @@ void reply(const char *command) {
       ok = Serial.setPins(-1, -1, -1, pin) && Serial.setMode(UART_MODE_RS485_HALF_DUPLEX);
     }
     SerialDMSeq.print("U485 ");
+    SerialDMSeq.println(ok ? 1 : 0);
+  } else if (strncmp(command, "uirda ", 6) == 0) {
+    // uirda <1 on | 0 off>: Serial in IrDA (setMode(UART_MODE_IRDA)), or plain UART again.
+    const bool ok = Serial.setMode(command[6] == '1' ? UART_MODE_IRDA : UART_MODE_UART);
+    SerialDMSeq.print("UIRDA ");
     SerialDMSeq.println(ok ? 1 : 0);
   } else if (strncmp(command, "ude ", 4) == 0) {
     // ude <n1> <gap ms> <n2>: usend's bytes in two writes with a pause between (two driver-enable windows).

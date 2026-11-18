@@ -76,8 +76,8 @@ typedef enum {
 } SerialHwFlowCtrl;
 
 /* setMode()'s modes, by ESP32's names and numbers (ESP-IDF's uart_mode_t).
- * UART_MODE_UART and UART_MODE_RS485_HALF_DUPLEX are what this core does; the
- * others are refused. */
+ * UART_MODE_UART, UART_MODE_RS485_HALF_DUPLEX and UART_MODE_IRDA are what
+ * this core does; the RS485 test modes are refused. */
 typedef enum {
     UART_MODE_UART = 0,
     UART_MODE_RS485_HALF_DUPLEX = 1,
@@ -239,7 +239,10 @@ public:
      * transmit-complete interrupt), low otherwise and after end(). No USART
      * here drives it in hardware: the core does, with the TC flag. Hardware
      * flow control is off in this mode. UART_MODE_UART goes back (the pin is
-     * let go, an input). IrDA and the RS485 test modes are refused. */
+     * let go, an input). UART_MODE_IRDA: the USART's IrDA SIR (normal mode,
+     * not low-power): each 0 bit goes out as a high pulse of 3/16 of a bit, a
+     * 1 as nothing, and the line idles low; the receiver takes the same.
+     * The RS485 test modes are refused. */
     bool setMode(SerialMode mode);
 
     /* ESP32's receive event: function runs (after loop(), as onReceiveError()

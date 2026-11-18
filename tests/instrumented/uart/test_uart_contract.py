@@ -542,6 +542,42 @@ def test_uart_rs485(dut, ws_run, request, record_property):
         _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
 
 
+def test_uart_irda(dut, ws_run, request, record_property):
+    """setMode(UART_MODE_IRDA): the USART's IrDA SIR on TX. At 9600 and 115200 baud the DUT sends 16 bytes (8N1);
+    WireSkein's `pulses` on TX: one high pulse per 0 bit (each start bit and each data 0), each 3/16 of a bit wide
+    within 25 % (the DUT's own bit time, Serial.baudRate()), and the line low (IrDA's idle) at the section's start and
+    end."""
+    from wireskein.runlog import ends, pulses, starts
+    target, oep_host = _oep_only(request)
+    dut_tx, dut_rx = _serial_lines(oep_host, target)
+    data = _pattern(16)
+    zeros = sum(1 + 8 - bin(b).count("1") for b in data)
+
+    def steps(wait):
+        with ws_run.section(1, f"irda {dut_tx['pad']}"):
+            for baud in (9600, 115200):
+                m = _ask(dut, wait, f"ucfg {baud} 0", rb"UCFG (\d) (\d+)")
+                assert m.group(1) == b"1"
+                bit = 1 / int(m.group(2))
+                assert _ask(dut, wait, "uirda 1", rb"UIRDA (\d)").group(1) == b"1", "setMode(UART_MODE_IRDA) refused"
+                wait(0.01)
+                idle = {dut_tx["pad"]: 0}
+                with ws_run.section(2, f"{baud} 8N1",
+                                    expect=[pulses(dut_tx["pad"], count=zeros, width_min_s=bit * 3 / 16 * 0.75,
+                                                   width_max_s=bit * 3 / 16 * 1.25),
+                                            starts(idle), ends(idle)]):
+                    ws_run.command("usend 16")
+                    _ask(dut, wait, "usend 16", rb"USEND \d+")
+                    wait(0.02 + 12 * 16 * bit)
+                _ask(dut, wait, "uirda 0", rb"UIRDA \d")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [dut_tx], rate=UART_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "uirda 0", rb"UIRDA \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
+
+
 def test_uart_half_duplex(dut, ws_run, request, record_property):
     """Single-wire half duplex (setPins(tx, tx): HDSEL) at 9600 on the DUT's TX pad, the probe's input pull-up on it
     (the pad is open drain). The DUT sends 16 bytes: decoded on the line, and nothing of them in the DUT's own receive

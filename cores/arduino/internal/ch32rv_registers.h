@@ -327,6 +327,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART_CTLR1(b) CH32RV_REG16((b) + 0x0Cu)
 #define CH32RV_USART_CTLR2(b) CH32RV_REG16((b) + 0x10u)
 #define CH32RV_USART_CTLR3(b) CH32RV_REG16((b) + 0x14u)
+#define CH32RV_USART_GPR(b)   CH32RV_REG16((b) + 0x18u)   /* PSC (IrDA's divider), GT */
 
 #define CH32RV_USART_STATR_PE   (1u << 0)
 #define CH32RV_USART_STATR_FE   (1u << 1)
@@ -357,6 +358,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
  * hardware flow control: RTS low while the data register can take a byte, a
  * byte sent only while CTS is low. The same bits on every family's USART
  * (device-data registers.csv). */
+#define CH32RV_USART_CTLR3_IREN  (1u << 1)
 #define CH32RV_USART_CTLR3_HDSEL (1u << 3)
 /* The data register's requests to the DMA: a received byte (DMAR), room for
  * the next to send (DMAT). */
