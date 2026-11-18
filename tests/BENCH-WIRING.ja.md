@@ -33,7 +33,7 @@
 | CH32V208WBU6 | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
 | CH32V307VCT6 | 25 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
 | CH32V407WEU6 | 21 本: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4.swdio@pa13`, `v407weu6-p4.swclk@pa14`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst` | なし |
-| CH32L103C8T6 | 2 本: `l103c8t6-pico@pb6`, `l103c8t6-pico@pb7` | なし |
+| CH32L103C8T6 | 0 本: なし | なし |
 | CH32X035C8T6 | 1 本: `x035c8t6-pico@pa13` | なし |
 | CH32X315MCU6 | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
 | CH32H417QEU6 | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | `h417qeu6-pico.swclk@pb8`, `h417qeu6-pico.swdio@pb9` |
@@ -307,10 +307,10 @@
 ## CH32L103C8T6（CH32L103）
 
 - 口: `oep://e8f60ae84dc6/l103c8t6-pico`
-- いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA15, PB13
+- いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA15, PB6, PB7, PB13
 - コンソール（rx / tx）: PA9, PA10
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15, PD0, PD1
-- 足す線（2 本、端子順）: `l103c8t6-pico@pb6`, `l103c8t6-pico@pb7`
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -321,14 +321,14 @@
 | タイマーの CH1 か CH2 | signals（PWM・捕捉・ワンパルスのトリガ・timerPulseIn） | 済 |  |
 | 1 つのタイマー・経路の CH1 と CH2 | signals::test_pwm_timer、test_phase_shift | 済 |  |
 | CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 済 |  |
-| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 該当なし | 候補は触らない端子かコンソールだけ: PA10, PA14, PA9, PB6, PB7 |
+| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 該当なし | 候補は触らない端子かコンソールだけ: PA10, PA14, PA9 |
 | CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 済 |  |
 | remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 済 |  |
 | ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
-| Wire の既定の SDA・SCL | wire | 未 | PB7, PB6 |
+| Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
