@@ -5,7 +5,10 @@
 #if defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V004) || \
     defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
     defined(CH32RV_SERIES_CH32M007) || defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X035) || \
-    defined(CH32RV_SERIES_CH32M030)
+    defined(CH32RV_SERIES_CH32M030) || \
+    (defined(CH32RV_UPLOAD_MAXIMUM_SIZE) && CH32RV_UPLOAD_MAXIMUM_SIZE <= 65536)
+/* The small series, and any part whose sketch gets 64 KB or less (L103, V103, V203C8 ...: the board's
+ * upload.maximum_size for the Part Number chosen): no format, no exFAT, short names. */
 #define FS_SMALL_FLASH 1
 #else
 #define FS_SMALL_FLASH 0

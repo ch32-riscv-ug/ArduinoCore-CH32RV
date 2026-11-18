@@ -96,7 +96,7 @@ Set any of these in the sketch's `build_opt.h` (`-DFF_FS_EXFAT=0`).
 | `FF_USE_LFN` | on (V003: off) | Long names (UTF-8). Off, names are 8.3 |
 | `FF_FS_READONLY` | off | Reading only |
 
-The small series are V002-V007, M007, X033, X035 and M030.
+The small series are V002-V007, M007, X033, X035 and M030, and any part whose sketch gets 64 KB of flash or less under the Part Number chosen (L103, V103, V203C8 ...: the board's `upload.maximum_size`).
 
 Flash and RAM over an empty sketch (mount, append, read back; from
 docs/filesystem.ja.md):

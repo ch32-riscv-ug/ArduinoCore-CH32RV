@@ -90,7 +90,7 @@ ESP32 と違うところと、その理由:
 | `FF_USE_LFN` | あり（V003: なし） | 長い名前（UTF-8）。なしでは 8.3 の名前 |
 | `FF_FS_READONLY` | なし | 読み出しだけ |
 
-小さい系列は V002〜V007、M007、X033、X035、M030 です。
+小さい系列は V002〜V007、M007、X033、X035、M030 と、Part Number で選んだ品のスケッチの Flash が 64 KB 以下のもの（L103、V103、V203C8 など。ボードの `upload.maximum_size`）です。
 
 空のスケッチに対する Flash と RAM（マウント、追記、読み戻し。docs/filesystem.ja.md）:
 
