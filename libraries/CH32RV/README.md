@@ -110,7 +110,7 @@ analogReadVref();                        // the internal reference, on analogRea
   the nanoCH32H417 carry one on PC14 / PC15 (seen starting on the V103 EVT,
   the V203 bench board and a nanoCH32H417, 2026-11-18). Changing the menu
   clears the RTC's time and the BKP words (choosing the RTC's clock again
-  takes a backup domain reset). X305/X315 cannot choose LSE yet.
+  takes a backup domain reset). X305/X315 have no LSE (their RTC counts LSI or HSE / 512, per the reference manual).
 - **Voltage and temperature are computed from typical values.** The internal
   reference (Vrefint) is the datasheet's typical value, within a few percent.
   The temperature is uncalibrated and can be tens of °C off on some series

@@ -24,7 +24,8 @@
 - [ ] FS の FS_SMALL_FLASH は系列で決めていて、64 KB の品（L103、V103、V203C8 など）は大きい設定（長い名前・exFAT・format）に
   なる。usb_peer_host.ino の USB_HOST_FS 版が L103 で 13.6 KB はみ出す。品の Flash の大きさで決めるかを決める。
 - [ ] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。X305 / X315
-  の LSE（BDCTLR が無く RTC の CTLRL に RTCSEL）は未対応。
+  には LSE が無い（RTC_CTLRL の RTCSEL は LSI か HSE ÷512 だけ、CH32X315RM 6.3.2）。HSE ÷512 は休止で止まり 39062.5 Hz で割り切れない
+  ので作らない。
 - [x] SoftSPI: H417 の読み取りが 1 ビットずれる（2026-11-14 から）は、DUT ではなくプローブの spi-target が H417 の遅い SCK の縁を
   2 回数えていた。[oep] の試作（SCK にヒステリシス＋パッドのグリッチフィルタ、0.0.58+ef3d173.sckhysf）で 3 回とも全部 PASS
   （ヒステリシスだけは 3 回中 2 回）。正式な版は [oep] が入れる。V003 の softspi の peripheral の 1 ビットは、その後 3 回続けて
