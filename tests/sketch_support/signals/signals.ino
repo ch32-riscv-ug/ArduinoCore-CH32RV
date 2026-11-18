@@ -53,6 +53,15 @@
  *   brkstate <brk pin>     BRKSTATE <latched> <the pad's level>
  *   resume                 RESUME <ok>
  *   compoff                COMPOFF
+ *   pwmt <a> <b> <hz> <align> <duty a> <duty b>  PWMT <ok>: CH32RVPwmTimer on
+ *                          two pads of one timer, 10 bits, align 0 edge 1 center
+ *   pwmtoff                PWMTOFF
+ *   phs <a> <b> <hz> <deg> PHS <ok>: CH32RVPhaseShift, a at 0, b at deg
+ *   phsoff                 PHSOFF
+ *   six <uh> <ul> <vh> <vl> <wh> <wl> <hz> <duty of 256>  SIX <ok>: CH32RVSixStep,
+ *                          all off until sixstep
+ *   sixstep <n>            SIXSTEP <ok>: step n (6 or more: all off)
+ *   sixoff                 SIXOFF
  *   shot <pin> <delay us> <width us>  SHOT <ok>: one pulse, started now
  *   shotoff                SHOTOFF
  *   oc <pin> <period us> <at us> <mode>  OC <ok>: output compare (mode as
@@ -125,6 +134,9 @@ static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0)
 static CH32RVComplementaryPwm bridge;
 static CH32RVOnePulse shot;
 static CH32RVOutputCompare compare;
+static CH32RVPwmTimer pwmTimer;
+static CH32RVPhaseShift phaseShift;
+static CH32RVSixStep sixStep;
 #endif
 #ifdef SIGNALS_EDGE_CAPTURE
 static CH32RVInputCapture edgeCapture;
@@ -199,6 +211,32 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "compoff")) {
         bridge.end();
         SerialDMSeq.println("COMPOFF");
+    } else if (!strcmp(argv[0], "pwmt") && argc == 7) {
+        /* pwmt <a> <b> <hz> <align 0 edge / 1 center> <duty a of 1024> <duty b of 1024> */
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, a4 ? CH32RVPwmTimer::CENTER : CH32RVPwmTimer::EDGE) &&
+                        pwmTimer.attach((int)a2) && pwmTimer.write(pin, (uint32_t)a5) &&
+                        pwmTimer.write((int)a2, (uint32_t)atol(argv[6]));
+        say("PWMT", 1, ok);
+    } else if (!strcmp(argv[0], "pwmtoff")) {
+        pwmTimer.end();
+        SerialDMSeq.println("PWMTOFF");
+    } else if (!strcmp(argv[0], "phs") && argc == 5) {
+        /* phs <a> <b> <hz> <b's degrees> */
+        const bool ok = phaseShift.begin(pin, (uint32_t)a3) && phaseShift.attach((int)a2, (uint16_t)a4);
+        say("PHS", 1, ok);
+    } else if (!strcmp(argv[0], "phsoff")) {
+        phaseShift.end();
+        SerialDMSeq.println("PHSOFF");
+    } else if (!strcmp(argv[0], "six") && argc == 10) {
+        /* six <uh> <ul> <vh> <vl> <wh> <wl> <hz> <duty of 256>: all off until sixstep */
+        const bool ok = sixStep.begin(pin, (int)a2, (int)a3, (int)a4, (int)a5, atoi(argv[6]), (uint32_t)atol(argv[7])) &&
+                        sixStep.write((uint32_t)atol(argv[8]));
+        say("SIX", 1, ok);
+    } else if (!strcmp(argv[0], "sixstep") && argc == 2) {
+        say("SIXSTEP", 1, sixStep.step((uint8_t)atoi(argv[1])));
+    } else if (!strcmp(argv[0], "sixoff")) {
+        sixStep.end();
+        SerialDMSeq.println("SIXOFF");
     } else if (!strcmp(argv[0], "shot") && argc == 4) {
         /* shot <pin> <delay us> <width us>: one pulse, started now */
         const bool ok = (shot.isAttached() || shot.begin(pin)) && shot.fire((uint32_t)a2, (uint32_t)a3);
@@ -316,9 +354,9 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
 
 static void reply(char *command)
 {
-    char *argv[6];
+    char *argv[10];
     int argc = 0;
-    for (char *t = strtok(command, " "); t && argc < 6; t = strtok(nullptr, " ")) {
+    for (char *t = strtok(command, " "); t && argc < 10; t = strtok(nullptr, " ")) {
         argv[argc++] = t;
     }
     if (!argc) {

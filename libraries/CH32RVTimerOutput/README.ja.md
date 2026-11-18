@@ -2,11 +2,14 @@
 
 [English](README.md)
 
-`analogWrite()` の先のタイマー出力です。3 つのクラスがあります。
+`analogWrite()` の先のタイマー出力です。6 つのクラスがあります。
 
 - **`CH32RVComplementaryPwm`:** 高機能タイマーのチャネルの出力と相補出力（CHx と CHxN）を、半ブリッジの上下として動かします。デッドタイムとブレーキ入力があります。
 - **`CH32RVOnePulse`:** 決めた遅れのあと、決めた幅のパルスを 1 発出します（ワンパルスモード）。スケッチが始めるか、エッジでハードが始めます。
 - **`CH32RVOutputCompare`:** 周期の中の決めた時刻に、端子を High・Low・反転にします（出力比較）。一致でコールバックも呼べます。
+- **`CH32RVPwmTimer`:** 1 つのタイマーの複数のチャネル（と CHxN）を同じ周期の PWM にします。端揃えか中央揃え。
+- **`CH32RVPhaseShift`:** 1 つのタイマーのチャネルに、同じ周波数でそれぞれの位相の矩形波（デューティ 50 %）を出します。
+- **`CH32RVSixStep`:** 高機能タイマーの CH1〜CH3 と CH1N〜CH3N で、三相ブリッジの 6 ステップ（台形波）駆動をします。
 
 ```cpp
 #include <CH32RVTimerOutput.h>
@@ -64,9 +67,38 @@ void loop() {
 | `onMatch(callback)` | 一致ごとにタイマーの割り込みから呼ぶ。`nullptr` で無し |
 | `tickHz()`、`end()`、`isAttached()` | |
 
+## CH32RVPwmTimer
+
+| 呼び出し | 意味 |
+|---|---|
+| `begin(pin, frequency, resolution = 8, align = EDGE)` | `pin`（CHx か CHxN）のタイマーと経路で始める。`CENTER` はカウンタが上下して、どのチャネルのパルスも同じ時刻を中心にする |
+| `attach(pin)` | 同じタイマー・経路の別の端子（デューティ 0 から） |
+| `write(pin, duty)` | `duty / 2^resolution` を High。CHxN の端子はそのチャネルの反転なので、チャネルの値を書くことになる |
+| `timer()`、`end()`、`isAttached()` | |
+
+## CH32RVPhaseShift
+
+| 呼び出し | 意味 |
+|---|---|
+| `begin(pin, frequency, degrees = 0)` | `pin` のチャネルに矩形波（カウンタは周波数の 2 倍で回り、比較の一致で反転） |
+| `attach(pin, degrees)` | 同じタイマー・経路の別のチャネルを `degrees` 遅れで。出力はそろって始め直す |
+| `setPhase(pin, degrees)` | 位相を変える。出力はそろって始め直す（最大 1 周期の乱れ） |
+| `end()`、`isAttached()` | |
+
+## CH32RVSixStep
+
+| 呼び出し | 意味 |
+|---|---|
+| `begin(uHigh, uLow, vHigh, vLow, wHigh, wLow, frequency, resolution = 8)` | U・V・W の上側（CH1〜CH3）と下側（CH1N〜CH3N）。同じ高機能タイマーと経路。始めは全部オフ |
+| `write(duty)` | 上側の PWM のデューティ |
+| `step(n)` | 0〜5 のステップへ（転流イベントで 3 相同時に）。6 以上は全部オフ |
+| `setDeadTime(ns)`、`currentStep()`、`end()`、`isAttached()` | |
+
+ステップ: 0 = U の PWM・V の下側オン、1 = U・W、2 = V・W、3 = V・U、4 = W・U、5 = W・V。残りの相は両方 Low。
+
 ## 状態
 
-全系列でビルドできます（2026-11-17）。tests/instrumented/signals がプローブの取り込みで確かめます: `test_complementary`（WireSkein の dead_time で 100 MS/s のデッドタイム、BKIN に線があればブレーキ）、`test_one_pulse`、`test_output_compare`。非対称デッドタイム（M030、H417）、6 ステップ・位相シフトの PWM は未実装です。
+全系列でビルドできます（2026-11-17）。tests/instrumented/signals がプローブの取り込みで確かめます: `test_complementary`（WireSkein の dead_time で 100 MS/s のデッドタイム、BKIN に線があればブレーキ）、`test_one_pulse`、`test_output_compare`、`test_pwm_timer`（端揃えは立ち上がりの一致、中央揃えは 75 % と 25 % の位相 90 度）、`test_phase_shift`（90・270 度）。`test_six_step` は 6 本の線がある台で動き、今のベンチには無いので、V203 で DUT 自身が 6 端子を読んで表どおりを確認しました（2026-11-19）。非対称デッドタイム（M030、H417）は未実装です。
 
 ## 例
 

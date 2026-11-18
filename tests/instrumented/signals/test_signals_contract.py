@@ -78,7 +78,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py, ws_ca
 import bench_lines
 from bench_lines import gpio_lines
 import ws_capture
-from wireskein.runlog import becomes, dead_time, ends, level, only_moving, pulses, rgb_led, trim
+from wireskein.runlog import becomes, dead_time, ends, level, only_moving, phase, pulses, rgb_led, skew, trim
 
 
 def settings(test_file):
@@ -587,6 +587,129 @@ def test_complementary(dut, oep_host, ws_run, record_property):
         ask(dut, "compoff", rb"COMPOFF")
         gpio.configure(brk["channel"], Gpio.INPUT)
         core.plan_release(host, [gpio.fn])
+
+
+def same_timer_pair(dut, lines):
+    """(A, B, timer, route): two lines that are channels (CHx) of one timer and route, A's first way to a timer being
+    that one (begin() takes the first it can), or None."""
+    ways = {line["pad"]: pads(dut, line["pin"]) for line in lines}
+    for a in lines:
+        first = next(iter(ways[a["pad"]]), None)
+        if not first or first[2] != ROLE_CH:
+            continue
+        t, c, _, r = first
+        for b in lines:
+            if b is not a and any(w[0] == t and w[2] == ROLE_CH and w[3] == r and w[1] != c for w in ways[b["pad"]]):
+                return a, b, t, r
+    return None
+
+
+def test_pwm_timer(dut, oep_host, ws_run, record_property):
+    """CH32RVPwmTimer: two channels of one timer at 20 kHz, 75 % and 25 %. Edge-aligned they rise together;
+    center-aligned the 25 % one rises a quarter period after the 75 % one (both pulses centred on the same
+    instant)."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPwmTimer")
+    found = same_timer_pair(dut, lines)
+    if found is None:
+        pytest.skip("no two labelled lines are channels of one timer and route: " + ", ".join(p["pad"] for p in lines))
+    a, b, timer, route = found
+    A, B = a["pad"], b["pad"]
+    record_property("pair", f"{A} {B} TIM{timer} route {route}")
+    waves = [becomes(A, freq_hz=20000, duty=0.75, **WAVE), becomes(B, freq_hz=20000, duty=0.25, **WAVE)]
+    off = [becomes(A, level=0), becomes(B, level=0)]
+    conditions = [
+        ("rest", None, None, [], 0.005),
+        # the edges judged in a section of their own, after the reply: the first periods are the change's
+        ("edge-aligned", f"pwmt {a['pin']} {b['pin']} 20000 0 768 256", rb"PWMT (\d)", waves, 0.01),
+        ("edge-aligned, rises", None, None, [skew(A, B, delay_abs_s=0.2e-6, edge="rise")], 0.01),
+        ("stopped", "pwmtoff", rb"PWMTOFF", off, 0.005),
+        ("center-aligned", f"pwmt {a['pin']} {b['pin']} 20000 1 768 256", rb"PWMT (\d)", waves, 0.01),
+        ("center-aligned, phase", None, None, [phase(A, B, phase_deg=90, freq_hz=20000)], 0.01),
+        ("stopped again", "pwmtoff", rb"PWMTOFF", off, 0.005),
+    ]
+    try:
+        replies = sweep(dut, ws_run, oep_host, [a, b], f"pwm timer {A} {B}", conditions, rate=10_000_000, moving=2,
+                        quiet=[])
+        assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PWMT ")), "begin() refused"
+    finally:
+        ask(dut, "pwmtoff", rb"PWMTOFF")
+
+
+def test_phase_shift(dut, oep_host, ws_run, record_property):
+    """CH32RVPhaseShift: two channels of one timer, 10 kHz squares, the second 90 degrees and then 270 degrees
+    behind the first."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPhaseShift")
+    found = same_timer_pair(dut, lines)
+    if found is None:
+        pytest.skip("no two labelled lines are channels of one timer and route: " + ", ".join(p["pad"] for p in lines))
+    a, b, timer, route = found
+    A, B = a["pad"], b["pad"]
+    record_property("pair", f"{A} {B} TIM{timer} route {route}")
+    # attach() restarts the outputs begin() started: a short pulse or two at the change
+    squares = [becomes(A, freq_hz=10000, duty=0.5, irregular_max=3, **WAVE),
+               becomes(B, freq_hz=10000, duty=0.5, irregular_max=3, **WAVE)]
+    off = [becomes(A, level=0), becomes(B, level=0)]
+    conditions = [("rest", None, None, [level(A, 0), level(B, 0)], 0.005)]
+    for deg in (90, 270):
+        conditions += [(f"{deg} degrees", f"phs {a['pin']} {b['pin']} 10000 {deg}", rb"PHS (\d)", squares, 0.01),
+                       (f"{deg} degrees, phase", None, None, [phase(A, B, phase_deg=deg, freq_hz=10000)], 0.02),
+                       (f"stopped after {deg}", "phsoff", rb"PHSOFF", off, 0.005)]
+    try:
+        replies = sweep(dut, ws_run, oep_host, [a, b], f"phase shift {A} {B}", conditions, rate=10_000_000,
+                        moving=2, quiet=[])
+        assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PHS ")), "begin() refused"
+    finally:
+        ask(dut, "phsoff", rb"PHSOFF")
+
+
+def test_six_step(dut, oep_host, ws_run, record_property):
+    """CH32RVSixStep on six labelled lines (CH1..CH3 and CH1N..CH3N of one advanced timer and route): in each step
+    the PWM high side and the low side that is on as the table says, the third phase low."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVSixStep")
+    ways = {line["pad"]: pads(dut, line["pin"]) for line in lines}
+    found = None
+    for route_of in {(w[0], w[3]) for v in ways.values() for w in v if w[2] == ROLE_CH}:
+        t, r = route_of
+        hi = [next((line for line in lines if (t, c, ROLE_CH, r) in ways[line["pad"]]), None) for c in (1, 2, 3)]
+        lo = [next((line for line in lines if (t, c, ROLE_CHN, r) in ways[line["pad"]]), None) for c in (1, 2, 3)]
+        if all(hi) and all(lo):
+            found = (hi, lo, t, r)
+            break
+    if found is None:
+        pytest.skip("no six labelled lines are CH1..CH3 and CH1N..CH3N of one timer and route")
+    hi, lo, timer, route = found
+    record_property("bridge", f"TIM{timer} route {route}: " + " ".join(f"{h['pad']}/{l['pad']}" for h, l in zip(hi, lo)))
+    pins = " ".join(f"{h['pin']} {l['pin']}" for h, l in zip(hi, lo))
+    order = [x for pair in zip(hi, lo) for x in pair]
+    pwm_of = [0, 0, 1, 1, 2, 2]
+    low_of = [1, 2, 2, 0, 0, 1]
+    conditions = [("begun, all off", f"six {pins} 20000 128", rb"SIX (\d)", [level(x["pad"], 0) for x in order], 0.005)]
+    for n in range(6):
+        want = []
+        for k in range(3):
+            if pwm_of[n] == k:
+                want += [becomes(hi[k]["pad"], freq_hz=20000, duty=0.5, **WAVE), becomes(lo[k]["pad"], level=0)]
+            elif low_of[n] == k:
+                want += [becomes(hi[k]["pad"], level=0), becomes(lo[k]["pad"], level=1)]
+            else:
+                want += [becomes(hi[k]["pad"], level=0), becomes(lo[k]["pad"], level=0)]
+        conditions.append((f"step {n}", f"sixstep {n}", rb"SIXSTEP (\d)", want, 0.01))
+    conditions.append(("stopped", "sixoff", rb"SIXOFF", [becomes(x["pad"], level=0) for x in order], 0.005))
+    try:
+        replies = sweep(dut, ws_run, oep_host, order, f"six step TIM{timer}", conditions, rate=10_000_000, moving=6,
+                        quiet=[])
+        assert all(m.group(1) == b"1" for m in replies), "the DUT refused a command"
+    finally:
+        ask(dut, "sixoff", rb"SIXOFF")
 
 
 def channel_line(dut, lines, prefer=None):

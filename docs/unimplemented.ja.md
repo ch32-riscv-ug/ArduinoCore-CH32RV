@@ -68,7 +68,7 @@
 | 非対称デッドタイム | M030、H417 | 2 | 自動 | プローブ | UNUSED:85, EVT TIM/Dead_Asymmetry |
 | ワンパルス | 全系列 | 実装済み（2026-11-17、`CH32RVOnePulse`。`fire()` と CH1/CH2 のエッジでの開始。ベンチ未確認、試験は `fire()` だけ） | 自動 | プローブ（幅を測る）。signals::test_one_pulse | libraries/CH32RVTimerOutput, PS:59, EVT TIM/One_Pulse |
 | 出力比較（Output Compare） | 全系列 | 実装済み（2026-11-17、`CH32RVOutputCompare`。ベンチ未確認） | 自動 | プローブ。signals::test_output_compare | libraries/CH32RVTimerOutput, PS:59, EVT TIM/Output_Compare_Mode |
-| 6 ステップ PWM、位相シフト PWM、中央揃え、独立出力 | V003、V103、V20x、V205、V30x、V407、M030 | 2 | 自動 | プローブ | EVT TIM/PWM_6_Step, PWM_Phase-shifted |
+| 6 ステップ PWM、位相シフト PWM、中央揃え、独立出力 | V003、V103、V20x、V205、V30x、V407、M030 | 実装済み（2026-11-19、CH32RVSixStep・CH32RVPhaseShift・CH32RVPwmTimer（EDGE / CENTER、チャネルごとの write）。signals::test_pwm_timer・test_phase_shift を V203・X035 で確認。6 ステップは 6 本の線のある台が無く、V203 で DUT の自己読みで確認） | 自動 | プローブ | libraries/CH32RVTimerOutput |
 | タイマーの同期・連結（マスター／スレーブ、外部トリガで開始） | 全系列 | 2 | 自動 | プローブ | UNUSED:84, TODO:301 |
 | ETR（外部クロック）・外部パルスの計数 | 全系列 | 一部実装（2026-11-18、`CH32RVPulseCounter`: CH1 / CH2 の端子で外部クロックモード 1、64 ビット。V203・V205・H417 で signals::test_pulse_counter。ETR の端子はコアの端子の表に無く未対応） | 自動 | プローブ（クロックを入れる） | PS:48, FC:69 |
 | タイマーの DMA バースト | 全系列 | 2 | 自動 | プローブ | PS:48, EVT TIM/TIM_DMA |

@@ -2,11 +2,14 @@
 
 [日本語](README.ja.md)
 
-Timer outputs beyond `analogWrite()`, in three classes:
+Timer outputs beyond `analogWrite()`, in six classes:
 
 - **`CH32RVComplementaryPwm`** drives a channel's output and its complementary output (CHx and CHxN of an advanced timer) as a half bridge's two sides, with a dead time and a break input.
 - **`CH32RVOnePulse`** makes one pulse of a set width after a set delay (one-pulse mode), started by the sketch or in hardware by an edge.
 - **`CH32RVOutputCompare`** makes a pad go active, inactive or toggle at a set time in each period (output compare), with a callback at the match.
+- **`CH32RVPwmTimer`** runs several channels of one timer (and their CHxN) as PWM on one period, edge- or center-aligned.
+- **`CH32RVPhaseShift`** puts square waves (50 % duty) of one frequency on a timer's channels, each at its own phase.
+- **`CH32RVSixStep`** drives a three-phase bridge in six steps (trapezoidal) on an advanced timer's CH1 .. CH3 and CH1N .. CH3N.
 
 ```cpp
 #include <CH32RVTimerOutput.h>
@@ -64,9 +67,38 @@ Both outputs are active high. On a break and after `end()` both are low.
 | `onMatch(callback)` | Called from the timer's interrupt at each match; `nullptr` for none. |
 | `tickHz()`, `end()`, `isAttached()` | |
 
+## CH32RVPwmTimer
+
+| Call | What it does |
+|---|---|
+| `begin(pin, frequency, resolution = 8, align = EDGE)` | starts on `pin`'s (CHx or CHxN) timer and route. `CENTER`: the counter runs up and down, every channel's pulse centred on the same instant |
+| `attach(pin)` | another pad of the same timer and route (at duty 0) |
+| `write(pin, duty)` | `duty / 2^resolution` high. A CHxN pad is its channel inverted, so this sets the channel |
+| `timer()`, `end()`, `isAttached()` | |
+
+## CH32RVPhaseShift
+
+| Call | What it does |
+|---|---|
+| `begin(pin, frequency, degrees = 0)` | a square wave on `pin`'s channel (the counter at twice the frequency, the output toggling at the compare) |
+| `attach(pin, degrees)` | another channel of the same timer and route, `degrees` behind; the outputs restart together |
+| `setPhase(pin, degrees)` | a new phase; the outputs restart together (up to a period disturbed) |
+| `end()`, `isAttached()` | |
+
+## CH32RVSixStep
+
+| Call | What it does |
+|---|---|
+| `begin(uHigh, uLow, vHigh, vLow, wHigh, wLow, frequency, resolution = 8)` | U, V, W high sides (CH1 .. CH3) and low sides (CH1N .. CH3N) of one advanced timer and route; all off to begin with |
+| `write(duty)` | the high side's PWM duty |
+| `step(n)` | step 0 .. 5, all three phases at once (the commutation event); 6 or more: all off |
+| `setDeadTime(ns)`, `currentStep()`, `end()`, `isAttached()` | |
+
+Steps: 0 = U PWM and V's low side on, 1 = U and W, 2 = V and W, 3 = V and U, 4 = W and U, 5 = W and V. The third phase has both sides low.
+
 ## Status
 
-Built for every series (2026-11-17). tests/instrumented/signals checks them on the probe's capture: `test_complementary` (the dead time with WireSkein's dead_time at 100 MS/s, the break where a line reaches BKIN), `test_one_pulse` and `test_output_compare`. Not yet built: the asymmetric dead time (M030, H417), six-step and phase-shifted PWM.
+Built for every series (2026-11-17). tests/instrumented/signals checks them on the probe's capture: `test_complementary` (the dead time with WireSkein's dead_time at 100 MS/s, the break where a line reaches BKIN), `test_one_pulse`, `test_output_compare`, `test_pwm_timer` (edge-aligned: the rises together; center-aligned: 75 % and 25 % 90 degrees apart) and `test_phase_shift` (90 and 270 degrees). `test_six_step` runs where six lines reach the bridge's pads, which no bench has yet: on V203 the DUT read its six pads back and found each step as the table says (2026-11-19). Not yet built: the asymmetric dead time (M030, H417).
 
 ## Examples
 

@@ -169,6 +169,24 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pwm-timer"            # CH32RVPwmTimer: two channels of one timer, edge-aligned (rises together) and center-aligned (phase)
+test = "signals::test_pwm_timer"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "phase-shift"          # CH32RVPhaseShift: squares 90 and 270 degrees apart (WireSkein phase)
+test = "signals::test_phase_shift"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
+id = "six-step"             # CH32RVSixStep: the six steps on CH1..3 / CH1N..3N (six lines on the bridge's pads)
+test = "signals::test_six_step"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "edge-capture"         # CH32RVInputCapture: each edge's time (any channel, any route) against the probe's PWM
 test = "signals::test_edge_capture"
 scope = "series"

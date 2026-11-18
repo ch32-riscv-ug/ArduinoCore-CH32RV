@@ -156,3 +156,117 @@ private:
     uint8_t _pin = 0;
     bool _wide = false;
 };
+
+/* Several PWM outputs of one timer on one period: the channels (CHx) and,
+ * on an advanced timer, their complementary outputs (CHxN, CHx inverted),
+ * edge-aligned or center-aligned (the counter runs up and down, so every
+ * channel's pulse is centred on the same instant: motor drives, less ripple).
+ *
+ *     CH32RVPwmTimer pwm;
+ *     pwm.begin(PA8, 20000, 10, CH32RVPwmTimer::CENTER);   // TIM1, 20 kHz, 10 bits
+ *     pwm.attach(PA9);                                     // TIM1 CH2 too
+ *     pwm.write(PA8, 256);
+ *     pwm.write(PA9, 768); */
+class CH32RVPwmTimer {
+public:
+    enum Align : uint8_t { EDGE = 0, CENTER = 1 };
+
+    /* pin: a channel pad (CHx or CHxN) of a timer; it picks the timer and the
+     * route. frequency in Hz; resolution: the bits write() takes (1 .. 16). */
+    bool begin(int pin, uint32_t frequency, uint8_t resolution = 8, Align align = EDGE);
+    /* Another channel pad of the same timer and route (at duty 0). */
+    bool attach(int pin);
+    void end();
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
+
+    /* duty / 2^resolution of each period high on pin (a CHxN pad: the channel's
+     * inverse, so its write() sets the channel). */
+    bool write(int pin, uint32_t duty);
+    uint8_t timer() const { return _timer; }
+
+private:
+    bool begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, Align align);
+    bool connect(const CH32RVTimerPad &pad);
+    const CH32RVTimerPad *find(int pin) const;
+
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};
+    CH32RVTimerLease _lease = {};
+    CH32RVTimerPad _pads[8] = {};
+    uint8_t _count = 0;
+    uint8_t _timer = 0;
+    uint32_t _base = 0;
+    uint32_t _steps = 0;
+    uint8_t _bits = 8;
+    bool _wide = false, _advanced = false;
+};
+
+/* Square waves (50 % duty) of one frequency on a timer's channels, each at
+ * its own phase: two- or four-phase clocks, interleaved converters. The
+ * channels toggle at their compare, the counter running at twice the
+ * frequency; a phase from 180 degrees on is the inverse of the one 180 less.
+ *
+ *     CH32RVPhaseShift clocks;
+ *     clocks.begin(PA8, 100000);        // TIM1 CH1, 100 kHz, phase 0
+ *     clocks.attach(PA9, 90);           // CH2 a quarter period later */
+class CH32RVPhaseShift {
+public:
+    bool begin(int pin, uint32_t frequency, uint16_t degrees = 0);
+    bool attach(int pin, uint16_t degrees);
+    /* The outputs restart together (a glitch of up to a period). */
+    bool setPhase(int pin, uint16_t degrees);
+    void end();
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
+
+private:
+    bool begin(const CH32RVTimerPad &pad, uint32_t frequency, uint16_t degrees);
+    void restart();
+
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};
+    CH32RVTimerLease _lease = {};
+    CH32RVTimerPad _pads[4] = {};
+    uint16_t _degrees[4] = {};
+    uint8_t _count = 0;
+    uint32_t _base = 0;
+    uint32_t _steps = 0;
+    bool _wide = false, _advanced = false;
+};
+
+/* Six-step (trapezoidal) drive of a three-phase bridge on an advanced timer:
+ * U, V, W on CH1, CH2, CH3 (high sides) and CH1N, CH2N, CH3N (low sides).
+ * In each step one phase's high side runs the PWM, another's low side is on
+ * and the third is off (both low); step() changes all of them at once (the
+ * timer's commutation event).
+ *
+ *     CH32RVSixStep motor;
+ *     motor.begin(PA8, PB13, PA9, PB14, PA10, PB15, 20000);
+ *     motor.write(100);                   // of 255
+ *     motor.step(0);                      // U PWM, V low; then 1 .. 5 in turn
+ *
+ *   step  0      1      2      3      4      5
+ *   PWM   U      U      V      V      W      W
+ *   low   V      W      W      U      U      V */
+class CH32RVSixStep {
+public:
+    bool begin(int uHigh, int uLow, int vHigh, int vLow, int wHigh, int wLow, uint32_t frequency,
+               uint8_t resolution = 8);
+    void end();
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
+
+    /* The high side's duty, duty / 2^resolution. */
+    bool write(uint32_t duty);
+    /* Step 0 .. 5 now; any other value turns all six off. */
+    bool step(uint8_t n);
+    uint8_t currentStep() const { return _step; }
+    /* As CH32RVComplementaryPwm's (between a phase's high and low side). */
+    uint32_t setDeadTime(uint32_t nanoseconds);
+
+private:
+    const CH32RVTimerOwner _owner = {this, nullptr, nullptr};
+    CH32RVTimerLease _lease = {};
+    CH32RVTimerPad _pads[6] = {};
+    uint32_t _base = 0;
+    uint32_t _steps = 0;
+    uint8_t _bits = 8;
+    uint8_t _dtg = 0;
+    uint8_t _step = 0xFF;
+};

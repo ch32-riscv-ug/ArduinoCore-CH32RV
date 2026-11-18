@@ -1,0 +1,436 @@
+/* CH32RVPwmTimer, CH32RVPhaseShift, CH32RVSixStep: several outputs of one
+ * timer (CH32RVTimerOutput.h). */
+#include "CH32RVTimerOutput.h"
+
+#include "TimerOutputCommon.h"
+
+using namespace ch32rv_timer_output;
+
+namespace {
+
+constexpr uint16_t CTLR1_CMS_CENTER1 = 1u << 5;   /* up and down; compare flags on the way down */
+constexpr uint16_t CTLR2_CCPC = 1u << 0;          /* CCxE, CCxNE, OCxM preloaded, moved at COM */
+constexpr uint16_t SWEVGR_COMG = 1u << 5;
+constexpr uint8_t OCM_TOGGLE = 3, OCM_FORCE_ACTIVE = 5;
+
+/* Sets (or clears) one bit of a channel's CCER nibble: 0 CCxE, 1 CCxP, 2 CCxNE. */
+void ccerBit(uint32_t base, uint8_t ch, unsigned bit, bool on)
+{
+    const uint16_t mask = (uint16_t)(1u << ((ch - 1u) * 4u + bit));
+    CH32RV_TIM_CCER(base) = on ? (uint16_t)(CH32RV_TIM_CCER(base) | mask) : (uint16_t)(CH32RV_TIM_CCER(base) & ~mask);
+}
+
+bool acquire(const CH32RVTimerPad &pad, uint32_t prescale, uint32_t reload, uint16_t control,
+             const CH32RVTimerOwner *owner, CH32RVTimerLease &lease)
+{
+    const CH32RVTimerRequest request = {pad.timer, CH32RV_TIMER_WHOLE, {(uint16_t)(prescale - 1u), reload, control}};
+    lease = ch32rv_timer_try_acquire(&request, owner);
+    if (!ch32rv_timer_lease_valid(&lease) || !ch32rv_timer_apply_base(&lease)) {
+        ch32rv_timer_release(&lease);
+        return false;
+    }
+    return true;
+}
+
+constexpr uint8_t ROLES = CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH) | CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CHN);
+
+}  // namespace
+
+/* ---- CH32RVPwmTimer ---- */
+
+bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Align align)
+{
+    end();
+    if (frequency == 0u || resolution < 1u || resolution > 16u) {
+        return false;
+    }
+    CH32RVTimerPad p;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, ROLES, i, &p); i++) {
+        if (begin(p, frequency, resolution, align)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPwmTimer::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, Align align)
+{
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
+    if (!cap) {
+        return false;
+    }
+    _advanced = cap->kind == CH32RV_TIMER_KIND_ADVANCED;
+    _wide = cap->counter_bits == 32u;
+    if (pad.role == CH32RV_TIMER_PAD_CHN && !_advanced) {
+        return false;
+    }
+    /* Center-aligned: a period is the counter up to the reload and back. */
+    const uint64_t cycles = ch32rv_timer_clock_hz(pad.timer) / frequency / (align == CENTER ? 2u : 1u);
+    uint32_t prescale, steps;
+    if (!split(cycles, _wide, prescale, steps)) {
+        return false;
+    }
+    const uint32_t reload = align == CENTER ? steps : steps - 1u;
+    if (!acquire(pad, prescale, reload,
+                 (uint16_t)(CH32RV_TIM_CTLR1_ARPE | (align == CENTER ? CTLR1_CMS_CENTER1 : 0u)), &_owner, _lease)) {
+        return false;
+    }
+    _timer = pad.timer;
+    _base = cap->register_base;
+    _steps = steps;
+    _bits = resolution;
+    _count = 0;
+    if (_advanced) {
+        CH32RV_TIM_BDTR(_base) = (uint16_t)(BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+    }
+    connect(pad);
+    ch32rv_timer_start(&_lease);
+    return true;
+}
+
+bool CH32RVPwmTimer::connect(const CH32RVTimerPad &pad)
+{
+    if (_count >= sizeof _pads / sizeof _pads[0]) {
+        return false;
+    }
+    bool shared = false;                   /* the channel already runs for another pad (CHx and CHxN) */
+    for (uint8_t i = 0; i < _count; i++) {
+        shared |= _pads[i].channel == pad.channel;
+    }
+    if (!shared) {
+        channelMode(_base, pad.channel, (uint8_t)(OCM_PWM1 << 4 | OCPE));
+        setCompare(_base, pad.channel, 0, _wide);
+    }
+    ccerBit(_base, pad.channel, pad.role == CH32RV_TIMER_PAD_CHN ? 2u : 0u, true);
+    ch32rv_timer_pad_connect(&pad, true);
+    _pads[_count++] = pad;
+    return true;
+}
+
+bool CH32RVPwmTimer::attach(int pin)
+{
+    if (!isAttached() || find(pin)) {
+        return isAttached();
+    }
+    CH32RVTimerPad p;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, ROLES, i, &p); i++) {
+        if (p.timer == _timer && ch32rv_timer_pads_together(&_pads[0], &p) &&
+            (p.role == CH32RV_TIMER_PAD_CH || _advanced)) {
+            return connect(p);
+        }
+    }
+    return false;
+}
+
+const CH32RVTimerPad *CH32RVPwmTimer::find(int pin) const
+{
+    for (uint8_t i = 0; i < _count; i++) {
+        if (_pads[i].pin == (uint8_t)CH32RV_PIN_RESOLVE(pin)) {
+            return &_pads[i];
+        }
+    }
+    return nullptr;
+}
+
+bool CH32RVPwmTimer::write(int pin, uint32_t duty)
+{
+    const CH32RVTimerPad *p = isAttached() ? find(pin) : nullptr;
+    if (!p) {
+        return false;
+    }
+    const uint32_t full = 1u << _bits;
+    if (duty >= full) {
+        /* past the period's end: always active (center: above the reload) */
+        setCompare(_base, p->channel, _steps + 1u, _wide);
+        return true;
+    }
+    setCompare(_base, p->channel, (uint32_t)(((uint64_t)duty * _steps) >> _bits), _wide);
+    return true;
+}
+
+void CH32RVPwmTimer::end()
+{
+    if (isAttached()) {
+        ch32rv_timer_stop(&_lease);
+        CH32RV_TIM_CCER(_base) = 0;
+        if (_advanced) {
+            CH32RV_TIM_BDTR(_base) = 0;
+        }
+        for (uint8_t i = 0; i < _count; i++) {
+            padLow(_pads[i].pin);
+        }
+    }
+    _count = 0;
+    ch32rv_timer_release(&_lease);
+}
+
+/* ---- CH32RVPhaseShift ---- */
+
+bool CH32RVPhaseShift::begin(int pin, uint32_t frequency, uint16_t degrees)
+{
+    end();
+    if (frequency == 0u) {
+        return false;
+    }
+    CH32RVTimerPad p;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &p); i++) {
+        if (begin(p, frequency, degrees)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPhaseShift::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint16_t degrees)
+{
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
+    if (!cap) {
+        return false;
+    }
+    _wide = cap->counter_bits == 32u;
+    _advanced = cap->kind == CH32RV_TIMER_KIND_ADVANCED;
+    /* A toggle each counter period: the counter at twice the frequency. */
+    uint32_t prescale, steps;
+    if (!split(ch32rv_timer_clock_hz(pad.timer) / frequency / 2u, _wide, prescale, steps) ||
+        !acquire(pad, prescale, steps - 1u, CH32RV_TIM_CTLR1_ARPE, &_owner, _lease)) {
+        return false;
+    }
+    _base = cap->register_base;
+    _steps = steps;
+    _pads[0] = pad;
+    _degrees[0] = (uint16_t)(degrees % 360u);
+    _count = 1;
+    if (_advanced) {
+        CH32RV_TIM_BDTR(_base) = (uint16_t)(BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+    }
+    ch32rv_timer_pad_connect(&pad, true);
+    restart();
+    return true;
+}
+
+bool CH32RVPhaseShift::attach(int pin, uint16_t degrees)
+{
+    if (!isAttached()) {
+        return false;
+    }
+    const uint8_t want = (uint8_t)CH32RV_PIN_RESOLVE(pin);
+    for (uint8_t i = 0; i < _count; i++) {
+        if (_pads[i].pin == want) {
+            return setPhase(pin, degrees);
+        }
+    }
+    CH32RVTimerPad p;
+    for (uint8_t i = 0; _count < 4u && ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &p);
+         i++) {
+        bool used = false;
+        for (uint8_t k = 0; k < _count; k++) {
+            used |= _pads[k].channel == p.channel;
+        }
+        if (!used && p.timer == _pads[0].timer && ch32rv_timer_pads_together(&_pads[0], &p)) {
+            _pads[_count] = p;
+            _degrees[_count++] = (uint16_t)(degrees % 360u);
+            ch32rv_timer_pad_connect(&p, true);
+            restart();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPhaseShift::setPhase(int pin, uint16_t degrees)
+{
+    const uint8_t want = (uint8_t)CH32RV_PIN_RESOLVE(pin);
+    for (uint8_t i = 0; isAttached() && i < _count; i++) {
+        if (_pads[i].pin == want) {
+            _degrees[i] = (uint16_t)(degrees % 360u);
+            restart();
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Every output low (forced), its toggle point and polarity set, the counter
+ * from 0: they start together. */
+void CH32RVPhaseShift::restart()
+{
+    ch32rv_timer_stop(&_lease);
+    /* From the channels' reset state, as begin() finds them: a toggle channel that had been running kept its
+     * level through the forced one and came back inverted (X035). */
+    CH32RV_TIM_CCER(_base) = 0;
+    CH32RV_TIM_CHCTLR1(_base) = 0;
+    CH32RV_TIM_CHCTLR2(_base) = 0;
+    CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+    for (uint8_t i = 0; i < _count; i++) {
+        const uint8_t ch = _pads[i].channel;
+        const uint16_t d = _degrees[i];
+        const bool invert = d >= 180u;
+        uint32_t at = (uint32_t)((uint64_t)(invert ? d - 180u : d) * _steps / 180u);
+        /* Never 0: when a compare of 0 first matches (as the counter starts, or at its first wrap a counter period
+         * later) differs between chips; 1 is a tick later for every such channel alike. */
+        if (at == 0u) {
+            at = 1u;
+        }
+        channelMode(_base, ch, (uint8_t)(OCM_FORCE_INACTIVE << 4));
+        setCompare(_base, ch, at, _wide);
+        ccerBit(_base, ch, 1u, invert);
+        ccerBit(_base, ch, 0u, true);
+        channelMode(_base, ch, (uint8_t)(OCM_TOGGLE << 4));
+    }
+    /* Toggle mode does not always start from the forced level (X035: a channel that had been running came back
+     * at the other one): each pad says which it took, and its polarity makes that the inactive level. */
+    delayMicroseconds(2);
+    for (uint8_t i = 0; i < _count; i++) {
+        const bool invert = _degrees[i] >= 180u;
+        if ((digitalRead(_pads[i].pin) != LOW) != invert) {
+            ccerBit(_base, _pads[i].channel, 1u, !invert);
+        }
+    }
+    /* One tick before the wrap: every channel's first match comes after the counter has run (a match at the
+     * first tick after the update was lost on X035). */
+    if (_wide) {
+        CH32RV_TIM_CNT32(_base) = _steps - 1u;
+    } else {
+        CH32RV_TIM_CNT(_base) = (uint16_t)(_steps - 1u);
+    }
+    ch32rv_timer_start(&_lease);
+}
+
+void CH32RVPhaseShift::end()
+{
+    if (isAttached()) {
+        ch32rv_timer_stop(&_lease);
+        CH32RV_TIM_CCER(_base) = 0;
+        if (_advanced) {
+            CH32RV_TIM_BDTR(_base) = 0;
+        }
+        for (uint8_t i = 0; i < _count; i++) {
+            padLow(_pads[i].pin);
+        }
+    }
+    _count = 0;
+    ch32rv_timer_release(&_lease);
+}
+
+/* ---- CH32RVSixStep ---- */
+
+bool CH32RVSixStep::begin(int uHigh, int uLow, int vHigh, int vLow, int wHigh, int wLow, uint32_t frequency,
+                          uint8_t resolution)
+{
+    end();
+    if (frequency == 0u || resolution < 1u || resolution > 16u) {
+        return false;
+    }
+    const int high[3] = {uHigh, vHigh, wHigh}, low[3] = {uLow, vLow, wLow};
+    CH32RVTimerPad first, h[3], l[3];
+    /* Each route of U's high side, with the other five pads on it. */
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)uHigh, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &first); i++) {
+        bool all = true;
+        for (uint8_t k = 0; k < 3 && all; k++) {
+            bool hit = false, lowHit = false;
+            for (uint8_t j = 0; !hit && ch32rv_timer_pad_find((uint32_t)high[k], CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH),
+                                                                j, &h[k]); j++) {
+                hit = ch32rv_timer_pads_together(&first, &h[k]);
+            }
+            for (uint8_t j = 0; hit && !lowHit &&
+                                ch32rv_timer_pad_find((uint32_t)low[k], CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CHN), j, &l[k]);
+                 j++) {
+                lowHit = l[k].channel == h[k].channel && ch32rv_timer_pads_together(&first, &l[k]);
+            }
+            all = hit && lowHit;
+        }
+        if (!all || h[0].channel == h[1].channel || h[1].channel == h[2].channel || h[0].channel == h[2].channel) {
+            continue;
+        }
+        const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(h[0].timer);
+        uint32_t prescale, steps;
+        if (!cap || cap->kind != CH32RV_TIMER_KIND_ADVANCED ||
+            !split(ch32rv_timer_clock_hz(h[0].timer) / frequency, false, prescale, steps) ||
+            !acquire(h[0], prescale, steps - 1u, CH32RV_TIM_CTLR1_ARPE, &_owner, _lease)) {
+            continue;
+        }
+        _base = cap->register_base;
+        _steps = steps;
+        _bits = resolution;
+        for (uint8_t k = 0; k < 3; k++) {
+            _pads[2 * k] = h[k];
+            _pads[2 * k + 1] = l[k];
+            channelMode(_base, h[k].channel, (uint8_t)(OCM_FORCE_INACTIVE << 4 | OCPE));
+            setCompare(_base, h[k].channel, 0, false);
+        }
+        CH32RV_TIM_CCER(_base) = 0;
+        TIM_CTLR2(_base) = (uint16_t)((TIM_CTLR2(_base) & ~0x3F00u) | CTLR2_CCPC);   /* idle low, preloaded */
+        CH32RV_TIM_BDTR(_base) = (uint16_t)(_dtg | BDTR_OSSI | BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+        for (uint8_t k = 0; k < 6; k++) {
+            ch32rv_timer_pad_connect(&_pads[k], true);
+        }
+        _step = 0xFF;
+        ch32rv_timer_start(&_lease);
+        return true;
+    }
+    return false;
+}
+
+bool CH32RVSixStep::write(uint32_t duty)
+{
+    if (!isAttached()) {
+        return false;
+    }
+    const uint32_t full = 1u << _bits;
+    const uint32_t c = duty >= full ? _steps : (uint32_t)(((uint64_t)duty * _steps) >> _bits);
+    for (uint8_t k = 0; k < 3; k++) {
+        setCompare(_base, _pads[2 * k].channel, c, false);
+    }
+    return true;
+}
+
+bool CH32RVSixStep::step(uint8_t n)
+{
+    if (!isAttached()) {
+        return false;
+    }
+    /* Per step: the phase whose high side runs the PWM, the one whose low side is on. */
+    static const uint8_t pwm[6] = {0, 0, 1, 1, 2, 2}, low[6] = {1, 2, 2, 0, 0, 1};
+    for (uint8_t k = 0; k < 3; k++) {
+        const uint8_t ch = _pads[2 * k].channel;
+        uint8_t mode = OCM_FORCE_INACTIVE, ccer = 0;             /* off: both at their inactive (low) level */
+        if (n < 6u && pwm[n] == k) {
+            mode = OCM_PWM1;
+            ccer = 0x1;                                          /* CCxE: the high side */
+        } else if (n < 6u && low[n] == k) {
+            mode = OCM_FORCE_ACTIVE;
+            ccer = 0x4;                                          /* CCxNE alone: CHxN follows OCxREF (high) */
+        }
+        channelMode(_base, ch, (uint8_t)(mode << 4 | OCPE));
+        channelEnable(_base, ch, ccer);
+    }
+    CH32RV_TIM_SWEVGR(_base) = SWEVGR_COMG;                      /* all three at once */
+    _step = n < 6u ? n : 0xFF;
+    return true;
+}
+
+uint32_t CH32RVSixStep::setDeadTime(uint32_t nanoseconds)
+{
+    const uint32_t clock = ch32rv_timer_clock_hz(isAttached() ? _pads[0].timer : 1u);
+    uint32_t ticks;
+    _dtg = deadTimeField(clock, nanoseconds, ticks);
+    if (isAttached()) {
+        CH32RV_TIM_BDTR(_base) = (uint16_t)((CH32RV_TIM_BDTR(_base) & ~0xFFu) | _dtg);
+    }
+    return nanoseconds ? (uint32_t)(((uint64_t)ticks * 1000000000u + clock / 2u) / clock) : 0u;
+}
+
+void CH32RVSixStep::end()
+{
+    if (isAttached()) {
+        ch32rv_timer_stop(&_lease);
+        CH32RV_TIM_CCER(_base) = 0;
+        CH32RV_TIM_BDTR(_base) = 0;
+        TIM_CTLR2(_base) &= (uint16_t)~CTLR2_CCPC;
+        for (uint8_t k = 0; k < 6; k++) {
+            padLow(_pads[k].pin);
+        }
+    }
+    _step = 0xFF;
+    ch32rv_timer_release(&_lease);
+}
