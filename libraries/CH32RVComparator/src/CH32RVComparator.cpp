@@ -27,44 +27,19 @@ struct Layout {
     uint8_t mode, nsel, psel, outNone, opa, ref;
     uint8_t hyst[3];
     uint32_t mask;
+    uint8_t enBit, hystBit, hystAt, hystHigh1, hystHigh2, vrefAt;
 };
 
-#if defined(CH32RV_SERIES_CH32V007) || defined(CH32RV_SERIES_CH32M007)
-/* OPA_CTLR2: EN 0, MODE 2:1 (0 PC0, 1 TIM1_CH4), NSEL 4:3, PSEL 6:5, HYEN 7 (24 mV), RMID 8; CMP_KEY */
-constexpr Layout L = {0x4002400Cu, 0x40024014u, 0, 0, 0, 1, 1, 3, 5, 1, NONE, NONE, {24, 0, 0}, 0x1FFu};
-#define CMP_HYST_BIT 7
-#elif defined(CH32RV_SERIES_CH32V205)
-/* CMP_CTLR: CMP1 at 0, CMP2 at 8: EN 0, MODE 2:1 (0 the pad, 1 a timer), NSEL 4:3 (2 DAC), PSEL 6:5 (2 the
- * OPA's output), HYS 7 with HYS_H (CMP1 19, CMP2 29) above it: 12.5 / 25 / 50 mV; CMP_KEY */
-constexpr Layout L = {0x4002600Cu, 0x40026018u, 0, 0, 8, 2, 1, 3, 5, 1, 2, NONE, {13, 25, 50}, 0xFFu};
-#define CMP_HYST_BIT 7
-#define CMP_HYST_HIGH(unit) ((unit) == 1u ? 19u : 29u)
-#elif defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103)
-/* OPA_CTLR2: CMP1 at 0, CMP2 at 8, CMP3 at 16: EN 0, MODE 2:1 (0 / 1 the pads, 2 TIM2), NSEL 3, PSEL 4,
- * HYEN 5 (15 mV), LP 6; OPCM_KEY */
-constexpr Layout L = {0x40026008u, 0x40026014u, 0, 0, 8, 3, 1, 3, 4, 2, NONE, NONE, {15, 0, 0}, 0x7Fu};
-#define CMP_HYST_BIT 5
-#elif defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
-/* OPA_CTLR2: CMP1 at 0, CMP2 at 5, CMP3 at 10: EN 0, MODE 1 (1 the pad, 0 TIM2), NSEL 2, PSEL 3, HYEN 4;
- * CMP_KEY */
-constexpr Layout L = {0x40026008u, 0x40026010u, 0, 0, 5, 3, 1, 2, 3, 0, NONE, NONE, {20, 0, 0}, 0x1Fu};
-#define CMP_HYST_BIT 4
-#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
-/* CMP_CTLR: PSEL 1:0 (2 OPA1), NSEL 3:2 (3 the reference), MODE 7:4 (0 GPIO by AF, 15 off), EN 8,
- * HYPSEL 10:9 (10 / 20 / 30 mV), VREF 12:11; CMP_STATR bit 0 */
-constexpr Layout L = {0x4001780Cu, 0, 0x40017810u, 0, 0, 1, 4, 2, 0, 15, 2, 3, {10, 20, 30}, 0x1FFFu};
-#define CMP_HYST_AT 9
-#define CMP_EN_BIT 8
-#define CMP_VREF_AT 11
-#else
-#define CH32RV_CMP_NO_LAYOUT 1
+/* Field positions beyond the unit's own (relative to it unless said):
+ * enBit; the hysteresis as one bit hystBit, or a 2-bit code at hystAt
+ * (absolute), with a second bit above it for unit 1 / 2 at hystHigh1 /
+ * hystHigh2 (absolute); the inner reference's level at vrefAt (absolute). */
+#if defined(CH32RV_CMP_LAYOUT)
+constexpr Layout L = CH32RV_CMP_LAYOUT;      /* the variant's, from the family's reference manual */
 #endif
 
-#if !defined(CH32RV_CMP_NO_LAYOUT) && defined(CH32RV_CMP_PADS)
+#if defined(CH32RV_CMP_LAYOUT) && defined(CH32RV_CMP_PADS)
 #define CH32RV_CMP_READY 1
-#ifndef CMP_EN_BIT
-#define CMP_EN_BIT 0
-#endif
 
 unsigned base(uint8_t unit)
 {
@@ -86,18 +61,21 @@ void unlock()
 void hysteresis(uint8_t unit, uint8_t code, uint32_t &bits, uint32_t &mask)
 {
     bits = mask = 0;
-#if defined(CMP_HYST_AT)
-    (void)unit;
-    mask = 3u << CMP_HYST_AT;
-    bits = (uint32_t)code << CMP_HYST_AT;
-#else
-    mask = 1u << (base(unit) + CMP_HYST_BIT);
+    if (L.hystAt != NONE) {
+        mask = 3u << L.hystAt;
+        bits = (uint32_t)code << L.hystAt;
+        return;
+    }
+    if (L.hystBit == NONE) {
+        return;
+    }
+    mask = 1u << (base(unit) + L.hystBit);
     bits = (code & 1u) ? mask : 0;
-#if defined(CMP_HYST_HIGH)
-    mask |= 1u << CMP_HYST_HIGH(unit);
-    bits |= (code & 2u) ? 1u << CMP_HYST_HIGH(unit) : 0;
-#endif
-#endif
+    const uint8_t high = unit == 1u ? L.hystHigh1 : unit == 2u ? L.hystHigh2 : NONE;
+    if (high != NONE) {
+        mask |= 1u << high;
+        bits |= (code & 2u) ? 1u << high : 0;
+    }
 }
 #endif
 
@@ -145,12 +123,12 @@ void CH32RVComparator::apply()
     uint32_t hb, hm;
     hysteresis(_unit, _hyst, hb, hm);
     uint32_t mask = (L.mask << base(_unit)) | hm, bits = (_fields << base(_unit)) | hb;
-#if defined(CMP_VREF_AT)
-    mask |= 3u << CMP_VREF_AT;
-    if (((_fields >> L.nsel) & 3u) == L.ref) {         /* the bias only while - takes it */
-        bits |= (uint32_t)_ref << CMP_VREF_AT;
+    if (L.vrefAt != NONE) {
+        mask |= 3u << L.vrefAt;
+        if (((_fields >> L.nsel) & 3u) == L.ref) {     /* the bias only while - takes it */
+            bits |= (uint32_t)_ref << L.vrefAt;
+        }
     }
-#endif
     volatile uint32_t &r = CH32RV_REG32(L.reg);
     r = (r & ~mask) | bits;
 #endif
@@ -174,7 +152,7 @@ bool CH32RVComparator::begin(int positivePin, int negativePin, int outPin)
         ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_AF_PP_50M);
         _out = (int8_t)outPin;
     }
-    _fields = 1u << CMP_EN_BIT | (uint32_t)o << L.mode | (uint32_t)n << L.nsel | (uint32_t)p << L.psel;
+    _fields = 1u << L.enBit | (uint32_t)o << L.mode | (uint32_t)n << L.nsel | (uint32_t)p << L.psel;
     apply();
     _begun = true;
     return true;
@@ -227,8 +205,8 @@ bool CH32RVComparator::setHysteresis(uint8_t millivolts)
 
 bool CH32RVComparator::setReference(uint8_t quarters)
 {
-#if defined(CH32RV_CMP_READY) && defined(CMP_VREF_AT)
-    if (quarters < 1u || quarters > 3u) {
+#if defined(CH32RV_CMP_READY)
+    if (L.vrefAt == NONE || quarters < 1u || quarters > 3u) {
         return false;
     }
     _ref = quarters;
@@ -248,7 +226,7 @@ void CH32RVComparator::end()
         return;
     }
 #if defined(CH32RV_CMP_READY)
-    _fields &= ~(1u << CMP_EN_BIT);
+    _fields &= ~(1u << L.enBit);
     apply();
 #endif
     if (_out >= 0) {

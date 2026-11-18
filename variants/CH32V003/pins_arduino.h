@@ -319,6 +319,8 @@ static const uint8_t SS = PIN_SPI_SS;
     { 1, 1, 1, PD0 }, \
     { 1, 2, 0, PD4 }, \
 }
+/* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
+#define CH32RV_OPA_LAYOUT { 0x40023800u, 0, 0u, 16, 0, 1, 0xFF, 2, 1, 0xFF, 0xFF, 0, { 0, 0, 0 }, 0x7u }
 
 /* ---- PWM: 8 pads on TIM1/TIM2, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 8

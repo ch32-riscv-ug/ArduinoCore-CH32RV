@@ -29,38 +29,11 @@ struct Layout {
     uint32_t mask;
 };
 
-#if defined(CH32RV_SERIES_CH32V003)
-/* EXTEN_CTR: OPA_EN 16, OPA_NSEL 17, OPA_PSEL 18 */
-constexpr Layout L = {0x40023800u, 0, 0, 16, 0, 1, NONE, 2, 1, NONE, NONE, 0, {0, 0, 0}, 0x7u};
-#elif defined(CH32RV_SERIES_CH32V203) || defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V303) || \
-    defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
-/* OPA_CTLR: a nibble each, EN 0, MODE 1, NSEL 2, PSEL 3 */
-constexpr Layout L = {0x40023804u, 0, 0, 0, 4, 4, 1, 3, 2, NONE, NONE, 0, {0, 0, 0}, 0xFu};
-#elif defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
-/* OPA_CTLR: EN 0, MODE 1, NSEL 4:2 (PGA x4 .. x32: 2 .. 5), PSEL 5, PGADIF 6, FB_EN 7, HS 8 */
-constexpr Layout L = {0x40023804u, 0, 0, 0, 0, 1, 1, 5, 2, 7, 2, 2, {4, 0, 0}, 0x1FFu};
-#elif defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
-    defined(CH32RV_SERIES_CH32M007)
-/* OPA_CTLR1: EN 0, MODE 2:1, PSEL 5:4, NSEL 10:8 (PGA x4 .. x32: 3 .. 6), FB_EN 11, PGADIF 12; OPA_KEY */
-constexpr Layout L = {0x40024004u, 0, 0x40024010u, 0, 0, 1, 1, 4, 8, 11, 8, 3, {4, 0, 0}, 0x1F37u};
-#elif defined(CH32RV_SERIES_CH32V205)
-/* OPA_CTLR1 / 2: EN 0, MODE 2:1, PSEL 4:3 (OPA2: 3), NSEL 5, PGA_SEL 9:8 (OPA1 x8 .. x64, OPA2 x4 .. x32),
- * FB_EN 10, PGADIF 11, HS 12; OPA_KEY */
-constexpr Layout L = {0x40026004u, 4, 0x40026014u, 0, 0, 2, 1, 3, 5, 10, 8, 0, {8, 4, 0}, 0x1FFFu};
-#elif defined(CH32RV_SERIES_CH32L103) || defined(CH32RV_SERIES_CH32M103)
-/* OPA_CTLR1: EN 0, MODE 3:1, PSEL 6:4, FB_EN 7, NSEL 11:8 (PGA x8 .. x64: 7 .. 10), LP 12; OPCM_KEY */
-constexpr Layout L = {0x40026004u, 0, 0x40026014u, 0, 0, 1, 1, 4, 8, 7, 8, 7, {8, 0, 0}, 0x1FFFu};
-#elif defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
-/* OPA_CTLR1: OPA1 at 0, OPA2 at 16: EN 0, MODE 1, PSEL 4:3, FB_EN 5, NSEL 8:6 (PGA x4 .. x32: 3 .. 6); OPA_KEY */
-constexpr Layout L = {0x40026004u, 0, 0x4002600Cu, 0, 16, 2, 1, 3, 6, 5, 6, 3, {4, 4, 0}, 0x1FFu};
-#elif defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417)
-/* OPA_CTLR1 / 2 / 3: EN 0, MODE 2:1, PSEL 3, NSEL 6:4 (PGA x8 .. x64: 2 .. 5), FB_EN 8, PGADIF 9, HS 10 */
-constexpr Layout L = {0x40017800u, 4, 0, 0, 0, 3, 1, 3, 4, 8, 4, 2, {8, 8, 8}, 0x7FFu};
-#else
-#define CH32RV_OPA_NO_LAYOUT 1
+#if defined(CH32RV_OPA_LAYOUT)
+constexpr Layout L = CH32RV_OPA_LAYOUT;      /* the variant's, from the family's reference manual */
 #endif
 
-#if !defined(CH32RV_OPA_NO_LAYOUT) && defined(CH32RV_OPA_PADS)
+#if defined(CH32RV_OPA_LAYOUT) && defined(CH32RV_OPA_PADS)
 #define CH32RV_OPA_READY 1
 
 volatile uint32_t &control(uint8_t unit)

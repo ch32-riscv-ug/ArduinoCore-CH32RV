@@ -613,6 +613,8 @@ static const uint8_t SS = PIN_SPI_SS;
     { 2, 2, 0, PA2 }, \
     { 2, 2, 1, PA4 }, \
 }
+/* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
+#define CH32RV_OPA_LAYOUT { 0x40023804u, 0, 0u, 0, 4, 4, 1, 3, 2, 0xFF, 0xFF, 0, { 0, 0, 0 }, 0xFu }
 
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u

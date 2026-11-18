@@ -2915,6 +2915,32 @@ TIMER_ITR_CSV = pathlib.Path(__file__).parent / "timer" / "itr.csv"
 CMP_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "cmp_select.csv"
 
 
+# The op-amps' and comparators' register layouts, by series (from the reference manuals): the initializers of
+# CH32RVOpamp's / CH32RVComparator's Layout, so the libraries name no family.
+OPA_LAYOUT_CSV = pathlib.Path(__file__).parent / "opa" / "opa_layout.csv"
+CMP_LAYOUT_CSV = pathlib.Path(__file__).parent / "opa" / "cmp_layout.csv"
+OPA_LAYOUT_FIELDS = ("reg u", "step", "key u", "at", "shift", "units", "mode", "psel", "nsel", "fb", "gain",
+                     "gain_code", ("min_gain1", "min_gain2", "min_gain3"), "mask u")
+CMP_LAYOUT_FIELDS = ("reg u", "key u", "status u", "at", "shift", "units", "mode", "nsel", "psel", "out_none", "opa",
+                     "ref", ("hyst1", "hyst2", "hyst3"), "mask u", "en_bit", "hyst_bit", "hyst_at", "hyst_high1",
+                     "hyst_high2", "vref_at")
+
+
+def opa_layout(path: pathlib.Path, series: str, fields: tuple) -> str | None:
+    """The series' row as a C initializer: an empty cell is 0xFF (no such field), "u" columns unsigned."""
+    with open(path, newline="", encoding="utf-8") as f:
+        row = next((r for r in csv.DictReader(f) if r["series"] == series), None)
+    if row is None:
+        return None
+
+    def cell(name):
+        name, _, unsigned = name.partition(" ")
+        v = row[name].strip()
+        return (v or "0xFF") + ("u" if unsigned and v else "")
+    parts = ["{ " + ", ".join(cell(n) for n in f) + " }" if isinstance(f, tuple) else cell(f) for f in fields]
+    return "{ " + ", ".join(parts) + " }"
+
+
 def load_opa_select() -> dict:
     """series -> [(unit, role 'P' / 'N' / 'O', value, (port, bit))]."""
     out: dict = {}
@@ -4847,6 +4873,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("}")
         if "OPCM" in clken:                    # H41x: the op-amps' own clock
             out.extend(clken_defines("CH32RV_OPA", "OPCM"))
+        layout = opa_layout(OPA_LAYOUT_CSV, series, OPA_LAYOUT_FIELDS)
+        if layout:
+            out.append("/* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */")
+            out.append(f"#define CH32RV_OPA_LAYOUT {layout}")
         out.append("")
 
     # --- CMP ---
@@ -4863,6 +4893,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("}")
         if "OPCM" in clken:
             out.extend(clken_defines("CH32RV_CMP", "OPCM"))
+        layout = opa_layout(CMP_LAYOUT_CSV, series, CMP_LAYOUT_FIELDS)
+        if layout:
+            out.append("/* where the comparator's fields are (opa/cmp_layout.csv; CH32RVComparator's Layout, in order) */")
+            out.append(f"#define CH32RV_CMP_LAYOUT {layout}")
         out.append("")
 
     # --- CAN ---

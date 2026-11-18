@@ -1217,6 +1217,8 @@ static const uint8_t SS = PIN_SPI_SS;
 }
 #define CH32RV_OPA_CLKEN_ADDR 0x4002101cu
 #define CH32RV_OPA_CLKEN_MASK 0x00800000u
+/* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
+#define CH32RV_OPA_LAYOUT { 0x40017800u, 4, 0u, 0, 0, 3, 1, 3, 4, 8, 4, 2, { 8, 8, 8 }, 0x7FFu }
 
 /* ---- comparator pads (reference manual: tools/generate/opa/cmp_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */
 #define CH32RV_CMP_PADS { \
@@ -1235,6 +1237,8 @@ static const uint8_t SS = PIN_SPI_SS;
 }
 #define CH32RV_CMP_CLKEN_ADDR 0x4002101cu
 #define CH32RV_CMP_CLKEN_MASK 0x00800000u
+/* where the comparator's fields are (opa/cmp_layout.csv; CH32RVComparator's Layout, in order) */
+#define CH32RV_CMP_LAYOUT { 0x4001780Cu, 0u, 0x40017810u, 0, 0, 1, 4, 2, 0, 15, 2, 3, { 10, 20, 30 }, 0x1FFFu, 8, 0xFF, 9, 0xFF, 0xFF, 11 }
 
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u
