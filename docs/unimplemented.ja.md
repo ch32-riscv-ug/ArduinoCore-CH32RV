@@ -90,7 +90,7 @@
 |---|---|---|---|---|---|
 | ADC のタイマー・外部トリガ | 全系列 | 実装済み（2026-11-17、ビルドのみ。CH32RVAdcStream の `beginTimer()`・`beginExternal()`・`conversions()`、arduino-esp32 の `analogContinuous()`。トリガ源の表は EVT から core に（internal/ch32rv_adc_trigger.h）、device-data に EXTSEL の意味の表が無い） | 自動 | プローブ（方形波を入れて間隔を見る）。periph::test_adc_timer_trigger・test_adc_external_trigger（トリガの端子のラベルが要る）・test_analog_continuous | libraries/CH32RVAdcStream, PS:80, PM:282 |
 | ADC の注入変換・不連続モード | 全系列 | 2 | 自動 | プローブ | PS:80, EVT ADC/Auto_Injection・Discontinuous_mode |
-| ADC アナログウォッチドッグ | 全 12 family | 2 | 自動 | プローブ（電圧を動かす）。自己なら DAC の系列 | PS:81, PM:284 |
+| ADC アナログウォッチドッグ | 全 12 family | 実装済み（2026-11-18、`CH32RVAdcStream.setWatchdog()` / `watchdogTripped()`、旗を読む形。V203・V003・H417 で periph::test_adc_watchdog） | 自動 | プローブ（電圧を動かす）。自己なら DAC の系列 | PS:81, PM:284 |
 | ADC デュアル（同時・交互） | V20x、V30x、V4x7、X3x5、H41x | 2 | 自動 | プローブ 2 本 | PS:82, PM:286 |
 | ADC の PGA（入力増幅） | L103、V205、H417 | 2 | 単発 | 外部の電圧源（精度はマニュアル試験） | UNUSED:74, EVT ADC/ADC_PGA |
 | ADC の平均（ADC_AVG）・高速変換 | M030、L103 | 2 | 自動 | プローブ | EVT CH32M030 ADC/ADC_AVG, CH32L103 ADC/ADC_FastConvent |

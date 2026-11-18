@@ -55,6 +55,19 @@ On the families whose ADC1 DMA request is DMA1 channel 1 (ch32-device-data dma.c
 
 Do not use `analogRead()` while a capture runs; after `end()` it works again. There is one ADC1: a stream and arduino-esp32's `analogContinuous()` (in the core, Arduino.h) do not run at once.
 
+## Analog watchdog
+
+```cpp
+adc.setWatchdog(0, 1000);          // a flag when a value leaves 0..1000 (-1: every pin, 0..: that pin only)
+if (adc.watchdogTripped()) { ... } // read and clear the flag
+adc.clearWatchdog();
+```
+
+The ADC compares every conversion in hardware: nothing for the sketch to do and nothing missed. Values are the
+converter's units, as in the buffer. No interrupt (the flag is read). Linked only into a sketch that calls
+`setWatchdog()`. Seen on V203, V003 and H417 with the probe holding the line low and high: the flag rises exactly
+when the line is outside the window (2026-11-18, periph::test_adc_watchdog).
+
 ## Examples
 
 - [AdcStreamStats](examples/AdcStreamStats/README.md): capture one pin and print, each second, the count, the minimum, maximum and mean, and any lost halves.

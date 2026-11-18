@@ -991,6 +991,12 @@ scope = "series"
 needs = ["ADC1"]
 
 [[item]]
+id = "adc-watchdog"         # CH32RVAdcStream.setWatchdog(): the flag rises exactly when the probe holds the line outside the window
+test = "periph::test_adc_watchdog"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
 id = "adc-timer-trigger"    # one ADC round per tick of a timer (CH32RVAdcStream.beginTimer(): the family's trigger timers)
 test = "periph::test_adc_timer_trigger"
 scope = "series"

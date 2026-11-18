@@ -190,6 +190,47 @@ def test_adc(dut, oep_host, record_property):
         core.plan_release(host, [gpio.fn])
 
 
+def test_adc_watchdog(dut, oep_host, record_property):
+    """periph.adc-watchdog: CH32RVAdcStream.setWatchdog() on a labelled ADC pad the probe's GPIO holds low, then
+    high. The window is the lowest quarter of full scale or the highest; the flag must rise exactly when the line sits
+    outside the window (low line: the high window trips, the low one does not; high line: the other way), and rise
+    again after watchdogTripped() cleared it while the line stays out."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    case = settings(__file__)
+    lost = {int(f.split(":")[1]) for d in case["target"].get("record", {}).get("defects", [])
+            for f in d.get("lose", []) if f.startswith("adc:")}
+    ready(dut, case)
+    line = None
+    for candidate in gpio_lines(oep_host, case["target"]):
+        channel = int(ask(dut, f"acaps {candidate['pin']}", rb"ACAPS (-?\d+)").group(1))
+        if channel >= 0 and channel not in lost:
+            line = candidate
+            break
+    if line is None:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    record_property("line", line["pad"])
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
+    results = {}
+    try:
+        for level, mode in (("low", Gpio.OUTPUT_LOW), ("high", Gpio.OUTPUT_HIGH)):
+            gpio.configure(line["channel"], mode)
+            time.sleep(0.02)
+            for band in (0, 1):
+                ok, tripped, again = (int(x) for x in ask(dut, f"awd {line['pin']} {band}",
+                                                             rb"AWD (\d) (\d) (\d)", timeout=10).groups())
+                assert ok, "begin() / startContinuous() / setWatchdog() refused"
+                results[f"{level} band {band}"] = (tripped, again)
+                outside = (level == "low") == (band == 1)
+                assert (tripped, again) == ((1, 1) if outside else (0, 0)), \
+                    f"line {level}, window {'top' if band else 'bottom'} quarter: tripped {tripped}, again {again}"
+    finally:
+        record_property("watchdog", json.dumps(results))
+        core.plan_release(host, [gpio.fn])
+
+
 def test_adc_stream(dut, oep_host, ws_run, record_property):
     """periph.adc-stream: CH32RVAdcStream (the ADC by DMA) on the labelled pads the DUT names as ADC channels (not
     the record's defects'). The probe's PWM drives the first, its GPIO holds the second (when there is one) high or

@@ -90,6 +90,7 @@ bool CH32RVAdcStream::configure(uint8_t step)
     CH32RV_ADC_RSQR2 = 0;
     CH32RV_ADC_RSQR1 = (uint32_t)(_count - 1u) << 20;
     CH32RV_ADC_CTLR1 = (_count > 1 ? CH32RV_ADC_CTLR1_SCAN : 0u) | CH32RV_ADC_CTLR1_RESET;
+    watchdogApply();
     return true;
 }
 
@@ -236,6 +237,10 @@ uint32_t CH32RVAdcStream::conversions() const
 /* No trigger linked: nothing to do (CH32RVAdcStreamTrigger.cpp has the real
  * one; the library is an archive, so it comes only with beginTimer() /
  * beginExternal()). */
+__attribute__((weak)) void CH32RVAdcStream::watchdogApply()
+{
+}
+
 __attribute__((weak)) bool CH32RVAdcStream::triggerControl(uint8_t op)
 {
     (void)op;

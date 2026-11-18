@@ -10,6 +10,9 @@
  *   stop                      STOP <bytes echoed>
  *   adc <pin>                 ADC <reading> <full scale> <VDD mV from Vrefint, 0 unknown>
  *   acaps <pin>               ACAPS <ADC channel of the pad, or -1>
+ *   awd <pin> <band>         CH32RVAdcStream on the pin at 50 kHz with its watchdog's window the lowest
+ *                             quarter of full scale (band 0) or the highest (band 1), for 50 ms:
+ *                             AWD <ok> <tripped 0/1> <tripped again right after a clear 0/1>
  *   astream <rate> <halves> <pin0> [<pin1> [<pin2>]]
  *                             CH32RVAdcStream on the pins at <rate> (the first
  *                             half dropped, <halves> halves of ASTREAM_HALF
@@ -457,6 +460,23 @@ static void reply(char *command)
         acont((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (uint32_t)atol(argv[3]), (pin_size_t)atoi(argv[4]));
 #else
         SerialDMSeq.printf("ACONT 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "awd") && argc == 3) {
+#if defined(NUM_ANALOG_INPUTS)
+        const uint16_t full = (uint16_t)((1u << CH32RV_ADC_BITS) - 1u);
+        const bool high = atoi(argv[2]) != 0;
+        const uint16_t lo = high ? (uint16_t)(full - full / 4) : 0, hi = high ? full : (uint16_t)(full / 4);
+        bool ok = stream.begin((pin_size_t)atoi(argv[1]), 50000);
+        ok = ok && stream.startContinuous(stream_buf, ASTREAM_HALF) && stream.setWatchdog(lo, hi);
+        delay(50);
+        const bool tripped = ok && stream.watchdogTripped();
+        delay(50);
+        const bool again = ok && stream.watchdogTripped();
+        stream.clearWatchdog();
+        stream.end();
+        SerialDMSeq.printf("AWD %d %d %d\r\n", ok ? 1 : 0, tripped ? 1 : 0, again ? 1 : 0);
+#else
+        SerialDMSeq.printf("AWD 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "astream") && argc >= 4) {
 #if defined(NUM_ANALOG_INPUTS)

@@ -10,3 +10,6 @@ beginExternal	KEYWORD2
 isExternalTriggerPin	KEYWORD2
 conversions	KEYWORD2
 triggerTimer	KEYWORD2
+setWatchdog	KEYWORD2
+watchdogTripped	KEYWORD2
+clearWatchdog	KEYWORD2

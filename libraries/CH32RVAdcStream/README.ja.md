@@ -55,6 +55,19 @@ ADC1 の DMA が DMA1 のチャネル 1 につながる系列です（ch32-devic
 
 取り込みの間は `analogRead()` を使わないでください。`end()` のあとは使えます。ADC1 は 1 つなので、このライブラリと arduino-esp32 の `analogContinuous()`（コアの Arduino.h）は同時には動きません。
 
+## アナログウォッチドッグ
+
+```cpp
+adc.setWatchdog(0, 1000);          // 0〜1000 の外に出たら旗（-1: 全部の端子、0..: その端子だけ）
+if (adc.watchdogTripped()) { ... } // 旗を読んで消す
+adc.clearWatchdog();
+```
+
+ADC のハードが変換のたびに比べるので、スケッチは何もしなくてよく、取りこぼしもありません。値は buffer と同じ
+変換器の単位です。割り込みは使いません（旗を読む）。`setWatchdog()` を呼ぶスケッチだけにリンクされます。
+V203・V003・H417 で、プローブが線を Low / High に保ったとき、範囲の外のときだけ旗が立つことを確かめました
+（2026-11-18、periph::test_adc_watchdog）。
+
 ## サンプル
 
 - [AdcStreamStats](examples/AdcStreamStats/README.ja.md): 1 本の端子を取り込み、1 秒ごとに数、最小・最大・平均、取りこぼしを表示します。

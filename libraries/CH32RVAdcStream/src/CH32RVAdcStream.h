@@ -115,6 +115,16 @@ public:
     /* The timer beginTimer() took (its number), 0 otherwise. */
     uint8_t triggerTimer() const;
 
+    /* The ADC's analog watchdog over the stream: a converted value outside
+     * low .. high (the converter's own units, as in the buffer) sets a flag
+     * that watchdogTripped() returns and clears. `pinIndex` is one of the
+     * begun pins (0 ..), or -1 for all of them. In hardware, at every
+     * conversion: nothing to do per sample. Before or after
+     * startContinuous(); false when not begun or out of range. */
+    bool setWatchdog(uint16_t low, uint16_t high, int8_t pinIndex = -1);
+    bool watchdogTripped();
+    void clearWatchdog();
+
     /* For the interrupt handler. */
     void isr();
 
@@ -128,6 +138,11 @@ private:
      * one is CH32RVAdcStreamTrigger.cpp's, linked with beginTimer() /
      * beginExternal() - so a free-running stream carries none of it. */
     bool triggerControl(uint8_t op);
+    /* The watchdog's settings back into CTLR1 after configure() rewrote it:
+     * a weak no-op unless CH32RVAdcStreamWatchdog.cpp is linked (setWatchdog()). */
+    void watchdogApply();
+    int8_t _wdIndex = -2;               /* -2 off, -1 all pins, else a pin */
+    uint16_t _wdLow = 0, _wdHigh = 0;
 
     uint8_t _channels[MAX_PINS] = {};
     uint8_t _count = 0, _step = 0;
