@@ -44,6 +44,15 @@
  *   suspend              H SUSPEND <ok> <last error>   (suspend(): the root port, remote wakeup armed)
  *   resume               H RESUME <ok> <last error>
  *   power                H POWER <suspended 0/1> <remote wakeups seen>
+ * Built with USB_HOST_FS (case usb-peer-host-fs) only - the FS library is more than the 64 KB parts' other host
+ * cases can carry:
+ *   fsmount <lun> <fmt>  H FSMOUNT <ok> <FAT type 0..4> <total bytes>   (CH32RVUsbHostMscFS on that LUN of the
+ *                        first stick; with fmt 1 a unit that holds no volume is formatted first)
+ *   fswrite <name> <hex> H FSWRITE <bytes written>     (FILE_WRITE: the file made anew)
+ *   fsread <name>        H FSREAD <ok> <hex>
+ *   fsls                 H FSLS <name>:<size> ... (the root's files)
+ *   fsrm <name>          H FSRM <ok>
+ *   fsend                H FSEND                       (end(): files closed, the cache synchronized)
  *   where <addr>         H WHERE <addr> <hub address> <hub speed> (0 0: on the root port; the hub the device
  *                        hangs from - a high-speed one reaches a full-speed device by split transactions)
  *
@@ -56,6 +65,9 @@
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbHost.h>
+#if defined(USB_HOST_FS)
+#include <CH32RVUsbHostMscFS.h>
+#endif
 #include <string.h>
 
 #ifndef BENCH_BUILD_ID
@@ -287,6 +299,72 @@ static void cmd_mscraw(uint32_t lba)
     SerialDMSeq.println(ok ? 1 : 0);
 }
 
+#if defined(USB_HOST_FS)
+static CH32RVUsbHostMscFS stick;
+
+static void cmd_fsmount(char *arg)
+{
+    const uint8_t lun = (uint8_t)strtoul(arg, &arg, 10);
+    const bool fmt = strtoul(arg, &arg, 10) != 0;
+    bool ok = stick.begin(usb, "/usb", CH32RV_USB_HOST_ANY_ADDRESS, lun);
+    if (!ok && fmt && stick.device().blockCount()) {
+        ok = stick.format(stick.device()) && stick.begin(usb, "/usb", CH32RV_USB_HOST_ANY_ADDRESS, lun);
+    }
+    SerialDMSeq.print("H FSMOUNT ");
+    SerialDMSeq.print(ok ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.print((unsigned)stick.fatType());
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println((unsigned long)(ok ? stick.totalBytes() : 0));
+}
+
+static void cmd_fswrite(char *arg)
+{
+    char *data = strchr(arg, ' ');
+    size_t n = 0;
+    if (data) {
+        *data++ = 0;
+        n = parse_hex(data, block, sizeof block);
+    }
+    char path[24] = "/";
+    strncat(path, arg, sizeof path - 2);
+    File f = stick.open(path, FILE_WRITE);
+    const size_t wrote = f ? f.write(block, n) : 0;
+    f.close();
+    SerialDMSeq.print("H FSWRITE ");
+    SerialDMSeq.println((unsigned long)wrote);
+}
+
+static void cmd_fsread(char *arg)
+{
+    char path[24] = "/";
+    strncat(path, arg, sizeof path - 2);
+    File f = stick.open(path, FILE_READ);
+    const int n = f ? f.read(block, sizeof block) : -1;
+    f.close();
+    SerialDMSeq.print("H FSREAD ");
+    SerialDMSeq.print(n >= 0 ? 1 : 0);
+    SerialDMSeq.print(' ');
+    hex(block, n > 0 ? (size_t)n : 0);
+    SerialDMSeq.println();
+}
+
+static void cmd_fsls()
+{
+    SerialDMSeq.print("H FSLS");
+    File root = stick.open("/");
+    for (File e = root.openNextFile(); e; e = root.openNextFile()) {
+        SerialDMSeq.print(' ');
+        SerialDMSeq.print(e.name());
+        SerialDMSeq.print(':');
+        SerialDMSeq.print((unsigned long)e.size());
+        e.close();
+    }
+    root.close();
+    SerialDMSeq.println();
+}
+#endif
+
 static void reply(char *cmd)
 {
     char *arg = strchr(cmd, ' ');
@@ -342,6 +420,24 @@ static void reply(char *cmd)
         SerialDMSeq.println(usb.midiSendNoteOn(ch, note, vel) ? 1 : 0);
     } else if (strcmp(cmd, "msc") == 0) {
         cmd_msc();
+#if defined(USB_HOST_FS)
+    } else if (strcmp(cmd, "fsmount") == 0) {
+        cmd_fsmount(arg);
+    } else if (strcmp(cmd, "fswrite") == 0) {
+        cmd_fswrite(arg);
+    } else if (strcmp(cmd, "fsread") == 0) {
+        cmd_fsread(arg);
+    } else if (strcmp(cmd, "fsls") == 0) {
+        cmd_fsls();
+    } else if (strcmp(cmd, "fsrm") == 0) {
+        char path[24] = "/";
+        strncat(path, arg, sizeof path - 2);
+        SerialDMSeq.print("H FSRM ");
+        SerialDMSeq.println(stick.remove(path) ? 1 : 0);
+    } else if (strcmp(cmd, "fsend") == 0) {
+        stick.end();
+        SerialDMSeq.println("H FSEND");
+#endif
     } else if (strcmp(cmd, "mscraw") == 0) {
         cmd_mscraw(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "vend") == 0) {

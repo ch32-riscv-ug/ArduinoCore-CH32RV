@@ -130,7 +130,7 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
   接続と切断は 4 件まで溜まります。
 - アイソクロナス（オーディオ・ビデオ）と USB ネットワークはありません。帯域とバッファがこのチップには足りません。
-- MSC はブロック単位だけです（`mscMount` / `EspUsbHostMscFS` に当たるものはありません）。
+- MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
 - ベンダーのバルクと CCID は、同時に開けるのはそれぞれ1つです。
 - USB シリアルの `setRxBufferSize()` はありません。受信の大きさは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
 - エラーは `esp_err_t` ではなく `CH32RVUsbHostError` です。ESP32 の task / PHY / channel 設定を持ち込みません。
@@ -230,7 +230,40 @@ program/pressure/pitch bend/SysEx の helper を使えます。channel は0始�
 `mscRequestSense()` で SCSI の状態、`mscSelectLun()` で対象 LUN を選べます。
 媒体の入っていないリーダーは、TEST UNIT READY を数回試したあと容量無しでマウントされます。`mscWaitReady()` で長く待てます。
 `mscEject()` は LoEj 付きの START STOP UNIT を送ります（ファームウェア更新のドライブは、これを書き込みの終わりと受け取ります）。
-filesystem、ファイル名、mount は扱いません。書き込みを追加する場合は、partition/FAT等を壊さないよう媒体の所有者を明確にします。
+`mscSynchronizeCache()` は SYNCHRONIZE CACHE(10) を送ります。
+
+ファイルとして読み書きするには、`CH32RVUsbHostMscFS`（`#include <CH32RVUsbHostMscFS.h>`、FS ライブラリの `FatFS`）を使います。
+EspUsbHost の `EspUsbHostMscFS` と同じ形です:
+
+```cpp
+#include <CH32RVUsbHost.h>
+#include <CH32RVUsbHostMscFS.h>
+
+CH32RVUsbHost usb;
+CH32RVUsbHostMscFS stick;
+
+void loop() {
+  if (usb.mscReady() && !stick.mounted()) {
+    stick.begin(usb);                       // "/usb"、最初のマスストレージ、LUN 0
+  }
+  if (stick.mounted()) {
+    File f = stick.open("/log.txt", FILE_APPEND);
+    f.println(millis());
+    f.close();
+  }
+  delay(1000);
+}
+```
+
+- FAT12/16/32 で、ブロックが 512 バイトの媒体だけです（exFAT は FS ライブラリで有効な系列だけ）。
+- `begin(host, basePath, address, lun, maxFiles, timeoutMs, skipSyncCache)` の `basePath` と `maxFiles` は
+  受け取るだけです。パスはボリュームの中のもの（`"/log.txt"`）で、同時に開けるファイルの数は FS ライブラリの
+  `FS_MAX_OPEN_FILES` です。
+- `sync()` と `end()` は SYNCHRONIZE CACHE を送ります（`skipSyncCache` で送らない）。キャッシュの無いドライブが
+  断っても失敗にしません。
+- ボリュームの無い媒体は、`stick.format(stick.device())` で作れます（format が入っている系列）。
+- `CH32RVUsbHostMscFS.h` はヘッダーだけで、インクルードしないスケッチには、これも FS ライブラリも入りません。
+- 抜かれたあとは、`end()` してから `begin()` し直すまで、どの呼び出しも false です。
 
 ### Vendor bulk と CCID
 

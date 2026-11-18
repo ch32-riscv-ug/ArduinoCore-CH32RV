@@ -207,6 +207,14 @@ also = ["CH32V208", "CH32V203RBT6"]   # the 10M MAC: its clock enable is not nam
 not_on = ["CH32V208CBU6"]            # the QFN48 V208 has no Ethernet (libraries/Network/src/NetworkEthernet.h)
 
 [[item]]
+id = "eth-libs"             # PubSubClient, ArduinoMqttClient, ArduinoHttpClient, aWOT unchanged on ETH
+test = "eth-libs"
+scope = "once"
+any_of = ["ETH_MAC", "ETH"]
+also = ["CH32V208", "CH32V203RBT6"]
+not_on = ["CH32V208CBU6"]
+
+[[item]]
 id = "pd"
 test = "pd"
 scope = "series"
@@ -356,6 +364,13 @@ also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
 [[item]]
 id = "usb-peer-host-storage"
 test = "usb-peer-host-storage"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
+
+[[item]]
+id = "usb-peer-host-fs"       # CH32RVUsbHostMscFS: a FAT volume on the stick, files written, read back, listed
+test = "usb-peer-host-fs"
 scope = "series"
 any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
@@ -845,7 +860,7 @@ scope = "series"
 needs = ["I2C1"]
 
 [[item]]
-id = "wire-data-nack"     # endTransmission() 3 (skips: the probe's i2c-target ACKs every byte)
+id = "wire-data-nack"     # endTransmission() 3: the probe's i2c-target NACKs from the n-th byte (nack_from)
 test = "wire::test_wire_data_nack"
 scope = "series"
 needs = ["I2C1"]
@@ -896,6 +911,11 @@ test = "softwire::test_wire_bus_recovery"
 scope = "once"
 
 [[item]]
+id = "softwire-data-nack"
+test = "softwire::test_wire_data_nack"
+scope = "once"
+
+[[item]]
 id = "softwire-10bit"
 test = "softwire::test_wire_10bit"
 scope = "once"
@@ -909,6 +929,12 @@ scope = "once"
 id = "softwire-pec"
 test = "softwire::test_wire_pec"
 scope = "once"
+
+[[item]]
+id = "spi-block"            # writeBytes / transferBytes / transfer(buf, n) and transferAsync (DMA)
+test = "spi::test_spi_block"
+scope = "series"
+needs = ["SPI1"]
 
 [[item]]
 id = "spi-slave"            # CH32RVSPISlave

@@ -12,6 +12,9 @@
  *   midilast              PD MIDILAST <hex>     (the packets received since the last midilast)
  *   vlast                 PD VLAST <wValue> <wIndex> <hex>  (the last vendor request 0x11 OUT)
  *   card <0|1>            PD CARD <0|1>         (the card taken out or put in: NotifySlotChange)
+ *   fat12                 PD FAT12 1            (unit 0 becomes an empty FAT12 volume - 64 sectors, one a
+ *                                               cluster, 16 root entries - and block 13 reads like the rest:
+ *                                               usb-peer-host-fs, whose small series cannot format)
  *
  * Without a command: logical unit 0 holds 64 blocks of (LBA ^ offset) - its
  * block 13 fails to read (the data stage stalled, sense 02/3A/00) - unit
@@ -50,10 +53,42 @@ Adafruit_USBD_MSC msc;
 
 /* ------------------------------------------------------------ mass storage */
 static uint8_t lun0[64][512], lun1[16][512];
+static bool bad13 = true;
+
+/* An empty FAT12 volume over unit 0: the boot sector, two one-sector FATs, a
+ * one-sector root directory (16 entries), 60 clusters of one sector. */
+static void fat12()
+{
+  memset(lun0, 0, sizeof lun0);
+  uint8_t *b = lun0[0];
+  static const uint8_t head[] = {0xEB, 0x3C, 0x90, 'M', 'S', 'D', 'O', 'S', '5', '.', '0',
+                                 0x00, 0x02,   /* 512 bytes a sector */
+                                 1,            /* a sector a cluster */
+                                 1, 0,         /* reserved sectors */
+                                 2,            /* FATs */
+                                 16, 0,        /* root entries */
+                                 64, 0,        /* sectors */
+                                 0xF8,         /* media */
+                                 1, 0,         /* sectors a FAT */
+                                 1, 0, 1, 0,   /* sectors a track, heads */
+                                 0, 0, 0, 0, 0, 0, 0, 0,   /* hidden, sectors (32-bit) */
+                                 0x80, 0, 0x29, 0x12, 0x34, 0x56, 0x78,
+                                 'N', 'O', ' ', 'N', 'A', 'M', 'E', ' ', ' ', ' ', ' ',
+                                 'F', 'A', 'T', '1', '2', ' ', ' ', ' '};
+  memcpy(b, head, sizeof head);
+  b[510] = 0x55;
+  b[511] = 0xAA;
+  for (int f = 1; f <= 2; f++) {
+    lun0[f][0] = 0xF8;
+    lun0[f][1] = 0xFF;
+    lun0[f][2] = 0xFF;
+  }
+  bad13 = false;
+}
 
 static int32_t read0(uint32_t lba, void *buffer, uint32_t size)
 {
-  if (lba == 13) return -1;   /* the data stage stalls; TinyUSB reports 02/3A/00 whatever sense is set here */
+  if (lba == 13 && bad13) return -1;   /* the data stage stalls; TinyUSB reports 02/3A/00 whatever sense is set here */
   if (lba >= 64) return -1;
   memcpy(buffer, lun0[lba], size);
   return (int32_t)size;
@@ -361,6 +396,14 @@ static void run(char *cmd)
       if (ccid_irq && !usbd_edpt_busy(0, ccid_irq)) usbd_edpt_xfer(0, ccid_irq, notify, sizeof notify, false);
     }
     say("PD CARD %u\n", in ? 1 : 0);
+  }
+  else if (!strcmp(cmd, "fat12"))
+  {
+    {
+      UsbLock lock;
+      fat12();
+    }
+    say("PD FAT12 1\n");
   }
   else say("PD UNKNOWN %s\n", cmd);
 }

@@ -10,6 +10,9 @@
  *   midilast              CD MIDILAST <hex>     (the packets received since the last midilast)
  *   vlast                 CD VLAST <wValue> <wIndex> <hex>  (the last vendor request 0x11 OUT)
  *   card <0|1>            CD CARD <0|1>         (the card taken out or put in: NotifySlotChange)
+ *   fat12                 CD FAT12 1            (unit 0 becomes an empty FAT12 volume - 64 sectors, one a
+ *                                               cluster, 16 root entries - and block 13 reads like the rest:
+ *                                               usb-peer-host-fs)
  *
  * Without a command: logical unit 0 is 64 blocks of (LBA ^ offset) - its block 13 fails to read, with the sense
  * peer_pico's TinyUSB reports for any failed read (02/3A/00, set here with setSense()) - and unit 1 is 16 blocks
@@ -48,14 +51,35 @@ static void say(const char *format, ...)
 
 /* ------------------------------------------------------------ mass storage: units 0 and 1 */
 static const uint32_t BLOCKS[2] = {64, 16};
-static const uint8_t SLOTS = 4;
+static const uint8_t SLOTS = 8;   /* a FAT volume's FATs, root and two files */
 static uint8_t slotData[SLOTS][512];
 static uint32_t slotLba[SLOTS];
 static uint8_t slotLun[SLOTS];
 static bool slotUsed[SLOTS];
 
-/* A block as it is until written: unit 0 (LBA ^ offset), unit 1 0xA5. */
-static uint8_t initial(uint8_t lun, uint32_t lba, uint32_t k) { return lun ? 0xA5 : (uint8_t)(lba ^ k); }
+/* After `fat12`: unit 0 an empty FAT12 volume (peer_pico's fat12()), its block 13 readable. */
+static bool fat;
+static const uint8_t FAT_BOOT[] = {0xEB, 0x3C, 0x90, 'M', 'S', 'D', 'O', 'S', '5', '.', '0', 0x00, 0x02, 1, 1, 0, 2,
+                                   16, 0, 64, 0, 0xF8, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                   0x80, 0, 0x29, 0x12, 0x34, 0x56, 0x78,
+                                   'N', 'O', ' ', 'N', 'A', 'M', 'E', ' ', ' ', ' ', ' ',
+                                   'F', 'A', 'T', '1', '2', ' ', ' ', ' '};
+
+static uint8_t fatByte(uint32_t lba, uint32_t k)
+{
+    if (lba == 0) {
+        if (k < sizeof FAT_BOOT) return FAT_BOOT[k];
+        return k == 510 ? 0x55 : k == 511 ? 0xAA : 0;
+    }
+    if (lba == 1 || lba == 2) return k == 0 ? 0xF8 : k < 3 ? 0xFF : 0;   /* the two FATs */
+    return 0;
+}
+
+/* A block as it is until written: unit 0 (LBA ^ offset), or the FAT12 volume; unit 1 0xA5. */
+static uint8_t initial(uint8_t lun, uint32_t lba, uint32_t k)
+{
+    return lun ? 0xA5 : fat ? fatByte(lba, k) : (uint8_t)(lba ^ k);
+}
 
 static int slotOf(uint8_t lun, uint32_t lba, bool make)
 {
@@ -93,7 +117,7 @@ static int32_t writeUnit(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *bu
 
 static int32_t read0(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
 {
-    if (lba == 13) {   /* the data stage stalls; the sense is the one peer_pico's TinyUSB gives any failed read */
+    if (lba == 13 && !fat) {   /* the data stage stalls; the sense is the one peer_pico's TinyUSB gives any failed read */
         msc.setSense(0x02, 0x3A, 0x00);
         return -1;
     }
@@ -201,6 +225,11 @@ static void run(char *cmd)
         if (lun == 0) msc.mediaPresent(ready);
         else if (lun == 1) msc1.mediaPresent(ready);
         say("CD MEDIA %u %u\n", lun, ready ? 1 : 0);
+    } else if (!strcmp(cmd, "fat12")) {
+        for (uint8_t i = 0; i < SLOTS; i++)
+            if (slotLun[i] == 0) slotUsed[i] = false;
+        fat = true;
+        say("CD FAT12 1\n");
     } else if (!strcmp(cmd, "midiraw")) {
         uint8_t d[48];
         const size_t n = parseHex(arg, d, sizeof d) / 4 * 4;

@@ -35,7 +35,7 @@ UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
 USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
-                   "usb-peer-host-power")
+                   "usb-peer-host-fs", "usb-peer-host-power")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
 # own port to this host, an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT, or another CH32RV board
 # (its own address, the controller of it the cable reaches). The P4 runs the S3's sketches (EspUsbHost / EspUsbDevice)
@@ -71,7 +71,7 @@ ALWAYS = ("runtime", "uart", "uart-dma", "flash", "synckit", "logic", "gpio", "s
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
 # reference checks and skips the ones that drive pads (it reads the record itself).
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
-                 "uart": ("uart", "uart-dma"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth",),
+                 "uart": ("uart", "uart-dma"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth", "eth-libs"),
                  "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog")}
 
 
@@ -354,6 +354,7 @@ def choose_cases(place, items=None, caps=None):
     out["sd"] = "run" if "sd" in parts else "skip: no sd in the record's parts"
     out["eth"] = ("run" if "eth" in parts and series_has("eth", series, items, caps, part)
                   else "skip: no eth in the record's parts" if "eth" not in parts else f"skip: {series} has no Ethernet")
+    out["eth-libs"] = out["eth"]
     out["pd"] = ("run" if "pd" in core and series_has("pd", series, items, caps)
                  else "skip: no pd in the record" if "pd" not in core else f"skip: {series} has no USB PD")
     # The record's usb, single or per controller: the port each kind of case runs on (records.usb_ports).

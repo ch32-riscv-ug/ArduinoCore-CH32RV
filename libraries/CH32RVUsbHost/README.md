@@ -163,7 +163,7 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   and up to 4 connections and disconnections queue.
 - No isochronous transfers (audio, video) and no USB networking: the chip has
   neither the bandwidth nor the buffers.
-- MSC works in blocks only (nothing like `mscMount` / `EspUsbHostMscFS`).
+- MSC's file system is `CH32RVUsbHostMscFS` (shaped as `EspUsbHostMscFS`, see MSC below). There is no ESP32 VFS, so no host `mscMount()`.
 - One vendor bulk interface and one CCID interface can be open at a time.
 - USB serial has no `setRxBufferSize()`. Replace the receive buffer with the
   sketch's own array through `CH32RVUsbHostCdcSerial::setBuffer()` ("Sizes and
@@ -284,9 +284,45 @@ does not always have 512-byte sectors, so read the capacity.
 A reader with no medium in it is mounted without a capacity after a few
 TEST UNIT READY tries; `mscWaitReady()` waits longer. `mscEject()` sends
 START STOP UNIT with LoEj (a firmware-update drive takes it as the end of the
-image). There are no file
-systems, file names or mounting. Before adding writes, be clear who owns the
-medium, so as not to break its partitions or FAT.
+image). `mscSynchronizeCache()` sends SYNCHRONIZE CACHE(10).
+
+For files, use `CH32RVUsbHostMscFS` (`#include <CH32RVUsbHostMscFS.h>`, the
+FS library's `FatFS`), shaped as EspUsbHost's `EspUsbHostMscFS`:
+
+```cpp
+#include <CH32RVUsbHost.h>
+#include <CH32RVUsbHostMscFS.h>
+
+CH32RVUsbHost usb;
+CH32RVUsbHostMscFS stick;
+
+void loop() {
+  if (usb.mscReady() && !stick.mounted()) {
+    stick.begin(usb);                       // "/usb", the first mass storage device, LUN 0
+  }
+  if (stick.mounted()) {
+    File f = stick.open("/log.txt", FILE_APPEND);
+    f.println(millis());
+    f.close();
+  }
+  delay(1000);
+}
+```
+
+- FAT12/16/32 on media with 512-byte blocks (exFAT where the FS library has
+  it built in).
+- `begin(host, basePath, address, lun, maxFiles, timeoutMs, skipSyncCache)`
+  takes `basePath` and `maxFiles` and does not use them: paths are the
+  volume's own (`"/log.txt"`), and the open files are the FS library's
+  `FS_MAX_OPEN_FILES`.
+- `sync()` and `end()` send SYNCHRONIZE CACHE (not with `skipSyncCache`); a
+  drive without a cache refusing it is not a failure.
+- A medium with no volume can get one with `stick.format(stick.device())`
+  (where format is built in).
+- `CH32RVUsbHostMscFS.h` is header only: a sketch that does not include it
+  carries neither it nor the FS library.
+- Once the stick is pulled, every call is false until `end()` and `begin()`
+  again.
 
 ### Vendor bulk and CCID
 

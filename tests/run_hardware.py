@@ -39,6 +39,7 @@ MODULES = {
     "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
     "usb-ss-iso": TESTS / "instrumented/usb/test_usb_ss_iso.py",
     "eth": TESTS / "instrumented/eth/test_eth_contract.py",
+    "eth-libs": TESTS / "instrumented/eth/test_eth_libs.py",
     "logic": TESTS / "instrumented/logic/test_logic_contract.py",
     "pd": TESTS / "instrumented/pd/test_pd_contract.py",
     "synckit": TESTS / "instrumented/synckit/test_synckit_contract.py",
@@ -71,18 +72,28 @@ MODULES = {
     "usb-peer-host-classes": TESTS / "peer/usb/host/classes/test_usb_peer_host_classes.py",
     "usb-peer-host-input": TESTS / "peer/usb/host/input/test_usb_peer_host_input.py",
     "usb-peer-host-storage": TESTS / "peer/usb/host/storage/test_usb_peer_host_storage.py",
+    "usb-peer-host-fs": TESTS / "peer/usb/host/storage/test_usb_peer_host_fs.py",
     "usb-peer-host-power": TESTS / "peer/usb/host/power/test_usb_peer_host_power.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
 CONSOLE_SOURCES = {"console-rtt": "rtt", "console-dmdata": "dmdata", "console-sdi": "sdi"}
-CONSOLE_FLAGS = {"console-rtt": "CONSOLE_RTT", "console-dmdata": "CONSOLE_DMDATA", "console-sdi": "CONSOLE_SDI"}
+# Libraries from the Arduino library index a case's DUT sketch uses, pinned (its sketch.yaml's profile installs
+# them into the bench's Arduino cache): eth-libs runs widely used network libraries unchanged on this core.
+CASE_LIBRARIES = {"eth-libs": ("PubSubClient (2.8)", "ArduinoMqttClient (0.1.8)", "ArduinoHttpClient (0.6.2)",
+                               "aWOT (3.5.0)")}
+# A case's own build flag (build_config.toml [flags]: a #define): the console it runs on, or the part of a shared
+# sketch only that case builds (usb-peer-host-fs: the FS library, 15-33 KB, which the 64 KB parts' other host
+# cases cannot carry).
+CONSOLE_FLAGS = {"console-rtt": "CONSOLE_RTT", "console-dmdata": "CONSOLE_DMDATA", "console-sdi": "CONSOLE_SDI",
+                 "usb-peer-host-fs": "USB_HOST_FS"}
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-ss-iso": TESTS / "sketch_support/usb_ss_iso/usb_ss_iso.ino",
     "eth": TESTS / "sketch_support/eth/eth.ino",
+    "eth-libs": TESTS / "sketch_support/eth_libs/eth_libs.ino",
     "logic": TESTS / "sketch_support/logic/logic.ino",
     "pd": TESTS / "sketch_support/pd/pd.ino",
     "synckit": TESTS / "sketch_support/synckit/synckit.ino",
@@ -117,6 +128,7 @@ SKETCHES = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-fs": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
 # The record's usb ports (harness.records.USB_PORTS) as the test sketches' controller (USB_TEST_CONTROLLER) and host port
@@ -160,6 +172,7 @@ PICO_PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_pico",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_pico",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_pico",
+    "usb-peer-host-fs": TESTS / "sketch_support/usb_peer/host_storage/peer_pico",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_pico",
 }
 # The same cases with another CH32RV board as the peer (the record's usb {to: ch32rv, port, controller}): written and
@@ -176,6 +189,7 @@ CH32RV_PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_ch32rv",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_ch32rv",
     "usb-peer-host-storage": TESTS / "sketch_support/usb_peer/host_storage/peer_ch32rv",
+    "usb-peer-host-fs": TESTS / "sketch_support/usb_peer/host_storage/peer_ch32rv",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
 }
 # The host peer's FAT (its own, apart from the DUT's FatFS) is the Pico's: staged beside the CH32RV peer's sketch.
@@ -213,6 +227,7 @@ HELPERS = {
     "usb-peer-host-classes": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-input": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-storage": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-fs": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-power": [TESTS / "peer/usb/host/host_peer.py"],
 }
 PLUGINS = ["pytest_embedded.plugin",
@@ -380,7 +395,7 @@ def stage_case(work, name, case, target):
         target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "selfsys":
         target = dict(target, selfsys_pins=places.gpio_pads(target["chip"]))
-    if case == "eth":
+    if case in ("eth", "eth-libs"):
         clocked = places.ethernet_clock(target["fqbn"])
         if clocked:
             target = dict(target, fqbn=clocked[0], f_cpu=clocked[1])
@@ -395,6 +410,8 @@ def stage_case(work, name, case, target):
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
             f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
+            + "".join(f"{'    libraries:' + chr(10) if i == 0 else ''}      - {lib}\n"
+                      for i, lib in enumerate(CASE_LIBRARIES.get(case, ())))
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
             f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"

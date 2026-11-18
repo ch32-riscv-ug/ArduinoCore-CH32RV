@@ -319,6 +319,17 @@ bool CH32RVUsbHost::mscEject(uint8_t address, uint32_t timeoutMs)
     return e == CH32RVUsbHostError::None ? ok() : fail(e);
 }
 
+bool CH32RVUsbHost::mscSynchronizeCache(uint8_t address, uint32_t timeoutMs)
+{
+    Msc *m = device(address);
+    if (!m) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    const uint8_t cdb[10] = {0x35, 0, 0, 0, 0, 0, 0, 0, 0, 0};   /* SYNCHRONIZE CACHE(10): every block */
+    const CH32RVUsbHostError e = run(*m, cdb, 10, nullptr, 0, false, timeoutMs);
+    return e == CH32RVUsbHostError::None ? ok() : fail(e);
+}
+
 bool CH32RVUsbHost::mscWaitReady(uint8_t address, uint32_t readyTimeoutMs)
 {
     const uint32_t t0 = millis();
@@ -423,6 +434,7 @@ bool CH32RVUsbHost::mscSelectLun(uint8_t, uint8_t) { return fail(CH32RVUsbHostEr
 bool CH32RVUsbHost::mscTestUnitReady(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscWaitReady(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscEject(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::mscSynchronizeCache(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscCapacity(uint32_t &, uint32_t &, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &, uint8_t)
 {

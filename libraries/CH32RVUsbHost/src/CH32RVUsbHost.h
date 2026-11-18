@@ -548,6 +548,8 @@ public:
     /* START STOP UNIT with LoEj: the medium is ejected (a drive whose eject
      * ends a write - a firmware-update disk - acts on it). */
     bool mscEject(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
+    /* SYNCHRONIZE CACHE(10): what the drive holds in its cache is written to the medium. */
+    bool mscSynchronizeCache(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool mscCapacity(uint32_t &blockCount, uint32_t &blockSize, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                      uint32_t timeoutMs = 5000);
     bool mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &info,

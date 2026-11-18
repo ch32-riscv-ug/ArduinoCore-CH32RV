@@ -26,7 +26,7 @@
 | 実行中のクロック変更 | 全系列 | 決定済み: 作らない（SYS-05） | — | 自己（変更前後で millis・Serial・PWM の selfcheck） | PS:40, FC:33 |
 | H41x・X305 の CPU Clock メニュー | H415/H416/H417、X305 | 実装済み（2026-11-17、ビルドのみ。H41x は V5F / V3F の組で 400/100（既定）・200/50・25/25 MHz、F_CPU は CPU Core で決まる。X305 は X315 と同じ 240 / 20 MHz） | 自動 | 自己（selfcheck） | PS:40, TODO:504 |
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 2 | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |
-| LSE（32 kHz 水晶） | RTC のある系列 | 2 | 単発→自動 | LSE の載った板。自己 | PS:53 |
+| LSE（32 kHz 水晶） | RTC のある系列 | 実装済み（2026-11-18、RTC Clock メニュー。立たなければ LSI。`CH32RV.rtcClock()`。V103 の EVT・V203・H417 の台で立つことを確かめた。水晶の無い板で LSI に戻る道は実機では未確認。X305/X315 は未対応） | 単発→自動 | LSE の載った板。自己 | PS:53 |
 | PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 実装済み（2026-11-17、ビルドのみ。`CH32RV.setLowVoltageDetect(mV, cb)` / `clearLowVoltageDetect()` / `isLowVoltage()` / `lowVoltageLevel()`、起床は `enableExtiLineWakeup(CH32RV_EXTI_PVD)`。H41x は PVD の割込み（EXTI の線）が無く、V004 / V007 / M007 は device-data に段が無いので未対応のまま） | 単発→自動 | 自己（selfexti::test_pvd: 閾値を VDD の上と下に。3.3 V の板で上にできるのは V003・V103・X035）。本当の低下は可変電源（VDD を下げる。単発） | PS:60, PM:290 |
 | 休止（lightSleep / deepSleep）の残りの系列 | M030、X315（X305）、V407/V467 | 実装済み（2026-11-15、ビルドのみ。V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は 2026-11-18 に実機で通った: 1 秒未満の端数の WFI が SysTick で終わらないので起きたまま待つ。selfsys・selfexti・system） | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep | libraries/CH32RV/README.ja.md |
 | 周辺を動かしたままの休止 | 全系列 | 2 | 自動 | プローブ | FC:31 |
@@ -131,7 +131,7 @@
 | SoftSPI のスレーブ | 全系列 | 実装済み（2026-11-15、SoftSPISlave。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。softspi::test_spi_slave | libraries/SPI/README.ja.md, TC:90 |
 | SPI のハードウェア CS（NSS） | 全系列 | 2 | 自動 | プローブ | FC:45, EVT SPI/FullDuplex_HardNSS |
 | SPI の半二重・片方向（3 線） | 全系列 | 2 | 自動 | プローブ | FC:46, EVT SPI/1Lines_half-duplex |
-| SPI の非同期・DMA 転送 | 全系列 | 2 | 自動 | プローブ | FC:44, EVT SPI/SPI_DMA・SPI_DMA_EXT |
+| SPI の非同期・DMA 転送 | 全系列 | 実装済み（2026-11-18、`transferAsync()` / `finishedAsync()` / `abortAsync()`（arduino-pico の名前、DMA）。同期のバッファ転送は CPU のループ。V203・H417・V003 で spi::test_spi_block が通る） | 自動 | プローブ | FC:44, EVT SPI/SPI_DMA・SPI_DMA_EXT |
 | SPI の CRC | V003、V00x、V20x、V205、V30x、V4x7、L103、M030、X035 | 2 | 自動 | プローブ | EVT SPI/SPI_CRC |
 | CAN 2.0B（HardwareCAN、フィルタ、ループバック、Listen-only、バスオフ） | V20x、V205、V30x、V4x7、L103/M103、H41x（3 個、TTCAN） | 2 | 自動 | 1 台: 内部ループバックとサイレントで自己。2 台目かプローブの CAN、トランシーバーと終端 | PS:98, PM:236 |
 | CAN の時間トリガ（TTCAN）・CAN 起床 | 上と同じ（起床は L103） | 2 | 単発 | 同上 | EVT CAN/Time-triggered, CAN/CAN_Wakeup |
@@ -173,7 +173,7 @@
 | ハブ越しの LS 機器（PRE PID）の確認 | USBFS のホスト | 2 | 単発 | FS ハブ＋LS の機器 | TODO:472-473 |
 | ホストのアイソクロナス（オーディオ・ビデオ） | 全ホスト | 1 | 自動 | ESP32-S3 / P4 の UAC・UVC デバイス | libraries/CH32RVUsbHost/README.ja.md:99, libraries/CH32RVUsbHost/src/CH32RVUsbHost.h:31 |
 | ホストの USB ネットワーク（NCM / ECM） | 全ホスト | 1 | 自動 | ESP32-S3 の NCM か USB の LAN アダプタ | FC:113, TODO:472 |
-| ホストの MSC のファイルシステム（マウント） | 全ホスト | 1 | 自動 | USB メモリか、MSC デバイスの対向（ESP32-S3・Pico・CH32RV） | libraries/CH32RVUsbHost/README.ja.md:100、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 |
+| ホストの MSC のファイルシステム（マウント） | 全ホスト | 実装済み（2026-11-18、`CH32RVUsbHostMscFS`（EspUsbHostMscFS の形）と `mscSynchronizeCache()`。usb-peer-host-fs） | 自動 | USB メモリか、MSC デバイスの対向（ESP32-S3・Pico・CH32RV） | libraries/CH32RVUsbHost/README.ja.md、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 |
 | ホストの USB シリアルの `setRxBufferSize()` | 全ホスト | 2 | 自動 | Pico | libraries/CH32RVUsbHost/README.ja.md:102 |
 | H41x の USBHS ホスト（SWD と兼用、口の 2.0 側） | H41x | 実装済み（2026-11-17、ビルドのみ。DMA の届く範囲の確かめが 17 ビットのままで H41x では `begin()` が必ず Busy だったのを直した: H41x・X3x5 は 24 ビット） | 単発 | ESP32-P4、SWD を外す部品。`begin()` の後はデバッガがつながらない（起動待ちのイメージで試す） | docs/usb.ja.md:341, TODO:457 |
 | ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 2 | 自動 | ESP32-S3 / P4 | TODO:468 |
@@ -216,7 +216,7 @@
 | PSRAM（チップ内 4〜8 MB） | V467 | 2 | 単発→自動 | V467 の石（自己） | PS:109, PM:254 |
 | キーと値の保存（Preferences 相当）・EEPROM.h | 全系列 | 決定済み: 作らない（SYS-01、推奨は外部の SD・I2C の EEPROM） | — | 自己 | FC:29, TODO:228 |
 | 内蔵 Flash 上のファイルシステム（littlefs）、FAT を NOR に、SPIFFS | 全系列（大きい系列） | 決定済み: 作らない（STO-04、2026-11-04） | — | 自己（電源断の試験は uhubctl） | FC:92, docs/filesystem.ja.md:255-258 |
-| eMMC・USB ホストの MSC のブロックデバイス（FS の下） | H417、ホスト | 2 | 単発→自動 | eMMC の板、Pico の MSC | libraries/FS/README.ja.md:38, docs/filesystem.ja.md:286 |
+| eMMC・USB ホストの MSC のブロックデバイス（FS の下） | H417、ホスト | USB ホストは実装済み（2026-11-18、`CH32RVUsbHostMscBlockDevice`）。eMMC は 2 | 単発→自動 | eMMC の板、Pico の MSC | libraries/FS/README.ja.md:38, docs/filesystem.ja.md:286 |
 | フラッシュの書き換え（UPD-01 自己更新、Update API） | 全系列 | 2 | 自動 | 自己 | FC:97 |
 | ITCM / DTCM の配置の仕組み | H41x | 2 | 自動 | 自己 | TODO:172,176 |
 
