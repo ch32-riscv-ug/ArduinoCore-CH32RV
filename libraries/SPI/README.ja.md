@@ -195,9 +195,11 @@ LVGLのflushは、`transferAsync()`で送り、`lv_display_set_flush_wait_cb()`�
 - **SPILoopback** — MOSIとMISOをジャンパ1本で繋ぐだけで、
   クロック・データ線・フレーミングをまとめて確認できます。
 - **SoftSPILoopback** — 同じことを`SoftSPI`で、選んだ3 padに対して行います。
+- **SpiAsyncDisplay** — ST7789の表示器に、DMA(`transferAsync()`)で送る間に次の行を描きます。
 
 ## サンプルの詳しい使い方
 
 - [SPILoopback](examples/SPILoopback/README.ja.md)：配線・操作・API の使い方と改造時の注意。
 - [SoftSPILoopback](examples/SoftSPILoopback/README.ja.md)：`SoftSPI`で任意の3 padの往復を確かめます。
 - [SpiFlashId](examples/SpiFlashId/README.ja.md): 外部SPI Flashを消去・書き換えせずJEDEC IDを読みます。
+- [SpiAsyncDisplay](examples/SpiAsyncDisplay/README.ja.md): `transferAsync()`で送る間に描く、ST7789の表示器。LVGLのflushでの使い方も。

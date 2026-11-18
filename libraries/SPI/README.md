@@ -214,9 +214,11 @@ An LVGL flush can send with `transferAsync()` and wait with
 - **SPILoopback** - one jumper from MOSI to MISO proves the clock, the data
   line and the framing in one go.
 - **SoftSPILoopback** - the same with `SoftSPI`, on three pads you choose.
+- **SpiAsyncDisplay** - an ST7789 display drawn while the previous lines go out by DMA (`transferAsync()`).
 
 ## Detailed example guides
 
 - [SPILoopback](examples/SPILoopback/README.md): connections, operation, API use and adaptation notes.
 - [SoftSPILoopback](examples/SoftSPILoopback/README.md): check a loopback on three pads of your choice with `SoftSPI`.
 - [SpiFlashId](examples/SpiFlashId/README.md): Read an external SPI Flash JEDEC ID without erase or programming.
+- [SpiAsyncDisplay](examples/SpiAsyncDisplay/README.md): an ST7789 display drawn while `transferAsync()` sends; LVGL's flush too.
