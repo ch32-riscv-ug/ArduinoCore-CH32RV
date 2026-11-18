@@ -22,6 +22,7 @@ their tests."""
 import json
 import pathlib
 import secrets
+import struct
 import sys
 import time
 
@@ -126,6 +127,21 @@ def open_bus(dut, oep_host, case, record_property):
     return lines, sck, miso, mosi, cs, soft
 
 
+def configure_target(target, mode, lsb, soft):
+    """The probe's spi-target in this mode and bit order. A SoftSPI's SCK is a GPIO with slow edges (H417's 10 MHz
+    pads) that the target counted twice now and then: there it filters SCK pulses under 25 ns (sck_filter, oep-spec
+    baa2605 fixture section 4; [oep] 2026-11-18), which holds up to about 16 MHz. Until an oep-client-python release has
+    configure(sck_filter=...), the option goes as that TLV (tag 0x01 critical, one byte 1)."""
+    if not soft:
+        target.configure(mode=mode, bit_order=lsb)
+        return
+    try:
+        target.configure(mode=mode, bit_order=lsb, sck_filter=True)
+    except TypeError:
+        from oep_client import message
+        target._call(target.CONFIGURE, struct.pack("<BB", mode, lsb) + message.tlv(0x01, b"\x01", critical=True))
+
+
 def wait_reply(dut, wait, pattern, timeout=3.0):
     """The DUT's reply, looked for in short tries with wait() between so the stream keeps being read."""
     end = time.monotonic() + timeout
@@ -204,7 +220,7 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
                             notices={"sck_outside_cs": "ng" if same_idle else 1}),
                         starts(idle), ends(idle)]
                 with ws_run.section(2, name, expect=want):
-                    target.configure(mode=mode, bit_order=lsb)
+                    configure_target(target, mode, lsb, soft)
                     target.arm(5, armed)
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
                     ws_run.command(command)
@@ -259,7 +275,7 @@ def test_spi_block(dut, oep_host, ws_run, record_property):
                             notices={"sck_outside_cs": "ng"}),
                         starts(idle), ends(idle)]
                 with ws_run.section(2, name, expect=want):
-                    target.configure(mode=0, bit_order=0)
+                    configure_target(target, 0, 0, soft)
                     target.arm(BLOCK_BYTES, armed)
                     command = f"blk {how} {BLOCK_HZ} {out.hex()}"
                     ws_run.command(command)
