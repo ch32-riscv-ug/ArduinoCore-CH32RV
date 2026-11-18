@@ -617,6 +617,18 @@ scope = "series"
 kind = "self"
 
 [[item]]
+id = "selfcheck-rtc-clock"  # the RTC counts the clock the RTC Clock menu asked (LSE needs the crystal)
+test = "selfcheck::test_rtc_clock"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfcheck-hsi-calibration"  # calibrateHsi() against the LSE settles on the nearest trim (rtcclock=lse)
+test = "selfcheck::test_hsi_calibration"
+scope = "series"
+kind = "self"
+
+[[item]]
 id = "selfcheck-serial"    # every Serial: BRR on its own bus and the real baud; its receiver fed from its own RX pad
 test = ["selfcheck::test_serial_transmit", "selfcheck::test_serial_receive"]
 scope = "series"

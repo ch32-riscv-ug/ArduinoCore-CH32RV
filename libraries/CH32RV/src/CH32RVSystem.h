@@ -275,6 +275,19 @@ public:
      * crystal); NONE where the series has no RTC. */
     CH32RVRtcClock rtcClock();
 
+    /* HSI's trim (RCC_CTLR HSITRIM, 0 - 31, 16 the factory's middle; each
+     * step moves HSI by a few tenths of a percent). False on X305 / X315,
+     * which have no trim, and for a value over 31. */
+    uint8_t hsiTrim();
+    bool setHsiTrim(uint8_t trim);
+    /* HSI measured against the RTC's LSE crystal and its trim set to the
+     * step nearest the right frequency (about 2 s); `errorPpm` (if given) is
+     * what is left, + fast / - slow. False when the system clock is not HSI
+     * (clockSource()) or the RTC does not count LSE (rtcClock(): the RTC
+     * Clock menu's LSE, started) - there is nothing to measure against - and
+     * on X305 / X315. */
+    bool calibrateHsi(int32_t *errorPpm = nullptr);
+
     /* Wake after `us` microseconds (0: no timer). False where the family
      * cannot sleep yet. */
     bool enableTimerWakeup(uint64_t us);

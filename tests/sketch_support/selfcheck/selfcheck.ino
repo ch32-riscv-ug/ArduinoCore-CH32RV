@@ -42,6 +42,25 @@
 #define SELFCHECK_SPI 1
 #endif
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_irq.h"
+
+/* HSI's error in ppm against the RTC's LSE, as CH32RV.calibrateHsi() measures it. */
+static int32_t hsi_error(uint32_t ms)
+{
+    uint32_t irq = ch32rv_irq_save();
+    const uint64_t l0 = ch32rv_rtc_lse_ticks();
+    const uint32_t t0 = micros();
+    ch32rv_irq_restore(irq);
+    while (micros() - t0 < ms * 1000u) {
+    }
+    irq = ch32rv_irq_save();
+    const uint64_t l1 = ch32rv_rtc_lse_ticks();
+    const uint32_t t1 = micros();
+    ch32rv_irq_restore(irq);
+    const int64_t ticks = (int64_t)(l1 - l0);
+    return ticks > 0 ? (int32_t)(((int64_t)(t1 - t0) * 32768 - ticks * 1000000) / ticks) : 0;
+}
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -461,6 +480,35 @@ static void reply(char *command)
         SerialDMSeq.printf("SOURCE %d %d %d %lu %d\r\n", asked, on_hse, use_pll,
                            (unsigned long)((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) >> 2),
                            (CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSERDY) ? 1 : 0);
+    } else if (!strcmp(argv[0], "rtcsrc")) {
+#ifdef CH32RV_RTC_LSE
+        const int asked = 1;
+#else
+        const int asked = 0;
+#endif
+        SerialDMSeq.printf("RTCSRC %d %d\r\n", asked, (int)CH32RV.rtcClock());
+    } else if (!strcmp(argv[0], "hsical")) {
+        /* From three steps off, calibrateHsi(); then the error of the trim it
+         * chose and of its two neighbours, measured the same way. */
+        const uint8_t start = CH32RV.hsiTrim();
+        CH32RV.setHsiTrim(start + 3u <= 31u ? (uint8_t)(start + 3u) : (uint8_t)(start - 3u));
+        delay(2);
+        int32_t err = 0;
+        const bool ok = CH32RV.calibrateHsi(&err);
+        const uint8_t trim = CH32RV.hsiTrim();
+        int32_t side[2] = {0, 0};
+        for (int k = 0; k < 2 && ok; k++) {
+            const int other = (int)trim + (k ? 1 : -1);
+            if (other < 0 || other > 31) {
+                side[k] = 999999;
+                continue;
+            }
+            CH32RV.setHsiTrim((uint8_t)other);
+            delay(2);
+            side[k] = hsi_error(500);
+        }
+        CH32RV.setHsiTrim(trim);
+        SerialDMSeq.printf("HSICAL %d %u %ld %ld %ld\r\n", ok ? 1 : 0, trim, (long)err, (long)side[0], (long)side[1]);
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {

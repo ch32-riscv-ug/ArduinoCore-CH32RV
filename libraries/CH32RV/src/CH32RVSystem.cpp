@@ -4,6 +4,7 @@
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_stack.h"
 #include "internal/ch32rv_rtc.h"
+#include "internal/ch32rv_irq.h"
 
 #include <stdint.h>
 
@@ -189,6 +190,101 @@ CH32RVRtcClock CH32RVSystem::rtcClock()
         return CH32RV_RTC_CLOCK_NONE;
     }
     return ch32rv_rtc_on_lse() ? CH32RV_RTC_CLOCK_LSE : CH32RV_RTC_CLOCK_LSI;
+}
+
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+#define CH32RV_NO_HSITRIM 1
+#endif
+#define HSITRIM_SHIFT 3u
+#define HSITRIM_MASK  (0x1Fu << HSITRIM_SHIFT)
+
+uint8_t CH32RVSystem::hsiTrim()
+{
+#ifdef CH32RV_NO_HSITRIM
+    return 0;
+#else
+    return (uint8_t)((CH32RV_RCC_CTLR & HSITRIM_MASK) >> HSITRIM_SHIFT);
+#endif
+}
+
+bool CH32RVSystem::setHsiTrim(uint8_t trim)
+{
+#ifdef CH32RV_NO_HSITRIM
+    (void)trim;
+    return false;
+#else
+    if (trim > 31u) {
+        return false;
+    }
+    CH32RV_RCC_CTLR = (CH32RV_RCC_CTLR & ~HSITRIM_MASK) | ((uint32_t)trim << HSITRIM_SHIFT);
+    return true;
+#endif
+}
+
+#ifndef CH32RV_NO_HSITRIM
+/* HSI's error in ppm (+ fast): micros() counts HSI (through the PLL), the
+ * RTC counts the crystal; over `ms` the two are compared. */
+static int32_t hsi_error_ppm(uint32_t ms)
+{
+    const uint32_t irq = ch32rv_irq_save();
+    const uint64_t l0 = ch32rv_rtc_lse_ticks();
+    const uint32_t t0 = micros();
+    ch32rv_irq_restore(irq);
+    while (micros() - t0 < ms * 1000u) {
+    }
+    const uint32_t irq2 = ch32rv_irq_save();
+    const uint64_t l1 = ch32rv_rtc_lse_ticks();
+    const uint32_t t1 = micros();
+    ch32rv_irq_restore(irq2);
+    /* (t / real - 1) x 10^6 with real = ticks x 10^6 / 32768 */
+    const int64_t ticks = (int64_t)(l1 - l0);
+    if (ticks <= 0) {
+        return 0;
+    }
+    return (int32_t)(((int64_t)(t1 - t0) * 32768 - ticks * 1000000) / ticks);
+}
+#endif
+
+bool CH32RVSystem::calibrateHsi(int32_t *errorPpm)
+{
+#ifdef CH32RV_NO_HSITRIM
+    (void)errorPpm;
+    return false;
+#else
+    if (clockSource() != CH32RV_CLOCK_SOURCE_HSI || rtcClock() != CH32RV_RTC_CLOCK_LSE) {
+        return false;
+    }
+    /* Walk the trim toward zero error a step at a time on short windows (a
+     * step is far larger than their resolution), then keep the best of the
+     * last two and measure it longer. */
+    uint8_t trim = hsiTrim();
+    int32_t err = hsi_error_ppm(100);
+    for (uint8_t i = 0; i < 32u; i++) {
+        const int dir = err > 0 ? -1 : 1;
+        const int next = (int)trim + dir;
+        if (next < 0 || next > 31) {
+            break;
+        }
+        setHsiTrim((uint8_t)next);
+        delay(2);                                  /* HSI and the PLL settle */
+        const int32_t e = hsi_error_ppm(100);
+        if ((e > 0) != (err > 0) || e == 0) {     /* crossed zero: the nearer of the two */
+            if ((e < 0 ? -e : e) > (err < 0 ? -err : err)) {
+                setHsiTrim(trim);
+                delay(2);
+            } else {
+                trim = (uint8_t)next;
+            }
+            break;
+        }
+        trim = (uint8_t)next;
+        err = e;
+    }
+    if (errorPpm) {
+        *errorPpm = hsi_error_ppm(500);
+    }
+    return true;
+#endif
 }
 
 CH32RVClockSource CH32RVSystem::clockSource()

@@ -68,6 +68,8 @@ extern "C" {
 int ch32rv_rtc_begin(void);
 /* 1 when the running RTC counts LSE, the 32.768 kHz crystal. */
 int ch32rv_rtc_on_lse(void);
+/* LSE periods the running RTC has counted (32768 a second); 0 when it is not on LSE. */
+uint64_t ch32rv_rtc_lse_ticks(void);
 /* The counter and the milliseconds under it - the RTC's own, without the
  * settimeofday() offset (the low-power code times sleeps with this). */
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms);

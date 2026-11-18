@@ -237,6 +237,19 @@ int ch32rv_rtc_on_lse(void)
     return rtc_lse;
 }
 
+uint64_t ch32rv_rtc_lse_ticks(void)
+{
+    if (!rtc_lse) {
+        return 0;
+    }
+    uint32_t s, d;
+    do {
+        s = ((uint32_t)RTC(0x18) << 16) | RTC(0x1C);
+        d = read_div();
+    } while (s != (((uint32_t)RTC(0x18) << 16) | RTC(0x1C)));
+    return (uint64_t)s * (rtc_psc + 1u) + (rtc_psc - (d > rtc_psc ? rtc_psc : d));
+}
+
 void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms)
 {
     uint32_t s, d;
@@ -333,6 +346,11 @@ int ch32rv_rtc_begin(void)
 }
 
 int ch32rv_rtc_on_lse(void)
+{
+    return 0;
+}
+
+uint64_t ch32rv_rtc_lse_ticks(void)
 {
     return 0;
 }

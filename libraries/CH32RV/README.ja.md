@@ -21,6 +21,7 @@ CH32RV.getBackupRegister(0);
 CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // RTCのアラーム。time()の秒かstruct tmで
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clock Source メニュー）
 CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE（RTC Clock メニュー）
+CH32RV.calibrateHsi(&ppm);               // HSI を LSE と比べて HSITRIM を合わせる（hsiTrim() / setHsiTrim() も）
 CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
 CH32RV.getHeapSize();                    // ヒープの大きさと、malloc() がまだ渡せる量
 CH32RV.getFreeHeap();
@@ -79,6 +80,10 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
   コールバックの中で `setAlarm()` を 1 回呼びます
 - **`clockSource()`** が HSE を返すのは、Clock Source メニューで水晶を選び、その水晶が立ったときだけです。
   立たなければ同じ CPU Clock を HSI で作ります(`F_CPU` は同じで、精度は HSI のもの)
+- **`calibrateHsi()`** は、RTC の LSE（水晶）を基準に HSI を測り、HSITRIM（0〜31）を一番近い段に合わせます（約 2 秒）。
+  1 段は 0.2〜0.4 % ほどで、残る誤差は段の半分以内です（V203: 12 段目で +551 ppm、V103: 16 段目で +1654 ppm、2026-11-18）。
+  システムクロックが HSI でないとき（Clock Source が HSE）と、RTC が LSE で動いていないとき（RTC Clock メニュー）は false です。
+  X305 / X315 には HSITRIM がありません。LSI は RTC が起動時に測って分周を合わせるので、校正の API はありません
 - **`rtcClock()`** が LSE を返すのは、RTC Clock メニューで 32.768 kHz の水晶（LSE）を選び、その水晶が立ったときだけです。
   立たなければ（2 秒待つ）、RTC は今までどおり測った LSI で数えます。LSE は 1 日に数秒以内、LSI は 1 日に数分ずれえます。
   WCH の EVT 板の多く（V103・V20x・V205・V30x・L103・H417）と nanoCH32H417 は、PC14 / PC15 に水晶が載っています

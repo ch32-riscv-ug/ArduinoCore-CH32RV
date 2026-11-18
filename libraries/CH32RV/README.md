@@ -23,6 +23,7 @@ CH32RV.getBackupRegister(0);
 CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s seconds or a struct tm
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
 CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE (RTC Clock menu)
+CH32RV.calibrateHsi(&ppm);               // HSI against the LSE, HSITRIM set (also hsiTrim() / setHsiTrim())
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out
 CH32RV.getFreeHeap();
@@ -83,6 +84,13 @@ analogReadVref();                        // the internal reference, on analogRea
 - **`clockSource()`** says HSE only when the Clock Source menu chose the crystal
   and it started. A crystal that does not start leaves the same CPU Clock on HSI
   (`F_CPU` unchanged, at HSI's accuracy).
+- **`calibrateHsi()`** measures HSI against the RTC's LSE crystal and sets
+  HSITRIM (0-31) to the nearest step (about 2 s). A step is 0.2-0.4 %, so
+  what is left is within half a step (V203: step 12, +551 ppm; V103: step 16,
+  +1654 ppm, 2026-11-18). False when the system clock is not HSI (Clock Source
+  HSE) or the RTC does not count LSE (RTC Clock menu). X305 / X315 have no
+  HSITRIM. LSI has no calibration call: the RTC measures it at its start and
+  sets its prescaler.
 - **`rtcClock()`** says LSE only when the RTC Clock menu chose the 32.768 kHz
   crystal (LSE) and it started. One that does not start within 2 s leaves the
   RTC on the measured LSI as before. LSE drifts seconds a day at most, LSI can

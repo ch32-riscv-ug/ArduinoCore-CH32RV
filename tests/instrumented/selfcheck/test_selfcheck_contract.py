@@ -150,6 +150,38 @@ def test_clock_source(dut, ready, record_property):
     assert sws == want, f"RCC_CFGR0's SWS is {sws}, the setting wants {want} (0 HSI, 1 HSE, 2 PLL)"
 
 
+def test_rtc_clock(dut, ready, record_property):
+    """The RTC counts what the RTC Clock menu asked: LSE (the crystal) when it was asked and started, LSI otherwise.
+    The host does not know whether the board carries the crystal: with LSE asked and LSI running it records that the
+    crystal did not start and skips; a series without an RTC says NONE (0)."""
+    asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
+    record_property("rtc_clock", ["none", "lsi", "lse"][clock])
+    if clock == 0:
+        pytest.skip("no RTC on this series")
+    if not asked:
+        assert clock == 1, "RTC Clock = LSI (or no menu), but the RTC counts LSE"
+    elif clock == 1:
+        pytest.skip("RTC Clock = LSE, but the crystal did not start (none on this board?): the RTC counts LSI")
+
+
+def test_hsi_calibration(dut, ready, record_property):
+    """CH32RV.calibrateHsi() against the LSE: from three trim steps off, the trim it settles on is the nearest of its
+    neighbours (each measured over 500 ms against the crystal; 300 ppm for the measurement's own spread) and within
+    1 % of the right frequency. Runs where the build asked for the RTC's LSE and the system clock is HSI
+    (CH32_TEST_OPTIONS=rtcclock=lse)."""
+    asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
+    if not asked or clock != 2:
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+    m = ask(dut, "hsical", rb"HSICAL (\d) (\d+) (-?\d+) (-?\d+) (-?\d+)", timeout=30)
+    ok, trim, err, below, above = (int(x) for x in m.groups())
+    record_property("hsi_calibration", json.dumps(dict(trim=trim, ppm=err, below=below, above=above)))
+    if not ok:
+        pytest.skip("calibrateHsi() false: the system clock is not HSI (Clock Source = HSE), or no HSITRIM (X3x5)")
+    assert abs(err) < 10000, f"{err} ppm left at trim {trim}"
+    assert abs(err) <= min(abs(below), abs(above)) + 300, \
+        f"trim {trim} leaves {err} ppm, its neighbours {below} / {above} ppm"
+
+
 @pytest.mark.parametrize("baud", [115200, 1000000])
 def test_serial_transmit(dut, ready, baud, record_property):
     count = int(ask(dut, "ports", rb"PORTS (\d+)").group(1))
