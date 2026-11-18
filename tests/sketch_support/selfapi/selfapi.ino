@@ -27,6 +27,9 @@
  *                             where the variant names none
  *   opa <+> <-> <out>         OPA1 open loop on those pins, + and - driven as GPIOs (<-> g<gain>: beginPga()):
  *                             OPA <begun 1/0> <out with + high> <out with + low> (analogRead() of the output)
+ *   cmppads                   CH32RVComparator CMP1's pads: CMPPADS <role>:<pin> ... (0 +, 1 -, 2 output), CMPPADS NONE
+ *   cmp <+> <-> <out or -1>   CMP1 on those pins (- -3: the inner REFERENCE), + and - driven as GPIOs: CMP <begun 1/0> <read() with + high>
+ *                             <read() with + low> <edges on the output pad (attachInterrupt CHANGE)>
  *   canlb <bitrate>           CAN (Arduino_CAN) in silent loopback: 20 frames - standard and extended identifiers in
  *                             turn, 0 .. 8 bytes - each read back: CANLB <begun 1/0> <right> <tx errors> <rx errors>,
  *                             CANLB NONE without a CAN */
@@ -38,6 +41,7 @@
 #include <ch32rv_priority.h>
 #include <Arduino_CAN.h>
 #include <CH32RVOpamp.h>
+#include <CH32RVComparator.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -50,6 +54,12 @@
 extern "C" uint32_t ch32rv_adc_millivolts(uint8_t index, uint32_t channel);
 
 static char line[64];
+
+static volatile uint16_t cmp_edges;
+static void cmp_edge()
+{
+    cmp_edges++;
+}
 static uint8_t used;
 
 static void crc_check()
@@ -786,6 +796,56 @@ static void reply(char *command)
             pinMode(minus, INPUT);
         }
         SerialDMSeq.printf("OPA %d %d %d\r\n", ok ? 1 : 0, level[0], level[1]);
+    } else if (!strcmp(argv[0], "cmppads")) {
+#if defined(CH32RV_CMP_PADS)
+        struct Pad { uint8_t unit, role, value, af, pin; };
+        static const Pad table[] = CH32RV_CMP_PADS;
+        SerialDMSeq.print("CMPPADS");
+        for (const Pad &e : table) {
+            if (e.unit == 1) {
+                SerialDMSeq.printf(" %d:%d", e.role, e.pin);
+            }
+        }
+        SerialDMSeq.print("\r\n");
+#else
+        SerialDMSeq.printf("CMPPADS NONE\r\n");
+#endif
+    } else if (!strcmp(argv[0], "cmp") && argc == 4) {
+        /* cmp <+ pin> <- pin> <out pin, -1 none> */
+        const int plus = atoi(argv[1]), minus = atoi(argv[2]), out = atoi(argv[3]);
+        CH32RVComparator cmp(1);
+        const bool pad = minus >= 0;            /* - may be CH32RVComparator::REFERENCE (-3) */
+        pinMode(plus, OUTPUT);
+        digitalWrite(plus, LOW);
+        if (pad) {
+            pinMode(minus, OUTPUT);
+            digitalWrite(minus, HIGH);
+        }
+        const bool ok = cmp.begin(plus, minus, out);
+        cmp_edges = 0;
+        if (ok && out >= 0) {
+            attachInterrupt(digitalPinToInterrupt(out), cmp_edge, CHANGE);
+        }
+        int level[2];
+        for (int k = 0; k < 2; k++) {
+            delay(1);
+            /* k 0: + high, - low; k 1: the other way */
+            digitalWrite(plus, k ? LOW : HIGH);
+            if (pad) {
+                digitalWrite(minus, k ? HIGH : LOW);
+            }
+            delay(1);
+            level[k] = cmp.read();
+        }
+        if (ok && out >= 0) {
+            detachInterrupt(digitalPinToInterrupt(out));
+        }
+        cmp.end();
+        pinMode(plus, INPUT);
+        if (pad) {
+            pinMode(minus, INPUT);
+        }
+        SerialDMSeq.printf("CMP %d %d %d %d\r\n", ok ? 1 : 0, level[0], level[1], (int)cmp_edges);
     } else if (!strcmp(argv[0], "canlb") && argc == 2) {
 #if defined(CH32RV_CAN1_BASE)
         CAN.setLoopback(true, true);

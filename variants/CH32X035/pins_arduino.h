@@ -592,6 +592,25 @@ static const uint8_t SS = PIN_SPI_SS;
     { 2, 2, 1, PA2 }, \
 }
 
+/* ---- comparator pads (reference manual: tools/generate/opa/cmp_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */
+#define CH32RV_CMP_PADS { \
+    { 1, 0, 0, 0, PC19 }, \
+    { 1, 0, 1, 0, PA0 }, \
+    { 1, 1, 0, 0, PC3 }, \
+    { 1, 1, 1, 0, PA23 }, \
+    { 1, 2, 1, 0, PA1 }, \
+    { 2, 0, 0, 0, PA12 }, \
+    { 2, 0, 1, 0, PA11 }, \
+    { 2, 1, 0, 0, PA22 }, \
+    { 2, 1, 1, 0, PC3 }, \
+    { 2, 2, 1, 0, PB2 }, \
+    { 3, 0, 0, 0, PA13 }, \
+    { 3, 0, 1, 0, PA14 }, \
+    { 3, 1, 0, 0, PA2 }, \
+    { 3, 1, 1, 0, PC3 }, \
+    { 3, 2, 1, 0, PB3 }, \
+}
+
 /* ---- PWM: 10 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 10
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

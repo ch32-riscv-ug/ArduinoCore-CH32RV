@@ -101,7 +101,7 @@
 | 外部の温度チャネル | V103、V20x、V30x | 2 | 単発 | 温度センサの板 | EVT ADC/Temperature_External_channel |
 | DAC の DMA 波形・タイマートリガ・三角波・ノイズ・2 ch 同時 | V30x、V4x7、H41x | 2 | 自動 | プローブ（ADC の入力）。自己なら ADC で読み戻す | UNUSED:76, FC:77 |
 | M030 の OPA（モーター段の電流検出。ほかの系列は CH32RVOpamp で実装済み） | M030 | 2 | 自動 | 自己（+ / - を GPIO で駆動、出力を ADC） | libraries/CH32RVOpamp |
-| コンパレータ（CMP、割込み・ブレーキ・起床・TIM 入力） | V00x、V205、L103、M030、X035、H41x | 2 | 自動 | プローブ | PS:83, PM:288 |
+| コンパレータの残り（CH32RVComparator で端子・read()・ヒステリシス・H41x の内部基準は実装済み）: ブレーキ・起床・TIM 入力・V205 の DAC、M030 | V007、V205、L103、M030、X035、H41x | 2 | 自動 | プローブ | libraries/CH32RVComparator |
 | TouchKey の残り | L103、V205、H41x、V103 | 2 | 単発→自動 | 自己（何もつながない端子の値）。指の向きは手作業 | PS:76, EVT TKEY/TKEY（V205 |
 | TouchKey のしきい値・イベント | TouchKey の系列 | 2 | 単発→自動 | 手作業（指）か、プローブで容量を切り替える治具 | FC:79 |
 | HSADC の残り | H41x | 2 | 自動 | プローブ（常駐ベンチに線が無い、TODO:148） | PS:77 |

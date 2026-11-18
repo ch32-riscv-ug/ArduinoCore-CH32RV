@@ -122,6 +122,44 @@ def test_opamp(dut, ready, record_property):
         assert pga[1] > full * 3 // 4 and pga[2] < full // 4, f"PGA x{gain}: {pga[1]} with + high, {pga[2]} with + low"
 
 
+def test_comparator(dut, ready, record_property):
+    """CH32RVComparator: CMP1 on its first + and - pads off the board's keep-off list, driven as GPIOs. read() is 1
+    with + high and - low, 0 the other way; with an output pad (the first off the list, where there is one) read()
+    is that pad's level and attachInterrupt(CHANGE) on it sees the two edges. Where there is an inner reference
+    (H41x), + against it (half the supply) the same way."""
+    for d in ready.get("record", {}).get("defects", []):
+        if "gpio-drive" in d.get("lose", []):
+            pytest.skip(f"the board's pads are not driven: defect {d.get('id')}")
+    m = ask(dut, "cmppads", rb"CMPPADS((?: \d:\d+)*| NONE)")
+    if m.group(1) == b" NONE":
+        pytest.skip("the variant names no comparator pads")
+    keep = set(ready.get("gpio_keep_off") or [])
+    roles = {0: [], 1: [], 2: []}
+    for item in m.group(1).split():
+        role, pin = (int(v) for v in item.split(b":"))
+        if pad(pin) not in keep:
+            roles[role].append(pin)
+    if not roles[0] or not roles[1]:
+        pytest.skip(f"every comparator + or - pad is among the board's pads to keep off: {sorted(keep)}")
+    plus, minus = roles[0][0], roles[1][0]
+    out = next((p for p in roles[2] if p not in (plus, minus)), -1)
+    m = ask(dut, f"cmp {plus} {minus} {out}", rb"CMP (\d) (-?\d+) (-?\d+) (\d+)")
+    ok, hi, lo, edges = (int(v) for v in m.groups())
+    record_property("cmp", json.dumps(dict(plus=pad(plus), minus=pad(minus), out=pad(out) if out >= 0 else None,
+                                           hi=hi, lo=lo, edges=edges)))
+    assert ok, "CH32RVComparator.begin() failed"
+    if hi < 0:
+        pytest.skip("no output pad off the keep-off list and no status bit: read() cannot see the result")
+    assert (hi, lo) == (1, 0), f"read() {hi} with + high, {lo} with + low"
+    if out >= 0:
+        assert edges >= 2, f"{edges} edges on the output pad"
+    # - from the inner reference (REFERENCE = -3, half the supply), where the chip has one.
+    m = ask(dut, f"cmp {plus} -3 -1", rb"CMP (\d) (-?\d+) (-?\d+) (\d+)")
+    ok, hi, lo, _ = (int(v) for v in m.groups())
+    if ok and hi >= 0:
+        assert (hi, lo) == (1, 0), f"against the reference: read() {hi} with + high, {lo} with + low"
+
+
 @pytest.mark.parametrize("bitrate", [125000, 500000, 1000000])
 def test_can_loopback(dut, ready, bitrate, record_property):
     """Arduino_CAN in silent loopback (no transceiver, no bus): 20 frames, standard and extended identifiers in turn

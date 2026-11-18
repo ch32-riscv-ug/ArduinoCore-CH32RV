@@ -2909,6 +2909,11 @@ OPA_SIGNAL_RE = [
 OPA_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "opa_select.csv"
 
 
+# The comparators the same way, from the reference manuals only (device-data
+# also gives V203 the pads of V205's comparators, which its manual has not).
+CMP_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "cmp_select.csv"
+
+
 def load_opa_select() -> dict:
     """series -> [(unit, role 'P' / 'N' / 'O', value, (port, bit))]."""
     out: dict = {}
@@ -4841,6 +4846,22 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("}")
         if "OPCM" in clken:                    # H41x: the op-amps' own clock
             out.extend(clken_defines("CH32RV_OPA", "OPCM"))
+        out.append("")
+
+    # --- CMP ---
+    with open(CMP_SELECT_CSV, newline="", encoding="utf-8") as f:
+        cmp_rows = [(int(r["unit"]), "PNO"[("P", "N", "OUT").index(r["role"])], int(r["value"]), int(r["af"] or 0),
+                     (r["pad"][1], int(r["pad"][2:]))) for r in csv.DictReader(f) if r["series"] == series]
+    cmp_rows = [r for r in cmp_rows if r[4] in set().union(*per_part)]
+    if cmp_rows:
+        out.append("/* ---- comparator pads (reference manual: tools/generate/opa/cmp_select.csv): unit, role (0 P, 1 N, "
+                   "2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */")
+        out.append("#define CH32RV_CMP_PADS { \\")
+        for unit, role, value, af, (port, bit) in cmp_rows:
+            out.append(f"    {{ {unit}, {'PNO'.index(role)}, {value}, {af}, {pad_name(port, bit)} }}, \\")
+        out.append("}")
+        if "OPCM" in clken:
+            out.extend(clken_defines("CH32RV_CMP", "OPCM"))
         out.append("")
 
     # --- CAN ---

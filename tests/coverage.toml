@@ -529,11 +529,12 @@ also = ["CH32V005", "CH32V006", "CH32V007", "CH32M007", "CH32V003", "CH32V203", 
 missing = ["CH32M030"]          # its op-amps are the motor stage's current sense, with no pads in device-data
 
 [[item]]
-id = "comparator"           # CMP: interrupt, brake, wake, timer input
+id = "comparator"           # CMP: CH32RVComparator, + / - driven as GPIOs, read() and the output pad's edges
+test = "selfapi::test_comparator"
 scope = "series"
 any_of = ["CMP"]
-also = ["CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V205", "CH32L103", "CH32M030", "CH32X035", "CH32H415", "CH32H416", "CH32H417"]
-missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M030", "CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32V205", "CH32X035"]
+also = ["CH32V007", "CH32M007", "CH32V205", "CH32L103", "CH32M103", "CH32M030", "CH32X033", "CH32X035", "CH32H415", "CH32H416", "CH32H417"]
+missing = ["CH32M030"]          # the motor stage's comparators
 
 [[item]]
 id = "pmp"                  # PMP (memory protection)
