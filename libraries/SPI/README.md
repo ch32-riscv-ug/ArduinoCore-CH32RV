@@ -169,6 +169,26 @@ SPI.endTransaction();
 An LVGL flush can send with `transferAsync()` and wait with
 `finishedAsync()` in `lv_display_set_flush_wait_cb()`.
 
+## Hardware chip select (setHwCs)
+
+As arduino-esp32's `SPI.setHwCs(true)`, the SPI drives its route's NSS pad itself:
+
+```cpp
+SPI.begin(PA5, PA6, PA7, PA4);   // ss is the route's NSS pad (left out: the route's NSS)
+SPI.setHwCs(true);
+SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));   // NSS goes low here
+SPI.transfer(buf, n);
+SPI.endTransaction();                                              // high once the last byte is out
+```
+
+- NSS is low from `beginTransaction()` to `endTransaction()` (SPE on and off). Transfers outside a transaction keep
+  it low from `begin()`. ESP32 raises and lowers it around each transfer; that differs.
+- Only the route's NSS pad (the variant's `CH32RV_SPIn_NSS_PADS`). With `ss` another pad, or on a series whose routes
+  have no NSS (X033 / X035), it does not take and `hwCs()` is `false`.
+- The code links only into a sketch that calls `setHwCs()`; the bus keeps a test and the pad's number (an SPI
+  sketch on V003 grows by 24 B). Checked on V203's PA4 against the probe's spi-target (2026-11-18,
+  spi::test_spi_hw_cs).
+
 ## Things worth knowing
 
 - **The clock is rounded down, never up.** `SPISettings(1000000, ...)` on a

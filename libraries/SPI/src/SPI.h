@@ -63,11 +63,11 @@ public:
     void begin() override;
     /* arduino-esp32's form: the pins (SCK, MISO, MOSI) named in the call.
      * All -1 keeps the pins the bus has; false leaves the bus closed. ss is
-     * accepted for the same reason and not used: chip select stays a GPIO the
-     * sketch (or the library) drives. */
+     * the pad setHwCs() drives; without setHwCs() chip select stays a GPIO
+     * the sketch (or the library) drives. */
     bool begin(int sck, int miso = -1, int mosi = -1, int ss = -1)
     {
-        (void)ss;
+        _ss1 = (uint8_t)(ss < 0 || ss > 0xFE ? 0 : ss + 1);
         if (_started) {
             end();
         }
@@ -121,6 +121,14 @@ public:
      * next started by the finishedAsync() that sees one end. abortAsync()
      * stops it after the byte on the wire. */
     bool transferAsync(const void *send, void *recv, size_t bytes);
+    /* arduino-esp32's hardware chip select: the SPI drives its route's NSS
+     * pad itself, low from beginTransaction() to endTransaction() (SPE on and
+     * off; transfers outside a transaction keep it low from begin()). The pad
+     * is begin()'s ss when given - it has to be the route's NSS - or else the
+     * route's own. Ignored where the route has no NSS pad (X033 / X035) or
+     * ss is another pad; hwCs() says whether it took. */
+    void setHwCs(bool use);
+    bool hwCs() const { return _hwcs; }
     bool finishedAsync(void);
     void abortAsync(void);
 protected:
@@ -146,6 +154,17 @@ private:
 
     uint32_t _clock_hz = 4000000;
     uint8_t _mode = 0;
+    uint8_t _ss1;              /* begin()'s ss + 1, 0 for none (zero-initialised: the bus stays in .bss) */
+    uint8_t _nss_pin;          /* the NSS pad setHwCs() drives */
+    bool _hwcs;
+    bool nss_pad(uint8_t &pin);
+    void nss_connect(bool on);
+    uint32_t route_value(void) const;
+    uint8_t slot_index(void) const;
+public:
+    /* For SPIHwCs.cpp; not part of the sketch-facing API. */
+    void hwcs_release();
+private:
     /* A peripheral (SPI_PERIPHERAL) until endTransaction(): 0 no, 1 MSB
      * first, 2 LSB first; 3 after it, the SPI off and the pads inputs until
      * the next controller use. */
@@ -153,6 +172,9 @@ private:
 };
 
 }  // namespace arduino
+
+/* setHwCs()'s end of a transaction (SPIHwCs.cpp); null until setHwCs(). */
+extern void (*ch32rv_spi_hwcs)(arduino::CH32RVSPIClass &bus);
 
 /* As many names as the board has enabled SPIs (ch32rv_instances.h), in the
  * Arduino ecosystem's order: the bare name first. An SPI set to Software in

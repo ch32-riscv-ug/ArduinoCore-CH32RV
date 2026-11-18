@@ -129,7 +129,7 @@
 | SPI ライブラリのスレーブ（`SPI_HAS_PERIPHERAL_MODE`） | 全系列 | 実装済み（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。spi・softspi::test_spi_peripheral | libraries/SPI/README.ja.md |
 | CH32RVSPISlave の残り（DMA、ハードの NSS、上限クロック、V407・H417） | 全系列 | 2 | 自動 | プローブ（速いマスター） | PS:45, libraries/CH32RVSPISlave/README.ja.md:38,48 |
 | SoftSPI のスレーブ | 全系列 | 実装済み（2026-11-15、SoftSPISlave。V203・V006・V205・V103 で確認） | 自動 | プローブ（spi-controller）。softspi::test_spi_slave | libraries/SPI/README.ja.md, TC:90 |
-| SPI のハードウェア CS（NSS） | 全系列 | 2 | 自動 | プローブ | FC:45, EVT SPI/FullDuplex_HardNSS |
+| SPI のハードウェア CS（NSS） | 全系列 | 実装済み（2026-11-18、`SPI.setHwCs()`（arduino-esp32 の名前）。トランザクションの間 NSS が Low。経路の NSS の表を生成。V203 の PA4 で spi::test_spi_hw_cs） | 自動 | プローブ | FC:45, EVT SPI/FullDuplex_HardNSS |
 | SPI の半二重・片方向（3 線） | 全系列 | 2 | 自動 | プローブ | FC:46, EVT SPI/1Lines_half-duplex |
 | SPI の非同期・DMA 転送 | 全系列 | 実装済み（2026-11-18、`transferAsync()` / `finishedAsync()` / `abortAsync()`（arduino-pico の名前、DMA）。同期のバッファ転送は CPU のループ。V203・H417・V003 で spi::test_spi_block が通る） | 自動 | プローブ | FC:44, EVT SPI/SPI_DMA・SPI_DMA_EXT |
 | SPI の CRC | V003、V00x、V20x、V205、V30x、V4x7、L103、M030、X035 | 2 | 自動 | プローブ | EVT SPI/SPI_CRC |

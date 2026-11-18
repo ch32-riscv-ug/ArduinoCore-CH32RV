@@ -155,6 +155,25 @@ V203(144 MHz)で4096バイトを送った時間(2026-11-18):
 
 LVGLのflushは、`transferAsync()`で送り、`lv_display_set_flush_wait_cb()`で`finishedAsync()`を待つ形にできます。
 
+## ハードウェアのチップセレクト(setHwCs)
+
+arduino-esp32の`SPI.setHwCs(true)`と同じく、SPIがその経路のNSSの端子を自分で動かします:
+
+```cpp
+SPI.begin(PA5, PA6, PA7, PA4);   // ssは経路のNSSの端子(省略すると経路のNSS)
+SPI.setHwCs(true);
+SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));   // ここでNSSがLow
+SPI.transfer(buf, n);
+SPI.endTransaction();                                              // 最後のbyteを送ってからHigh
+```
+
+- NSSは`beginTransaction()`から`endTransaction()`までLowです(SPEの入り切り)。トランザクションを使わない転送では、
+  `begin()`からLowのままです。ESP32は転送ごとに上げ下げするので、そこは違います。
+- 使えるのは経路のNSSの端子だけです(variantの`CH32RV_SPIn_NSS_PADS`)。`ss`が別の端子のときや、経路にNSSが無い
+  系列(X033 / X035)では効かず、`hwCs()`が`false`です。
+- コードは`setHwCs()`を呼ぶスケッチだけにリンクされます。バスに残るのは判定と端子の番号だけです(V003でSPIを使う
+  スケッチが24 B増える)。V203のPA4で、プローブのspi-targetを相手に確かめました(2026-11-18、spi::test_spi_hw_cs)。
+
 ## 知っておくとよいこと
 
 - **クロックは切り上げず、必ず切り下げます。** 48MHzの部品で

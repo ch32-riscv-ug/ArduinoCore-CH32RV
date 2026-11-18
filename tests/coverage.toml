@@ -967,6 +967,12 @@ scope = "series"
 needs = ["SPI1"]
 
 [[item]]
+id = "spi-hw-cs"            # SPI.setHwCs(): the SPI drives its NSS pad across a transaction
+test = "spi::test_spi_hw_cs"
+scope = "series"
+needs = ["SPI1"]
+
+[[item]]
 id = "spi-slave"            # CH32RVSPISlave
 test = "spi::test_spi_slave"
 scope = "series"

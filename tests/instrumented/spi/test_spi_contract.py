@@ -296,6 +296,60 @@ def test_spi_block(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_spi_hw_cs(dut, oep_host, ws_run, record_property):
+    """SPI.setHwCs(true) (arduino-esp32's): the SPI drives its NSS pad itself, low from beginTransaction() to
+    endTransaction(), the sketch's GPIO CS left high. On the default route's NSS pad (PIN_SPI_SS), when the probe
+    labels it: writeBytes and transferBytes of 64 bytes as in test_spi_block, the probe's spi-target framed by that
+    pad, judged by WireSkein (CS high at the start and the end, the bytes and 512 clocks) and the bytes read back."""
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("setHwCs() is the hardware SPI's")
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    taken, nss_pin = (int(x) for x in ask(dut, "hwcs 1", rb"HWCS (\d) (\d+)").groups())
+    if not taken:
+        pytest.skip("setHwCs() did not take: the route has no NSS pad")
+    nss = pad(nss_pin)
+    if nss not in lines:
+        ask(dut, "hwcs 0", rb"HWCS \d \d+")
+        pytest.skip(f"the NSS pad {nss} is not a labelled line of the port")
+    record_property("nss", nss)
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", nss))}
+    host = oep_host.host
+    target = SpiTarget(host)
+    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]))
+    wrong = []
+
+    def steps(wait):
+        idle = {nss: 1}
+        with ws_run.section(1, f"spi hardware cs {sck} {miso} {mosi} {nss}"):
+            for how, name in (("w", "writeBytes"), ("t", "transferBytes")):
+                out = secrets.token_bytes(BLOCK_BYTES)
+                armed = secrets.token_bytes(BLOCK_BYTES)
+                want = [spi(sck, mosi=mosi, miso=miso, cs=nss, mode=0, bit_order="msb",
+                            mosi_bytes=out.hex(), miso_bytes=armed.hex(), bits=8 * BLOCK_BYTES,
+                            notices={"sck_outside_cs": "ng"}),
+                        starts(idle), ends(idle)]
+                with ws_run.section(2, name, expect=want):
+                    configure_target(target, 0, 0, False)
+                    target.arm(BLOCK_BYTES, armed)
+                    command = f"blk {how} {BLOCK_HZ} {out.hex()}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    m = wait_reply(dut, wait, rb"BLK ([01]) (-|[0-9a-f]+)")
+                    ws_run.reply(m.group(0).decode())
+                    if m.group(2) != b"-" and bytes.fromhex(m.group(2).decode()) != armed:
+                        wrong.append(f"{name}: read {m.group(2).decode()}, the target was armed with {armed.hex()}")
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (nss, sck, mosi, miso)], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+        ask(dut, "hwcs 0", rb"HWCS \d \d+")
+    assert not wrong, " | ".join(wrong)
+
+
 SLAVE_HZ = 100_000                 # within what CH32RVSPISlave's README measured (100-200 kHz, one interrupt a byte)
 SOFT_SLAVE_HZ = 50_000             # SoftSPISlave: one interrupt a bit, each within half a period (10 us here)
 SLAVE_SETUP_NS = 20_000            # CS falling to the first clock: the CS interrupt selects the slave

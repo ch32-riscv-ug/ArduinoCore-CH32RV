@@ -14,6 +14,8 @@
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex>
  *
+ *   hwcs <0|1>                         SPI.setHwCs(): HWCS <1 taken / 0> <the NSS pad, 0 when none>;
+ *                                      while on, xfer and blk leave CS to the SPI (the NSS pad)
  *   blk <how> <hz> <bytes>             the buffer transfers, mode 0 MSB first, CS low around one
  *                                      call with the bytes (hex, up to 80): how w writeBytes, t
  *                                      transferBytes, b transfer(buf, n), a transferAsync out only,
@@ -77,6 +79,8 @@ static size_t unhex(const char *text, uint8_t *out, size_t room)
     return n;
 }
 
+static bool hwcs;      /* SPI.setHwCs(true): the SPI drives CS (its NSS pad) */
+
 static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char *bytes)
 {
     uint8_t out[16];
@@ -88,14 +92,18 @@ static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char 
         soft.setHalfPeriodUs((uint16_t)(hz ? (500000u + hz - 1u) / hz : 0u));
     }
     bus->beginTransaction(SPISettings(hz, lsb ? LSBFIRST : MSBFIRST, mode));
-    digitalWrite(cs, LOW);
+    if (!hwcs) {
+        digitalWrite(cs, LOW);
+    }
     delayMicroseconds(50);             /* the probe's CS set-up */
     for (size_t i = 0; i < n; i++) {
         out[i] = bus->transfer(out[i]);
     }
     const uint16_t in = bus->transfer16(word);
     delayMicroseconds(10);
-    digitalWrite(cs, HIGH);
+    if (!hwcs) {
+        digitalWrite(cs, HIGH);
+    }
     bus->endTransaction();
     SerialDMSeq.print("XFER ");
     for (size_t i = 0; i < n; i++) {
@@ -138,7 +146,9 @@ static void blk(char how, uint32_t hz, const char *bytes)
         soft.setHalfPeriodUs((uint16_t)(hz ? (500000u + hz - 1u) / hz : 0u));
     }
     bus->beginTransaction(SPISettings(hz, MSBFIRST, SPI_MODE0));
-    digitalWrite(cs, LOW);
+    if (!hwcs) {
+        digitalWrite(cs, LOW);
+    }
     delayMicroseconds(50);
     bool ok;
 #if defined(SPI_INTERFACES_COUNT)
@@ -148,7 +158,9 @@ static void blk(char how, uint32_t hz, const char *bytes)
     ok = BlockCommands::block(soft, how, out, in, n);
 #endif
     delayMicroseconds(10);
-    digitalWrite(cs, HIGH);
+    if (!hwcs) {
+        digitalWrite(cs, HIGH);
+    }
     bus->endTransaction();
     SerialDMSeq.print("BLK ");
     SerialDMSeq.print(ok ? 1 : 0);
@@ -285,6 +297,25 @@ void loop()
             softPins[2] = (int)mosi;
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+        } else if (strncmp(line, "hwcs ", 5) == 0) {
+#if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
+            const bool want = line[5] == '1';
+            if (want) {
+                SPI.begin(-1, -1, -1, -1);
+            }
+            SPI.setHwCs(want);
+            hwcs = SPI.hwCs();
+            SerialDMSeq.print("HWCS ");
+            SerialDMSeq.print(hwcs ? 1 : 0);
+            SerialDMSeq.print(' ');
+#ifdef PIN_SPI_SS
+            SerialDMSeq.println(want && hwcs ? (unsigned)PIN_SPI_SS : 0u);
+#else
+            SerialDMSeq.println(0u);
+#endif
+#else
+            SerialDMSeq.println("HWCS 0 0");
+#endif
         } else if (strncmp(line, "blk ", 4) == 0) {
             const char how = line[4];
             p += 6;

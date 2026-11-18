@@ -381,6 +381,16 @@ static const uint8_t SDA = PIN_WIRE_SDA;
     { 5, { PA1, PB5, PA2 }, 0x00000005u, 0x00000000u }, \
     { 6, { PB5, PC7, PB4 }, 0x00000006u, 0x00000000u }, \
 }
+/* SPI1's NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */
+#define CH32RV_SPI1_NSS_PADS { \
+    { PA1, PB5, PA2, PC1 }, \
+    { PB1, PB2, PC0, PB0 }, \
+    { PB5, PC7, PB4, PC4 }, \
+    { PC5, PC7, PC6, PC0 }, \
+    { PC5, PC7, PC6, PC1 }, \
+    { PD2, PB3, PD3, PC4 }, \
+    { PD4, PD5, PD6, PD3 }, \
+}
 /* SPI1's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
 #define CH32RV_SPI1_DMA_TX CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)

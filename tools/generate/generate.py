@@ -4667,6 +4667,22 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             emit_instance_routes(out, f"SPI{index}", ("SCK", "MISO", "MOSI"), series,
                                  parts, spis, remap, "spi", index, SPI_ROUTE_ORDER,
                                  forbidden, route is not None)
+            # Each route's NSS pad, for setHwCs(): rows of SCK, MISO, MOSI,
+            # NSS, matched on the first three (only setHwCs() reads them).
+            nss_roles = ("SCK", "MISO", "MOSI", "NSS")
+            nss_rows = {pads for _v, pads, _a, _b in
+                        route_table(series, parts, spis, remap, "spi", nss_roles, index)}
+            if not nss_rows and route is not None:
+                for pn in parts:
+                    entry = spis.get(pn, {}).get((index, route))
+                    if entry and set(nss_roles) <= set(entry):
+                        nss_rows.add(tuple(entry[r] for r in nss_roles))
+            if nss_rows:
+                out.append(f"/* SPI{index}'s NSS pad on each route (setHwCs()): SCK, MISO, MOSI, NSS. */")
+                out.append(f"#define CH32RV_SPI{index}_NSS_PADS {{ \\")
+                for pads in sorted(nss_rows):
+                    out.append("    { " + ", ".join(pad_name(*pd) for pd in pads) + " }, \\")
+                out.append("}")
             spi_dma = {}
             for family in sorted({r.get("family", "") for r in rows}):
                 got = SPI_DMA.get(family, {}).get(index)

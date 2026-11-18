@@ -279,6 +279,26 @@ void release_pin(uint8_t pin)
 
 }  // namespace
 
+/* For SPIHwCs.cpp: the bus's route value (the pads' alternate function where
+ * chosen per pin) - the route begin() took. */
+uint32_t CH32RVSPIClass::route_value(void) const
+{
+    if (!_slot) {
+        return 0;
+    }
+    if (_want) {
+        return _want->value;
+    }
+    return spis[index_of(_slot)].def.value;
+}
+
+uint8_t CH32RVSPIClass::slot_index(void) const
+{
+    return index_of(_slot);
+}
+
+void (*ch32rv_spi_hwcs)(arduino::CH32RVSPIClass &bus);
+
 uint8_t CH32RVSPIClass::peripheral(void) const
 {
     return _slot ? spis[index_of(_slot)].number : 0;
@@ -446,8 +466,8 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
     /* SSM/SSI keep the peripheral in master mode without owning an NSS pin:
      * without them a low NSS input drops it out of master mode (MODF) and the
      * transfer silently never happens. */
-    uint16_t ctlr1 = CH32RV_SPI_CTLR1_MSTR | CH32RV_SPI_CTLR1_SSM |
-                     CH32RV_SPI_CTLR1_SSI |
+    uint16_t ctlr1 = CH32RV_SPI_CTLR1_MSTR |
+                     ((ch32rv_spi_hwcs && _hwcs) ? 0u : (uint16_t)(CH32RV_SPI_CTLR1_SSM | CH32RV_SPI_CTLR1_SSI)) |
                      (uint16_t)(br_for(spi_pclk(_base), clock_hz) << CH32RV_SPI_CTLR1_BR_SHIFT);
     if (mode & 0x1u) {
         ctlr1 |= CH32RV_SPI_CTLR1_CPHA;
@@ -469,7 +489,8 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
      * CTLR1 of 0 makes the peripheral a slave with CPOL 0 for that moment,
      * and SCK left its idle level - a pulse a device could take for a clock. */
     CH32RV_SPI_CTLR1(_base) = (uint16_t)(now & ~CH32RV_SPI_CTLR1_SPE);
-    CH32RV_SPI_CTLR2(_base) = 0;
+    /* setHwCs(): NSS an output, low while SPE is on (SSOE) */
+    CH32RV_SPI_CTLR2(_base) = (ch32rv_spi_hwcs && _hwcs) ? CH32RV_SPI_CTLR2_SSOE : 0u;
     CH32RV_SPI_CTLR1(_base) = ctlr1;
     CH32RV_SPI_CTLR1(_base) = (uint16_t)(ctlr1 | CH32RV_SPI_CTLR1_SPE);
 }
@@ -504,6 +525,8 @@ void CH32RVSPIClass::endTransaction(void)
     if (_periph == 1 || _periph == 2) {
         CH32RV_SPI_CTLR1(_base) = 0;
         _periph = 3;
+    } else if (ch32rv_spi_hwcs && _hwcs && _started && !_periph) {
+        ch32rv_spi_hwcs(*this);      /* setHwCs(): NSS high (SPIHwCs.cpp) */
     }
 }
 

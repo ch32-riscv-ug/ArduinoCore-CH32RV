@@ -225,6 +225,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 
 #define CH32RV_SPI_CTLR2_RXDMAEN   (1u << 0)
 #define CH32RV_SPI_CTLR2_TXDMAEN   (1u << 1)
+#define CH32RV_SPI_CTLR2_SSOE      (1u << 2)
 
 #define CH32RV_SPI_STATR_RXNE      (1u << 0)
 #define CH32RV_SPI_STATR_TXE       (1u << 1)
