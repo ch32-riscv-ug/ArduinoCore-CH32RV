@@ -9,12 +9,14 @@ only come back from an image that was written, checked, installed and started. T
 installed (bytes that are not an image, a download abandoned half way, a UF2 for another family) and check the old
 digits are still there. A peer, not the PC: these are the update protocols, not a class driver's transfers.
 
-The raw .bin drive ends with an eject (START STOP UNIT, LoEj): the Pico peer (TinyUSB) sends one, EspUsbHost has no
-public SCSI command for it - that part is left out there (recorded). The UF2 refusal comes last: its stalled write
+The raw .bin drive ends with an eject (START STOP UNIT, LoEj): the Pico peer (TinyUSB) and the CH32RV peer
+(CH32RVUsbHost's mscEject()) send one, EspUsbHost has no public SCSI command for it - that part is left out there
+(recorded). The UF2 refusal comes last: its stalled write
 leaves the peer's drive unusable (no reset recovery in either host stack).
 
 Writes the DUT's program flash several times: the runner builds it with CH32RV_BOOT_HOLD_MS (the case's notes).
-The image must fit the staging area the DUT reports (about the flash less the sketch), and the peer's buffer (96 KiB).
+The image must fit the staging area the DUT reports (about the flash less the sketch), and the peer's buffer (fwclr
+answers its size: 96 KiB on the Pico and the ESP32s, what the RAM allows on a CH32RV peer).
 """
 import pathlib
 import re
@@ -31,8 +33,8 @@ TAG = b"CH32GEN:"
 DFU_IDLE, DFU_DNLOAD_IDLE, DFU_MANIFEST, DFU_ERROR = 2, 5, 7, 10
 ERR_WRITE = 3
 UF2_FAMILY_ERROR = 30
-PEER_BUFFER = 96 * 1024
 CHUNK = 512                        # bytes a fwput line: 1024 hex digits, under the peers' 1200-character lines
+# The Pico's console (RTT down through the probe) takes a line in 6-11 s (2026-11-18): fwput waits up to 30 s.
 
 
 def fw(dut, timeout=15):
@@ -59,9 +61,9 @@ def with_generation(image, generation):
 
 def load(peer, data):
     """The peer's buffer holds `data` (fwclr, then fwput lines)."""
-    command(peer, "fwclr", rb"FWCLR")
+    command(peer, "fwclr", rb"FWCLR \d+")
     for at in range(0, len(data), CHUNK):
-        m = command(peer, f"fwput {at} {data[at:at + CHUNK].hex()}", rb"FWPUT (\d) (\d+)")
+        m = command(peer, f"fwput {at} {data[at:at + CHUNK].hex()}", rb"FWPUT (\d) (\d+)", timeout=30)
         assert m.group(1) == b"1", f"the peer did not take the bytes at {at}"
     assert int(m.group(2)) == len(data)
 
@@ -115,8 +117,10 @@ def test_usb_peer_firmware(dut, peers, record_property):
     record_property("staging_bytes", first["capacity"])
     if len(image) > first["capacity"]:
         pytest.skip(f"the image ({len(image)} B) does not fit the staging area ({first['capacity']} B) on this part")
-    if len(image) + 512 > PEER_BUFFER:
-        pytest.skip(f"the image ({len(image)} B) does not fit the peer's buffer ({PEER_BUFFER} B)")
+    peer_buffer = int(command(peer, "fwclr", rb"FWCLR (\d+)").group(1))
+    record_property("peer_buffer", peer_buffer)
+    if len(image) + 512 > peer_buffer:
+        pytest.skip(f"the image ({len(image)} B) does not fit the peer's buffer ({peer_buffer} B)")
     assert image.count(TAG) == 1
     m = command(peer, "dfuinfo", rb"DFUINFO (-?\d+) (\d+)")
     itf, transfer = int(m.group(1)), int(m.group(2))
@@ -160,8 +164,9 @@ def test_usb_peer_firmware(dut, peers, record_property):
     record_property("uf2_s", round(time.monotonic() - started, 3))
     assert after["generation"] == generation, "the UF2 image is not the one running"
 
-    # usb.peer-raw-drive: the .bin in order, ended by the host's eject (START STOP UNIT, LoEj) - the Pico peer only.
-    if peer.kind == "pico":
+    # usb.peer-raw-drive: the .bin in order, ended by the host's eject (START STOP UNIT, LoEj) - the Pico and CH32RV
+    # peers (EspUsbHost has no eject).
+    if peer.kind in ("pico", "ch32rv"):
         generation = set_generation(peer, image)
         pad = -len(image) % 512
         if pad:

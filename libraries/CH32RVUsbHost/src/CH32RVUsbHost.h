@@ -545,6 +545,9 @@ public:
     bool mscSelectLun(uint8_t lun, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     bool mscTestUnitReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool mscWaitReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t readyTimeoutMs = 5000);
+    /* START STOP UNIT with LoEj: the medium is ejected (a drive whose eject
+     * ends a write - a firmware-update disk - acts on it). */
+    bool mscEject(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool mscCapacity(uint32_t &blockCount, uint32_t &blockSize, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                      uint32_t timeoutMs = 5000);
     bool mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &info,

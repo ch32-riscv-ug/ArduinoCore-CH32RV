@@ -1060,7 +1060,7 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "ccid")) cmdCcid();
   else if (!strcmp(cmd, "apdu")) cmdApdu(arg);
   else if (!strcmp(cmd, "dfu")) cmdDfu();
-  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; rtt.println("P FWCLR"); }
+  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; say("P FWCLR %u\n", (unsigned)sizeof fwImage); }
   else if (!strcmp(cmd, "fwput")) cmdFwPut(arg);
   else if (!strcmp(cmd, "dfuinfo")) cmdDfuInfo();
   else if (!strcmp(cmd, "dfudn")) cmdDfuDn(arg);

@@ -282,7 +282,9 @@ Go `mscWaitReady()` -> `mscInquiry()` / `mscCapacity()` -> `mscReadBlocks()` /
 does not always have 512-byte sectors, so read the capacity.
 `mscRequestSense()` gives the SCSI state and `mscSelectLun()` picks the LUN.
 A reader with no medium in it is mounted without a capacity after a few
-TEST UNIT READY tries; `mscWaitReady()` waits longer. There are no file
+TEST UNIT READY tries; `mscWaitReady()` waits longer. `mscEject()` sends
+START STOP UNIT with LoEj (a firmware-update drive takes it as the end of the
+image). There are no file
 systems, file names or mounting. Before adding writes, be clear who owns the
 medium, so as not to break its partitions or FAT.
 

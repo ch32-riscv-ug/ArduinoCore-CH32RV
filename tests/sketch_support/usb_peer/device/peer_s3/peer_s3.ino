@@ -707,7 +707,7 @@ static void run(char *cmd)
     cmdVend(arg);
   }
   else if (!strcmp(cmd, "hididle")) cmdHidIdle(arg);
-  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; Serial.println("S3 FWCLR"); }
+  else if (!strcmp(cmd, "fwclr")) { fwLength = 0; Serial.printf("S3 FWCLR %u\n", (unsigned)sizeof fwImage); }
   else if (!strcmp(cmd, "fwput")) cmdFwPut(arg);
   else if (!strcmp(cmd, "dfuinfo")) cmdDfuInfo();
   else if (!strcmp(cmd, "dfudn")) cmdDfuDn(arg);

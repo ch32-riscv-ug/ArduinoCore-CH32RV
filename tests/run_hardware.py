@@ -170,6 +170,7 @@ CH32RV_PEERS = {
     "usb-peer-classes": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-fs": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-firmware": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_ch32rv",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_ch32rv",

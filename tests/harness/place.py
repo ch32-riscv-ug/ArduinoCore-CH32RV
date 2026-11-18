@@ -57,7 +57,6 @@ CH32RV_PEER_LACKS = {
     "usb-peer-media": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no isochronous transfers (the speaker, "
                       "microphone and camera streams)",
     "usb-peer-net": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no USB networking (CDC-NCM)",
-    "usb-peer-firmware": "skip: the CH32RV peer's sketch has no firmware-update commands yet (fwput, dfudn, mscw)",
 }
 # The speed a controller of the record's usb runs at (USB 2.0: 1 full, 2 high; 3 SuperSpeed), as CH32RVUsbHost numbers it.
 USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 2, "super_speed": 3}

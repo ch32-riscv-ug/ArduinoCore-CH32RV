@@ -287,7 +287,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した
   （未リリース）。リリースが出たら上げ、X035 の softwire を流し直す。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
-  流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。
+  流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。2026-11-18 にログを
+  読んだ: キー 47 の押下は DUT に届き、離した報告を Pico が 2 秒送れなかった（DUT のホストが割り込み IN を取りに来ない）。
+  直前に LED の SET_REPORT。同じ日に 3 回流して 3 回とも通った（core-20261117T235358Z-cc0546ec ほか 2 つ、USBFS の HCD の
+  suspend の変更の後）。次に出たら DUT の割り込み IN の再開を追う。
 - [ ] USB の未実装（docs/unimplemented.ja.md の 6・7 章）のうち、試験の相手に要るもの: デバイスの LS（FS の DCD の低速）、
   USBSS デバイスのストリーム（Mult>0 は 2026-11-17 に実装、ビルドのみ）、LPM（L1）。V103 と第 1 世代 USBHS のホスト、HS ハブの先の split、H41x の USBHS の
   ホストは 2026-11-17 に実装した（ビルドのみ）。配線待ち: V103 の USB の口 → Pico、V307 の USBHS（HSE の板）→ P4、V407 の

@@ -34,6 +34,13 @@
  *   cdcn <idx> <hex>     C CDCN <idx> <hex back within 2 s>   (any CDC port by its index)
  *   cdcline <idx> <baud> <bits> <parity> <stop>   C CDCLINE <ok>   (SET_LINE_CODING)
  *   cdcctl <idx> <dtr> <rts>                      C CDCCTL <ok>    (SET_CONTROL_LINE_STATE)
+ *   fwclr / fwput <at> <hex>   C FWCLR <buffer bytes> / C FWPUT <ok> <length>   (the image to hand over)
+ *   dfuinfo              C DFUINFO <DFU-mode interface or -1> <wTransferSize>
+ *   dfudn <n> <at> <len> / dfust / dfuclr / dfuabort   C DFUDN|DFUST|DFUCLR|DFUABORT <ok> <bStatus> <bState>
+ *   dfuall               C DFUALL <ok> <blocks> <bStatus> <bState>   (the whole buffer, then the empty DNLOAD)
+ *   uf2w <lba> <family hex> <count> <reverse>   C UF2W <ok> <written> <total>
+ *   rawall <lba>         C RAWALL <ok>       (the buffer as sectors)
+ *   mscej                C MSCEJ <ok> <CH32RVUsbHostError>   (mscEject())
  *
  * Events: C CONNECTED <addr> <vid> <pid> <product> / C DISCONNECTED <addr> <vid> <pid> / C KEY <p|r> <keycode>
  * <ascii> / C HIDVIN <hex> / C MIDI <cin> <status> <d1> <d2> / C NOTE <text> / C HIDIN <interface> <report hex, ID
@@ -458,8 +465,173 @@ static void cmdDfu()
     say("C DFU 1 %u\n", ok || usb.lastError() != CH32RVUsbHostError::Stalled ? 1 : 0);
 }
 
+/* ------------------------------------------------------------ firmware update (usb-peer-firmware)
+ * The test host sends an image in hex lines (fwclr, fwput) and this board hands it to the DUT: by DFU 1.1 on its
+ * DFU-mode interface (class 0xFE / 1 / protocol 2), or as sectors on its drive (WRITE(10)), the raw drive ended by
+ * an eject (mscEject(): START STOP UNIT, LoEj). The buffer is what the board's RAM allows (96 KiB on H41x / V4x7 /
+ * X3x5, 32 KiB on V30x / V205 / V208, none to speak of below); fwclr answers its size. */
+#if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415) || \
+    defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || defined(CH32RV_SERIES_CH32X305) ||  \
+    defined(CH32RV_SERIES_CH32X315)
+static uint8_t fwImage[96 * 1024];
+#elif defined(CH32RV_SERIES_CH32V303) || defined(CH32RV_SERIES_CH32V305) || defined(CH32RV_SERIES_CH32V307) || \
+    defined(CH32RV_SERIES_CH32V317) || defined(CH32RV_SERIES_CH32V205) || defined(CH32RV_SERIES_CH32V208)
+static uint8_t fwImage[32 * 1024];
+#else
+static uint8_t fwImage[512];   /* 20 KB of RAM or less: no image fits, fwclr says so and the test skips */
+#endif
+static uint32_t fwLength;
+
+static void cmdFwPut(const char *arg)
+{
+    char *hex = nullptr;
+    const uint32_t at = strtoul(arg, &hex, 10);
+    while (hex && *hex == ' ') hex++;
+    const size_t n = at < sizeof fwImage ? parseHex(hex ? hex : "", fwImage + at, sizeof fwImage - at) : 0;
+    if (n && at + n > fwLength) fwLength = at + n;
+    say("C FWPUT %u %lu\n", n ? 1 : 0, (unsigned long)fwLength);
+}
+
+static bool control(uint8_t type, uint8_t request, uint16_t value, uint16_t index, uint8_t *data, size_t length,
+                    size_t *actual = nullptr, uint32_t timeout = 5000)
+{
+    return usb.vendorControlTransfer(type, request, value, index, data, length, actual, dev.address, timeout);
+}
+
+/* The DFU-mode interface and its functional descriptor's wTransferSize, from the configuration descriptor. */
+static int dfuMode(uint16_t *transfer)
+{
+    static uint8_t cfg[512];
+    size_t got = 0;
+    *transfer = 0;
+    if (!control(0x80, 0x06, 0x0200, 0, cfg, 9, &got) || got < 4) return -1;
+    size_t total = (size_t)(cfg[2] | cfg[3] << 8);
+    if (total > sizeof cfg) total = sizeof cfg;
+    if (!control(0x80, 0x06, 0x0200, 0, cfg, total, &got)) return -1;
+    int found = -1;
+    bool in = false;
+    for (size_t at = 0; at + 2 <= got && cfg[at]; at += cfg[at]) {
+        const uint8_t *d = cfg + at;
+        if (d[1] == 0x04 && d[0] >= 9) {
+            in = d[3] == 0 && d[5] == 0xFE && d[6] == 0x01 && d[7] == 0x02;
+            if (in) found = d[2];
+        } else if (in && d[1] == 0x21 && d[0] >= 7) {
+            *transfer = (uint16_t)(d[5] | d[6] << 8);
+            break;
+        }
+    }
+    return found;
+}
+
+/* GETSTATUS: bStatus, bState; waits the bwPollTimeout it asks for. false when the request failed. */
+static bool dfuStatus(int itf, uint8_t *status, uint8_t *state)
+{
+    static uint8_t st[6];
+    size_t actual = 0;
+    if (!control(0xA1, 0x03, 0, (uint16_t)itf, st, 6, &actual) || actual != 6) return false;
+    *status = st[0];
+    *state = st[4];
+    pause((uint32_t)st[1] | (uint32_t)st[2] << 8 | (uint32_t)st[3] << 16);
+    return true;
+}
+
+static void cmdDfuInfo()
+{
+    uint16_t transfer = 0;
+    const int itf = dfuMode(&transfer);
+    say("C DFUINFO %d %u\n", itf, transfer);
+}
+
+static void cmdDfuDn(const char *arg)
+{
+    unsigned block = 0;
+    unsigned long at = 0, len = 0;
+    sscanf(arg, "%u %lu %lu", &block, &at, &len);
+    uint16_t transfer = 0;
+    const int itf = dfuMode(&transfer);
+    uint8_t status = 0xFF, state = 0xFF;
+    bool ok = itf >= 0 && at + len <= sizeof fwImage &&
+              control(0x21, 0x01, (uint16_t)block, (uint16_t)itf, len ? fwImage + at : nullptr, len);
+    ok = ok && dfuStatus(itf, &status, &state);
+    say("C DFUDN %u %u %u\n", ok ? 1 : 0, status, state);
+}
+
+static void cmdDfuSimple(const char *what)
+{
+    uint16_t transfer = 0;
+    const int itf = dfuMode(&transfer);
+    uint8_t status = 0xFF, state = 0xFF;
+    bool ok = itf >= 0;
+    if (ok && !strcmp(what, "st")) ok = dfuStatus(itf, &status, &state);
+    else if (ok && !strcmp(what, "clr")) ok = control(0x21, 0x04, 0, (uint16_t)itf, nullptr, 0);
+    else if (ok) ok = control(0x21, 0x06, 0, (uint16_t)itf, nullptr, 0);   /* abort */
+    say("C DFU%s %u %u %u\n", !strcmp(what, "st") ? "ST" : !strcmp(what, "clr") ? "CLR" : "ABORT", ok ? 1 : 0,
+        status, state);
+}
+
+/* The whole buffer by DFU: wTransferSize blocks, then the zero-length DNLOAD; stops at the first block whose
+ * GETSTATUS is not OK / dfuDNLOAD-IDLE. */
+static void cmdDfuAll()
+{
+    uint16_t transfer = 0;
+    const int itf = dfuMode(&transfer);
+    uint8_t status = 0xFF, state = 0xFF;
+    unsigned blocks = 0;
+    bool ok = itf >= 0 && transfer;
+    for (uint32_t at = 0; ok && at < fwLength; at += transfer, blocks++) {
+        const uint32_t n = fwLength - at < transfer ? fwLength - at : transfer;
+        ok = control(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, fwImage + at, n) &&
+             dfuStatus(itf, &status, &state) && status == 0 && state == 5;
+    }
+    if (ok) ok = control(0x21, 0x01, (uint16_t)blocks, (uint16_t)itf, nullptr, 0) && dfuStatus(itf, &status, &state);
+    say("C DFUALL %u %u %u %u\n", ok ? 1 : 0, blocks, status, state);
+}
+
+/* UF2 blocks made here from the buffer's raw image (uf2conv.py's layout: 256 bytes a block at 0x08000000 + n x
+ * 256, the family in the header, the last padded with 0xFF), written one a sector from `lba`: `count` of them (0:
+ * all), last first when `reverse`. Stops at the first refused one. */
+static void cmdUf2W(const char *arg)
+{
+    unsigned long lba = 0, family = 0, count = 0, reverse = 0;
+    sscanf(arg, "%lu %lx %lu %lu", &lba, &family, &count, &reverse);
+    const uint32_t total = (fwLength + 255u) / 256u;
+    if (!count || count > total) count = total;
+    static uint8_t b[512];
+    unsigned written = 0;
+    bool ok = total > 0;
+    for (uint32_t k = 0; ok && k < count; k++) {
+        const uint32_t n = reverse ? total - 1u - k : k;
+        memset(b, 0, sizeof b);
+        const uint32_t head[8] = {0x0A324655u, 0x9E5D5157u, 0x00002000u, 0x08000000u + n * 256u, 256u, n, total,
+                                  (uint32_t)family};
+        memcpy(b, head, sizeof head);
+        memset(b + 32, 0xFF, 256);
+        const uint32_t at = n * 256u, left = fwLength - at;
+        memcpy(b + 32, fwImage + at, left < 256u ? left : 256u);
+        const uint32_t tail = 0x0AB16F30u;
+        memcpy(b + 508, &tail, 4);
+        ok = usb.mscWriteBlocks((uint32_t)(lba + k), b, 1, dev.address);
+        if (ok) written++;
+    }
+    say("C UF2W %u %u %lu\n", ok ? 1 : 0, written, (unsigned long)total);
+}
+
+/* The buffer as it is, padded to whole sectors with 0xFF, from `lba` in 4 KiB writes. */
+static void cmdRawAll(const char *arg)
+{
+    const uint32_t lba = strtoul(arg, nullptr, 10);
+    const uint32_t length = (fwLength + 511u) & ~511u;
+    bool ok = length && length <= sizeof fwImage;
+    if (ok) memset(fwImage + fwLength, 0xFF, length - fwLength);
+    for (uint32_t at = 0; ok && at < length; at += 4096u) {
+        const uint32_t n = length - at < 4096u ? length - at : 4096u;
+        ok = usb.mscWriteBlocks(lba + at / 512u, fwImage + at, n / 512u, dev.address);
+    }
+    say("C RAWALL %u\n", ok ? 1 : 0);
+}
+
 /* ------------------------------------------------------------ commands */
-static char line[400];
+static char line[1200];   /* fwput: 512 bytes of hex a line */
 static size_t used;
 
 static void run(char *cmd)
@@ -468,6 +640,19 @@ static void run(char *cmd)
     if (arg) *arg++ = '\0';
     else arg = cmd + strlen(cmd);
     if (!strcmp(cmd, "ping")) SerialDMSeq.println("C PONG");
+    else if (!strcmp(cmd, "fwclr")) {
+        fwLength = 0;
+        say("C FWCLR %u\n", (unsigned)sizeof fwImage);
+    } else if (!strcmp(cmd, "fwput")) cmdFwPut(arg);
+    else if (!strcmp(cmd, "dfuinfo")) cmdDfuInfo();
+    else if (!strcmp(cmd, "dfudn")) cmdDfuDn(arg);
+    else if (!strcmp(cmd, "dfust")) cmdDfuSimple("st");
+    else if (!strcmp(cmd, "dfuclr")) cmdDfuSimple("clr");
+    else if (!strcmp(cmd, "dfuabort")) cmdDfuSimple("abort");
+    else if (!strcmp(cmd, "dfuall")) cmdDfuAll();
+    else if (!strcmp(cmd, "uf2w")) cmdUf2W(arg);
+    else if (!strcmp(cmd, "rawall")) cmdRawAll(arg);
+    else if (!strcmp(cmd, "mscej")) say("C MSCEJ %u %u\n", usb.mscEject(dev.address) ? 1 : 0, (unsigned)usb.lastError());
     else if (!strcmp(cmd, "dev")) cmdDev();
     else if (!strcmp(cmd, "cdc")) cmdCdc(arg);
     else if (!strcmp(cmd, "cdcbig")) cmdCdcBig(strtoul(arg, nullptr, 10));

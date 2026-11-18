@@ -229,6 +229,7 @@ program/pressure/pitch bend/SysEx の helper を使えます。channel は0始�
 必要な byte 数は block count × block size です。媒体が512-byte sectorとは限らないので容量情報を確認します。
 `mscRequestSense()` で SCSI の状態、`mscSelectLun()` で対象 LUN を選べます。
 媒体の入っていないリーダーは、TEST UNIT READY を数回試したあと容量無しでマウントされます。`mscWaitReady()` で長く待てます。
+`mscEject()` は LoEj 付きの START STOP UNIT を送ります（ファームウェア更新のドライブは、これを書き込みの終わりと受け取ります）。
 filesystem、ファイル名、mount は扱いません。書き込みを追加する場合は、partition/FAT等を壊さないよう媒体の所有者を明確にします。
 
 ### Vendor bulk と CCID
