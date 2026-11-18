@@ -14,6 +14,19 @@
 一覧と優先の案・試験の種類は [docs/unimplemented.ja.md](docs/unimplemented.ja.md)（184 行: 優先 1 が 47、2 が 126、範囲の判断が
 10、除外 1）。確かめる機材が無いものも先に実装し、試験と配線の案を用意して「配線待ち」にする。
 
+- [x] 2026-11-18 ユーザーの優先: HTTP / MQTT（外部ライブラリでよい）、USB ホストの MSC のマウント、LSE、SPI の DMA、有名な
+  画像ライブラリが使えるか。CAN は優先低め。全部入れた: 画像ライブラリ（Adafruit GFX + ST77xx / ILI9341、SSD1306、U8g2、
+  LovyanGFX、TFT_eSPI、LVGL）のビルドを通すため A0〜 / SDA / MOSI などを定数に、wiring_private.h、Arduino.h に ltoa・<cstdlib>・
+  <initializer_list>（f663eb77）。SPI のバッファ転送の CPU ループと transferAsync（DMA、d7ea1a51、spi::test_spi_block）。LSE
+  （RTC Clock メニュー、7b313e9a）。CH32RVUsbHostMscFS（0548a945、usb-peer-host-fs）。eth-libs（PubSubClient など、V407 / V208）。
+- [ ] Adafruit NeoPixel は `ARDUINO_ARCH_CH32RV` の送信コードが無く `#error Architecture not supported`。動かすには Adafruit への
+  寄稿（外に出す作業なのでユーザーに聞く）。
+- [ ] FS の FS_SMALL_FLASH は系列で決めていて、64 KB の品（L103、V103、V203C8 など）は大きい設定（長い名前・exFAT・format）に
+  なる。usb_peer_host.ino の USB_HOST_FS 版が L103 で 13.6 KB はみ出す。品の Flash の大きさで決めるかを決める。
+- [ ] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。X305 / X315
+  の LSE（BDCTLR が無く RTC の CTLRL に RTCSEL）は未対応。
+- [ ] SoftSPI: H417 の読み取りが 1 ビットずれる（spi contract・block、2026-11-14 から）。V003 の softspi の test_spi_peripheral が
+  1 ビットずれる。どちらも 2026-11-18 の SPI の変更より前から。
 - [ ] 優先の案をユーザーと決める。範囲の判断が要るもの（RTOS の port、EVT / SPL 互換、ベンダ IDE 互換、CH32F、無線 SoC
   を BLE の除外に含めるか、汎用ドライバの同梱、EVT のバイナリのライブラリ相当）はユーザーに聞く。
 - [x] 文書の「対象外」「不要そう」「入れない」「対応しない」を未実装に直す（2026-11-18: network-stack、upload-routes、oep-workflow、
