@@ -213,8 +213,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   1 サンプル前に変わって見え、変化から逆の CPHA と読んでいた）。wireskein 0.0.29 で直り、H417 の output_only・contract が通る
   （2026-11-18、core-20261118T035825Z-e13f21a7）。
 - [ ] wireskein 0.0.29 の spi slave の照合が verify.py:624 で `KeyError: 'cpol'`（V203 の test_spi_slave、0.0.28 では通った）。
-  [wireskein] に知らせた。同じ実行で H417 の test_spi_slave は、プローブ（P4X、0726efd）の取り込みが no_stage_bytes・
-  dma_overruns で止まった（前日は通った）。[oep] に知らせた。
+  [wireskein] に知らせた。（同じ実行の H417 の test_spi_slave の取り込みの落ちは、ホストの負荷（ロードアベレージ 11〜22）で
+  プローブの送り待ちがあふれたもの。流し直して spi の 4 つとも通った、core-20261118T040437Z-78f31b21。）
 - [x] **V103 の RTC のアラームが約 1 秒遅かった**（2026-11-18）: 2 秒が 2.6〜2.9 s。レジスタを直接読む試しで、V103 も ALRF は値の
   1 カウント後に立つ（ALR = CNT で約 1 s、+1 で約 2 s）こと、立った直後の CNT はまだ ALR の値を読むことが分かった。ほかの系列と
   同じく 1 引いて書き、アラームの割り込みでは常に RTC を読み直す（ch32rv_rtc_resync。休止中だけだった）。1 引いただけのときは
