@@ -10,7 +10,8 @@
 - 「足す端子」は条件ごとの最小の候補で、ほかの条件の候補と重なるものは 1 本で両方を満たします。台ごとに
   重ねずにまとめた一覧が先頭の「足す線の一覧」です。
 - デバッグ（2 線の系列は SWDIO・SWCLK、V003 は SWIO）・リセット（NRST）・コンソールの線は、役割のラベル
-  （`.swdio@<端子>` など）で付いていれば済とします（NRST は端子の書かれていない `.nrst` でも）。
+  （`.swdio@<端子>` など）で付いていれば済とします（NRST は端子の書かれていない `.nrst` でも）。2 線の系列でも
+  1 線（`.swio@`）で付いていれば済です（V006・V205・H417 は OEP から 2 線で接続できず 1 線、2026-11-19）。
 - OPA・コンパレータ・CAN のループバックは DUT の自己試験なので線は要りません（端子が触らない端子でなければ動く）。
 - 1 台の P4 で約 16 本が目安（BENCH.ja.md §5）。足りないときは、上の行（多くの試験が使う条件）から引きます。
 
@@ -20,23 +21,22 @@
 （役割の付く線はデバッグ・リセット・コンソールだけ。ほかは普通の線）。
 
 「ラベルを直す線」は、線はもう引いてあって役割のラベル（`.swclk@` など）が付いていないものです。
-いまの 1 線のデバッグ（`.swio@`）は、2 線の系列では SWDIO として数えません（RVSWD の 2 本を引く）。
 
 | 台 | 足す線 | ラベルを直す線 |
 |---|---|---|
 | CH32V003F4U6 | 0 本: なし | なし |
 | CH32V003F4P6 | 0 本: なし | なし |
-| CH32V006K8U6 | 0 本: なし | `v006k8u6.swclk@pb3`, `v006k8u6.swdio@pd1` |
+| CH32V006K8U6 | 0 本: なし | なし |
 | CH32V103R8T6 | 1 本: `v103r8t6-evt@pa8` | なし |
 | CH32V203C8T6 | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
-| CH32V205RCT6 | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | `v205rct6-pico.swdio@pa13`, `v205rct6-pico.swclk@pa14` |
+| CH32V205RCT6 | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
 | CH32V208WBU6 | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
 | CH32V307VCT6 | 25 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
-| CH32V407WEU6 | 21 本: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4.swdio@pa13`, `v407weu6-p4.swclk@pa14`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst` | なし |
+| CH32V407WEU6 | 19 本: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst` | なし |
 | CH32L103C8T6 | 0 本: なし | なし |
 | CH32X035C8T6 | 1 本: `x035c8t6-pico@pa13` | なし |
 | CH32X315MCU6 | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
-| CH32H417QEU6 | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | `h417qeu6-pico.swclk@pb8`, `h417qeu6-pico.swdio@pb9` |
+| CH32H417QEU6 | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | なし |
 
 ## CH32V003F4U6（CH32V003）
 
@@ -103,11 +103,10 @@
 - コンソール（rx / tx）: PD5, PD6
 - 触らない端子: PA1, PA2, PA7, PB3, PD1
 - 足す線（0 本、端子順）: なし
-- ラベルを直す線: `v006k8u6.swclk@pb3`, `v006k8u6.swdio@pd1`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
-| デバッグ（SWDIO・SWCLK） | 書き込み・デバッガ（run_hardware） | 未 | PD1 (swdio), PB3 (swclk) |
+| デバッグ（SWDIO・SWCLK）、いまは 1 線（SWIO） | 書き込み・デバッガ（run_hardware） | 済 |  |
 | リセット（NRST） | 書き込み、periph（リセットの理由） | 済 |  |
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 済 |  |
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |
@@ -191,11 +190,10 @@
 - コンソール（rx / tx）: PB6, PB7
 - 触らない端子: PA0, PA1, PA11, PA12, PA13, PA14, PB6, PB7, PC14, PC15
 - 足す線（6 本、端子順）: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8`
-- ラベルを直す線: `v205rct6-pico.swdio@pa13`, `v205rct6-pico.swclk@pa14`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
-| デバッグ（SWDIO・SWCLK） | 書き込み・デバッガ（run_hardware） | 未 | PA13 (swdio), PA14 (swclk) |
+| デバッグ（SWDIO・SWCLK）、いまは 1 線（SWIO） | 書き込み・デバッガ（run_hardware） | 済 |  |
 | リセット（NRST） | 書き込み、periph（リセットの理由） | 済 |  |
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 済 |  |
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |
@@ -279,11 +277,11 @@
 - いまの線: なし
 - コンソール（rx / tx）: PA9, PA10（未配線: Serial の既定の端子）
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15, PE12
-- 足す線（21 本、端子順）: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4.swdio@pa13`, `v407weu6-p4.swclk@pa14`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst`
+- 足す線（19 本、端子順）: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
-| デバッグ（SWDIO・SWCLK） | 書き込み・デバッガ（run_hardware） | 未 | PA13 (swdio), PA14 (swclk) |
+| デバッグ（SWDIO・SWCLK）、いまは 1 線（SWIO） | 書き込み・デバッガ（run_hardware） | 済 |  |
 | リセット（NRST） | 書き込み、periph（リセットの理由） | 未 | NRST (nrst) |
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 未 | PA9 (rx), PA10 (tx) |
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 未 | PA0, PA1 |
@@ -399,11 +397,10 @@
 - コンソール（rx / tx）: PB14, PB15
 - 触らない端子: PA11, PA12, PB3, PB4, PB8, PB9, PC14, PC15
 - 足す線（9 本、端子順）: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8`
-- ラベルを直す線: `h417qeu6-pico.swclk@pb8`, `h417qeu6-pico.swdio@pb9`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
-| デバッグ（SWDIO・SWCLK） | 書き込み・デバッガ（run_hardware） | 未 | PB9 (swdio), PB8 (swclk) |
+| デバッグ（SWDIO・SWCLK）、いまは 1 線（SWIO） | 書き込み・デバッガ（run_hardware） | 済 |  |
 | リセット（NRST） | 書き込み、periph（リセットの理由） | 済 |  |
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 済 |  |
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |

@@ -150,7 +150,11 @@ def plan(part, labels_now, console, reserved):
              {"rx": tx, "tx": rx})):
         missing = [f"{pad} ({role})" for role, pad in roles.items() if role not in reserved and pad]
         absent = [role for role, pad in roles.items() if role not in reserved and not pad]
-        if not missing and not absent:
+        if "swdio" in roles and "swio" in reserved:
+            # A two-wire chip on one wire: where two wires would not attach (V006, V205, H417 on OEP,
+            # 2026-11-19), the probe keeps SWIO and the SWCLK pad stays a plain line.
+            out.append((cond + "、いまは 1 線（SWIO）", tests, True, [], ""))
+        elif not missing and not absent:
             out.append((cond, tests, True, [], ""))
         else:
             out.append((cond, tests, False, missing, ("端子が device-data に無い: " + ", ".join(absent)) if absent else ""))
@@ -266,7 +270,8 @@ def render(results, labels_known):
              "- 「足す端子」は条件ごとの最小の候補で、ほかの条件の候補と重なるものは 1 本で両方を満たします。台ごとに",
              "  重ねずにまとめた一覧が先頭の「足す線の一覧」です。",
              "- デバッグ（2 線の系列は SWDIO・SWCLK、V003 は SWIO）・リセット（NRST）・コンソールの線は、役割のラベル",
-             "  （`.swdio@<端子>` など）で付いていれば済とします（NRST は端子の書かれていない `.nrst` でも）。",
+             "  （`.swdio@<端子>` など）で付いていれば済とします（NRST は端子の書かれていない `.nrst` でも）。2 線の系列でも",
+             "  1 線（`.swio@`）で付いていれば済です（V006・V205・H417 は OEP から 2 線で接続できず 1 線、2026-11-19）。",
              "- OPA・コンパレータ・CAN のループバックは DUT の自己試験なので線は要りません（端子が触らない端子でなければ動く）。",
              "- 1 台の P4 で約 16 本が目安（BENCH.ja.md §5）。足りないときは、上の行（多くの試験が使う条件）から引きます。",
              ""]
@@ -288,7 +293,7 @@ def render(results, labels_known):
                "条件ごとの表の「足す端子」を台ごとに重ねずにまとめ、端子の順に並べたものです。ラベルの形で書いています",
                "（役割の付く線はデバッグ・リセット・コンソールだけ。ほかは普通の線）。", "",
                "「ラベルを直す線」は、線はもう引いてあって役割のラベル（`.swclk@` など）が付いていないものです。",
-               "いまの 1 線のデバッグ（`.swio@`）は、2 線の系列では SWDIO として数えません（RVSWD の 2 本を引く）。", "",
+               "",
                "| 台 | 足す線 | ラベルを直す線 |", "|---|---|---|"]
     sections = []
     for part, unit, port, series, now, console, keep, rows, reserved in results:
