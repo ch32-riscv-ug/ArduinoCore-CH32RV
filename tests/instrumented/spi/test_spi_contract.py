@@ -62,21 +62,32 @@ def far_from(candidates, lines, refs):
     which the probe's SPI target took for the end of the frame ([oep], 2026-11-14) - and the channels run along the
     probe's header. The probe's channel numbers do not tell what runs beside what (PD6 is channel 54, PD7 4), so first
     the DUT's pads: another port is furthest, on the same port the bits apart; then the channels."""
-    def pad_gap(a, b):
-        return 99 if a[:2].upper() != b[:2].upper() else abs(int(a[2:]) - int(b[2:]))
     return max(candidates, key=lambda p: (min(pad_gap(p, r) for r in refs),
                                           min(abs(lines[p]["channel"] - lines[r]["channel"]) for r in refs)))
 
 
+def pad_gap(a, b):
+    """How far apart two pads are on the DUT: another port is furthest, on the same port the bits apart."""
+    return 99 if a[:2].upper() != b[:2].upper() else abs(int(a[2:]) - int(b[2:]))
+
+
 def spread(lines):
-    """SoftSPI's four lines, as far apart on the probe as the labels allow (sck, miso, mosi, cs): side by side on
-    6-2's harness, CS and MISO picked up the edges of the lines next to them."""
+    """SoftSPI's four lines (sck, miso, mosi, cs), as far apart as the labels allow where it matters: an edge on a
+    line beside SCK or CS reaches it (6-2's harness: CS beside SCK split a frame in two, PD5 / PD6, 2026-11-18), so
+    SCK is put furthest from CS, then the pair furthest from MOSI; MISO, which the target drives and nobody samples
+    on an edge, takes what is left. The probe's channel numbers do not tell what runs beside what: the DUT's pads
+    first, the channels after."""
+    import itertools
     pads = sorted(lines, key=lambda p: lines[p]["channel"])
-    if len(pads) <= 4:
-        return tuple(pads[:4])
-    step = (len(pads) - 1) / 3
-    picked = [pads[round(i * step)] for i in range(4)]
-    return picked[0], picked[2], picked[1], picked[3]
+    if len(pads) < 4:
+        return tuple(pads)
+
+    def score(roles):
+        sck, miso, mosi, cs = roles
+        chan = lambda a, b: abs(lines[a]["channel"] - lines[b]["channel"])
+        return (pad_gap(sck, cs), min(pad_gap(sck, mosi), pad_gap(cs, mosi)),
+                chan(sck, cs), min(chan(sck, mosi), chan(cs, mosi)))
+    return max(itertools.permutations(pads, 4), key=score)
 
 
 def open_bus(dut, oep_host, case, record_property):
