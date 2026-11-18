@@ -240,6 +240,15 @@ compile.
   (5) on V006, V103, V203, V205, X035 and H417 (V003 ran at 2 MHz). The
   peripheral clock is assumed to be `F_CPU`.
   Changes to system or APB clock settings must preserve or update this assumption.
+- **H417's hardware I2C can put out an out-of-spec clock on weakly pulled-up
+  lines.** On the bench (2026-11-14, only the probe's 45 kΩ pull-ups, 20-100 kHz)
+  about one transaction in ten carried an SCL high of only 20-80 ns (the lows
+  around it normal, mostly on bits sending a 1; I2C's FREQ and TRISE do not
+  change it). A receiver may count it as an extra clock and take the address or
+  the data wrong (the DUT then returns 2, 3 or 5). H41x pads have no internal
+  pull-up while open-drain, so fit 2.2-4.7 kΩ external pull-ups. Whether those
+  make the short highs go away is not yet measured. SoftWire runs on the same
+  lines.
 
 ## Examples
 
