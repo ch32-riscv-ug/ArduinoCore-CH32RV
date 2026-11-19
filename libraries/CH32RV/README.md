@@ -313,7 +313,7 @@ uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
   Core = V3F the V5F stays asleep: the three IPC calls return false (the HSEM works as ever).
 - **What the V3F can use:** a function handed to the V3F runs with interrupts on, and an interrupt enabled from the
   V3F is taken there (the low 32 are each core's own, a shared one moves to the core that enables it, RM 4.7.5.45):
-  `Serial1` and the like begun on the V3F, `pinMode()` / `digitalWrite()`, `attachInterrupt()`, a timer's callback,
+  `Serial1` and the like after `begin()` on the V3F, `pinMode()` / `digitalWrite()`, `attachInterrupt()`, a timer's callback,
   `millis()` / `delay()`. Priorities are the V3F's two levels (bit 7).
 - **The rules:** a peripheral (a USART, timer, SPI, I2C, ADC, ...) is used from one core. The V5F's `Serial` (and
   `printf`, and the core's console) is the V5F's; the V3F takes another (`Serial1`, ...). A pin and an EXTI vector

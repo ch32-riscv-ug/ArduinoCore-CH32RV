@@ -14,7 +14,7 @@ UART モニタを用意します。
 
 ## API と処理の流れ
 
-`ch32rv_priority.h` が PFIC の優先度のバイトを設定します: `ch32rv_irq_set_priority(irqn, priority)`。小さいほど急ぎです。`CH32RV_IRQ_PRIORITY(level)` は割り込みのレベル（0 から `CH32RV_IRQ_PREEMPT_LEVELS - 1`。多くの系列で 2、V30x と M030 で 4、H41x の V5F で 8）のバイトです。タイマーの割り込みの番号は capability の `update_irq`、端子のものは `ch32rv_pin_irqn(pin)`、ほかは `CH32RV_IRQN_<名前>` です。コアは自分の割り込みも含めてすべて 0（一番急ぎ）のままにするので、下げた割り込み処理にはコアの割り込みが割り込みます。
+`ch32rv_priority.h` が PFIC の優先度のバイトを設定します: `ch32rv_irq_set_priority(irqn, priority)`。小さいほど急ぎです。`CH32RV_IRQ_PRIORITY(level)` は割り込みのレベル（0 から `CH32RV_IRQ_PREEMPT_LEVELS - 1`。多くの系列で 2、V30x と M030 で 4、H41x の V5F で 8）のバイトです。タイマーの割り込みの番号は capability の `update_irq`、端子のものは `ch32rv_pin_irqn(pin)`、ほかは `CH32RV_IRQN_<name>` です。コアは自分の割り込みも含めてすべて 0（一番急ぎ）のままにするので、下げた割り込み処理にはコアの割り込みが割り込みます。
 
 ## 改造するときの注意
 
