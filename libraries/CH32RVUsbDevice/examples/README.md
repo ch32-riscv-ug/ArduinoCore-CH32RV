@@ -141,6 +141,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [CompositeCdcMidi](CompositeCdcMidi/README.md) | A named CDC port and MIDI in one device, each echoing with its own back-pressure. |
 | [MSC](MSC/README.md) | An eight-KiB RAM-backed raw block device for SCSI and block-transfer checks. |
 | [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a `CONFIG.TXT` file written by the PC. |
+| [MscCdcBlocks](MscCdcBlocks/README.md) | Raw-block MSC beside a serial port that reports the read and write counts. |
 | [MSCFileSystem](MSCFileSystem/README.md) | One FAT volume (the FS library) for the sketch and a PC, handed over at eject. |
 | [MSCSdCard](MSCSdCard/README.md) | An SPI SD card exposed as USB mass storage; the PC owns the filesystem. |
 | [MediaKeys](MediaKeys/README.md) | Consumer media-key reports plus a declared System Control function. |
@@ -152,6 +153,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [SerialUSBEcho](SerialUSBEcho/README.md) | A minimal CDC ACM device using the predefined `SerialUSB`. It echoes received bytes and sends a counter once a second while the terminal is open. |
 | [SmartCardReader](SmartCardReader/README.md) | A one-slot CCID reader whose card is emulated in software; no physical card interface is needed. |
 | [USBVendor](USBVendor/README.md) | A non-HID vendor interface with bulk IN/OUT, EP0 vendor requests and WebUSB/WinUSB descriptors. |
+| [ReconfigureVendor](ReconfigureVendor/README.md) | Stops the device and starts it again with other buffer sizes. |
 | [VendorBulkPeer](VendorBulkPeer/README.md) | A lossless vendor bulk echo with a PyUSB script on the PC: partial transfers and a stalled sender. |
 | [UsbNetworkPing](UsbNetworkPing/README.md) | A CDC-NCM device answering ARP and IPv4 ping directly from Ethernet frames, without an IP stack, web server or Internet connection. |
 | [VendorHID](VendorHID/README.md) | Vendor-defined HID input, output and feature reports, distinct from the bulk-based USBVendor example. |

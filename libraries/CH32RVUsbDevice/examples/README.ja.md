@@ -160,6 +160,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [CompositeCdcMidi](CompositeCdcMidi/README.ja.md) | 名前つきの CDC と MIDI の複合機器。どちらもエコー、機能ごとに押し戻し。 |
 | [MSC](MSC/README.ja.md) | RAM を16×512 bytesの raw block device として公開します。SCSI やブロック転送の確認用です。 |
 | [MSCFatRamDisk](MSCFatRamDisk/README.ja.md) | 10 KiB の RAM に FAT12 を作り、PC が書いた `CONFIG.TXT` を取り出す例です。 |
+| [MscCdcBlocks](MscCdcBlocks/README.ja.md) | 生のブロックの MSC と、読み書きの回数を知らせるシリアルの複合機器。 |
 | [MSCFileSystem](MSCFileSystem/README.ja.md) | スケッチと PC で 1 つの FAT のボリューム（FS ライブラリ）を使い、取り外しで受け渡す例です。 |
 | [MSCSdCard](MSCSdCard/README.ja.md) | SPI の SD カードを USB MSC の媒体として PC へ公開します。ファイルシステムは PC が扱います。 |
 | [MediaKeys](MediaKeys/README.ja.md) | 音量・再生・トラック操作の Consumer Control と、System Control の宣言例です。 |
@@ -171,6 +172,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [SerialUSBEcho](SerialUSBEcho/README.ja.md) | 定義済みの `SerialUSB` だけで始める CDC ACM の最小例です。受信したバイトをそのまま返し、端末を開いている間は毎秒カウンタを送ります。 |
 | [SmartCardReader](SmartCardReader/README.ja.md) | カード自体をスケッチで模擬する1スロットの CCID リーダーです。実カードや接触型カード回路は接続しません。 |
 | [USBVendor](USBVendor/README.ja.md) | HID ではない vendor-specific interface に bulk IN/OUT と EP0 vendor request を用意します。WebUSB と WinUSB 用の descriptor も有効にします。 |
+| [ReconfigureVendor](ReconfigureVendor/README.ja.md) | 動いている途中で止め、別のバッファの大きさで始め直します。 |
 | [VendorBulkPeer](VendorBulkPeer/README.ja.md) | 失わないベンダーの bulk のエコーと PC の PyUSB のスクリプト。部分転送と送り手の詰まりを再現します。 |
 | [UsbNetworkPing](UsbNetworkPing/README.ja.md) | CDC-NCM の Ethernet フレームから ARP と IPv4 ping に応答します。IP スタックを持たず、Web サーバーやインターネット接続は提供しません。 |
 | [VendorHID](VendorHID/README.ja.md) | vendor-defined HID の Input、Output、Feature report を観察します。bulk を使う USBVendor とは別の例です。 |
