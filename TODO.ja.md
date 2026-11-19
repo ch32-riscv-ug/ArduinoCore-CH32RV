@@ -396,7 +396,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   それまで H41x では未対応を返していた（selfsys は skip）。RTC（F1 型。BDCTLR は 0x24 でビットの位置が違い、BKP のデータ
   レジスタが無いので RAM に置く）とストップ（V3F も待機中はストップ）を入れ、nano で V5F・V3F とも selfsys（RTC、200 ms の
   lightSleep）が通り、2.5 秒の lightSleep で石がストップに入ってクロックを立て直すこと、deepSleep のあとタイマーの起床で
-  再起動することを確かめた。残りは端子での起床（system の case、6-2）と DFU。
+  再起動することを確かめた。残りは端子での起床（system の case、6-2）と DFU。→ 端子での起床は、h417qeu6-pico の system::test_sleep
+  （V5F）の「lightSleep pin」が 2026-11-18 に通っていた（core-20261118T004906Z-41e5c45d、プローブが PD4 を動かして起床）。
+  残りは DFU（BOOT 域のブートローダーは USB 2.0 の口で、この台の USB は SS の線だけ: 配線待ち）。
 - [x] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
   0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。→ 2026-11-20: 今は仕組みを足さない。共有 SRAM も V5F から待ち無しで
   （docs/h417-cores-design.ja.md）、置き場で速さは変わらない。差が出るのは V3F とのバンクの取り合いだけで、測った取り合い
