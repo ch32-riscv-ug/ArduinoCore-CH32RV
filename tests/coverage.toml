@@ -107,6 +107,27 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]
 
 [[item]]
+id = "pioc-spi-tx"          # the PiocSpiTx example's program: SPI mode 0 out on IO0 (SCK) / IO1 (MOSI), CS a GPIO
+test = "pioc::test_pioc_spi_tx"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
+id = "pioc-nec-rx"          # the PiocIrNecRx example's program: NEC frames decoded from the probe's MOSI on IO0
+test = "pioc::test_pioc_nec_rx"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
+id = "pioc-onewire"         # the PiocOneWire example's program: 1-Wire reset / write / read slots, open drain on IO0
+test = "pioc::test_pioc_onewire"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"
@@ -336,6 +357,11 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pulse-in"             # pulseIn() / pulseInLong() (the software loop) against the probe's PWM, and the timeout
+test = "signals::test_pulse_in"
+scope = "series"
+
+[[item]]
 id = "ticker"               # Ticker (arduino-esp32's API) on a timer of its own
 test = "signals::test_ticker"
 scope = "series"
@@ -350,6 +376,12 @@ needs = ["TIM1"]
 [[item]]
 id = "adc"
 test = "periph::test_adc"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
+id = "adc-resolution"       # analogReadResolution() at 8 / 10 / 16 bits and the ADC's own, analogReference() a no-op
+test = "periph::test_adc_resolution"
 scope = "series"
 needs = ["ADC1"]
 
@@ -385,6 +417,11 @@ any_of = ["USBPD", "USBPD0"]
 id = "softspi"
 test = "softspi"
 scope = "once"
+
+[[item]]
+id = "shift-in-out"         # shiftOut() / shiftIn() on SoftSPI's lines, MSB and LSB first, the probe's spi-target
+test = "softspi::test_shift"
+scope = "series"
 
 [[item]]
 id = "softwire-clock"
@@ -472,6 +509,30 @@ needs = ["USBSS"]
 [[item]]
 id = "usb-ss-iso-out"       # isochronous OUT intervals of more than one burst (companion Mult 1, 2) are taken whole
 test = "usb-ss-iso::test_usb_ss_iso_out"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
+id = "usb-vendor-halt"      # an endpoint halt set by the DUT or the host, EPIPE, GET_STATUS, CLEAR_FEATURE (the PC)
+test = "usb-ss-iso::test_usb_vendor_halt"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
+id = "usb-vendor-reset"     # the host's port reset three times, back at the same speed, the bulk echo again
+test = "usb-ss-iso::test_usb_vendor_after_reset"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
+id = "usb-vendor-sizes"     # the bulk echo at 1 .. 65536 bytes (packet edges, bursts) and after a host ZLP
+test = "usb-ss-iso::test_usb_vendor_bulk_sizes"
+scope = "series"
+needs = ["USBSS"]
+
+[[item]]
+id = "usb-ss-restart"       # ten CH32RV.restart()s, each enumerated again at SuperSpeed
+test = "usb-ss-iso::test_usb_ss_enumeration_after_restart"
 scope = "series"
 needs = ["USBSS"]
 
