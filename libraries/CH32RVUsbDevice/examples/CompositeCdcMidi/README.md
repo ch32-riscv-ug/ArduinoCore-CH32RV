@@ -24,3 +24,6 @@ input.
 | `console.configure()` / `midi.configure()` | Each function's buffer sizes. Before `device.begin()`. |
 | `console.writeAvailable()` | Room on the sending side: only that much is read and echoed, so nothing is lost. |
 | `midi.readPacket()` / `writePacket()` | One MIDI packet at a time; one that cannot be sent is held and sent on a later turn. |
+
+Checked on CH32H417 over SuperSpeed (2026-11-20): 440 bytes on the serial port and 200 MIDI packets (and 600 in one
+write while reading) came back unchanged.

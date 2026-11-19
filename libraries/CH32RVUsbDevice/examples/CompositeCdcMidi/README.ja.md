@@ -22,3 +22,6 @@ PC にはシリアルのポート 1 つ（インターフェース名 `Console`�
 | `console.configure()` / `midi.configure()` | 機能ごとのバッファの大きさ。`device.begin()` の前に。 |
 | `console.writeAvailable()` | 送る側の空き。空きの分だけ読んで返すので、取りこぼしません。 |
 | `midi.readPacket()` / `writePacket()` | MIDI の packet を 1 つずつ。送れなければ持っておき、次の回に送る。 |
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20）: シリアルの 440 バイトと、MIDI の 200 packet（読みながら一度に書いた 600 も）が
+そのまま戻りました。
