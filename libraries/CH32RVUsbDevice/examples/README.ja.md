@@ -141,6 +141,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [CustomHID](CustomHID/README.ja.md) | 独自の report descriptor を渡して、8-byte Input report だけを持つ HID を作ります。 |
 | [DescriptorDump](DescriptorDump/README.ja.md) | ホストに見せている記述子（デバイス・構成・BOS・MS OS 2.0・文字列・HID）と、制御要求・バスのイベントを UART に表示します。 |
 | [UsbBringUpCheck](UsbBringUpCheck/README.ja.md) | 新しい板やケーブルで最初に動かす立ち上げの確認。始まった・列挙された・休止・ホストからの向きを分けて示し、列挙されなければ確認項目を出します。 |
+| [UsbConsole](UsbConsole/README.ja.md) | UART の端末から HID とベンダーの転送を 1 つずつ送り、ホストから来るものを全部表示します。 |
 | [FirmwareDFU](FirmwareDFU/README.ja.md) | 動いたまま DFU で新しいファームウェアを受け取り、確かめてから入れ替えます。 |
 | [FirmwareMSC](FirmwareMSC/README.ja.md) | `.uf2`（または `.bin`）をコピーすると入れ替わる USB ドライブです。 |
 | [DfuRuntime](DfuRuntime/README.ja.md) | CDC を持たない DFU runtime インターフェースで、USB から ISP への移行を試します。PA1 が Low の間は `onDetach()` が移行を拒否します。 |
