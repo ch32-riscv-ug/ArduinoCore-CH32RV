@@ -16,11 +16,11 @@
 | コマンド | すること |
 |---|---|
 | `help` / `state` | 一覧 / 列挙・休止・LED・HID の protocol・ベンダーの状態 |
-| `text <文字列>` | キー入力として送る（ホストで前に出ている窓に入る） |
+| `text <string>` | キー入力として送る（ホストで前に出ている窓に入る） |
 | `key <usage> [modifiers]` / `hold ...` / `release` | キーを 1 回押す / 押したまま / 放す（usage は HID の番号、0x04 が a） |
 | `mouse <dx> <dy> [buttons] [wheel]` / `click <1\|2\|4>` | マウスの移動 / クリック |
-| `report <id> <16 進...>` | HID の instance 0 に生の報告（ID は含めない） |
-| `vendor <16 進...>` / `vendortext <文字列>` | ベンダーの bulk IN に送る |
+| `report <id> <hex...>` | HID の instance 0 に生の報告（ID は含めない） |
+| `vendor <hex...>` / `vendortext <string>` | ベンダーの bulk IN に送る |
 
 ホストから来たものは `HOST_` で始まる行で出ます。
 

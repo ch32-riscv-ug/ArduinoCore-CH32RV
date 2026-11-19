@@ -14,7 +14,7 @@ Send text from the RTT monitor and inspect uppercase replies. Echo works without
 
 ## API and processing flow
 
-Read only available bytes and return them with `write()`. The LED uses `millis()` instead of blocking for input.
+`read()` only the bytes `available()` reports and return them with `write()`. The LED uses `millis()` instead of blocking for input.
 
 ## Adapting the example
 

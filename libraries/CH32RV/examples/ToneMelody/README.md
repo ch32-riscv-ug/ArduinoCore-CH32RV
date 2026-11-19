@@ -18,7 +18,7 @@ The scale plays once at startup. Reset to repeat. An active buzzer does not foll
 
 ## Adapting the example
 
-The delays schedule the next note. Replace them with time-based state when handling other inputs. Check [timer sharing (Japanese)](../../../../docs/timer-design.ja.md) when combining PWM or other timer users.
+The `delay()` calls schedule the next note. Replace them with time-based state when handling other inputs. Check [timer sharing (Japanese)](../../../../docs/timer-design.ja.md) when combining PWM or other timer users.
 
 ## Related documentation
 

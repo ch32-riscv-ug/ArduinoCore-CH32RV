@@ -14,7 +14,7 @@ Inspect each SPI mode result. An unconnected MISO floats and is not a valid comm
 
 ## API and processing flow
 
-Declare `SoftSPI bus(SCK, MISO, MOSI)`, call `begin()`, then use transactions and `transfer()`. As with hardware SPI, the return is the simultaneously received value.
+Declare `SoftSPI bus(SCK, MISO, MOSI)`, call `bus.begin()`, then use transactions and `transfer()`. As with hardware SPI, the return is the simultaneously received value.
 
 ## Adapting the example
 

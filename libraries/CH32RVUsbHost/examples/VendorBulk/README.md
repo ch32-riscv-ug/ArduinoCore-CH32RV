@@ -25,11 +25,11 @@ The default selects a discovered vendor interface. Knowing VID/PID does not defi
 | `onDeviceConnected()` | Flags a later open attempt, keeping class work in `loop()`. |
 | `vendorOpen(address, interfaceNumber)` | Selects and opens a vendor interface; omitted arguments select a candidate automatically. |
 | `onVendorData(callback)` | Receives IN data through `deliverEvents()`; copy data rather than retaining its pointer. |
-| `vendorWrite(buffer, length)` | Sends OUT and returns success. Check `lastErrorName()` on failure. |
+| `vendorWrite(buffer, length)` | Sends OUT and returns success as a `bool`. Check `lastErrorName()` on failure. |
 
-Callback chunks are not necessarily complete application messages. Define delimiters or length fields and assemble multiple receives. IN/OUT directions are host-relative.
+The chunks `onVendorData()` passes are not necessarily complete application messages. Define delimiters or length fields and assemble multiple receives. IN/OUT directions are host-relative.
 
-Connection events also occur for non-vendor devices. Select the intended interface and accept UART input after a successful open to avoid consuming data while disconnected. Add a retry policy for failed sends.
+Connection events also occur for non-vendor devices. Select the intended interface and accept UART input after `vendorOpen()` succeeds to avoid consuming data while disconnected. Add a retry policy for failed sends.
 
 ## Related documentation
 

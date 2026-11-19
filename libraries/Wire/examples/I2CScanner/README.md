@@ -10,7 +10,7 @@ Connect SDA, SCL and common GND. Both signals need pull-ups to a suitable voltag
 
 ## Steps and expected results
 
-The sketch scans once at startup and prints responding addresses. On a bus timeout, check wiring and pull-ups first. Reset to repeat.
+The sketch scans once at startup and prints responding addresses. On `bus timed out`, check wiring and pull-ups first. Reset to repeat.
 
 ## API and processing flow
 
