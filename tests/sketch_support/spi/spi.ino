@@ -14,6 +14,10 @@
  *                                      hex); CS high:
  *                                      XFER <bytes read, hex> <word read, hex>
  *
+ *   shift <lsb> <out hex> <n>         after `pins` (SoftSPI's pins): CS low; shiftOut() each out byte
+ *                                      (MOSI as data, SCK as clock), then shiftIn() n bytes (MISO as
+ *                                      data); CS high: SHIFT <bytes read, hex> (SHIFT NONE before `pins`)
+ *
  *   hwcs <0|1>                         SPI.setHwCs(): HWCS <1 taken / 0> <the NSS pad, 0 when none>;
  *                                      while on, xfer and blk leave CS to the SPI (the NSS pad)
  *   blk <how> <hz> <bytes>             the buffer transfers, mode 0 MSB first, CS low around one
@@ -297,6 +301,45 @@ void loop()
             softPins[2] = (int)mosi;
             SerialDMSeq.print("PINS ");
             SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+        } else if (strncmp(line, "shift ", 6) == 0) {
+            p += 6;
+            const BitOrder order = strtol(p, &p, 10) ? LSBFIRST : MSBFIRST;
+            while (*p == ' ') {
+                p++;
+            }
+            static uint8_t out[40], in[40];
+            char *count = strchr(p, ' ');
+            if (count) {
+                *count++ = '\0';                  /* unhex() would read on into the count */
+            }
+            const size_t n = unhex(p, out, sizeof out);
+            size_t k = count ? strtoul(count, nullptr, 10) : 0;
+            k = k > sizeof in ? sizeof in : k;
+            if (softPins[0] < 0) {
+                SerialDMSeq.println("SHIFT NONE");
+            } else {
+                soft.end();
+                pinMode(softPins[0], OUTPUT);
+                digitalWrite(softPins[0], LOW);
+                pinMode(softPins[2], OUTPUT);
+                pinMode(softPins[1], INPUT);
+                digitalWrite(cs, LOW);
+                delayMicroseconds(50);
+                for (size_t i = 0; i < n; i++) {
+                    shiftOut(softPins[2], softPins[0], order, out[i]);
+                }
+                for (size_t i = 0; i < k; i++) {
+                    in[i] = shiftIn(softPins[1], softPins[0], order);
+                }
+                delayMicroseconds(50);
+                digitalWrite(cs, HIGH);
+                soft.begin(softPins[0], softPins[1], softPins[2]);
+                SerialDMSeq.print("SHIFT ");
+                for (size_t i = 0; i < k; i++) {
+                    hex(in[i], 2);
+                }
+                SerialDMSeq.println();
+            }
         } else if (strncmp(line, "hwcs ", 5) == 0) {
 #if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
             const bool want = line[5] == '1';

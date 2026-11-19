@@ -17,6 +17,8 @@
  *   toned <pin> <hz> <ms>  TONE: tone(pin, hz, ms), which stops by itself
  *   notone <pin>           NOTONE (the pin as noTone() leaves it)
  *   input <pin>            INPUT: pinMode(pin, INPUT), the line let go
+ *   pulsein <pin> <state> <timeout us> <long>  PULSEIN <us>: pulseIn(), or
+ *                          pulseInLong() when long is 1 (the pin an input)
  *   level <pin> <0/1>      LEVEL: digitalWrite(pin, v)
  *   irq <pin> <mode>       IRQ <ok>: attachInterrupt, mode 1 RISING, 2 FALLING,
  *                          3 CHANGE; the count starts at 0
@@ -437,6 +439,13 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "level") && argc == 3) {
         digitalWrite(pin, atoi(argv[2]) ? HIGH : LOW);
         SerialDMSeq.println("LEVEL");
+    } else if (!strcmp(argv[0], "pulsein") && argc == 5) {
+        pinMode(pin, INPUT);
+        const uint8_t state = (uint8_t)atoi(argv[2]);
+        const unsigned long timeout = (unsigned long)atol(argv[3]);
+        const unsigned long us = atoi(argv[4]) ? pulseInLong(pin, state, timeout) : pulseIn(pin, state, timeout);
+        SerialDMSeq.print("PULSEIN ");
+        SerialDMSeq.println(us);
     } else if (!strcmp(argv[0], "input") && argc == 2) {
         pinMode(pin, INPUT);
         SerialDMSeq.println("INPUT");

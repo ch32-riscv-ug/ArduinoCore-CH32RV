@@ -1030,6 +1030,11 @@ def test_pulse_counter(dut, oep_host, record_property):
         release_pwm(oep_host, pwm)
 
 
+PULSE_IN_LOOP_US = 3.0      # a turn of pulseIn()'s loop at each of the two edges (2026-11-20: within 1 us on X035,
+                            # V205 and H417 where the DUT's rate was known)
+PULSE_IN_SPAN_S = 6.0       # the DUT's rate over 6 s: its uncertainty (half the console round trips over it) about 0.8 % (2026-11-20)
+
+
 def dut_stamp(dut):
     """(host time at the reply's midpoint, DUT micros(), the round trip in s)."""
     sent = time.monotonic()
@@ -1079,6 +1084,54 @@ def test_timer_pulse_in(dut, oep_host, record_property):
         assert abs(width - expect) <= allowed, \
             f"timerPulseIn({state}) on {line['pad']}: {width} us for {expect:.1f} +- {allowed:.1f} " \
             f"({want:.1f} us at {made_hz:.1f} Hz on the probe's clock, the DUT's clock at {rate:.5f})"
+
+
+def test_pulse_in(dut, oep_host, record_property):
+    """pulseIn() and pulseInLong() (the software loop on micros(); no timer) against the probe's PWM on the first
+    labelled line: the high and the low widths at 1 kHz 25 % (250 / 750 us) and 50 Hz 50 % (10 ms), each call's
+    timeout 100 ms, and 0 for a timeout (the line held low, a high pulse looked for with a 20 ms timeout). Judged
+    against the DUT's timebase as timerPulseIn() is (its micros() against the host's clock, over PULSE_IN_SPAN_S): off by the rate's
+    uncertainty times the width, plus 2 ticks for the two micros() readings, plus PULSE_IN_LOOP_US for the loop's
+    turn at each edge (a digitalRead() and a micros() between the edge and its reading)."""
+    from oep_client.fixture import Pwm
+    case = settings(__file__)
+    line = first_line(oep_host, case)
+    ready(dut, case)
+    record_property("line", line["pad"])
+    pwm = probe_pwm(oep_host, line)
+    got = []
+    try:
+        h0, us0, rtt0 = dut_stamp(dut)
+        for hz, duty in ((1000, 0.25), (50, 0.5)):
+            made = pwm.start(0, hz, round(duty * Pwm.FULL))
+            high = 1e6 / made.hz * made.duty / Pwm.FULL
+            for state, want in ((1, high), (0, 1e6 / made.hz - high)):
+                for long_ in (0, 1):
+                    width = int(ask(dut, f"pulsein {line['pin']} {state} 100000 {long_}", rb"PULSEIN (\d+)").group(1))
+                    got.append((hz, state, long_, want, width, made.hz))
+        pwm.start(0, 1000, 0)
+        timeouts = [int(ask(dut, f"pulsein {line['pin']} 1 20000 {long_}", rb"PULSEIN (\d+)").group(1))
+                    for long_ in (0, 1)]
+        time.sleep(max(0.0, PULSE_IN_SPAN_S - (time.monotonic() - h0)))
+        h1, us1, rtt1 = dut_stamp(dut)
+    finally:
+        release_pwm(oep_host, pwm)
+    span = h1 - h0
+    rate = ((us1 - us0) & 0xFFFFFFFF) / 1e6 / span
+    rate_unc = (rtt0 + rtt1) / 2 / span
+    record_property("dut_rate", f"{rate:.5f} +- {rate_unc:.5f} over {span:.2f} s")
+    record_property("timeouts", json.dumps(timeouts))
+    wrong = [f"{'pulseInLong' if long_ else 'pulseIn'}(HIGH) with nothing on the line gave {t}, not 0"
+             for long_, t in enumerate(timeouts) if t != 0]
+    for hz, state, long_, want, width, made_hz in got:
+        name = "pulseInLong" if long_ else "pulseIn"
+        expect = want * rate
+        allowed = expect * rate_unc + 2.0 + PULSE_IN_LOOP_US
+        record_property(f"{name}_{hz}_{state}", f"{width} us for {expect:.1f} (+- {allowed:.1f})")
+        if abs(width - expect) > allowed:
+            wrong.append(f"{name}({state}) on {line['pad']}: {width} us for {expect:.1f} +- {allowed:.1f} "
+                         f"({want:.1f} us at {made_hz:.1f} Hz on the probe's clock)")
+    assert not wrong, " | ".join(wrong)
 
 
 def test_ticker(dut, oep_host, ws_run):

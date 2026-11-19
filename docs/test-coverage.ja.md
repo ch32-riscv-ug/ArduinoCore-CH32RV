@@ -59,10 +59,10 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | pin encoding、mode、digital I/O | あり | あり・限定: core_api、gpio_probe、unit/board_layer | 未配線 pad/route、package と製品番号の差。外部駆動・観測 |
 | EXTI、attach/detach | あり | 現行: signals::test_interrupt（プローブが動かす線で RISING・FALLING・CHANGE の数）、selfcheck::test_gpio（自己検査） | 複数 line、解除後、競合、argument callback の契約 |
 | millis/micros/delay | あり | 現行: selfcheck::test_time_rate（ホストの時計と比べる）、runtime（粗い進行） | wrap 境界、clock 条件、独立基準との長時間誤差 |
-| pulseIn | あり（software） | 現行: selfsys::test_servo（Servo の幅を pulseIn で読む、自己検査）。旧: core_api の timeout | 既知入力の両極性、境界、timeout 上限。独立 pulse source |
+| pulseIn | あり（software） | 現行: signals::test_pulse_in（プローブの PWM の High と Low、1 kHz 25 %・50 Hz、DUT の時計で補正して 3 µs と 2 刻み以内、線が動かないときの timeout で 0。2026-11-20 に X035・V205・H417）、selfsys::test_servo（Servo の幅を pulseIn で読む、自己検査） | 境界（1 µs 台の幅）、timeout 上限 |
 | timerPulseIn（CH32RVTimerInput、timer の捕捉、選んで使う） | あり（2026-11-17、ビルドのみ） | 現行: signals::test_timer_pulse_in（プローブの PWM の High と Low、1 kHz・10 kHz） | timer が使用中で pulseIn に落ちる場合、timeout |
-| pulseInLong | あり | なし | pulseIn と分けた幅・timeout 契約。独立 pulse source |
-| shiftIn/shiftOut | あり | なし（旧: shiftOut の呼び出しのみ） | bit order、clock edge、既知 payload。peer/波形 |
+| pulseInLong | あり（pulseIn と同じ） | 現行: signals::test_pulse_in（pulseIn と同じ条件と判定） | 割り込みを止めた中での呼び出し（AVR の pulseInLong が要る場面） |
+| shiftIn/shiftOut | あり | 現行: softspi::test_shift（SoftSPI の線で shiftOut 3 バイトと shiftIn 3 バイト、MSB・LSB。WireSkein の spi（モード 0）とプローブの spi-target。2026-11-20 に X035・V205・H417。SCK は 0.13〜1.8 MHz） | 速い石での相手の上限（SCK は digitalWrite の速さ） |
 | heap、String、new/delete | あり | あり・限定: heap_string | OOM、断片化、境界、小 RAM、繰返し。host と小 RAM DUT |
 | Print/Stream、printf | あり | あり・限定: print_format、stdio_printf、serial_echo | overload、timeout、partial read/write、境界。host と独立 serial peer |
 | math/random 等 | あり | あり・限定: core_api | 再現性、境界値、API 契約。native/host と実機 |

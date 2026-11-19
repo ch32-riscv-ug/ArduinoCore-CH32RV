@@ -292,6 +292,65 @@ def test_spi_block(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+SHIFT_BYTES = 3
+
+
+def test_shift(dut, oep_host, ws_run, record_property):
+    """shiftOut() and shiftIn() on SoftSPI's lines (the softspi case; CS an ordinary GPIO around them): 3 random bytes
+    out (MOSI as data, SCK as clock), then 3 in from MISO, MSB first and LSB first, while the probe's spi-target
+    (mode 0, which is how both move the clock: data set while SCK is low, read while it is high) answers 6 armed
+    bytes. On the wire (WireSkein, spi, mode 0): MOSI = the bytes out, then the last bit held through shiftIn(); MISO =
+    the armed bytes; 48 clocks. What shiftIn() gave back (SHIFT) = the armed bytes 4 to 6 (bit-reversed for LSB first:
+    the target sends MSB first). The clock is as fast as digitalWrite(); its rate is not part of the contract."""
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    if case.get("case") != "softspi":
+        pytest.skip("shiftOut() / shiftIn() are judged on the softspi case's lines")
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
+    host = oep_host.host
+    target = SpiTarget(host)
+    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]))
+    wrong = []
+
+    def rev(b):
+        return int(f"{b:08b}"[::-1], 2)
+
+    def steps(wait):
+        idle = {cs: 1, sck: 0}
+        with ws_run.section(1, f"shiftOut / shiftIn {sck} {miso} {mosi} {cs}"):
+            for lsb in (0, 1):
+                out = secrets.token_bytes(SHIFT_BYTES)
+                armed = secrets.token_bytes(2 * SHIFT_BYTES)
+                last = (out[-1] >> 7) & 1 if lsb else out[-1] & 1
+                held = bytes([0xFF if last else 0x00]) * SHIFT_BYTES
+                on_wire = armed if not lsb else bytes(rev(b) for b in armed)
+                want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=0, bit_order="lsb" if lsb else "msb",
+                            mosi_bytes=(out + held).hex(), miso_bytes=on_wire.hex(), bits=16 * SHIFT_BYTES,
+                            notices={"sck_outside_cs": "ng"}),
+                        starts(idle), ends(idle)]
+                name = "LSBFIRST" if lsb else "MSBFIRST"
+                with ws_run.section(2, name, expect=want):
+                    configure_target(target, 0, 0, True)
+                    target.arm(2 * SHIFT_BYTES, armed)
+                    command = f"shift {lsb} {out.hex()} {SHIFT_BYTES}"
+                    ws_run.command(command)
+                    dut.write(command + "\n")
+                    m = wait_reply(dut, wait, rb"SHIFT (NONE|[0-9a-f]*)")
+                    ws_run.reply(m.group(0).decode())
+                    if m.group(1) != on_wire[SHIFT_BYTES:].hex().encode():
+                        wrong.append(f"{name}: shiftIn() read {m.group(1).decode()}, "
+                                     f"the target sent {on_wire[SHIFT_BYTES:].hex()} ({name})")
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("read", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
 def test_spi_hw_cs(dut, oep_host, ws_run, record_property):
     """SPI.setHwCs(true) (arduino-esp32's): the SPI drives its NSS pad itself, low from beginTransaction() to
     endTransaction(), the sketch's GPIO CS left high. On the default route's NSS pad (PIN_SPI_SS), when the probe
