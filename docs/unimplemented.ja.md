@@ -161,7 +161,7 @@
 | V407 の 2 つのデバイス・デバイスとホストの同時 | V407/V467 | 2 | 自動 | PC＋周辺機器 | docs/usb.ja.md:347, EVT CH32V407 USBHS/Dual_device・Device_Host |
 | USBSS の口の USB 2.0 側（同じコネクタの HS への切り替え） | H417/H416 | 2 | 自動 | PC、SWD を外す部品 | libraries/CH32RVUsbDevice/src/CH32RVUsbDcdUsbss.cpp:29-33, TODO:135-136 |
 | EspUsbDevice との差（複数リスナー、キュー、64 bit LBA、CCID の追加 API、Info の例、例 30 本ほど） | 全 USB 系列 | 2 | 自動 | PC、ESP32-S3 | TODO:468 |
-| USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md:94 |
+| USB デバイスのコールバックが関数ポインタ 1 枠（`std::function`・複数登録なし） | 全 | 2 | 一部済み（デバイスもホストもコールバックは `CH32RVCallback` で、取り込みのあるラムダを受ける。ホストの README とヘッダーの「関数ポインタ」の記述は古かったので直した、2026-11-19）。残り: 1 つの出来事に複数のリスナー（RAM の都合で今は 1 つ） | 自動 | 自己 | libraries/CH32RVUsbHost/README.ja.md |
 | デバイスの suspend / resume・リモートウェイクアップの試験 | 全 USB 系列 | 1（デバイスの側は実装済み、2026-11-17、ビルドのみ。ホストの側は 2026-11-18 に usb-peer-host-power で確かめた） | 自動 | 眠らせるピアのホストが要る: CH32RVUsbHost の `suspend()`（USBFS・USBHS2 は実機で確かめた）で、CH32RV どうしの対向の配線を待つ。Pico（TinyUSB）と EspUsbHost にはホストの suspend が無い。PC 相手はやめた（実転送以外はピア） | libraries/CH32RVUsbDevice/src/CH32RVUsbDevice.h:123-125 |
 
 ## USB ホスト

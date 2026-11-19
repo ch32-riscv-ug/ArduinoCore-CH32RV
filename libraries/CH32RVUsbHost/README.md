@@ -153,8 +153,9 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
 
 ## Differences from EspUsbHost
 
-- Callbacks are function pointers (no `std::function`, no lists of
-  listeners), for a chip with 20 KB of RAM.
+- Callbacks are `CH32RVCallback`: a function or a lambda capturing up to two
+  pointers (`[this]` and the like), no heap (not `std::function`); one per
+  event, no lists of listeners - for a chip with 20 KB of RAM.
 - There are no task settings. The stack runs after `loop()` and inside
   `delay()`, and the waiting APIs run it while they wait. Callbacks are called
   from `deliverEvents()`, which the sketch calls (never inside `delay()` or an

@@ -31,8 +31,9 @@
  * Not here: isochronous streaming (audio, video) and USB networking - they need
  * buffers and bandwidth this part does not have.
  *
- * Differences from EspUsbHost: callbacks are plain function pointers (no
- * std::function, no listener lists); there is no task to configure - the stack
+ * Differences from EspUsbHost: callbacks are CH32RVCallback - a function or a
+ * lambda capturing up to two pointers, no heap (not std::function) - one per
+ * event (no listener lists); there is no task to configure - the stack
  * runs from ch32rv_usb_host_task() after every loop() and inside delay(), and
  * the blocking calls below drive it while they wait. The callbacks run from
  * deliverEvents(), which the sketch calls (ch32rv_deliver.h) - never inside
