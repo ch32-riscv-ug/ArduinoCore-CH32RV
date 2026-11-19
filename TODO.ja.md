@@ -371,8 +371,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
 - [x] 利用者向けの文書（2026-11-14: README の CPU Core の行に全部あり、V3F を 2 つ目のコアとして使う案内も足した）: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
   `--core 1` と `dbg resume --all`。
-- [ ] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
-  優先して置くか（今はリンクの順）。
+- [x] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
+  優先して置くか → `CH32RV_RAMFUNC`（.highcode）が ITCM の先頭、残りはリンクの順（2026-11-20 に確かめて
+  docs/h417-cores-design.ja.md に書いた。いちばん大きな例でも ITCM 115 KB・共有 SRAM 36 KB）。
 
 ## Clang だけにする（2026-11-12 に方針を決めた）
 
