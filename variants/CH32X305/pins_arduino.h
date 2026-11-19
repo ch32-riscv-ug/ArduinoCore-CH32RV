@@ -342,6 +342,12 @@ static const uint8_t A11 = PIN_A11;
     (p) == PA1 ? 4 : \
     1)
 
+/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half
+ *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */
+#define CH32RV_ADC_DUALMOD_SHIFT 16u
+#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
+#define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u
+
 /* Pads take their output speed from GPIOx_SPEED, two bits a pad (00 10 MHz,
  * 01 50, 10 100, 11 180 MHz; ch32rv_gpio_set_speed()). */
 #define CH32RV_GPIO_SPEED_OFFSET 0x1cu

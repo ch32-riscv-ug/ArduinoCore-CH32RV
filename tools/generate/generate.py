@@ -1655,6 +1655,25 @@ def load_dac_dma(tables: pathlib.Path) -> dict:
     return out
 
 
+# ADC1 + ADC2 together (dual mode, CH32RVAdcStream): family -> {mode: DUALMOD value} from index/adc_dual_modes.csv,
+# with the field's shift. Families left out although the table has them: CH32V103 (its rows are the shared
+# reference manual's; the chip has no ADC2 block) and CH32V20x, whose parts differ in their number of ADCs and
+# device-data does not yet say which part has two.
+ADC_DUAL: dict = {}
+ADC_DUAL_UNKNOWN_PARTS = {"CH32V20x"}
+
+
+def load_adc_dual(tables: pathlib.Path) -> dict:
+    """family -> (DUALMOD's shift, {mode: value}) for the modes CH32RVAdcStream uses."""
+    out: dict = {}
+    for r in read_table(tables, "adc_dual_modes.csv", ("family", "field", "bits", "value", "mode")):
+        if r["field"] != "DUALMOD":
+            continue
+        shift = int(r["bits"].split(":")[1])
+        out.setdefault(r["family"], (shift, {}))[1][r["mode"]] = int(r["value"])
+    return out
+
+
 def load_dac_triggers(tables: pathlib.Path) -> dict:
     """family -> ([(timer, TSEL value)], software trigger's value or None) from index/dac_triggers.csv (TSEL1's;
     TSEL2 takes the same values)."""
@@ -4699,6 +4718,25 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("    1)")
         out.append("")
 
+    # --- dual ADC (ADC1 + ADC2): CH32RVAdcStream's beginSimultaneous() / beginInterleaved() ---
+    # Only where every family of the series has the modes and an ADC2 at the same base.
+    families = {r.get("family", "") for r in rows}
+    if families and all(f in ADC_DUAL and f not in ADC_DUAL_UNKNOWN_PARTS and 2 in adc_bases.get(f, {})
+                        for f in families):
+        dual = {(ADC_DUAL[f][0], ADC_DUAL[f][1].get("regular_simultaneous"),
+                 ADC_DUAL[f][1].get("fast_interleaved"), adc_bases[f][2]) for f in families}
+        if len(dual) == 1:
+            shift, simultaneous, interleaved, base2 = dual.pop()
+            if simultaneous is not None and interleaved is not None:
+                out.append("/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half")
+                out.append(" *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */")
+                if 2 not in {inst for inst, _ in extra}:
+                    out.append(f"#define CH32RV_ADC2_BASE {base2:#010x}u")
+                out.append(f"#define CH32RV_ADC_DUALMOD_SHIFT {shift}u")
+                out.append(f"#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS {simultaneous}u")
+                out.append(f"#define CH32RV_ADC_DUAL_FAST_INTERLEAVED {interleaved}u")
+                out.append("")
+
     # --- default USART pins ---
     # Only emit an entry when every part in the series that has this USART puts
     # it on the same pads; otherwise a sketch built for ANY would target a pin
@@ -5926,6 +5964,7 @@ def main() -> int:
     SPI_DMA.update(load_spi_dma(args.tables))
     DAC_DMA.update(load_dac_dma(args.tables))
     DAC_TRIGGERS.update(load_dac_triggers(args.tables))
+    ADC_DUAL.update(load_adc_dual(args.tables))
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
     gpio_speed = load_gpio_speed(args.tables)

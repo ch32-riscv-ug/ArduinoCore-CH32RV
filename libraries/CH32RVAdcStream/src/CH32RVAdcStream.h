@@ -45,6 +45,16 @@
  * Values are the converter's own (0 .. 4095, or 0 .. 1023 on 10-bit parts),
  * without analogRead()'s scaling or calibration offset.
  *
+ * Two ADCs together (dual mode; V30x, V4x7, X305 / X315, H41x - where the
+ * variant has CH32RV_ADC_DUALMOD_SHIFT; CH32RVAdcStreamDual.cpp):
+ *   - simultaneous(pins2, count) after a begin*(): ADC2 converts pins2[i] at
+ *     the same moment ADC1 converts the begun pin i, on the same trigger. A
+ *     round then holds ADC1's pin 0, ADC2's pin 0, ADC1's pin 1, ADC2's
+ *     pin 1, ...; sampleRate() still counts rounds.
+ *   - beginInterleaved(pin): ADC2 and ADC1 take turns on one pin, half a
+ *     conversion apart, free-running at the shortest sample time: twice the
+ *     fastest rate begin() reaches. readBuffer()'s half is in time order.
+ *
  * Continuous capture: the two halves alternate. A half is the sketch's from
  * readBuffer() until the next readBuffer() call; when the DMA comes back to a
  * half the sketch has not taken, it is counted in overruns() and its data is
@@ -84,6 +94,17 @@ public:
     {
         return ch32rv_adc_pin_trigger_valid(pin) && ch32rv_adc_pin_trigger_mode_ok((uint8_t)edge);
     }
+    /* ADC2 alongside ADC1 (dual mode): pins2[i] at the same moment as the
+     * begun pin i, `count` the begun pin count. After begin(), beginTimer()
+     * or beginExternal(); before startContinuous(). False without a second
+     * ADC, when a pin is no ADC2 input, or when pins2[i] is the begun pin i's
+     * channel (the two may not sample one channel at once). */
+    bool simultaneous(const pin_size_t *pins2, uint8_t count);
+    bool simultaneous(pin_size_t pin2) { return simultaneous(&pin2, 1); }
+    /* ADC2 and ADC1 in turn on `pin`, free-running, at twice begin()'s
+     * fastest rate (sampleRate()). False without a second ADC or when the pin
+     * is no input of both. */
+    bool beginInterleaved(pin_size_t pin);
     /* Stops a capture, frees the timer or the trigger pad, and gives the ADC
      * back to analogRead(). */
     void end();
@@ -141,6 +162,27 @@ private:
     /* The watchdog's settings back into CTLR1 after configure() rewrote it:
      * a weak no-op unless CH32RVAdcStreamWatchdog.cpp is linked (setWatchdog()). */
     void watchdogApply();
+    /* ADC2's part of configure(), startContinuous(), stop() and end(): a weak
+     * no-op unless CH32RVAdcStreamDual.cpp is linked (simultaneous() /
+     * beginInterleaved()). */
+    enum : uint8_t { DUAL_CONFIGURE, DUAL_START, DUAL_STOP, DUAL_END };
+    void dualControl(uint8_t op);
+    /* readBuffer()'s half put in time order where interleaving needs it:
+     * CH32RVAdcStreamDual.cpp's, a weak no-op otherwise. */
+    void dualTake(uint16_t *half);
+    enum : uint8_t { DUAL_OFF, DUAL_SIMULTANEOUS, DUAL_INTERLEAVED };
+#ifdef CH32RV_ADC_DUALMOD_SHIFT
+    uint8_t _dual = DUAL_OFF;
+    uint8_t _channels2[MAX_PINS] = {};
+#else
+    static constexpr uint8_t _dual = DUAL_OFF;   /* one ADC: every dual branch folds away */
+#endif
+    /* Values in the buffer per round: the pin count, twice it simultaneous,
+     * one interleaved (a round is then one sample). */
+    uint8_t valuesPerRound() const
+    {
+        return _dual == DUAL_SIMULTANEOUS ? (uint8_t)(_count * 2u) : _dual == DUAL_INTERLEAVED ? 1u : _count;
+    }
     int8_t _wdIndex = -2;               /* -2 off, -1 all pins, else a pin */
     uint16_t _wdLow = 0, _wdHigh = 0;
 

@@ -18,3 +18,5 @@ convert	KEYWORD2
 startTimer	KEYWORD2
 onRound	KEYWORD2
 rounds	KEYWORD2
+simultaneous	KEYWORD2
+beginInterleaved	KEYWORD2

@@ -375,6 +375,13 @@ static const uint8_t A15 = PIN_A15;
 #define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu
 #define CH32RV_ESIG_UNIID3_ADDR 0x1ffff7f0u
 
+/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half
+ *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */
+#define CH32RV_ADC2_BASE 0x40012800u
+#define CH32RV_ADC_DUALMOD_SHIFT 16u
+#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
+#define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u
+
 /* DMAMUX: which request each DMA channel takes (CH32H41x). */
 #define CH32RV_DMAMUX_BASE 0x40020800u
 

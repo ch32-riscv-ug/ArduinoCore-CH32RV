@@ -374,6 +374,13 @@ static const uint8_t A15 = PIN_A15;
 #define CH32RV_ESIG_UNIID2_ADDR 0x1ffff7ecu
 #define CH32RV_ESIG_UNIID3_ADDR 0x1ffff7f0u
 
+/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half
+ *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */
+#define CH32RV_ADC2_BASE 0x40012800u
+#define CH32RV_ADC_DUALMOD_SHIFT 16u
+#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
+#define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u
+
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */
 /* USART1: route default, on every part */

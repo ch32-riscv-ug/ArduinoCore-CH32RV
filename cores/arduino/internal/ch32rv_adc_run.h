@@ -259,6 +259,11 @@ CH32RV_ADC_RUN_STATIC void ch32rv_adc_restore(void)
     CH32RV_ADC_RSQR2 = 0;
 }
 
+#ifdef CH32RV_ADC_DUALMOD_SHIFT
+/* ADC2 up for a dual-mode run (wiring_analog.c). */
+void ch32rv_adc2_begin(void);
+#endif
+
 /* Links ch32rv_adc_run.c, whose vector calls the hooks below (an empty call:
  * it costs nothing once linked). */
 void ch32rv_adc_run_link(void);

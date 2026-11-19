@@ -68,6 +68,27 @@ ADC のハードが変換のたびに比べるので、スケッチは何もし�
 V203・V003・H417 で、プローブが線を Low / High に保ったとき、範囲の外のときだけ旗が立つことを確かめました
 （2026-11-18、periph::test_adc_watchdog）。
 
+## 2 つの ADC を一緒に（デュアルモード）
+
+```cpp
+const pin_size_t v[] = {PA1}, i[] = {PA2};
+adc.beginTimer(v, 1, 10000);       // ADC1: PA1 を 10 kHz で
+adc.simultaneous(i, 1);            // ADC2: PA2 を同じ瞬間に
+adc.startContinuous(buf, 256);     // buf: ADC1 の PA1, ADC2 の PA2, ADC1 の PA1, ...
+
+adc.beginInterleaved(PA4);         // ADC2 と ADC1 が交互に PA4 を: 1 つの ADC の 2 倍の速さ
+```
+
+ADC2 のある系列（V30x、V4x7、X305 / X315、H41x。variant の `CH32RV_ADC_DUALMOD_SHIFT`）で使えます。
+`simultaneous()` は `begin()`・`beginTimer()`・`beginExternal()` のあとに呼び、ADC2 が `pins2[i]` を ADC1 の i 番目の端子と
+同じトリガで変換します。1 回分は「ADC1 の端子 0、ADC2 の端子 0、ADC1 の端子 1、…」で、`sampleRate()` は回数です。
+同じチャネルを両方で同時に変換することはできません（RM の禁止）。X305 / X315 の ADC2 は自分の端子だけです。
+`beginInterleaved()` は 1 本の端子を最短のサンプル時間で交互に変換し、`readBuffer()` の半分は時刻の順に並びます
+（X305 / X315 は両方の ADC が届く端子が無いので false）。ウォッチドッグは ADC1 の値だけを見ます。
+注入変換・交互トリガ・遅い交互変換はまだありません。
+V407 と H417 で、DAC の 2 本の出力を読んで確かめました（2026-11-19、analog::test_adc_dual。交互変換は V407 で
+約 3.57 M 回/秒、H417 で約 7.16 M 回/秒）。`simultaneous()` / `beginInterleaved()` を呼ぶスケッチだけにリンクされます。
+
 ## 注入変換（CH32RVAdcInjected）
 
 ```cpp

@@ -91,6 +91,7 @@ bool CH32RVAdcStream::configure(uint8_t step)
     CH32RV_ADC_RSQR1 = (uint32_t)(_count - 1u) << 20;
     CH32RV_ADC_CTLR1 = (_count > 1 ? CH32RV_ADC_CTLR1_SCAN : 0u) | CH32RV_ADC_CTLR1_RESET;
     watchdogApply();
+    dualControl(DUAL_CONFIGURE);
     return true;
 }
 
@@ -119,6 +120,7 @@ void CH32RVAdcStream::end()
     if (!_begun) {
         return;
     }
+    dualControl(DUAL_END);
     ch32rv_adc_restore();
     ch32rv_adc_dma_give();
     _begun = false;
@@ -134,7 +136,9 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buf0, uint16_t *buf1, uint16_t s
 
 bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
 {
-    if (!_begun || !buffer || samples < _count || samples % _count != 0 || samples > 32767u) {
+    /* Dual: each DMA transfer is a word, ADC1's value and ADC2's. */
+    const uint8_t per = valuesPerRound(), each = _dual ? 2u : 1u;
+    if (!_begun || !buffer || samples < per || samples % per != 0 || samples % each != 0 || samples > 32767u) {
         return false;
     }
     stop();
@@ -150,10 +154,13 @@ bool CH32RVAdcStream::startContinuous(uint16_t *buffer, uint16_t samples)
     CH32RV_ADC_DMA_MUX();
     CH32RV_ADC_DMA_PADDR = (uint32_t)(uintptr_t)&CH32RV_ADC_RDATAR;
     CH32RV_ADC_DMA_MADDR = (uint32_t)(uintptr_t)buffer;
-    CH32RV_ADC_DMA_CNTR = (uint32_t)samples * 2u;
-    CH32RV_ADC_DMA_CFGR = CH32RV_ADC_DMA_MINC | CH32RV_ADC_DMA_CIRC | CH32RV_ADC_DMA_16BIT | CH32RV_ADC_DMA_PL_HI | CH32RV_ADC_DMA_HTIE | CH32RV_ADC_DMA_TCIE | CH32RV_ADC_DMA_EN;
+    CH32RV_ADC_DMA_CNTR = (uint32_t)samples * 2u / each;
+    CH32RV_ADC_DMA_CFGR = CH32RV_ADC_DMA_MINC | CH32RV_ADC_DMA_CIRC |
+                          (_dual ? CH32RV_ADC_DMA_16BIT * 2u : CH32RV_ADC_DMA_16BIT) | CH32RV_ADC_DMA_PL_HI |
+                          CH32RV_ADC_DMA_HTIE | CH32RV_ADC_DMA_TCIE | CH32RV_ADC_DMA_EN;
     _running = true;
     ch32rv_irq_enable(CH32RV_ADC_DMA_IRQN);
+    dualControl(DUAL_START);
     if (!triggerControl(TRIGGER_START)) {
         ch32rv_adc_go(ch32rv_adc_arm());
     }
@@ -169,6 +176,7 @@ void CH32RVAdcStream::stop()
     if (!triggerControl(TRIGGER_STOP)) {
         ch32rv_adc_halt();
     }
+    dualControl(DUAL_STOP);
     _running = false;
 }
 
@@ -185,7 +193,14 @@ const uint16_t *CH32RVAdcStream::readBuffer()
     }
     interrupts();
     CH32RV_ADC_DMA_DONE();
-    return take == 0xFF ? nullptr : _buf + (size_t)take * _samples;
+    if (take == 0xFF) {
+        return nullptr;
+    }
+    uint16_t *half = _buf + (size_t)take * _samples;
+    if (_dual) {
+        dualTake(half);
+    }
+    return half;
 }
 
 void CH32RVAdcStream::isr()
@@ -230,8 +245,9 @@ uint32_t CH32RVAdcStream::conversions() const
     if (pending) {
         laps++;                          /* wrapped, its interrupt still to run */
     }
-    const uint32_t written = remaining >= total ? 0u : total - remaining;
-    return (laps * total + written) / _count;
+    const uint32_t each = _dual ? 2u : 1u;
+    const uint32_t written = remaining * each >= total ? 0u : total - remaining * each;
+    return (laps * total + written) / valuesPerRound();
 }
 
 /* No trigger linked: nothing to do (CH32RVAdcStreamTrigger.cpp has the real
@@ -239,6 +255,16 @@ uint32_t CH32RVAdcStream::conversions() const
  * beginExternal()). */
 __attribute__((weak)) void CH32RVAdcStream::watchdogApply()
 {
+}
+
+__attribute__((weak)) void CH32RVAdcStream::dualControl(uint8_t op)
+{
+    (void)op;
+}
+
+__attribute__((weak)) void CH32RVAdcStream::dualTake(uint16_t *half)
+{
+    (void)half;
 }
 
 __attribute__((weak)) bool CH32RVAdcStream::triggerControl(uint8_t op)

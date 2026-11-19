@@ -91,14 +91,10 @@ static void ch32rv_adc_begin(uint8_t index)
     (void)index;
 }
 #else
-static void ch32rv_adc_begin(uint8_t index)
+/* The instance at `base` (clocked already) set up for analogRead() and
+ * calibrated: the divider, the longest sample times, software start. */
+static void ch32rv_adc_power_up(uint32_t base)
 {
-    if (CH32RV_ADC_IS_STARTED(index)) {
-        return;
-    }
-    const uint32_t base = CH32RV_ADC_BASE(index);
-    CH32RV_ADC_ENABLE_CLOCK(index);
-
     /* ADCCLK has to stay inside the family's own ceiling, which is not the
      * same number everywhere: 14 MHz on CH32V103/V20x/V30x, 48 on CH32L103,
      * 64 on CH32V205, 80 on CH32X315, and as low as 6 on CH32X035 and CH32V003
@@ -140,6 +136,16 @@ static void ch32rv_adc_begin(uint8_t index)
     CH32RV_ADC_CTLR2_AT(base) |= CH32RV_ADC_CTLR2_CAL;
     while (CH32RV_ADC_CTLR2_AT(base) & CH32RV_ADC_CTLR2_CAL) {
     }
+}
+
+static void ch32rv_adc_begin(uint8_t index)
+{
+    if (CH32RV_ADC_IS_STARTED(index)) {
+        return;
+    }
+    const uint32_t base = CH32RV_ADC_BASE(index);
+    CH32RV_ADC_ENABLE_CLOCK(index);
+    ch32rv_adc_power_up(base);
 #ifdef CH32RV_ADC_CAL_CHANNEL
     /* The EVT's Get_CalibrationValue(): VDDA / 2 should read mid-scale; the
      * difference, from the middle six of ten sorted readings, is added to
@@ -167,6 +173,26 @@ static void ch32rv_adc_begin(uint8_t index)
     }
 #endif
     CH32RV_ADC_MARK_STARTED(index);
+}
+#endif
+
+#ifdef CH32RV_ADC_DUALMOD_SHIFT
+/* ADC2 for a dual-mode run (CH32RVAdcStream): clocked, set up and calibrated
+ * as analogRead() does ADC1. On X305 / X315 it is analogRead()'s own instance 2. */
+void ch32rv_adc2_begin(void)
+{
+#if !CH32RV_ADC_CLOCK_OK
+#elif defined(CH32RV_ADC_INSTANCE_COUNT) && CH32RV_ADC_INSTANCE_COUNT > 1
+    ch32rv_adc_begin(1);
+#else
+    static bool started;
+    if (started) {
+        return;
+    }
+    CH32RV_REG32(CH32RV_CLKEN_ADC2_ADDR) |= CH32RV_CLKEN_ADC2_MASK;
+    ch32rv_adc_power_up(CH32RV_ADC2_BASE);
+    started = true;
+#endif
 }
 #endif
 

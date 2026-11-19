@@ -68,6 +68,27 @@ converter's units, as in the buffer. No interrupt (the flag is read). Linked onl
 `setWatchdog()`. Seen on V203, V003 and H417 with the probe holding the line low and high: the flag rises exactly
 when the line is outside the window (2026-11-18, periph::test_adc_watchdog).
 
+## Both ADCs together (dual mode)
+
+```cpp
+const pin_size_t v[] = {PA1}, i[] = {PA2};
+adc.beginTimer(v, 1, 10000);       // ADC1: PA1 at 10 kHz
+adc.simultaneous(i, 1);            // ADC2: PA2 at the same moment
+adc.startContinuous(buf, 256);     // buf: ADC1's PA1, ADC2's PA2, ADC1's PA1, ...
+
+adc.beginInterleaved(PA4);         // ADC2 and ADC1 in turn on PA4: twice one ADC's rate
+```
+
+On the series with an ADC2 (V30x, V4x7, X305 / X315, H41x; the variant's `CH32RV_ADC_DUALMOD_SHIFT`).
+`simultaneous()` comes after `begin()`, `beginTimer()` or `beginExternal()`: ADC2 converts `pins2[i]` on the same
+trigger as ADC1's pin i. A round holds ADC1's pin 0, ADC2's pin 0, ADC1's pin 1, ...; `sampleRate()` counts rounds.
+The two cannot convert one channel at once (the manual forbids it); on X305 / X315 ADC2 has its own pads only.
+`beginInterleaved()` converts one pad in turn at the shortest sample time, and `readBuffer()`'s half comes in time
+order (false on X305 / X315: no pad reaches both ADCs). The watchdog sees ADC1's values only. Injected, alternate
+trigger and slow interleaved modes are not there yet. Checked on V407 and H417 reading the two DAC outputs
+(2026-11-19, analog::test_adc_dual; interleaved about 3.57 M samples a second on V407, 7.16 M on H417). Linked only
+into a sketch that calls `simultaneous()` or `beginInterleaved()`.
+
 ## Injected group (CH32RVAdcInjected)
 
 ```cpp
