@@ -70,5 +70,7 @@ See the [library API](../README.md) and [peer tests](../../../tests/peer/usb/REA
 | [MIDI](MIDI/README.md) | UART logging of USB MIDI messages, with periodic transmission of Note 60. |
 | [MSCBlockDump](MSCBlockDump/README.md) | USB storage INQUIRY/capacity and a hex dump of the first block, without a filesystem. |
 | [Mouse](Mouse/README.md) | UART inspection of USB mouse relative movement, wheel and button bitmap. |
+| [HostHidReports](HostHidReports/README.md) | Gamepad, media-key and system-key reports, each with the device it came from. |
+| [HostHubDevices](HostHubDevices/README.md) | The tree of devices behind a hub, listed on each connection and disconnection. |
 | [USBSerial](USBSerial/README.md) | A bidirectional UART-console bridge to a CDC-ACM device or supported USB-UART adapter. |
 | [VendorBulk](VendorBulk/README.md) | A vendor bulk interface bridge: UART input to bulk OUT, and received bulk IN shown as hex. |

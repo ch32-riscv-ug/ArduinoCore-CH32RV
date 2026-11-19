@@ -76,5 +76,7 @@ Device 側のサンプルを対向機器にすると、通信の方向と期待�
 | [MIDI](MIDI/README.ja.md) | USB MIDI 機器の受信メッセージを UART に表示し、Note 60 を周期的に送ります。 |
 | [MSCBlockDump](MSCBlockDump/README.ja.md) | USB メモリの INQUIRY と容量を表示し、先頭ブロックを hex dump します。ファイルシステムは使いません。 |
 | [Mouse](Mouse/README.ja.md) | USB マウスの相対移動、ホイール、ボタン bitmap を UART で観察します。 |
+| [HostHidReports](HostHidReports/README.ja.md) | ゲームパッド・メディアキー・システムキーの報告を、どの機器から来たかと一緒に表示します。 |
+| [HostHubDevices](HostHubDevices/README.ja.md) | ハブの先の機器の木を、つなぐ・抜くたびに表示します。 |
 | [USBSerial](USBSerial/README.ja.md) | CDC-ACM または対応 USB-UART アダプタを接続し、ボードの UART モニタと双方向に中継します。 |
 | [VendorBulk](VendorBulk/README.ja.md) | vendor-specific bulk interface を開き、UART 入力を OUT へ送り、IN の受信を hex 表示します。 |
