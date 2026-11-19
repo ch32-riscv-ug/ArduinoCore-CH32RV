@@ -58,5 +58,5 @@
 - 2: `libraries/CH32RVDma`、`tools/generate/generate.py` の `CH32RV_DMA_CHANNELS`。試験 selfapi::test_dma。
 - 3: `cores/arduino/ch32rv_heap_lock.c`、`generate.py` の `HEAP_WRAP_FLAGS`。試験 selfapi::test_cores_heap。
 - 4: `cores/arduino/ch32rv_stack.c`（`ch32rv_stack_guard()`、HardFault_Handler）、`crt0_ch32.S`。2026-11-20 に X035・L103・
-  V407・H417 で、再帰でスタックを使い切ると PANIC のリセットになり、PMP の無い V203 は SysTick の確認でそうなった（手で確認）。
+  V307・V407・H417 で、再帰でスタックを使い切ると PANIC のリセットになり、PMP の無い V203 は SysTick の確認でそうなった（手で確認）。
 - 5: `crt0_ch32.S`、`ch32rv_option_user.c`、`generate.py` の `IWDG_SERIES`。
