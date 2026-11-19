@@ -12,7 +12,7 @@ A PC application that reads raw HID reports and a UART monitor.
 
 1. Open usage page `0xff00`, usage 1.
 2. About once a second read `45 53 50 counter timeLo timeHi aa 55`.
-3. Compare the counter with UART `CUSTOM_HID_TX`.
+3. Compare the counter with `CUSTOM_HID_TX counter=...` on the UART.
 
 ## Settings and limits
 

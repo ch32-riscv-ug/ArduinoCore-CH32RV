@@ -18,7 +18,7 @@ with serial.Serial('/dev/ttyUSB0', 115200, timeout=2) as port:
     print(port.read(256).decode(errors='replace'))
 ```
 
-ポートを開くと基板がリセットされる構成では、起動を待ってから送ります。正常なら`Packet bytes: 10 20 30`を表示します。末尾だけ変えてchecksum不一致、`A5 00`や`A5 11`で不正な長さ、`A5 03 10`を送って1秒より長く空けてtimeoutを試します。正常な2パケットをつなげて送った場合は返信も2つになります。
+ポートを開くと基板がリセットされる構成では、起動を待ってから送ります。正常なら`Packet bytes: 10 20 30`を表示します。末尾だけ変えて`Checksum mismatch`、`A5 00`や`A5 11`で`Invalid length`、`A5 03 10`を送って1秒より長く空けてtimeoutを試します。正常な2パケットをつなげて送った場合は返信も2つになります。
 
 ## APIと改造時の注意
 

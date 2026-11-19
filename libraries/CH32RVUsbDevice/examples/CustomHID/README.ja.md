@@ -26,7 +26,7 @@ descriptor に Report ID はなく、8-byte Input だけを宣言しています
 | `CH32RVUsbDeviceHidCustom(...)` | descriptor の先頭・そのバイト長・Input payload の長さを渡します。descriptor の配列は使用中有効に保ちます。 |
 | `customHid.sendReport(report, sizeof(report))` | descriptor と一致する payload を送ります。成功は `bool` で返ります。 |
 
-この descriptor の `8 bit × 8要素` は8 bytesです。配列を増やすときは送信側だけでなく、Report Count と
+この descriptor の 8 bit × 8 要素は 8 bytes です。配列を増やすときは送信側だけでなく、Report Count と
 constructor に渡す長さもそろえます。Report ID を新設した場合は、その扱いもホスト側とそろえます。
 
 Input だけの descriptor に Output を送っても、この例の受信処理にはなりません。双方向にするなら

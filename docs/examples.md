@@ -2,7 +2,7 @@
 
 [日本語](examples.ja.md)
 
-Start with a small example, confirm wiring and I/O, then combine functions. Every sketch has a neighboring README describing hardware, operation, expected results, API use and adaptation notes.
+Start with a small example, confirm wiring and I/O, then combine functions. Every sketch has a neighboring `README.ja.md` (Japanese) and README describing hardware, operation, expected results, API use and adaptation notes.
 
 ## Choose by purpose
 
@@ -56,7 +56,7 @@ After [AnalogInputToPwm](../libraries/CH32RV/examples/AnalogInputToPwm/README.md
 
 ## Run an example
 
-1. Read the sketch and its README. Check the exact part, power, input voltage and pins.
+1. Read the `.ino` and its README. Check the exact part, power, input voltage and pins.
 2. Choose the board and Part Number, then adapt pin constants to the PCB.
 3. Upload using an appropriate [upload route (Japanese)](upload-routes.ja.md).
 4. Open the monitor or class application and compare the steps with the expected results.
@@ -70,9 +70,9 @@ In Arduino IDE, open File → Examples → library name. For CLI builds, replace
 |---|---|
 | Pins, power and external circuits | Shared pads, voltage domains and motor supply conditions cannot be solved in software alone |
 | Units | Distinguish ms/µs, Hz, mV/mA, samples and bytes |
-| Return values | Distinguish boolean success, actual processed length and `-1` for no received byte |
+| Return values | Distinguish `bool` success, actual processed length and `-1` for no received byte |
 | Object and buffer lifetime | Keep functions, callback targets, DMA and direct-transfer buffers alive and unchanged while used |
 | Execution context | Distinguish ISR, `loop()`, notification callbacks and response providers |
-| Waiting and retries | Demonstration delays and verbose output can hold up other input or transfer work |
+| Waiting and retries | Demonstration `delay()` calls and verbose output can hold up other input or transfer work |
 
 The [sketch composition guide (Japanese)](sketch-guide.ja.md) explains elapsed-time checks, ISR handoff, `deliverEvents()` and short work functions. For supported series and implementation limits, use the library README, [USB support table](usb.ja.md#対応状況) and [peripheral guide](peripheral-support.ja.md), rather than duplicating them in every example.
