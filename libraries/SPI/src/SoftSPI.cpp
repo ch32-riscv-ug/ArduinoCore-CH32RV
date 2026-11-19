@@ -138,15 +138,25 @@ void SoftSPI::peripheral_mode(bool on)
  * trailing one. */
 uint8_t SoftSPI::follow(uint8_t data)
 {
-    const pin_size_t sck = CH32RV_PIN_RESOLVE(_sck), mosi = CH32RV_PIN_RESOLVE(_mosi);
-    const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(sck), sck_bit = (uint8_t)CH32RV_PIN_BIT(sck);
-    const uint8_t mosi_port = (uint8_t)CH32RV_PIN_PORT(mosi), mosi_bit = (uint8_t)CH32RV_PIN_BIT(mosi);
+    const bool msb = (_order == MSBFIRST);
+    uint8_t mask = msb ? 0x80u : 0x01u;
     const bool drive = _miso != NOT_A_PIN;
     const pin_size_t miso = drive ? CH32RV_PIN_RESOLVE(_miso) : 0;
     const uint8_t miso_port = (uint8_t)CH32RV_PIN_PORT(miso), miso_bit = (uint8_t)CH32RV_PIN_BIT(miso);
+    /* CPHA 0: the first bit up before anything else. Between two bytes the controller gives half a period from the
+     * last trailing edge to the next leading one, and the return, the next transfer() and this call spend most of
+     * it on a slow part (X035 at 48 MHz, 50 kHz: 0.2 us left, 2026-11-20). */
+    if (drive && !cpha()) {
+        if (data & mask) {
+            ch32rv_gpio_set(miso_port, miso_bit);
+        } else {
+            ch32rv_gpio_clear(miso_port, miso_bit);
+        }
+    }
+    const pin_size_t sck = CH32RV_PIN_RESOLVE(_sck), mosi = CH32RV_PIN_RESOLVE(_mosi);
+    const uint8_t sck_port = (uint8_t)CH32RV_PIN_PORT(sck), sck_bit = (uint8_t)CH32RV_PIN_BIT(sck);
+    const uint8_t mosi_port = (uint8_t)CH32RV_PIN_PORT(mosi), mosi_bit = (uint8_t)CH32RV_PIN_BIT(mosi);
     const uint8_t idle = cpol() ? 1u : 0u;
-    const bool msb = (_order == MSBFIRST);
-    uint8_t mask = msb ? 0x80u : 0x01u;
     uint8_t in = 0;
 
     for (uint8_t i = 0; i < 8; i++) {
@@ -154,7 +164,7 @@ uint8_t SoftSPI::follow(uint8_t data)
             while (ch32rv_gpio_read(sck_port, sck_bit) == idle) {
             }
         }
-        if (drive) {
+        if (drive && (cpha() || i)) {
             if (data & mask) {
                 ch32rv_gpio_set(miso_port, miso_bit);
             } else {
