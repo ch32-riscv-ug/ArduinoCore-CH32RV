@@ -327,10 +327,11 @@ def render(results, labels_known):
         wired = set(now) | {p for p in reserved.values() if p}       # pads a line reaches now, any label
         relabel = [x for x in every if " (" in x and x.split()[0] in wired]
         todo = [x for x in every if x not in relabel]
-        summary.append(f"| {part} | {len(todo)} 本: {', '.join(label(port, x) for x in todo) or 'なし'} | "
+        name = f"{part}（{port or '口なし'}）"     # the part says the series; the port tells the bench's place
+        summary.append(f"| {name} | {len(todo)} 本: {', '.join(label(port, x) for x in todo) or 'なし'} | "
                        f"{', '.join(label(port, x) for x in relabel) or 'なし'} |")
         where = f"`oep://{unit}/{port}`" if unit else "OEP 未接続（WCH-Link のみ）"
-        sections += [f"## {part}（{series}）", "", f"- 口: {where}"]
+        sections += [f"## {name}", "", f"- 口: {where}"]
         sections.append(f"- いまの線: {', '.join(sorted(now, key=key)) or 'なし'}")
         sections.append(f"- コンソール（rx / tx）: {', '.join(sorted(console, key=key)) or '不明'}" +
                         ("" if now else "（未配線: Serial の既定の端子）"))

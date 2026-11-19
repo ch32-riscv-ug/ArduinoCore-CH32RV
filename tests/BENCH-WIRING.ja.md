@@ -24,21 +24,21 @@
 
 | 台 | 足す線 | ラベルを直す線 |
 |---|---|---|
-| CH32V003F4U6 | 0 本: なし | なし |
-| CH32V003F4P6 | 0 本: なし | なし |
-| CH32V006K8U6 | 0 本: なし | なし |
-| CH32V103R8T6 | 1 本: `v103r8t6-evt@pa8` | なし |
-| CH32V203C8T6 | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
-| CH32V205RCT6 | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
-| CH32V208WBU6 | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
-| CH32V307VCT6 | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
-| CH32V407WEU6 | 20 本: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pa8`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst` | なし |
-| CH32L103C8T6 | 0 本: なし | なし |
-| CH32X035C8T6 | 1 本: `x035c8t6-pico@pa13` | なし |
-| CH32X315MCU6 | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
-| CH32H417QEU6 | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | なし |
+| CH32V003F4U6（v003f4u6-uia） | 0 本: なし | なし |
+| CH32V003F4P6（v003f4p6） | 0 本: なし | なし |
+| CH32V006K8U6（v006k8u6） | 0 本: なし | なし |
+| CH32V103R8T6（v103r8t6-evt） | 1 本: `v103r8t6-evt@pa8` | なし |
+| CH32V203C8T6（v203c8t6） | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
+| CH32V205RCT6（v205rct6-pico） | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
+| CH32V208WBU6（v208wbu6） | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
+| CH32V307VCT6（口なし） | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
+| CH32V407WEU6（v407weu6-yd-p4） | 20 本: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pa8`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst` | なし |
+| CH32L103C8T6（l103c8t6-pico） | 0 本: なし | なし |
+| CH32X035C8T6（x035c8t6-pico） | 1 本: `x035c8t6-pico@pa13` | なし |
+| CH32X315MCU6（口なし） | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
+| CH32H417QEU6（h417qeu6-pico） | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | なし |
 
-## CH32V003F4U6（CH32V003）
+## CH32V003F4U6（v003f4u6-uia）
 
 - 口: `oep://30eda0ea068b/v003f4u6-uia`
 - いまの線: PA1, PA2, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2
@@ -53,7 +53,7 @@
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 済 |  |
 | 製品ボード（uiapduino:pro-micro-ch32v003-v1.4）: 一般の周辺の試験は汎用の台で流す | runtime, hid だけ | 済 |  |
 
-## CH32V003F4P6（CH32V003）
+## CH32V003F4P6（v003f4p6）
 
 - 口: `oep://30eda0e34a0e/v003f4p6`
 - いまの線: PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2, PD3, PD4
@@ -83,7 +83,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V006K8U6（CH32V006）
+## CH32V006K8U6（v006k8u6）
 
 - 口: `oep://30eda0e343c6/v006k8u6`
 - いまの線: PA0, PA3, PA4, PA5, PA6, PB0, PB1, PB2, PB3, PB4, PB5, PB6, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2, PD3, PD4, PD7
@@ -112,7 +112,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V103R8T6（CH32V103）
+## CH32V103R8T6（v103r8t6-evt）
 
 - 口: `oep://80f1b2d80a34/v103r8t6-evt`
 - いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1, PB6, PB7, PB8, PB9, PB10, PB11, PB12, PB13, PB14, PB15, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC13
@@ -142,7 +142,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V203C8T6（CH32V203）
+## CH32V203C8T6（v203c8t6）
 
 - 口: `oep://e8f60ae84e28/v203c8t6`
 - いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1, PB6, PB7
@@ -172,7 +172,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V205RCT6（CH32V205）
+## CH32V205RCT6（v205rct6-pico）
 
 - 口: `oep://30eda0e31108/v205rct6-pico`
 - いまの線: PA2, PA3, PA6, PA7, PA8, PA9, PA10, PA14, PA15, PB2, PB3, PB4, PB5, PB8, PB9, PB10, PB11, PC0
@@ -202,7 +202,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V208WBU6（CH32V208）
+## CH32V208WBU6（v208wbu6）
 
 - 口: `oep://30eda0e31451/v208wbu6`
 - いまの線: なし
@@ -232,7 +232,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 未 | PA5, PA6, PA7 |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 未 | PA0, PA1, PA15, PA2 |
 
-## CH32V307VCT6（CH32V307）
+## CH32V307VCT6（口なし）
 
 - 口: OEP 未接続（WCH-Link のみ）
 - いまの線: なし
@@ -263,7 +263,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 未 | PA5, PA6, PA7 |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 未 | PA0, PA1, PA15, PA2 |
 
-## CH32V407WEU6（CH32V407）
+## CH32V407WEU6（v407weu6-yd-p4）
 
 - 口: `oep://30eda0ea068b/v407weu6-yd-p4`
 - いまの線: なし
@@ -295,7 +295,7 @@
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 未 | PA0, PA1, PA15, PA2 |
 | WS2812 ブロック（ARGB）の端子 | signals::test_rgb_led_hardware | 未 | PA15 |
 
-## CH32L103C8T6（CH32L103）
+## CH32L103C8T6（l103c8t6-pico）
 
 - 口: `oep://e8f60ae84dc6/l103c8t6-pico`
 - いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA15, PB6, PB7, PB13
@@ -325,7 +325,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32X035C8T6（CH32X035）
+## CH32X035C8T6（x035c8t6-pico）
 
 - 口: `oep://80f1b2d835d6/x035c8t6-pico`
 - いまの線: PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA10, PA11, PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7, PB8, PB9, PC6, PC7
@@ -356,7 +356,7 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32X315MCU6（CH32X315）
+## CH32X315MCU6（口なし）
 
 - 口: OEP 未接続（WCH-Link のみ）
 - いまの線: なし
@@ -386,7 +386,7 @@
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 未 | PA0, PA1, PA10, PA11 |
 | WS2812 ブロック（ARGB）の端子 | signals::test_rgb_led_hardware | 未 | PA15 |
 
-## CH32H417QEU6（CH32H417）
+## CH32H417QEU6（h417qeu6-pico）
 
 - 口: `oep://e8f60ae84dc2/h417qeu6-pico`
 - いまの線: PA0, PA1, PA6, PA7, PA13, PA14, PB8, PB10, PB11, PC0, PD4, PD5, PD6, PD7, PF3, PF5
