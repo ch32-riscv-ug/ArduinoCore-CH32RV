@@ -675,7 +675,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - [ ] 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
   自動トグル、HS の PHY と HSE。第2世代 USBHS（V467、X305 / X315、V205）と X315 の USBSS はビルドだけ（V407 は HS で確認済み）。
 - H417:
-  - [ ] USBSS のデバイスの実機の続き（列挙と CDC、DFU までは確認済み）。
+  - [x] USBSS のデバイスの実機の続き（列挙と CDC、DFU までは確認済み）。→ 2026-11-20、h417qeu6-pico の SS の口（PC）で
+    usb・usb-classes・usb-media の case と、usb-ss-iso（等時の Mult、ベンダーのバルクの halt・リセット・大きさ・再起動後の列挙）が
+    通る（等時の Mult>0 の部分の間隔のばらつきは上の usb-ss-iso の項目）。
   - [x] SS の列挙が、リセットの後に 4〜5 回に 1 回ほど失敗する（2026-11-11、HS の線を切った後のベンチ。SWD の書き込み
     3 回とリセット 5 回のうち 2 回）。カーネルは `device descriptor read/all, error -71` や
     `unable to get BOS descriptor set` / `unable to read config index 0 descriptor/start: -71` を出し、UsbFallback が FS に
