@@ -283,9 +283,13 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   ずつ、core-20261117T221818Z-d3fa53ac）。ほかは一致。V20x / V30x の線 18 は [data] が 68be61e で足し、一致した。
   interrupts.csv は生成器の tools/generate/interrupts/interrupts.csv と slot ごとの handler が一致（差は D8W・D8C の条件
   つきの行だけ。V30x D8 の slot 58 も USBWakeUp で同じ）。
-- [ ] EXTI の線の表（internal/ch32rv_exti_line.h）と ADC のトリガの表（internal/ch32rv_adc_trigger.h）を device-data から
+- [x] EXTI の線の表（internal/ch32rv_exti_line.h）と ADC のトリガの表（internal/ch32rv_adc_trigger.h）を device-data から
   生成する。値は一致しているので、残りは device-data の名前（USBHS1_WAKEUP など）とコアの名前（CH32RV_EXTI_*、
-  ベクタ名、試す順番）の対応表。[data] の線 18 の答えを待ってから。
+  ベクタ名、試す順番）の対応表。
+  → 2026-11-20: EXTI は手書きのまま、tests/unit/test_exti_lines.py で device-data と線と源が一致することを毎回確かめる形にした。
+  生成にすると、5 つの系列の別名（USBHS1・USBPD0・USB・USBFSOTG・LPTIM1・OSCCAL、ベクタの大文字小文字）と、V103 の線 18
+  （CH32F103 の USBD）、V307 の線 20（die で違う）の除外が、生成器の中の別の層になるため。V407 の線 18 / 20 の conflict は
+  device-data の中の根拠の話で、採った値（実測）は同じ。
   → ADC の通常グループのタイマーの源は生成にした（2026-11-19、variant の CH32RV_ADC_TIMER_SOURCES。F1 型の TIM1 を試す順だけ
   CC1→CC3 に変わった。V203・V205・H417・X035・V006 で periph が通る）。端子の源と EXTI の線は手書きのまま（EXTI は V407 の
   線 18 が device-data でまだ conflict）。
