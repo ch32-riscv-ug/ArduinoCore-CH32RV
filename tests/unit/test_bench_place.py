@@ -368,3 +368,14 @@ def test_the_records_link_uart_names_dut_pads():
     assert records.check_core({"link_uart": {}}) == []                 # none (X315)
     assert records.check_core({"link_uart": {"tx": "PA9"}})            # a pad in lower case
     assert records.check_core({"link_uart": {"cts": "pa11"}})          # tx and rx only
+
+
+def test_a_product_board_runs_flashing_and_its_own_cases():
+    """A product board (UIAPduino) runs runtime and hid alone: its pads are the board's (the user, 2026-11-19)."""
+    items, caps = place.series_needs()
+    uiap = dict(chip="CH32V003F4U6", kind="oep", lines={"nrst": 1, "rx": 2, "tx": 3},
+                record={"board": place.UIAPDUINO_BOARD, "supply": {"from": "probe"}})
+    cases = place.choose_cases(uiap, items, caps)
+    running = sorted(c for c, s in cases.items() if s == "run")
+    assert running == ["hid", "runtime"], running
+    assert cases["gpio"].startswith("skip: a product board")

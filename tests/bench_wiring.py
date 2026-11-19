@@ -26,7 +26,7 @@ OUT = REPO / "tests/BENCH-WIRING.ja.md"
 
 # (probe unit, port) of each bench DUT; None: on a WCH-Link only (no OEP port yet).
 BENCH = [
-    ("CH32V003F4U6", "30eda0ea068b", "v003f4u6-uia"),
+    ("CH32V003F4U6", "30eda0ea068b", "v003f4u6-uia", place.UIAPDUINO_BOARD),
     ("CH32V003F4P6", "30eda0e34a0e", "v003f4p6"),
     ("CH32V006K8U6", "30eda0e343c6", "v006k8u6"),
     ("CH32V103R8T6", "80f1b2d80a34", "v103r8t6-evt"),
@@ -40,7 +40,19 @@ BENCH = [
     ("CH32X315MCU6", None, None),
     ("CH32H417QEU6", "e8f60ae84dc2", "h417qeu6-pico"),
 ]
-UNITS = sorted({u for _, u, _ in BENCH if u})
+UNITS = sorted({entry[1] for entry in BENCH if entry[1]})
+# A product board's variant, for its reserved pads (the "Board-level reserved functions" its pins_arduino.h names).
+BOARD_VARIANTS = {place.UIAPDUINO_BOARD: "UIAPduino_Pro_Micro_CH32V003_V14"}
+
+
+def board_reserved(board):
+    """The pads a product board keeps for itself (its USB, SWIO, reset): never a test's, never a line to add."""
+    variant = BOARD_VARIANTS.get(board)
+    if not variant:
+        return set()
+    text = (place.REPO / "variants" / variant / "pins_arduino.h").read_text()
+    block = text.split("Board-level reserved functions", 1)[-1].split("\n\n/*", 1)[0]
+    return set(re.findall(r"#define\s+\w+\s+(P[A-K]\d+)\b", block))
 
 
 def read_labels():
@@ -126,10 +138,10 @@ def bit(pad):
     return int(pad[2:])
 
 
-def plan(part, labels_now, console, reserved):
+def plan(part, labels_now, console, reserved, board=None):
     rows = pinout(part)
     series = rows[0]["series"] if rows else part[:8]
-    keep = set(place.gpio_keep_off(part) or []) | set(place.debug_pads(part) or [])
+    keep = set(place.gpio_keep_off(part) or []) | set(place.debug_pads(part) or []) | board_reserved(board)
     d = variant_defaults(series)
     if not console:          # not wired yet: the console goes on Serial's default pads
         console = {p for p in (d["PIN_SERIAL_TX"], d["PIN_SERIAL_RX"]) if p}
@@ -158,6 +170,13 @@ def plan(part, labels_now, console, reserved):
             out.append((cond, tests, True, [], ""))
         else:
             out.append((cond, tests, False, missing, ("端子が device-data に無い: " + ", ".join(absent)) if absent else ""))
+
+    own = place.PRODUCT_BOARD_CASES.get(board)
+    if own is not None:
+        # A product board runs the flashing and its own cases alone (harness/place.py): the lines above are all.
+        out.append((f"製品ボード（{board}）: 一般の周辺の試験は汎用の台で流す", ", ".join(own) + " だけ", True, [],
+                    ""))
+        return series, keep, out, console
 
     debug = set(place.debug_pads(part) or [])
 
@@ -345,9 +364,9 @@ def main():
     if a.save_labels:
         pathlib.Path(a.save_labels).write_text(json.dumps(labels))
     results = []
-    for part, unit, port in BENCH:
+    for part, unit, port, *board in BENCH:
         now, console, reserved = port_pads(labels, unit, port) if unit else ({}, set(), {})
-        series, keep, rows, console = plan(part, now, console, reserved)
+        series, keep, rows, console = plan(part, now, console, reserved, board[0] if board else None)
         results.append((part, unit, port, series, now, console, keep, rows, reserved))
     pathlib.Path(a.out).write_text(render(results, bool(labels)) + "\n")
     print(f"wrote {a.out}")

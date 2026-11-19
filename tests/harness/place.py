@@ -32,6 +32,12 @@ BOARD_IDENTIFY = pathlib.Path("/run/board-identify/by-id")
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
 USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
+# Product boards whose series a generic board also covers (the record's board): their pads are the board's
+# (UIAPduino's PD3 / PD4 are its USB), so the bench runs only the flashing and the board's own cases there; the
+# generic peripheral cases are the generic boards' (v003f4p6 for V003) - the user, 2026-11-19. Not for a series with
+# no official board, whose product board is all the bench has (V407 / V467: VCC-GND's YD-WCHV4x7; M030: the motor
+# board, which keeps its pads by its gpio-drive defect instead): those run every case as any board does.
+PRODUCT_BOARD_CASES = {UIAPDUINO_BOARD: ("runtime", "hid")}
 USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
@@ -414,6 +420,12 @@ def choose_cases(place, items=None, caps=None):
             for case in FEATURE_CASES.get(feature, ()):
                 if out.get(case) == "run":
                     out[case] = f"skip: defect {defect.get('id')} ({feature})"
+    own = PRODUCT_BOARD_CASES.get(core.get("board"))
+    if own is not None:
+        for case, state in out.items():
+            if state == "run" and case not in own:
+                out[case] = (f"skip: a product board ({core.get('board')}) runs the flashing and its own cases "
+                             f"({', '.join(own)}); the generic boards run the rest")
     return out
 
 

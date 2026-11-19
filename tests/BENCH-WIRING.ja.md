@@ -24,7 +24,7 @@
 
 | 台 | 足す線 | ラベルを直す線 |
 |---|---|---|
-| CH32V003F4U6 | 1 本: `v003f4u6-uia@pd4` | なし |
+| CH32V003F4U6 | 0 本: なし | なし |
 | CH32V003F4P6 | 0 本: なし | なし |
 | CH32V006K8U6 | 0 本: なし | なし |
 | CH32V103R8T6 | 1 本: `v103r8t6-evt@pa8` | なし |
@@ -43,30 +43,15 @@
 - 口: `oep://30eda0ea068b/v003f4u6-uia`
 - いまの線: PA1, PA2, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2
 - コンソール（rx / tx）: PD5, PD6
-- 触らない端子: PA1, PA2, PD1, PD7
-- 足す線（1 本、端子順）: `v003f4u6-uia@pd4`
+- 触らない端子: PA1, PA2, PD1, PD3, PD4, PD7
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
 | デバッグ（SWIO） | 書き込み・デバッガ（run_hardware） | 済 |  |
 | リセット（NRST） | 書き込み、periph（リセットの理由） | 済 |  |
 | コンソールの UART（rx は DUT の TX、tx は DUT の RX） | すべての試験の READY と応答 | 済 |  |
-| GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |
-| タイマーの CH1 か CH2 | signals（PWM・捕捉・ワンパルスのトリガ・timerPulseIn） | 済 |  |
-| 1 つのタイマー・経路の CH1 と CH2 | signals::test_pwm_timer、test_phase_shift | 済 |  |
-| CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 済 |  |
-| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 済 |  |
-| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 済 |  |
-| remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 済 |  |
-| ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
-| ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 済 |  |
-| 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 該当なし | この型番に条件を満たす端子が無い |
-| コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
-| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PD4 |
-| Wire の既定の SDA・SCL | wire | 済 |  |
-| SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
-| SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
-| SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
+| 製品ボード（uiapduino:pro-micro-ch32v003-v1.4）: 一般の周辺の試験は汎用の台で流す | runtime, hid だけ | 済 |  |
 
 ## CH32V003F4P6（CH32V003）
 
