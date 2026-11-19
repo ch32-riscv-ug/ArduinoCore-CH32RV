@@ -21,7 +21,7 @@ dac.write(2048);                   // 普通の値に戻す（波形は止まる
 |---|---|
 | `begin()` / `end()` | 端子を DAC にして出力バッファを入れ、0 を出す / 波形を止めて変換器を切る |
 | `write(value)` | 0〜4095 を出す。波形が動いていれば先に止める |
-| `triangle(bits, stepHz, base)` | base〜base + 2^bits - 1 を 1 LSB ずつ往復。12 bit の全幅なら周波数は stepHz / 8190 |
+| `triangle(bits, stepHz, base)` | base〜base + 2^bits - 1 を 1 LSB ずつ往復（`bits` は 1〜12）。12 bit の全幅なら周波数は stepHz / 8190 |
 | `noise(bits, stepHz, base)` | 変換器の LFSR の下位 bits を base に足した値を、毎秒 stepHz 回 |
 | `play(samples, count, sampleHz)` | 12 bit の右詰めのサンプルを DMA で繰り返し出す。配列は再生中ずっと有効にしておく（書き換えればそのまま出る） |
 | `playBoth(pairs, count, sampleHz)` | 2 つのチャネルを同じトリガで同時に更新する（DAC の 2 ch 用の保持レジスタ RD12BDHR を DMA で）。`pairs` は DAC1、DAC2、DAC1、DAC2、… の順で `count` 組、4 バイト境界に置く。DAC1 のオブジェクトで呼び、DAC2 は自分で用意する |

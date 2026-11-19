@@ -20,7 +20,7 @@ A serial terminal at 115200 baud shows a line every 0.5 s.
   A bit is 3 x d1 + 770 x d2 + 11 of the PIOC's cycles, worked out from `CH32RVPioc::clockHz()` and the baud rate.
 - `command()` starts the send and `waitDone()` waits for the last stop bit.
 - No `loadSram()`: writing the SRAM holds the PIOC in reset, and IO0 floats meanwhile, losing the idle high. The PIOC
-  is begun once and left running.
+  is started once with `begin()` and left running.
 - A bit is 14 cycles at least (about 3.4 Mbaud at 48 MHz) and about 200,000 at most (about 240 baud at 48 MHz).
 
 Judged by WireSkein's `uart` (the bytes, 8N1, no framing error) at 9600, 115200 and 1 Mbaud on H417, X035 (48 MHz)

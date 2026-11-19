@@ -37,7 +37,7 @@ series without the GPHA.
 - Conversion to RGB565 keeps the high bits; expansion from RGB565 copies the high bits low (the manual's tables).
 - The colour table did not take the GPHA's own load (CMAR, CS, START); the CPU's writes, a colour at a time, did
   (`setPalette()` does that).
-- A blend comes out up to 3 below the exact `(a x f + (255 - a) x b) / 255` per channel (opaque white over black: 0xFD).
+- A blend comes out up to 3 below the exact `(a * f + (255 - a) * b) / 255` per channel (opaque white over black: 0xFD).
 
 ## Test
 

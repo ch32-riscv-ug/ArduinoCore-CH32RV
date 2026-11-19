@@ -22,7 +22,7 @@ space, 32 bits (address, its inverse, command, its inverse, LSB first) and the c
 - d4 / d5 are the carrier's high part and d6 / d7 its low part as wait turns; a period is (3 x d4 + 770 x d5) +
   (3 x d6 + 770 x d7) + 25 cycles, worked out from `CH32RVPioc::clockHz()`.
 - Marks and spaces are counted in carrier periods (one routine, outputting or not, so both last alike).
-- The PIOC is begun once and left running (`begin()` is a reset, IO0 floating meanwhile).
+- The PIOC is started once with `begin()` and left running (`begin()` is a reset, IO0 floating meanwhile).
 
 WireSkein's `ir` passes on H417, X035 (48 MHz) and V205 (2026-11-19, pioc::test_pioc_ir_nec: a plain and an extended
 address, each command's inverse, the carrier at 37.99 .. 38.00 kHz, the marks' and spaces' lengths).
