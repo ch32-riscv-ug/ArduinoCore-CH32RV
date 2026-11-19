@@ -51,6 +51,16 @@ public:
      * turns it off. Before or after begin(). */
     uint32_t setDeadTime(uint32_t nanoseconds);
     uint32_t deadTime() const { return _deadNs; }
+    /* Asymmetric dead time: risingNs before CHx turns on (OCxREF's rising
+     * edge), fallingNs before CHxN turns on (its falling edge). The longer is
+     * the timer's dead time (setDeadTime()'s), the shorter its second dead
+     * time in that one's steps (at least one step, at most one step less).
+     * False where the timer has no second dead time (CH32RV_TIM_DT2_OFFSET:
+     * H41x; CH32M030's TIM1 has one, not yet in device-data) unless the two
+     * are equal, which is setDeadTime(). deadTime() / deadTimeShort() then
+     * tell what was set. Before or after begin(). */
+    bool setDeadTime(uint32_t risingNs, uint32_t fallingNs);
+    uint32_t deadTimeShort() const { return _dead2Ns; }
 
     /* The timer's break input (BKIN) on `pin`: at activeLevel, the hardware
      * turns both outputs off at once (low) and keeps them off until
@@ -74,6 +84,9 @@ private:
     uint32_t _steps = 0;            /* counter steps in a period */
     uint32_t _deadNs = 0;
     uint32_t _deadAsk = 0;          /* what setDeadTime() was given */
+    uint32_t _dead2Ask = 0;         /* the shorter of setDeadTime(rising, falling) */
+    uint32_t _dead2Ns = 0;
+    uint8_t _dt2Edge = 0;           /* 0: none, 1: on the rising edge, 2: on the falling edge */
     uint8_t _dtg = 0;               /* BDTR's dead-time field */
     uint8_t _bits = 8;
     bool _break = false, _breakHigh = false;

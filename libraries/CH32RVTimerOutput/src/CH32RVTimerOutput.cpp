@@ -4,6 +4,17 @@
 #include "internal/ch32rv_irq.h"
 #include "internal/ch32rv_registers.h"
 
+/* The second dead time off (setDeadTime(ns), end()). */
+static inline void dt2Off(uint32_t base)
+{
+#if defined(CH32RV_TIM_DT2_OFFSET)
+    volatile uint16_t &aux = *reinterpret_cast<volatile uint16_t *>(base + CH32RV_TIM_DT2_OFFSET);
+    aux = (uint16_t)(aux & ~(CH32RV_TIM_DT2_RISING | CH32RV_TIM_DT2_FALLING));
+#else
+    (void)base;
+#endif
+}
+
 using namespace ch32rv_timer_output;
 
 /* ---- CH32RVComplementaryPwm ---- */
@@ -49,7 +60,11 @@ bool CH32RVComplementaryPwm::begin(const CH32RVTimerPad &pad, const CH32RVTimerP
     _steps = steps;
     _bits = resolution;
     _break = false;
-    if (_deadAsk) {
+    if (_dt2Edge) {
+        /* asked for before begin(): the clock is known now */
+        const uint32_t longer = _deadAsk, shorter = _dead2Ask;
+        setDeadTime(_dt2Edge == 1 ? shorter : longer, _dt2Edge == 1 ? longer : shorter);
+    } else if (_deadAsk) {
         setDeadTime(_deadAsk);      /* asked for before begin(): the clock is known now */
     }
     const uint8_t ch = pad.channel;
@@ -84,6 +99,7 @@ void CH32RVComplementaryPwm::end()
         ch32rv_timer_stop(&_lease);
         CH32RV_TIM_BDTR(_base) = 0;
         CH32RV_TIM_CCER(_base) = 0;
+        dt2Off(_base);
         padLow(_pad.pin);
         padLow(_padN.pin);
     }
@@ -107,6 +123,11 @@ bool CH32RVComplementaryPwm::write(uint32_t duty)
 uint32_t CH32RVComplementaryPwm::setDeadTime(uint32_t nanoseconds)
 {
     _deadAsk = nanoseconds;
+    _dt2Edge = 0;
+    _dead2Ns = 0;
+    if (isAttached()) {
+        dt2Off(_base);
+    }
     const uint32_t clock = ch32rv_timer_clock_hz(isAttached() ? _pad.timer : 1u);
     uint32_t ticks;
     _dtg = deadTimeField(clock, nanoseconds, ticks);
@@ -116,6 +137,47 @@ uint32_t CH32RVComplementaryPwm::setDeadTime(uint32_t nanoseconds)
     }
     applyBdtr();
     return _deadNs;
+}
+
+bool CH32RVComplementaryPwm::setDeadTime(uint32_t risingNs, uint32_t fallingNs)
+{
+    if (risingNs == fallingNs) {
+        setDeadTime(risingNs);
+        return true;
+    }
+#if defined(CH32RV_TIM_DT2_OFFSET)
+    const bool risingShort = risingNs < fallingNs;
+    const uint32_t longer = risingShort ? fallingNs : risingNs, shorter = risingShort ? risingNs : fallingNs;
+    setDeadTime(longer);
+    _dead2Ask = shorter;
+    _dt2Edge = risingShort ? 1u : 2u;
+    /* The second dead time counts in the first's steps (Tdtg: 1, 2, 8 or 16
+     * clocks by DTG's top bits), more than 0 and fewer than DTG's. */
+    const uint32_t clock = ch32rv_timer_clock_hz(isAttached() ? _pad.timer : 1u);
+    const uint8_t top = _dtg >> 5;
+    const uint32_t step = top < 4u ? 1u : top < 6u ? 2u : top == 6u ? 8u : 16u;
+    const uint32_t longTicks = (uint32_t)(((uint64_t)_deadNs * clock + 500000000u) / 1000000000u);
+    const uint32_t want = (uint32_t)(((uint64_t)shorter * clock + 999999999u) / 1000000000u);
+    uint32_t units = (want + step - 1u) / step;
+    const uint32_t most = longTicks / step > 1u ? longTicks / step - 1u : 0u;
+    if (most == 0u) {
+        return false;                  /* the longer is too short to have a shorter */
+    }
+    units = units < 1u ? 1u : units > most ? most : units;
+    if (units > 0xFFu) {
+        units = 0xFFu;
+    }
+    _dead2Ns = (uint32_t)(((uint64_t)units * step * 1000000000u + clock / 2u) / clock);
+    if (isAttached()) {
+        volatile uint16_t &aux = *reinterpret_cast<volatile uint16_t *>(_base + CH32RV_TIM_DT2_OFFSET);
+        aux = (uint16_t)((aux & ~(0xFFu << CH32RV_TIM_DT2_SHIFT) & ~(CH32RV_TIM_DT2_RISING | CH32RV_TIM_DT2_FALLING)) |
+                         (units << CH32RV_TIM_DT2_SHIFT) |
+                         (risingShort ? CH32RV_TIM_DT2_RISING : CH32RV_TIM_DT2_FALLING));
+    }
+    return true;
+#else
+    return false;
+#endif
 }
 
 bool CH32RVComplementaryPwm::attachBreak(int pin, int activeLevel, uint8_t mode)

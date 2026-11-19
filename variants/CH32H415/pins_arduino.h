@@ -1032,6 +1032,12 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_USBPD_CC_PORT_MASK(port) ( \
 ((port) == 1u ? 0x18u : 0u))
 
+/* ---- the advanced timers' second dead time (device-data registers.csv: DT_VLU2, DTP / DTN_MODE) ---- */
+#define CH32RV_TIM_DT2_OFFSET 0x50u
+#define CH32RV_TIM_DT2_SHIFT 8
+#define CH32RV_TIM_DT2_RISING (1u << 6)
+#define CH32RV_TIM_DT2_FALLING (1u << 7)
+
 /* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */
 #define CH32RV_PIOC_BASE 0x40025c00u
 #define CH32RV_PIOC_IRQN 122

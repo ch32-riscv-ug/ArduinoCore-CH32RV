@@ -3002,6 +3002,10 @@ USBPD_CC: dict = {}
 # PIOC (the RISC8B I/O processor, CH32RVPioc): part -> {(role 0 IO0 / 1 IO1, (port, bit), value)}, the value the AF
 # number (per-pin families) or the remap field's (X035); family -> (SFR base, IRQ number).
 PIOC_PADS: dict = {}
+# The advanced timers' second dead time (asymmetric dead time): family -> (register offset, DT_VLU2's shift, the bit
+# that puts it on OCxREF's rising edge, the one for the falling edge), from registers.csv's TIM fields DT_VLU2 and
+# DTP_MODE (H417 names it DT_MODE) / DTN_MODE. Only where the register's offset is known.
+TIM_DT2: dict = {}
 PIOC_BLOCK: dict = {}
 # Where each family's PIOC runs its program from: 4 KiB of SRAM the core copies the image into. Not in
 # device-data yet (asked of [data], 2026-11-19); the EVT's headers: ch32h417_pioc.h PIOC_SRAM_BASE 0x50040000 (a region
@@ -3060,6 +3064,24 @@ def load_usbpd_cc(tables: pathlib.Path) -> dict:
         clock = clocks.get((r["family"], block))
         if reg and clock:
             out.setdefault(r["part_number"], set()).add(((r["port"], int(r["gpio"])),) + reg + clock)
+    return out
+
+
+def load_tim_dt2(tables: pathlib.Path) -> dict:
+    """TIM_DT2: the second dead time's register and bits per family (registers.csv)."""
+    fields: dict = {}
+    for r in read_table(tables, "registers.csv", ("family", "type", "register", "offset", "field", "bits")):
+        if r["type"] == "TIM" and r["field"] in ("DT_VLU2", "DT_MODE", "DTP_MODE", "DTN_MODE"):
+            fields.setdefault(r["family"], {})[r["field"]] = (r["register"], r["offset"], r["bits"])
+    out = {}
+    for family, f in fields.items():
+        rising = f.get("DTP_MODE") or f.get("DT_MODE")
+        if "DT_VLU2" not in f or not rising or "DTN_MODE" not in f:
+            continue
+        reg, offset, bits = f["DT_VLU2"]
+        if not offset or rising[0] != reg or f["DTN_MODE"][0] != reg:
+            continue
+        out[family] = (int(offset, 16), int(bits.split(":")[-1]), int(rising[2]), int(f["DTN_MODE"][2]))
     return out
 
 
@@ -5060,6 +5082,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" | ".join(f"((port) == {pi}u ? {m:#x}u : 0u)" for pi, m in sorted(masks.items())) + ")")
         out.append("")
 
+    # --- the advanced timers' second dead time (CH32RVComplementaryPwm::setDeadTime(rising, falling)) ---
+    if family in TIM_DT2:
+        off, shift, rise, fall = TIM_DT2[family]
+        out.append("/* ---- the advanced timers' second dead time (device-data registers.csv: DT_VLU2, DTP / DTN_MODE) ---- */")
+        out.append(f"#define CH32RV_TIM_DT2_OFFSET {off:#x}u")
+        out.append(f"#define CH32RV_TIM_DT2_SHIFT {shift}")
+        out.append(f"#define CH32RV_TIM_DT2_RISING (1u << {rise})")
+        out.append(f"#define CH32RV_TIM_DT2_FALLING (1u << {fall})")
+        out.append("")
+
     # --- PIOC ---
     # The I/O processor (CH32RVPioc): its SFRs, interrupt, program SRAM (PIOC_SRAM above) and the IO0 / IO1 pads with
     # the value that routes them (the AF number on the per-pin families, the remap field's value on X035).
@@ -5760,6 +5792,7 @@ def main() -> int:
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
+    TIM_DT2.update(load_tim_dt2(args.tables))
     _pioc_pads, _pioc_block = load_pioc(args.tables)
     PIOC_PADS.update(_pioc_pads)
     PIOC_BLOCK.update(_pioc_block)

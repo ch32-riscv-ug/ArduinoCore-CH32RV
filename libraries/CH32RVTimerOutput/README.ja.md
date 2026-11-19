@@ -43,6 +43,7 @@ void loop() {
 | `begin(pin, pinN, frequency, resolution = 8)` | `pin` は高機能タイマー（TIM1、TIM8 など）のチャネルの CHx、`pinN` は同じチャネル・経路の CHxN。`resolution` は `write()` が受けるビット数（1〜16） |
 | `write(duty)` | 各周期の `duty / 2^resolution` の間 CHx が High（デッドタイムの分だけ短い）。CHxN は残りの間（同じく短い）。0 で CHx が Low・CHxN が High、`2^resolution` でその逆 |
 | `setDeadTime(ns)` / `deadTime()` | 切り替えの前後で両方 Low の時間。タイマーのデッドタイムの刻み（クロック単位、長いほど粗い、最大 1008 クロック: 96 MHz で 10.5 µs）に切り上げ、設定した値を返す。`begin()` の前でも後でも |
+| `setDeadTime(risingNs, fallingNs)` / `deadTimeShort()` | 非対称のデッドタイム。risingNs は CHx が on になる前、fallingNs は CHxN が on になる前。長い方がタイマーのデッドタイム、短い方が 2 つ目のデッドタイム（長い方の刻みで 1 刻み以上、長い方より 1 刻み以上短い）。2 つ目のデッドタイムの無いタイマー（H41x 以外。M030 の TIM1 にもあるが device-data に位置が無い）では、等しくなければ false。ベンチ未確認（2026-11-19） |
 | `attachBreak(pin, activeLevel = LOW, mode = INPUT_PULLUP)` | タイマーのブレーキ入力（BKIN、同じ経路）。`activeLevel` になると、CPU を介さずハードが両方の出力を即座にオフ（Low）にする |
 | `breakActive()` / `resume()` | ブレーキが来た（保持される）。`resume()` はブレーキ入力が戻っていれば出力を戻す。まだ有効なら false |
 | `detachBreak()`、`end()`、`isAttached()` | |
