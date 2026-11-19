@@ -226,6 +226,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     CLEAR_FEATURE、サスペンドとリモートウェイクアップ、LPM / U1 / U2（sysfs）。B（6-2 の SS）で今すぐ流せる分から。
     2026-11-17: 等時の Mult は usb-ss-iso（tests/instrumented/usb/test_usb_ss_iso.py、スケッチ usb_ss_iso）を入れた
     （DCD は 1 間隔を 1 chain、記述子は superSpeedBurst()）。ビルドだけで、6-2 で未実行。
+    2026-11-20: 同じスケッチにベンダーのバルクを足し、STALL と CLEAR_FEATURE（test_usb_vendor_halt）、ポートのリセット後の
+    再通信（test_usb_vendor_after_reset）、パケットの前後・burst・0 長（test_usb_vendor_bulk_sizes: 1〜65536 バイトの往復、
+    64 KiB は 10 ms）を入れ、H417 の SS で通った。残り: ストリーム、サスペンドとリモートウェイクアップ・LPM / U1 / U2
+    （sysfs への書き込みに root が要る）。
   - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
   - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
 - [ ] L103 は今ベンチに無い（2026-11-18、ユーザー: 後日 OEP で配線し直す）。その間はビルドだけ。配線ができたら、今日のコアの

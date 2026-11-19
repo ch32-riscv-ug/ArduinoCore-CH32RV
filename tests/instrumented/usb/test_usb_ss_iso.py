@@ -326,3 +326,56 @@ def test_usb_vendor_after_reset(dut, record_property):
             wrong.append(f"round {round_}: back at speed {host.device().speed}, was {speed}")
     record_property("rounds", json.dumps(seen))
     assert not wrong, " | ".join(wrong)
+
+
+BULK_SIZES = (1, 1023, 1024, 1025, 4096, 16384, 65536)
+
+
+def test_usb_vendor_bulk_sizes(dut, record_property):
+    """The vendor bulk echo at sizes around the packet (1024 at SuperSpeed) and in bursts (16 and 64 KiB: the
+    endpoint's bMaxBurst lets the host send several packets before an ACK), the host writing from one thread while
+    it reads in another (the DUT's FIFO is smaller than the larger sizes); and a zero-length packet from the host,
+    which the DUT takes as an empty transfer with no echo, the next echo intact. Every byte back, in order."""
+    import threading
+    host = _ready(dut)
+    dev = host.device()
+    number, out, inn = _bulk(dev)
+    usb.util.claim_interface(dev, number)
+    seen, wrong = {}, []
+    try:
+        for size in BULK_SIZES:
+            data = secrets.token_bytes(size)
+            errors = []
+
+            def writer():
+                try:
+                    dev.write(out, data, timeout=5000)
+                except usb.core.USBError as e:
+                    errors.append(repr(e))
+
+            t = threading.Thread(target=writer)
+            started = time.monotonic()
+            t.start()
+            got = bytearray()
+            deadline = time.monotonic() + 10
+            while len(got) < size and time.monotonic() < deadline:
+                try:
+                    got += bytes(dev.read(inn, 16384, timeout=200))
+                except usb.core.USBTimeoutError:
+                    pass
+            t.join(10)
+            took = time.monotonic() - started
+            seen[size] = dict(back=len(got), ms=round(took * 1000, 1), errors=errors)
+            if bytes(got) != data or errors:
+                wrong.append(f"{size} bytes: {len(got)} back{' (differing)' if len(got) == size else ''}"
+                             + (f", the write: {errors[0]}" if errors else ""))
+        dev.write(out, b"", timeout=1000)
+        ok, n = _echo(dev, out, inn)
+        seen["after a ZLP"] = n
+        if not ok:
+            wrong.append(f"the echo after a zero-length packet: {n} of 100 bytes back")
+    finally:
+        usb.util.release_interface(dev, number)
+        usb.util.dispose_resources(dev)
+    record_property("bulk", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
