@@ -11,7 +11,7 @@ A part with a USB device port, and a USB cable to the PC. Failures show on a 115
 
 ## What to do and what to expect
 
-The PC sees an 8 KB drive (`CH32RV` / `RAM blocks`) and a serial port (interface name `disk statistics`). The drive is
+The PC sees an 8 KB drive (4 KB on CH32V103 / V203, for their RAM) (`CH32RV` / `RAM blocks`) and a serial port (interface name `disk statistics`). The drive is
 all zeros, and the OS offers to format it. With the serial port open, `reads=... writes=...` shows every second, and at
 once on `?`. The counts grow as the PC reads and writes the drive.
 
