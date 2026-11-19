@@ -24,15 +24,15 @@
 
 | 台 | 足す線 | ラベルを直す線 |
 |---|---|---|
-| CH32V003F4U6 | 0 本: なし | なし |
+| CH32V003F4U6 | 1 本: `v003f4u6-uia@pd4` | なし |
 | CH32V003F4P6 | 0 本: なし | なし |
 | CH32V006K8U6 | 0 本: なし | なし |
 | CH32V103R8T6 | 1 本: `v103r8t6-evt@pa8` | なし |
 | CH32V203C8T6 | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
 | CH32V205RCT6 | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
 | CH32V208WBU6 | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
-| CH32V307VCT6 | 25 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
-| CH32V407WEU6 | 19 本: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst` | なし |
+| CH32V307VCT6 | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
+| CH32V407WEU6 | 20 本: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pa8`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst` | なし |
 | CH32L103C8T6 | 0 本: なし | なし |
 | CH32X035C8T6 | 1 本: `x035c8t6-pico@pa13` | なし |
 | CH32X315MCU6 | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
@@ -44,7 +44,7 @@
 - いまの線: PA1, PA2, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2
 - コンソール（rx / tx）: PD5, PD6
 - 触らない端子: PA1, PA2, PD1, PD7
-- 足す線（0 本、端子順）: なし
+- 足す線（1 本、端子順）: `v003f4u6-uia@pd4`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -62,6 +62,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 済 |  |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 該当なし | この型番に条件を満たす端子が無い |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PD4 |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -91,6 +92,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 済 |  |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 該当なし | この型番に条件を満たす端子が無い |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -149,6 +151,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 該当なし | 候補は触らない端子かコンソールだけ: PA11, PA12 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -178,6 +181,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 該当なし | 候補は触らない端子かコンソールだけ: PA11, PA12 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -207,6 +211,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 該当なし | この型番に条件を満たす端子が無い |
+| PIOC の IO0 | pioc::test_pioc_pulses | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -236,6 +241,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 未 | PA2, PA3 |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 該当なし | 候補は触らない端子かコンソールだけ: PA11, PA12 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
 | Wire の既定の SDA・SCL | wire | 未 | PB7, PB6 |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 未 | PA0, PA1 |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 未 | PA5, PA6, PA7 |
@@ -247,7 +253,7 @@
 - いまの線: なし
 - コンソール（rx / tx）: PA9, PA10（未配線: Serial の既定の端子）
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15
-- 足す線（25 本、端子順）: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst`
+- 足す線（26 本、端子順）: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -266,6 +272,7 @@
 | DAC の出力 | periph（analogWrite の DAC） | 未 | PA4 |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 未 | PC0, PC1 |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PC4 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
 | Wire の既定の SDA・SCL | wire | 未 | PB7, PB6 |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 未 | PA0, PA1 |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 未 | PA5, PA6, PA7 |
@@ -277,7 +284,7 @@
 - いまの線: なし
 - コンソール（rx / tx）: PA9, PA10（未配線: Serial の既定の端子）
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15, PE12
-- 足す線（19 本、端子順）: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst`
+- 足す線（20 本、端子順）: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pa8`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -296,6 +303,7 @@
 | DAC の出力 | periph（analogWrite の DAC） | 未 | PA4 |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 未 | PE0, PE1 |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PC4 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
 | Wire の既定の SDA・SCL | wire | 未 | PB7, PB6 |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 未 | PA0, PA1 |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 未 | PA5, PA6, PA7 |
@@ -326,6 +334,7 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -355,6 +364,8 @@
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PA13 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 済 |  |
+| PIOC の IO0 | pioc::test_pioc_pulses | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -415,6 +426,7 @@
 | DAC の出力 | periph（analogWrite の DAC） | 未 | PA4 |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PD15 |
+| PIOC の IO0 | pioc::test_pioc_pulses | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |

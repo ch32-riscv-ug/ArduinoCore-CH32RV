@@ -238,6 +238,9 @@ def plan(part, labels_now, console, reserved):
           if "CK" in g and console and {g.get("TX"), g.get("RX")} & console]
     if ck:
         need("コンソールの USART の CK（同じ経路）", "uart-sync::test_uart_synchronous（UsartSPI）", ck)
+    pioc = sorted({r["pad"] for r in rows if r["peripheral"] == "PIOC" and r["role"] == "IO0"})
+    if pioc:
+        need("PIOC の IO0", "pioc::test_pioc_pulses", [[p] for p in pioc])
 
     # I2C, SPI: the variant's defaults; SoftWire / SoftSPI: plain lines with distinct bits.
     sda, scl = d["PIN_WIRE_SDA"], d["PIN_WIRE_SCL"]
