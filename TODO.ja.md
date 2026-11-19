@@ -701,7 +701,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - [ ] IP（docs/network-stack.ja.md）の残り: V317 の実機。V203RB は WCH-Link 一体型のボード（wchlink://BC5F4B9807F7）で eth が通った（2026-11-13、tests/.env の記録、今の `OEP_PORT_MEMO_<serial>`）。V208 の USB(ベンチの暫定配線では PC につながっていない)。
   V307 のチップのリビジョン 0x20 の回避策。対象の系列の USB デバイスのドライバで NCM を実機で確かめる。HTTP サーバー、MQTT / HTTP のクライアント（FEATURE_CANDIDATES の NET-03）。
 - [ ] スタックの予約（Stack Size メニュー、既定は RAM の 16 分の 1、2026-11-14）より深く使うコードは、ヒープを黙って上書きする（Stack Check メニューを On にすると、はみ出しでリセットし、次の起動の resetReason() が panic になる）。TLS は、セッションの間 `_sbrk` に sp から 6 KB の余白を求めさせて直した（2026-11-03。V307 の 224k_96k の MAC エラーは、きれいなメモリー不足に変わった。H417 の HTTPS はそのまま通る）。ほかに深いスタックを使うライブラリが出たら、同じ `ch32rv_heap_stack_margin` を使う。
-  V307 の eth の試験の HTTPS は、224k_96k でも 192k_128k でもメモリーが足りない（ヒープは 192k_128k で約 45 KB）。収める工夫（lwIP の大きさ、`MBEDTLS_SSL_IN_CONTENT_LEN` の縮小と max_fragment_length）は、必要になったら。
+  V307 の eth の試験の HTTPS は、224k_96k でも 192k_128k でもメモリーが足りない（試験のスケッチが大きい）。HttpsGet・MutualTlsClient は
+  192k_128k で通る（2026-11-20 に lwIP の送信用のヒープを 20 KB にしてから）。試験のスケッチを収める工夫（`MBEDTLS_SSL_IN_CONTENT_LEN` の縮小と
+  max_fragment_length）は、必要になったら。
 
 - [ ] EspUsbDevice との差の残り（Info の例 3 本は 2026-11-20 に済み: UsbBringUpCheck・UsbConsole を移植、DescriptorDump は既にあった。MidiEcho・CompositeCdcMidi・ReconfigureVendor・MscCdcBlocks・FirmwareCDC も移植。FirmwareHTTP（ESP の WebServer と
   HTTPUpdateServer に頼る）の代わりに、HTTP から取ってくる Update の HttpUpdate を足した（V307 で確かめた）。AudioPlayback（形を複数）はこちらが 1 つの形なので AudioSpeaker で足りる。CdcConsole と VendorEcho は
