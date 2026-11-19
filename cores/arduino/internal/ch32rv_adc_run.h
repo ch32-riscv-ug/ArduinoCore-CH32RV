@@ -52,6 +52,22 @@ extern "C" {
 #else
 #define CH32RV_ADC_DMA_MUX()   ((void)0)
 #endif
+/* ADC1's own interrupt (end of an injected round, ...): its vector's name differs between families. The
+ * handler is ch32rv_adc_irq.c's, linked by ch32rv_adc_irq_link(); it calls ch32rv_adc_injected_irq(), a weak
+ * empty default where CH32RVAdcInjected is not linked. */
+#if defined(CH32RV_IRQN_ADC1_2)
+#define CH32RV_ADC_IRQN        CH32RV_IRQN_ADC1_2
+#define CH32RV_ADC_IRQ_HANDLER ADC1_2_IRQHandler
+#elif defined(CH32RV_IRQN_ADC1)
+#define CH32RV_ADC_IRQN        CH32RV_IRQN_ADC1
+#define CH32RV_ADC_IRQ_HANDLER ADC1_IRQHandler
+#elif defined(CH32RV_IRQN_ADC)
+#define CH32RV_ADC_IRQN        CH32RV_IRQN_ADC
+#define CH32RV_ADC_IRQ_HANDLER ADC_IRQHandler
+#endif
+void ch32rv_adc_irq_link(void);
+void ch32rv_adc_injected_irq(void);
+
 #define CH32RV_ADC_DMA_CFGR    CH32RV_REG32(CH32RV_ADC_DMA_CH_BASE + 0x00u)
 #define CH32RV_ADC_DMA_CNTR    CH32RV_REG32(CH32RV_ADC_DMA_CH_BASE + 0x04u)
 #define CH32RV_ADC_DMA_PADDR   CH32RV_REG32(CH32RV_ADC_DMA_CH_BASE + 0x08u)

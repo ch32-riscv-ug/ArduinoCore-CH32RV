@@ -10,6 +10,8 @@
  *   stop                      STOP <bytes echoed>
  *   adc <pin>                 ADC <reading> <full scale> <VDD mV from Vrefint, 0 unknown>
  *   acaps <pin>               ACAPS <ADC channel of the pad, or -1>
+ *   inj <pin>                CH32RVAdcInjected on the pin: INJ <begun> <convert()'s value> <startTimer(1000) ok> <rate>
+ *                            <rounds in the 500 ms after> <their us> <the last round's value> <the ADC's bits>
  *   awd <pin> <band>         CH32RVAdcStream on the pin at 50 kHz with its watchdog's window the lowest
  *                             quarter of full scale (band 0) or the highest (band 1), for 50 ms:
  *                             AWD <ok> <tripped 0/1> <tripped again right after a clear 0/1>
@@ -64,6 +66,7 @@
 #include <string.h>
 #if defined(NUM_ANALOG_INPUTS)
 #include <CH32RVAdcStream.h>
+#include <CH32RVAdcInjected.h>
 #endif
 /* The ADC's triggers: CH32RVAdcStream's timer (atimer) and pad (aext), and
  * analogContinuous() (acont). V003's 16 KB holds the pad's alone beside the
@@ -477,6 +480,25 @@ static void reply(char *command)
         SerialDMSeq.printf("AWD %d %d %d\r\n", ok ? 1 : 0, tripped ? 1 : 0, again ? 1 : 0);
 #else
         SerialDMSeq.printf("AWD 0 0 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "inj") && argc == 2) {
+#if defined(NUM_ANALOG_INPUTS)
+        /* the injected group: one round by software, then rounds at 1 kHz from a timer for 500 ms */
+        static CH32RVAdcInjected inj;
+        const pin_size_t pin = (pin_size_t)atoi(argv[1]);
+        uint16_t v = 0;
+        const bool ok = inj.begin(&pin, 1) && inj.convert(&v);
+        const bool timed = ok && inj.startTimer(1000);
+        const uint32_t r0 = inj.rounds(), t0 = micros();
+        delay(500);
+        const uint32_t rounds = inj.rounds() - r0, us = micros() - t0;
+        const uint16_t last = inj.value(0);
+        const uint32_t rate = inj.rate();
+        inj.end();
+        SerialDMSeq.printf("INJ %d %u %d %lu %lu %lu %u %d\r\n", ok ? 1 : 0, v, timed ? 1 : 0, (unsigned long)rate,
+                           (unsigned long)rounds, (unsigned long)us, last, CH32RV_ADC_BITS);
+#else
+        SerialDMSeq.printf("INJ 0 0 0 0 0 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "astream") && argc >= 4) {
 #if defined(NUM_ANALOG_INPUTS)

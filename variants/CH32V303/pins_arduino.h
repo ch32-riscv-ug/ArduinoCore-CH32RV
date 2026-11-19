@@ -898,6 +898,13 @@ static const uint8_t SS = PIN_SPI_SS;
 /* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 0, 5}, {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 1, 8}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 2, 5}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {4, 3, 8}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4}, {5, 3, 8}, {8, 0, 1}, {8, 1, 2}, {8, 2, 4}, {8, 3, 5}, {9, 0, 10}, {9, 1, 5}, {9, 2, 6}, {9, 3, 7}, {10, 0, 9}, {10, 1, 2}, {10, 2, 4}, {10, 3, 5} }
 
+/* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */
+#define CH32RV_ADC_JEXTSEL_SHIFT 12u
+#define CH32RV_ADC_JEXTSEL_BITS 3u
+#define CH32RV_ADC_JSWSTART_VALUE 7u
+#define CH32RV_ADC_JTRIGGERS { {1, 0, 0}, {1, 4, 1}, {2, 0, 2}, {2, 1, 3}, {3, 4, 4}, {4, 0, 5} }
+
+
 /* ---- Timer pads (CH32RVTimer.h ch32rv_timer_pad_find): every pad a
  * timer reaches, on every route the core can select. Fields: pad,
  * timer, channel | role << 4 (role 0 CHx, 1 CHxN, 2 BKIN with channel

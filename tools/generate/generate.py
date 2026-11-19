@@ -2959,6 +2959,34 @@ OPA_PINS: dict = {}
 USBPD_CC: dict = {}
 
 
+# The ADC's injected group: its JEXTSEL field and what each value starts it from (adc_triggers.csv, group
+# "injected"). family -> {"shift", "bits", "software", "timers": {value: (timer, event)}} (event 0: TRGO, n: CCn).
+ADC_JTRIGGERS: dict = {}
+
+
+def load_adc_jtriggers(tables: pathlib.Path) -> dict:
+    out: dict = {}
+    seen: dict = {}
+    for r in read_table(tables, "adc_triggers.csv", ("family", "group", "field", "bits", "value", "trigger")):
+        if r["group"] != "injected" or r["field"] != "JEXTSEL":
+            continue
+        hi, _, lo = r["bits"].partition(":")
+        f = out.setdefault(r["family"], {"shift": int(lo or hi), "bits": int(hi) - int(lo or hi) + 1,
+                                         "software": None, "timers": {}})
+        v = int(r["value"])
+        seen.setdefault((r["family"], v), set()).add(r["trigger"])
+        if r["trigger"] == "JSWSTART":
+            f["software"] = v
+            continue
+        m = re.fullmatch(r"TIM(\d+)_(TRGO|CC(\d))", r["trigger"])
+        if m:
+            f["timers"][v] = (int(m.group(1)), 0 if m.group(2) == "TRGO" else int(m.group(3)))
+    for (family, v), triggers in seen.items():      # a value with two meanings (a remap picks): neither
+        if len(triggers) > 1 and v in out[family]["timers"]:
+            del out[family]["timers"][v]
+    return out
+
+
 def load_usbpd_cc(tables: pathlib.Path) -> dict:
     regs = {(r["family"], r["block"], r["register"]): (int(r["address"], 16), int(r["width_bits"]))
             for r in read_table(tables, "register_map.csv", ("family", "block", "register", "address", "width_bits"))
@@ -5215,6 +5243,24 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */")
         out.append("#define CH32RV_TIMER_ITR { " + ", ".join(f"{{{s}, {i}, {m}}}" for s, i, m in sorted(itr)) + " }")
     out.append("")
+    # --- ADC injected group ---
+    # The sources every family of the series agrees on (V203 spans V20x and V205's die).
+    fams = [ADC_JTRIGGERS.get(f) for f in sorted({r.get("family", "") for r in rows})]
+    if fams and all(fams) and len({(f["shift"], f["bits"], f["software"]) for f in fams}) == 1 \
+            and fams[0]["software"] is not None:
+        common = set(fams[0]["timers"].items())
+        for f in fams[1:]:
+            common &= set(f["timers"].items())
+        common = {v: te for v, te in common if te[0] in timer_caps}
+        out.append("/* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, "
+                   "and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */")
+        out.append(f"#define CH32RV_ADC_JEXTSEL_SHIFT {fams[0]['shift']}u")
+        out.append(f"#define CH32RV_ADC_JEXTSEL_BITS {fams[0]['bits']}u")
+        out.append(f"#define CH32RV_ADC_JSWSTART_VALUE {fams[0]['software']}u")
+        if common:
+            out.append("#define CH32RV_ADC_JTRIGGERS { " + ", ".join(f"{{{t}, {e}, {v}}}" for v, (t, e) in sorted(common.items())) + " }")
+        out.append("")
+    out.append("")
     out.extend(timer_pad_block(series, parts, union, timer_pads, timer_remaps,
                                timer_caps, candidates, handlers, pwm_pads,
                                reserved))
@@ -5602,6 +5648,7 @@ def main() -> int:
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
+    ADC_JTRIGGERS.update(load_adc_jtriggers(args.tables))
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)

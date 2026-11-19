@@ -1045,6 +1045,12 @@ scope = "series"
 needs = ["ADC1"]
 
 [[item]]
+id = "adc-injected"         # CH32RVAdcInjected: a software round and timer rounds read the probe's low / high, at the rate
+test = "periph::test_adc_injected"
+scope = "series"
+needs = ["ADC1"]
+
+[[item]]
 id = "adc-timer-trigger"    # one ADC round per tick of a timer (CH32RVAdcStream.beginTimer(): the family's trigger timers)
 test = "periph::test_adc_timer_trigger"
 scope = "series"

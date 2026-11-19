@@ -68,6 +68,28 @@ converter's units, as in the buffer. No interrupt (the flag is read). Linked onl
 `setWatchdog()`. Seen on V203, V003 and H417 with the probe holding the line low and high: the flag rises exactly
 when the line is outside the window (2026-11-18, periph::test_adc_watchdog).
 
+## Injected group (CH32RVAdcInjected)
+
+```cpp
+#include <CH32RVAdcInjected.h>
+
+CH32RVAdcInjected inj;
+const pin_size_t pins[] = {PA0, PA1};
+inj.begin(pins, 2);                    // 1 .. 4 pins, converted in this order as one round
+uint16_t v[2];
+inj.convert(v);                        // one round now (software start), waited for
+inj.onRound([](const uint16_t *v, uint8_t n) { /* from the ADC's interrupt */ });
+inj.startTimer(1000);                  // rounds 1000 times a second from a timer
+```
+
+ADC1's injected group: up to four channels converted at a set instant, between `analogRead()`'s and the stream's
+regular conversions (a motor's currents at a set point of the PWM period, say). Values are the converter's raw
+counts (`bits()` bits; `analogReadResolution()` does not apply). `startTimer()` takes a free timer among the
+sources the chip can start the group with (the variant's `CH32RV_ADC_JTRIGGERS`, generated from device-data's
+adc_triggers.csv: a timer's TRGO or a channel's compare); `rate()` says the rate it gives. `value(i)` and
+`rounds()` give the last values and the count. Checked on V203 and X035: the values with the probe holding the line
+low / high, and 499 rounds in 500 ms at 1 kHz (2026-11-19, periph::test_adc_injected).
+
 ## Examples
 
 - [AdcStreamStats](examples/AdcStreamStats/README.md): capture one pin and print, each second, the count, the minimum, maximum and mean, and any lost halves.

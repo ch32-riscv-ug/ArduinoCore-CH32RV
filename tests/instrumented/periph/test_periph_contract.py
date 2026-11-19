@@ -338,6 +338,43 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_adc_injected(dut, oep_host, record_property):
+    """periph.adc-injected: CH32RVAdcInjected on a labelled ADC pad the probe's GPIO holds low, then high. convert()
+    (a software round) and the timer's rounds read under a quarter / over three quarters of full scale; the timer
+    gives its rate's rounds in 500 ms, within 3 % (on the DUT's own clock), and rate() within 3 % of 1 kHz."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    case = settings(__file__)
+    ready(dut, case)
+    found = adc_pads(dut, oep_host, case, 1)
+    if not found:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    (line, channel), = found
+    record_property("line", f"{line['pad']} channel {channel}")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
+    results = {}
+    try:
+        for level, mode in (("low", Gpio.OUTPUT_LOW), ("high", Gpio.OUTPUT_HIGH)):
+            gpio.configure(line["channel"], mode)
+            time.sleep(0.02)
+            m = ask(dut, f"inj {line['pin']}", rb"INJ (\d) (\d+) (\d) (\d+) (\d+) (\d+) (\d+) (\d+)", timeout=10)
+            ok, value, timed, rate, rounds, us, last, bits = (int(x) for x in m.groups())
+            results[level] = dict(value=value, rate=rate, rounds=rounds, us=us, last=last)
+            assert ok, "begin() or convert() refused"
+            assert timed, "startTimer(1000) found no timer"
+            full = (1 << bits) - 1
+            for name, v in (("convert()", value), ("the timer's last round", last)):
+                assert (v < full // 4) if level == "low" else (v > full * 3 // 4), f"line {level}: {name} read {v} of {full}"
+            assert abs(rate - 1000) <= 30, f"rate() {rate}, not 1 kHz"
+            want = rate * us / 1e6
+            assert abs(rounds - want) <= max(2, want * 0.03), f"{rounds} rounds in {us} us at {rate} Hz"
+    finally:
+        record_property("injected", json.dumps(results))
+        core.plan_release(host, [gpio.fn])
+
+
 def adc_pads(dut, oep_host, case, n, skip_pads=()):
     """Up to n labelled lines the DUT names as ADC channels (not the record's defects', not skip_pads):
     [(line, channel)]."""

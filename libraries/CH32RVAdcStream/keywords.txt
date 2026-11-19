@@ -13,3 +13,8 @@ triggerTimer	KEYWORD2
 setWatchdog	KEYWORD2
 watchdogTripped	KEYWORD2
 clearWatchdog	KEYWORD2
+CH32RVAdcInjected	KEYWORD1
+convert	KEYWORD2
+startTimer	KEYWORD2
+onRound	KEYWORD2
+rounds	KEYWORD2

@@ -68,6 +68,28 @@ ADC のハードが変換のたびに比べるので、スケッチは何もし�
 V203・V003・H417 で、プローブが線を Low / High に保ったとき、範囲の外のときだけ旗が立つことを確かめました
 （2026-11-18、periph::test_adc_watchdog）。
 
+## 注入変換（CH32RVAdcInjected）
+
+```cpp
+#include <CH32RVAdcInjected.h>
+
+CH32RVAdcInjected inj;
+const pin_size_t pins[] = {PA0, PA1};
+inj.begin(pins, 2);                    // 1〜4 本、この順に 1 回の変換で
+uint16_t v[2];
+inj.convert(v);                        // 今 1 回（ソフトの開始）、待って値を返す
+inj.onRound([](const uint16_t *v, uint8_t n) { /* ADC の割り込みから */ });
+inj.startTimer(1000);                  // タイマーで 1 秒に 1000 回
+```
+
+ADC1 の注入グループです。`analogRead()` やストリームの通常の変換の合間に割り込んで、決めた瞬間に最大 4 本を
+変換します（PWM の周期の決まった位置でモーターの電流を取る、など）。値は変換器の生の数（`bits()` ビット、
+`analogReadResolution()` は効かない）。`startTimer()` のタイマーは、チップが注入グループを起動できる源
+（variant の `CH32RV_ADC_JTRIGGERS`、device-data の adc_triggers.csv から生成: タイマーの TRGO か、チャネルの
+比較の一致）のうち空いているもので、`rate()` が実際の回数を返します。`value(i)`・`rounds()` で最後の値と回数。
+V203・X035 で、プローブが線を Low / High に保ったときの値と、1 kHz で 500 ms に 499 回を確かめました
+（2026-11-19、periph::test_adc_injected）。
+
 ## サンプル
 
 - [AdcStreamStats](examples/AdcStreamStats/README.ja.md): 1 本の端子を取り込み、1 秒ごとに数、最小・最大・平均、取りこぼしを表示します。
