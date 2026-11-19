@@ -12,6 +12,7 @@ Check Type-C, CC and power circuits against the board schematic. Logs use the sk
 |---|---|---|
 | ListProfiles | Sink | PD charger; requests 9 V after startup |
 | CycleVoltages | Sink | PD charger and PA1-to-GND button; cycles fixed voltages |
+| PpsVoltageControl | Sink | PD charger with PPS; a voltage in mV typed on the UART |
 | PowerSource | Source | Adjustable supply, VBUS switch, source CC circuit and real control callbacks |
 
 The sink examples change VBUS voltage. A board powered from VBUS and its loads must tolerate the requested voltage. voltage/current report contract values, not measurements.
@@ -51,5 +52,6 @@ See the [library API](../README.md) for quantization, failure recovery and hardw
 | Example | Purpose |
 |---|---|
 | [CycleVoltages](CycleVoltages/README.md) | A button cycles through the charger fixed-voltage PDOs and logs contract values. |
+| [PpsVoltageControl](PpsVoltageControl/README.md) | Sets the voltage of the charger's PPS range from the UART; no PPS, out of range, refusal and unplugging handled. |
 | [ListProfiles](ListProfiles/README.md) | Lists charger PDOs and requests 9 V. This actively changes VBUS voltage rather than only inspecting capabilities. |
 | [PowerSource](PowerSource/README.md) | A PD source protocol template with callbacks for a VBUS switch and adjustable supply. As supplied it only logs; it does not control a physical supply. |

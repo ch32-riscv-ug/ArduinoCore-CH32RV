@@ -14,9 +14,10 @@ UART アダプタの RX をボードの TX、TX を RX、GND 同士を接続し�
 |---|---|---|
 | ListProfiles | Sink | PD 充電器。起動後に9 Vを要求 |
 | CycleVoltages | Sink | PD 充電器、PA1–GND ボタン。固定電圧を循環 |
+| PpsVoltageControl | Sink | PPS の PD 充電器。UART で mV を打つ |
 | PowerSource | Source | 外部の可変電源、VBUSスイッチ、Source用 CC 回路と実制御 callback |
 
-ListProfiles と CycleVoltages は VBUS の電圧を変えます。VBUS をボードの電源入力に使う場合、そのレギュレータと接続負荷を要求電圧へ対応させます。`voltage()` / `current()` は契約値であり、実測値ではありません。
+ListProfiles と CycleVoltages と PpsVoltageControl は VBUS の電圧を変えます。VBUS をボードの電源入力に使う場合、そのレギュレータと接続負荷を要求電圧へ対応させます。`voltage()` / `current()` は契約値であり、実測値ではありません。
 
 PowerSource の付属 callback はログのみです。実電源制御へ置き換え、広告 PDO と Rp の電流値を供給回路の能力に合わせてから sink を接続します。WeAct X035 の Sink 用 R4/R5 を残した状態で Source として使用しません。
 
@@ -51,5 +52,6 @@ API、PPS の量子化、失敗時の処理と実機確認の範囲は [ライ�
 | 例 | 内容 |
 |---|---|
 | [CycleVoltages](CycleVoltages/README.ja.md) | ボタン操作で充電器の固定 PDO を順に選び、契約値を UART に表示します。 |
+| [PpsVoltageControl](PpsVoltageControl/README.ja.md) | 充電器の PPS の範囲の電圧を UART から決めます。PPS 無し・範囲外・拒否・抜去を扱います。 |
 | [ListProfiles](ListProfiles/README.ja.md) | PD 充電器の PDO を一覧表示し、9 V を要求します。読み出し専用の例ではなく、VBUS 電圧が実際に変わります。 |
 | [PowerSource](PowerSource/README.ja.md) | PD Source の protocol と、VBUS スイッチ・可変電源を接続する callback の骨格です。そのままでは実電源を制御しません。 |
