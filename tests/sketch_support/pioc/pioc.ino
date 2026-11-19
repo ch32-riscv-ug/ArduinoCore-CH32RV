@@ -26,6 +26,9 @@
  *                        waits the example works out: PRX <begun> <clockHz()> <cycles a bit>, at once (the bytes come
  *                        after)
  *   prxget               waitDone(2000): PRXGET <cmd.out or -1> <bytes taken> <them in hex>
+ *   pnecrx <pin>         nec_rx.S (a copy of the PiocIrNecRx example's) begun on the pad, its ticks as the example
+ *                        works them out, one command given: PNECRX <begun> <M> <a tick in ns>
+ *   pnecget              waitDone(2000): PNECGET <cmd.out or -1> <d8 .. d11 as a 32-bit hex, the first bit lowest>
  *   ppadsall             PPADSALL <role:pin:value>... (every PIOC pad: role 0 IO0, 1 IO1; value the AF or remap)
  *   pspi <sck> <mosi> <cs> <n> <seed> <hz>
  *                        spi_tx.S (a copy of the PiocSpiTx example's) begun on the two pads once and left running: n
@@ -49,6 +52,7 @@ PIOC_IMAGE(ir_nec);
 PIOC_IMAGE(pulse_in);
 PIOC_IMAGE(uart_rx);
 PIOC_IMAGE(spi_tx);
+PIOC_IMAGE(nec_rx);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
 int spiSck = -1;             // the same for spi_tx (its SCK pad)
@@ -296,6 +300,30 @@ void reply(char *command) {
     SerialDMSeq.print(irqCalls);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(pioc.read(1));
+  } else if (strncmp(command, "pnecrx ", 7) == 0) {
+    const int pin = (int)strtol(command + 7, nullptr, 10);
+    uartPin = -1;
+    necPin = -1;
+    spiSck = -1;
+    const bool begun = pioc.begin(PIOC_IMAGE_OF(nec_rx), pin);
+    const uint32_t clk = CH32RVPioc::clockHz();
+    uint32_t m = (uint32_t)((uint64_t)clk * 75 / 1000000 / 773);
+    m = m < 1 ? 1 : m > 255 ? 255 : m;
+    const float tickUs = (float)(m * 773 + 14) * 1e6f / (float)clk;
+    const uint8_t ticks[4] = {(uint8_t)m, (uint8_t)(256 - (int)(1125.0f / tickUs + 0.5f)),
+                              (uint8_t)(256 - (int)(3375.0f / tickUs + 0.5f)),
+                              (uint8_t)(256 - (int)(6000.0f / tickUs + 0.5f))};
+    if (begun) {
+      pioc.writeData(1, ticks, sizeof ticks);
+      pioc.command(1);
+    }
+    SerialDMSeq.printf("PNECRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)m, (unsigned long)(tickUs * 1000.0f));
+  } else if (strcmp(command, "pnecget") == 0) {
+    const int status = pioc.waitDone(2000);
+    uint8_t b[4];
+    pioc.readData(8, b, sizeof b);
+    SerialDMSeq.printf("PNECGET %d %08lx\r\n", status,
+                       (unsigned long)(b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24));
   } else if (strncmp(command, "pspi ", 5) == 0) {
     char *p;
     const int sck = (int)strtol(command + 5, &p, 10);

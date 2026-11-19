@@ -127,5 +127,6 @@ PF13・PF14。PB8 / PB9 は SWD と兼用）。
 - [PiocSpiTx](examples/PiocSpiTx/README.ja.md): SPI の送信をもう 1 つ（IO0 に SCK、IO1 に MOSI、モード 0、MSB から。CS は GPIO）。H417・V205 で 100 kHz・1 MHz の送信が WireSkein の `spi` で通っています（2026-11-20）。
 - [PiocUartTx](examples/PiocUartTx/README.ja.md): シリアルの送信をもう 1 つ（IO0、8N1）。データは共有レジスタで 24 バイトずつ渡す。H417・X035・V205 で 9600〜1M bps の送信が WireSkein の `uart` で通っています（2026-11-19）。
 - [PiocIrNec](examples/PiocIrNec/README.ja.md): NEC 方式の赤外線リモコンのフレームを 38 kHz の搬送波で送る。H417・X035・V205 で WireSkein の `ir` が通っています（2026-11-19）。
+- [PiocIrNecRx](examples/PiocIrNecRx/README.ja.md): NEC 方式の赤外線リモコンのフレームを受ける（受光モジュールの出力を IO0 に、1 フレームを PIOC が 32 ビットに読み解く）。H417・X035・V205 で、プローブが出した通常・拡張のアドレスと繰り返しの符号を受けています（2026-11-20）。
 - [PiocPulseIn](examples/PiocPulseIn/README.ja.md): 割込みに揺らされない `pulseIn()`。IO0 の 1 周期の High と Low を 8 サイクル刻みで数える。H417・X035・V205 でプローブの PWM を 0.5 % 以内で測れています（2026-11-19）。
 - [PiocUartRx](examples/PiocUartRx/README.ja.md): シリアルの受信をもう 1 つ（IO0、8N1、最大 24 バイトずつ）。H417・X035・V205 でプローブの UART から 9600〜1M bps で受けています（2026-11-19）。

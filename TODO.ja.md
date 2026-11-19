@@ -443,8 +443,9 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   38 kHz の搬送波。pioc::test_pioc_ir_nec が WireSkein の ir で通る）と PiocPulseIn（パルス幅の測定。プローブの PWM の fixture を
   IO0 に plan して pioc::test_pioc_pulse_in）、PiocUartRx（プローブの UART の fixture の TX を IO0 に plan して
   pioc::test_pioc_uart_rx）、PiocSpiTx（SPI の送信、IO0 に SCK・IO1 に MOSI。H417・V205 で pioc::test_pioc_spi_tx が
-  WireSkein の spi で通る。2026-11-20）を足した。残りの候補: 1-Wire（DS18B20。相手の石か、プローブの 1-Wire の相手役が要る）、NEC の受信
-  （プローブが NEC の波形を出す仕組みが要る）。どれも自前で書き起こす（EVT のコードは持ち込まない）。
+  WireSkein の spi で通る。2026-11-20）と PiocIrNecRx（NEC の受信。PIOC が 1 フレームを 32 ビットに読み解く。プローブの
+  spi-controller が MOSI に受光モジュールの出力の形を出し、H417・X035・V205 で pioc::test_pioc_nec_rx が通る。2026-11-20）を足した。
+  残りの候補: 1-Wire（DS18B20。相手の石か、プローブの 1-Wire の相手役が要る）。どれも自前で書き起こす（EVT のコードは持ち込まない）。
   README の「使い道と限界」に沿って、PIOC に向いた用途を選ぶ。
 - [ ] PIOC の L2 以降のマクロ（待ち時間、構造化、部品、雛形）は設計してから入れる（ユーザー、2026-11-19）。置き場はコアでなく
   アプリ側: スケッチのプロジェクトのファイルとして持ち、版の差や環境の差を無くす（ユーザー、2026-11-19）。案は

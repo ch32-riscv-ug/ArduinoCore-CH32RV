@@ -202,6 +202,91 @@ def test_pioc_uart_tx(dut, ws_run, request, record_property):
         assert (begun, loaded, status) == (1, 1, 0), f"{baud}: begun {begun}, loaded {loaded}, cmd.out {status}"
 
 
+NEC_RX_UNIT_HZ = 1_000_000 / 562.5      # the probe's spi-controller clocks one NEC unit (562.5 us) a bit on MOSI
+NEC_RX_FRAMES = ((0x00, 0x45), (0x1234, 0x5A), None)    # (address, command); None: a repeat code
+
+
+def _nec_rx_wave(frame):
+    """What an IR receiver module puts out for `frame` (low while the carrier is on), one bit a unit, high around."""
+    low, high = [0], [1]
+    seq = high * 16 + low * 16
+    if frame is None:
+        seq += high * 4 + low
+    else:
+        address, command = frame
+        a = [address & 0xFF, (~address & 0xFF) if address <= 0xFF else address >> 8, command, ~command & 0xFF]
+        seq += high * 8
+        for byte in a:
+            for i in range(8):
+                seq += low + high * (3 if byte >> i & 1 else 1)
+        seq += low
+    return seq + high * (-len(seq) % 8 + 16)          # whole bytes, then 9 ms high
+
+
+def test_pioc_nec_rx(dut, request, record_property):
+    """The PiocIrNecRx example's program (nec_rx.S, a copy beside pioc.ino): the probe's spi-controller, its MOSI on
+    IO0's line (the first PIOC pad the probe labels as a plain line), clocks out what an IR receiver module puts out
+    for an NEC frame - one bit a 562.5 us unit, low while the carrier would be on - while the PIOC waits with the ticks
+    the example works out: a plain address (0x00, command 0x45) and an extended one (0x1234, 0x5A) each give
+    cmd.out 0 and their 32 bits (the first bit lowest); a repeat code gives 1."""
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and its spi-controller (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    from oep_client import core, host as oh
+    from oep_client.fixture import SpiController, SpiItem, pack_wire_bits
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    others = [line for pad, line in lines.items() if pad != io0["pad"]][:3]
+    if len(others) < 3:
+        pytest.skip("the spi-controller's SCK, MISO and CS want three more plain lines")
+    record_property("io0", io0["pad"])
+    host = oep_host.host
+    pattern = rb"PNECRX (\d) (\d+) (\d+)"
+    assert _ask_now(dut, f"pnecrx {io0['pin']}", pattern).group(1) == b"1", "begin() refused nec_rx"
+    spi = SpiController(host)
+    try:
+        core.plan_apply(host, spi.assignments(others[0]["channel"], io0["channel"], others[1]["channel"],
+                                              others[2]["channel"]))
+    except oh.Rejected:
+        pytest.skip("the probe's spi-controller does not take MOSI on IO0's line")
+    seen, wrong = {}, []
+    try:
+        hz = spi.configure(mode=0, bit_order=0, clock_hz=round(NEC_RX_UNIT_HZ))
+        record_property("unit_us", round(1e6 / hz, 1))
+        spi.transfer([SpiItem(tx=b"\xff" * 4)])              # MOSI high (idle) before the PIOC looks
+        for frame in NEC_RX_FRAMES:
+            name = "repeat" if frame is None else f"0x{frame[0]:x} 0x{frame[1]:02x}"
+            m = _ask_now(dut, f"pnecrx {io0['pin']}", pattern)
+            time.sleep(0.005)
+            spi.transfer([SpiItem(tx=pack_wire_bits(_nec_rx_wave(frame)))])
+            m = _ask_now(dut, "pnecget", rb"PNECGET (-?\d+) ([0-9a-f]{8})", timeout=5)
+            status, bits = int(m.group(1)), int(m.group(2), 16)
+            seen[name] = dict(status=status, bits=f"{bits:08x}")
+            if frame is None:
+                want = (1, None)
+            else:
+                address, command = frame
+                second = (~address & 0xFF) if address <= 0xFF else address >> 8
+                want = (0, (address & 0xFF) | second << 8 | command << 16 | (~command & 0xFF) << 24)
+            if status != want[0] or (want[1] is not None and bits != want[1]):
+                wrong.append(f"{name}: cmd.out {status}, bits {bits:08x}"
+                             + ("" if want[1] is None else f" (want {want[1]:08x})"))
+    finally:
+        core.plan_release(host, [spi.fn])
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("received", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
+
+
 SPI_RATE = 20_000_000        # 20 MS/s as the SPI contract: 10 samples in 1 MHz SCK's half period
 SPI_SENDS = ((40, 5, 100_000), (60, 9, 1_000_000))   # (bytes, seed, SCK Hz)
 
