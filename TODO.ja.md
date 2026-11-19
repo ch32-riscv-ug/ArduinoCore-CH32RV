@@ -62,8 +62,9 @@
   残り:
   - [ ] USB の項目に controller（full_speed …）と対向（S3 / P4 / Pico / PC）の軸。junit に record_property で残し、
     coverage の欄を分ける。同じ相手の口が複数ある記録で、口ごとに case を流す。
-  - [ ] 計画にあって試験の無い契約: Wire のデータの NACK・timeout・バスの回復・clock stretch（プローブの i2c-target に
-    SDA を握らせる・NACK させる条件）、USB の STALL の解除・相手のリセット後の再通信・コアとの共存。
+  - [ ] 計画にあって試験の無い契約: USB の STALL の解除・相手のリセット後の再通信・コアとの共存。Wire のデータの NACK・
+    timeout・バスの回復・clock stretch は試験があり（wire / softwire の test_wire_data_nack ほか）、2026-11-20 に X035・V205 で
+    wire・softwire とも、H417 で softwire が通った（H417 のハードの Wire は上の潰れたクロックの件）。
     → pulseIn / pulseInLong（signals::test_pulse_in）と shiftIn / shiftOut（softspi::test_shift）は 2026-11-20 に足して、
     X035・V205・H417 で通った。
   - [x] TEST_PLAN の「ベンチの X035C8T6 は I2C が使えない」と X035 の wire ✓ の食い違い（どの台で通ったか）、V205 の
