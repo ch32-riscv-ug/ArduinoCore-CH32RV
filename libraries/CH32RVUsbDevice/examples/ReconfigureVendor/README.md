@@ -26,3 +26,7 @@ unchanged at either size.
 | `vendor.configure(buffers)` | The ring sizes; only while stopped. |
 | `device.begin()` | Starts again with the new settings. |
 | `vendor.readCapacity()` / `writeCapacity()` | The actual ring sizes (one byte marks the free space). |
+
+Checked on CH32H417 over SuperSpeed (2026-11-20, with the switch made every 4 s in a test copy instead of `r` on the
+UART): every new enumeration, at either size, echoes 1000 bytes unchanged. At SuperSpeed the 128-byte receive ring is
+rounded up to one packet (1024): smaller, nothing was ever received.

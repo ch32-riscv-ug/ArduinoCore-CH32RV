@@ -76,7 +76,9 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
   8 logical units, HID 4 interfaces, others 1); within it, declaring is enough. CDC and vendor buffers are set
   with `configure(CH32RVUsbBulkStreamConfig)` (EspUsbDevice v3's field names):
   the class's own by default, the sketch's array when given; nothing is
-  allocated. CCID (`CH32RVUsbCcidConfig`) and video (`CH32RVUsbVideoConfig`)
+  allocated. The receive ring holds at least one packet of the speed the host
+  picked (64 / 512 / 1024 bytes): the class's own store is rounded up to it; a
+  sketch's array smaller than a packet never receives at that speed. CCID (`CH32RVUsbCcidConfig`) and video (`CH32RVUsbVideoConfig`)
   are set with `configure()` too. Neither the number of classes nor the size
   of the descriptors has a build-time limit.
 - **Disks are objects the MSC class reads from** (`setStorage()`; `attach()`

@@ -25,3 +25,7 @@ bulk を送受信する道具（[USBVendor](../USBVendor/README.ja.md) の PyUSB
 | `vendor.configure(buffers)` | 輪の大きさ。止まっている間だけ効く。 |
 | `device.begin()` | 新しい設定で始め直す。 |
 | `vendor.readCapacity()` / `writeCapacity()` | 実際の輪の大きさ（1 バイトは空きの印に使う）。 |
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20。試験用の写しで、UART の `r` の代わりに 4 秒ごとに切り替え）: どちらの大きさでも、
+列挙のやり直しのたびに 1000 バイトがそのまま戻りました。SuperSpeed では 128 バイトの受信の輪は 1 パケット（1024）に広がります
+（それより小さいと、何も受けられませんでした）。

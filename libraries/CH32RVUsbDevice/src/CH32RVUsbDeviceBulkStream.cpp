@@ -204,6 +204,15 @@ void CH32RVUsbDeviceBulkStream::usbConfigured(CH32RVUsbSpeed speed)
 void CH32RVUsbDeviceBulkStream::bulkConfigured(uint16_t packet)
 {
     _packet = packet;
+    /* The receive ring holds at least one packet of this speed: smaller, no
+     * OUT transfer is ever armed and the host waits for good (a 128-byte ring
+     * at SuperSpeed's 1024, 2026-11-20). The class's own store has the room
+     * (two of the largest packets); a sketch's array smaller than a packet
+     * cannot be helped (README). */
+    if (!_config.rxBuffer) {
+        const uint16_t asked = _config.rxCapacity ? (uint16_t)_config.rxCapacity : (uint16_t)sizeof _rxStore;
+        _rxSize = asked < packet && packet <= sizeof _rxStore ? packet : asked;
+    }
     _rxHead = _rxTail = _rxEnd = 0;
     _txHead = _txTail = 0;
     receive();
