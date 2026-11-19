@@ -367,6 +367,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   ch32rv_gpio_write_config()（nibble と X035 の USB の端子の errata だけ）を分け、ch32rv_gpio_od_write() はそれを使うようにした
   （CC の Rd は pinMode() の最初の設定で切れている）。X035 の softwire の wire_slave が 2 回とも通り、X035・V205・H417 の
   softwire・wire・gpio も通る（H417 のハードの Wire は既知の潰れたクロック）。
+- [ ] V006 の signals::test_timer_trigger: `CH32RVPwmTimer.startOn()` で待っている間、出力（PC0、TIM2）が Low でなく High のまま
+  （2026-11-20、ほかの X035・V205・H417・L103 は通る。トリガーの後の 20 kHz は正しい）。試したが効かなかったもの: 待つ間の
+  カウンタを 0 でなく自動再読み込みの値にする（中央揃えの pwm_timer が崩れた）、出力の参照を強制の Low にしてから PWM モード 1 に
+  戻す。次は待っている間の CHCTLR・CCER・CNT・端子の設定を DUT から読んで、どこが High を出しているかを見る。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。2026-11-18 にログを
   読んだ: キー 47 の押下は DUT に届き、離した報告を Pico が 2 秒送れなかった（DUT のホストが割り込み IN を取りに来ない）。
