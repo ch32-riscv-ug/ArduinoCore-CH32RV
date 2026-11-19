@@ -100,6 +100,13 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]
 
 [[item]]
+id = "pioc-uart-rx"         # the PiocUartRx example's program: 24 bytes from the probe's UART at 9600 .. 1 Mbaud
+test = "pioc::test_pioc_uart_rx"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"

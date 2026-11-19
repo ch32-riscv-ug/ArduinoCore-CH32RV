@@ -416,8 +416,9 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   タイミングは clockHz() から。H417・X035・V205 で pioc::test_pioc_ws2812 が WireSkein の rgb_led で通る）と PiocUartTx（共有
   レジスタで 24 バイトずつ。9600〜1M bps、pioc::test_pioc_uart_tx が WireSkein の uart で通る）と PiocIrNec（NEC の送信、
   38 kHz の搬送波。pioc::test_pioc_ir_nec が WireSkein の ir で通る）と PiocPulseIn（パルス幅の測定。プローブの PWM の fixture を
-  IO0 に plan して pioc::test_pioc_pulse_in）を足した。残りの候補: 1-Wire（DS18B20）、NEC の受信、UART の受信（プローブの
-  UART の fixture の TX を IO0 に plan すれば試験できる）。どれも自前で書き起こす（EVT のコードは持ち込まない）。
+  IO0 に plan して pioc::test_pioc_pulse_in）、PiocUartRx（プローブの UART の fixture の TX を IO0 に plan して
+  pioc::test_pioc_uart_rx）を足した。残りの候補: 1-Wire（DS18B20。相手の石か、プローブの 1-Wire の相手役が要る）、NEC の受信
+  （プローブが NEC の波形を出す仕組みが要る）。どれも自前で書き起こす（EVT のコードは持ち込まない）。
   README の「使い道と限界」に沿って、PIOC に向いた用途を選ぶ。
 - [ ] PIOC の L2 以降のマクロ（待ち時間、構造化、部品、雛形）は設計してから入れる（ユーザー、2026-11-19）。案は
   work/pioc-handoff-20261119/macro-spec.ja.md。SFR の名前を C++ と共有する形（#define）もそこで決める。

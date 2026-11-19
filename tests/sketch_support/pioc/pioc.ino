@@ -21,7 +21,11 @@
  *                        (address above 0xFF: extended): PNEC <begun> <cmd.out or -1> <clockHz()> <cycles a period>
  *   pin <pin> <count>    pulse_in.S (a copy of the PiocPulseIn example's) begun on that pad, then count periods
  *                        measured: PIN <begun> <clockHz()> then <high turns>:<low turns> per period (-1:-1 for one
- *                        that timed out after 200 ms); each turn is 8 cycles */
+ *                        that timed out after 200 ms); each turn is 8 cycles
+ *   prx <pin> <n> <baud> uart_rx.S (a copy of the PiocUartRx example's) begun on that pad, n bytes asked for with the
+ *                        waits the example works out: PRX <begun> <clockHz()> <cycles a bit>, at once (the bytes come
+ *                        after)
+ *   prxget               waitDone(2000): PRXGET <cmd.out or -1> <bytes taken> <them in hex> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVPioc.h>
@@ -38,6 +42,7 @@ PIOC_IMAGE(ws2812);
 PIOC_IMAGE(uart_tx);
 PIOC_IMAGE(ir_nec);
 PIOC_IMAGE(pulse_in);
+PIOC_IMAGE(uart_rx);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
 CH32RVPioc pioc;
@@ -199,6 +204,41 @@ void reply(char *command) {
       pioc.readData(1, c, sizeof c);
       SerialDMSeq.printf(" %lu:%lu", (unsigned long)(c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16),
                          (unsigned long)(c[3] | (uint32_t)c[4] << 8 | (uint32_t)c[5] << 16));
+    }
+    SerialDMSeq.printf("\r\n");
+  } else if (strncmp(command, "prx ", 4) == 0) {
+    char *p;
+    const int pin = (int)strtol(command + 4, &p, 10);
+    const unsigned long n = strtoul(p, &p, 10);
+    const uint32_t baud = (uint32_t)strtoul(p, nullptr, 10);
+    auto split = [](int32_t cycles, uint8_t *out) {
+      int32_t hi = cycles > 3 ? (cycles - 3) / 770 : 0;
+      int32_t lo = (cycles - 770 * hi + 1) / 3;
+      lo = lo < 1 ? 1 : lo > 256 ? 256 : lo;
+      out[0] = (uint8_t)lo;
+      out[1] = (uint8_t)hi;
+    };
+    uartPin = -1;
+    necPin = -1;
+    const bool begun = pioc.begin(PIOC_IMAGE_OF(uart_rx), pin);
+    const int32_t bit = (int32_t)((CH32RVPioc::clockHz() + baud / 2) / baud);
+    uint8_t params[5] = {(uint8_t)(n > 24 ? 24 : n)};
+    split(bit - 11, params + 1);
+    split(bit + bit / 2 - 12, params + 3);
+    if (begun) {
+      pioc.writeData(0, params, sizeof params);
+      pioc.command(1);
+    }
+    SerialDMSeq.printf("PRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz(),
+                       (unsigned long)(3u * (params[1] ? params[1] : 256) + 770u * params[2] + 11u));
+  } else if (strcmp(command, "prxget") == 0) {
+    const int status = pioc.waitDone(2000);
+    const uint8_t got = pioc.read(7);
+    uint8_t bytes[24];
+    pioc.readData(8, bytes, got > 24 ? 24 : got);
+    SerialDMSeq.printf("PRXGET %d %u ", status, got);
+    for (uint8_t i = 0; i < got && i < 24; i++) {
+      SerialDMSeq.printf("%02x", bytes[i]);
     }
     SerialDMSeq.printf("\r\n");
   } else if (strncmp(command, "pcmd ", 5) == 0) {

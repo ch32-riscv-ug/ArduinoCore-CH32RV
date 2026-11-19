@@ -322,3 +322,62 @@ def test_pioc_pulse_in(dut, request, record_property):
         _ask_now(dut, "pend", rb"PEND")
     record_property("pulses", json.dumps(seen))
     assert not wrong, " | ".join(wrong)
+
+
+RX_SENDS = ((9600, 3), (115200, 5), (1_000_000, 9))     # (baud, seed): 24 bytes each
+
+
+def test_pioc_uart_rx(dut, request, record_property):
+    """The PiocUartRx example's program (uart_rx.S, a copy beside pioc.ino): the probe's UART fixture, its TX planned
+    on IO0's line (the first PIOC pad the probe labels as a plain line), sends 24 bytes (i * 37 + seed) at 9600,
+    115200 and 1 Mbaud while the PIOC waits for them with the waits the example works out: all 24 taken, the same
+    bytes, the program answering 0."""
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and its UART fixture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    from oep_client import core, fixture, host as oh, registry
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    record_property("io0", io0["pad"])
+    host = oep_host.host
+    # the DUT's pad an input before the probe drives it
+    assert _ask_now(dut, f"prx {io0['pin']} 1 9600", rb"PRX (\d) (\d+) (\d+)").group(1) == b"1", "begin() refused uart_rx"
+    TX = registry.FIXTURE_UART.enum["role"]["tx"]
+    io = fn = None
+    for candidate in core.find_all(host, "oep.fixture.uart"):
+        try:
+            core.plan_apply(host, [(candidate, TX, io0["channel"])])
+        except oh.Rejected:
+            continue
+        io, fn = fixture.FixtureUartIO(host, candidate), candidate
+        break
+    if io is None:
+        pytest.skip("no oep.fixture.uart on the probe takes TX on IO0's line")
+    seen, wrong = {}, []
+    try:
+        for baud, seed in RX_SENDS:
+            data = bytes((i * 37 + seed) & 0xFF for i in range(24))
+            probe_baud = io.configure(baud)
+            time.sleep(0.01)
+            m = _ask_now(dut, f"prx {io0['pin']} 24 {baud}", rb"PRX (\d) (\d+) (\d+)")
+            time.sleep(0.005)
+            io.write(data)
+            m = _ask_now(dut, "prxget", rb"PRXGET (-?\d+) (\d+) ([0-9a-f]*)", timeout=5)
+            status, got, hexed = int(m.group(1)), int(m.group(2)), m.group(3).decode()
+            seen[baud] = dict(probe_baud=probe_baud, status=status, got=got, data=hexed)
+            if (status, got, hexed) != (0, 24, data.hex()):
+                wrong.append(f"{baud}: cmd.out {status}, {got} of 24 bytes, {hexed} (sent {data.hex()})")
+    finally:
+        core.plan_release(host, [fn])
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("received", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
