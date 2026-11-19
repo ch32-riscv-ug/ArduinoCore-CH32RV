@@ -245,6 +245,42 @@ public:
      * The RS485 test modes are refused. */
     bool setMode(SerialMode mode);
 
+    /* Multiprocessor communication: the USART's mute mode, with WCH's EVT
+     * USART_MultiProcessorCommunication. setAddress(a), a 0 .. 15: each
+     * frame gets one more bit after the data (8N1: 9 bits), 1 on an address
+     * frame and 0 on data; the receiver takes only the data after an address
+     * frame whose low 4 bits are `a`, and mutes itself again at an address
+     * frame for anyone else. The address frames are not read. -1: plain UART
+     * again. False on an open port with parity (the bit is the parity's
+     * place), with 5 or 6 data bits, or with setRxBufferSize()'s DMA (it
+     * would read the address frames too); before begin() it is kept, and a
+     * begin() in such a format leaves the port plain. writeAddress(a) sends
+     * one address frame (what was written before it goes out first). mute(): the
+     * receiver takes nothing until the next address frame for this port, or
+     * without setAddress() until the line has been idle for a frame - the
+     * rest of a message: called on a quiet line it does not hold (the USART
+     * wakes at once, every bench part 2026-11-19), so call it while the
+     * message is still coming. False when the port is closed. */
+    bool setAddress(int address);
+    bool writeAddress(uint8_t address);
+    bool mute(void);
+
+    /* Synchronous mode: the USART as an SPI controller, the low end of
+     * UsartSPI (<UsartSPI.h>, libraries/SPI), which most sketches want
+     * instead. The clock on the route's CK pad at clockHz (the USART's clock
+     * / BRR, BRR at least 16), TX the data out, RX the data in, 8 bits least
+     * significant first, `mode` SPI's 0 .. 3 (CPOL, CPHA). Opens the port
+     * (as begin(clockHz) does, on its route); false when the route has no CK
+     * pad, or the USART does not keep CPOL / CPHA / LBCL. The clock is a ceiling, as SPISettings' is: rounded down, and
+     * the fastest the USART makes for anything above it. transferSynchronous()
+     * clocks one byte out and returns the one clocked in (polled; 0 when not
+     * synchronous). synchronousClockPin(): the CK pad, -1 when not
+     * synchronous. endSynchronous() closes the port and lets CK go. */
+    bool beginSynchronous(uint32_t clockHz, uint8_t mode = 0);
+    uint8_t transferSynchronous(uint8_t data);
+    int synchronousClockPin(void) const;
+    void endSynchronous(void);
+
     /* ESP32's receive event: function runs (after loop(), as onReceiveError()
      * does - ch32rv_deliver.h) when the receive buffer reaches setRxFIFOFull()'s
      * count, and when the line has been quiet for setRxTimeout()'s symbols
@@ -327,6 +363,7 @@ private:
     size_t txBufferBuiltin(size_t size);
     size_t txBufferHeap(size_t size);
     bool bind(uint8_t index, const ch32rv_route_t &route);
+    void close(void);                  /* end() but the flush */
     uint32_t base(void) const;
     void start(void);
     /* irq()'s two halves, shared with the modes' interrupt (both inline,

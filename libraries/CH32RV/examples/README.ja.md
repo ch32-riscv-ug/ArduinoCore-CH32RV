@@ -64,6 +64,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [SerialPacketReceiver](SerialPacketReceiver/README.ja.md) | 長さ付きバイナリパケットをchecksum・timeout付きで受信します。 |
 | [SerialReceiveEvent](SerialReceiveEvent/README.ja.md) | 線が静かになったらまとまりを受け取り（`onReceive()`）、受信の誤りも知らせてもらいます。 |
 | [SerialFlowControl](SerialFlowControl/README.ja.md) | RTS で送り手を待たせ、CTS で送信を止めます（`setHwFlowCtrlMode()`）。 |
+| [SerialMultiprocessor](SerialMultiprocessor/README.ja.md) | 1 本の UART の線で何台ものボードをアドレスで呼び分けます（`setAddress()`）。 |
 | [SerialRS485](SerialRS485/README.ja.md) | RS485 のバスに問い合わせます。送信のたびにコアがトランシーバーの DE を切り替えます。 |
 | [SerialHalfDuplex](SerialHalfDuplex/README.ja.md) | 開放ドレインの 1 本の線で送受信します（`setPins(p, p)`）。 |
 | [SerialDmaBuffers](SerialDmaBuffers/README.ja.md) | `loop()` がほかの仕事をしている間も 1 Mbaud の流れを受け取ります（DMA が運ぶ大きいバッファ、`setRxBufferSize()`）。 |

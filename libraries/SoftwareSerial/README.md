@@ -54,7 +54,7 @@ void loop() {
 
 The receive side needs the interrupt to arrive within one and a half bits of
 the edge; CH32X035 at 48 MHz takes about 5 us, so 115200 (8.7 us a bit) is the
-practical top on the slow parts. The bench test (`uart.software-serial`) runs
+practical top on the slow parts. The bench test (`software-serial`) runs
 9600, 57600 and 115200 8N1 and 8E1, 8O1, 8N2, 7E1 at 9600, both ways, against
 the probe's UART. Receiving at 9600 is required; faster receives are recorded,
 not promised (they depend on the part's interrupt latency). On the bench

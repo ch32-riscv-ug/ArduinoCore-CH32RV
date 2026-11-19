@@ -281,6 +281,14 @@ static const uint8_t A9 = PIN_A9;
     { 4, { PA13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00100000u }, \
     { 5, { PB8, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00100000u }, \
 }
+/* SERIAL1_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL1_CK_ROUTE_COUNT 4
+#define CH32RV_SERIAL1_CK_ROUTES { \
+    { 2, { PA3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00080000u }, \
+    { 3, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00080000u }, \
+    { 4, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00100000u }, \
+    { 5, { PB6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00100000u }, \
+}
 /* USART2: route default, on every part */
 #define CH32RV_SERIAL2_TX PA2
 #define CH32RV_SERIAL2_RX PA3
@@ -314,6 +322,13 @@ static const uint8_t A9 = PIN_A9;
     { 0, { PA1, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 2, { PA1, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00040000u }, \
     { 3, { PA1, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000008u, 0x00040000u }, \
+}
+/* SERIAL2_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL2_CK_ROUTE_COUNT 3
+#define CH32RV_SERIAL2_CK_ROUTES { \
+    { 0, { PA4, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 2, { PA4, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00040000u }, \
+    { 3, { PA4, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000008u, 0x00040000u }, \
 }
 /* USART3: route default, on every part */
 #define CH32RV_SERIAL3_TX PB10
@@ -353,6 +368,11 @@ static const uint8_t A9 = PIN_A9;
 #define CH32RV_SERIAL4_CTS_ROUTES { \
     { 0, { PB3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
     { 1, { PA7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
+}
+/* SERIAL4_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL4_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL4_CK_ROUTES { \
+    { 1, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX

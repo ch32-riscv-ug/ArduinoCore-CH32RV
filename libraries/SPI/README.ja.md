@@ -108,10 +108,32 @@ void loop() {
 `begin(sck, miso, mosi)`は任意のpadを受けます。ハードウェアSPIのコードはlinkされません。
 グローバルの`SPI`を直接使うライブラリを、ハードウェアSPIの使えない基板で動かすためのものです。
 
+## UsartSPI(USARTのSPI)
+
+`UsartSPI`(`<UsartSPI.h>`)は、USARTの同期モードをSPIのコントローラーにします(AVRの「USARTのSPIモード」と同じ考え)。
+USARTのrouteのCKがSCK、TXがMOSI、RXがMISOです。SPIのペリフェラルが埋まっているとき、またはその端子が
+パッケージに出ていないときに、もう1つのハードウェアのバスとして使えます。`SPIClass`の派生なので、
+`SPIClass *`を受けるライブラリにそのまま渡せます。
+
+```cpp
+#include <UsartSPI.h>
+
+UsartSPI bus(Serial1);            // Serial1のUSARTとroute: CK、RX、TX
+bus.begin();                      // またはbus.begin(sck, miso, mosi)
+bus.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+```
+
+`begin(sck, miso, mosi)`のMISOとMOSIはそのSerialのroute(RXとTX)を選び、SCKはそのrouteのCKでなければなりません。
+クロックはSPISettingsの値以下に丸め、上限はUSARTのクロック÷16です。USARTは下位ビットから送るので、
+MSBFIRSTはライブラリがビットを反転します。ペリフェラルのモード(SPI_PERIPHERAL)はありません。
+開いている間、そのSerialはUARTではありません(`bus.end()`の後の`Serial1.begin()`で戻ります)。
+CKの端子はvariantの`CH32RV_SERIALn_CK_ROUTES`にあります。V00x・M007には同期モードが無く(CTLR2にCLKENが無い)、
+`begin()`がfalseを返します。下の層は`Serial.beginSynchronous()`・`transferSynchronous()`・`endSynchronous()`です。
+
 ## `SPIClass`
 
 `SPIClass`はこのライブラリのクラス(`<SPIClass.h>`)で、ハードウェアのバス(`CH32RVSPIClass`)と
-`SoftSPI`の共通の型です。ArduinoCore-APIの`typedef HardwareSPI SPIClass`ではないので、
+`SoftSPI`、`UsartSPI`の共通の型です。ArduinoCore-APIの`typedef HardwareSPI SPIClass`ではないので、
 `class SPIClass;`の前方宣言が通ります。`SPI`の型は`CH32RVSPIClass`なので、
 `extern SPIClass SPI;`や、ESP32の`SPIClass spi(bus)`の書き方は通りません。
 

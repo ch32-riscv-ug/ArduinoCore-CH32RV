@@ -76,7 +76,11 @@ void SoftwareSerial::begin(long speed, uint16_t config)
     default: _stop_q4 = _bit_q4; break;
     }
     if (_tx != NO_PIN) {
-        sendBit(true);                                     /* idle before it drives */
+        /* Idle before it drives - with the port's clock on, or the write is
+         * lost and the pad starts low (the first begin() on a port nothing
+         * had used: the first frame broke on every bench part, 2026-11-19). */
+        ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(_tx));
+        sendBit(true);
         pinMode(_tx, OUTPUT);
     }
     if (_rx != NO_PIN) {

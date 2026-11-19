@@ -338,6 +338,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART_STATR_TC   (1u << 6)
 #define CH32RV_USART_STATR_TXE  (1u << 7)
 
+#define CH32RV_USART_CTLR1_RWU    (1u << 1)
 #define CH32RV_USART_CTLR1_RE     (1u << 2)
 #define CH32RV_USART_CTLR1_TE     (1u << 3)
 #define CH32RV_USART_CTLR1_IDLEIE (1u << 4)
@@ -346,9 +347,17 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART_CTLR1_TXEIE  (1u << 7)
 #define CH32RV_USART_CTLR1_PCE    (1u << 10)
 #define CH32RV_USART_CTLR1_PS     (1u << 9)
+#define CH32RV_USART_CTLR1_WAKE   (1u << 11)
 #define CH32RV_USART_CTLR1_M      (1u << 12)
 #define CH32RV_USART_CTLR1_UE     (1u << 13)
 
+#define CH32RV_USART_CTLR2_ADD     0xFu        /* the multiprocessor address */
+/* The synchronous mode's clock (CK): the last bit's clock pulse, its phase
+ * and idle level, the pad on. */
+#define CH32RV_USART_CTLR2_LBCL    (1u << 8)
+#define CH32RV_USART_CTLR2_CPHA    (1u << 9)
+#define CH32RV_USART_CTLR2_CPOL    (1u << 10)
+#define CH32RV_USART_CTLR2_CLKEN   (1u << 11)
 #define CH32RV_USART_CTLR2_STOP_1   (0u << 12)
 #define CH32RV_USART_CTLR2_STOP_0P5 (1u << 12)
 #define CH32RV_USART_CTLR2_STOP_2   (2u << 12)

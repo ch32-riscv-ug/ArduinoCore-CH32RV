@@ -447,6 +447,11 @@ static const uint8_t A11 = PIN_A11;
 #define CH32RV_SERIAL1_RTS_ROUTES { \
     { 1, { PC7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
 }
+/* SERIAL1_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL1_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL1_CK_ROUTES { \
+    { 1, { PC3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* USART2: route af-1, on every part */
 /* PD6 / PD7 also USB D- / D+ (every part): with USB in use, name other
  * pins. */
@@ -492,6 +497,11 @@ static const uint8_t A11 = PIN_A11;
 #define CH32RV_SERIAL2_RTS_ROUTES { \
     { 1, { PA7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
 }
+/* SERIAL2_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL2_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL2_CK_ROUTES { \
+    { 1, { PA3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* USART3: route af-1, on every part */
 #define CH32RV_SERIAL3_TX PC8
 #define CH32RV_SERIAL3_RX PC9
@@ -529,6 +539,11 @@ static const uint8_t A11 = PIN_A11;
 #define CH32RV_SERIAL3_RTS_ROUTES { \
     { 1, { PB7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
 }
+/* SERIAL3_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL3_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL3_CK_ROUTES { \
+    { 1, { PC10, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
 /* USART4: route af-1, on every part */
 #define CH32RV_SERIAL4_TX PA8
 #define CH32RV_SERIAL4_RX PA9
@@ -565,6 +580,11 @@ static const uint8_t A11 = PIN_A11;
 #define CH32RV_SERIAL4_RTS_ROUTE_COUNT 1
 #define CH32RV_SERIAL4_RTS_ROUTES { \
     { 1, { PD13, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
+}
+/* SERIAL4_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL4_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL4_CK_ROUTES { \
+    { 1, { PD11, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000001u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX

@@ -769,6 +769,14 @@ void CH32RVHardwareSerial::end(void)
         return;
     }
     flush();
+    close();
+}
+
+/* end() without the wait for the last byte: the synchronous mode's end
+ * (HardwareSerialSync.cpp), where every transfer waited for its byte and TC
+ * is never set if none was made (X035, 2026-11-19: end() waited for ever). */
+void CH32RVHardwareSerial::close(void)
+{
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->end(*this);     /* DE low, CTS / RTS let go */
     }

@@ -2819,17 +2819,18 @@ UART_SIGNAL_RE = [
     (re.compile(r"^U(TX|RX)$"),            lambda m: (1, m.group(1))),
     (re.compile(r"^UART_(TX|RX)$"),        lambda m: (1, m.group(1))),
 ]
-# The flow-control pads (setPins()' CTS / RTS, setHwFlowCtrlMode()), in the
-# same spellings. They are not route roles: a route is chosen by TX / RX, and
-# CTS / RTS are looked up on the route that was (remap families: the same
-# field value moves them; per-pin families: each pad has its own function
-# number). One table per role, so a USART whose RTS is bonded and CTS is not
-# still gets RTS - and the RS485 DE pin, which any GPIO can be, needs neither.
+# The flow-control pads (setPins()' CTS / RTS, setHwFlowCtrlMode()) and the
+# synchronous clock (CK, UsartSPI's SCK), in the same spellings. They are not
+# route roles: a route is chosen by TX / RX, and CTS / RTS / CK are looked up
+# on the route that was (remap families: the same field value moves them;
+# per-pin families: each pad has its own function number). One table per
+# role, so a USART whose RTS is bonded and CTS is not still gets RTS - and the
+# RS485 DE pin, which any GPIO can be, needs neither.
 UART_FLOW_SIGNAL_RE = [
-    (re.compile(r"^US?ART(\d+)_(CTS|RTS)$"), lambda m: (int(m.group(1)), m.group(2))),
-    (re.compile(r"^(CTS|RTS)(\d+)$"),        lambda m: (int(m.group(2)), m.group(1))),
-    (re.compile(r"^U(CTS|RTS)$"),             lambda m: (1, m.group(1))),
-    (re.compile(r"^UART_(CTS|RTS)$"),         lambda m: (1, m.group(1))),
+    (re.compile(r"^US?ART(\d+)_(CTS|RTS|CK)$"), lambda m: (int(m.group(1)), m.group(2))),
+    (re.compile(r"^(CTS|RTS|CK)(\d+)$"),        lambda m: (int(m.group(2)), m.group(1))),
+    (re.compile(r"^U(CTS|RTS|CK)$"),             lambda m: (1, m.group(1))),
+    (re.compile(r"^UART_(CTS|RTS|CK)$"),         lambda m: (1, m.group(1))),
 ]
 # Route preference: the first one present wins. Families that expose no
 # "default" route (V205/X305/X315) only carry af-N alternate-function numbers.
@@ -3365,7 +3366,7 @@ def load_uart_pins(tables: pathlib.Path, alts=None) -> dict:
 
 
 def load_uart_flow_pins(tables: pathlib.Path, alts=None) -> dict:
-    """part -> {(usart index, route): {"CTS": ..., "RTS": ...}}."""
+    """part -> {(usart index, route): {"CTS": ..., "RTS": ..., "CK": ...}}."""
     return load_pin_routes(tables, UART_FLOW_SIGNAL_RE, UART_ROUTE_ORDER,
                            "uart", alts)
 
@@ -4688,9 +4689,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             emit_instance_routes(out, f"SERIAL{index}", ("TX", "RX"), series, parts,
                                  uarts, remap, "usart", index, UART_ROUTE_ORDER,
                                  forbidden, route is not None)
-            # CTS and RTS, one table each, by the route they belong to
-            # (HardwareSerial's setHwFlowCtrlMode()).
-            for role in ("CTS", "RTS"):
+            # CTS, RTS and CK, one table each, by the route they belong to
+            # (HardwareSerial's setHwFlowCtrlMode(), UsartSPI's clock).
+            for role in ("CTS", "RTS", "CK"):
                 if any(role in e for pn in parts
                        for (i, _r), e in UART_FLOW.get(pn, {}).items() if i == index):
                     emit_instance_routes(out, f"SERIAL{index}_{role}", (role,), series,

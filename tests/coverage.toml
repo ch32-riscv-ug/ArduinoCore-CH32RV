@@ -54,6 +54,17 @@ test = "uart::test_uart_irda"
 scope = "series"
 
 [[item]]
+id = "uart-multiprocessor"  # setAddress() / writeAddress() / mute(): address-mark and idle-line wake (9-bit words)
+test = "uart::test_uart_multiprocessor"
+scope = "series"
+
+[[item]]
+id = "uart-synchronous"     # UsartSPI: the USART's synchronous mode as an SPI controller, every mode and bit order
+test = "uart-sync::test_uart_synchronous"
+scope = "series"
+not_on = ["CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007"]
+
+[[item]]
 id = "uart-half-duplex"     # setPins(tx, tx): single wire (HDSEL), the echo, receiving on the TX pad
 test = "uart::test_uart_half_duplex"
 scope = "series"
@@ -85,7 +96,7 @@ scope = "series"
 
 [[item]]
 id = "software-serial"      # SoftwareSerial: 9600 / 57600 / 115200 8N1 and 8E1, 8O1, 8N2, 7E1 both ways
-test = "uart::test_uart_software_serial"
+test = "software-serial::test_software_serial"
 scope = "series"
 
 [[item]]

@@ -63,7 +63,7 @@ USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 
 # The record's usb ports a CH32RV peer can be the host on (CH32RVUsbHost's CH32RV_USB_HOST_PORT_*).
 USB_HOST_CONTROLLERS = ("full_speed", "high_speed", "high_speed_2", "super_speed")
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
-ALWAYS = ("runtime", "uart", "uart-dma", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
+ALWAYS = ("runtime", "uart", "uart-dma", "uart-sync", "software-serial", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
           "analog", "selfcheck", "selfbus", "selfsys", "selfapi", "selfexti")
 # A defect's `lose` names a feature; these are the cases that test it.
@@ -71,8 +71,9 @@ ALWAYS = ("runtime", "uart", "uart-dma", "flash", "synckit", "logic", "gpio", "s
 # PMSM board): every case that makes a pad of its choosing an output; selfcheck keeps its clock, transmit and
 # reference checks and skips the ones that drive pads (it reads the record itself).
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
-                 "uart": ("uart", "uart-dma"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth", "eth-libs"),
-                 "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog")}
+                 "uart": ("uart", "uart-dma", "uart-sync"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth", "eth-libs"),
+                 "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog",
+                                "software-serial")}
 
 
 class PlaceError(ValueError):
@@ -316,7 +317,7 @@ def static_reason(case, part, items=None, caps=None):
     return f"{part} has no {case}" if series_has(case, series, items, whole, part) else f"{series} has no {case}"
 
 
-LINE_CASES = ("gpio", "spi", "softspi", "wire", "softwire", "periph", "signals", "system")
+LINE_CASES = ("gpio", "spi", "softspi", "wire", "softwire", "periph", "signals", "system", "software-serial")
 
 
 def choose_cases(place, items=None, caps=None):
@@ -337,7 +338,7 @@ def choose_cases(place, items=None, caps=None):
     for case in LINE_CASES:
         if not oep and out.get(case) == "run":
             out[case] = f"skip: the {case} case drives and reads the pads from an OEP probe's lines"
-    for case in ("uart", "uart-dma"):
+    for case in ("uart", "uart-dma", "uart-sync"):
         if oep and out.get(case) == "run":
             lacking = [line for line in ("rx", "tx") if place["lines"].get(line) is None]
             if lacking:
@@ -345,6 +346,8 @@ def choose_cases(place, items=None, caps=None):
     # uart-dma takes the probe's UART and logic capture: a WCH-Link has neither.
     if not oep and out.get("uart-dma") == "run":
         out["uart-dma"] = "skip: the uart-dma case needs an OEP probe's UART and lines"
+    if not oep and out.get("uart-sync") == "run":
+        out["uart-sync"] = "skip: the uart-sync case needs an OEP probe's spi-target and lines"
     # A console the probe cannot carry (ch32rv capabilities: SDI is a WCH-LinkE's only).
     for case in [c for c in out if c.startswith("console-") and out[c] == "run"]:
         can = place.get("probe_capabilities", {}).get("monitor " + case.removeprefix("console-"))

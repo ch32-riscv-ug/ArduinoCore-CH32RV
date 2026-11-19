@@ -116,10 +116,31 @@ default route pins and `begin(sck, miso, mosi)` takes any pads; no hardware SPI
 code is linked. It lets a library that uses the global `SPI` run on a board
 whose hardware SPI cannot be used.
 
+## UsartSPI (SPI on a USART)
+
+`UsartSPI` (`<UsartSPI.h>`) makes a USART's synchronous mode an SPI controller (AVR's "USART in SPI mode"): the
+route's CK is SCK, TX is MOSI, RX is MISO. Another hardware bus when the SPI peripherals are taken or their pads are
+not on the package. It derives from `SPIClass`, so a library that takes `SPIClass *` takes it unchanged.
+
+```cpp
+#include <UsartSPI.h>
+
+UsartSPI bus(Serial1);            // Serial1's USART and route: CK, RX, TX
+bus.begin();                      // or bus.begin(sck, miso, mosi)
+bus.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+```
+
+In `begin(sck, miso, mosi)`, MISO and MOSI choose the Serial's route (its RX and TX) and SCK must be that route's
+CK. The clock is rounded down from SPISettings', at most the USART's clock / 16. The USART sends the least
+significant bit first, so the library reverses the bits for MSBFIRST. There is no peripheral mode
+(SPI_PERIPHERAL). While open, that Serial is no UART (`Serial1.begin()` after `bus.end()` takes it back). The CK pads are the
+variant's `CH32RV_SERIALn_CK_ROUTES`. V00x and M007 have no synchronous mode (no CLKEN in CTLR2) and `begin()`
+returns false. The layer below is `Serial.beginSynchronous()`, `transferSynchronous()` and `endSynchronous()`.
+
 ## `SPIClass`
 
 `SPIClass` is this library's class (`<SPIClass.h>`), the common type of the
-hardware bus (`CH32RVSPIClass`) and `SoftSPI`. It is not ArduinoCore-API's
+hardware bus (`CH32RVSPIClass`), `SoftSPI` and `UsartSPI`. It is not ArduinoCore-API's
 `typedef HardwareSPI SPIClass`, so a forward declaration `class SPIClass;`
 compiles. `SPI`'s type is `CH32RVSPIClass`, so `extern SPIClass SPI;` and
 ESP32's `SPIClass spi(bus)` do not compile.

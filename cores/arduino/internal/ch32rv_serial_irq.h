@@ -35,6 +35,10 @@ struct CH32RVSerialMode {
     static void setOnReceive(CH32RVHardwareSerial &port, const CH32RVCallback<void(void)> &function,
                              bool onlyOnTimeout);
     static size_t deliver(void);
+    /* setAddress()'s hooks (in the file's own namespace): the port's format,
+     * and a received frame's errors and byte (-1: none) into its buffer. */
+    static uint16_t config(CH32RVHardwareSerial &port);
+    static void received(CH32RVHardwareSerial &port, uint8_t errors, int c);
 };
 
 __attribute__((always_inline)) inline void CH32RVHardwareSerial::serviceRx(uint32_t base,

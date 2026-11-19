@@ -60,6 +60,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [SerialPacketReceiver](SerialPacketReceiver/README.md) | Parse length-prefixed binary packets with a checksum and timeout. |
 | [SerialReceiveEvent](SerialReceiveEvent/README.md) | Take a whole message when the line goes quiet (`onReceive()`) and hear about receive errors. |
 | [SerialFlowControl](SerialFlowControl/README.md) | Pace a sender with RTS and hold sending with CTS (`setHwFlowCtrlMode()`). |
+| [SerialMultiprocessor](SerialMultiprocessor/README.md) | Call several boards on one UART line by address (`setAddress()`). |
 | [SerialRS485](SerialRS485/README.md) | Query an RS485 bus; the core switches the transceiver's driver enable around each write. |
 | [SerialHalfDuplex](SerialHalfDuplex/README.md) | Send and receive on one open-drain wire (`setPins(p, p)`). |
 | [SerialDmaBuffers](SerialDmaBuffers/README.md) | Take a 1 Mbaud stream while `loop()` is busy: larger buffers moved by DMA (`setRxBufferSize()`). |

@@ -2,7 +2,8 @@
  * hardware flow control (setHwFlowCtrlMode()), RS485's driver enable
  * (setMode(UART_MODE_RS485_HALF_DUPLEX)), single-wire half duplex
  * (setPins(p, p)) and the receive events (onReceive(), setRxTimeout(),
- * setRxFIFOFull()), with ESP32's names.
+ * setRxFIFOFull()), with ESP32's names; and the multiprocessor mute mode
+ * (setAddress(), writeAddress(), mute()), the USART's own.
  *
  * In a file of its own, and reached from HardwareSerial.cpp only through
  * ch32rv_serial_mode_ops, which only this file writes: a sketch that uses none
@@ -284,11 +285,52 @@ struct Mode {
     CH32RVHardwareSerial *port;
     CH32RVCallback<void(void)> on_receive;
     ch32rv_route_t one_wire;   /* setPins(p, p)'s route: RX joined to TX     */
+    uint8_t addressed, address;   /* setAddress(): on, and its 0 .. 15     */
 };
 Mode modes[CH32RV_SERIAL_COUNT];
 
 constexpr uint8_t CAPACITY = CH32RV_SERIAL_RX_BUFFER_SIZE - 1 > 255 ? 255
                                                                     : CH32RV_SERIAL_RX_BUFFER_SIZE - 1;
+
+inline bool has_parity(uint16_t config)
+{
+    const uint16_t parity = config & SERIAL_PARITY_MASK;
+    return parity && parity != SERIAL_PARITY_NONE;
+}
+
+/* setAddress()'s extra bit after the data: bit 8 of a 9-bit word for 8 data
+ * bits, bit 7 of an 8-bit one for 7. */
+inline uint16_t address_mark(uint16_t config)
+{
+    return (config & SERIAL_DATA_MASK) == SERIAL_DATA_8 ? 0x100u : 0x80u;
+}
+
+/* The port's format leaves room for setAddress()'s mark: no parity, 7 or 8
+ * data bits. */
+inline bool address_format(uint16_t config)
+{
+    const uint16_t data = config & SERIAL_DATA_MASK;
+    return !has_parity(config) && (data == SERIAL_DATA_8 || data == SERIAL_DATA_7);
+}
+
+/* setAddress() on, and the port's format takes it. */
+inline bool addressing(const Mode &m, uint16_t config)
+{
+    return m.addressed && address_format(config);
+}
+
+/* setAddress()'s part of start() and of the interrupt, reached only through
+ * this pointer, which only setAddress() writes: a sketch that never calls it
+ * links none of it (the other modes' users do not pay for it). */
+struct AddressOps {
+    /* CTLR1 as start() is about to write it -> with the word and the wake;
+     * CTLR2's address set. */
+    uint16_t (*format)(CH32RVHardwareSerial &port, uint32_t base, uint16_t ctlr1);
+    /* The received frame taken when the port is addressed; false: not, the
+     * plain path's. */
+    bool (*receive)(CH32RVHardwareSerial &port, uint32_t base, uint32_t status);
+};
+const AddressOps *address_ops;
 
 inline uint8_t symbols(const Mode &m)
 {
@@ -451,8 +493,11 @@ void CH32RVSerialMode::start(CH32RVHardwareSerial &port)
     const uint16_t ctlr1 = CH32RV_USART_CTLR1(base);
     CH32RV_USART_CTLR1(base) = (uint16_t)(ctlr1 & ~CH32RV_USART_CTLR1_UE);
     CH32RV_USART_CTLR3(base) = ctlr3;
-    CH32RV_USART_CTLR1(base) = (uint16_t)((ctlr1 & ~(CH32RV_USART_CTLR1_IDLEIE | CH32RV_USART_CTLR1_TCIE)) |
-                                          ie | CH32RV_USART_CTLR1_UE);
+    uint16_t keep = (uint16_t)(ctlr1 & ~(CH32RV_USART_CTLR1_IDLEIE | CH32RV_USART_CTLR1_TCIE));
+    if (address_ops) {
+        keep = address_ops->format(port, base, keep);
+    }
+    CH32RV_USART_CTLR1(base) = (uint16_t)(keep | ie | CH32RV_USART_CTLR1_UE);
     /* A port on DMA (HardwareSerialDmaRx.cpp / Tx.cpp): its requests back,
      * no interrupt per received byte, and a transmit run in flight keeps its
      * transmit-complete interrupt. Interrupts still off: nothing saw the
@@ -517,7 +562,10 @@ void CH32RVSerialMode::irq(CH32RVHardwareSerial &port, uint32_t base)
             }
         }
     }
-    port.serviceRx(base, status);
+    /* Receive by DMA: the DMA takes every frame (setAddress() refuses it). */
+    if (!address_ops || CH32RV_SERIAL_DMA_ON(port, RX) || !address_ops->receive(port, base, status)) {
+        port.serviceRx(base, status);
+    }
     if (status & CH32RV_USART_STATR_RXNE) {
         m.pending &= (uint8_t)~P_IDLE;      /* a byte: the quiet starts again */
     }
@@ -707,10 +755,66 @@ uint32_t CH32RVSerialMode::frameMicros(CH32RVHardwareSerial &port)
     uint32_t bits = 1u + 4u + ((config & SERIAL_DATA_MASK) >> 8);       /* SERIAL_DATA_5 is 0x100 */
     const uint32_t parity = config & SERIAL_PARITY_MASK;
     bits += parity != SERIAL_PARITY_NONE && parity ? 1u : 0u;
+    bits += address_ops && addressing(modes[port._number], config) ? 1u : 0u;   /* setAddress()'s mark */
     bits += (config & SERIAL_STOP_BIT_MASK) == SERIAL_STOP_BIT_2 ? 2u : 1u;
     const uint32_t fck = port.peripheral() == 1 ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
     const uint32_t brr = CH32RV_USART_BRR(port.registers());
     return (uint32_t)((uint64_t)bits * brr * 1000000u / fck);
+}
+
+/* ------------------------------------------------- setAddress()'s hooks */
+namespace {
+
+/* The mark one bit past the data (M for 8 data bits), the wake on an address
+ * frame, the address, and muted from the start. Without setAddress() the word
+ * is begin()'s again (M only for 8 bits and parity). */
+uint16_t address_word(CH32RVHardwareSerial &port, uint32_t base, uint16_t ctlr1)
+{
+    const Mode &m = modes[port.number()];
+    const uint16_t config = CH32RVSerialMode::config(port);
+    ctlr1 &= (uint16_t)~(CH32RV_USART_CTLR1_WAKE | CH32RV_USART_CTLR1_RWU);
+    if (has_parity(config)) {
+        return ctlr1;
+    }
+    ctlr1 &= (uint16_t)~CH32RV_USART_CTLR1_M;
+    if (addressing(m, config)) {
+        ctlr1 |= (uint16_t)(CH32RV_USART_CTLR1_WAKE | CH32RV_USART_CTLR1_RWU |
+                            (address_mark(config) == 0x100u ? CH32RV_USART_CTLR1_M : 0u));
+        CH32RV_USART_CTLR2(base) = (uint16_t)((CH32RV_USART_CTLR2(base) & ~CH32RV_USART_CTLR2_ADD) | m.address);
+    }
+    return ctlr1;
+}
+
+/* The address frame that woke the receiver comes in as a byte with the mark
+ * set: not data, so not kept. A frame in error is the plain path's. */
+bool address_receive(CH32RVHardwareSerial &port, uint32_t base, uint32_t status)
+{
+    const uint16_t config = CH32RVSerialMode::config(port);
+    if (!addressing(modes[port.number()], config) || !(status & CH32RV_USART_STATR_RXNE) ||
+        (status & (CH32RV_USART_STATR_FE | CH32RV_USART_STATR_PE))) {
+        return false;
+    }
+    const uint32_t data = CH32RV_USART_DATAR(base);
+    CH32RVSerialMode::received(port, (uint8_t)(status & (CH32RV_USART_STATR_ORE | CH32RV_USART_STATR_NE)),
+                               (data & address_mark(config)) ? -1 : (int)(uint8_t)data);
+    return true;
+}
+
+const AddressOps address_hooks = {address_word, address_receive};
+
+}  // namespace
+
+uint16_t CH32RVSerialMode::config(CH32RVHardwareSerial &port)
+{
+    return port._config;
+}
+
+void CH32RVSerialMode::received(CH32RVHardwareSerial &port, uint8_t errors, int c)
+{
+    port._errors |= errors;
+    if (c >= 0 && !port._rx.push((uint8_t)c)) {
+        port._errors |= CH32RV_SERIAL_MARK_FULL;
+    }
 }
 
 /* ------------------------------------------------- the API */
@@ -768,6 +872,59 @@ bool CH32RVHardwareSerial::setMode(SerialMode mode)
     if (_slot) {
         CH32RVSerialMode::start(*this);
     }
+    return true;
+}
+
+bool CH32RVHardwareSerial::setAddress(int address)
+{
+    if (address < -1 || address > (int)CH32RV_USART_CTLR2_ADD) {
+        return false;
+    }
+    /* Open: its format and receive path now. Closed: begin()'s format
+     * decides (start() leaves a port without room for the mark plain). */
+    if (address >= 0 && _slot && (!address_format(_config) || CH32RV_SERIAL_DMA_ON(*this, RX))) {
+        return false;
+    }
+    Mode &m = modes[_number];
+    install();
+    address_ops = &address_hooks;
+    if (_slot) {
+        flush();
+        CH32RVSerialMode::end(*this);
+    }
+    m.addressed = address >= 0;
+    m.address = address >= 0 ? (uint8_t)address : 0u;
+    if (_slot) {
+        CH32RVSerialMode::start(*this);
+    }
+    return true;
+}
+
+bool CH32RVHardwareSerial::writeAddress(uint8_t address)
+{
+    if (!_slot || address > CH32RV_USART_CTLR2_ADD || !address_ops || !addressing(modes[_number], _config)) {
+        return false;
+    }
+    /* Past the ring (it holds bytes): what is in it goes first. */
+    flush();
+    const uint32_t base = registers();
+    CH32RVSerialMode::write(*this);    /* RS485: the driver on */
+    while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TXE) == 0u) {
+    }
+    CH32RV_USART_DATAR(base) = (uint16_t)(address_mark(_config) | address);
+    CH32RVSerialMode::written(*this);
+    return true;
+}
+
+bool CH32RVHardwareSerial::mute(void)
+{
+    if (!_slot) {
+        return false;
+    }
+    const uint32_t base = registers();
+    const uint32_t irq = ch32rv_irq_save();
+    CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_RWU;
+    ch32rv_irq_restore(irq);
     return true;
 }
 

@@ -230,6 +230,14 @@ static const uint8_t A7 = PIN_A7;
     { 2, { PC7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00200000u, 0x00000000u }, \
     { 3, { PC7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00200004u, 0x00000000u }, \
 }
+/* SERIAL1_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL1_CK_ROUTE_COUNT 4
+#define CH32RV_SERIAL1_CK_ROUTES { \
+    { 0, { PD4, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+    { 1, { PD7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000004u, 0x00000000u }, \
+    { 2, { PD7, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00200000u, 0x00000000u }, \
+    { 3, { PC5, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00200004u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX

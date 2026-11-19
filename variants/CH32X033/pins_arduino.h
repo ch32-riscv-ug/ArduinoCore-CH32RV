@@ -296,6 +296,11 @@ static const uint8_t A13 = PIN_A13;
     { 3, { PC3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000180u, 0x00000000u }, \
     { 4, { PC3, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000200u, 0x00000000u }, \
 }
+/* SERIAL2_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL2_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL2_CK_ROUTES { \
+    { 0, { PA4, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00000000u }, \
+}
 /* USART3: no default route for the whole series (its pads
  * move between packages, or sit on debug / strap pads). With a
  * part number selected it may have one below; otherwise begin()
@@ -363,6 +368,11 @@ static const uint8_t A13 = PIN_A13;
 #define CH32RV_SERIAL4_RTS_ROUTE_COUNT 1
 #define CH32RV_SERIAL4_RTS_ROUTES { \
     { 4, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00004000u, 0x00000000u }, \
+}
+/* SERIAL4_CK routes for setRoute()/setPins(): route number, then CK */
+#define CH32RV_SERIAL4_CK_ROUTE_COUNT 1
+#define CH32RV_SERIAL4_CK_ROUTES { \
+    { 1, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00001000u, 0x00000000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
 #ifndef PIN_SERIAL_TX

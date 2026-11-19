@@ -234,6 +234,10 @@ def plan(part, labels_now, console, reserved):
          [[g["TX"], g["RX"]] for (u, _), g in usart.items() if "TX" in g and "RX" in g and u not in cons_usart])
     need("コンソールの USART の CTS か RTS", "uart::test_uart_flow",
          [[g[k]] for (u, _), g in usart.items() if u in cons_usart for k in ("CTS", "RTS") if k in g])
+    ck = [[g["CK"]] for (u, _), g in usart.items()
+          if "CK" in g and console and {g.get("TX"), g.get("RX")} & console]
+    if ck:
+        need("コンソールの USART の CK（同じ経路）", "uart-sync::test_uart_synchronous（UsartSPI）", ck)
 
     # I2C, SPI: the variant's defaults; SoftWire / SoftSPI: plain lines with distinct bits.
     sda, scl = d["PIN_WIRE_SDA"], d["PIN_WIRE_SCL"]

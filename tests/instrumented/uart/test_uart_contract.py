@@ -15,8 +15,10 @@ Serial.onReceiveError() reports compared with the kind made (test_uart_receive_e
 
 The modes beyond plain UART, each skipped with its reason where the bench lacks the lines (plain `<port>@<pad>` lines
 besides the rx / tx labels): uart.flow-control (test_uart_flow_control: Serial's CTS / RTS pads among the plain
-lines), uart.rs485 (a plain line as DE), uart.half-duplex (the DUT's TX pad alone), uart.receive-event (onReceive())
-and uart.software-serial (two plain lines). The DUT runs sketch_support/uart/uart.ino."""
+lines), uart.rs485 (a plain line as DE), uart.half-duplex (the DUT's TX pad alone), uart.multiprocessor (setAddress(), mute()),
+and uart.receive-event (onReceive())
+The DUT runs sketch_support/uart/uart.ino. SoftwareSerial is the software-serial case's
+(instrumented/software_serial)."""
 import secrets
 
 
@@ -355,7 +357,7 @@ def _expect_after(dut, wait, line, pattern, timeout=3.0):
 
 
 # ---- the modes beyond plain UART, and SoftwareSerial (tests/README.ja.md: uart.flow-control, uart.rs485,
-# uart.half-duplex, uart.receive-event, uart.software-serial) --------------------------------------------------------
+# uart.half-duplex, uart.multiprocessor, uart.receive-event) --------------------------------------------------------
 # tests/README.ja.md 取り込みの速さ: these run at 115200 and below (RS485 also at 1 Mbaud): T is the bit there.
 SLOW_RATE = 4_000_000          # 115200: T 8.7 us, 35 / T; DE / RTS / CTS times are judged in tens of microseconds
 HALF_DUPLEX_RATE = 1_000_000   # 9600 (an open-drain line with the probe's pull-up): T 104 us, 100 / T
@@ -578,6 +580,115 @@ def test_uart_irda(dut, ws_run, request, record_property):
         _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
 
 
+def _even_weight(n):
+    """umsg's bytes: (i * 37 + 11) & 0x7F, bit 7 making the count of ones even."""
+    out = []
+    for i in range(n):
+        v = (i * 37 + 11) & 0x7F
+        out.append(v | 0x80 if bin(v).count("1") & 1 else v)
+    return bytes(out)
+
+
+def test_uart_multiprocessor(dut, ws_run, request, record_property):
+    """Serial.setAddress() / writeAddress() / mute(): the USART's mute mode at 115200, 8 data bits (9-bit words,
+    bit 8 the address mark). Every byte here has an even count of ones, and so do the addresses (3, 5): a frame read
+    as 8E1 is good exactly when its mark is 0 (data) and as 8O1 exactly when it is 1 (an address) - WireSkein's
+    `uart` has no 9-bit data, so each section is judged both ways, the data frames as the 8E1 reading's data with
+    the addresses its parity errors, the addresses as the 8O1 reading's. The probe's UART makes the marks the same
+    way (8O1 for an address, 8E1 for data).
+    sends: setAddress(5), writeAddress(5) and 8 bytes on TX. addressed: the probe sends address 3 + A, 5 + B, 3 + C;
+    the DUT reads B alone (the address frames are not read either). mute: 5 + A, mute(), D with no address, 5 + B:
+    the DUT reads A and B, not D. idle: setAddress(-1) (8N1), a first byte the DUT reads, mute(), B + C back to
+    back - the DUT calls mute() once B's first byte is in, the rest still coming - a pause, D: the DUT reads B's first
+    byte and D alone (muted until the line went idle; mute() on a quiet line does not hold)."""
+    from oep_client.fixture import FixtureUart
+    from wireskein.runlog import ends, starts, uart
+    target, oep_host = _oep_only(request)
+    dut_tx, dut_rx = _serial_lines(oep_host, target)
+    io, used = _plan_uart(oep_host, rx=dut_tx, tx=dut_rx)
+    assert io is not None, "no free oep.fixture.uart on the probe"
+    host = oep_host.host
+    even, odd, plain = (FixtureUart.format_byte(parity=p) for p in "EON")
+    w = _even_weight(16)
+    A, B, C, D = w[0:4], w[4:8], w[8:12], w[12:16]
+    out = _even_weight(8)
+    got = {}
+
+    def both(pad, baud, data, addresses):
+        """The 9-bit frames on `pad`: `data` as 8E1's data, `addresses` as 8O1's."""
+        return [uart(pad, baud, parity="even", data=data.hex(), errors={"parity": len(addresses)}),
+                uart(pad, baud, parity="odd", data=bytes(addresses).hex(), errors={"parity": len(data)})]
+
+    def send(wait, frames):
+        for fmt, chunk in frames:
+            io.configure(115200, fmt)
+            io.write(chunk)
+            wait(0.005 + 12 * len(chunk) / 115200)
+
+    def avail(wait):
+        m = _ask(dut, wait, "uavail", rb"UAVAIL (\d+) ([0-9A-F]+)")
+        ws_run.reply(m.group(0).decode())
+        return int(m.group(1)), m.group(2).decode()
+
+    def steps(wait):
+        idle_tx, idle_rx = {dut_tx["pad"]: 1}, {dut_rx["pad"]: 1}
+        with ws_run.section(1, f"multiprocessor {dut_tx['pad']} {dut_rx['pad']}"):
+            m = _ask(dut, wait, "ucfg 115200 0", rb"UCFG (\d) (\d+)")
+            assert m.group(1) == b"1"
+            baud = int(m.group(2))
+            probe_baud = io.configure(115200, even)
+            assert _ask(dut, wait, "uaddr 5", rb"UADDR (\d)").group(1) == b"1", "setAddress(5) refused"
+            wait(0.01)
+            with ws_run.section(2, "sends", expect=both(dut_tx["pad"], baud, out, [5]) + [starts(idle_tx),
+                                                                                         ends(idle_tx)]):
+                ws_run.command("umsg 5 8")
+                got["sends"] = _ask(dut, wait, "umsg 5 8", rb"UMSG (\d) \d+").group(1) == b"1"
+                wait(0.01)
+            avail(wait)
+            with ws_run.section(2, "addressed", expect=both(dut_rx["pad"], probe_baud, A + B + C, [3, 5, 3])
+                                + [starts(idle_rx), ends(idle_rx)]):
+                send(wait, [(odd, bytes([3])), (even, A), (odd, bytes([5])), (even, B), (odd, bytes([3])), (even, C)])
+                got["addressed"] = avail(wait)
+            with ws_run.section(2, "mute", expect=both(dut_rx["pad"], probe_baud, A + D + B, [5, 5])
+                                + [starts(idle_rx), ends(idle_rx)]):
+                send(wait, [(odd, bytes([5])), (even, A)])
+                assert _ask(dut, wait, "umute", rb"UMUTE (\d) -?\d+").group(1) == b"1"
+                send(wait, [(even, D), (odd, bytes([5])), (even, B)])
+                got["mute"] = avail(wait)
+            assert _ask(dut, wait, "uaddr -1", rb"UADDR (\d)").group(1) == b"1"
+            io.configure(115200, plain)
+            wait(0.01)
+            with ws_run.section(2, "idle", expect=[uart(dut_rx["pad"], probe_baud, data=(A[:1] + B + C + D).hex()),
+                                                   starts(idle_rx), ends(idle_rx)]):
+                send(wait, [(plain, A[:1])])
+                got["first"] = avail(wait)
+                # mute() on a quiet line does not hold (the USART wakes at once, every bench part 2026-11-19): it is
+                # for the rest of a message, so the DUT mutes after the first byte of B + C, which is still coming.
+                ws_run.command("umute w")
+                dut.write("umute w\n")
+                wait(0.05)
+                io.write(B + C)
+                m = _expect(dut, wait, rb"UMUTE (\d) (-?\d+)")
+                ws_run.reply(m.group(0).decode())
+                got["mute_first"] = (int(m.group(1)), int(m.group(2)))
+                wait(0.02 + 12 * len(B + C) / 115200)
+                send(wait, [(plain, D)])
+                got["idle"] = avail(wait)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=SLOW_RATE, steps=steps)
+    finally:
+        from oep_client import core
+        core.plan_release(host, [used])
+        _ask_now(dut, "uaddr -1", rb"UADDR \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
+    record_property("received", json.dumps(got))
+    assert got.get("sends"), "writeAddress(5) refused"
+    want = {"addressed": (4, f"{_fnv(B):X}"), "mute": (8, f"{_fnv(A + B):X}"), "first": (1, f"{_fnv(A[:1]):X}"),
+            "mute_first": (1, B[0]), "idle": (4, f"{_fnv(D):X}")}
+    assert {k: got.get(k) for k in want} == want
+
+
 def test_uart_half_duplex(dut, ws_run, request, record_property):
     """Single-wire half duplex (setPins(tx, tx): HDSEL) at 9600 on the DUT's TX pad, the probe's input pull-up on it
     (the pad is open drain). The DUT sends 16 bytes: decoded on the line, and nothing of them in the DUT's own receive
@@ -711,83 +822,3 @@ def test_uart_receive_event(dut, ws_run, request, record_property):
         elif name.startswith("fifo") and (not r["calls"] or min(r["seen"]) < 8 or r["left"] >= 8):
             wrong.append(f"{name}: calls {r['calls']} saw {r['seen']} left {r['left']}, want each >= 8, < 8 left")
     assert not wrong, " | ".join(wrong)
-
-
-SOFT_CONDITIONS = [(9600, 0), (57600, 0), (115200, 0), (9600, 1), (9600, 2), (9600, 3), (9600, 4)]
-# SoftwareSerial receives in a pin interrupt and times bits by SysTick: how fast a part follows depends on its
-# interrupt latency, not only its clock (V003 and V006 both at 24 MHz: V003 takes 115200, V006 7 bytes of 16 there,
-# 2026-11-17). Like an I2C clock above 400 kHz (the user, 2026-11-15: what can be set but may not work is not an
-# error), the receive above SOFT_PROMISED_BAUD is recorded, not required; what the DUT sends is judged at every speed.
-SOFT_PROMISED_BAUD = 9600
-
-
-def test_uart_software_serial(dut, ws_run, request, record_property):
-    """SoftwareSerial on the first two plain lines (RX, TX), against the probe's UART: 8N1 at 9600, 57600 and 115200,
-    and 8E1, 8O1, 8N2, 7E1 at 9600. Each condition: the DUT sends 16 bytes (decoded on its TX at the nominal baud
-    within 3 %, the format, no error) and receives 16 the probe sends (decoded on its RX; the DUT's count and FNV-1a,
-    no overflow); the other line stays idle."""
-    from oep_client import core, fixture
-    from wireskein.runlog import ends, level, starts, uart
-    target, oep_host = _oep_only(request)
-    dut_tx, dut_rx = _serial_lines(oep_host, target)
-    plain = _plain_lines(oep_host, target, dut_tx, dut_rx)
-    if len(plain) < 2:
-        pytest.skip("SoftwareSerial needs two plain <port>@<pad> lines")
-    ss_rx, ss_tx = plain[0], plain[1]
-    record_property("lines", f"rx {ss_rx['pad']} tx {ss_tx['pad']}")
-    io, used = _plan_uart(oep_host, rx=ss_tx, tx=ss_rx)
-    assert io is not None, "no free oep.fixture.uart takes the two lines"
-    host = oep_host.host
-    sent = _pattern(COUNT)
-    got = {}
-
-    def steps(wait):
-        idle = {ss_tx["pad"]: 1, ss_rx["pad"]: 1}
-        with ws_run.section(1, f"SoftwareSerial rx {ss_rx['pad']} tx {ss_tx['pad']}"):
-            for baud, k in SOFT_CONDITIONS:
-                bits, parity, stop = FORMATS[k]
-                name = f"{baud} {bits}{parity[0].upper()}{stop}"
-                mask = (1 << bits) - 1
-                out = bytes(b & mask for b in sent)
-                back = bytes(b & mask for b in reversed(sent))
-                common = dict(bits=bits, parity=parity, stop=stop)
-                # Begun before the section: until the first begin() the TX pad is no output yet.
-                m = _ask(dut, wait, f"ssbegin {ss_rx['pin']} {ss_tx['pin']} {baud} {k}", rb"SSBEGIN (\d)")
-                assert m.group(1) == b"1", f"{name}: SoftwareSerial is not listening"
-                probe_baud = io.configure(baud, fixture.FixtureUart.format_byte(bits, parity[0].upper(), stop))
-                wait(0.02)
-                with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
-                    ws_run.command(f"ssbegin {baud} {k}")
-                    with ws_run.section(3, "dut sends", expect=[uart(ss_tx["pad"], baud, data=out.hex(), **common),
-                                                                level(ss_rx["pad"], 1)]):
-                        ws_run.command(f"sssend {COUNT}")
-                        _ask(dut, wait, f"sssend {COUNT}", rb"SSSEND \d+", timeout=5)
-                        wait(0.02)
-                        io.read(4096)
-                    with ws_run.section(3, "dut receives", expect=[uart(ss_rx["pad"], probe_baud, data=back.hex(),
-                                                                        **common), level(ss_tx["pad"], 1)]):
-                        ws_run.command(f"ssrecv {COUNT}")
-                        dut.write(f"ssrecv {COUNT} {int(200 + 12000 * COUNT / baud)}\n")
-                        _expect(dut, wait, rb"SSRECV READY")
-                        io.write(back)
-                        m = _expect(dut, wait, rb"SSRECV (\d+) ([0-9A-F]+) (\d)", timeout=5)
-                        ws_run.reply(m.group(0).decode())
-                        got[name] = (int(m.group(1)), m.group(2).decode(), m.group(3) == b"1")
-                        wait(0.02)
-
-    try:
-        ws_capture.stream(ws_run, oep_host, [ss_rx, ss_tx], rate=SLOW_RATE, steps=steps)
-    finally:
-        core.plan_release(host, [used])
-        _ask_now(dut, "ssend", rb"SSEND")
-    record_property("received", json.dumps(got))
-    wrong = []
-    for baud, k in SOFT_CONDITIONS:
-        bits, parity, stop = FORMATS[k]
-        name = f"{baud} {bits}{parity[0].upper()}{stop}"
-        back = bytes(b & ((1 << bits) - 1) for b in reversed(sent))
-        if got.get(name) != (COUNT, f"{_fnv(back):X}", False) and baud <= SOFT_PROMISED_BAUD:
-            wrong.append(f"{name}: {got.get(name)}")
-    record_property("received_beyond", json.dumps({n: v for n, v in got.items()
-                                                   if int(n.split()[0]) > SOFT_PROMISED_BAUD}))
-    assert not wrong, "the DUT received: " + " | ".join(wrong)

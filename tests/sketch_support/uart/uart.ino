@@ -1,22 +1,21 @@
 /* UART contracts (tests/instrumented/uart): Serial on the probe's UART and
- * lines, a SoftwareSerial on two plain lines. Console on SerialDMSeq; every
+ * lines. Console on SerialDMSeq; every
  * command answers one line (see each branch below):
  *
  *   uart, stdio, ucfg, upins, usend, urecv, uerr, uhold, uoff   Serial itself
  *   uwrite, uflow, urts                                          flow control
  *   u485, ude                                                    RS485's DE
  *   uirda                                                        IrDA (setMode)
+ *   uaddr, umsg, umute                                           multiprocessor (mute mode)
  *   uhd, uavail                                                  single wire
  *   uevt, uevq                                                   onReceive()
- *   ssbegin, sssend, ssrecv, ssend                               SoftwareSerial
  *
- * Split from core_contracts (2026-11-17) so that the modes and SoftwareSerial
- * fit CH32V003's 16 KB. */
+ * Split from core_contracts (2026-11-17) so that the modes fit CH32V003's
+ * 16 KB; SoftwareSerial went to sketch_support/software_serial (2026-11-19)
+ * to make room for the multiprocessor mode. */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
-#include <SoftwareSerial.h>
-#include <new>
 #include "internal/ch32rv_gpio.h"   // CH32RV_GPIO_NO_OPEN_DRAIN: whether a one-wire pad can be open drain
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,9 +37,6 @@ uint8_t eventSeen[8];
 uint32_t eventTotal;
 uint32_t eventHash = 2166136261u;
 
-// ssbegin: the SoftwareSerial under test, built in place (its pins are the constructor's).
-alignas(SoftwareSerial) uint8_t softStorage[sizeof(SoftwareSerial)];
-SoftwareSerial *soft;
 static const uint16_t formats[] = {SERIAL_8N1, SERIAL_8E1, SERIAL_8O1, SERIAL_8N2, SERIAL_7E1, SERIAL_7O1};
 
 uint32_t fnv(uint32_t hash, uint8_t byte) { return (hash ^ byte) * 16777619u; }
@@ -217,6 +213,42 @@ void reply(const char *command) {
     const bool ok = Serial.setMode(command[6] == '1' ? UART_MODE_IRDA : UART_MODE_UART);
     SerialDMSeq.print("UIRDA ");
     SerialDMSeq.println(ok ? 1 : 0);
+  } else if (strncmp(command, "uaddr ", 6) == 0) {
+    // uaddr <0..15 | -1>: Serial.setAddress() - UADDR <ok>.
+    const bool ok = Serial.setAddress((int)strtol(command + 6, nullptr, 10));
+    SerialDMSeq.print("UADDR ");
+    SerialDMSeq.println(ok ? 1 : 0);
+  } else if (strncmp(command, "umsg ", 5) == 0) {
+    // umsg <address> <n>: writeAddress(address), then n bytes of even weight - byte i is (i * 37 + 11) & 0x7F with
+    // bit 7 making its count of ones even (the host reads the frames as 8E1 and 8O1). UMSG <ok> <n>.
+    char *end;
+    const unsigned long a = strtoul(command + 5, &end, 10);
+    const unsigned long n = strtoul(end, nullptr, 10);
+    const bool ok = Serial.writeAddress((uint8_t)a);
+    for (unsigned long i = 0; ok && i < n; ++i) {
+      uint8_t v = (uint8_t)((i * 37u + 11u) & 0x7Fu);
+      if (__builtin_popcount(v) & 1) v |= 0x80u;
+      Serial.write(v);
+    }
+    Serial.flush();
+    SerialDMSeq.print("UMSG ");
+    SerialDMSeq.print(ok ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(n);
+  } else if (strncmp(command, "umute", 5) == 0) {
+    // umute: Serial.mute() - UMUTE <ok>. umute w: in a message - up to 2 s for its first byte, read, then mute()
+    // while the rest is still coming: UMUTE <ok> <the byte, decimal> (-1: none came).
+    int first = -1;
+    if (command[5] == ' ' && command[6] == 'w') {
+      const unsigned long start = millis();
+      while (!Serial.available() && millis() - start < 2000) {
+      }
+      first = Serial.read();
+    }
+    SerialDMSeq.print("UMUTE ");
+    SerialDMSeq.print(Serial.mute() ? 1 : 0);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(first);
   } else if (strncmp(command, "ude ", 4) == 0) {
     // ude <n1> <gap ms> <n2>: usend's bytes in two writes with a pause between (two driver-enable windows).
     char *end;
@@ -295,50 +327,6 @@ void reply(const char *command) {
       SerialDMSeq.print(eventSeen[i]);
     }
     SerialDMSeq.println();
-  } else if (strncmp(command, "ssbegin ", 8) == 0) {
-    // ssbegin <rx> <tx> <baud> <format>: a SoftwareSerial on those pads (ucfg's formats). SSBEGIN <listening>.
-    char *end;
-    const int rx = (int)strtol(command + 8, &end, 10);
-    const int tx = (int)strtol(end, &end, 10);
-    const long baud = strtol(end, &end, 10);
-    const unsigned long k = strtoul(end, nullptr, 10);
-    if (soft) soft->~SoftwareSerial();
-    soft = new (softStorage) SoftwareSerial((uint8_t)rx, (uint8_t)tx);
-    soft->begin(baud, k < sizeof formats / sizeof formats[0] ? formats[k] : 0);
-    SerialDMSeq.print("SSBEGIN ");
-    SerialDMSeq.println(soft->isListening() ? 1 : 0);
-  } else if (strncmp(command, "sssend ", 7) == 0) {
-    // sssend <n>: usend's bytes on the SoftwareSerial.
-    const unsigned long n = strtoul(command + 7, nullptr, 10);
-    unsigned long sent = 0;
-    for (unsigned long i = 0; soft && i < n; ++i) sent += soft->write((uint8_t)(i * 37u + 11u));
-    SerialDMSeq.print("SSSEND ");
-    SerialDMSeq.println(sent);
-  } else if (strncmp(command, "ssrecv ", 7) == 0) {
-    // ssrecv <n> <ms>: urecv on the SoftwareSerial; SSRECV <count> <FNV-1a> <overflow>.
-    char *end;
-    const unsigned long n = strtoul(command + 7, &end, 10);
-    const unsigned long ms = strtoul(end, nullptr, 10);
-    while (soft && soft->available()) soft->read();
-    SerialDMSeq.println("SSRECV READY");
-    uint32_t hash = 2166136261u;
-    unsigned long got = 0;
-    const unsigned long start = millis();
-    while (soft && got < n && millis() - start < ms) {
-      if (soft->available()) {
-        hash = fnv(hash, (uint8_t)soft->read());
-        ++got;
-      }
-    }
-    SerialDMSeq.print("SSRECV ");
-    SerialDMSeq.print(got);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(hash, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(soft && soft->overflow() ? 1 : 0);
-  } else if (strcmp(command, "ssend") == 0) {
-    if (soft) soft->end();
-    SerialDMSeq.println("SSEND");
   } else if (strcmp(command, "stdio") == 0) {
     // stdout follows Serial once it is begun (setup()); ch32rv_set_stdout() overrides it, nullptr discards.
     puts("STDIO SERIAL");
