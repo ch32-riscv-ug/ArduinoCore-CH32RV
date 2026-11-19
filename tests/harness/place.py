@@ -63,7 +63,7 @@ USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 
 # The record's usb ports a CH32RV peer can be the host on (CH32RVUsbHost's CH32RV_USB_HOST_PORT_*).
 USB_HOST_CONTROLLERS = ("full_speed", "high_speed", "high_speed_2", "super_speed")
 # Cases that need nothing but the chip and the probe (each test skips what its lines do not allow).
-ALWAYS = ("runtime", "uart", "uart-dma", "uart-sync", "software-serial", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
+ALWAYS = ("runtime", "uart", "uart-dma", "uart-sync", "software-serial", "pioc", "flash", "synckit", "logic", "gpio", "spi", "softspi", "wire", "softwire", "periph",
           "signals", "system", "console-rtt", "console-dmdata", "console-sdi",
           "analog", "selfcheck", "selfbus", "selfsys", "selfapi", "selfexti")
 # A defect's `lose` names a feature; these are the cases that test it.
@@ -73,7 +73,7 @@ ALWAYS = ("runtime", "uart", "uart-dma", "uart-sync", "software-serial", "flash"
 FEATURE_CASES = {"i2c": ("wire",), "spi": ("spi",), "usb": USB_CASES + PEER_DEVICE_CASES + PEER_HOST_CASES,
                  "uart": ("uart", "uart-dma", "uart-sync"), "sd": ("sd",), "pd": ("pd",), "eth": ("eth", "eth-libs"),
                  "gpio-drive": ("gpio", "logic", "spi", "softspi", "wire", "softwire", "periph", "signals", "analog",
-                                "software-serial")}
+                                "software-serial", "pioc")}
 
 
 class PlaceError(ValueError):
@@ -317,7 +317,7 @@ def static_reason(case, part, items=None, caps=None):
     return f"{part} has no {case}" if series_has(case, series, items, whole, part) else f"{series} has no {case}"
 
 
-LINE_CASES = ("gpio", "spi", "softspi", "wire", "softwire", "periph", "signals", "system", "software-serial")
+LINE_CASES = ("gpio", "spi", "softspi", "wire", "softwire", "periph", "signals", "system", "software-serial", "pioc")
 
 
 def choose_cases(place, items=None, caps=None):

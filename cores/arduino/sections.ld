@@ -60,6 +60,15 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_end = .);
     } >FLASH
 
+    /* The PIOC's program SRAM where it is the bottom 4 KiB of RAM (V205):
+     * CH32RVPioc's reservation (CH32RV_PIOC_SRAM_SECTION ".pioc_sram_low"),
+     * so .data and the rest start above it. Only what something references
+     * survives --gc-sections: 0 B unless a sketch uses the PIOC. */
+    .pioc_sram_low ORIGIN(RAM) (NOLOAD) :
+    {
+        *(.pioc_sram_low)
+    } >RAM
+
     /* Code the sketch asks to run from RAM (CH32RV_RAMFUNC, Arduino.h).
      * crt0_ch32.S copies it together with .data, so it must stay right before
      * .data in both RAM and flash (asserted below). Empty unless used.
@@ -123,13 +132,21 @@ SECTIONS
 
     /* NOLOAD: GNU ld makes a section of only symbols and a moved `.` NOBITS on
      * its own, lld makes it PROGBITS - a RAM-sized gap in the .bin. */
-    .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size (NOLOAD) :
+    .stack ORIGIN(RAM) + LENGTH(RAM) - SIZEOF(.pioc_sram_high) - __stack_size (NOLOAD) :
     {
         PROVIDE( _heap_end = . );
         . = ALIGN(4);
         PROVIDE( _susrstack = . );
         . = . + __stack_size;
         PROVIDE( _eusrstack = . );
+    } >RAM
+
+    /* The PIOC's program SRAM where it is the top 4 KiB of RAM (X035 / X033):
+     * CH32RVPioc's reservation (".pioc_sram_high"), the stack below it. 0 B
+     * unless used, as .pioc_sram_low. */
+    .pioc_sram_high ORIGIN(RAM) + LENGTH(RAM) - SIZEOF(.pioc_sram_high) (NOLOAD) :
+    {
+        *(.pioc_sram_high)
     } >RAM
 
     /* Storage kept across resets (CH32RV_FLASH_STORE, ch32rv_flash.h), packed

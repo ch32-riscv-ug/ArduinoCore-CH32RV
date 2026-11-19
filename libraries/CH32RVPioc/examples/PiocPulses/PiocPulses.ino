@@ -12,8 +12,10 @@
 PIOC_IMAGE(pulses);
 CH32RVPioc pioc;
 
-// en: IO0's pad: one the PIOC reaches (the variant's CH32RV_PIOC_PADS); PA0 on CH32H417.
-// ja: IO0 の端子。PIOC が届く端子（variant の CH32RV_PIOC_PADS）。CH32H417 なら PA0。
+// en: IO0's pad: one the PIOC reaches (the variant's CH32RV_PIOC_PADS) - PA0 on CH32H417, PC7 on CH32X035
+// en: (PC18 is SWD's too), PB10 on CH32V205.
+// ja: IO0 の端子。PIOC が届く端子（variant の CH32RV_PIOC_PADS）。CH32H417 は PA0、CH32X035 は PC7（PC18 は SWD と兼用）、
+// ja: CH32V205 は PB10。
 static const int IO0_PIN = PA0;
 
 void setup()

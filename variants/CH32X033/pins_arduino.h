@@ -483,6 +483,12 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_PIOC_BASE 0x40026c00u
 #define CH32RV_PIOC_IRQN 47
 #define CH32RV_PIOC_SRAM_BASE 0x20004000u
+/* the SRAM is part of the sketch's RAM: CH32RVPioc reserves it in this section (sections.ld) */
+#define CH32RV_PIOC_SRAM_SECTION ".pioc_sram_high"
+/* the pads' remap field (routes.csv: AFIO PCFR1 bit 23); the pads' value is its value */
+#define CH32RV_PIOC_REMAP_PCFR1 1
+#define CH32RV_PIOC_REMAP_SHIFT 23
+#define CH32RV_PIOC_REMAP_MASK 0x00800000u
 /* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */
 #define CH32RV_PIOC_PADS { \
     { 0, PC18, 0 }, \

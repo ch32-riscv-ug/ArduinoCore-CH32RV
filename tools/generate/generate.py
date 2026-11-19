@@ -3007,6 +3007,11 @@ PIOC_BLOCK: dict = {}
 # device-data yet (asked of [data], 2026-11-19); the EVT's headers: ch32h417_pioc.h PIOC_SRAM_BASE 0x50040000 (a region
 # of its own), ch32x035 PIOC 0x20004000 (the top 4 KiB of the 20 KiB RAM), ch32v205 0x20000000 (the bottom 4 KiB).
 PIOC_SRAM = {"CH32H417": 0x50040000, "CH32X035": 0x20004000, "CH32V205": 0x20000000}
+# Where that SRAM sits in the sketch's RAM, for the linker (sections.ld): "high" the top 4 KiB of RAM (X035: the stack
+# moves below it), "low" the bottom 4 KiB (V205: .data and the rest move above it); none: a region of its own (H41x).
+PIOC_SRAM_PLACE = {"CH32X035": "high", "CH32V205": "low"}
+# The remap field that routes the PIOC's pads on the remap families: family -> (register, bit), from routes.csv.
+PIOC_REMAP: dict = {}
 
 
 # The ADC's injected group: its JEXTSEL field and what each value starts it from (adc_triggers.csv, group
@@ -3077,6 +3082,10 @@ def load_pioc(tables: pathlib.Path) -> tuple:
     irq = {r["family"]: int(r["number"])
            for r in read_table(tables, "interrupts.csv", ("family", "number", "name")) if r["name"] == "PIOC"}
     block = {f: (b, irq[f]) for f, b in base.items() if f in irq}
+    for r in read_table(tables, "routes.csv", ("series", "selector", "controller", "register", "bits", "peripheral")):
+        m = re.fullmatch(r"(PCFR\d):(\d+)", r["bits"])
+        if r["peripheral"] == "PIOC" and r["controller"] == "afio" and m:
+            PIOC_REMAP[r["series"]] = (m.group(1), int(m.group(2)))
     return pads, block
 
 
@@ -5061,6 +5070,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define CH32RV_PIOC_BASE {pbase:#010x}u")
         out.append(f"#define CH32RV_PIOC_IRQN {pirq}")
         out.append(f"#define CH32RV_PIOC_SRAM_BASE {PIOC_SRAM[family]:#010x}u")
+        if family in PIOC_SRAM_PLACE:
+            out.append("/* the SRAM is part of the sketch's RAM: CH32RVPioc reserves it in this section (sections.ld) */")
+            out.append(f'#define CH32RV_PIOC_SRAM_SECTION ".pioc_sram_{PIOC_SRAM_PLACE[family]}"')
+        pioc_remap = PIOC_REMAP.get(series)
+        if pioc_remap:
+            reg, bit = pioc_remap
+            out.append(f"/* the pads' remap field (routes.csv: AFIO {reg} bit {bit}); the pads' value is its value */")
+            out.append(f"#define CH32RV_PIOC_REMAP_{reg} 1")
+            out.append(f"#define CH32RV_PIOC_REMAP_SHIFT {bit}")
+            out.append(f"#define CH32RV_PIOC_REMAP_MASK {1 << bit:#010x}u")
         out.append("/* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */")
         out.append("#define CH32RV_PIOC_PADS { \\")
         for role, (port, bit), value in pioc_pads:

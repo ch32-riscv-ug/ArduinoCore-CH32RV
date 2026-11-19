@@ -6,8 +6,10 @@ The PIOC: WCH's RISC8B I/O processor on X035 / X033, V205 and H41x - an 8-bit co
 and two pads (IO0, IO1) it drives cycle by cycle. Its program is written in the sketch's (or a library's) `.S` with
 the core's macros (`<ch32rv_pioc.inc>`) and assembled by the sketch's own clang; no other assembler is involved.
 
-**Prototype (2026-11-19)**: H41x (per-pad AF) works today. X035's remap, and the PIOC SRAM X035 and V205 share with the
-sketch's RAM (X035's stack, V205's `.data`), come next.
+On X035 / X033 and V205 the PIOC's program SRAM is 4 KiB of the ordinary RAM (X035: the top, the stack then sits below
+it; V205: the bottom, `.data` and the rest above it). The linker sets it aside only for a sketch that uses the PIOC;
+one that does not keeps all its RAM. X035's pads are chosen by the PCFR1 remap (IO0 / IO1 on PC18 / PC19, or IO0 on
+PC7); PC18 / PC19 are SWD's too. The bench test passes on H417, X035 and V205 (PA0, PC7, PB10; 2026-11-19).
 
 ## Writing the program
 

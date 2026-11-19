@@ -65,6 +65,13 @@ scope = "series"
 not_on = ["CH32V002", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007"]
 
 [[item]]
+id = "pioc-pulses"          # CH32RVPioc + ch32rv_pioc.inc: a .S program loaded, commands, n pulses on IO0
+test = "pioc::test_pioc_pulses"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]    # no clock gate of its own (always clocked), so no PIOC clock-enable name
+
+[[item]]
 id = "uart-half-duplex"     # setPins(tx, tx): single wire (HDSEL), the echo, receiving on the TX pad
 test = "uart::test_uart_half_duplex"
 scope = "series"

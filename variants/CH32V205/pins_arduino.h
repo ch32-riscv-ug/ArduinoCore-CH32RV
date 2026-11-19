@@ -966,6 +966,8 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_PIOC_BASE 0x40025c00u
 #define CH32RV_PIOC_IRQN 63
 #define CH32RV_PIOC_SRAM_BASE 0x20000000u
+/* the SRAM is part of the sketch's RAM: CH32RVPioc reserves it in this section (sections.ld) */
+#define CH32RV_PIOC_SRAM_SECTION ".pioc_sram_low"
 /* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */
 #define CH32RV_PIOC_PADS { \
     { 0, PA11, 4 }, \

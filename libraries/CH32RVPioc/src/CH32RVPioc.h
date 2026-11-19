@@ -21,8 +21,10 @@
  * clears both. d0 .. d31 (SFR_DATA_REG0 ..) are shared bytes either side
  * reads and writes at any time.
  *
- * Prototype (2026-11-19): the per-pin AF families (H41x). X035's remap and
- * the SRAM X035 / V205 share with the sketch's RAM come next. */
+ * On X035 / X033 and V205 the program SRAM is 4 KiB of the sketch's RAM
+ * (X035: the top, below which the stack then sits; V205: the bottom): a
+ * sketch that uses the PIOC has that much less (sections.ld), one that does
+ * not keeps it all. */
 #pragma once
 
 #include <Arduino.h>

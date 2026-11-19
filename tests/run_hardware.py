@@ -33,6 +33,7 @@ MODULES = {
     "uart-dma": TESTS / "instrumented/uart/test_uart_dma.py",
     "software-serial": TESTS / "instrumented/software_serial/test_software_serial.py",
     "uart-sync": TESTS / "instrumented/uart/test_uart_sync.py",
+    "pioc": TESTS / "instrumented/pioc/test_pioc.py",
     "gpio": TESTS / "instrumented/gpio/test_gpio_contract.py",
     "hid": TESTS / "single/runtime/test_runtime_contract.py",
     "power": TESTS / "instrumented/power/test_power_contract.py",
@@ -104,6 +105,7 @@ SKETCHES = {
     "uart-dma": TESTS / "sketch_support/uart_dma/uart_dma.ino",
     "software-serial": TESTS / "sketch_support/software_serial/software_serial.ino",
     "uart-sync": TESTS / "sketch_support/uart_sync/uart_sync.ino",
+    "pioc": TESTS / "sketch_support/pioc/pioc.ino",
     "wire": TESTS / "sketch_support/wire/wire.ino",
     "softwire": TESTS / "sketch_support/wire/wire.ino",
     "softspi": TESTS / "sketch_support/spi/spi.ino",
@@ -214,6 +216,7 @@ HELPERS = {
     "uart-dma": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "software-serial": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "uart-sync": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
+    "pioc": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "sd": [TESTS / "instrumented/bench_lines.py"],
     "periph": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
     "signals": [TESTS / "instrumented/bench_lines.py", TESTS / "instrumented/ws_capture.py"],
@@ -413,6 +416,9 @@ def stage_case(work, name, case, target):
     if case != "power":
         sketch = SKETCHES.get(case, TESTS / "sketch_support/core_contracts/core_contracts.ino")
         shutil.copyfile(sketch, directory / f"{case}.ino")
+        # Its assembly beside it (a PIOC program, sketch_support/pioc): arduino-cli builds a sketch's .S files.
+        for extra in sorted(sketch.parent.glob("*.S")):
+            shutil.copyfile(extra, directory / extra.name)
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
             f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"

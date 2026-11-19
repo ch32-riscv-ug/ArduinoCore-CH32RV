@@ -7,14 +7,27 @@
 
 namespace {
 
-#if defined(CH32RV_PIOC_BASE) && defined(CH32RV_PIOC_PADS) && defined(CH32RV_CLKEN_PIOC_ADDR) && \
-    CH32RV_GPIO_PER_PIN_AF
+/* The pads are routed by an AF number per pad (H41x, V205) or by one remap
+ * field for both (X035 / X033: AFIO PCFR1). */
+#if defined(CH32RV_PIOC_BASE) && defined(CH32RV_PIOC_PADS) && \
+    (CH32RV_GPIO_PER_PIN_AF || defined(CH32RV_PIOC_REMAP_MASK))
 #define CH32RV_PIOC_READY 1
 
 struct PiocPad {
-    uint8_t role, pin, value;      /* value: the pad's AF number */
+    uint8_t role, pin, value;      /* value: the pad's AF number, or the remap field's value */
 };
 const PiocPad pads[] = CH32RV_PIOC_PADS;
+
+/* Where the program SRAM is part of the sketch's RAM (X035's top 4 KiB,
+ * V205's bottom), this reservation keeps the linker's other sections out of
+ * it (sections.ld); referenced only from begin(), so a sketch without the
+ * PIOC keeps its whole RAM. */
+#if defined(CH32RV_PIOC_SRAM_SECTION)
+__attribute__((section(CH32RV_PIOC_SRAM_SECTION), aligned(4))) uint8_t reserved[4096];
+inline uint8_t *program_sram() { return reserved; }
+#else
+inline uint8_t *program_sram() { return reinterpret_cast<uint8_t *>(CH32RV_PIOC_SRAM_BASE); }
+#endif
 
 constexpr uint32_t SRAM_BYTES = 4096;
 /* SFR_SYS_CFG, the host's bits (WCH's PIOC header) */
@@ -43,7 +56,9 @@ bool CH32RVPioc::route(int pin, uint8_t role)
             const uint8_t port = (uint8_t)CH32RV_PIN_PORT(want), bit = (uint8_t)CH32RV_PIN_BIT(want);
             ch32rv_gpio_clock_enable(port);
             ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_AF_PP_50M);
+#if CH32RV_GPIO_PER_PIN_AF
             ch32rv_pin_set_af(want, p.value);
+#endif
             _pads[role] = (int8_t)want;
             return true;
         }
@@ -66,19 +81,43 @@ bool CH32RVPioc::begin(const Image &image, int io0, int io1)
      * anything changes. */
     const uint8_t want0 = io0 < 0 ? 0xFF : (uint8_t)CH32RV_PIN_RESOLVE(io0);
     const uint8_t want1 = io1 < 0 ? 0xFF : (uint8_t)CH32RV_PIN_RESOLVE(io1);
-    bool ok0 = io0 < 0, ok1 = io1 < 0;
+    int v0 = io0 < 0 ? -1 : -2, v1 = io1 < 0 ? -1 : -2;      /* -2: not found */
     for (const PiocPad &p : pads) {
-        ok0 |= p.role == 0 && p.pin == want0;
-        ok1 |= p.role == 1 && p.pin == want1;
+        if (p.role == 0 && p.pin == want0) {
+            v0 = p.value;
+        }
+        if (p.role == 1 && p.pin == want1) {
+            v1 = p.value;
+        }
     }
-    if (!ok0 || !ok1) {
+    if (v0 == -2 || v1 == -2) {
         return false;
     }
+#if defined(CH32RV_PIOC_REMAP_MASK)
+    /* One field routes both: the two pads must be of one remap value. */
+    if (v0 >= 0 && v1 >= 0 && v0 != v1) {
+        return false;
+    }
+    const int remap = v0 >= 0 ? v0 : v1;
+#endif
+    uint8_t *sram = program_sram();
+    if (reinterpret_cast<uintptr_t>(sram) != CH32RV_PIOC_SRAM_BASE) {
+        return false;                  /* the linker put the reservation elsewhere */
+    }
+#if defined(CH32RV_CLKEN_PIOC_ADDR)
     CH32RV_REG32(CH32RV_CLKEN_PIOC_ADDR) |= CH32RV_CLKEN_PIOC_MASK;
+#endif
+#if defined(CH32RV_PIOC_REMAP_MASK)
+    if (remap >= 0) {
+        ch32rv_clock_enable(AFIO);
+        CH32RV_AFIO_PCFR1 = (CH32RV_AFIO_PCFR1 & ~CH32RV_PIOC_REMAP_MASK) |
+                            ((uint32_t)remap << CH32RV_PIOC_REMAP_SHIFT);
+    }
+#endif
     const uint8_t io = (uint8_t)((io0 >= 0 ? SYS_IO_EN0 : 0) | (io1 >= 0 ? SYS_IO_EN1 : 0));
     /* Held in reset while its SRAM is written (EVT: RGB1W_Init) */
     sfr(REG_SYS_CFG) = (uint8_t)(SYS_RESET | io);
-    memcpy(reinterpret_cast<void *>(CH32RV_PIOC_SRAM_BASE), image.words, image.bytes);
+    memcpy(sram, image.words, image.bytes);
     route(io0, 0);
     route(io1, 1);
     sfr(REG_SYS_CFG) = (uint8_t)(SYS_CLK_GATE | io);
@@ -99,7 +138,9 @@ void CH32RVPioc::end()
         return;
     }
     sfr(REG_SYS_CFG) = SYS_RESET;          /* stopped, the pads the host's again */
+#if defined(CH32RV_CLKEN_PIOC_ADDR)
     CH32RV_REG32(CH32RV_CLKEN_PIOC_ADDR) &= ~CH32RV_CLKEN_PIOC_MASK;
+#endif
     for (int8_t &pin : _pads) {
         if (pin >= 0) {
             ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
