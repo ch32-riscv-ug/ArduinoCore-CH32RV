@@ -45,10 +45,19 @@ streaming" PIO-style jobs do not fit. Its place is "a slower protocol with decis
 done to the clock instead of by the main core".
 
 **Against the ESP32's ULP**: both are a small core that runs apart from the main one and reports when done. But the
-ULP is mainly a watcher while the main core is in deep sleep (low power); the PIOC runs on HCLK, so it presumably
-stops in deep sleep (Standby) [not checked], and whether it keeps running and can wake the main core from its light
-WFI sleep is [not checked] either. It is less a low-power watcher than a stand-in for timing-critical pad work while
-the main core runs.
+ULP is mainly a watcher while the main core is in deep sleep (low power). The PIOC runs on HCLK, so it stops in any
+sleep that stops the clock (measured on X035, V205 and H417, 2026-11-19):
+
+| The main core | The PIOC |
+|---|---|
+| A plain WFI (Sleep; HCLK runs) | Keeps running; its request (`onDone()`) wakes the main core |
+| The stop part of `CH32RV.lightSleep()` | Stops, and goes on where it was after the wake (a pulse under way is stretched); its request does not wake the main core |
+| `CH32RV.deepSleep()` (standby, a restart) | Stops, and the program is lost (`begin()` again after the wake) |
+
+On the RTC families (V205, H417 ...) `lightSleep()` spends a sleep under a second in a plain WFI, so the PIOC runs
+through it; X035 sleeps in the AWU's stop, so it stops even for a short one. No API makes the PIOC's request a reason
+for `lightSleep()` to end yet. So it is not a low-power watcher: it takes timing-critical pad work off the main core
+while that core runs or waits in a WFI.
 
 ## Writing the program
 
