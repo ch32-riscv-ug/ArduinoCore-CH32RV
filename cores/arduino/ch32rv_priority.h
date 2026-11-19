@@ -114,6 +114,27 @@ bool ch32rv_irq_set_fast(uint32_t irqn, bool on);
 /* Whether `irqn` is entered by a VTF slot. */
 bool ch32rv_irq_is_fast(uint32_t irqn);
 
+/* A handler for an interrupt attached at run time, as attachInterrupt() does
+ * for a pin: fn(arg) runs in the interrupt (machine mode, as any handler -
+ * a plain function, no interrupt attribute). For an interrupt no handler is
+ * linked for (the vector's Default_Handler): a library that wants a DMA
+ * channel's or a timer's interrupt only when it gets that channel or timer
+ * at run time. ch32rv_irq_attach() records fn and arg and enables the
+ * interrupt; false when the vector has a linked handler of its own (a
+ * library's DMA1_Channel1_IRQHandler, the core's USART1_IRQHandler: that one
+ * stays), or all CH32RV_IRQ_ATTACH_SLOTS are in use. Attaching again
+ * replaces fn and arg. ch32rv_irq_detach() disables it and gives the slot
+ * back. Dispatched through Default_Handler by the interrupt's number
+ * (mcause): a few cycles more than a linked handler, none of the vector
+ * table moved to RAM (2026-11-20). On V103, whose table is jumps, a linked
+ * handler is not detected: attach only what nothing links. */
+#ifndef CH32RV_IRQ_ATTACH_SLOTS
+#define CH32RV_IRQ_ATTACH_SLOTS 8
+#endif
+typedef void (*ch32rv_irq_handler_t)(void *arg);
+bool ch32rv_irq_attach(uint32_t irqn, ch32rv_irq_handler_t fn, void *arg);
+void ch32rv_irq_detach(uint32_t irqn);
+
 /* The EXTI vector a pin's interrupt (attachInterrupt()) is taken on, or -1. */
 static inline int ch32rv_pin_irqn(uint32_t pin)
 {

@@ -7,7 +7,10 @@
  * with a pattern before setup(), and the SysTick interrupt looks at the
  * reservation's bottom 64 bytes every millisecond: once the stack has reached
  * them, the part resets and CH32RV.resetReason() says panic (ESP32's
- * ESP_RST_PANIC). The fill also gives CH32RV.getMinFreeStack(). */
+ * ESP_RST_PANIC). The fill also gives CH32RV.getMinFreeStack(). Where the core
+ * has PMP, those 64 bytes are a locked no-access region as well (from crt0,
+ * before main(): ch32rv_stack_guard()), and the first access to them resets
+ * at once - in a handler too - instead of at the next SysTick. */
 #pragma once
 
 #include <stdint.h>
@@ -29,6 +32,10 @@ void ch32rv_stack_fill(void);
 /* From SysTick: resets through ch32rv_stack_overflow() once the stack has
  * reached the reservation's bottom. */
 void ch32rv_stack_check(void);
+/* From crt0 in machine mode: the PMP guard where there is PMP. */
+void ch32rv_stack_guard(void);
+/* 1 once the PMP guard is set. */
+extern uint8_t ch32rv_stack_guarded;
 /* Weak: the default records the panic and resets. */
 void ch32rv_stack_overflow(void) __attribute__((noreturn));
 #endif

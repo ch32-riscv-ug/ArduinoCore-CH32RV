@@ -494,6 +494,17 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_SERVO_SHARES_PWM 1
 #define CH32RV_SERVO_TIMER_BITS 16
 
+/* Every DMA channel: X(dma, channel, its interrupt, its registers, its flags' register, their shift) -
+ * CH32RVDma takes a free one (internal/ch32rv_dma.h). */
+#define CH32RV_DMA_CHANNELS(X) \
+    X(1, 1, CH32RV_IRQN_DMA1_Channel1, 0x40020008u, 0x40020000u, 0u) \
+    X(1, 2, CH32RV_IRQN_DMA1_Channel2, 0x4002001cu, 0x40020000u, 4u) \
+    X(1, 3, CH32RV_IRQN_DMA1_Channel3, 0x40020030u, 0x40020000u, 8u) \
+    X(1, 4, CH32RV_IRQN_DMA1_Channel4, 0x40020044u, 0x40020000u, 12u) \
+    X(1, 5, CH32RV_IRQN_DMA1_Channel5, 0x40020058u, 0x40020000u, 16u) \
+    X(1, 6, CH32RV_IRQN_DMA1_Channel6, 0x4002006cu, 0x40020000u, 20u) \
+    X(1, 7, CH32RV_IRQN_DMA1_Channel7, 0x40020080u, 0x40020000u, 24u)
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

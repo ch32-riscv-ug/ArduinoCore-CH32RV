@@ -427,12 +427,11 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [ ] PIOC の L2 以降のマクロ（待ち時間、構造化、部品、雛形）は設計してから入れる（ユーザー、2026-11-19）。置き場はコアでなく
   アプリ側: スケッチのプロジェクトのファイルとして持ち、版の差や環境の差を無くす（ユーザー、2026-11-19）。案は
   work/pioc-handoff-20261119/macro-spec.ja.md。SFR の名前を C++ と共有する形（#define）もそこで決める。
-- [ ] **実験済み・導入の判断待ち（2026-11-19、ユーザー: 全部実験してから導入を検討）**。記録は work/experiments-20261119/README.ja.md（手元のみ）:
-  H41x の Watchdog メニュー（LOADCODE の起動で確認を呼ぶ＋書き込みに fence。V5F・V3F で書き換えと戻しが通る）、
-  2 コアの malloc（HSEM のロックで壊れ 0、+304 B・V5F 約 11 % 減。ロックなしは壊れて V3F が止まる）、
-  PMP（X035・V407・H417 で効く、V203・V205 に無い。スケッチはユーザーモードなので ecall で設定）、
-  ベクタ表の RAM 化（X035・V203・H417 で差し替えた SWI が動く）、
-  DMA のメモリ間の API（クラス案と関数案。速い CPU では memcpy が速く、利点は非同期と周辺への転送）。
+- [x] **実験済みの機能の導入（2026-11-19 に実験、2026-11-20 に使い方を比べて推奨の形で入れた。ユーザー: API もいろいろ使い方を
+  検討してから推奨の形で入れる）**。形と理由は [docs/adr/0018-system-primitives.ja.md](docs/adr/0018-system-primitives.ja.md):
+  H41x の Watchdog メニュー、2 コアの malloc のロック（selfapi::test_cores_heap が h417qeu6-pico で通る）、
+  実行時の割り込み `ch32rv_irq_attach()`（ベクタ表は写さず Default_Handler から振り分け。X035・V003・V203・H417 で
+  selfapi::test_irq_attach）、CH32RVDma（selfapi::test_dma）、PMP は Stack Check メニューの中のスタックの守り。
 - [ ] PIOC のエミュレータと pytest の pioc-sim:// は後で検討（ユーザー、2026-11-19。引き継ぎ資料の 5 章）。
 - [ ] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。
 - [ ] 代表ユースケース「X035 の USB PD シンクと PPS の操作画面」。PD の充電器・画面・ボタンが要る。

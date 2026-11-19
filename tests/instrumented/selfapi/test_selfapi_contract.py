@@ -446,6 +446,37 @@ def test_gpha(dut, ready, record_property):
     assert right == total, f"{right} of {total} right; wrong: {' '.join(wrong)}"
 
 
+def test_dma(dut, ready, record_property):
+    """CH32RVDma: begin() takes a free channel; a byte copy between shifted addresses, a word copy and a fill land
+    exactly (the bytes around them untouched); copyAsync() runs while the CPU counts and calls onDone()'s callback
+    once with its argument; a fill longer than CNTR's 65535 units goes in parts (where 66 KB of heap is free)."""
+    m = ask(dut, "dma", rb"DMA (NONE|(\d+) (\d+) (\d) (\d) (\d) (\d) (\d+) (\d+) (\d))", timeout=15)
+    assert m.group(1) != b"NONE", "begin() found no free DMA channel"
+    dma, ch, odd, words, filled, async_, callbacks, turns, chunk = (int(m.group(k)) for k in range(2, 11))
+    record_property("dma", json.dumps(dict(dma=dma, channel=ch, turns=turns, parts=chunk)))
+    wrong = [name for name, ok in (("byte copy", odd), ("word copy", words), ("fill", filled),
+                                   ("background copy", async_)) if not ok]
+    assert not wrong, f"wrong data: {', '.join(wrong)} (DMA{dma} channel {ch})"
+    assert callbacks == 1, f"onDone()'s callback ran {callbacks} times (100 per call with a wrong argument)"
+    assert chunk != 0, "the 66001-byte fill in two parts came out wrong"
+
+
+def test_irq_attach(dut, ready, record_property):
+    """ch32rv_irq_attach(): a handler attached at run time to a vector nothing links a handler for runs once per raise
+    with its argument, a vector with a linked handler is refused (it keeps its own), and after
+    ch32rv_irq_detach() a raise runs nothing. Dispatched through Default_Handler (crt0's jump to
+    ch32rv_irq_unhandled)."""
+    m = ask(dut, "irqattach", rb"IRQATTACH (NONE|(\d+) (\d) (\d+) (\d) (\d) (\d+))")
+    if m.group(1) == b"NONE":
+        pytest.skip("V103's table is jumps (no check of a linked handler), or no free vector")
+    irqn, ok, runs, arg, refused, after = (int(m.group(k)) for k in range(2, 8))
+    record_property("irq_attach", json.dumps(dict(irqn=irqn, runs=runs, after=after)))
+    assert ok == 1, f"ch32rv_irq_attach({irqn}) refused a free vector"
+    assert runs == 1 and arg == 1, f"the attached handler ran {runs} times (once expected), its argument seen {arg}"
+    assert refused == 1, "a vector with a linked handler was taken"
+    assert after == 1, f"the handler ran after ch32rv_irq_detach() ({after} runs in all)"
+
+
 def test_vtf(dut, ready, record_property):
     """ch32rv_irq_set_fast() (VTF): a timer's update interrupt at the timer's full clock, 300 entries through the
     vector table, then 300 with the interrupt in a VTF slot: the slot is taken and is_fast() says so, the handler (the

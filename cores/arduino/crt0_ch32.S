@@ -184,7 +184,13 @@ _vector_base:
 /* ---- default handler and weak aliases (pass 2) ---- */
     .section  .text.vector_handler, "ax", @progbits
     .weak   Default_Handler
+/* Every vector no handler is linked for. It goes on to ch32rv_irq_unhandled: the loop below, or - when a sketch or
+   library attaches a handler at run time (ch32rv_irq_attach(), ch32rv_irq_attach.c) - the dispatch that reads
+   mcause and calls it. A jump, not an alias, so the strong definition replaces the weak one at link time. */
 Default_Handler:
+    j ch32rv_irq_unhandled
+    .weak   ch32rv_irq_unhandled
+ch32rv_irq_unhandled:
 1:
     j 1b
 
@@ -389,6 +395,16 @@ ch32rv_loadcode_ram:
     addi s0, s0, 4
     j 1b
 2:
+#endif
+
+#if CH32RV_STACK_CHECK
+/* The Stack Check menu's PMP guard, while still in machine mode (ch32rv_stack.c). */
+#ifdef CH32RV_LOADCODE
+    la t0, ch32rv_stack_guard
+    jalr t0
+#else
+    jal ch32rv_stack_guard
+#endif
 #endif
 
     la t0, main

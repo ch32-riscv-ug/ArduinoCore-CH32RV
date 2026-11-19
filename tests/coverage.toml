@@ -928,6 +928,18 @@ any_of = ["ADC1", "ADC"]
 kind = "self"
 
 [[item]]
+id = "selfapi-dma"          # CH32RVDma: copies and a fill exact, a background copy with its callback, a long fill in parts
+test = "selfapi::test_dma"
+scope = "series"
+kind = "self"
+
+[[item]]
+id = "selfapi-irq-attach"   # a handler attached at run time runs with its argument; a linked vector is refused; detach
+test = "selfapi::test_irq_attach"
+scope = "series"
+kind = "self"
+
+[[item]]
 id = "selfapi-priorities"   # interrupt priorities: two timers nest when one is less urgent, not otherwise
 test = "selfapi::test_priorities"
 scope = "series"

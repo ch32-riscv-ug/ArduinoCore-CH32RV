@@ -1606,6 +1606,8 @@ DMAMUX_SPI_CHANNELS = {1: ((2, 6), (2, 7)), 2: ((2, 2), (2, 3)),
                        3: ((1, 8), (2, 1)), 4: ((1, 6), (1, 7))}
 # family -> {SPI number: {"RX" | "TX": dma_line tuple}} (load_spi_dma).
 SPI_DMA: dict = {}
+# family -> {block: base address} (load_dma_blocks): every DMA channel, for CH32RV_DMA_CHANNELS.
+DMA_BLOCKS: dict = {}
 
 
 def load_spi_dma(tables: pathlib.Path) -> dict:
@@ -5645,6 +5647,26 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     emit_timer("Servo", pick([t for t in pool if t != tone_timer]),
                "a servo is attached")
 
+    # --- every DMA channel (CH32RVDma: memory to memory on a free one) ---
+    # Those with registers (register_blocks.csv) and a vector of their own; the flags as dma_line() finds them.
+    lines, seen = [], set()
+    for family in sorted({r.get("family", "") for r in rows}):
+        for dma in (1, 2):
+            for ch in range(1, 17):
+                name = f"DMA{dma}_Channel{ch}"
+                if name not in DMA_BLOCKS.get(family, {}) or f"{name}_IRQHandler" not in handlers or name in seen:
+                    continue
+                seen.add(name)
+                d, c, cbase, flags, shift, _ = dma_line(DMA_BLOCKS, family, dma, ch, 0, "CH32RV_DMA_CHANNELS")
+                lines.append(f"    X({d}, {c}, CH32RV_IRQN_{name}, {cbase:#010x}u, {flags:#010x}u, {shift}u)")
+    if lines:
+        out.append("/* Every DMA channel: X(dma, channel, its interrupt, its registers, its flags' register, their shift) -")
+        out.append(" * CH32RVDma takes a free one (internal/ch32rv_dma.h). */")
+        out.append("#define CH32RV_DMA_CHANNELS(X) \\")
+        out.extend(line + " \\" for line in lines[:-1])
+        out.append(lines[-1])
+        out.append("")
+
     # --- no LED_BUILTIN ---
     # A Generic board is a silicon series, not a PCB, so it does not know where
     # an LED is - or whether there is one. The old placeholder here was the
@@ -6014,6 +6036,7 @@ def main() -> int:
     uart_dma = load_uart_dma(args.tables)
     RTC_LSE_FAMILIES.update(load_rtc_lse_families(args.tables))
     SPI_DMA.update(load_spi_dma(args.tables))
+    DMA_BLOCKS.update(load_dma_blocks(args.tables))
     DAC_DMA.update(load_dac_dma(args.tables))
     DAC_TRIGGERS.update(load_dac_triggers(args.tables))
     ADC_DUAL.update(load_adc_dual(args.tables))

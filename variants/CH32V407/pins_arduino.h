@@ -1269,6 +1269,34 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_SERVO_SHARES_PWM 0
 #define CH32RV_SERVO_TIMER_BITS 16
 
+/* Every DMA channel: X(dma, channel, its interrupt, its registers, its flags' register, their shift) -
+ * CH32RVDma takes a free one (internal/ch32rv_dma.h). */
+#define CH32RV_DMA_CHANNELS(X) \
+    X(1, 1, CH32RV_IRQN_DMA1_Channel1, 0x40020008u, 0x40020000u, 0u) \
+    X(1, 2, CH32RV_IRQN_DMA1_Channel2, 0x4002001cu, 0x40020000u, 4u) \
+    X(1, 3, CH32RV_IRQN_DMA1_Channel3, 0x40020030u, 0x40020000u, 8u) \
+    X(1, 4, CH32RV_IRQN_DMA1_Channel4, 0x40020044u, 0x40020000u, 12u) \
+    X(1, 5, CH32RV_IRQN_DMA1_Channel5, 0x40020058u, 0x40020000u, 16u) \
+    X(1, 6, CH32RV_IRQN_DMA1_Channel6, 0x4002006cu, 0x40020000u, 20u) \
+    X(1, 7, CH32RV_IRQN_DMA1_Channel7, 0x40020080u, 0x40020000u, 24u) \
+    X(1, 8, CH32RV_IRQN_DMA1_Channel8, 0x40020090u, 0x400200f0u, 0u) \
+    X(1, 9, CH32RV_IRQN_DMA1_Channel9, 0x400200a0u, 0x400200f0u, 4u) \
+    X(1, 10, CH32RV_IRQN_DMA1_Channel10, 0x400200b0u, 0x400200f0u, 8u) \
+    X(1, 11, CH32RV_IRQN_DMA1_Channel11, 0x400200c0u, 0x400200f0u, 12u) \
+    X(1, 12, CH32RV_IRQN_DMA1_Channel12, 0x400200d0u, 0x400200f0u, 16u) \
+    X(1, 13, CH32RV_IRQN_DMA1_Channel13, 0x400200e0u, 0x400200f0u, 20u) \
+    X(2, 1, CH32RV_IRQN_DMA2_Channel1, 0x40020408u, 0x40020400u, 0u) \
+    X(2, 2, CH32RV_IRQN_DMA2_Channel2, 0x4002041cu, 0x40020400u, 4u) \
+    X(2, 3, CH32RV_IRQN_DMA2_Channel3, 0x40020430u, 0x40020400u, 8u) \
+    X(2, 4, CH32RV_IRQN_DMA2_Channel4, 0x40020444u, 0x40020400u, 12u) \
+    X(2, 5, CH32RV_IRQN_DMA2_Channel5, 0x40020458u, 0x40020400u, 16u) \
+    X(2, 6, CH32RV_IRQN_DMA2_Channel6, 0x4002046cu, 0x40020400u, 20u) \
+    X(2, 7, CH32RV_IRQN_DMA2_Channel7, 0x40020480u, 0x40020400u, 24u) \
+    X(2, 8, CH32RV_IRQN_DMA2_Channel8, 0x40020490u, 0x400204d0u, 0u) \
+    X(2, 9, CH32RV_IRQN_DMA2_Channel9, 0x400204a0u, 0x400204d0u, 4u) \
+    X(2, 10, CH32RV_IRQN_DMA2_Channel10, 0x400204b0u, 0x400204d0u, 8u) \
+    X(2, 11, CH32RV_IRQN_DMA2_Channel11, 0x400204c0u, 0x400204d0u, 12u)
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

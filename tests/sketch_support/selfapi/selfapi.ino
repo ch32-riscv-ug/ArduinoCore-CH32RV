@@ -14,6 +14,14 @@
  *                             fast one (every 100 us), 50 ms in each of three settings - slow less urgent than fast,
  *                             both the same, slow more urgent: PRIO <preemption levels> then <slow handlers run>
  *                             <of them interrupted by the fast one> for each setting; PRIO NONE without two timers
+ *   dma                       CH32RVDma: DMA <dma> <channel> <bytes, shifted 251> <words 256> <fill 250> <async with
+ *                             onDone()> <callbacks> <CPU turns meanwhile> <66001 bytes in two parts: 1 / 0, 2 without the
+ *                             RAM>, each 1 right (neighbours untouched) / 0; DMA NONE when begin() found no channel
+ *   irqattach                 ch32rv_irq_attach(): a vector nothing links a handler for (the last below 128 whose entry
+ *                             is Default_Handler) attached, raised by its pending bit, detached, raised again:
+ *                             IRQATTACH <irqn> <attach 1/0> <runs> <arg seen 1/0> <a linked vector (timer 1's update)
+ *                             refused 1/0> <runs after detach>; IRQATTACH NONE on V103 (jump table) or with no such
+ *                             vector
  *   vtf                       ch32rv_irq_set_fast(): a timer's update interrupt at its full clock, 300 entries with the
  *                             vector table and 300 with a VTF slot, the counter read first thing in the handler:
  *                             VTF <slots> <set 1/0> <is_fast() after 1/0> <least count, table> <least count, VTF>
@@ -64,6 +72,7 @@
 #include <CH32RVComparator.h>
 #include <CH32RVEcdc.h>
 #include <CH32RVGpha.h>
+#include <CH32RVDma.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -274,6 +283,123 @@ static void on_vtf(void *)
     const uint32_t c = CH32RV_TIM_CNT(vtf_base);
     vtf_least = c < vtf_least ? c : vtf_least;
     vtf_entries++;
+}
+
+/* ---- CH32RVDma ---- */
+static volatile uint32_t dma_callbacks;
+
+static void dma_done(void *arg)
+{
+    dma_callbacks = dma_callbacks + (arg == &dma_callbacks ? 1u : 100u);
+}
+
+/* dst[0 .. n) against want(i), and the guard bytes around it untouched (0xEE). */
+static bool dma_same(const uint8_t *dst, size_t n, uint8_t (*want)(size_t))
+{
+    if (dst[-1] != 0xEE || dst[n] != 0xEE) {
+        return false;
+    }
+    for (size_t i = 0; i < n; i++) {
+        if (dst[i] != want(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static uint8_t dma_src_at(size_t i) { return (uint8_t)(i * 7u + 3u); }
+static uint8_t dma_shift3(size_t i) { return dma_src_at(i + 3u); }
+static uint8_t dma_5a(size_t) { return 0x5A; }
+
+static void dma_check()
+{
+    CH32RVDma dma;
+    if (!dma.begin()) {
+        SerialDMSeq.printf("DMA NONE\r\n");
+        return;
+    }
+    alignas(4) static uint8_t src[256], dst[264];     /* small enough for the 2 KiB parts */
+    for (size_t i = 0; i < sizeof src; i++) {
+        src[i] = dma_src_at(i);
+    }
+    memset(dst, 0xEE, sizeof dst);
+    const bool odd = dma.copy(dst + 5, src + 3, 251) && dma_same(dst + 5, 251, dma_shift3);
+    memset(dst, 0xEE, sizeof dst);
+    const bool words = dma.copy(dst + 4, src, 256) && dma_same(dst + 4, 256, dma_src_at);
+    memset(dst, 0xEE, sizeof dst);
+    const bool filled = dma.fill(dst + 7, 0x5A, 250) && dma_same(dst + 7, 250, dma_5a);
+    memset(dst, 0xEE, sizeof dst);
+    dma_callbacks = 0;
+    dma.onDone(dma_done, (void *)&dma_callbacks);
+    uint32_t turns = 0;
+    const bool started = dma.copyAsync(dst + 4, src, 256);
+    while (dma.busy()) {
+        turns++;
+    }
+    const bool async = started && dma_same(dst + 4, 256, dma_src_at);
+    dma.onDone(nullptr);
+    /* More units than CNTR holds: bytes (an odd length), two parts. */
+    int chunk = 2;
+    uint8_t *big = (uint8_t *)malloc(66001u + 2u);
+    if (big) {
+        memset(big, 0xEE, 66003u);
+        chunk = dma.fill(big + 1, 0x5A, 66001u) && dma_same(big + 1, 66001u, dma_5a) ? 1 : 0;
+        free(big);
+    }
+    SerialDMSeq.printf("DMA %u %u %d %d %d %d %lu %lu %d\r\n", dma.dma(), dma.channel(), odd ? 1 : 0, words ? 1 : 0,
+                       filled ? 1 : 0, async ? 1 : 0, (unsigned long)dma_callbacks, (unsigned long)turns, chunk);
+    dma.end();
+}
+
+/* ---- ch32rv_irq_attach() ---- */
+static volatile uint32_t attach_runs;
+static volatile bool attach_arg_seen;
+static uint8_t attach_identity;
+
+static void attach_fn(void *arg)
+{
+    attach_runs = attach_runs + 1;
+    attach_arg_seen = arg == &attach_identity;
+}
+
+extern "C" const uint32_t _vector_base[];
+extern "C" void Default_Handler(void);
+
+static void attach_raise(uint32_t irqn)
+{
+    CH32RV_REG32(CH32RV_PFIC_BASE + 0x200u + 4u * (irqn >> 5)) = 1u << (irqn & 31u);   /* IPSR: set pending */
+    delay(2);
+}
+
+static void irq_attach_check()
+{
+#if defined(CH32RV_SERIES_CH32V103)
+    SerialDMSeq.printf("IRQATTACH NONE\r\n");
+#else
+    uint32_t irqn = 0;
+    for (uint32_t n = 127; n >= 16u && !irqn; n--) {
+        if (_vector_base[n] == (uint32_t)(uintptr_t)Default_Handler) {
+            irqn = n;
+        }
+    }
+    if (!irqn) {
+        SerialDMSeq.printf("IRQATTACH NONE\r\n");
+        return;
+    }
+    attach_runs = 0;
+    attach_arg_seen = false;
+    const bool ok = ch32rv_irq_attach(irqn, attach_fn, &attach_identity);
+    attach_raise(irqn);
+    const uint32_t runs = attach_runs;
+    const uint32_t linked = ch32rv_timer_capability(0)->update_irq;
+    const bool refused = !ch32rv_irq_attach(linked, attach_fn, &attach_identity);
+    ch32rv_irq_detach(irqn);
+    attach_raise(irqn);
+    const uint32_t after = attach_runs;
+    ch32rv_irq_clear_pending(irqn);
+    SerialDMSeq.printf("IRQATTACH %lu %d %lu %d %d %lu\r\n", (unsigned long)irqn, ok ? 1 : 0, (unsigned long)runs,
+                       attach_arg_seen ? 1 : 0, refused ? 1 : 0, (unsigned long)after);
+#endif
 }
 
 static uint8_t vtf_identity;
@@ -1285,6 +1411,10 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "adcpins")) {
         SerialDMSeq.printf("ADCPINS\r\n");
 #endif
+    } else if (!strcmp(argv[0], "dma")) {
+        dma_check();
+    } else if (!strcmp(argv[0], "irqattach")) {
+        irq_attach_check();
     } else if (!strcmp(argv[0], "vtf")) {
         vtf_check();
     } else if (!strcmp(argv[0], "prio")) {
