@@ -202,6 +202,73 @@ def test_pioc_uart_tx(dut, ws_run, request, record_property):
         assert (begun, loaded, status) == (1, 1, 0), f"{baud}: begun {begun}, loaded {loaded}, cmd.out {status}"
 
 
+SPI_RATE = 20_000_000        # 20 MS/s as the SPI contract: 10 samples in 1 MHz SCK's half period
+SPI_SENDS = ((40, 5, 100_000), (60, 9, 1_000_000))   # (bytes, seed, SCK Hz)
+
+
+def test_pioc_spi_tx(dut, ws_run, request, record_property):
+    """The PiocSpiTx example's program (spi_tx.S, a copy beside pioc.ino): SCK on IO0 and MOSI on IO1, the first pair
+    of PIOC pads (of one AF or remap value) the probe labels as plain lines, CS a third plain line as a GPIO; begun
+    once (before the capture) and left running; n bytes (byte i = i * 37 + seed), 24 at a time as the example sends
+    them, at 100 kHz and 1 MHz: WireSkein's `spi` (mode 0, MSB first) finds exactly those bytes within CS, SCK within
+    10 % of what the program makes (its clock over 2 * (3 * turns + 6) cycles, the sketch reports both), SCK low and
+    CS high at the section's start and end; the program answers 0."""
+    from wireskein.runlog import ends, spi, starts
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppadsall", rb"PPADSALL((?: \d+:\d+:\d+)*)")
+    pads = [tuple(int(x) for x in t.split(b":")) for t in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADSALL empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    pair = next(((lines[_pad(p0)], lines[_pad(p1)]) for r0, p0, v0 in pads for r1, p1, v1 in pads
+                 if r0 == 0 and r1 == 1 and v0 == v1 and _pad(p0) in lines and _pad(p1) in lines), None)
+    if pair is None:
+        pytest.skip("the probe labels no IO0 and IO1 pads of one route as plain lines")
+    sck, mosi = pair
+    pioc_pads = {_pad(p) for _, p, _ in pads}
+    cs = next((line for pad, line in lines.items() if pad not in pioc_pads), None)
+    if cs is None:
+        pytest.skip("no third plain line for CS")
+    record_property("pads", f"SCK {sck['pad']} MOSI {mosi['pad']} CS {cs['pad']}")
+    pattern = rb"PSPI (\d) (-?\d+) (\d+) (\d+)"
+    # the SCK each rate really gets: one probe run first (the sketch reports the clock and the half period's turns)
+    actual = {}
+    for n, seed, hz in SPI_SENDS:
+        m = _ask_now(dut, f"pspi {sck['pin']} {mosi['pin']} {cs['pin']} 1 0 {hz}", pattern)
+        actual[hz] = int(m.group(3)) / (2 * (3 * int(m.group(4)) + 6))
+    record_property("sck_hz", json.dumps(actual))
+    got = {}
+
+    def steps(wait):
+        idle = {sck["pad"]: 0, cs["pad"]: 1}
+        with ws_run.section(1, f"pioc spi_tx SCK {sck['pad']} MOSI {mosi['pad']} CS {cs['pad']}"):
+            for n, seed, hz in SPI_SENDS:
+                data = "".join(f"{(i * 37 + seed) & 0xFF:02x}" for i in range(n))
+                want = [spi(sck["pad"], mosi=mosi["pad"], cs=cs["pad"], mode=0, mosi_bytes=data,
+                            freq_hz=actual[hz]), starts(idle), ends(idle)]
+                with ws_run.section(2, f"{n} bytes at {hz} Hz", expect=want):
+                    wait(0.01)
+                    command = f"pspi {sck['pin']} {mosi['pin']} {cs['pin']} {n} {seed} {hz}"
+                    ws_run.command(command)
+                    m = _ask(dut, wait, command, pattern, timeout=5.0)
+                    ws_run.reply(m.group(0).decode())
+                    got[hz] = [int(x) for x in m.groups()]
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [cs, sck, mosi], rate=SPI_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("replies", json.dumps(got))
+    for hz, (begun, status, clock, turns) in got.items():
+        assert (begun, status) == (1, 0), f"{hz}: begun {begun}, cmd.out {status}"
+
+
 NEC_RATE = 4_000_000        # 4 MS/s: about 100 samples a carrier period
 NEC_FRAMES = ((0x00, 0x45), (0x1234, 0x5A))     # (address, command): a plain and an extended address
 

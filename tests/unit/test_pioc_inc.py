@@ -11,6 +11,7 @@ COPIES = [
     ("tests/sketch_support/pioc/ir_nec.S", "libraries/CH32RVPioc/examples/PiocIrNec/ir_nec.S"),
     ("tests/sketch_support/pioc/pulse_in.S", "libraries/CH32RVPioc/examples/PiocPulseIn/pulse_in.S"),
     ("tests/sketch_support/pioc/uart_rx.S", "libraries/CH32RVPioc/examples/PiocUartRx/uart_rx.S"),
+    ("tests/sketch_support/pioc/spi_tx.S", "libraries/CH32RVPioc/examples/PiocSpiTx/spi_tx.S"),
 ]
 
 

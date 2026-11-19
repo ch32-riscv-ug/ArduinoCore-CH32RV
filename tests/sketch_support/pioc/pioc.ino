@@ -25,7 +25,12 @@
  *   prx <pin> <n> <baud> uart_rx.S (a copy of the PiocUartRx example's) begun on that pad, n bytes asked for with the
  *                        waits the example works out: PRX <begun> <clockHz()> <cycles a bit>, at once (the bytes come
  *                        after)
- *   prxget               waitDone(2000): PRXGET <cmd.out or -1> <bytes taken> <them in hex> */
+ *   prxget               waitDone(2000): PRXGET <cmd.out or -1> <bytes taken> <them in hex>
+ *   ppadsall             PPADSALL <role:pin:value>... (every PIOC pad: role 0 IO0, 1 IO1; value the AF or remap)
+ *   pspi <sck> <mosi> <cs> <n> <seed> <hz>
+ *                        spi_tx.S (a copy of the PiocSpiTx example's) begun on the two pads once and left running: n
+ *                        bytes (i * 37 + seed) with CS (a GPIO) low around them, 24 at a time, the half period from
+ *                        clockHz() as the example works it out: PSPI <begun> <cmd.out or -1> <clockHz()> <half turns> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVPioc.h>
@@ -43,8 +48,10 @@ PIOC_IMAGE(uart_tx);
 PIOC_IMAGE(ir_nec);
 PIOC_IMAGE(pulse_in);
 PIOC_IMAGE(uart_rx);
+PIOC_IMAGE(spi_tx);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
+int spiSck = -1;             // the same for spi_tx (its SCK pad)
 CH32RVPioc pioc;
 volatile int irqStatus = -1;
 volatile uint8_t irqCalls;
@@ -75,10 +82,19 @@ void reply(char *command) {
     }
 #endif
     SerialDMSeq.println();
+  } else if (strcmp(command, "ppadsall") == 0) {
+    SerialDMSeq.print("PPADSALL");
+#if defined(CH32RV_PIOC_PADS)
+    for (const Pad &p : pads) {
+      SerialDMSeq.printf(" %u:%u:%u", p.role, p.pin, p.value);
+    }
+#endif
+    SerialDMSeq.println();
   } else if (strncmp(command, "pbegin ", 7) == 0) {
     SerialDMSeq.print("PBEGIN ");
     uartPin = -1;
     necPin = -1;
+    spiSck = -1;
     SerialDMSeq.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
   } else if (strncmp(command, "pws ", 4) == 0) {
     char *p;
@@ -92,6 +108,7 @@ void reply(char *command) {
     }
     uartPin = -1;
     necPin = -1;
+    spiSck = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(ws2812), pin);
     const bool loaded = begun && pioc.loadSram(0x400, bytes, count);
     auto turns = [](uint32_t ns, uint32_t fixed) -> uint8_t {
@@ -191,6 +208,7 @@ void reply(char *command) {
     const unsigned long count = strtoul(p, nullptr, 10);
     uartPin = -1;
     necPin = -1;
+    spiSck = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
     SerialDMSeq.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
     for (unsigned long k = 0; begun && k < count; k++) {
@@ -220,6 +238,7 @@ void reply(char *command) {
     };
     uartPin = -1;
     necPin = -1;
+    spiSck = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(uart_rx), pin);
     const int32_t bit = (int32_t)((CH32RVPioc::clockHz() + baud / 2) / baud);
     uint8_t params[5] = {(uint8_t)(n > 24 ? 24 : n)};
@@ -277,9 +296,49 @@ void reply(char *command) {
     SerialDMSeq.print(irqCalls);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(pioc.read(1));
+  } else if (strncmp(command, "pspi ", 5) == 0) {
+    char *p;
+    const int sck = (int)strtol(command + 5, &p, 10);
+    const int mosi = (int)strtol(p, &p, 10);
+    const int cs = (int)strtol(p, &p, 10);
+    const unsigned long n = strtoul(p, &p, 10);
+    const unsigned long seed = strtoul(p, &p, 10);
+    const uint32_t hz = (uint32_t)strtoul(p, nullptr, 10);
+    const int32_t half = (int32_t)((CH32RVPioc::clockHz() + hz) / (2 * hz));
+    int32_t turns = (half - 6 + 1) / 3;
+    turns = turns < 1 ? 1 : turns > 256 ? 256 : turns;
+    const uint8_t h = (uint8_t)turns;
+    bool begun = spiSck == sck;
+    if (!begun) {
+      uartPin = -1;
+      necPin = -1;
+      begun = pioc.begin(PIOC_IMAGE_OF(spi_tx), sck, mosi);
+      spiSck = begun ? sck : -1;
+      pinMode(cs, OUTPUT);
+      digitalWrite(cs, HIGH);
+      delay(1);
+    }
+    int status = begun ? 0 : -1;
+    uint8_t chunk[24];
+    digitalWrite(cs, LOW);
+    for (unsigned long i = 0; status == 0 && i < n; i += sizeof chunk) {
+      const uint8_t k = (uint8_t)(n - i > sizeof chunk ? sizeof chunk : n - i);
+      for (uint8_t j = 0; j < k; j++) {
+        chunk[j] = (uint8_t)((i + j) * 37u + seed);
+      }
+      pioc.writeData(8, chunk, k);
+      pioc.writeData(1, &h, 1);
+      pioc.write(0, k);
+      pioc.command(1);
+      status = pioc.waitDone(2000);
+    }
+    digitalWrite(cs, HIGH);
+    SerialDMSeq.printf("PSPI %d %d %lu %d\r\n", begun ? 1 : 0, status, (unsigned long)CH32RVPioc::clockHz(), (int)turns);
   } else if (strcmp(command, "pend") == 0) {
+    spiSck = -1;
     uartPin = -1;
     necPin = -1;
+    spiSck = -1;
     pioc.end();
     SerialDMSeq.println("PEND");
   } else {

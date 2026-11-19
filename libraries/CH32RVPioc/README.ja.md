@@ -124,6 +124,7 @@ PF13・PF14。PB8 / PB9 は SWD と兼用）。
 
 - [PiocPulses](examples/PiocPulses/README.ja.md): コマンド n ごとに IO0 に n 個のパルスを出す。
 - [PiocWs2812](examples/PiocWs2812/README.ja.md): WS2812（NeoPixel）を PIOC で光らせる。色のデータは `loadSram()` で SRAM に置き、待ちの回数は `clockHz()` から計算する。H417・X035・V205 で WireSkein の `rgb_led` が通っています（2026-11-19）。
+- [PiocSpiTx](examples/PiocSpiTx/README.ja.md): SPI の送信をもう 1 つ（IO0 に SCK、IO1 に MOSI、モード 0、MSB から。CS は GPIO）。H417・V205 で 100 kHz・1 MHz の送信が WireSkein の `spi` で通っています（2026-11-20）。
 - [PiocUartTx](examples/PiocUartTx/README.ja.md): シリアルの送信をもう 1 つ（IO0、8N1）。データは共有レジスタで 24 バイトずつ渡す。H417・X035・V205 で 9600〜1M bps の送信が WireSkein の `uart` で通っています（2026-11-19）。
 - [PiocIrNec](examples/PiocIrNec/README.ja.md): NEC 方式の赤外線リモコンのフレームを 38 kHz の搬送波で送る。H417・X035・V205 で WireSkein の `ir` が通っています（2026-11-19）。
 - [PiocPulseIn](examples/PiocPulseIn/README.ja.md): 割込みに揺らされない `pulseIn()`。IO0 の 1 周期の High と Low を 8 サイクル刻みで数える。H417・X035・V205 でプローブの PWM を 0.5 % 以内で測れています（2026-11-19）。
