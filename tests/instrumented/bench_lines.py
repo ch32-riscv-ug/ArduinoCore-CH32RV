@@ -103,8 +103,13 @@ def gpio_lines(oep_host, target):
     # The chip's debug pads (run_hardware's debug_pads): a probe writing over one wire may label the other plain,
     # but the core never turns SWD off, so the pad is no GPIO.
     debug = set(target.get("debug_pads") or []) if isinstance(target, dict) else set()
+    # Pads the board's record takes (a defect's lose "pad:PB6": L103's EVT board holds PB6 / PB7 low through
+    # 5.1 kOhm on its CC lines): no test drives or reads them.
+    lost = {f.split(":", 1)[1].strip().upper() for d in (target.get("record", {}).get("defects", [])
+                                                         if isinstance(target, dict) else [])
+            for f in d.get("lose", []) if f.startswith("pad:")}
     return [line for line in port_lines(oep_host, target)
-            if line["pad"] not in debug
+            if line["pad"] not in debug and line["pad"] not in lost
             and (line["role"] is None or (line["role"] not in RESERVED and line["role"] not in device_roles
                                           and not line["role"].startswith("power")))]
 

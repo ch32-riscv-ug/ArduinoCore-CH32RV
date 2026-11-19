@@ -341,8 +341,9 @@ static void i2c_info(int k)
 /* setClock(hz) and what it wrote: I2CREG <PCLK1> <CTLR2 FREQ> <CKCFGR> */
 static void i2c_reg(int k, unsigned long hz)
 {
-    wires[k]->begin();
+    /* Before begin(), which applies it: on a started bus setClock() waits for the next transfer. */
     wires[k]->setClock(hz);
+    wires[k]->begin();
     const uint32_t base = i2c_base(wires[k]->peripheral());
     const unsigned freq = base ? CH32RV_I2C_CTLR2(base) & CH32RV_I2C_CTLR2_FREQ_MASK : 0;
     const unsigned ckcfgr = base ? CH32RV_I2C_CKCFGR(base) : 0;

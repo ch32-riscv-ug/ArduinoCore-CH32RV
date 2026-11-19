@@ -165,6 +165,9 @@ usb-peer-media（CH32RVUsbHost に isochronous が無い）、usb-peer-net（CH3
   | `eth` | eth |
 
   ほかの名前も書けます。今は飛ばす case が無いだけで、細かいものは `<機能>:<番号>` の形で書きます（例 `adc:3` は ADC のチャネル 3）。
+  `pad:<端子>`（例 `pad:PB6`）は、その端子を試験の線から外します（`bench_lines.gpio_lines`。ラベルがあっても、どの試験も
+  動かさず・読まない）。板の部品がその端子を固定しているとき（L103 の評価ボードの CC の 5.1 kΩ が PB6 / PB7 を Low に引く）に
+  使います。
 - `why`: 何を見てそう判断したかです。日付も書きます。
 
 ### 4.7 `options`
