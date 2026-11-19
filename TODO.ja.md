@@ -461,7 +461,9 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
     （ISRG Root X1 の相互署名、RSA-4096）に変わり、検証の RSA-4096 が増えた。V307 の RAM 128 KB では TLS の最中の空きヒープが
     6.9 KB で、署名の検証が PSA のメモリー不足（-141）になり、NOT_TRUSTED に見えていた（DUT の上で x509 の検証だけなら通る、
     一時的な検証のコールバックで突き止めた）。V307 / V317 の 128 KB の時だけ lwIP の MEM_SIZE を 32 → 20 KB にして、
-    接続前の空きが 47.5 → 59.9 KB、HTTP 200 を確かめた（libraries/Network/src/lwipopts.h）。送受信の速さへの影響は未測定。
+    接続前の空きが 47.5 → 59.9 KB、HTTP 200 を確かめた（libraries/Network/src/lwipopts.h）。送受信の速さは変わらない
+    （eth の試験を一時的に 192 KB + 128 KB で流して、20 KB でも 32 KB でも TCP 9.49 / 9.41 Mbit/s）。
+    ついでに eth の試験の証明書を 2 日前から有効にした（時計を合わせた後に少し遅れた DUT が「まだ有効でない」と断っていた）。
   - [x] `openssl s_server -www` を相手にすると、TLS 1.3 でハンドシェイクのあとの記録の復号が MAC の誤り（-0x7180）になっていた
     （v0.8.0 から）→ 同じヒープ不足だった。上の lwIP の変更のあと、`-www` で返事を読めた（大きなページを 1 つの記録で返す相手）。
   - ついでに分かったこと: V307 で eth の自動の試験は Flash / RAM Split の既定（RAM 64 KB）でヒープ不足として記録されるだけで、

@@ -7,6 +7,7 @@ Certificates are made here with openssl for each run (a CA, an ECDSA P-256 and a
 RSA-2048 server certificate for this host's address, and a second CA the board
 must refuse). Throughput is recorded as junit properties; the assertions are
 on content and a 5 Mbit/s floor each way, not on speed."""
+import datetime
 import http.server
 import json
 import pathlib
@@ -42,9 +43,18 @@ def route_to(ip):
 def pki(directory, address):
     def run(*args):
         subprocess.run(["openssl", *args], cwd=directory, check=True, capture_output=True)
+
+    # Valid from two days back: a board whose clock is set but a little behind (the RTC an earlier sketch set by
+    # SNTP, drifting since) saw a certificate made "now" as not yet valid (X509 BADCERT_FUTURE, V307 2026-11-20).
+    # -not_before / -not_after are OpenSSL 3.4's; an older one keeps "now" and 30 days.
+    now = datetime.datetime.now(datetime.timezone.utc)
+    window = ["-not_before", (now - datetime.timedelta(days=2)).strftime("%Y%m%d%H%M%SZ"),
+              "-not_after", (now + datetime.timedelta(days=30)).strftime("%Y%m%d%H%M%SZ")]
+    dated = "-not_before" in subprocess.run(["openssl", "x509", "-help"], capture_output=True, text=True).stderr
+    period = window if dated else ["-days", "30"]
     for ca in ("ca", "other-ca"):
         run("ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", f"{ca}.key")
-        run("req", "-x509", "-new", "-key", f"{ca}.key", "-sha256", "-days", "30", "-subj", f"/CN=eth contract {ca}",
+        run("req", "-x509", "-new", "-key", f"{ca}.key", "-sha256", *period, "-subj", f"/CN=eth contract {ca}",
             "-out", f"{ca}.pem")
     (directory / "ext.cnf").write_text(f"subjectAltName=IP:{address}\nextendedKeyUsage=serverAuth\n")
     for kind in ("ec", "rsa"):
@@ -53,7 +63,7 @@ def pki(directory, address):
         else:
             run("genrsa", "-out", f"{kind}.key", "2048")
         run("req", "-new", "-key", f"{kind}.key", "-subj", f"/CN={address}", "-out", f"{kind}.csr")
-        run("x509", "-req", "-in", f"{kind}.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-CAcreateserial", "-days", "30",
+        run("x509", "-req", "-in", f"{kind}.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-CAcreateserial", *period,
             "-sha256", "-extfile", "ext.cnf", "-out", f"{kind}.pem")
 
 
