@@ -749,7 +749,10 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 
 - [ ] EspUsbDevice との差の残り（Info の例 3 本は 2026-11-20 に済み: UsbBringUpCheck・UsbConsole を移植、DescriptorDump は既にあった。MidiEcho・CompositeCdcMidi・ReconfigureVendor・MscCdcBlocks・FirmwareCDC も移植。FirmwareHTTP（ESP の WebServer と
   HTTPUpdateServer に頼る）の代わりに、HTTP から取ってくる Update の HttpUpdate を足した（V307 で確かめた）。AudioPlayback（形を複数）はこちらが 1 つの形なので AudioSpeaker で足りる。CdcConsole と VendorEcho は
-  SerialUSBEcho と VendorBulkPeer が同じことを示す。M5 と P4 の例は板に固有）:ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
+  SerialUSBEcho と VendorBulkPeer が同じことを示す。M5 と P4 の例は板に固有）:ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API。
+  → 2026-11-20: 例を数え直した。EspUsbDevice の 45 本のうち、こちらに無いのは M5 の 3 本・P4 の 2 本（板に固有）、AudioPlayback・CdcConsole・
+  VendorEcho・FirmwareHTTP（上の理由）、UsbNetwork（Network の UsbNcmNetwork）だけになった（FirmwareVendor・FirmwareBootMode を足した）。
+  複数リスナーとキューは、下の「イベントの payload の持ち方」（ユーザーの判断待ち）と同じ設計の問題。64 ビット LBA は 2 TB を超える媒体が要る。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
   （85f96bb で直した）。H417 では、その後の DETACH → DFU を 10 回ほど続けて通した。PC ホストの X035 で確かめれば閉じられる。
