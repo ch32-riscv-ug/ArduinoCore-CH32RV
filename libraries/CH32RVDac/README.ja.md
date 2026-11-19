@@ -24,7 +24,8 @@ dac.write(2048);                   // 普通の値に戻す（波形は止まる
 | `triangle(bits, stepHz, base)` | base〜base + 2^bits - 1 を 1 LSB ずつ往復。12 bit の全幅なら周波数は stepHz / 8190 |
 | `noise(bits, stepHz, base)` | 変換器の LFSR の下位 bits を base に足した値を、毎秒 stepHz 回 |
 | `play(samples, count, sampleHz)` | 12 bit の右詰めのサンプルを DMA で繰り返し出す。配列は再生中ずっと有効にしておく（書き換えればそのまま出る） |
-| `stop()` | 波形を止める。出力は最後の値のまま |
+| `playBoth(pairs, count, sampleHz)` | 2 つのチャネルを同じトリガで同時に更新する（DAC の 2 ch 用の保持レジスタ RD12BDHR を DMA で）。`pairs` は DAC1、DAC2、DAC1、DAC2、… の順で `count` 組、4 バイト境界に置く。DAC1 のオブジェクトで呼び、DAC2 は自分で用意する |
+| `stop()` | 波形を止める。出力は最後の値のまま（`playBoth()` なら両方） |
 | `stepRate()` / `running()` | タイマーが実際に作る 1 秒あたりの段数（近い値）/ 動いているか |
 
 ## 仕組みと制約
@@ -33,10 +34,11 @@ dac.write(2048);                   // 普通の値に戻す（波形は止まる
   TIM5、TIM2、TIM4）を 1 つ借りて作ります。波形が動いている間、そのタイマーは丸ごと使います。
 - `play()` は variant の `CH32RV_DACn_DMA` の DMA チャネル（V30x / V4x7 は DMA2 の ch3 / ch4、H41x は DMAMUX）を、
   再生中だけ使います。
-- 2 つのチャネルはそれぞれ別のタイマーで動きます。同じトリガで同時に更新する（DHR12RD）形はまだありません。
+- `triangle()`・`noise()`・`play()` では、2 つのチャネルはそれぞれ別のタイマーで動きます。同時に変えたいときは `playBoth()` を使います。
 - DAC の無い系列では、どの関数も false を返します。
 
 ## 試験
 
 `analog::test_dac_waves`（tests/instrumented/analog）が、三角波・ノイズ・サンプルの再生を、同じ石の ADC で読み戻して
-範囲・変化の数・タイマーの速さを判定します。V407 と H417 で通っています（2026-11-19）。
+範囲・変化の数・タイマーの速さを判定します。`analog::test_dac_both` は、`playBoth()` の逆向きの方形波を ADC1 と ADC2 の同時変換で読み、
+どの回も 2 つの和が保たれる（同時に変わる）ことを確かめます。どちらも V407 と H417 で通っています（2026-11-19）。

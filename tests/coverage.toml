@@ -133,6 +133,13 @@ needs = ["ECDC"]
 kind = "self"
 
 [[item]]
+id = "dac-both"             # CH32RVDac::playBoth(): both channels on one trigger (RD12BDHR), read by the dual ADC
+test = "analog::test_dac_both"
+scope = "series"
+needs = ["DAC", "ADC2"]
+kind = "self"
+
+[[item]]
 id = "adc-dual"             # CH32RVAdcStream: ADC1 + ADC2 simultaneous (free and on a timer) and fast interleaved
 test = "analog::test_adc_dual"
 scope = "series"

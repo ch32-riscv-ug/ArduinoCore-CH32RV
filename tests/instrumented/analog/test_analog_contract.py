@@ -144,3 +144,32 @@ def test_adc_dual(dut, record_property):
             wrong.append(f"interleaved: {rate} samples a second against {single} for one ADC")
     record_property("dual", json.dumps(results))
     assert not wrong, " | ".join(wrong)
+
+
+BOTH_HZ = 2_000     # the pairs swap 2000 times a second: about 10 swaps in the 256 rounds (~2.6 ms at 100 k)
+
+
+def test_dac_both(dut, record_property):
+    """CH32RVDac::playBoth(): DAC1 and DAC2 on one trigger from the dual holding register, swapping 500 and 3595 (two
+    opposite squares) 2000 times a second, read on their pads by ADC1 and ADC2 converting simultaneously (dual mode,
+    no wiring): each side spans both values (within 4 % of full scale) and the two sum to 4095 within 400 in all but
+    3 of 256 rounds - a pair that changed apart would leave rounds near 1000 or 7190 until the second one changed.
+    The series without two DAC pads or the dual ADC skip."""
+    case = settings(__file__)
+    nonce = secrets.token_hex(4)
+    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    m = ask(dut, f"dacboth {BOTH_HZ}", rb"(DACBOTH [^\r\n]*|UNKNOWN dacboth)")
+    if m.group(1).startswith(b"UNKNOWN"):
+        pytest.skip("n/a: no dual ADC (CH32RV_ADC_DUALMOD_SHIFT) or no two DAC pads")
+    fields = m.group(1).split()[1:]
+    assert fields[0] == b"1", "playBoth() refused or the ADC took no half"
+    rounds, bad, lo1, hi1, lo2, hi2 = (int(x) for x in fields[1:])
+    record_property("both", json.dumps(dict(rounds=rounds, off=bad, dac1=[lo1, hi1], dac2=[lo2, hi2])))
+    wrong = []
+    for name, lo, hi in (("DAC1", lo1, hi1), ("DAC2", lo2, hi2)):
+        if abs(lo - 500) > 0.04 * 4095 or abs(hi - 3595) > 0.04 * 4095:
+            wrong.append(f"{name} spans {lo}..{hi}, want 500..3595")
+    if bad > 3:
+        wrong.append(f"{bad} of {rounds} rounds sum away from 4095: the two did not change together")
+    assert not wrong, " | ".join(wrong)

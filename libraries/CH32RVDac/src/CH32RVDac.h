@@ -44,6 +44,14 @@ public:
      * over until stop() or write(). The buffer must stay valid while it plays;
      * changing it plays the change. */
     bool play(const uint16_t *samples, uint16_t count, uint32_t sampleHz);
+    /* Both channels on one trigger (the converter's dual holding register,
+     * RD12BDHR): pairs[0] / pairs[1] are DAC1's / DAC2's first values,
+     * pairs[2] / pairs[3] the next, ... `count` pairs, sampleHz of them a
+     * second, over and over; the two outputs change at the same moment. The
+     * array 4-byte aligned (a word a pair; alignas(4)). On a DAC1 object
+     * (false on DAC2's); it sets DAC2 up itself, and a DAC2 object must not be
+     * playing meanwhile. stop() / write() end both. */
+    bool playBoth(const uint16_t *pairs, uint16_t count, uint32_t sampleHz);
     /* The wave or samples stop; the output keeps its last value. */
     void stop();
 
@@ -59,6 +67,7 @@ private:
     uint8_t _channel;
     bool _begun = false;
     bool _dma = false;
+    bool _both = false;
     uint8_t _timer = 0;
     uint32_t _rate = 0;
 };

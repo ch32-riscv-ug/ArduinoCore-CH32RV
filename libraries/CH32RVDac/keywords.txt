@@ -5,3 +5,4 @@ play	KEYWORD2
 stop	KEYWORD2
 stepRate	KEYWORD2
 running	KEYWORD2
+playBoth	KEYWORD2

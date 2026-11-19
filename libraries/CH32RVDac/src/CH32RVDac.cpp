@@ -19,6 +19,9 @@ constexpr uint32_t CHANNEL_BITS = 0xFFFFu;
 constexpr uint16_t MMS_UPDATE = 2u << 4;     /* TRGO: the update event */
 /* DMA: 16-bit on both sides (a half word) */
 constexpr uint32_t PSIZE_16 = 1u << 8, MSIZE_16 = 1u << 10;
+/* playBoth(): a word, DAC1's value low and DAC2's high, into the dual holding register */
+constexpr uint32_t PSIZE_32 = 2u << 8, MSIZE_32 = 2u << 10;
+#define DAC_RD12BDHR CH32RV_REG32(CH32RV_DAC_BASE + 0x20u)
 
 int pinOf(uint8_t channel)
 {
@@ -209,6 +212,10 @@ void CH32RVDac::stop()
     /* The wave's value stays: the converter's output register holds it until
      * the next write. */
     setControl(_channel, EN);
+    if (_both) {
+        setControl(2, EN);
+        _both = false;
+    }
 #endif
 }
 
@@ -256,6 +263,48 @@ bool CH32RVDac::noise(uint8_t bits, uint32_t stepHz, uint16_t base)
     (void)bits;
     (void)stepHz;
     (void)base;
+    return false;
+#endif
+}
+
+bool CH32RVDac::playBoth(const uint16_t *pairs, uint16_t count, uint32_t sampleHz)
+{
+#if defined(CH32RV_DAC_READY) && defined(CH32RV_DAC2_PIN)
+    const ch32rv_dma_line_t *d = dmaOf(1);
+    if (_channel != 1 || !_begun || !d || !pairs || !count || ((uintptr_t)pairs & 3u)) {
+        return false;
+    }
+    stop();
+    if (!ch32rv_dma_claim(d->dma, d->channel)) {
+        return false;
+    }
+    uint8_t tsel;
+    if (!startTimer(sampleHz, tsel)) {
+        ch32rv_dma_release(d->dma, d->channel);
+        return false;
+    }
+    /* DAC2's pad and channel, as its begin() would */
+    const int pin = CH32RV_DAC2_PIN;
+    ch32rv_gpio_clock_enable((uint8_t)CH32RV_PIN_PORT(pin));
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin), CH32RV_GPIO_CFG_IN_ANALOG);
+    _dma = true;
+    _both = true;
+    ch32rv_dma_open(d);
+    CH32RV_DMA_PADDR(d) = (uint32_t)(uintptr_t)&DAC_RD12BDHR;
+    CH32RV_DMA_MADDR(d) = (uint32_t)(uintptr_t)pairs;
+    CH32RV_DMA_CNTR(d) = count;
+    CH32RV_DMA_CFGR(d) = CH32RV_DMA_CFGR_DIR | CH32RV_DMA_CFGR_CIRC | CH32RV_DMA_CFGR_MINC | PSIZE_32 | MSIZE_32 |
+                         CH32RV_DMA_CFGR_PL(2) | CH32RV_DMA_CFGR_EN;
+    DAC_RD12BDHR = (uint32_t)pairs[0] | (uint32_t)pairs[1] << 16;
+    /* both on the same trigger; the DMA request is DAC1's alone */
+    setControl(2, EN | TEN | ((uint32_t)tsel << TSEL_SHIFT));
+    setControl(1, EN | TEN | ((uint32_t)tsel << TSEL_SHIFT) | DMAEN);
+    ch32rv_timer_start(&leases[0]);
+    return true;
+#else
+    (void)pairs;
+    (void)count;
+    (void)sampleHz;
     return false;
 #endif
 }

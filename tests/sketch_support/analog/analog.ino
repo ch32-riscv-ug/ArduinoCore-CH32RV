@@ -21,7 +21,11 @@
  *                             high and low: ADCDUAL 1 <samples a second> <runs> <shortest> <longest> (the whole
  *                             runs: not the first and the last) <free-running rate of one ADC at the same step>
  *                             (ADCDUAL 0 when refused or no half came; the command is there only with
- *                             CH32RV_ADC_DUALMOD_SHIFT and a DAC) */
+ *                             CH32RV_ADC_DUALMOD_SHIFT and a DAC)
+ *   dacboth <hz>              CH32RVDac::playBoth(): DAC1 and DAC2 swap 500 and 3595 at hz (a square each, opposite),
+ *                             read by ADC1 and ADC2 simultaneously, free-running, 256 rounds: DACBOTH <1> <rounds>
+ *                             <rounds whose sum is off 4095 by more than 400> <DAC1 min> <max> <DAC2 min> <max>
+ *                             (DACBOTH 0 when refused or no half came) */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
@@ -41,6 +45,8 @@ static uint8_t used;
 #if defined(CH32RV_ADC_DUALMOD_SHIFT) && defined(CH32RV_DAC1_PIN) && defined(CH32RV_DAC2_PIN)
 #define ANALOG_DUAL 1
 static uint16_t dualBuf[2 * 1024];
+
+alignas(4) static uint16_t bothPairs[4] = {500, 3595, 3595, 500};
 
 static const uint16_t *dualHalf(CH32RVAdcStream &adc)
 {
@@ -116,6 +122,34 @@ static void dualReply(char **argv, int argc)
     }
     adc.end();
     SerialDMSeq.printf("ADCDUAL 0\r\n");
+}
+
+static void bothReply(uint32_t hz)
+{
+    CH32RVDac dac(1);
+    CH32RVAdcStream adc;
+    bool ok = dac.begin() && dac.playBoth(bothPairs, 2, hz);
+    delay(2);
+    ok = ok && adc.begin(CH32RV_DAC1_PIN, 100000) && adc.simultaneous(CH32RV_DAC2_PIN) && adc.startContinuous(dualBuf, 512);
+    const uint16_t *half = ok ? dualHalf(adc) : nullptr;
+    if (half) {
+        int bad = 0, lo[2] = {0x7FFF, 0x7FFF}, hi[2] = {0, 0};
+        for (int i = 0; i < 512; i += 2) {
+            const int a = half[i], b = half[i + 1], sum = a + b;
+            bad += sum < 4095 - 400 || sum > 4095 + 400;
+            lo[0] = a < lo[0] ? a : lo[0];
+            hi[0] = a > hi[0] ? a : hi[0];
+            lo[1] = b < lo[1] ? b : lo[1];
+            hi[1] = b > hi[1] ? b : hi[1];
+        }
+        adc.end();
+        dac.end();
+        SerialDMSeq.printf("DACBOTH 1 256 %d %d %d %d %d\r\n", bad, lo[0], hi[0], lo[1], hi[1]);
+        return;
+    }
+    adc.end();
+    dac.end();
+    SerialDMSeq.printf("DACBOTH 0\r\n");
 }
 #endif
 
@@ -219,6 +253,8 @@ static void reply(char *command)
 #if defined(ANALOG_DUAL)
     } else if (!strcmp(argv[0], "adcdual") && argc >= 3) {
         dualReply(argv, argc);
+    } else if (!strcmp(argv[0], "dacboth") && argc == 2) {
+        bothReply((uint32_t)atol(argv[1]));
 #endif
     } else {
         SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
