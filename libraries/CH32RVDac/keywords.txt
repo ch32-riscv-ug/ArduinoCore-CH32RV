@@ -1,0 +1,7 @@
+CH32RVDac	KEYWORD1
+triangle	KEYWORD2
+noise	KEYWORD2
+play	KEYWORD2
+stop	KEYWORD2
+stepRate	KEYWORD2
+running	KEYWORD2

@@ -1050,6 +1050,11 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_DAC1_PIN PA4
 /* DAC2: on every part */
 #define CH32RV_DAC2_PIN PA5
+#define CH32RV_DAC1_DMA CH32RV_DMA_LINE(2, 5, 0x40020458u, 0x40020400u, 16u, 103u)
+#define CH32RV_DAC2_DMA CH32RV_DMA_LINE(1, 5, 0x40020058u, 0x40020000u, 16u, 104u)
+/* the DAC's triggers (device-data dac_triggers.csv): { timer whose TRGO, TSEL value } */
+#define CH32RV_DAC_TRIGGERS { { 6, 0 }, { 8, 1 }, { 7, 2 }, { 5, 3 }, { 2, 4 }, { 4, 5 } }
+#define CH32RV_DAC_TSEL_SOFTWARE 7
 
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,

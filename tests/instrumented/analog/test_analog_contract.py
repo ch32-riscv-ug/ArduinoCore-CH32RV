@@ -47,3 +47,45 @@ def test_dac(dut, record_property):
                     wrong.append(f"pin {pin} {bits}-bit {value}: readings {lo}..{hi} do not hold steady")
     record_property("readings", json.dumps(readings))
     assert not wrong, " | ".join(wrong)
+
+
+# (mode, bits, steps a second, base): a triangle of 2046 steps (10 ms), noise, and a 32-sample ramp at 1 kHz.
+WAVES = [("t", 10, 200_000, 1024), ("n", 8, 100_000, 2048), ("p", 10, 32_000, 1024)]
+
+
+def test_dac_waves(dut, record_property):
+    """CH32RVDac on each DAC channel, read back by analogRead() on its own pad (no wiring): the converter's triangle
+    (10 bits above 1024), its noise (8 bits above 2048) and a 32-sample ramp played by DMA, each for 200 reads 100 us
+    apart while it runs. The lowest and highest reads within 4 % of the ADC's full scale of the wave's bottom and top
+    (as test_dac judges a steady value; the reads may miss the very ends, so the band is measured inwards only), the
+    reads changing more than 50 times (it moves), and the step rate within 1 % of the one asked for."""
+    case = settings(__file__)
+    nonce = secrets.token_hex(4)
+    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    pins = ask(dut, "dacpins", rb"DACPINS (-?\d+) (-?\d+)").groups()
+    channels = [k + 1 for k, p in enumerate(pins) if int(p) >= 0]
+    if not channels:
+        pytest.skip("n/a: the part has no DAC output")
+    results, wrong = {}, []
+    for channel in channels:
+        for mode, bits, hz, base in WAVES:
+            m = ask(dut, f"dacwave {channel} {mode} {bits} {hz} {base}",
+                    rb"DACWAVE (\d)(?: (\d+) (\d+) (\d+) (\d+) (\d+) (\d+))?")
+            name = f"DAC{channel} {mode}"
+            if m.group(1) != b"1":
+                wrong.append(f"{name}: refused")
+                continue
+            rate, lo, hi, mean, changes, full = (int(x) for x in m.groups()[1:])
+            results[name] = dict(rate=rate, lo=lo, hi=hi, mean=mean, changes=changes)
+            bottom, top = base / 4095 * full, (base + (1 << bits) - 1) / 4095 * full
+            if lo < bottom - 0.04 * full or lo > bottom + 0.04 * full + 0.25 * (top - bottom):
+                wrong.append(f"{name}: lowest read {lo}, the wave's bottom about {bottom:.0f}")
+            if hi > top + 0.04 * full or hi < top - 0.04 * full - 0.25 * (top - bottom):
+                wrong.append(f"{name}: highest read {hi}, the wave's top about {top:.0f}")
+            if changes <= 50:
+                wrong.append(f"{name}: the reads changed {changes} times in 200: not moving")
+            if abs(rate - hz) > 0.01 * hz:
+                wrong.append(f"{name}: {rate} steps a second, asked {hz}")
+    record_property("waves", json.dumps(results))
+    assert not wrong, " | ".join(wrong)

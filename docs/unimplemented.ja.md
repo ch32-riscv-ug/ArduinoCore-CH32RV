@@ -99,7 +99,7 @@
 | mV を返す `analogReadMilliVolts()` | 全系列 | 実装済み（2026-11-17、ビルドのみ。直前に Vrefint で測った電源電圧で換算。精度は未測定） | 単発（精度）。自動は広い幅だけ（selfapi::test_millivolts） | 外部の電圧源（マニュアル） | libraries/CH32RV/README.ja.md |
 | ADC の工場校正値（Get_CalibrationValue） | V20x、V30x | 2 | 単発 | 外部の電圧計（マニュアル） | TODO:499 |
 | 外部の温度チャネル | V103、V20x、V30x | 2 | 単発 | 温度センサの板 | EVT ADC/Temperature_External_channel |
-| DAC の DMA 波形・タイマートリガ・三角波・ノイズ・2 ch 同時 | V30x、V4x7、H41x | 2 | 自動 | プローブ（ADC の入力）。自己なら ADC で読み戻す | UNUSED:76, FC:77 |
+| DAC の DMA 波形・タイマートリガ・三角波・ノイズ・2 ch 同時 | V30x、V4x7、H41x | 2 | 実装済み（2026-11-19、`CH32RVDac` の triangle / noise / play、タイマーの TRGO。V407・H417 で analog::test_dac_waves）。残り: 2 ch を同じトリガで同時に更新（DHR12RD） | 自己（ADC で読み戻す） | libraries/CH32RVDac |
 | M030 の OPA（モーター段の電流検出。ほかの系列は CH32RVOpamp で実装済み） | M030 | 2 | 自動 | 自己（+ / - を GPIO で駆動、出力を ADC） | libraries/CH32RVOpamp |
 | コンパレータの残り（CH32RVComparator で端子・read()・ヒステリシス・H41x の内部基準は実装済み）: ブレーキ・起床・TIM 入力・V205 の DAC、M030 | V007、V205、L103、M030、X035、H41x | 2 | 自動 | プローブ | libraries/CH32RVComparator |
 | TouchKey の残り | L103、V205、H41x、V103 | 2 | 単発→自動 | 自己（何もつながない端子の値）。指の向きは手作業 | PS:76, EVT TKEY/TKEY（V205 |

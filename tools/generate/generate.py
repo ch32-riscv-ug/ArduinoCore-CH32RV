@@ -1629,6 +1629,48 @@ def load_spi_dma(tables: pathlib.Path) -> dict:
     return out
 
 
+# DMAMUX (CH32H41x): the DAC channels' requests (103, 104) on these channels - every channel is already some
+# USART's, so they share (USART6's transmit and USART2's): the claim in ch32rv_dma.c settles a clash at run time.
+DMAMUX_DAC_CHANNELS = {1: (2, 5), 2: (1, 5)}
+# family -> {DAC channel: dma_line tuple} (load_dac_dma); family -> [(timer, TSEL value)] and the software trigger's
+# value (load_dac_triggers).
+DAC_DMA: dict = {}
+DAC_TRIGGERS: dict = {}
+
+
+def load_dac_dma(tables: pathlib.Path) -> dict:
+    """family -> {1 | 2: dma_line tuple}: the DAC channels' DMA requests (index/dma.csv; CH32RVDac's waves)."""
+    blocks = load_dma_blocks(tables)
+    out: dict = {}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id", "peripheral", "request")):
+        m = re.match(r"^DAC(?:_CH)?([12])$", r["request"])
+        if not m:
+            continue
+        index = int(m.group(1))
+        if r["dma"]:
+            dma, ch, request = int(r["dma"].removeprefix("DMA")), int(r["channel"]), 0
+        else:
+            (dma, ch), request = DMAMUX_DAC_CHANNELS[index], int(r["request_id"])
+        out.setdefault(r["family"], {})[index] = dma_line(blocks, r["family"], dma, ch, request, f"DAC{index}")
+    return out
+
+
+def load_dac_triggers(tables: pathlib.Path) -> dict:
+    """family -> ([(timer, TSEL value)], software trigger's value or None) from index/dac_triggers.csv (TSEL1's;
+    TSEL2 takes the same values)."""
+    out: dict = {}
+    for r in read_table(tables, "dac_triggers.csv", ("family", "field", "value", "trigger", "kind")):
+        if r["field"] != "TSEL1":
+            continue
+        timers, soft = out.setdefault(r["family"], ([], [None]))
+        m = re.fullmatch(r"TIM(\d+)_TRGO", r["trigger"])
+        if r["kind"] == "timer" and m:
+            timers.append((int(m.group(1)), int(r["value"])))
+        elif r["trigger"] == "SWTRIG":
+            soft[0] = int(r["value"])
+    return {f: (sorted(t, key=lambda x: x[1]), s[0]) for f, (t, s) in out.items()}
+
+
 # SDIO (SD_MMC, internal/ch32rv_sdio.h): the signals in the order the core's
 # pad table numbers them.
 SDIO_SIGNALS = ("CK", "CMD", "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7")
@@ -5259,6 +5301,19 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                      else f"on {coverage} of {len(parts)} parts")
             out.append(f"/* DAC{channel}: {where} */")
             out.append(f"#define CH32RV_DAC{channel}_PIN {pad_name(*pad)}")
+        family = SERIES_CONFIG[series]["family"]
+        dac_dma = DAC_DMA.get(family, {})
+        for channel in sorted(dac_dma):
+            if channel in chosen_dac:
+                dma, ch, cbase, flags, shift, request = dac_dma[channel]
+                out.append(f"#define CH32RV_DAC{channel}_DMA CH32RV_DMA_LINE({dma}, {ch}, {cbase:#010x}u, "
+                           f"{flags:#010x}u, {shift}u, {request}u)")
+        if family in DAC_TRIGGERS:
+            timers, soft = DAC_TRIGGERS[family]
+            out.append("/* the DAC's triggers (device-data dac_triggers.csv): { timer whose TRGO, TSEL value } */")
+            out.append("#define CH32RV_DAC_TRIGGERS { " + ", ".join(f"{{ {t}, {v} }}" for t, v in timers) + " }")
+            if soft is not None:
+                out.append(f"#define CH32RV_DAC_TSEL_SOFTWARE {soft}")
         out.append("")
 
     # --- ARGB ---
@@ -5869,6 +5924,8 @@ def main() -> int:
     uart_dma = load_uart_dma(args.tables)
     RTC_LSE_FAMILIES.update(load_rtc_lse_families(args.tables))
     SPI_DMA.update(load_spi_dma(args.tables))
+    DAC_DMA.update(load_dac_dma(args.tables))
+    DAC_TRIGGERS.update(load_dac_triggers(args.tables))
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
     gpio_speed = load_gpio_speed(args.tables)

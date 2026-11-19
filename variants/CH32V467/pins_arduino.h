@@ -1009,6 +1009,11 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_DAC1_PIN PA4
 /* DAC2: on every part */
 #define CH32RV_DAC2_PIN PA5
+#define CH32RV_DAC1_DMA CH32RV_DMA_LINE(2, 3, 0x40020430u, 0x40020400u, 8u, 0u)
+#define CH32RV_DAC2_DMA CH32RV_DMA_LINE(2, 4, 0x40020444u, 0x40020400u, 12u, 0u)
+/* the DAC's triggers (device-data dac_triggers.csv): { timer whose TRGO, TSEL value } */
+#define CH32RV_DAC_TRIGGERS { { 6, 0 }, { 8, 1 }, { 7, 2 }, { 5, 3 }, { 2, 4 }, { 4, 5 } }
+#define CH32RV_DAC_TSEL_SOFTWARE 7
 
 /* ---- ARGB: the WS2812 block (rgbLedWrite(), ch32rv_rgb_led_write()) on 1 pad,
  *      fed by DMA1 channel 10; on any other pad the CPU sends ---- */
