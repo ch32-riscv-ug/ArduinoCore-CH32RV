@@ -29,7 +29,7 @@ void loop()  { app.runOnce(); }       // 仕事が動くのはここだけ
 
 | 部品 | 操作 |
 |---|---|
-| `Work` | `post()`（どこからでも。ISR も可。何度呼んでも 1 回）、`wakeOn(deadline)`、`wakeEvery(period)`、`wakeWhen(条件の関数)`、`measure(stats)` |
+| `Work` | `post()`（どこからでも。ISR も可。何度呼んでも 1 回）、`wakeOn(deadline)`、`wakeEvery(period)`、`wakeWhen(condition)`（条件の関数）、`measure(stats)` |
 | `Executor` | `attach(work)`（すぐ準備済みになり、最初の `runOnce()` で 1 回動く）、`detach(work)`、`runOnce()`、`anyReady()`、`measure(roundStats)` |
 | `WorkStats` | 仕事ごとの `runs`・`totalUs`・`maxUs`（`measure()` したときだけ） |
 | `RoundStats` | 実行器の `rounds`・`emptyRounds`・`maxUs` |

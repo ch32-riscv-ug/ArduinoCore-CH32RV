@@ -20,13 +20,13 @@
 |---|---|
 | [QueueFromInterrupt](QueueFromInterrupt/README.ja.md) | 割り込みから `loop()` へ、`Queue` で値を渡します。 |
 | [CriticalSection](CriticalSection/README.ja.md) | ISR が書く複数の変数を、矛盾のない 1 組として読みます。 |
-| [NotifyCounter](NotifyCounter/README.ja.md) | データ無しで回数だけを伝えます。 |
-| [NotifyBits](NotifyBits/README.ja.md) | 種類の違うイベントを 1 つにまとめます。 |
-| [BinarySemaphore](BinarySemaphore/README.ja.md) | 「起きた」を 1 回だけ伝えます。 |
-| [RingBuffer](RingBuffer/README.ja.md) | 大きさの決まったバイト列です。 |
-| [MessageBuffer](MessageBuffer/README.ja.md) | 長さの違うメッセージを丸ごと扱います。 |
-| [BlockPool](BlockPool/README.ja.md) | コピーしたくない大きさの記録を、プールのブロックで貸し借りします。 |
-| [DeadlinePeriod](DeadlinePeriod/README.ja.md) | `delay()` を使わずに 2 つの予定を同時に進めます。 |
+| [NotifyCounter](NotifyCounter/README.ja.md) | データ無しで回数だけを伝えます。ISR が `notify()`、`loop()` が `tryTakeAll()` で受け取ります。 |
+| [NotifyBits](NotifyBits/README.ja.md) | 種類の違うイベントを 1 つにまとめます。ISR ごとに bit を立て、`loop()` が `tryWaitBits()` でどれか・全部を待ちます。 |
+| [BinarySemaphore](BinarySemaphore/README.ja.md) | 「起きた」を 1 回だけ伝えます。ISR が渡し、`loop()` が受け取ります。 |
+| [RingBuffer](RingBuffer/README.ja.md) | 大きさの決まったバイト列です。UART から打った文字を `Ring` に溜め、行ごとに処理します。 |
+| [MessageBuffer](MessageBuffer/README.ja.md) | 長さの違うメッセージを丸ごと扱います。`trySend()` は全部か何も入れず、`tryReceive()` は 1 つを丸ごと返します。 |
+| [BlockPool](BlockPool/README.ja.md) | コピーしたくない大きさの記録を、プールのブロックで貸し借りします。ISR がブロックを借りて埋め、ポインタを `Queue` で送り、`loop()` が使って返します。 |
+| [DeadlinePeriod](DeadlinePeriod/README.ja.md) | `delay()` を使わずに 2 つの予定を同時に進めます。`Period` で LED を点滅し、`Deadline` で UART の入力を 5 秒待ちます。 |
 | [TryLock](TryLock/README.ja.md) | `loop()` が何回かに分けて埋めるバッファを、その間 ISR に触らせません。 |
 
 ## ビルド
