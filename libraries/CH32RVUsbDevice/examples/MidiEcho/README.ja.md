@@ -22,3 +22,7 @@ DAW や MIDI のモニタの道具で、ボードの MIDI の出力へ音や CC 
 | `midi.readPacket(packet)` | 受けた packet を 1 つ取り出す。無ければ false。 |
 | `midi.writePacket(packet)` | 送る。待ち行列が満杯なら false で、その packet を持ったまま次の回に送り直す。 |
 | `device.ready()` | ホストが設定を選んだか。抜かれたら持っていた packet を捨てる。 |
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20、PyUSB で USB-MIDI の packet を直接）: 16 個ずつの 200 個と、読みながら一度に
+書いた 600 個が、どれも順に戻りました。PC が読まない間は、デバイスが書き込みの残りを受けずに待たせ（PC の書き込みが待つ）、
+捨てません。

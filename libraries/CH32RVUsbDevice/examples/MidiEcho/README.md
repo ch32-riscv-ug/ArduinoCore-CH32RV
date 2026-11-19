@@ -22,3 +22,7 @@ MIDI input. Sent fast and many, they all come back in order.
 | `midi.readPacket(packet)` | Takes one received packet; false when none. |
 | `midi.writePacket(packet)` | Sends; false when the queue is full, and the packet is held and sent again on a later turn. |
 | `device.ready()` | Whether the host chose the configuration; on an unplug the held packet is dropped. |
+
+Checked on CH32H417 over SuperSpeed (2026-11-20, USB-MIDI packets through PyUSB): 200 packets written 16 at a time and
+600 in one write while reading, every one back in order. With the PC not reading, the device holds the rest of the
+write back (the PC's write waits) instead of dropping it.
