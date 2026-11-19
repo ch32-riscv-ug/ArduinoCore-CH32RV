@@ -21,8 +21,8 @@
   （RTC Clock メニュー、7b313e9a）。CH32RVUsbHostMscFS（0548a945、usb-peer-host-fs）。eth-libs（PubSubClient など、V407 / V208）。
 - [ ] Adafruit NeoPixel は `ARDUINO_ARCH_CH32RV` の送信コードが無く `#error Architecture not supported`。動かすには Adafruit への
   寄稿（外に出す作業なのでユーザーに聞く）。
-- [ ] FS の FS_SMALL_FLASH は系列で決めていて、64 KB の品（L103、V103、V203C8 など）は大きい設定（長い名前・exFAT・format）に
-  なる。usb_peer_host.ino の USB_HOST_FS 版が L103 で 13.6 KB はみ出す。品の Flash の大きさで決めるかを決める。
+- [x] FS の FS_SMALL_FLASH は、小さい系列に加えて、選んだ品の書き込みの上限（`CH32RV_UPLOAD_MAXIMUM_SIZE`）が 64 KB 以下でも
+  小さい設定になる（L103、V103、V203C8 など。libraries/FS/src/FSConfig.h。2026-11-20 に済んでいたのを確かめた）。
 - [ ] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。X305 / X315
   には LSE が無い（RTC_CTLRL の RTCSEL は LSI か HSE ÷512 だけ、CH32X315RM 6.3.2）。HSE ÷512 は休止で止まり 39062.5 Hz で割り切れない
   ので作らない。
@@ -725,7 +725,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。
 - PWM の remap 先と CHxN。TIM8〜10 の PWM は 2026-10-22 に入れた（V30x・V4x7・H41x、TIM1〜5 の端子は奪わない、ビルドのみ。`--case logic` の `logic_pin` でその端子を指定して確かめられる）。
-- [ ] GPIO 以外の EXTI（peripheral-plan の B）。WWDG は `CH32RV.wwdgEnable()` で入り、2026-11-19 に V203・H417・X035 で system::test_window_watchdog が通った。
+- [x] GPIO 以外の EXTI（peripheral-plan の B）: `CH32RV.attachExtiLine()` など（2026-11-17）。WWDG は `CH32RV.wwdgEnable()` で入り、2026-11-19 に V203・H417・X035 で system::test_window_watchdog が通った。
 - [ ] SPI のスレーブ（CH32RVSPISlave）の残り（X035 で、プローブの spi-controller が 100 kHz のマスターになる spi.slave が通る。2026-11-05）: ハードウェアのマスターでの上限のクロック、V407（PA7 が RMII と重なる可能性）・H417 の実機、SPI マスターの LSBFIRST が V003 で正しいか（X035 は 2026-11-03 に case spi で、モード 0〜3 と LSBFIRST の transfer16() まで線で確かめた）。
 - [x] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
   → 済み: `beginTimer()`（2026-11-17）。トリガの表は device-data の adc_triggers.csv から生成。periph::test_adc_timer_trigger が
