@@ -411,3 +411,60 @@ def test_usb_ss_enumeration_after_restart(dut, record_property):
             wrong.append(f"round {round_}: the echo gave {n} of 100 bytes back")
     record_property("speeds", json.dumps(speeds))
     assert not wrong, " | ".join(wrong)
+
+
+UNPLUGS = 3
+
+
+def test_usb_vendor_after_unplug(dut, record_property):
+    """The cable pulled and put back, three times: the hub port the DUT hangs from (its parent in the topology) has its
+    power cut for a second and given back (uhubctl -a cycle; the hub must switch its ports one by one, ppps). The DUT,
+    powered from the probe, sees VBUS go: it comes back at the same speed as this build, and the vendor bulk echo of
+    100 random bytes works each time. Skips where the parent is not such a hub or uhubctl cannot switch it."""
+    import shutil
+    import subprocess
+    settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    host = _ready(dut)
+    hub, _, port = host.topology.rpartition(".")
+    if not hub or "-" not in hub or not shutil.which("uhubctl"):
+        pytest.skip("the DUT is not behind a hub port uhubctl can reach (topology " + host.topology + ")")
+    status = subprocess.run(["uhubctl", "-l", hub], capture_output=True, text=True, timeout=30)
+    if status.returncode or "ppps" not in status.stdout:
+        pytest.skip(f"hub {hub} does not switch its ports one by one (uhubctl: {status.stdout.strip()[:120]})")
+    speed = host.device().speed
+    rounds, wrong = [], []
+    for round_ in range(UNPLUGS):
+        t0 = time.monotonic()
+        cycle = subprocess.run(["uhubctl", "-l", hub, "-p", port, "-a", "cycle", "-d", "1"], capture_output=True,
+                               text=True, timeout=30)
+        if cycle.returncode:
+            pytest.skip(f"uhubctl could not switch {hub} port {port}: {cycle.stderr.strip()[:120]}")
+        back = False
+        while time.monotonic() - t0 < 15:
+            try:
+                dev = host.device()
+                if host.product().endswith(settings["build_id"]):
+                    back = True
+                    break
+            except (AssertionError, usb.core.USBError, OSError):
+                pass
+            time.sleep(0.1)
+        if not back:
+            wrong.append(f"round {round_}: not back 15 s after the power cycle")
+            break
+        entry = dict(round=round_, back_s=round(time.monotonic() - t0, 2), speed=dev.speed)
+        if dev.speed != speed:
+            wrong.append(f"round {round_}: back at speed {dev.speed}, was {speed}")
+        number, out, inn = _bulk(dev)
+        usb.util.claim_interface(dev, number)
+        try:
+            ok, n = _echo(dev, out, inn)
+        finally:
+            usb.util.release_interface(dev, number)
+            usb.util.dispose_resources(dev)
+        entry["echo"] = n
+        rounds.append(entry)
+        if not ok:
+            wrong.append(f"round {round_}: the echo gave {n} of 100 bytes back")
+    record_property("unplugs", json.dumps(rounds))
+    assert not wrong, " | ".join(wrong)

@@ -235,7 +235,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     64 KiB は 10 ms）を入れ、H417 の SS で通った。残り: ストリーム、サスペンドとリモートウェイクアップ・LPM / U1 / U2
     （sysfs への書き込みに root が要る）。
   - デバイスの試験用のスケッチに、ストリーム・Mult・burst の窓・STALL を起こす命令を持つベンダーの機能を足す。
+    → 2026-11-20: usb_ss_iso にベンダーのバルクと STALL の要求を足した（Mult は等時の代替設定）。残りはストリーム。
   - ハブの抜き差しを PPPS の口の電源で起こす道具（今の power の case の uhubctl を、相手の機器にも使う）。
+    → 2026-11-20: usb-ss-iso::test_usb_vendor_after_unplug（DUT の親のハブの口を uhubctl で切り入れ、3 回とも SS で 4.7 秒で戻り
+    往復が通る、H417）。ピアの機器（Pico・P4）の側は、今の配線ではハブを通らないので未。
 - [ ] L103 は今ベンチに無い（2026-11-18、ユーザー: 後日 OEP で配線し直す）。その間はビルドだけ。配線ができたら、今日のコアの
   変更（RTC のアラームの割り込みでの読み直し、休止、`Serial.baudRate()`）を selfsys・system で確かめる（ほかの 9 系列は通った）。
 - [x] **H417 の SPI の CPHA 0 が 1 ビットずれて NG（2026-11-15）**: DUT は正しく、WireSkein の照合の誤り（MOSI が送る側の縁の
