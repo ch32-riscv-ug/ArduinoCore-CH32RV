@@ -457,10 +457,10 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   同じロットの F8U6 では PC16 / PC17（route 2）の I2C が通っていた（2026-09-30）ので、制限は端子によって違うのかもしれない。
 - [ ] V103R8T6（d39e、CH549 の Link）が休止の試験の最初の休止から起きず、デバッガも応答しない（2026-10-28）。Link では電源を切れず、
   ハブの口の電源でも戻らない。手で電源を入れ直してから、RTC（LSI の測定・アラーム）を調べる。それまで V103 は RTC の系列から外している。
-- [ ] まだ無い例（下の表 A）: `RgbLed`、`SerialBridge` / `PeripheralRoutes`（配線が要る）、`I2CEeprom`・`SpiSharedBus`（部品が要る）、
-  `SoftI2CRegisterRead` / `SoftSpiDevice`、USB 系（`MidiChannelsAndReceive`、`UsbReconnect` / `VendorBulkPeer`、Host の
+- [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、USB 系（`MidiChannelsAndReceive`、`UsbReconnect` / `VendorBulkPeer`、Host の
   HID / hub）、`PpsVoltageControl`、`TlsClient`（TLS の例が 1 つも無い。実機の Ethernet と V307 の RAM の確認が要る）、`UsbNcmNetwork`、
-  `AdcBlockStatistics`、`SensorConsole`。
+  `AdcBlockStatistics`、`SensorConsole`。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
+  `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
 - [ ] 応用の候補: ESP32 の HTTPClient / WebServer や EVT の MQTT を参考にした HTTP 取得・小さな Web server・telemetry、
   SDK の ETH↔UART 中継、audio 録音、camera 表示。TCP / TLS があるだけで HTTP / MQTT の公開 library もあるとは扱わず、
   library の採用とメモリ・接続復旧を先に確認する。
