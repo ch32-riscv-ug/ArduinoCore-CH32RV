@@ -23,6 +23,9 @@ version 更新は tools/index/bump_version.py で platform.txt と同梱 example
 example profile の同期は tools/generate/sync_example_profiles.py が担当します。
 退避したテストの sketch.yaml は version 更新や生成チェックの対象にしません。
 
+利用者に見える変更は、コミットのときに CHANGELOG.md の `## Unreleased` へ `- (EN) ...` と `- (JA) ...` の組で書きます。
+リリースの workflow が tools/index/prepare_release.py でそれを `## X.Y.Z` に移し、その節を GitHub の Release の本文にします。
+
 ## CI の境界
 
 CI は新 suite、生成整合性、vendor provenance、package 導入を実行します。
