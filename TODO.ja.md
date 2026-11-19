@@ -308,8 +308,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   いたので、DFU の書き込みが 8 KB 揃えの確認で断られていた）。範囲の上限はモードの大きさ（`ch32rv_flash_size()`）。
   960K の H417 と V203 で flash が通る（2026-11-18、core-20261117T220801Z-8ac2f076）。480K は試していない（オプション
   バイトの書き換えになるので常駐の石ではしない）。
-- [ ] H41x の 480K モードでは、リンカースクリプトの FLASH が 960K のままで、末尾に置く `.ch32rv_store`
+- [x] H41x の 480K モードでは、リンカースクリプトの FLASH が 960K のままで、末尾に置く `.ch32rv_store`
   （CH32RV_FLASH_STORE）が flash の外になる。480K の石を対象にするなら、メニューかリンク時に FLASH の長さを分ける。
+  → 済み（2026-11-19 に確認）: DBMODE は読み出し専用で石が決める（RM 1 章・46 章）。480K の部品は H416RDU6 だけで、その variant は
+  もう ch32h416_480k_896k.ld（FLASH 491520）を使う。960K の部品が 480K で動くことは無い。
 - [x] H417 の CPU Clock 200（V5F 200 / V3F 50 MHz、HPRE で 1/2 の EVT に無い組）で、window watchdog の早い給餌のリセットが
   原因のフラグを残さなかった（2026-11-17）。EVT に無い組は出さないことにし（ユーザー）、200 と 25（PLL 無し）の項目を
   H415〜H417 のメニューから外した。H41x の CPU Clock は EVT の 400 / 100 だけ。
@@ -721,7 +723,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - PWM の remap 先と CHxN。TIM8〜10 の PWM は 2026-10-22 に入れた（V30x・V4x7・H41x、TIM1〜5 の端子は奪わない、ビルドのみ。`--case logic` の `logic_pin` でその端子を指定して確かめられる）。
 - [ ] GPIO 以外の EXTI（peripheral-plan の B）。WWDG は `CH32RV.wwdgEnable()` で入り、2026-11-19 に V203・H417・X035 で system::test_window_watchdog が通った。
 - [ ] SPI のスレーブ（CH32RVSPISlave）の残り（X035 で、プローブの spi-controller が 100 kHz のマスターになる spi.slave が通る。2026-11-05）: ハードウェアのマスターでの上限のクロック、V407（PA7 が RMII と重なる可能性）・H417 の実機、SPI マスターの LSBFIRST が V003 で正しいか（X035 は 2026-11-03 に case spi で、モード 0〜3 と LSBFIRST の transfer16() まで線で確かめた）。
-- [ ] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
+- [x] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
+  → 済み: `beginTimer()`（2026-11-17）。トリガの表は device-data の adc_triggers.csv から生成。periph::test_adc_timer_trigger が
+  V003・V006・V103・V203・V205・L103・X035・H417 で通る（2026-11-19 の集計）。
 - CH32RVAdcStream の複数の端子が 1 つずれていた件（2026-11-05〜07、X035・V003）: begin() の measure() が、数えた DMA を使い切った
   あとも ADC に連続変換をさせて止めていたので、DMA が受け取らなかった要求が 1 つ残っていた。この要求は ADC の電源を落としても、
   RDATAR を読んでも消えず、次にチャネルを有効にした瞬間（ADC を走らせる前）に古い値を 1 個運んでいた（開始の直前に DMA の残り数が
