@@ -30,3 +30,6 @@ RX port 1 channel 3 note-off 60 0
   口として見えます。channel は MIDI のメッセージの中の番号で、1 つの口に 16 あります。
 - 受けた packet の header の上位 4 bit が cable、status byte の下位 4 bit が channel です（API の channel は 0 から）。
 - `noteOn(channel, note, velocity, cable)` の最後の引数で送る口を選びます。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20、PyUSB で USB-MIDI の packet）: 口 1・channel 3 のノートオンとオフが、口 2・
+channel 3 で戻り、口 2 のノートとコントロールチェンジは返りませんでした。

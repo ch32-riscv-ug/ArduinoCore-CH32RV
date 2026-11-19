@@ -33,3 +33,6 @@ What is sent to the second output is only logged (`RX port 2 ...`).
 - In a received packet the header's high 4 bits are the cable and the status byte's low 4 bits the channel (the API's
   channel counts from 0).
 - `noteOn(channel, note, velocity, cable)` picks the port to send on with its last argument.
+
+Checked on CH32H417 over SuperSpeed (2026-11-20, USB-MIDI packets from PyUSB): a note on and off on port 1, channel 3,
+came back on port 2, channel 3; a note on port 2 and a control change were not echoed.
