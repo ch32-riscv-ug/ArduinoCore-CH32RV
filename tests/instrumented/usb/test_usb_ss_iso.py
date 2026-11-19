@@ -285,3 +285,44 @@ def test_usb_vendor_halt(dut, record_property):
         usb.util.dispose_resources(dev)
     record_property("halt", json.dumps(seen, default=str))
     assert not wrong, " | ".join(wrong)
+
+
+def test_usb_vendor_after_reset(dut, record_property):
+    """The device after the host resets its port (libusb's reset(): a bus reset and the enumeration again), three
+    times: it comes back at the same speed, as this build, and the vendor bulk echo of 100 random bytes works each
+    time (the stack's endpoints opened anew, nothing left of the transfers before)."""
+    host = _ready(dut)
+    seen, wrong = [], []
+    for round_ in range(3):
+        dev = host.device()
+        speed = dev.speed
+        number, out, inn = _bulk(dev)
+        usb.util.claim_interface(dev, number)
+        try:
+            ok, n = _echo(dev, out, inn)
+        finally:
+            usb.util.release_interface(dev, number)
+        seen.append(dict(round=round_, speed=speed, echo=n))
+        if not ok:
+            wrong.append(f"round {round_}: {n} of 100 bytes back")
+        try:
+            dev.reset()
+        except usb.core.USBError as e:              # libusb may report the device gone while it re-enumerates
+            seen[-1]["reset"] = repr(e)
+        usb.util.dispose_resources(dev)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            try:
+                if host.device() is not None and host.product().endswith(
+                        json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["build_id"]):
+                    break
+            except (usb.core.USBError, AssertionError, OSError):
+                pass
+            time.sleep(0.1)
+        else:
+            wrong.append(f"round {round_}: the device did not come back after the reset")
+            break
+        if host.device().speed != speed:
+            wrong.append(f"round {round_}: back at speed {host.device().speed}, was {speed}")
+    record_property("rounds", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)

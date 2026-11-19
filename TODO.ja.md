@@ -62,8 +62,10 @@
   残り:
   - [ ] USB の項目に controller（full_speed …）と対向（S3 / P4 / Pico / PC）の軸。junit に record_property で残し、
     coverage の欄を分ける。同じ相手の口が複数ある記録で、口ごとに case を流す。
-  - [ ] 計画にあって試験の無い契約: USB の相手のリセット後の再通信・コアとの共存。STALL の解除は 2026-11-20 に
-    usb-ss-iso::test_usb_vendor_halt（PC の libusb、H417 の SS）を足して通った。FS / HS の DCD は PC につながる口が無く未確認。Wire のデータの NACK・
+  - [ ] 計画にあって試験の無い契約: USB のコアとの共存（何との共存かを決めてから）。STALL の解除と相手のリセット後の
+    再通信は 2026-11-20 に usb-ss-iso::test_usb_vendor_halt・test_usb_vendor_after_reset（PC の libusb、H417 の SS）を足して
+    通った。FS / HS の DCD は PC につながる口が無く未確認（ピアの Pico / P4 にはホストの CLEAR_FEATURE とポートのリセットの
+    口を足す必要がある）。Wire のデータの NACK・
     timeout・バスの回復・clock stretch は試験があり（wire / softwire の test_wire_data_nack ほか）、2026-11-20 に X035・V205 で
     wire・softwire とも、H417 で softwire が通った（H417 のハードの Wire は上の潰れたクロックの件）。
     → pulseIn / pulseInLong（signals::test_pulse_in）と shiftIn / shiftOut（softspi::test_shift）は 2026-11-20 に足して、
