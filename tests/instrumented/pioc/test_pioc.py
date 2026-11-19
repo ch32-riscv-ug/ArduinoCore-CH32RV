@@ -2,8 +2,10 @@
 
 test_pioc_pulses: the DUT loads bench_pulses into the PIOC with IO0 on the first PIOC IO0 pad the probe labels as a
 plain line (`<port>@<pad>`, not a debug pad; skips without one), then for n = 1, 3, 8 sends command n: the program
-answers 0x5A (cmd.out) and counts the commands in d1, and IO0 shows exactly n pulses (WireSkein `pulses`), low at the
-section's start and end. The pulse width follows the PIOC's clock (d0 = 40 turns of a 3-cycle loop: about 1.2 to
+answers 0x5A (cmd.out), the request is down once that is taken (done() false: SB_INT_REQ falls on the host's write
+of cmd.out, not its read), d1 counts the commands, and IO0 shows exactly n pulses (WireSkein `pulses`), low at the
+section's start and end; then once more with onDone() (the PIOC's interrupt): the callback runs once with 0x5A.
+The pulse width follows the PIOC's clock (d0 = 40 turns of a 3-cycle loop: about 1.2 to
 2.5 us at 48 to 100 MHz) and is recorded, not judged."""
 import json
 import pathlib
@@ -75,15 +77,18 @@ def test_pioc_pulses(dut, ws_run, request, record_property):
                     wait(0.01)
                     command = f"pcmd {n} {DELAY_TURNS}"
                     ws_run.command(command)
-                    m = _ask(dut, wait, command, rb"PCMD (-?\d+) (\d+)")
+                    m = _ask(dut, wait, command, rb"PCMD (-?\d+) (\d+) (\d)")
                     ws_run.reply(m.group(0).decode())
-                    got[n] = (int(m.group(1)), int(m.group(2)))
+                    got[n] = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
                     wait(0.01)
 
     try:
         ws_capture.stream(ws_run, oep_host, [io0], rate=RATE, steps=steps)
+        m = _ask_now(dut, f"pirq 2 {DELAY_TURNS}", rb"PIRQ (-?\d+) (\d+) (\d+)")
+        got["irq"] = tuple(int(x) for x in m.groups())
     finally:
         _ask_now(dut, "pend", rb"PEND")
     record_property("replies", json.dumps(got))
-    want = {n: (0x5A, i + 1) for i, n in enumerate(COUNTS)}
+    want = {n: (0x5A, i + 1, 0) for i, n in enumerate(COUNTS)}
+    want["irq"] = (0x5A, 1, len(COUNTS) + 1)
     assert got == want, f"cmd.out and d1 per command: {got}, want {want}"

@@ -17,8 +17,8 @@
  * The handshake is the PIOC's own (its manual, EVT's host code): the host's
  * write of cmd.in sets SB_DATA_MW_SR for the program to see; the program's
  * write of cmd.out (SFR_CTRL_RD) sets SB_DATA_SW_MR and, if it sets
- * SB_INT_REQ, the request done() / waitDone() wait for; reading cmd.out
- * clears both. d0 .. d31 (SFR_DATA_REG0 ..) are shared bytes either side
+ * SB_INT_REQ, the request done() / waitDone() wait for; the host reads
+ * cmd.out (clearing SB_DATA_SW_MR) and writes it (clearing SB_INT_REQ). d0 .. d31 (SFR_DATA_REG0 ..) are shared bytes either side
  * reads and writes at any time.
  *
  * On X035 / X033 and V205 the program SRAM is 4 KiB of the sketch's RAM
@@ -28,6 +28,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <CH32RVCallback.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -57,11 +58,20 @@ public:
     void command(uint8_t value);
     /* The program has asked for attention (SB_INT_REQ). */
     bool done() const;
-    /* Until done() or timeoutMs: cmd.out (which clears the request), -1 on
+    /* Until done() or timeoutMs: cmd.out (the request taken down), -1 on
      * the time-out. */
     int waitDone(uint32_t timeoutMs);
-    /* cmd.out now (clears the request). */
+    /* cmd.out now, and the request taken down (the host's write of cmd.out
+     * clears SB_INT_REQ; its read alone does not). */
     uint8_t result();
+    /* Each request (SB_INT_REQ) as an interrupt instead: the PIOC's
+     * interrupt reads cmd.out (which clears the request) and calls this with
+     * it - keep it short, it runs in the interrupt. done() / waitDone() then
+     * see nothing; nullptr goes back to them. One PIOC: the last begun object
+     * gets the calls. */
+    typedef CH32RVCallback<void(uint8_t)> DoneCallback;
+    void onDone(DoneCallback callback);
+    void service();                    /* the interrupt's, for PIOC_IRQHandler */
 
     /* d0 .. d31: SFR_DATA_REG0 + index. */
     void writeData(uint8_t index, const void *data, size_t n);
@@ -78,4 +88,5 @@ private:
     bool route(int pin, uint8_t role);
     int8_t _pads[2] = {-1, -1};
     bool _begun = false;
+    DoneCallback _done;
 };

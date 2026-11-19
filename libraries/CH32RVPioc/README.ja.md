@@ -65,8 +65,9 @@ void loop() {
 | `end()` | 止めて（リセットのまま、クロックを切る）端子を戻す |
 | `command(v)` | cmd.in に書く。プログラムは `WAITB WB_DATA_MW_SR_1` で待ち、`MOV SFR_CTRL_WR, A` で読む |
 | `done()` | プログラムが `SB_INT_REQ` を立てた |
-| `waitDone(ms)` | `done()` まで待って cmd.out を読む（読むと要求が消える）。時間切れは -1 |
-| `result()` | 今の cmd.out |
+| `waitDone(ms)` | `done()` まで待って cmd.out を読み、要求を下ろす。時間切れは -1 |
+| `result()` | 今の cmd.out。要求も下ろす（`SB_INT_REQ` はホストが cmd.out に書くと消え、読むだけでは消えない。2026-11-19 に X035 で確認） |
+| `onDone(cb)` | 要求を割込みで受ける。割込みが cmd.out を読んで要求を下ろし、`cb(cmd.out)` を呼ぶ（割込みの中なので短く）。`nullptr` で `waitDone()` に戻る |
 | `writeData(i, p, n)` / `readData(i, p, n)` / `write(i, v)` / `read(i)` | 共有のレジスタ d0〜d31（`SFR_DATA_REG0` + i） |
 
 PIOC の届く端子は variant の `CH32RV_PIOC_PADS` です（H417 は IO0 が PA0・PB8・PC1・PE3・PF12、IO1 が PB9・PC0・PC2・PE4・

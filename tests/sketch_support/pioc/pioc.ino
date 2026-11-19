@@ -4,7 +4,8 @@
  *   ready <nonce>        READY <nonce> <build id>
  *   ppads                PPADS <the IO0 pads the PIOC reaches, pin numbers> (PPADS alone: no PIOC)
  *   pbegin <pin>         begin() with IO0 on that pad: PBEGIN <1 / 0>
- *   pcmd <n> <delay>     d0 = delay, command(n), waitDone(1000): PCMD <cmd.out or -1> <d1>
+ *   pcmd <n> <delay>     d0 = delay, command(n), waitDone(1000): PCMD <cmd.out or -1> <d1> <done() after: 1 / 0>
+ *   pirq <n> <delay>     the same with onDone(): PIRQ <the callback's cmd.out or -1> <calls> <d1>
  *   pend                 end(): PEND */
 #include <Arduino.h>
 #include <CH32RV.h>
@@ -19,6 +20,8 @@
 
 PIOC_IMAGE(bench_pulses);
 CH32RVPioc pioc;
+volatile int irqStatus = -1;
+volatile uint8_t irqCalls;
 char line[64];
 uint8_t used;
 
@@ -58,6 +61,31 @@ void reply(char *command) {
     const int status = pioc.waitDone(1000);
     SerialDMSeq.print("PCMD ");
     SerialDMSeq.print(status);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.print(pioc.read(1));
+    SerialDMSeq.print(' ');
+    SerialDMSeq.println(pioc.done() ? 1 : 0);   // the request must be down once its cmd.out is taken
+  } else if (strncmp(command, "pirq ", 5) == 0) {
+    char *p;
+    const unsigned long n = strtoul(command + 5, &p, 10);
+    const unsigned long delayTurns = strtoul(p, nullptr, 10);
+    irqStatus = -1;
+    irqCalls = 0;
+    pioc.onDone([](uint8_t status) {
+      irqStatus = status;
+      irqCalls = irqCalls + 1;
+    });
+    pioc.write(0, (uint8_t)delayTurns);
+    pioc.command((uint8_t)n);
+    const unsigned long start = millis();
+    while (!irqCalls && millis() - start < 1000) {
+    }
+    delay(5);                                  // a second call would show
+    pioc.onDone(nullptr);
+    SerialDMSeq.print("PIRQ ");
+    SerialDMSeq.print(irqStatus);
+    SerialDMSeq.print(' ');
+    SerialDMSeq.print(irqCalls);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(pioc.read(1));
   } else if (strcmp(command, "pend") == 0) {

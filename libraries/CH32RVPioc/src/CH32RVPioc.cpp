@@ -1,6 +1,7 @@
 #include "CH32RVPioc.h"
 
 #include "internal/ch32rv_gpio.h"
+#include "internal/ch32rv_interrupt.h"
 #include "internal/ch32rv_registers.h"
 
 #include <string.h>
@@ -35,14 +36,47 @@ constexpr uint8_t SYS_INT_REQ = 0x80, SYS_IO_EN1 = 0x08, SYS_IO_EN0 = 0x04, SYS_
                   SYS_CLK_GATE = 0x01;
 constexpr uint8_t REG_SYS_CFG = 0x1C, REG_CTRL_RD = 0x1D, REG_CTRL_WR = 0x1E, REG_DATA0 = 0x20;
 
+/* cmd.out, and the request taken down: reading cmd.out clears
+ * SB_DATA_SW_MR, but SB_INT_REQ only falls when the host writes cmd.out (the
+ * data is ignored; WCH's ch32h417_pioc.h, and measured on X035 2026-11-19:
+ * after the read SYS_CFG still read 0x85 and the interrupt came back at
+ * once). */
+uint8_t take_result();
+
 /* The host sees the PIOC's SFR n at its base + n. */
 volatile uint8_t &sfr(uint8_t n)
 {
     return *reinterpret_cast<volatile uint8_t *>(CH32RV_PIOC_BASE + n);
 }
+
+uint8_t take_result()
+{
+    const uint8_t status = sfr(REG_CTRL_RD);
+    sfr(REG_CTRL_RD) = 0;
+    /* Read back so the write has landed before an interrupt returns: else
+     * the request still stood and the interrupt came once more (all three
+     * families, 2026-11-19). */
+    (void)sfr(REG_SYS_CFG);
+    return status;
+}
 #endif
 
+/* The object the interrupt serves (onDone()). */
+CH32RVPioc *serving;
+
 }  // namespace
+
+#if defined(CH32RV_PIOC_READY) && defined(CH32RV_PIOC_IRQN)
+/* The vector table's PIOC entry (weak there): linked with this file. */
+extern "C" CH32RV_INTERRUPT void PIOC_IRQHandler(void)
+{
+    if (serving) {
+        serving->service();
+    } else {
+        (void)take_result();           /* nobody to tell: the request taken down */
+    }
+}
+#endif
 
 bool CH32RVPioc::route(int pin, uint8_t role)
 {
@@ -122,6 +156,13 @@ bool CH32RVPioc::begin(const Image &image, int io0, int io1)
     route(io1, 1);
     sfr(REG_SYS_CFG) = (uint8_t)(SYS_CLK_GATE | io);
     _begun = true;
+#if defined(CH32RV_PIOC_IRQN)
+    if (_done) {
+        serving = this;
+        ch32rv_irq_clear_pending(CH32RV_PIOC_IRQN);
+        ch32rv_irq_enable(CH32RV_PIOC_IRQN);
+    }
+#endif
     return true;
 #else
     (void)image;
@@ -137,6 +178,12 @@ void CH32RVPioc::end()
     if (!_begun) {
         return;
     }
+#if defined(CH32RV_PIOC_IRQN)
+    if (serving == this) {
+        ch32rv_irq_disable(CH32RV_PIOC_IRQN);
+        serving = nullptr;
+    }
+#endif
     sfr(REG_SYS_CFG) = SYS_RESET;          /* stopped, the pads the host's again */
 #if defined(CH32RV_CLKEN_PIOC_ADDR)
     CH32RV_REG32(CH32RV_CLKEN_PIOC_ADDR) &= ~CH32RV_CLKEN_PIOC_MASK;
@@ -176,9 +223,41 @@ bool CH32RVPioc::done() const
 uint8_t CH32RVPioc::result()
 {
 #if defined(CH32RV_PIOC_READY)
-    return _begun ? sfr(REG_CTRL_RD) : 0;
+    return _begun ? take_result() : 0;
 #else
     return 0;
+#endif
+}
+
+void CH32RVPioc::onDone(DoneCallback callback)
+{
+#if defined(CH32RV_PIOC_READY) && defined(CH32RV_PIOC_IRQN)
+    ch32rv_irq_disable(CH32RV_PIOC_IRQN);
+    _done = callback;
+    if (_done) {
+        serving = this;
+        if (_begun) {
+            /* A request waitDone() took was latched with the interrupt off
+             * (the PFIC keeps it): the first call came with an old cmd.out
+             * (all three families, 2026-11-19). */
+            ch32rv_irq_clear_pending(CH32RV_PIOC_IRQN);
+            ch32rv_irq_enable(CH32RV_PIOC_IRQN);
+        }
+    } else if (serving == this) {
+        serving = nullptr;
+    }
+#else
+    (void)callback;
+#endif
+}
+
+void CH32RVPioc::service()
+{
+#if defined(CH32RV_PIOC_READY)
+    const uint8_t status = take_result();
+    if (_done) {
+        _done(status);
+    }
 #endif
 }
 

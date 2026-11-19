@@ -432,6 +432,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_PFIC_BASE    0xE000E000u
 #define CH32RV_PFIC_IENR(i) CH32RV_REG32(CH32RV_PFIC_BASE + 0x100u + 4u * (i))
 #define CH32RV_PFIC_IRER(i) CH32RV_REG32(CH32RV_PFIC_BASE + 0x180u + 4u * (i))
+#define CH32RV_PFIC_IPRR(i) CH32RV_REG32(CH32RV_PFIC_BASE + 0x280u + 4u * (i))
 #define CH32RV_PFIC_IPRIOR(n) CH32RV_REG8(CH32RV_PFIC_BASE + 0x400u + (n))
 
 static inline void ch32rv_irq_enable(uint32_t irqn)
@@ -442,6 +443,13 @@ static inline void ch32rv_irq_enable(uint32_t irqn)
 static inline void ch32rv_irq_disable(uint32_t irqn)
 {
     CH32RV_PFIC_IRER(irqn >> 5) = 1u << (irqn & 31u);
+}
+
+/* Forget a request that came while the interrupt was off: the PFIC keeps it
+ * pending, and enabling would run the handler for it at once. */
+static inline void ch32rv_irq_clear_pending(uint32_t irqn)
+{
+    CH32RV_PFIC_IPRR(irqn >> 5) = 1u << (irqn & 31u);
 }
 
 /* System reset through the PFIC, the RISC-V equivalent of NVIC_SystemReset.

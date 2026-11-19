@@ -67,8 +67,9 @@ void loop() {
 | `end()` | Stops it (held in reset, its clock off) and gives the pads back |
 | `command(v)` | Writes cmd.in; the program waits with `WAITB WB_DATA_MW_SR_1` and reads it with `MOV SFR_CTRL_WR, A` |
 | `done()` | The program set `SB_INT_REQ` |
-| `waitDone(ms)` | Until `done()`, then cmd.out (reading it clears the request); -1 on a time-out |
-| `result()` | cmd.out now |
+| `waitDone(ms)` | Until `done()`, then cmd.out with the request taken down; -1 on a time-out |
+| `result()` | cmd.out now, the request taken down (`SB_INT_REQ` falls when the host writes cmd.out, not when it reads it; measured on X035 2026-11-19) |
+| `onDone(cb)` | The requests by interrupt: it reads cmd.out, takes the request down and calls `cb(cmd.out)` (in the interrupt: keep it short). `nullptr` goes back to `waitDone()` |
 | `writeData(i, p, n)` / `readData(i, p, n)` / `write(i, v)` / `read(i)` | The shared registers d0 .. d31 (`SFR_DATA_REG0` + i) |
 
 The pads the PIOC reaches are the variant's `CH32RV_PIOC_PADS` (H417: IO0 on PA0, PB8, PC1, PE3, PF12; IO1 on PB9,
