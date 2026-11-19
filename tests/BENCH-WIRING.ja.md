@@ -32,7 +32,7 @@
 | CH32V205RCT6 | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
 | CH32V208WBU6 | 13 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
 | CH32V307VCT6 | 25 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
-| CH32V407WEU6 | 19 本: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst` | なし |
+| CH32V407WEU6 | 19 本: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst` | なし |
 | CH32L103C8T6 | 0 本: なし | なし |
 | CH32X035C8T6 | 1 本: `x035c8t6-pico@pa13` | なし |
 | CH32X315MCU6 | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa5`, `<口>@pa6`, `<口>@pa10`, `<口>@pa11`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pc4`, `<口>@pc5`, `<口>@pc6`, `<口>.nrst@pd2`, `<口>@pd3`, `<口>.rx@pd4`, `<口>.tx@pd5` | なし |
@@ -40,7 +40,7 @@
 
 ## CH32V003F4U6（CH32V003）
 
-- 口: `oep://30eda0ea068b/v003f4u6`
+- 口: `oep://30eda0ea068b/v003f4u6-uia`
 - いまの線: PA1, PA2, PC0, PC1, PC2, PC3, PC4, PC5, PC6, PC7, PD0, PD2
 - コンソール（rx / tx）: PD5, PD6
 - 触らない端子: PA1, PA2, PD1, PD7
@@ -273,11 +273,11 @@
 
 ## CH32V407WEU6（CH32V407）
 
-- 口: `oep://30eda0ea068b/v407weu6-p4`
+- 口: `oep://30eda0ea068b/v407weu6-yd-p4`
 - いまの線: なし
 - コンソール（rx / tx）: PA9, PA10（未配線: Serial の既定の端子）
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15, PE12
-- 足す線（19 本、端子順）: `v407weu6-p4@pa0`, `v407weu6-p4@pa1`, `v407weu6-p4@pa2`, `v407weu6-p4@pa4`, `v407weu6-p4@pa5`, `v407weu6-p4@pa6`, `v407weu6-p4@pa7`, `v407weu6-p4.rx@pa9`, `v407weu6-p4.tx@pa10`, `v407weu6-p4@pa15`, `v407weu6-p4@pb6`, `v407weu6-p4@pb7`, `v407weu6-p4@pb8`, `v407weu6-p4@pb9`, `v407weu6-p4@pb13`, `v407weu6-p4@pc4`, `v407weu6-p4@pe0`, `v407weu6-p4@pe1`, `v407weu6-p4.nrst`
+- 足す線（19 本、端子順）: `v407weu6-yd-p4@pa0`, `v407weu6-yd-p4@pa1`, `v407weu6-yd-p4@pa2`, `v407weu6-yd-p4@pa4`, `v407weu6-yd-p4@pa5`, `v407weu6-yd-p4@pa6`, `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4.rx@pa9`, `v407weu6-yd-p4.tx@pa10`, `v407weu6-yd-p4@pa15`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4@pb8`, `v407weu6-yd-p4@pb9`, `v407weu6-yd-p4@pb13`, `v407weu6-yd-p4@pc4`, `v407weu6-yd-p4@pe0`, `v407weu6-yd-p4@pe1`, `v407weu6-yd-p4.nrst`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|

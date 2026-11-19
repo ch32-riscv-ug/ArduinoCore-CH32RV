@@ -26,7 +26,7 @@ OUT = REPO / "tests/BENCH-WIRING.ja.md"
 
 # (probe unit, port) of each bench DUT; None: on a WCH-Link only (no OEP port yet).
 BENCH = [
-    ("CH32V003F4U6", "30eda0ea068b", "v003f4u6"),
+    ("CH32V003F4U6", "30eda0ea068b", "v003f4u6-uia"),
     ("CH32V003F4P6", "30eda0e34a0e", "v003f4p6"),
     ("CH32V006K8U6", "30eda0e343c6", "v006k8u6"),
     ("CH32V103R8T6", "80f1b2d80a34", "v103r8t6-evt"),
@@ -34,7 +34,7 @@ BENCH = [
     ("CH32V205RCT6", "30eda0e31108", "v205rct6-pico"),
     ("CH32V208WBU6", "30eda0e31451", "v208wbu6"),
     ("CH32V307VCT6", None, None),
-    ("CH32V407WEU6", "30eda0ea068b", "v407weu6-p4"),
+    ("CH32V407WEU6", "30eda0ea068b", "v407weu6-yd-p4"),
     ("CH32L103C8T6", "e8f60ae84dc6", "l103c8t6-pico"),
     ("CH32X035C8T6", "80f1b2d835d6", "x035c8t6-pico"),
     ("CH32X315MCU6", None, None),
