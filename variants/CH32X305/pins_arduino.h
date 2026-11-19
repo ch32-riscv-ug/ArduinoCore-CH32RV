@@ -343,7 +343,7 @@ static const uint8_t A11 = PIN_A11;
     1)
 
 /* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half
- *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */
+ *      (device-data adc_dual_modes.csv, register_blocks.csv, parts.csv adc_units) ---- */
 #define CH32RV_ADC_DUALMOD_SHIFT 16u
 #define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
 #define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u

@@ -1656,11 +1656,9 @@ def load_dac_dma(tables: pathlib.Path) -> dict:
 
 
 # ADC1 + ADC2 together (dual mode, CH32RVAdcStream): family -> {mode: DUALMOD value} from index/adc_dual_modes.csv,
-# with the field's shift. Families left out although the table has them: CH32V103 (its rows are the shared
-# reference manual's; the chip has no ADC2 block) and CH32V20x, whose parts differ in their number of ADCs and
-# device-data does not yet say which part has two.
+# with the field's shift. Which parts have the second ADC is parts.csv's adc_units (CH32V103 has the table's rows -
+# the shared reference manual's - but no ADC2 block and no count).
 ADC_DUAL: dict = {}
-ADC_DUAL_UNKNOWN_PARTS = {"CH32V20x"}
 
 
 def load_adc_dual(tables: pathlib.Path) -> dict:
@@ -4718,23 +4716,33 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("    1)")
         out.append("")
 
-    # --- dual ADC (ADC1 + ADC2): CH32RVAdcStream's beginSimultaneous() / beginInterleaved() ---
-    # Only where every family of the series has the modes and an ADC2 at the same base.
-    families = {r.get("family", "") for r in rows}
-    if families and all(f in ADC_DUAL and f not in ADC_DUAL_UNKNOWN_PARTS and 2 in adc_bases.get(f, {})
-                        for f in families):
+    # --- dual ADC (ADC1 + ADC2): CH32RVAdcStream's simultaneous() / beginInterleaved() ---
+    # On the parts with two ADCs or more (parts.csv adc_units; empty is unknown and counts as one), where every
+    # family among them has the modes and an ADC2 at the same base. When only some parts of the series have them,
+    # the defines are theirs alone (a build for ANY has none).
+    def units(r):
+        return int(r["adc_units"]) if (r.get("adc_units") or "").isdigit() else 0
+    duals = [r for r in rows if units(r) >= 2]
+    families = {r.get("family", "") for r in duals}
+    if duals and all(f in ADC_DUAL and 2 in adc_bases.get(f, {}) for f in families):
         dual = {(ADC_DUAL[f][0], ADC_DUAL[f][1].get("regular_simultaneous"),
                  ADC_DUAL[f][1].get("fast_interleaved"), adc_bases[f][2]) for f in families}
         if len(dual) == 1:
             shift, simultaneous, interleaved, base2 = dual.pop()
             if simultaneous is not None and interleaved is not None:
                 out.append("/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half")
-                out.append(" *      (device-data adc_dual_modes.csv, register_blocks.csv) ---- */")
+                out.append(" *      (device-data adc_dual_modes.csv, register_blocks.csv, parts.csv adc_units) ---- */")
+                some = len(duals) < len(rows)
+                if some:
+                    out.append("#if " + " || ".join(f"defined(CH32RV_PART_{r['part_number']})"
+                                                    for r in sorted(duals, key=lambda r: r["part_number"])))
                 if 2 not in {inst for inst, _ in extra}:
                     out.append(f"#define CH32RV_ADC2_BASE {base2:#010x}u")
                 out.append(f"#define CH32RV_ADC_DUALMOD_SHIFT {shift}u")
                 out.append(f"#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS {simultaneous}u")
                 out.append(f"#define CH32RV_ADC_DUAL_FAST_INTERLEAVED {interleaved}u")
+                if some:
+                    out.append("#endif")
                 out.append("")
 
     # --- default USART pins ---

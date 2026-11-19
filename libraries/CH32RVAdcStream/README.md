@@ -79,7 +79,7 @@ adc.startContinuous(buf, 256);     // buf: ADC1's PA1, ADC2's PA2, ADC1's PA1, .
 adc.beginInterleaved(PA4);         // ADC2 and ADC1 in turn on PA4: twice one ADC's rate
 ```
 
-On the series with an ADC2 (V30x, V4x7, X305 / X315, H41x; the variant's `CH32RV_ADC_DUALMOD_SHIFT`).
+On the series with an ADC2 (V30x, V4x7, X305 / X315, H41x, and the V203 parts with two ADCs; the variant's `CH32RV_ADC_DUALMOD_SHIFT`). Some V203 parts have one ADC, so there it needs the part chosen in the board menu (false for ANY).
 `simultaneous()` comes after `begin()`, `beginTimer()` or `beginExternal()`: ADC2 converts `pins2[i]` on the same
 trigger as ADC1's pin i. A round holds ADC1's pin 0, ADC2's pin 0, ADC1's pin 1, ...; `sampleRate()` counts rounds.
 The two cannot convert one channel at once (the manual forbids it); on X305 / X315 ADC2 has its own pads only.

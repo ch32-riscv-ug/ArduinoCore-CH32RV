@@ -79,7 +79,7 @@ adc.startContinuous(buf, 256);     // buf: ADC1 の PA1, ADC2 の PA2, ADC1 の 
 adc.beginInterleaved(PA4);         // ADC2 と ADC1 が交互に PA4 を: 1 つの ADC の 2 倍の速さ
 ```
 
-ADC2 のある系列（V30x、V4x7、X305 / X315、H41x。variant の `CH32RV_ADC_DUALMOD_SHIFT`）で使えます。
+ADC2 のある系列（V30x、V4x7、X305 / X315、H41x、V203 の ADC が 2 つの部品。variant の `CH32RV_ADC_DUALMOD_SHIFT`）で使えます。V203 は部品によって ADC が 1 つなので、ボードのメニューで部品を選んだときだけ使えます（ANY では false）。
 `simultaneous()` は `begin()`・`beginTimer()`・`beginExternal()` のあとに呼び、ADC2 が `pins2[i]` を ADC1 の i 番目の端子と
 同じトリガで変換します。1 回分は「ADC1 の端子 0、ADC2 の端子 0、ADC1 の端子 1、…」で、`sampleRate()` は回数です。
 同じチャネルを両方で同時に変換することはできません（RM の禁止）。X305 / X315 の ADC2 は自分の端子だけです。
