@@ -49,6 +49,8 @@
  *   tpulsein <pin> <state> <timeout us>  TPULSEIN <us>: timerPulseIn()
  *                          (CH32RVTimerInput, the timer's capture)
  *   comp <pin> <pinN> <hz> <duty of 256> <dead ns>  COMP <ok> <dead ns set>
+ *   compa <pin> <pinN> <hz> <duty of 256> <rise ns> <fall ns>
+ *                                    setDeadTime(rise, fall): COMPA <begun> <taken> <the longer set> <the shorter>
  *   brk <pin> <level>      BRK <ok>: the bridge's break input, active at level
  *   brkstate <brk pin>     BRKSTATE <latched> <the pad's level>
  *   resume                 RESUME <ok>
@@ -114,10 +116,10 @@ static void counted() { edges++; }
 
 /* "<word> <a> <b> <c>\r\n" with as many numbers as given (plain print: the
  * formatted kind does not fit V003's 16 KB beside the rest). */
-static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0)
+static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0, long d = 0)
 {
     SerialDMSeq.print(word);
-    const long v[3] = {a, b, c};
+    const long v[4] = {a, b, c, d};
     for (int k = 0; k < n; k++) {
         SerialDMSeq.print(' ');
         SerialDMSeq.print(v[k]);
@@ -209,6 +211,14 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
             bridge.write((uint32_t)a4);
         }
         say("COMP", 2, ok, (long)bridge.deadTime());
+    } else if (!strcmp(argv[0], "compa") && argc == 7) {
+        /* compa <pin> <pinN> <hz> <duty of 256> <rise ns> <fall ns>: asymmetric dead time */
+        const bool taken = bridge.setDeadTime((uint32_t)a5, (uint32_t)atol(argv[6]));
+        const bool ok = bridge.begin(pin, (int)a2, (uint32_t)a3, 8);
+        if (ok) {
+            bridge.write((uint32_t)a4);
+        }
+        say("COMPA", 4, ok, taken, (long)bridge.deadTime(), (long)bridge.deadTimeShort());
     } else if (!strcmp(argv[0], "brk") && argc == 3) {
         say("BRK", 1, bridge.attachBreak(pin, (int)a2, a2 ? INPUT_PULLDOWN : INPUT_PULLUP));
     } else if (!strcmp(argv[0], "brkstate") && argc == 2) {

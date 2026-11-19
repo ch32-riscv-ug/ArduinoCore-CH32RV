@@ -589,6 +589,53 @@ def test_complementary(dut, oep_host, ws_run, record_property):
         core.plan_release(host, [gpio.fn])
 
 
+ASYM_DEAD = (800, 300)     # ns before CHx turns on (OCxREF's rising edge), before CHxN turns on (its falling edge)
+
+
+def test_asymmetric_dead_time(dut, oep_host, ws_run, record_property):
+    """CH32RVComplementaryPwm::setDeadTime(rise, fall) on the first CHx / CHxN pair the probe labels: 800 ns before
+    CHx turns on and 300 ns before CHxN does, then the other way round, each judged by WireSkein's dead_time with a
+    limit each way (lo_to_hi: CHxN off to CHx on; hi_to_lo: CHx off to CHxN on), within 100 ns of what the DUT says it
+    set (the longer the timer's dead time, the shorter its second one in that one's steps). Skips where the timer
+    has no second dead time (setDeadTime() refuses unequal times: COMPA ... 0) or no pair is labelled."""
+    from wireskein.runlog import becomes, dead_time, level, trim
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVComplementaryPwm")
+    found = complementary_pair(dut, lines)
+    if found is None:
+        pytest.skip("no two labelled lines are a CHx and its CHxN on one route: " + ", ".join(p["pad"] for p in lines))
+    a, b, timer, channel, route, _ways = found
+    hi, lo, pa, pb = a["pad"], b["pad"], a["pin"], b["pin"]
+    record_property("pair", f"{hi} TIM{timer} CH{channel}, {lo} CH{channel}N, route {route}")
+    off = [becomes(hi, level=0), becomes(lo, level=0)]
+    m = ask(dut, f"compa {pa} {pb} 20000 128 {ASYM_DEAD[0]} {ASYM_DEAD[1]}", rb"COMPA (\d) (\d) (\d+) (\d+)")
+    ask(dut, "compoff", rb"COMPOFF")
+    if m.group(2) == b"0":
+        pytest.skip(f"TIM{timer} has no second dead time (setDeadTime(rise, fall) refused unequal times)")
+    sets = {}
+    try:
+        for rise, fall in (ASYM_DEAD, ASYM_DEAD[::-1]):
+            command = f"compa {pa} {pb} 20000 128 {rise} {fall}"
+            m = ask(dut, command, rb"COMPA (\d) (\d) (\d+) (\d+)")
+            ask(dut, "compoff", rb"COMPOFF")
+            longer, shorter = int(m.group(3)), int(m.group(4))
+            got_rise, got_fall = (longer, shorter) if rise > fall else (shorter, longer)
+            sets[f"{rise}/{fall}"] = (got_rise, got_fall)
+            judge = dead_time(hi, lo, lo_to_hi_min_s=(got_rise - 100) * 1e-9, lo_to_hi_max_s=(got_rise + 100) * 1e-9,
+                              hi_to_lo_min_s=(got_fall - 100) * 1e-9, hi_to_lo_max_s=(got_fall + 100) * 1e-9)
+            conditions = [("rest", None, None, [level(hi, 0), level(lo, 0)], 0.005),
+                          (f"rise {got_rise} ns fall {got_fall} ns", command, rb"COMPA (\d) (\d) (\d+) (\d+)",
+                           [trim(judge, head_s=0.002)], 0.01),
+                          ("stopped", "compoff", rb"COMPOFF", off, 0.005)]
+            sweep(dut, ws_run, oep_host, [a, b], f"asymmetric dead time {rise}/{fall} ns {hi} {lo}", conditions,
+                  rate=100_000_000, moving=2, quiet=[])
+    finally:
+        ask(dut, "compoff", rb"COMPOFF")
+    record_property("dead_set_ns", json.dumps(sets))
+
+
 def same_timer_pair(dut, lines):
     """(A, B, timer, route): two lines that are channels (CHx) of one timer and route, A's first way to a timer being
     that one (begin() takes the first it can), or None."""
