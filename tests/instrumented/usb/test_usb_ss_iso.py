@@ -14,6 +14,9 @@ looks at each interval's bytes:
 
 A controller that served one burst an interval would make every interval of alternate settings 2-5 partial.
 Passes when partial intervals are at most 1 % and whole ones at least 90 %; see the bounds below.
+
+Beside it, test_usb_vendor_halt: an endpoint halt and its clearing on a vendor bulk interface of the same sketch,
+whichever side halts it (the PC's libusb is the only host here that sends CLEAR_FEATURE on its own).
 """
 import json
 import pathlib
@@ -198,3 +201,87 @@ def test_usb_ss_iso_out(dut, record_property, alt):
         f"after the first are not taken"
     assert served["out_whole"] >= intervals * WHOLE_MIN, \
         f"only {served['out_whole']} of {intervals} intervals arrived whole (DUT {served}, host errors {errors})"
+
+
+def _bulk(dev):
+    """The vendor bulk interface (0xFF / 0x56 / 0x42): (its number, bulk OUT, bulk IN)."""
+    cfg = dev.get_active_configuration()
+    itf = next(i for i in cfg if (i.bInterfaceClass, i.bInterfaceSubClass, i.bInterfaceProtocol) == (0xFF, 0x56, 0x42))
+    out = next(e for e in itf if not e.bEndpointAddress & 0x80)
+    inn = next(e for e in itf if e.bEndpointAddress & 0x80)
+    return itf.bInterfaceNumber, out.bEndpointAddress, inn.bEndpointAddress
+
+
+def _echo(dev, out, inn, n=100):
+    data = secrets.token_bytes(n)
+    dev.write(out, data, timeout=1000)
+    got = bytearray()
+    deadline = time.monotonic() + 2
+    while len(got) < n and time.monotonic() < deadline:
+        try:
+            got += bytes(dev.read(inn, 1024, timeout=200))
+        except usb.core.USBTimeoutError:
+            pass
+    return bytes(got) == data, len(got)
+
+
+def test_usb_vendor_halt(dut, record_property):
+    """An endpoint halt both ways, through the host's libusb: the DUT stalls its bulk IN (then OUT) when asked (a
+    vendor request, CH32RVUsbDevice::stall()); the host's transfer on it fails with a pipe error (EPIPE), GET_STATUS
+    and the DUT's stalled() say halted; CLEAR_FEATURE(ENDPOINT_HALT) (libusb's clear_halt) clears both, and the echo
+    of 100 random bytes works again (the sequence numbers start over on both sides). Then the host halts each
+    endpoint itself (SET_FEATURE(ENDPOINT_HALT)), the DUT's stalled() says so, and clearing it brings the echo back."""
+    host = _ready(dut)
+    dev = host.device()
+    record_property("speed", dev.speed)
+    number, out, inn = _bulk(dev)
+    usb.util.claim_interface(dev, number)
+    wrong, seen = [], {}
+
+    def halted(ep):
+        status = dev.ctrl_transfer(0x82, 0x00, 0, ep, 2, timeout=1000)        # GET_STATUS of the endpoint
+        return dev.ctrl_transfer(0xC1, 0x52, ep, number, 1, timeout=1000)[0], status[0] & 1
+
+    try:
+        ok, n = _echo(dev, out, inn)
+        seen["echo before"] = n
+        if not ok:
+            wrong.append(f"the echo before any halt: {n} of 100 bytes back")
+        for ep, name in ((inn, "IN"), (out, "OUT")):
+            dev.ctrl_transfer(0x41, 0x51, ep, number, None, timeout=1000)
+            seen[f"{name} stalled by the DUT"] = halted(ep)
+            if halted(ep) != (1, 1):
+                wrong.append(f"{name} after stall(): stalled() / GET_STATUS {halted(ep)}, want (1, 1)")
+            try:
+                if ep & 0x80:
+                    dev.read(ep, 64, timeout=500)
+                else:
+                    dev.write(ep, b"x", timeout=500)
+                wrong.append(f"{name} stalled: the transfer went through")
+            except usb.core.USBError as e:
+                seen[f"{name} transfer while stalled"] = e.errno
+                if e.errno != 32:
+                    wrong.append(f"{name} stalled: the transfer failed with {e!r}, not EPIPE")
+            dev.clear_halt(ep)
+            seen[f"{name} cleared"] = halted(ep)
+            if halted(ep) != (0, 0):
+                wrong.append(f"{name} after CLEAR_FEATURE: stalled() / GET_STATUS {halted(ep)}, want (0, 0)")
+            ok, n = _echo(dev, out, inn)
+            seen[f"echo after {name}"] = n
+            if not ok:
+                wrong.append(f"the echo after {name}'s halt was cleared: {n} of 100 bytes back")
+        for ep, name in ((inn, "IN"), (out, "OUT")):
+            dev.ctrl_transfer(0x02, 0x03, 0, ep, None, timeout=1000)        # SET_FEATURE(ENDPOINT_HALT)
+            seen[f"{name} halted by the host"] = halted(ep)
+            if halted(ep) != (1, 1):
+                wrong.append(f"{name} after SET_FEATURE: stalled() / GET_STATUS {halted(ep)}, want (1, 1)")
+            dev.clear_halt(ep)
+            ok, n = _echo(dev, out, inn)
+            seen[f"echo after the host's {name} halt"] = n
+            if not ok:
+                wrong.append(f"the echo after the host's {name} halt was cleared: {n} of 100 bytes back")
+    finally:
+        usb.util.release_interface(dev, number)
+        usb.util.dispose_resources(dev)
+    record_property("halt", json.dumps(seen, default=str))
+    assert not wrong, " | ".join(wrong)

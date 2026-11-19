@@ -19,6 +19,13 @@
  * writes those 7 bytes a packet; the rest is left as it is. OUT: the DUT
  * checks each transfer that ends (one an interval) the same way.
  *
+ * Beside it, a vendor bulk interface (CH32RVUsbDeviceVendor, subclass / protocol
+ * 0x56 / 0x42) for the endpoint halt (usb-ss-iso's test_usb_vendor_halt): it
+ * echoes what bulk OUT brings back on bulk IN, and two vendor requests to the
+ * interface (wIndex its number): 0x51 stalls the endpoint wValue names
+ * (CH32RVUsbDevice::stall()), 0x52 answers 1 byte, whether it is halted
+ * (stalled()).
+ *
  *   ready <nonce>  READY <nonce> <build id> <USB started 0/1> <last error>
  *   iso            ISO <alt> <packets an interval> <IN buffers>
  *                      <IN submitted> <IN refused>
@@ -260,6 +267,7 @@ static bool iso_descriptor(const CH32RVUsbDeviceFunction &self, CH32RVUsbDescrip
 }
 
 static IsoBurst iso;
+static CH32RVUsbDeviceVendor bulk(USBDevice, 64);
 static CH32RVUsbDeviceConfig config;
 static char line[80];
 static uint8_t used;
@@ -296,11 +304,33 @@ void setup()
 #ifdef USB_TEST_CONTROLLER
     config.controller = USB_TEST_CONTROLLER;   /* run_hardware.py: the controller the record's usb names */
 #endif
+    bulk.setInterfaceProtocol(0x56, 0x42);
+    bulk.onControlRequest([](const CH32RVUsbDeviceVendorControlRequest &r) {
+        if (r.stage != CH32RV_USB_DEVICE_CONTROL_STAGE_SETUP) {
+            return true;
+        }
+        if (r.bRequest == 0x51 && !(r.bmRequestType & 0x80)) {
+            USBDevice.stall((uint8_t)r.wValue);
+            return bulk.sendControlResponse(r);
+        }
+        if (r.bRequest == 0x52 && (r.bmRequestType & 0x80)) {
+            static uint8_t halted;
+            halted = USBDevice.stalled((uint8_t)r.wValue) ? 1 : 0;
+            return bulk.sendControlResponse(r, &halted, 1);
+        }
+        return false;
+    });
     USBDevice.begin(config);
 }
 
 void loop()
 {
+    uint8_t echo[256];
+    const size_t room = (size_t)bulk.availableForWrite();
+    if (room && bulk.available()) {
+        bulk.write(echo, bulk.read(echo, room < sizeof echo ? room : sizeof echo));
+        bulk.flush();
+    }
     while (SerialDMSeq.available()) {
         const int c = SerialDMSeq.read();
         if (c == '\n') {
