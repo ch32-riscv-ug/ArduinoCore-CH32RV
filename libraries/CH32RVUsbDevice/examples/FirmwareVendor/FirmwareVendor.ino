@@ -18,6 +18,7 @@ CH32RVUsbDeviceVendor vendor(device);
 enum : uint8_t { REQUEST_START = 1, REQUEST_COMMIT = 2, REQUEST_ABORT = 3, REQUEST_STATUS = 4 };
 
 static volatile bool restartPending;
+static uint8_t failure;   // en: the error that stopped the last image (abort() would say ABORT) / ja: 止めた誤り（abort() は ABORT になる）
 static uint8_t statusReply[8];
 
 static bool onRequest(const CH32RVUsbDeviceVendorControlRequest &r)
@@ -33,9 +34,11 @@ static bool onRequest(const CH32RVUsbDeviceVendorControlRequest &r)
     //     誤りを返す。
     const size_t size = r.wValue | (size_t)r.wIndex << 16;
     Update.abort();
+    failure = 0;
     if (Update.begin(size)) {
       Serial.printf("Receiving %u bytes (up to %u)\n", unsigned(size), unsigned(Update.capacity()));
     } else {
+      failure = Update.getError();
       Serial.printf("Refused: %s\n", Update.errorString());
     }
     return vendor.sendControlResponse(r);
@@ -44,6 +47,7 @@ static bool onRequest(const CH32RVUsbDeviceVendorControlRequest &r)
     // en: end() checks the image before it may replace this sketch; a stall tells the host it did not.
     // ja: end() がイメージを確かめてから、このスケッチと入れ替えられるようにする。だめなら stall でホストに伝える。
     if (!Update.isRunning() || !Update.end()) {
+      failure = failure ? failure : Update.getError();
       Serial.printf("Commit refused: %s\n", Update.errorString());
       return false;
     }
@@ -57,7 +61,7 @@ static bool onRequest(const CH32RVUsbDeviceVendorControlRequest &r)
     // ja: [0] 受け取り中、[1..3] Update ライブラリの誤り、[4..7] 書いたバイト数（リトルエンディアン）。
     const uint32_t written = (uint32_t)Update.progress();
     statusReply[0] = Update.isRunning() ? 1 : 0;
-    statusReply[1] = Update.getError();
+    statusReply[1] = failure ? failure : Update.getError();
     statusReply[2] = statusReply[3] = 0;
     memcpy(statusReply + 4, &written, 4);
     return vendor.sendControlResponse(r, statusReply, r.wLength < sizeof statusReply ? r.wLength : sizeof statusReply);
@@ -97,6 +101,7 @@ void loop()
       continue;   // en: no START: dropped / ja: START の前のものは捨てる
     }
     if (Update.write(buffer, got) != got) {
+      failure = Update.getError();
       Serial.printf("Write failed: %s\n", Update.errorString());
       Update.abort();
     }

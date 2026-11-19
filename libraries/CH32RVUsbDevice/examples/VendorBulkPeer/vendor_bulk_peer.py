@@ -56,8 +56,12 @@ except usb.core.USBTimeoutError as e:
     print(f"stalled: the write timed out ({e})")
 back = read_some(len(block), timeout=500)
 print(f"stalled: the write took {taken or len(back)} bytes before the device stopped reading, {len(back)} came back")
-rest = block[len(back):]
-if rest:
-    ep_out.write(rest, timeout=2000)
-    back += read_some(len(rest), timeout=500)
+# The rest, a packet's worth at a time while reading: written in one go it would stall again where the device's
+# buffers fill (3 KB on a SuperSpeed H417, 2026-11-20), the host not reading meanwhile.
+pos = len(back)
+while pos < len(block):
+    chunk = block[pos:pos + ep_out.wMaxPacketSize]
+    pos += ep_out.write(chunk, timeout=2000)
+    back += read_some(pos - len(back), timeout=50)
+back += read_some(len(block) - len(back), timeout=500)
 print(f"after resuming: {len(back)} of {len(block)} back, {'in order, none lost' if back == block else 'DIFFERENT'}")

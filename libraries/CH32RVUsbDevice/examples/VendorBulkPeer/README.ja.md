@@ -40,3 +40,6 @@ UART には毎秒 `moved ... bytes, IN full ... times` が出ます。stalled �
 
 [USBVendor](../USBVendor/README.ja.md) のエコーは `write()` の戻り値を見ていないので、PC が読まないと送りきれない分を捨てます。
 こちらは読む量を空きで抑えて、失わない形です。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20）: 3 つの段とも全部のバイトが順に戻り、止まった書き込みは 3 KB（デバイスの
+バッファ）で待ち、PC が読むと続きました。

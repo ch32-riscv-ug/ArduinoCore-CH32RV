@@ -30,8 +30,13 @@ can watch the progress. Any other vendor request is stalled.
 1. After the upload the UART shows `Ready: up to <bytes> bytes ...`: the largest image it takes.
 2. Send the new sketch's `.bin` (Arduino's "Export compiled binary"): `uv run --with pyusb python3 firmware_vendor.py Blink.ino.bin`
 3. After `accepted` the board starts the new sketch.
-4. Too big: `device refused the image` before anything is sent. Not a sketch for this chip: `device refused to install it`
-   at the commit, and this sketch stays.
+4. Too big: `device refused the image` before anything is sent (Update error 4, no space). Not a sketch for this chip:
+   `device stopped at 256 bytes` at the first block (Update error 8, the wrong magic byte). This sketch stays either way.
+   A check that fails only at the end gives `device refused to install it` at the commit.
 
 The rest of the image waits in the device's 2 KB FIFO while a flash page is erased (the host is held with NAKs), so
 nothing is lost. Power lost during the swap (the copy to the start) leaves the sketch half written (a probe recovers it).
+
+Checked on CH32H417 over SuperSpeed (2026-11-20): a 32 KB sketch (VendorBulkPeer) written in 0.14 s and started; a
+file that is not a sketch stopped at the first block (error 8) and one too big refused at START (error 4), FirmwareVendor
+staying.

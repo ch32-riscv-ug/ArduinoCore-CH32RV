@@ -41,3 +41,6 @@ The UART prints `moved ... bytes, IN full ... times` every second; `IN full` gro
 
 [USBVendor](../USBVendor/README.md)'s echo does not look at `write()`'s return value, so what does not fit while the
 PC is not reading is dropped. This one bounds the reads by the room and loses nothing.
+
+Checked on CH32H417 over SuperSpeed (2026-11-20): every byte back in order in all three phases; the stalled write held
+at 3 KB (the device's buffers) until the PC read again.

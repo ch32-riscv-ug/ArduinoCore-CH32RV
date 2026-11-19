@@ -31,8 +31,12 @@ pyusb（Linux ではデバイスのファイルに書ける権限: 1209:0001 の
 2. 新しいスケッチの `.bin`（Arduino の「コンパイルしたバイナリを出力」）を送ります:
    `uv run --with pyusb python3 firmware_vendor.py Blink.ino.bin`
 3. `accepted` のあと、基板が新しいスケッチで動きます。
-4. 大きすぎると、何も送る前に `device refused the image`。この石のスケッチでなければ、確定のときに
-   `device refused to install it` で、このスケッチのままです。
+4. 大きすぎると、何も送る前に `device refused the image`（Update の誤り 4、場所が足りない）。この石のスケッチでなければ、
+   最初のブロックで `device stopped at 256 bytes`（誤り 8、先頭の印が違う）。どちらでも、このスケッチのままです。最後の確かめで
+   落ちるものは、確定のときに `device refused to install it` になります。
 
 flash のページを消している間、残りのイメージはデバイスの 2 KB の FIFO で待ちます（ホストは NAK で待たされる）ので、
 失われません。入れ替え（先頭への写し）の途中で電源が切れると、スケッチは半分書かれたままです（プローブで戻せます）。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20）: 32 KB のスケッチ（VendorBulkPeer）を 0.14 秒で書いて起動し、スケッチで
+ない中身は最初のブロックで止まり（誤り 8）、大きすぎるものは START で断られ（誤り 4）、FirmwareVendor のままでした。

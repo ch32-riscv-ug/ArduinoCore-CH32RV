@@ -502,7 +502,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [ ] V103R8T6（d39e、CH549 の Link）が休止の試験の最初の休止から起きず、デバッガも応答しない（2026-10-28）。Link では電源を切れず、
   ハブの口の電源でも戻らない。手で電源を入れ直してから、RTC（LSI の測定・アラーム）を調べる。それまで V103 は RTC の系列から外している。
 - [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、`TlsClient` は既存の HttpsGet（CA の検証・時刻・誤りの表示）が示している。
-  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）・`UsbReconnect` / `VendorBulkPeer`（CH32RVUsbDevice、後者は PC の PyUSB のスクリプトと組）を足した（ビルドだけ）。
+  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）・`UsbReconnect` / `VendorBulkPeer`（CH32RVUsbDevice、後者は PC の PyUSB のスクリプトと組）を足した（ビルドだけ）。→ VendorBulkPeer は 2026-11-20 に H417 の SS で 3 つの段とも通った（PC 側のスクリプトの再開の段を直した: 一度に書くとまた止まる）。FirmwareVendor・FirmwareBootMode も足し、FirmwareVendor は H417 の SS で入れ替えと断りを確かめた。
   `MutualTlsClient`（NetworkClientSecure、クライアント証明書、手元の Python のサーバーと組）は CH32V307 で確かめた。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
   取りこぼし）、`SensorConsole` は既存の ButtonBlinkConsole（周期・ISR からの通知・コマンド）が同じことを示すので作らない。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
   `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
