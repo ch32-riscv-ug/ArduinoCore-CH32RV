@@ -17,7 +17,7 @@ An exact host-capable part, a host adapter providing 5-V VBUS, any USB device an
 
 ## Settings and limits
 
-This sketch prints on connect/disconnect; it does not implement every periodic display or diagnostic in the Esp example. For Unsupported, check the exact chip part first. Enumeration alone does not mean its class operations are supported.
+This sketch prints on connect/disconnect; it does not implement every periodic display or diagnostic in the Esp example. For `Unsupported`, check the exact chip part first. Enumeration alone does not mean its class operations are supported.
 
 ## API usage and adaptation
 
@@ -30,7 +30,7 @@ This sketch prints on connect/disconnect; it does not implement every periodic d
 
 VID/PID identify the whole device; interface class/subclass/protocol identify its functions. Composite devices contain multiple interfaces. Endpoint direction is host-relative: IN receives, OUT sends.
 
-Enumeration does not establish class usability. Next check class readiness and transfers with its example. For multiple peripherals, retain callback addresses and discard disconnected-device state.
+Enumeration does not establish class usability. Next check the class's `*Ready()` and transfers with its example. For multiple peripherals, retain callback addresses and discard disconnected-device state.
 
 ## Related documentation
 

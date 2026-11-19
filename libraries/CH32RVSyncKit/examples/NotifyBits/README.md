@@ -19,7 +19,7 @@ Push buttons from `BUTTON_A` (default `PA1`) and `BUTTON_B` (default `PA2`) to G
 
 ## API usage and adaptation
 
-`setBits(mask)` records event kinds. `tryWaitBits(mask, clearOnExit, waitAll)` checks them; note the argument order.
+`setBits(mask)` records event kinds. `tryWaitBits(mask, clearOnExit, waitAll)` checks them; do not swap `clearOnExit` and `waitAll`.
 
 "Both" means both events occurred since clearing, not that both physical buttons are held simultaneously. Use a counter or queue as well if repeated occurrences of one kind matter.
 

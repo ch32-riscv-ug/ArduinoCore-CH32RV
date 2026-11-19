@@ -15,7 +15,7 @@ An LED with its resistor on `LED_PIN` (default `PA1`). A 115200-baud 8N1 UART mo
 
 ## Settings and limits
 
-When `loop()` is late by several periods, `due()` is true once and `missed()` counts the skipped ones (no burst). Both are only as punctual as `loop()`.
+When `loop()` is late by several periods, a `Period`'s `due()` is true once and `missed()` counts the skipped ones (no burst). Both are only as punctual as `loop()`.
 
 ## API usage and adaptation
 

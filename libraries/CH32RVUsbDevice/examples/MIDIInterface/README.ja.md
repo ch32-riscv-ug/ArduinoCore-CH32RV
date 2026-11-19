@@ -6,7 +6,7 @@ USB MIDI と 31250 bps UART の MIDI メッセージを双方向に変換する�
 
 ## 必要なものと配線
 
-`Serial1` の RX=`PA3`、TX=`PA2` に適した MIDI IN/OUT 回路を接続します。DIN ケーブルは GPIO へ直結せず、受信絶縁・送信回路を介します。UART ログ用の `Serial` と同じ USART/端子にならないようルートを確認します。
+`Serial1` の RX=`PA3`、TX=`PA2` に適した MIDI IN/OUT 回路を接続します。DIN ケーブルは GPIO へ直結せず、受信絶縁・送信回路を介します。UART ログ用の `Serial` と `Serial1` が同じ USART/端子にならないようルートを確認します。
 
 ## 操作と期待する結果
 

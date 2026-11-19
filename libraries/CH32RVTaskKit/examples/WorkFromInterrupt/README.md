@@ -11,11 +11,11 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 ## Steps and expected results
 
 1. A press shows `PRESS ms=...` and `RUN handled=1`.
-2. Press several times within 300 ms: one `RUN handled=n` drains them all (several posts are one run).
+2. Press several times within 300 ms: one `RUN handled=n` drains them all (several `post()` calls are one run).
 
 ## Settings and limits
 
-Data goes in the `Queue`, the signal is `post()`. Posts are not counted, so anything that must be counted stays in the data.
+Data goes in the `Queue`, the signal is `post()`. `post()` calls are not counted, so anything that must be counted stays in the data.
 
 ## API usage and adaptation
 

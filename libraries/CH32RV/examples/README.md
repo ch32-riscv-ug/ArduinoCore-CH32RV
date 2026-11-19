@@ -6,7 +6,7 @@ Small examples for GPIO, UART, ADC, PWM and interrupts. Each folder's README cov
 
 ## Preparation
 
-In Arduino IDE, choose File → Examples → CH32RV and select the board and exact Part Number. Generic boards do not define PCB wiring; adapt pin constants at the top of each sketch to your schematic. Start with PinCapabilities to inspect aliases such as `A1` or `RX`.
+In Arduino IDE, choose File → Examples → CH32RV and select the board and exact Part Number. Generic boards do not define PCB wiring; adapt the pin constants at the top of each `.ino` to your schematic. Start with PinCapabilities to inspect aliases such as `A1` or `RX`.
 
 Most examples log through hardware `Serial`. Connect adapter RX to board TX, TX to RX, and common GND. Match I/O voltage and `Serial.begin()` settings. A USB connector alone does not mean that UART output can be read through it.
 
@@ -69,6 +69,6 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | [BoardWeActCH32X035](BoardWeActCH32X035/README.md) | A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names. |
 | [BoardUIAPduinoProMicro](BoardUIAPduinoProMicro/README.md) | Initialize UART, I2C, SPI, ADC and PWM using the UIAPduino Pro Micro board pin assignments. |
 
-Verify examples separately before combining them. Delays and extensive demonstration logging are not intended as the final structure for many concurrent features. Continue with the [sketch composition guide (Japanese)](../../../docs/sketch-guide.ja.md) for time management, ISR data transfer and callback handling.
+Verify examples separately before combining them. Examples that wait in `delay()` and extensive demonstration logging are not intended as the final structure for many concurrent features. Continue with the [sketch composition guide (Japanese)](../../../docs/sketch-guide.ja.md) for time management, ISR data transfer and callback handling.
 
 See the [example guide](../../../docs/examples.md) for all libraries and [build rules (Japanese)](../../../docs/examples-build-rules.ja.md) for profiles.

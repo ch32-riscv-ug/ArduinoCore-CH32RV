@@ -17,14 +17,14 @@ A PC with CDC-NCM support, a USB data cable and a UART monitor. See the accompan
 
 ## Settings and limits
 
-There is no DHCP. If no NIC appears, check OS NCM support/binding first. Match MY_IP with the PC subnet when changing addresses. Test ordinary small, unfragmented IPv4 ping without IP options: this demo is not a general validated IP parser. The receive callback prepares a response and loop sends it.
+There is no DHCP. If no NIC appears, check OS NCM support/binding first. Match `MY_IP` with the PC subnet when changing addresses. Test ordinary small, unfragmented IPv4 ping without IP options: this demo is not a general validated IP parser. The receive callback prepares a response and `loop()` sends it.
 
 ## API usage and adaptation
 
 | API | Use in this example |
 |---|---|
 | `net.onFrame(callback)` | Receives Ethernet frames through `deliverEvents()`; the sketch need not remove USB NCM headers. |
-| `net.sendFrame(data, length)` | Sends an Ethernet-header-inclusive frame; check its boolean result. |
+| `net.sendFrame(data, length)` | Sends an Ethernet-header-inclusive frame; check its `bool` result. |
 | `net.macAddress()` | Provides USB-network MAC information. The example makes the PC and responding side use different MACs. |
 | `net.linkUp()` | Checks the USB network link, not IP configuration or ping reachability. |
 

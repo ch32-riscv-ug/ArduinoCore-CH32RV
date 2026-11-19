@@ -62,7 +62,7 @@ Adafruit_Something device(&bus);
   a hardware SPI only, and returns `false` for pins no route has.
 - MISO can be `NOT_A_PIN` (-1 to `begin()`) for a write-only bus; `transfer()`
   then returns 0.
-- **No clock frequency.** SPISettings' frequency is accepted and ignored; the
+- **No clock frequency.** The frequency in `SPISettings` is accepted and ignored; the
   one knob is `setHalfPeriodUs()`, a **floor** on the half period.
 - All four modes, `MSBFIRST` and `LSBFIRST`. `transfer16()` / `transfer32()`
   send the low byte first under `LSBFIRST`, as `SPI` does.
@@ -237,7 +237,7 @@ SPI.endTransaction();                                              // high once 
   `transfer()` waits for it with no timeout, as there. That API has no chip
   select: the bus is selected from `beginTransaction()` to `endTransaction()`
   and drives MISO all along, the bytes are framed by the `transfer()` calls,
-  and the controller has to leave the time from one `transfer()` to the next
+  and the controller has to leave the time from one `transfer()` to the next `transfer()`
   between bytes (the hardware SPI takes each byte as `transfer()` gives it).
   For transfers framed by CS, queued ahead and moved by interrupts, use
   [CH32RVSPISlave](../CH32RVSPISlave/README.md) (the hardware SPI) or
