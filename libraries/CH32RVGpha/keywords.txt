@@ -4,3 +4,4 @@ copy	KEYWORD2
 blend	KEYWORD2
 bitsOf	KEYWORD2
 Surface	KEYWORD1
+setPalette	KEYWORD2

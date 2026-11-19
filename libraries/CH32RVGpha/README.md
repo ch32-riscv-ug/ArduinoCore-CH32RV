@@ -21,11 +21,12 @@ gpha.blend(sprite, 0, 0, screen, 40, 40, screen, 40, 40, 32, 32, 200);   // spri
 | `fill(to, x, y, w, h, argb)` | `to`'s rectangle set to `0xAARRGGBB` |
 | `copy(from, fx, fy, to, tx, ty, w, h)` | `from`'s rectangle into `to`, its pixels converted to `to`'s format |
 | `blend(fg, fx, fy, bg, bx, by, to, tx, ty, w, h, alpha)` | `fg` over `bg` into `to`, weighed by `fg`'s alpha times `alpha / 255` |
+| `setPalette(argb, count, background)` | The colour table an indexed source (L8 ...) looks up: `count` (1 .. 256) colours `0xAARRGGBB`, for the foreground (`copy()`'s source, `blend()`'s fg) or, `background` true, `blend()`'s bg |
 | `bitsOf(format)` | Bits a pixel |
 
 Formats: ARGB8888, RGB888, RGB565, ARGB1555, ARGB4444 (in and out) and L8, AL44, AL88, L4, A8, A4 (in only). The
-indexed L8, AL44, AL88 and L4 need a CLUT (colour table), which no call loads yet (A8 and A4 take the layer colour
-registers, not settable yet either). Every
+indexed L8, AL44, AL88 and L4 look their colours up in the table `setPalette()` loads; A8 and A4 take the layer
+colour registers, not settable yet. Every
 call waits for the transfer's end. A configuration the hardware refuses (CEIF) returns false, as does every call on a
 series without the GPHA.
 
@@ -33,10 +34,11 @@ series without the GPHA.
 
 - The fill colour (OCOLR) is ARGB8888 whatever the output format (the STM32 DMA2D takes the output's).
 - Conversion to RGB565 keeps the high bits; expansion from RGB565 copies the high bits low (the manual's tables).
+- The colour table did not take the GPHA's own load (CMAR, CS, START); the CPU's writes, a colour at a time, did
+  (`setPalette()` does that).
 - A blend comes out up to 3 below the exact `(a x f + (255 - a) x b) / 255` per channel (opaque white over black: 0xFD).
 
 ## Test
 
 `selfapi::test_gpha` (tests/instrumented/selfapi) checks fills and converting copies (both ways) exactly against the
-CPU's reckoning and blends within -3 .. +1, with every pixel around the rectangles untouched: 6 of 6 on H417
-(2026-11-19).
+CPU's reckoning and blends within -3 .. +1, with every pixel around the rectangles untouched, an L8 copy through a palette included: 7 of 7 on H417 (2026-11-19).

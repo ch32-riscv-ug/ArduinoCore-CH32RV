@@ -9,7 +9,8 @@
  * whatever the output format (the STM32 DMA2D's takes the output's); the
  * conversions to RGB565 keep the high bits as the manual's tables say; a
  * blend comes out up to 3 below the exact (a * f + (255 - a) * b) / 255 per
- * channel (white over black, opaque: 0xFD). */
+ * channel (white over black, opaque: 0xFD); a colour table takes the CPU's
+ * writes (CWRS / CDAT with the enable bit), not the GPHA's own load. */
 #include "CH32RVGpha.h"
 
 #include "internal/ch32rv_registers.h"
@@ -31,6 +32,11 @@
 #define GPHA_OMAR     GPHA(0x3Cu)
 #define GPHA_OOR      GPHA(0x40u)
 #define GPHA_NLR      GPHA(0x44u)
+#define GPHA_FGCWRS   GPHA(0x50u)
+#define GPHA_FGCDAT   GPHA(0x54u)
+#define GPHA_BGCWRS   GPHA(0x58u)
+#define GPHA_BGCDAT   GPHA(0x5Cu)
+#define CWRS_CLUT_EN  (1u << 8)
 
 #define CTLR_START    (1u << 0)
 #define MODE(m)       ((uint32_t)(m) << 16)
@@ -101,6 +107,25 @@ bool CH32RVGpha::run(uint32_t mode, uint16_t w, uint16_t h)
     return false;
 }
 
+bool CH32RVGpha::setPalette(const uint32_t *argb, uint16_t count, bool background)
+{
+    if (!argb || count < 1u || count > 256u) {
+        return false;
+    }
+    ch32rv_clock_enable(GPHA);
+    /* Written by the CPU, an entry at a time with the table's enable bit set:
+     * the GPHA's own load (CMAR, CS, START) left the table as it was on
+     * CH32H417 (read back unchanged, an L8 copy wrong; 2026-11-19), the
+     * CPU's writes took. The enable stays set. */
+    volatile uint32_t &index = background ? GPHA_BGCWRS : GPHA_FGCWRS;
+    volatile uint32_t &data = background ? GPHA_BGCDAT : GPHA_FGCDAT;
+    for (uint16_t i = 0; i < count; i++) {
+        index = CWRS_CLUT_EN | i;
+        data = argb[i];
+    }
+    return true;
+}
+
 bool CH32RVGpha::fill(const Surface &to, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t argb)
 {
     if (!fits(to, x, w) || !h || !output(to.format)) {
@@ -154,6 +179,7 @@ bool CH32RVGpha::blend(const Surface &fg, uint16_t fx, uint16_t fy, const Surfac
 uint8_t CH32RVGpha::bitsOf(Format) { return 0; }
 bool CH32RVGpha::run(uint32_t, uint16_t, uint16_t) { return false; }
 bool CH32RVGpha::fill(const Surface &, uint16_t, uint16_t, uint16_t, uint16_t, uint32_t) { return false; }
+bool CH32RVGpha::setPalette(const uint32_t *, uint16_t, bool) { return false; }
 bool CH32RVGpha::copy(const Surface &, uint16_t, uint16_t, const Surface &, uint16_t, uint16_t, uint16_t, uint16_t)
 {
     return false;

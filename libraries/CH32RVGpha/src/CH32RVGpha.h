@@ -51,6 +51,12 @@ public:
     bool blend(const Surface &fg, uint16_t fx, uint16_t fy, const Surface &bg, uint16_t bx, uint16_t by,
                const Surface &to, uint16_t tx, uint16_t ty, uint16_t w, uint16_t h, uint8_t alpha = 255);
 
+    /* The colour table an indexed source (L8, AL44, AL88, L4) looks up: count
+     * (1 .. 256) colours 0xAARRGGBB, for the foreground layer - copy()'s
+     * source and blend()'s fg - or (background true) blend()'s bg. Kept until
+     * set again. */
+    bool setPalette(const uint32_t *argb, uint16_t count, bool background = false);
+
     /* Bits a pixel of `format`. */
     static uint8_t bitsOf(Format format);
 
