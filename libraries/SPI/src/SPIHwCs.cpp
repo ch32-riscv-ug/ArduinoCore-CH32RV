@@ -137,5 +137,10 @@ void CH32RVSPIClass::setHwCs(bool use)
     const uint16_t keep = CH32RV_SPI_CTLR1(_base);
     CH32RV_SPI_CTLR1(_base) = (uint16_t)(keep & ~CH32RV_SPI_CTLR1_SPE);
     apply(_clock_hz, _order, _mode);
+    if (_hwcs) {
+        /* apply() leaves SPE on, which with SSOE holds NSS low: off until the next beginTransaction(), so CS is
+         * high outside a transaction from the start (L103 showed it low until the first endTransaction()). */
+        hwcs_release();
+    }
 }
 

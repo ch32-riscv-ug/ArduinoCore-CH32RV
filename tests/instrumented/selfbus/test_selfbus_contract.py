@@ -245,12 +245,13 @@ def test_i2c_registers(dut, wires, record_property):
             want_freq = min(pclk1 // 1_000_000, case_freq_max())
             if freq != want_freq:
                 wrong.append(f"I2C{w['n']}: FREQ {freq}, want {want_freq} (PCLK1 {pclk1 // 1_000_000} MHz)")
+            # Wire rounds CCR up (a clock no faster than asked, Wire.cpp apply_clock)
             if hz == 100000:
-                want = max(4, pclk1 // (2 * hz))
+                want = max(4, -(-pclk1 // (2 * hz)))
                 if ckcfgr != want:
                     wrong.append(f"I2C{w['n']} 100 kHz: CKCFGR {ckcfgr:#x}, want {want:#x}")
             else:
-                want = 0x8000 | max(1, pclk1 // (3 * hz))
+                want = 0x8000 | max(1, -(-pclk1 // (3 * hz)))
                 if ckcfgr & 0x8FFF != want:
                     wrong.append(f"I2C{w['n']} 400 kHz: CKCFGR {ckcfgr:#x}, want FS | {want & 0xFFF:#x}")
     record_property("i2c", json.dumps(results))
