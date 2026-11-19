@@ -15,9 +15,9 @@ lines (PD10-PD15, PF0-PF2, PC6-PC9, PA13-PA15) shows in the output.
 ## Operation and expected result
 
 Each second it prints the buffers filled, the bytes written and the newest
-sample. With a 400 MHz SYSCLK expect about `3051 buffers/s, 12468224
-bytes/s` (6.25 MHz x 2 bytes = 12.5 MB/s; 2048 samples x 3051 = about 6.25
-million). Bit n of the sample is DATAn.
+sample. With a 400 MHz SYSCLK expect about
+`3051 buffers/s, 12468224 bytes/s` (6.25 MHz x 2 bytes = 12.5 MB/s; 2048
+samples x 3051 = about 6.25 million). Bit n of the sample is DATAn.
 
 If `begin: ...` or `setup: ...` is printed, the name is `lastErrorName()`'s
 (see "Errors" in the README).

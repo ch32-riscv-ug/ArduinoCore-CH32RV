@@ -10,7 +10,7 @@ A 3.3 V SD socket/module, card and device board. Use board SCK/MISO/MOSI pins an
 
 ## Steps and expected results
 
-1. Match all four SPI pin constants to the wiring.
+1. Match `SCK_PIN` / `MISO_PIN` / `MOSI_PIN` / `CS_PIN` to the wiring.
 2. Check UART for `USB SD MSC ready blocks=... block_size=512`.
 3. Read/write existing files on the PC, then eject and observe `SD_EJECT`.
 

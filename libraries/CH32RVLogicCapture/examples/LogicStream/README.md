@@ -14,7 +14,7 @@ Read bulk IN as 16-bit little-endian bitmaps. Check the period on bit 3 and the 
 
 ## API and processing flow
 
-`logic.startContinuous(buf, samples)` uses one array in alternating halves. `readBuffer()` returns one completed half. The direct-write length is half the sample count times `sizeof(uint16_t)`.
+`logic.startContinuous(buf, samples)` uses one array in alternating halves. `readBuffer()` returns one completed half. The length given to `writeDirect()` is half the sample count times `sizeof(uint16_t)`.
 
 ## Adapting the example
 

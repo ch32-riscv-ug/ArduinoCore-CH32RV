@@ -17,7 +17,7 @@ A PC recording application and UART monitor. No physical microphone is needed. S
 
 ## Settings and limits
 
-A 64-entry table and 32-bit phase generate samples paced by elapsed time; catch-up after a stall is limited to 10 ms. This demo does not inspect partial capture.write results. Real applications should handle FIFO capacity and partial writes.
+A 64-entry table and 32-bit phase generate samples paced by elapsed time; catch-up after a stall is limited to 10 ms. This demo does not inspect the return value of `capture.write()`. Real applications should handle FIFO capacity and partial writes.
 
 ## API usage and adaptation
 
@@ -28,9 +28,9 @@ A 64-entry table and 32-bit phase generate samples paced by elapsed time; catch-
 | `capture.write(samples, byteCount)` | Returns bytes accepted by the FIFO. Its length argument is bytes, not samples. |
 | `capture.availableForWrite()` | Reports available bytes when handling partial writes. |
 
-Computing sample count from elapsed `micros()` prevents pitch from depending on loop speed. Phase advances the waveform table. Change both advertised format and phase increment when changing sample rate.
+Computing sample count from elapsed `micros()` prevents pitch from depending on the speed of `loop()`. Phase advances the waveform table. Change both advertised format and phase increment when changing sample rate.
 
-For a real ADC, match sampling time, signed representation, byte order and channel order to the PCM format. Retain or explicitly count discarded data after a short write. USB background processing cannot maintain continuous recording if the sketch stops supplying PCM.
+For a real ADC, match sampling time, signed representation, byte order and channel order to the PCM format. Retain or explicitly count discarded data when `write()` takes less than asked. USB background processing cannot maintain continuous recording if the sketch stops supplying PCM.
 
 ## Related documentation
 

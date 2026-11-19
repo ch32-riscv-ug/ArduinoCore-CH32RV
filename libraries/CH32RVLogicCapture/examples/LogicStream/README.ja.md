@@ -14,7 +14,7 @@ GPIO ポートを連続取得し、完成した半バッファを USB Vendor の
 
 ## API と処理の流れ
 
-`logic.startContinuous(buf, samples)` は一つの配列を二分して循環使用します。`readBuffer()` が返すのは完成した半分です。`writeDirect()` へ渡す長さは「半分のサンプル数 × sizeof(uint16_t)」です。
+`logic.startContinuous(buf, samples)` は一つの配列を二分して循環使用します。`readBuffer()` が返すのは完成した半分です。`writeDirect()` へ渡す長さは、半分のサンプル数 × `sizeof(uint16_t)` です。
 
 ## 改造するときの注意
 
