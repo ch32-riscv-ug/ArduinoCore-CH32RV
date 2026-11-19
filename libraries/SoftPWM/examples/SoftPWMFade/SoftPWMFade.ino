@@ -7,8 +7,10 @@
 // ja: LED をつないだ端子に合わせて変える。
 #ifdef LED_BUILTIN
 static const int LED = LED_BUILTIN;
+#elif defined(PIN_A0)
+static const int LED = PIN_A0;          // a pin every board of the series has
 #else
-static const int LED = PA0;
+static const int LED = PIN_WIRE_SDA;
 #endif
 
 void setup()
