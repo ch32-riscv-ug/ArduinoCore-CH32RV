@@ -15,7 +15,7 @@ Check Type-C, CC and power circuits against the board schematic. Logs use the sk
 | PpsVoltageControl | Sink | PD charger with PPS; a voltage in mV typed on the UART |
 | PowerSource | Source | Adjustable supply, VBUS switch, source CC circuit and real control callbacks |
 
-The sink examples change VBUS voltage. A board powered from VBUS and its loads must tolerate the requested voltage. voltage/current report contract values, not measurements.
+The sink examples change VBUS voltage. A board powered from VBUS and its loads must tolerate the requested voltage. `voltage()` / `current()` report contract values, not measurements.
 
 PowerSource callbacks only print. Implement actual switching and set advertised PDO/Rp currents to physical capabilities before connecting a sink. Remove sink Rd resistors as appropriate; on WeAct X035 these are R4/R5.
 
@@ -30,7 +30,7 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
 
 Alternatively open File → Examples → CH32RVUsbPd in Arduino IDE. Generated profiles declare build conditions, not hardware-verified support.
 
-Sink examples use a bounded wait for the initial contract. connected means CC attach; ready means an explicit PD contract. A Type-C-only supply may never become ready. Request units are mV/mA: 9 V is 9000. The driver keeps the link (and a PPS contract) alive from delay() and the return of loop(); nothing has to be called.
+Sink examples use a bounded wait for the initial contract. `connected()` means CC attach; `ready()` means an explicit PD contract. A Type-C-only supply may never become ready. `request()` units are mV/mA: 9 V is `9000`. The driver keeps the link (and a PPS contract) alive from `delay()` and the return of `loop()`; nothing has to be called.
 
 Only one sink/source role can own the PD block at a time. USB data-device operation is independent, but simultaneous use requires a peer supporting both power and data roles and suitable connector power wiring.
 
@@ -41,7 +41,7 @@ Only one sink/source role can own the PD block at a time. USB data-device operat
 | begin fails | A series with the block (not X033), required source callbacks, opposite-role Busy |
 | connected but not ready | PD-capable source, CC wiring, wait time |
 | request fails | Advertised PDO, mV/mA units, exact fixed voltage/PPS range and peer rejection |
-| PPS expires | A loop() or callback that does not return for seconds |
+| PPS expires | A `loop()` or callback that does not return for seconds |
 | Reboot loop after reset | Contract recovery/Hard Reset dropping VBUS and board power routing |
 | Negotiated and measured voltage differ | Physical source callback and supply implementation |
 
