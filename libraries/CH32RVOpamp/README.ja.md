@@ -35,7 +35,7 @@ void setup() {
 | X035 / X033 | 2 | OPA1: PB0・PB8・PB4 / PA6・PB6 / PA3・PB5、OPA2: PA7・PB3・PB7 / PA5・PB1 / PA4・PA2 | 4〜32 倍 |
 | H41x | 3 | OPA1: PB0・PA6 / PB1・PA7 / PC4・PA5、OPA2: PE9・PF11 / PE8・PF12 / PE7・PB1、OPA3: PC2・PA2 / PC3・PA3 / PA0・PA4 | 8〜64 倍 |
 
-端子と選択の値は各系列の RM から（tools/generate/opa/opa_select.csv。V20x / V30x は device-data の番号）。
+端子と選択の値は device-data の opa_cmp_selects.csv（各系列の RM から、食い違いは実測。V003・V20x / V30x はピン表の番号）。
 小さいパッケージに無い端子は、その variant の CH32RV_OPA_PADS に入りません。M030 の OPA（モーター段の電流検出）は
 対象外です。
 

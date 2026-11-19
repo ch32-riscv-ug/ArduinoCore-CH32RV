@@ -78,7 +78,7 @@ Both outputs are active high. On a break and after `end()` both are low.
 | `startOn(pin, edge = RISING)` | the counter stops and waits for an edge on `pin` (this timer's channel 1 or 2 pad, not one of its outputs), then runs from 0 |
 | `timer()`, `end()`, `isAttached()` | |
 
-Which timer can follow which (the ITR table) comes from each family's reference manual, `tools/generate/timer/itr.csv`, as the variant's `CH32RV_TIMER_ITR`; the core's `ch32rv_timer_trigger_from(slave, master)` looks it up.
+Which timer can follow which (the ITR table) comes from device-data's `timer_itr.csv` (the reference manuals), as the variant's `CH32RV_TIMER_ITR`; the core's `ch32rv_timer_trigger_from(slave, master)` looks it up.
 
 ## CH32RVPhaseShift
 

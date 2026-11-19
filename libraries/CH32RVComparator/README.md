@@ -41,7 +41,7 @@ void loop() {
 | X035 / X033 | 3 | CMP1: PC19, PA0 / PC3, PA23 / PA1; CMP2: PA12, PA11 / PA22, PC3 / PB2; CMP3: PA13, PA14 / PA2, PC3 / PB3 | on (no value in the manual) |
 | H41x | 1 | PB0, PB2 / PB1, PC4, PA5 (DAC2) / PA6, PA8, PB12, PC5, PE6, PE12, PE15 | 10, 20, 30 mV |
 
-The pads and their selection values come from each family's reference manual (tools/generate/opa/cmp_select.csv).
+The pads and their selection values come from device-data's opa_cmp_selects.csv (the reference manuals, measured where they disagree).
 M030's comparators (the motor stage's) are not covered; V205's 4-bit DAC as -, and the outputs to timers, brake
 and wake-up are not there yet.
 

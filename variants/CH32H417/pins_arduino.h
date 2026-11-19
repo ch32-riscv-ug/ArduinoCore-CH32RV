@@ -1194,7 +1194,7 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
-/* ---- op-amp pads (reference manual: tools/generate/opa/opa_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
+/* ---- op-amp pads (device-data opa_cmp_selects.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
 #define CH32RV_OPA_PADS { \
     { 1, 0, 0, PB0 }, \
     { 1, 0, 1, PA6 }, \
@@ -1220,13 +1220,12 @@ static const uint8_t SS = PIN_SPI_SS;
 /* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
 #define CH32RV_OPA_LAYOUT { 0x40017800u, 4, 0u, 0, 0, 3, 1, 3, 4, 8, 4, 2, { 8, 8, 8 }, 0x7FFu }
 
-/* ---- comparator pads (reference manual: tools/generate/opa/cmp_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */
+/* ---- comparator pads (device-data opa_cmp_selects.csv): unit, role (0 P, 1 N, 2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */
 #define CH32RV_CMP_PADS { \
     { 1, 0, 0, 0, PB0 }, \
     { 1, 0, 1, 0, PB2 }, \
     { 1, 1, 0, 0, PB1 }, \
     { 1, 1, 1, 0, PC4 }, \
-    { 1, 1, 2, 0, PA5 }, \
     { 1, 2, 0, 10, PA6 }, \
     { 1, 2, 0, 12, PA8 }, \
     { 1, 2, 0, 13, PB12 }, \
@@ -1517,7 +1516,7 @@ static const uint8_t SS = PIN_SPI_SS;
     X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x4002101cu, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler) \
     X(9, 2, 32, 4, 0, CH32RV_TIM9_BASE, 0x4002101cu, 0x00080000u, CH32RV_IRQN_TIM9, TIM9_IRQHandler) \
     X(10, 2, 32, 4, 0, CH32RV_TIM10_BASE, 0x4002101cu, 0x00100000u, CH32RV_IRQN_TIM10, TIM10_IRQHandler)
-/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
+/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 0, 5}, {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 1, 8}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 2, 5}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {4, 3, 8}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4}, {5, 3, 8}, {8, 0, 1}, {8, 1, 2}, {8, 2, 4}, {8, 3, 5}, {9, 0, 1}, {9, 1, 2}, {9, 2, 10}, {10, 0, 1}, {10, 1, 8}, {10, 2, 2}, {10, 3, 9} }
 
 /* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */

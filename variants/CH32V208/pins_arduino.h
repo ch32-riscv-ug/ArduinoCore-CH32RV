@@ -619,7 +619,7 @@ static const uint8_t SS = PIN_SPI_SS;
     X(3, 2, 16, 4, 0, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler) \
     X(4, 2, 16, 4, 0, CH32RV_TIM4_BASE, 0x4002101cu, 0x00000004u, CH32RV_IRQN_TIM4, TIM4_IRQHandler) \
     X(5, 2, 32, 4, 0, CH32RV_TIM5_BASE, 0x4002101cu, 0x00000008u, CH32RV_IRQN_TIM5, TIM5_IRQHandler)
-/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
+/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 0, 5}, {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 2, 5}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4} }
 
 /* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */

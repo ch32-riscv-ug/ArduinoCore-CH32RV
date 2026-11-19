@@ -35,7 +35,7 @@ void setup() {
 | X035 / X033 | 2 | OPA1: PB0, PB8, PB4 / PA6, PB6 / PA3, PB5; OPA2: PA7, PB3, PB7 / PA5, PB1 / PA4, PA2 | x4 .. x32 |
 | H41x | 3 | OPA1: PB0, PA6 / PB1, PA7 / PC4, PA5; OPA2: PE9, PF11 / PE8, PF12 / PE7, PB1; OPA3: PC2, PA2 / PC3, PA3 / PA0, PA4 | x8 .. x64 |
 
-The pads and their selection values come from each family's reference manual (tools/generate/opa/opa_select.csv;
+The pads and their selection values come from each family's reference manual (device-data's opa_cmp_selects.csv, measured where the manuals disagree;
 V20x / V30x take device-data's numbering). Pads a small package lacks are not in its variant's CH32RV_OPA_PADS.
 M030's op-amps (the motor stage's current sense) are not covered.
 

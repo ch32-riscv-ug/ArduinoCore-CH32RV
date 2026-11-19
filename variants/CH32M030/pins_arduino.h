@@ -425,6 +425,20 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- comparator pads (device-data opa_cmp_selects.csv): unit, role (0 P, 1 N, 2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */
+#define CH32RV_CMP_PADS { \
+    { 3, 0, 0, 0, PA3 }, \
+    { 3, 0, 1, 0, PB0 }, \
+    { 3, 0, 2, 0, PB1 }, \
+    { 3, 0, 3, 0, PB3 }, \
+    { 3, 1, 0, 0, PA5 }, \
+    { 3, 1, 1, 0, PA6 }, \
+    { 3, 1, 2, 0, PA7 }, \
+    { 3, 1, 3, 0, PB2 }, \
+}
+#define CH32RV_CMP_CLKEN_ADDR 0x40021014u
+#define CH32RV_CMP_CLKEN_MASK 0x00000080u
+
 /* ---- USB PD CC pads (device-data): pad, its PORT_CCx, the register's bits, the block's clock ---- */
 #define CH32RV_USBPD_CC_PADS { \
     { PA0, 0x4002400cu, 8, 0x40021014u, 0x00000010u }, \
@@ -469,7 +483,7 @@ static const uint8_t SS = PIN_SPI_SS;
     X(1, 1, 16, 4, 1, CH32RV_TIM1_BASE, 0x40021018u, 0x00000800u, CH32RV_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
     X(2, 2, 16, 4, 1, CH32RV_TIM2_BASE, 0x4002101cu, 0x00000001u, CH32RV_IRQN_TIM2, TIM2_IRQHandler) \
     X(3, 3, 16, 2, 1, CH32RV_TIM3_BASE, 0x4002101cu, 0x00000002u, CH32RV_IRQN_TIM3, TIM3_IRQHandler)
-/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
+/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 0, 2}, {2, 0, 1}, {3, 0, 1}, {3, 1, 2} }
 
 /* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */

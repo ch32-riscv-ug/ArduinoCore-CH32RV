@@ -40,7 +40,7 @@ void loop() {
 | X035 / X033 | 3 | CMP1: PC19・PA0 / PC3・PA23 / PA1、CMP2: PA12・PA11 / PA22・PC3 / PB2、CMP3: PA13・PA14 / PA2・PC3 / PB3 | あり（値は RM に無い） |
 | H41x | 1 | PB0・PB2 / PB1・PC4・PA5（DAC2） / PA6・PA8・PB12・PC5・PE6・PE12・PE15 | 10・20・30 mV |
 
-端子と選択の値は各系列の RM から（tools/generate/opa/cmp_select.csv）。M030 のコンパレータ（モーター段）は
+端子と選択の値は device-data の opa_cmp_selects.csv（各系列の RM から、食い違いは実測）。M030 のコンパレータ（モーター段）は
 対象外です。V205 の 4 bit の DAC を - にする使い方と、タイマーへの出力・ブレーキ・起床はまだありません。
 
 ## 試験

@@ -2901,18 +2901,18 @@ OPA_SIGNAL_RE = [
     (re.compile(r"^O(\d)([PN])(\d)$"), lambda m: (int(m.group(1)), m.group(2), int(m.group(3)))),
     (re.compile(r"^O(\d)O(\d)$"), lambda m: (int(m.group(1)), "O", int(m.group(2)))),
 ]
-# The value each pad has in its op-amp's selection field, by series, where the
-# reference manual names the pads: the datasheet's numbering (OUT1 / OUT2,
-# CHP0 / CHP1) is not always that value (V4x7's MODE1 0 is PB1, its OUT2).
-# Series not listed (V20x, V30x: the manual says CH0P / CH1P, OUT0 / OUT1)
-# take the datasheet's number.
-OPA_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "opa_select.csv"
-TIMER_ITR_CSV = pathlib.Path(__file__).parent / "timer" / "itr.csv"
+# family -> [(slave, itr, master)] (index/timer_itr.csv; a master that is no timer - USB, ETH - left out).
+TIMER_ITR: dict = {}
 
 
-# The comparators the same way, from the reference manuals only (device-data
-# also gives V203 the pads of V205's comparators, which its manual has not).
-CMP_SELECT_CSV = pathlib.Path(__file__).parent / "opa" / "cmp_select.csv"
+def load_timer_itr(tables: pathlib.Path) -> dict:
+    out: dict = {}
+    for r in read_table(tables, "timer_itr.csv", ("family", "slave", "itr", "master")):
+        for master in r["master"].split(";"):
+            s, m = re.fullmatch(r"TIM(\d+)", r["slave"]), re.fullmatch(r"TIM(\d+)", master.strip())
+            if s and m:
+                out.setdefault(r["family"], []).append((int(s.group(1)), int(r["itr"]), int(m.group(1))))
+    return out
 
 
 # The op-amps' and comparators' register layouts, by series (from the reference manuals): the initializers of
@@ -2941,15 +2941,56 @@ def opa_layout(path: pathlib.Path, series: str, fields: tuple) -> str | None:
     return "{ " + ", ".join(parts) + " }"
 
 
-def load_opa_select() -> dict:
-    """series -> [(unit, role 'P' / 'N' / 'O', value, (port, bit))]."""
+# The op-amps' and comparators' selection values, from device-data (index/opa_cmp_selects.csv, read from the
+# reference manuals, measured where they disagree): family -> [(block "OPA" / "CMP", unit, role "P" / "N" / "O",
+# value, (port, bit))]. A field's unit is its number (PSEL2: 2; none: 1); a register is a comparator's where
+# opa_cmp_registers.csv says so (L103 / X035 / V00x keep theirs in OPA_CTLR2) or it names CMP.
+OPA_CMP_SELECTS: dict = {}
+
+
+def load_opa_cmp_selects(tables: pathlib.Path) -> dict:
+    blocks = {}
+    for r in read_table(tables, "opa_cmp_registers.csv", ("family", "register", "unit")):
+        blocks[(r["family"], r["register"])] = r["unit"]
     out: dict = {}
-    with open(OPA_SELECT_CSV, newline="", encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            role = {"P": "P", "N": "N", "OUT": "O"}[r["role"]]
-            out.setdefault(r["series"], []).append(
-                (int(r["unit"]), role, int(r["value"]), (r["pad"][1], int(r["pad"][2:]))))
+    for r in read_table(tables, "opa_cmp_selects.csv", ("family", "register", "field", "value", "target")):
+        m = re.fullmatch(r"(PSEL|NSEL|MODE)(\d?)", r["field"])
+        if not m:
+            continue
+        reg = r["register"]
+        block = blocks.get((r["family"], reg)) or blocks.get((r["family"], reg.removeprefix("OPA_"))) \
+            or ("CMP" if "CMP" in reg else "OPA" if reg.startswith("OPA") else None)
+        if block not in ("OPA", "CMP"):
+            continue
+        role = {"PSEL": "P", "NSEL": "N", "MODE": "O"}[m.group(1)]
+        rm = re.search(r"CMP(\d)", reg)                  # M030's CMP3_CFGR: the register names the unit
+        unit = int(m.group(2) or (rm.group(1) if rm else 1))
+        for target in r["target"].split(";"):
+            pm = re.fullmatch(r"P([A-K])(\d{1,2})", target.strip())
+            if pm:
+                out.setdefault(r["family"], []).append(
+                    (block, unit, role, int(r["value"]), (pm.group(1), int(pm.group(2)))))
     return out
+
+
+# part -> {(port, bit): the pad's AF as a comparator's output (0: none named)} over the pads device-data gives
+# a comparator: which parts have one, and the output's AF on the per-pin AF families (V205, H41x).
+CMP_PADS: dict = {}
+
+
+def load_cmp_pads(tables: pathlib.Path) -> dict:
+    out: dict = {}
+    _, functions = load_pin_functions(tables)
+    for r in functions:
+        if not re.fullmatch(r"CMP\d?", r["peripheral"]) or not r["port"]:
+            continue
+        pads = out.setdefault(r["part_number"], {})
+        af = int(r["af"]) if r.get("af", "").isdigit() and r["role"].startswith("OUT") else 0
+        key = (r["port"], int(r["gpio"]))
+        pads[key] = max(pads.get(key, 0), af)
+    return out
+
+
 # part -> {(unit, role, index): (port, bit)} (main(); gen_pins reads it).
 OPA_PINS: dict = {}
 
@@ -4903,18 +4944,20 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # --- OPA ---
     # Each op-amp input / output pad the series has, with the value its
     # selection field takes for it (CH32RVOpamp matches the pins it is given):
-    # opa/opa_select.csv where the reference manual names the pads, which
+    # device-data opa_cmp_selects.csv (the reference manuals, measured where they disagree), which
     # also drops the datasheet's pads that are no plain selection (the PGA's
     # feedback pad); else the datasheet's number.
     opa_rows: dict = {}
-    selected = load_opa_select().get(series)
-    if selected is not None:
+    family = SERIES_CONFIG[series]["family"]
+    has_opa = any(OPA_PINS.get(pn) for pn in parts)
+    selected = [(u, r, v, pad) for b, u, r, v, pad in OPA_CMP_SELECTS.get(family, ()) if b == "OPA"]
+    if has_opa and selected:
         have = set().union(*per_part)
-        source = "reference manual: tools/generate/opa/opa_select.csv"
+        source = "device-data opa_cmp_selects.csv"
         for unit, role, value, pad in selected:
             if pad in have:
                 opa_rows.setdefault((unit, role, value, pad), None)
-    else:
+    elif has_opa:
         source = "device-data"
         for pn in parts:
             for key, pad in OPA_PINS.get(pn, {}).items():
@@ -4934,12 +4977,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("")
 
     # --- CMP ---
-    with open(CMP_SELECT_CSV, newline="", encoding="utf-8") as f:
-        cmp_rows = [(int(r["unit"]), "PNO"[("P", "N", "OUT").index(r["role"])], int(r["value"]), int(r["af"] or 0),
-                     (r["pad"][1], int(r["pad"][2:]))) for r in csv.DictReader(f) if r["series"] == series]
-    cmp_rows = [r for r in cmp_rows if r[4] in set().union(*per_part)]
+    cmp_af: dict = {}
+    for pn in parts:
+        for pad, af in CMP_PADS.get(pn, {}).items():
+            cmp_af[pad] = max(cmp_af.get(pad, 0), af)
+    cmp_rows = sorted({(u, r, v, cmp_af.get(pad, 0) if r == "O" else 0, pad)
+                       for b, u, r, v, pad in OPA_CMP_SELECTS.get(family, ()) if b == "CMP" and pad in cmp_af},
+                      key=lambda x: (x[0], "PNO".index(x[1]), x[2], x[4]))
     if cmp_rows:
-        out.append("/* ---- comparator pads (reference manual: tools/generate/opa/cmp_select.csv): unit, role (0 P, 1 N, "
+        out.append("/* ---- comparator pads (device-data opa_cmp_selects.csv): unit, role (0 P, 1 N, "
                    "2 OUT), selection value, the output pad's AF (per-pin AF families), pad ---- */")
         out.append("#define CH32RV_CMP_PADS { \\")
         for unit, role, value, af, (port, bit) in cmp_rows:
@@ -5234,13 +5280,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 f"{handler}){suffix}")
     else:
         out.append("#define CH32RV_TIMER_TABLE(X) /* no managed TIM */")
-    # Which timer's TRGO reaches which slave's ITRx (timer/itr.csv, from the reference manuals): the slave's
+    # Which timer's TRGO reaches which slave's ITRx (device-data timer_itr.csv, from the reference manuals): the slave's
     # SMCFGR.TS for following another timer (CH32RVTimer.h ch32rv_timer_trigger_from).
-    with open(TIMER_ITR_CSV, newline="", encoding="utf-8") as f:
-        itr = [(int(r["slave"]), int(r["itr"]), int(r["master"])) for r in csv.DictReader(f)
-               if r["series"] == series and int(r["slave"]) in timer_caps and int(r["master"]) in timer_caps]
+    itr = sorted({x for x in TIMER_ITR.get(SERIES_CONFIG[series]["family"], ())
+                  if x[0] in timer_caps and x[2] in timer_caps})
     if itr:
-        out.append("/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */")
+        out.append("/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */")
         out.append("#define CH32RV_TIMER_ITR { " + ", ".join(f"{{{s}, {i}, {m}}}" for s, i, m in sorted(itr)) + " }")
     out.append("")
     # --- ADC injected group ---
@@ -5649,6 +5694,9 @@ def main() -> int:
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     ADC_JTRIGGERS.update(load_adc_jtriggers(args.tables))
+    OPA_CMP_SELECTS.update(load_opa_cmp_selects(args.tables))
+    CMP_PADS.update(load_cmp_pads(args.tables))
+    TIMER_ITR.update(load_timer_itr(args.tables))
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)

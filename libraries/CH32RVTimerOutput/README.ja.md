@@ -78,7 +78,7 @@ void loop() {
 | `startOn(pin, edge = RISING)` | カウンタを止め、`pin`（このタイマーの CH1 か CH2 の端子、出力に使っていないもの）のエッジを待って 0 から動かす |
 | `timer()`、`end()`、`isAttached()` | |
 
-どのタイマーがどのタイマーに従えるか（ITR の表）は各系列の RM から作った `tools/generate/timer/itr.csv` で、variant の `CH32RV_TIMER_ITR` になり、コアの `ch32rv_timer_trigger_from(slave, master)` が引きます。
+どのタイマーがどのタイマーに従えるか（ITR の表）は device-data の `timer_itr.csv`（各系列の RM から）で、variant の `CH32RV_TIMER_ITR` になり、コアの `ch32rv_timer_trigger_from(slave, master)` が引きます。
 
 ## CH32RVPhaseShift
 

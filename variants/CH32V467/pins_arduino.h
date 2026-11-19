@@ -838,7 +838,7 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
-/* ---- op-amp pads (reference manual: tools/generate/opa/opa_select.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
+/* ---- op-amp pads (device-data opa_cmp_selects.csv): unit, role (0 P, 1 N, 2 OUT), selection value, pad ---- */
 #define CH32RV_OPA_PADS { \
     { 1, 0, 0, PB12 }, \
     { 1, 0, 1, PA6 }, \
@@ -974,7 +974,7 @@ static const uint8_t SS = PIN_SPI_SS;
     X(6, 2, 16, 0, 0, CH32RV_TIM6_BASE, 0x4002101cu, 0x00000010u, CH32RV_IRQN_TIM6, TIM6_IRQHandler) \
     X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x4002101cu, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler) \
     X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x40021018u, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler)
-/* ---- internal triggers (tools/generate/timer/itr.csv): slave, ITRx, master ---- */
+/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4} }
 
 /* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */
