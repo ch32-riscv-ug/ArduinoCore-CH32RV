@@ -105,7 +105,15 @@
 #define MEMP_NUM_TCP_SEG 16
 #define MEMP_NUM_PBUF 8
 #else
+#if defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317)
+/* 128 KB of RAM: the large pools but 20 KB of transmit heap, so that an HTTPS handshake keeps its margin - with 32 KB
+ * the chain Let's Encrypt's test site sends since 2026 (an RSA-4096 cross-signed root) left the handshake 6.9 KB of
+ * heap and the signature check failed for want of memory (PSA_ERROR_INSUFFICIENT_MEMORY, reported as NOT_TRUSTED;
+ * 2026-11-20). Three connections' TCP_SND_BUF still fit. */
+#define MEM_SIZE (20 * 1024)
+#else
 #define MEM_SIZE (32 * 1024)
+#endif
 #define PBUF_POOL_SIZE 16
 #define TCP_WND (4 * TCP_MSS)
 #define TCP_SND_BUF (4 * TCP_MSS)

@@ -457,10 +457,11 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   取りこぼし）、`SensorConsole` は既存の ButtonBlinkConsole（周期・ISR からの通知・コマンド）が同じことを示すので作らない。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
   `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
 - [ ] **TLS の 2 つの問題（2026-11-20、CH32V307 で見つけた）**:
-  - HttpsGet が `TLS connect failed: -0x2700, verify flags 0x8`（NOT_TRUSTED）。試験のサイト valid-isrgrootx1.letsencrypt.org の
-    鎖が YR1 → Root YR（ISRG Root X1 の相互署名、2026-05-13 から）に変わった。PC の openssl は X1 だけで検証が通る。DUT の時計は
-    合っている（SNTP）。中間の CA の数・受信の大きさ・時刻の設定は問題なし。mbedtls の debug の出力で、どの段で親が見つからないかを
-    見る。V407 / H417 でも同じかを確かめる（ベンチの eth の試験は手元の CA なので、この変化を捕まえない）。
+  - [x] HttpsGet が `TLS connect failed: -0x2700, verify flags 0x8`（NOT_TRUSTED）→ 直した。試験のサイトの鎖が YR1 → Root YR
+    （ISRG Root X1 の相互署名、RSA-4096）に変わり、検証の RSA-4096 が増えた。V307 の RAM 128 KB では TLS の最中の空きヒープが
+    6.9 KB で、署名の検証が PSA のメモリー不足（-141）になり、NOT_TRUSTED に見えていた（DUT の上で x509 の検証だけなら通る、
+    一時的な検証のコールバックで突き止めた）。V307 / V317 の 128 KB の時だけ lwIP の MEM_SIZE を 32 → 20 KB にして、
+    接続前の空きが 47.5 → 59.9 KB、HTTP 200 を確かめた（libraries/Network/src/lwipopts.h）。送受信の速さへの影響は未測定。
   - `openssl s_server` を相手にすると、TLS 1.3 でハンドシェイクのあとの記録の復号が MAC の誤り（-0x7180）になる。暗号の組・
     チケットの数・クライアント証明書の有無に関係なく、v0.8.0 でも同じ。Python の ssl のサーバー（同じ OpenSSL）とは通る。
   - ついでに分かったこと: V307 で eth の自動の試験は Flash / RAM Split の既定（RAM 64 KB）でヒープ不足として記録されるだけで、
