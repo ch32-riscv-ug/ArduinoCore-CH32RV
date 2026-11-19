@@ -94,6 +94,23 @@ public:
     uint32_t overruns() const { return _overruns; }
     uint32_t halvesFilled() const { return _filled; }
 
+    /* A deeper ring for streaming (to USB, to a card): `buffer` of `samples`
+     * values in `blocks` blocks (2..16; samples a multiple of 2 x blocks, up
+     * to 65534), filled round and round like startContinuous(). readBlock()
+     * hands over the next full block in order, or nullptr; it stays as it
+     * was until the capture comes round to it again - a block's time at the
+     * least, blocks - 1 blocks' while the reader keeps up. A reader that falls
+     * blocks - 1 behind skips ahead to the oldest block still whole and the
+     * skipped blocks are counted (blockOverruns()). Use readBlock() or
+     * readBuffer(), not both. The GPIO port only (false on UHSIF_DATA). */
+    bool startRing(uint16_t *buffer, uint32_t samples, uint8_t blocks);
+    const uint16_t *readBlock();
+    uint32_t blockSamples() const;
+    uint32_t blockOverruns() const;
+    /* Samples the DMA has written since the start (startContinuous() or
+     * startRing()), from the halves done and the DMA's count. */
+    uint32_t samplesWritten() const;
+
     /* One burst of `samples` (1..65535) at the DMA's own speed, no timer;
      * returns the rate it ran at (samples per second, from the time taken),
      * 0 on bad arguments or when the DMA did not finish. Stops a continuous

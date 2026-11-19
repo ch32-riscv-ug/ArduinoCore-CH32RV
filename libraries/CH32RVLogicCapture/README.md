@@ -113,6 +113,14 @@ if (const uint16_t *half = logic.readBuffer()) { ... }
   filled again before the sketch took it counts in `overruns()`, and its data
   is lost.
 - Keep the buffer in RAM the DMA reaches (globals and statics).
+- A deeper ring for streaming: `startRing(buf, samples, blocks)` cuts the
+  buffer into 2-16 blocks and `readBlock()` hands over each full block in
+  order (or nullptr). A block stays as it was until the capture comes round
+  to it again; a reader that falls a whole ring behind skips to the oldest
+  block still whole, and `blockOverruns()` counts the skipped ones.
+  `samplesWritten()` says how far the capture has got. The GPIO port only.
+  Checked on V203, X035 and H417 (2026-11-20): 100 kS/s into 8 blocks of
+  512, 390 blocks in order in 2 s, 13 skipped after 100 ms without reading.
 - `LogicStream` streams 9.09 MS/s x 2 bytes = 18 MB/s over SuperSpeed.
 - Inputs go up to the port's supply: PE7-PE15 and others are VIO18 pins (see
   "Input range" in the CH32RVHsAdc README).

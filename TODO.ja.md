@@ -338,7 +338,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   単発、起動待ちのイメージで）。表は tests/TEST_PLAN.ja.md の「ホストのコントローラーの配線待ち」。
 - [ ] UHSIF 200 MS/s を PC へ流す余裕を広げる。V5F の試作では 120 秒で崩れ 11 か所、ITCM に置いた既定の形では 30 秒で
   91 か所（USB は 407 MB/s まで、必要 400 MB/s）。USB の割り込みと送り出しの処理の置き場所、リングの深さ、ITCM に入れる順番。
-- [ ] CH32RVLogicCapture に、PC へ流すための深いリング（4〜16 個の塊）の API。
+- [x] CH32RVLogicCapture に、PC へ流すための深いリング（2〜16 個の塊）の API: `startRing()` / `readBlock()` / `blockOverruns()` /
+  `samplesWritten()`（2026-11-20、GPIO のポート。V203・X035・H417 で確かめた）。UHSIF の経路は 200 MS/s の調査（上）と合わせる。
 - [ ] H417 の HSADC（高速 ADC）を常駐ベンチで試す配線を足す（2026-11-14 ユーザー、あとで）。試験は periph の hs-adc（VDDIO の
   PF8〜PF10 に、プローブのラベル付きの線が要る。PC0〜PC3 は VIO18 なので使わない）。
 - [ ] 常駐ベンチに USB PD の配線を足す（2026-11-14 ユーザー）。CH32RV のボード 2 台の CC の線どうしと GND をつなぐ（または両方の

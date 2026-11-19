@@ -235,6 +235,23 @@ const uint16_t *CH32RVLogicCapture::readBuffer()
     return take == 0xFF ? nullptr : _buf + (take ? _half : 0u);
 }
 
+uint32_t CH32RVLogicCapture::samplesWritten() const
+{
+    if (!_running || _backend) {
+        return 0;
+    }
+    uint32_t halves, left;
+    do {
+        halves = _filled;
+        left = CH_CNTR;
+    } while (halves != _filled);
+    const uint32_t pos = _half * 2u - left;          /* where the DMA writes next, 0 .. samples - 1 */
+    const uint32_t inHalf = pos % _half;
+    /* pos in the half after the last one reported: its interrupt has not run yet. */
+    const uint32_t ahead = (pos / _half) != (halves & 1u) ? 1u : 0u;
+    return (halves + ahead) * _half + inHalf;
+}
+
 void CH32RVLogicCapture::halfFilled(uint8_t k)
 {
     if (_ready & (1u << k)) {
