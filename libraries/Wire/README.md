@@ -28,7 +28,7 @@ that has pins of its own - the board menu's FIX pins, or the variant's default
 route under AUTO - and `Wire1` the other one. That is number order on every
 series but H417, whose I2C1 has no default route for the whole series (PB8 /
 PB9 are SWD, PB6 / PB7 are missing on some packages): there `Wire` is I2C2 and
-`Wire1` I2C1, which needs `begin(sda, scl)`.
+`Wire1` I2C1, and `Wire1` needs `begin(sda, scl)`.
 
 `SDA` and `SCL` name `Wire`'s default route, as the datasheet defines it. Print them if you are unsure - they differ per series:
 
@@ -74,7 +74,7 @@ Adafruit_Something device(&bus);
 - Both pads are `OUTPUT_OPENDRAIN` (emulated as input / output-low on X033 /
   X035, whose GPIO has no open drain). **The bus still needs pull-ups.**
 - Clock stretching is waited for. `endTransmission()`'s codes and the timeout
-  API are Wire's.
+  API are those of `Wire`.
 - `setClock()` is the clock it keeps, up to what the CPU and the line allow:
   each half period waits for a deadline, so the pin writes and SCL's rise come
   out of the wait. Measured on the bench (2026-11-15, the probe's weak pull-ups):
@@ -85,7 +85,7 @@ Adafruit_Something device(&bus);
   `getClock()` returns what was asked.
 - **A target too.** `bus.begin(0x42)` (or `bus.begin(0x42, sda, scl, 0)`)
   answers at 0x42 - or a 10-bit address (`0x2A5 | WIRE_10BIT`), and address 0
-  after `setGeneralCall(true)` - with Wire's target contract: `onReceive(count)` after the
+  after `setGeneralCall(true)` - with the target contract of `Wire`: `onReceive(count)` after the
   STOP (or at a repeated START, before `onRequest()` in a register read),
   `onRequest()` at a read's address, 0xFF past what it wrote, the head of a
   write longer than the buffer. A START (SDA falling, `attachInterrupt()`)
@@ -122,8 +122,8 @@ Adafruit_Something device(&bus);
   each START - up to 9 SCL pulses while SDA reads low - the bus clear `Wire`
   does after a failed transfer.
 - There is no `setRoute()`: that is the hardware's. `peripheral()` returns 0,
-  and `clearBus()` frees the bus the way Wire's does.
-- The buffers are Wire's `CH32RV_WIRE_BUFFER_SIZE` (32 by default).
+  and `clearBus()` frees the bus the way `Wire` does.
+- The buffers are `CH32RV_WIRE_BUFFER_SIZE` (32 by default), as on `Wire`.
 - `endTransmission()` on a bus that is not open returns 4, as on `Wire` (it
   does not `begin()` by itself).
 

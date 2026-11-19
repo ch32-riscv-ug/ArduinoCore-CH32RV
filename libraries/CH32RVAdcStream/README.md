@@ -112,7 +112,7 @@ adc_triggers.csv: a timer's TRGO or a channel's compare); `rate()` says the rate
 low / high, and 499 rounds in 500 ms at 1 kHz (2026-11-19, periph::test_adc_injected).
 
 `simultaneous(pins2, count)` after `begin()` adds ADC2's injected group, converting `pins2[i]` at the same moment
-as ADC1's pin i (dual injected simultaneous). A round then holds ADC1's `count` values, then ADC2's - in `convert()`,
+as ADC1's pin i (dual injected simultaneous). A round then holds ADC1's `count` values, then ADC2's `count` - in `convert()`,
 `value()` and the callback (`2 * count` values). Not together with a dual `CH32RVAdcStream` (both set the same mode
 field). Checked on V407 and H417, each side reading its own DAC (2026-11-19, analog::test_adc_injected_dual).
 

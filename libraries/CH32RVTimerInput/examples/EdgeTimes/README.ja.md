@@ -8,7 +8,7 @@
 
 出荷のまま（`SELF_TEST 1`）だと、測る端子に `tone()` で 1 kHz の矩形波を出し、その端子自身を測ります。配線は要りません。0.5 秒ごとに `high 500 us  low 500 us  high 500 us ...` のように出ます。
 
-自分の信号を測るときは `SELF_TEST 0` にし、起動時に表示される端子（`Timing pin ...`）へ入れます。端子の電圧の範囲を守り、GND を共通にしてください。線が動かないと `No edges: the line is still` と出ます。
+自分の信号を測るときは `SELF_TEST 0` にし、起動時に表示される端子（`Timing PA6` など）へ入れます。端子の電圧の範囲を守り、GND を共通にしてください。線が動かないと `No edges: the line is still` と出ます。
 
 ## API と改造時の注意
 

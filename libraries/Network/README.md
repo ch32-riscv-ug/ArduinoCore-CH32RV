@@ -6,7 +6,7 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 
 - For the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417. Other series stop with an error.
 - Ethernet (`ETH`) runs on a CH32V307 (its built-in 10 Mbit/s PHY), a CH32V407 (45 Mbit/s and TLS 1.3 at 200 MHz), a CH32H417 and a CH32V208 (its built-in 10 Mbit/s PHY, CPU Clock `60MHz`, no TLS), checked with the bench's `eth` case: DHCP, ICMP, UDP and TCP echo, TCP both ways, HTTP and HTTPS. V203RB / V317 / V467 / H415 / H416 are built only.
-- USB NCM (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...) is built for these series and has not been run on hardware.
+- USB NCM (`NetworkUsbNcm`, `beginNetwork()` of `CH32RVUsbDeviceNet` ...) is built for these series and has not been run on hardware.
 - Examples: [EthernetStatus](examples/EthernetStatus/README.md), [TcpEchoServer](examples/TcpEchoServer/README.md), [UdpEcho](examples/UdpEcho/README.md), [HttpGet](examples/HttpGet/README.md), [MdnsWebServer](examples/MdnsWebServer/README.md), [NetworkTime](examples/NetworkTime/README.md) - each run on the V307. [UsbNcmNetwork](examples/UsbNcmNetwork/README.md), over USB NCM, is built only.
 - Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, SNTP, mDNS, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
 
@@ -80,7 +80,7 @@ Over TLS, connect by host name: the certificate is checked against it.
 ## Behaviour
 
 - lwIP runs without an OS (NO_SYS), after each `loop()` and inside `delay()` (the core's `ch32rv_net_task()`). A `loop()` that blocks for long stalls the network too.
-- Calls that wait (`connect()`, `write()`, `Network.hostByName()`) keep the stack running. `available()`, `read()`, `peek()`, `connected()`, `parsePacket()` and `accept()` run it once when they have nothing, so Stream's timed reads (`readStringUntil()`, `readBytes()` ...) keep receiving.
+- Calls that wait (`connect()`, `write()`, `Network.hostByName()`) keep the stack running. `available()`, `read()`, `peek()`, `connected()`, `parsePacket()` and `accept()` run it once when they have nothing, so `Stream`'s timed reads (`readStringUntil()`, `readBytes()` ...) keep receiving.
 - Not callable from an interrupt.
 - `NetworkClient` copies received data into a buffer of its own (the TCP window's size); the window opens as the sketch reads, so a slow reader slows the sender instead of losing data.
 - `write()` waits for room in the send buffer and gives up after 10 s without progress, returning what it wrote.
