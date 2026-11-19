@@ -1206,14 +1206,14 @@ static const uint8_t SS = PIN_SPI_SS;
     { 2, 0, 1, PF11 }, \
     { 2, 1, 0, PE8 }, \
     { 2, 1, 1, PF12 }, \
-    { 2, 2, 0, PB1 }, \
-    { 2, 2, 1, PE7 }, \
+    { 2, 2, 0, PE7 }, \
+    { 2, 2, 1, PB1 }, \
     { 3, 0, 0, PC2 }, \
     { 3, 0, 1, PA2 }, \
     { 3, 1, 0, PC3 }, \
     { 3, 1, 1, PA3 }, \
-    { 3, 2, 0, PA4 }, \
-    { 3, 2, 1, PA0 }, \
+    { 3, 2, 0, PA0 }, \
+    { 3, 2, 1, PA4 }, \
 }
 #define CH32RV_OPA_CLKEN_ADDR 0x4002101cu
 #define CH32RV_OPA_CLKEN_MASK 0x00800000u
