@@ -280,6 +280,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   最初の代替設定の切り替え（SET_INTERFACE）が "Other error" になり、以後の転送が status 1 / submit -1 で続けて落ちる
   （core-20261117T113920Z-40375c22）。通った回は直前のイメージが USB を使わないもの、落ちた回は USB を使うもの
   だった。DCD の SET_INTERFACE と等時のエンドポイントの開き直しを、再列挙の直後に追う（usbmon は root が要る）。
+  → 2026-11-20: SET_INTERFACE の失敗は 3 回とも出なかった。代わりに IN の Mult>0（alt 2〜4）で、間隔の 2〜4 % が一部の
+  パケットだけで来て落ちる（in[2] の部分 8〜58 / 512、errors 13〜144。in[1] は部分 0 で通る）。11-17 に通った版（7e9ccc6）の
+  コアに今の試験で流しても、1 回目は in[2]・in[3] が通り、2 回目は in[2] の部分 14 で落ちたので、コードの退行ではなく回ごとの
+  ばらつき（二分探索では決まらない）。DUT の in_submitted が間隔の数より少ない（505 / 512）ので、DUT が次の間隔を出しそびれて
+  いる見込み。次は usbmon（root）でホストの側の status と、DUT の側の送り遅れ（割り込みの間隔）を同時に取る。
 - [x] ch32-device-data cb02bca / 3c9ed13 の取り込み（lock は 3c9ed13）。pvd_levels.csv は生成器の load_pvd に、pinout.csv の
   condition の列は SDIO の経路の一般の規則にした（SDIO_ROUTE_FIXES をやめた）。2026-11-18 に残りの表をコアと突き合わせた:
   adc_triggers.csv は ch32rv_adc_trigger.h と値がすべて一致（値 6 の TKEY / OPA はコアが使わない）。exti_lines.csv は
