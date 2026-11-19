@@ -9,7 +9,7 @@ adapter (CDC-NCM), audio (UAC1/UAC2), a camera (UVC) and a DFU runtime
 interface (an upload entry), combined by declaring them. The API follows
 [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice); migration also
 requires checking API differences, pins, RAM, endpoints and bandwidth below. Built on its own device stack, not
-TinyUSB. The full guide (Japanese) is
+TinyUSB ([ADR-0012](../../docs/adr/0012-usb-stack.md)). The full guide (Japanese) is
 [docs/usb.ja.md](../../docs/usb.ja.md).
 
 ```cpp
@@ -58,7 +58,7 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
   compile error.
 - **Only the keyboard layouts a sketch names are linked**; all 19 together
   would be about 17 KB.
-- **CDC is a `Stream`**, and blocks until everything is written while a host
+- **CDC is a `Stream`** (`print()` and the rest work as they are), and blocks until everything is written while a host
   has the port open - up to `setTxTimeoutMs()` (1000 ms) without progress,
   then the rest is dropped (EspUsbDevice does the same, but sends without a
   host that has the port open too). How this library
@@ -84,7 +84,7 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 - **The network's IP layer** (`ipConfig()`, `dhcpServer()`, `dhcpClient()`,
   `dhcpAdvertiseGateway()`, `dhcpDns()`, `defaultRoute()`, `beginNetwork()`,
   `networkUp()`, `localIP()`) comes from the Network library: a sketch using it
-  includes `<Network.h>` too. That library is for the series with an Ethernet
+  has `#include <Network.h>` too. That library is for the series with an Ethernet
   MAC (V208, V307/V317, V407/V467, H41x), not the X035. Without
   `beginNetwork()` the function exchanges raw Ethernet frames. Check controller
   and networking hardware coverage in the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況).
@@ -93,7 +93,7 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
   (built only; [docs/usb.ja.md](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ), Japanese).
 - **The CDC and vendor classes' direct path (`writeDirect()`, from their shared base `CH32RVUsbDeviceBulkStream`) works on every series**:
   one transfer straight from the caller's buffer, which stays untouched until
-  `onDirectTxComplete()` hands it back (once, whether sent, reset or stopped).
+  `onDirectTxComplete()` hands it back (once, whether sent, reset or `end()`).
   No build flag and no alignment rule (the USBSS DMA reads a 4-byte-aligned
   buffer itself). Receiving can borrow too (`rxMode` Borrowed, `readDirect()`),
   and either loan can be cancelled (`cancelDirectTx()` / `cancelDirectRx()`).
@@ -145,8 +145,8 @@ CDC, and troubleshooting. Every example has English and Japanese instructions.
 | `CH32RVUsbDeviceDfuRuntime` | An update entry through DFU_DETACH; the next mode depends on the series. **Included by default** (`config.dfuRuntime = false` leaves it out); declare it to decide the transition in `onDetach()`. Its interface name, "CH32RV", marks a ch32rv upload port in discovery |
 
 Every default string and ID (VID/PID, manufacturer, product, interface names,
-MSC inquiry, FAT volume label) is changed at run time - CH32RVUsbDeviceConfig,
-setName(), vendorID() and the like - not from build_opt.h. Nothing is limited
+MSC inquiry, FAT volume label of `format()`) is changed at run time - `CH32RVUsbDeviceConfig`,
+`setName()`, `vendorID()` and the like - not from `build_opt.h`. Nothing is limited
 at build time either: descriptors are produced as the host reads them.
 
 All HID classes of a device share one HID interface, as in EspUsbDevice: one
@@ -191,7 +191,7 @@ sample rates, video without a frame buffer.
 
 ## Composite configuration and runtime
 
-Declare functions on the same device and call begin once after configuring
+Pass the same `device` to each function's constructor, and call `device.begin(config)` once after configuring
 them. Declaration order affects interface/endpoint allocation. Multiple HID
 functions share one HID interface with report IDs, except those given
 `enableOwnInterface()`. Several MSC objects are the logical units of one MSC
@@ -205,8 +205,8 @@ interface. Default DFU uses no endpoint.
 | Keyboard + CDC + MSC | One + two + one = four |
 
 Controllers differ in IN/OUT resources, packet memory and ISO limits. Do not
-apply ESP32-specific endpoint counts to CH32. OutOfEndpoints and
-TooManyInstances indicate different resource limits; see the
+apply ESP32-specific endpoint counts to CH32. `OutOfEndpoints` and
+`TooManyInstances` indicate different resource limits; see the
 [controller table](../../docs/usb.ja.md#コントローラと速度).
 
 `begin()` returning true means the stack started; `ready()` means the host
@@ -220,7 +220,7 @@ loop of your own, call `device.task()` to keep the stack running.
 | CDC | Serial terminal with DTR; baud is not bus speed |
 | HID | Input window or raw report viewer; distinguish ID from payload |
 | MIDI | MIDI monitor/synthesizer; API channels are zero-based |
-| MSC | MSC for raw blocks, MSCFatRamDisk for files, MSCFileSystem for a volume the sketch also mounts (FS library) |
+| MSC | [MSC](examples/MSC/README.md) for raw blocks, [MSCFatRamDisk](examples/MSCFatRamDisk/README.md) for files, [MSCFileSystem](examples/MSCFileSystem/README.md) for a volume the sketch also mounts (FS library) |
 | Vendor | libusb/WinUSB/WebUSB application, not a serial terminal |
 | CCID | PC/SC ATR and APDU; device responses include SW1/SW2 |
 | Audio | Playback/recording with the advertised PCM format |
@@ -248,4 +248,4 @@ See the [USB support table (Japanese)](../../docs/usb.ja.md#対応状況) for im
 ## Uploading
 
 CDC 1200-bps touch and DFU_DETACH provide update entry points. The destination and programming method depend on the series; follow the [USB upload guide (Japanese)](../../docs/usb.ja.md#書き込み).
-`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`. Returning false stalls the DFU_DETACH request, so the host sees it fail. Once accepted, the device leaves whatever follows - `end()` (which then does not return), a bus reset, SET_CONFIGURATION 0. The request's wValue and the descriptor's wDetachTimeOut (1000 ms) are not used: the device detaches itself (WILL_DETACH). EspUsbDevice v3 keeps the same contract.
+`onDetach()` makes an immediate transition decision and does not wait for notification delivery through `deliverEvents()`. Returning false stalls the DFU_DETACH request, so the host sees it fail. Once accepted, the device leaves whatever follows - `end()`, a bus reset, SET_CONFIGURATION 0 (`end()` then does not return). The request's wValue and the descriptor's wDetachTimeOut (1000 ms) are not used: the device detaches itself (WILL_DETACH). EspUsbDevice v3 keeps the same contract.

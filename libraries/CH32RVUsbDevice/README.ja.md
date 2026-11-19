@@ -76,7 +76,7 @@ void loop() {
 - **ファームウェア更新**: `CH32RVUsbDeviceDfu`（DFU のダウンロード）と `CH32RVUsbDeviceMscFirmwareDisk`（UF2 / `.bin` のドライブ）。
   イメージはスケッチの後ろの flash に置いて確かめ、再起動のときに先頭へコピーします（ビルドのみ。
   [docs/usb.ja.md](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ)）。
-- **CDC とベンダーの直接転送（`writeDirect()`）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
+- **CDC とベンダーの直接転送（`writeDirect()`。共通の土台 `CH32RVUsbDeviceBulkStream` のもの）は全系列で使えます。** 呼び出し側のバッファから、そのまま 1 回の転送で
   送ります（`onDirectTxComplete()` で返るまで、バッファは触らず残してください。送り終えても、リセットや `end()` で
   止まっても、必ず 1 回返ります）。ビルド時の設定は要らず、整列の決まりもありません（USBSS は 4 バイト境界なら DMA で
   直接読みます）。受信も借りられ（`rxMode` を Borrowed にして `readDirect()`）、どちらも取り消せます
@@ -89,8 +89,8 @@ void loop() {
   [USB の書き込み手順](../../docs/usb.ja.md#書き込み) を参照してください。
 - **記述子を取り出す API は同じ名前です**（`deviceDescriptor()`、`configurationDescriptor()`、`stringDescriptor()`、
   `bosDescriptor()`、`microsoftOs20Descriptor()`、`hidReportDescriptor()` など）。このライブラリは記述子を常駐させず、
-  呼ばれたときに 1 つの共有のヒープのバッファへ組み立てます。configuration・BOS・MS OS 2.0・HID report 等のポインタは、別の種類も含め、次に記述子を組み立てる API を呼ぶまで有効です。
-  `onAnyControlRequest()` も同じ動きです（ベンダー要求は SETUP で、すべての制御転送は ACK で知らせる）。
+  呼ばれたときに 1 つの共有のヒープのバッファへ組み立てます。configuration・BOS・MS OS 2.0・HID report 等のポインタは、別の種類も含め、次に記述子を組み立てる API を呼ぶまで有効です。文字列のポインタは次の
+  `stringDescriptor()` の呼び出しまで有効です。`onAnyControlRequest()` も同じ動きです（ベンダー要求は SETUP で、すべての制御転送は ACK で知らせる）。
 - **このライブラリだけのもの**: `CH32RVUsbDeviceDfuRuntime`（ISP への入口）、`SerialUSB` / `USBDevice` の定義済み
   オブジェクト、`enterBootloader()`、`onBusEvent()`（リセット・構成・構成の解除・サスペンド・レジューム）、
   `configurationDescriptorFor(CH32RVUsbSpeed)`。
