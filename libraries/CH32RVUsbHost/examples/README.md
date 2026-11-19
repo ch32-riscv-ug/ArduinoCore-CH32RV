@@ -6,11 +6,11 @@ The board is the USB host; the PC observes its UART. Start with [DeviceInfo](Dev
 
 ## Parts and connections
 
-Check the exact part for host capability. A working USB device port does not establish host support. Consult the [library support information](../README.md) for controller, pins, clocks and hardware verification.
+Check the exact part for host capability. A working USB device port does not establish host support. Consult the [library support information](../README.md#対応) for controller, pins, clocks and hardware verification.
 
-Wire D+/D− and GND, and provide 5-V VBUS to the device from the board power circuit/switch. begin does not create a supply or configure the Type-C power role. A device-only Type-C connector with sink Rd resistors does not by itself provide host/source wiring; check the board source/CC circuit.
+Wire D+/D− and GND, and provide 5-V VBUS to the device from the board power circuit/switch. `usb.begin()` does not create a supply or configure the Type-C power role. A device-only Type-C connector with sink Rd resistors does not by itself provide host/source wiring; check the board source/CC circuit.
 
-Every example uses hardware Serial at 115200 baud, 8N1. Wire board TX→adapter RX and GND; board RX←adapter TX is also required for console input in USBSerial and VendorBulk. Use the board I/O voltage.
+Every example uses the hardware `Serial` at 115200 baud, 8N1. Wire board TX→adapter RX and GND; board RX←adapter TX is also required for console input in USBSerial and VendorBulk. Use the board I/O voltage.
 
 ## Build and run
 
@@ -26,22 +26,22 @@ arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6 \
 3. Inspect its interfaces with DeviceInfo and choose the matching class example.
 4. Check I/O, unplug and replug behavior with a matching device.
 
-Generated sketch profiles declare build conditions, not host-capable hardware. A series profile can compile on a part without host support. See the [build rules](../../../docs/examples-build-rules.ja.md).
+Generated `sketch.yaml` profiles declare build conditions, not host-capable hardware. A series profile can compile on a part without host support. See the [build rules](../../../docs/examples-build-rules.ja.md).
 
 ## Task processing and selection
 
-The host stack runs after loop and during delay. Call usb.task in long processing loops. Callbacks run only from deliverEvents(), which each example calls at the top of loop(); they may use blocking APIs but should remain short. Several examples set a flag and open or transfer from loop. See the [guide (Japanese)](../../../docs/sketch-guide.ja.md).
+The host stack runs after `loop()` and during `delay()`. Call `usb.task()` in long processing loops. Callbacks run only from `deliverEvents()`, which each example calls at the top of `loop()`; they may use blocking APIs but should remain short. Several examples set a flag and open or transfer from `loop()`. See the [guide (Japanese)](../../../docs/sketch-guide.ja.md).
 
 | API/state | Meaning |
 |---|---|
 | `usb.begin()` / `usb.ready()` | Host controller startup, not readiness of the intended peripheral |
 | `onDeviceConnected()` | Enumeration notification; retain its `address` to identify the device |
 | `serialReady()` / `midiReady()` / `mscReady()` and similar | Usable class function; card or medium readiness can require further checks |
-| Open/transfer result | Check success and inspect `lastErrorName()` immediately on failure |
+| Open/transfer result | Check success; on `false`, inspect `lastErrorName()` immediately |
 
-The default address selects the first matching device. For multiple peripherals, retain callback addresses and pass explicit address arguments, or CDC `setAddress()`/`setPort()`. Do not assume addresses survive reconnect. Copy callback reference/pointer data if it must be retained.
+The default address selects the first matching device. For multiple peripherals, retain the callbacks' `address` and pass explicit address arguments, or CDC `setAddress()`/`setPort()`. Do not assume addresses survive reconnect. Copy callback reference/pointer data if it must be retained.
 
-Waiting APIs delay the rest of the sketch. Do not call them in an ISR. A callback can set a flag and leave open/transfer work to `loop()`. Decide how pending output and state are handled on disconnect.
+Waiting APIs delay the rest of the sketch. Do not call them in an ISR. A callback can set a flag and leave open/transfer work to `loop()`; that keeps connection notices apart from transfers. Decide how pending output and state are handled on disconnect.
 
 For hubs, composite devices, class coverage and capacity limits, consult the [library README](../README.md). Device-side examples make useful peers with known protocol behavior.
 
@@ -49,11 +49,11 @@ For hubs, composite devices, class coverage and capacity limits, consult the [li
 
 | Symptom | Check |
 |---|---|
-| Unsupported | Exact part and host support table |
-| Busy | Active device stack on the same controller; end before switching |
+| `Unsupported` | Exact part and host support table |
+| `Busy` | Active device stack on the same controller; `end()` before switching |
 | No connection event | VBUS, GND, D+/D−, device-mode port and UART logging |
-| Identity printed, no class I/O | Class/protocol support, class readiness and open results |
-| Timeout / Stalled | Missing response versus a peer refusing a request; inspect lastErrorName and descriptors |
+| Identity printed, no class I/O | Class/protocol support, `*Ready()` and open results |
+| `Timeout` / `Stalled` | Missing response versus a peer refusing a request; inspect `lastErrorName()` and descriptors |
 | Large composite cannot enumerate | Library configuration/descriptor capacity and RAM requirements |
 | Storage reader never ready | Media presence and the library known limitations |
 | Serial losses | Polling frequency, return values and compile-time ring/FIFO sizes |
