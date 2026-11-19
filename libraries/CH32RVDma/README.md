@@ -30,6 +30,8 @@ dma.fill(dst, 0, n);                  // n bytes of one value
 - A long transfer goes in parts of 65535 units (CNTR's 16 bits), each next part started from the interrupt.
 - Speed: on some parts the CPU's `memcpy()` is faster (a 4 KiB copy, 2026-11-19: X035 218 us by memcpy against 140
   us by DMA, V203 24 against 44, H417 28 against 53). A DMA copy pays when the CPU has other work meanwhile.
+- A sketch that waits in its own WFI (`__asm__("wfi")`) stops the DMA meanwhile on V003, V203 and X035 (V006 and
+  L103 go on, 2026-11-20). `wait()` uses no WFI.
 - The interrupt is attached at run time with `ch32rv_irq_attach()` ([ch32rv_priority.h](../../cores/arduino/ch32rv_priority.h)).
   V103's vector table is jumps, where a linked handler cannot be told: used together with a library that has that
   channel's handler (CH32RVLogicCapture and the like), `onDone()` may not run on it (`busy()` / `wait()` work).
