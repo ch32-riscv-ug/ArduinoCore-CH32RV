@@ -7,7 +7,7 @@ IPv4 networking on lwIP, with the API of ESP32's Arduino core 3.x Network librar
 - For the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417. Other series stop with an error.
 - Ethernet (`ETH`) runs on a CH32V307 (its built-in 10 Mbit/s PHY), a CH32V407 (45 Mbit/s and TLS 1.3 at 200 MHz), a CH32H417 and a CH32V208 (its built-in 10 Mbit/s PHY, CPU Clock `60MHz`, no TLS), checked with the bench's `eth` case: DHCP, ICMP, UDP and TCP echo, TCP both ways, HTTP and HTTPS. V203RB / V317 / V467 / H415 / H416 are built only.
 - USB NCM (`NetworkUsbNcm`, `CH32RVUsbDeviceNet::beginNetwork()` ...) is built for these series and has not been run on hardware.
-- Examples: [EthernetStatus](examples/EthernetStatus/README.md), [TcpEchoServer](examples/TcpEchoServer/README.md), [UdpEcho](examples/UdpEcho/README.md), [HttpGet](examples/HttpGet/README.md), [MdnsWebServer](examples/MdnsWebServer/README.md), [NetworkTime](examples/NetworkTime/README.md) - each run on the V307.
+- Examples: [EthernetStatus](examples/EthernetStatus/README.md), [TcpEchoServer](examples/TcpEchoServer/README.md), [UdpEcho](examples/UdpEcho/README.md), [HttpGet](examples/HttpGet/README.md), [MdnsWebServer](examples/MdnsWebServer/README.md), [NetworkTime](examples/NetworkTime/README.md) - each run on the V307. [UsbNcmNetwork](examples/UsbNcmNetwork/README.md), over USB NCM, is built only.
 - Tested on the host against Linux's TCP/IP (`tests/unit/network`): static addresses, the DHCP client and server, SNTP, mDNS, ICMP, UDP, TCP both ways, in parallel and outgoing, DNS - also over a link that loses and reorders frames.
 
 ## Usage
