@@ -620,21 +620,9 @@ any_of = ["LTDC"]
 missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V407", "CH32V467"]
 
 [[item]]
-id = "gpha"                 # GPHA 2D DMA
-scope = "series"
-any_of = ["GPHA"]
-missing = ["CH32H415", "CH32H416", "CH32H417"]
-
-[[item]]
 id = "serdes"               # SerDes
 scope = "series"
 any_of = ["SERDES"]
-missing = ["CH32H415", "CH32H416", "CH32H417"]
-
-[[item]]
-id = "ecdc"                 # ECDC (AES / SM4)
-scope = "series"
-any_of = ["ECDC"]
 missing = ["CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]
