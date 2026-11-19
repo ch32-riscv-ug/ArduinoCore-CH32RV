@@ -6,12 +6,12 @@ Which piece of work is slow? Each Work counts and times its runs and the executo
 
 ## Hardware and connections
 
-A 115200-baud 8N1 UART monitor on RX/TX.
+A 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 
 1. Every 2 s: `FAST runs=... avg_us=... max_us=...`, `SLOW ...`, `ROUNDS total=... empty=... max_us=...`.
-2. `SLOW`'s `max_us` is about 3000 and the rounds' `max_us` at least that: the slow Work holds the others up.
+2. `SLOW`'s `max_us` is about 3000 and the `ROUNDS` `max_us` at least that: the slow Work holds the others up.
 
 ## Settings and limits
 

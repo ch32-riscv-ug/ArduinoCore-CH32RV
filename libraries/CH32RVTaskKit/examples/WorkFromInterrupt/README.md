@@ -6,7 +6,7 @@ An interrupt does not do the work, it asks for it: the ISR puts the press time i
 
 ## Hardware and connections
 
-A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on RX/TX.
+A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 

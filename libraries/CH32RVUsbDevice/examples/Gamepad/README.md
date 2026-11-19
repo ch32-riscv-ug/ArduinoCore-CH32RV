@@ -27,9 +27,9 @@ The report supports 32 buttons; this example cycles eight. For physical analog c
 | `buttons` | A bitmap: `1UL << 0` is the first button. OR bits together for multiple buttons. |
 | `sendReport(report)` | Sends state assembled in a report structure. |
 
-Map ADC readings according to their configured resolution, with the joystick center at zero. Add a dead zone for center noise, clamp the result, then convert to `int8_t`.
+Map `analogRead()` values according to their configured resolution, with the joystick center at zero. Add a dead zone for center noise, clamp the result, then convert to `int8_t`.
 
-Reports describe full state, not changes. Clear a button bit on release and send a neutral hat when released. If `send()` fails, check enumeration and pacing, then send the latest state on a later iteration.
+Reports describe full state, not changes. Clear a button bit on release and send a neutral hat when released. If `send()` returns `false`, check enumeration and pacing, then send the latest state on a later iteration.
 
 ## Related documentation
 

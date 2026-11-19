@@ -6,7 +6,7 @@ An explicitly declared CDC port with UART diagnostics for line coding, DTR/RTS a
 
 ## Hardware and connections
 
-A PC CDC terminal and a separate 115200-baud 8N1 UART monitor on the board RX/TX pins.
+A PC CDC terminal and a separate 115200-baud 8N1 UART monitor on the board `RX` / `TX` pins.
 
 ## Steps and expected results
 

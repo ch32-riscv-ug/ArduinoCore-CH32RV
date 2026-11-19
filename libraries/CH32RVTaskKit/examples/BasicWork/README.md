@@ -6,7 +6,7 @@ Two pieces of work that run only on their trigger: an LED on a `Period`, and a l
 
 ## Hardware and connections
 
-An LED with its resistor on `LED_PIN` (default `PA1`), and a 115200-baud 8N1 UART monitor on RX/TX.
+An LED with its resistor on `LED_PIN` (default `PA1`), and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 
@@ -15,7 +15,7 @@ An LED with its resistor on `LED_PIN` (default `PA1`), and a 115200-baud 8N1 UAR
 
 ## Settings and limits
 
-An attached Work runs once in the first `runOnce()`, then only on a trigger (`wakeEvery`, `wakeWhen`, `wakeOn`, `post()`). A Work cannot wait in the middle: it keeps its state in variables and returns.
+A Work given to `attach()` runs once in the first `runOnce()`, then only on a trigger (`wakeEvery`, `wakeWhen`, `wakeOn`, `post()`). A Work cannot wait in the middle: it keeps its state in variables and returns.
 
 ## API usage and adaptation
 

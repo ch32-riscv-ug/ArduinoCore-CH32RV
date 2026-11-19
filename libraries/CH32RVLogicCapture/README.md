@@ -108,7 +108,7 @@ if (const uint16_t *half = logic.readBuffer()) { ... }
 - The timer is taken through the core's timer manager (`CH32RVTimer.h`), so
   `analogWrite()`, `tone()` and Servo leave it alone, and it leaves them
   alone.
-- A continuous half is the sketch's until the next `readBuffer()`. Finish
+- A continuous half `readBuffer()` returned is the sketch's until the next `readBuffer()`. Finish
   with it before the DMA comes back: half the samples / the rate. A half
   filled again before the sketch took it counts in `overruns()`, and its data
   is lost.

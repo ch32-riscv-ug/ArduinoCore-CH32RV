@@ -6,7 +6,7 @@ A fixed-size byte stream: characters typed on the UART are collected in a `Ring`
 
 ## Hardware and connections
 
-A 115200-baud 8N1 UART monitor on RX/TX, sending LF or CRLF line endings.
+A 115200-baud 8N1 UART monitor on `RX` / `TX`, sending LF or CRLF line endings.
 
 ## Steps and expected results
 
@@ -15,7 +15,7 @@ A 115200-baud 8N1 UART monitor on RX/TX, sending LF or CRLF line endings.
 
 ## Settings and limits
 
-Only `loop()` uses this ring, so it is `LoopOnly` (no masking). Keep the default `IsrSafe` when an ISR shares it.
+Only `loop()` uses this `Ring`, so it is `LoopOnly` (no masking). Keep the default `IsrSafe` when an ISR shares it.
 
 ## API usage and adaptation
 

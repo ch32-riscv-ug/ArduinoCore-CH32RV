@@ -17,7 +17,7 @@ A supported device board, a USB data cable and a PC serial terminal. This sketch
 
 ## Settings and limits
 
-`SerialUSB.begin()` uses the default `1209:0001` identity. Newlines pass through unchanged; disable terminal local echo to avoid seeing duplicates. Its boolean conversion reflects DTR. Opening and closing at 1200 bps triggers the upload entry; see the guide for the X035/X033-specific ISP behavior.
+`SerialUSB.begin()` uses the default `1209:0001` identity. Newlines pass through unchanged; disable terminal local echo to avoid seeing duplicates. `SerialUSB` as a boolean (`operator bool`) reflects DTR. Opening and closing at 1200 bps triggers the upload entry; see the guide for the X035/X033-specific ISP behavior.
 
 ## API usage and adaptation
 

@@ -26,9 +26,9 @@ Power-off, standby and wake calls are commented out and are not sent by this ske
 | `media.click(usage)` | Sends a usage press and release. Do not pass a character code. |
 | `CH32RVUsbDeviceHidSystemControl systemControl(device)` | Adds separate HID controls affecting host power state. |
 
-A successful send does not guarantee that the media player acted. Volume behavior also depends on the OS; track controls depend on application support. Use the boolean result to distinguish transmission failure from host behavior.
+A successful send does not guarantee that the media player acted. Volume behavior also depends on the OS; track controls depend on application support. Use the `bool` result to distinguish transmission failure from host behavior.
 
-For buttons, debounce and call `click()` on the press transition. Calling it on every iteration while held repeats the action. Check the effects of individual System Control usages before enabling them.
+For buttons, debounce and call `click()` on the press transition. Calling it on every `loop()` while held repeats the action. Check the effects of individual System Control usages before enabling them.
 
 ## Related documentation
 

@@ -6,7 +6,7 @@ An interrupt hands values to `loop()` through a `Queue`. The ISR stores the pres
 
 ## Hardware and connections
 
-A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on RX/TX.
+A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 
@@ -20,7 +20,7 @@ In the ISR a failed `trySend()` is counted, never waited on. A full queue refuse
 
 ## API usage and adaptation
 
-`trySend(value)` copies a value and returns success; `tryReceive(value)` removes one or immediately returns `false` when empty. Queuing a pointer does not manage its target's lifetime or ownership.
+`trySend(value)` copies a value and returns `true` when it was stored; `tryReceive(value)` returns `true` when it removed one, or `false` at once when empty. Queuing a pointer does not manage its target's lifetime or ownership.
 
 The deliberate delay demonstrates overflow. For an application, read more frequently and choose whether full-queue input is discarded or reported. For exact dropped counts, protect the auxiliary counter's copy/reset as one operation too.
 

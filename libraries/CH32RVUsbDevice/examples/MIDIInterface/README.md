@@ -6,7 +6,7 @@ A bidirectional bridge between USB MIDI and 31250-baud UART MIDI messages.
 
 ## Hardware and connections
 
-Use appropriate MIDI input/output circuits on Serial1 RX=PA3 and TX=PA2, including an isolated MIDI input. Do not wire a DIN MIDI cable directly to GPIO. Verify that Serial logging and Serial1 use distinct USART routes.
+Use appropriate MIDI input/output circuits on `Serial1` RX=`PA3` and TX=`PA2`, including an isolated MIDI input. Do not wire a DIN MIDI cable directly to GPIO. Verify that the `Serial` log and `Serial1` use distinct USART routes.
 
 ## Steps and expected results
 

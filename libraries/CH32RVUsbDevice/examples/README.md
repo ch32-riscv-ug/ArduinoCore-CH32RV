@@ -30,7 +30,7 @@ Most examples log on hardware `Serial`, separately from CDC `SerialUSB`/`UsbSeri
 | RX | TX, when commands are accepted |
 | GND | GND |
 
-Match I/O voltage and resolve aliases such as RX/TX through the board/variant and schematic. UART can report failures even when USB will not start. Examples without UART say so in their individual guides.
+Match I/O voltage and resolve aliases such as `RX` / `TX` through the board/variant and schematic. UART can report failures even when USB will not start. Examples without UART say so in their individual guides.
 
 ## From declaration to communication
 

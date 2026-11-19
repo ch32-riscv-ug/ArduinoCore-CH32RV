@@ -6,7 +6,7 @@ Two schedules at once without `delay()`: a `Period` blinks an LED and a `Deadlin
 
 ## Hardware and connections
 
-An LED with its resistor on `LED_PIN` (default `PA1`). A 115200-baud 8N1 UART monitor on RX/TX.
+An LED with its resistor on `LED_PIN` (default `PA1`). A 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 

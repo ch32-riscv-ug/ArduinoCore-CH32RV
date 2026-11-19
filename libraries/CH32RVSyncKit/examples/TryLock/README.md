@@ -6,7 +6,7 @@
 
 ## Hardware and connections
 
-A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on RX/TX.
+A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 
@@ -15,7 +15,7 @@ A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N
 
 ## Settings and limits
 
-`loop()` cannot run until the ISR returns, so an ISR waiting for loop()'s lock would never return. Hold a lock from one loop() to the next only on purpose, as here.
+`loop()` cannot run until the ISR returns, so an ISR waiting for the lock of `loop()` would never return. Hold a lock across `loop()` calls only on purpose, as here.
 
 ## API usage and adaptation
 
