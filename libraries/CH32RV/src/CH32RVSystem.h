@@ -307,6 +307,13 @@ public:
      * (512 Hz from the LSE: what setRtcCalibration() is measured against).
      * False where there is no such output (H41x) or no RTC. */
     bool setRtcOutput(CH32RVRtcOutput what);
+    /* A clock on the MCO pad (CH32RV_MCO_PIN: PA8, PC4, PB9 ... per
+     * series): CH32RV_MCO_SYSCLK, _HSI, _HSE, _PLL and the others the series
+     * names (the variant's CH32RV_MCO_*, from the reference manual's MCO
+     * field), or 0 to stop it (the pad an input again). The source must be
+     * running (HSE only with a crystal in use). False where the series or
+     * part has no MCO pad, or for a value that is not one of its sources. */
+    bool setClockOutput(uint8_t source);
 
     /* Wake after `us` microseconds (0: no timer). False where the family
      * cannot sleep yet. */

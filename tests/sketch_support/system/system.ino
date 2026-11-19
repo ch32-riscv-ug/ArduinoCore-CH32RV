@@ -27,6 +27,9 @@
  *                                pin falls with the reset: its high time is T/8 or T
  *   ewi                          EWI <early-warning callbacks the boot before this one counted>
  *                                <us> <counter steps>: the WWDG counter's rate before its first feed
+ *   mcohz                        MCOHZ <the MCO pad, 0 when none> <source>:<its Hz> ... (SYSCLK and HSI where the
+ *                                series offers them)
+ *   mco <source>                 CH32RV.setClockOutput(source): MCO <1 / 0>
  *   bkpw <seed>                  every backup word i := seed + 257 i: BKPW <count> <keeps power>
  *   bkpr <seed>                  BKPR <count> <words that read seed + 257 i>
  *   alarm <s> <pin>              the pin high, setAlarm(time() + s) with a callback that lets the
@@ -40,6 +43,7 @@
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
+#include "internal/ch32rv_clock.h"   // CH32RV_CLOCK_SYSCLK_HZ, CH32RV_HSI_HZ: what mcohz reports
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -271,6 +275,21 @@ static void reply(char *command)
         digitalWrite(pin, LOW);
         CH32RV.disableWakeup();
         SerialDMSeq.printf("ASLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
+    } else if (!strcmp(argv[0], "mcohz") && argc == 1) {
+#if defined(CH32RV_MCO_PIN)
+        SerialDMSeq.printf("MCOHZ %u", (unsigned)CH32RV_MCO_PIN);
+#if defined(CH32RV_MCO_SYSCLK)
+        SerialDMSeq.printf(" %u:%lu", (unsigned)CH32RV_MCO_SYSCLK, (unsigned long)CH32RV_CLOCK_SYSCLK_HZ);
+#endif
+#if defined(CH32RV_MCO_HSI)
+        SerialDMSeq.printf(" %u:%lu", (unsigned)CH32RV_MCO_HSI, (unsigned long)CH32RV_HSI_HZ);
+#endif
+        SerialDMSeq.printf("\r\n");
+#else
+        SerialDMSeq.printf("MCOHZ 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "mco") && argc == 2) {
+        SerialDMSeq.printf("MCO %d\r\n", CH32RV.setClockOutput((uint8_t)atoi(argv[1])) ? 1 : 0);
     } else {
         SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
     }

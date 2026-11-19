@@ -24,6 +24,7 @@ CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s sec
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
 CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE (RTC Clock menu)
 CH32RV.calibrateHsi(&ppm);               // HSI against the LSE, HSITRIM set (also hsiTrim() / setHsiTrim())
+CH32RV.setClockOutput(CH32RV_MCO_HSI);    // HSI on the MCO pad (CH32RV_MCO_PIN); 0 stops it
 CH32RV.setRtcCalibration(20);            // the LSE RTC 20 ppm slower (faster when negative); setRtcOutput(): 512 Hz on TAMPER
 CH32RV.getVddMillivolts();               // supply voltage (mV), from the ADC's internal reference
 CH32RV.getHeapSize();                    // the heap, and what malloc() can still hand out

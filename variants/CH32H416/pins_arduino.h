@@ -864,6 +864,21 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_USBPD_CC_PORT_MASK(port) ( \
 ((port) == 1u ? 0x18u : 0u))
 
+/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */
+#define CH32RV_MCO_PIN PB0
+#define CH32RV_MCO_AF 0
+#define CH32RV_MCO_SHIFT 24
+#define CH32RV_MCO_MASK 0x0f000000u
+#define CH32RV_MCO_SYSCLK 4
+#define CH32RV_MCO_HSI 5
+#define CH32RV_MCO_HSE 6
+#define CH32RV_MCO_PLL_DIV2 7
+#define CH32RV_MCO_UTMI 8
+#define CH32RV_MCO_USBSS_PLL_DIV2 9
+#define CH32RV_MCO_ETH_PLL_DIV8 10
+#define CH32RV_MCO_SERDES_DIV16 11
+#define CH32RV_MCO_SOURCES { 4, 5, 6, 7, 8, 9, 10, 11 }
+
 /* ---- the advanced timers' second dead time (device-data registers.csv: DT_VLU2, DTP / DTN_MODE) ---- */
 #define CH32RV_TIM_DT2_OFFSET 0x50u
 #define CH32RV_TIM_DT2_SHIFT 8

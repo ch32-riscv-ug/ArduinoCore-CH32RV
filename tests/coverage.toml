@@ -72,6 +72,11 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]    # no clock gate of its own (always clocked), so no PIOC clock-enable name
 
 [[item]]
+id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
+test = "system::test_clock_output"
+scope = "series"
+
+[[item]]
 id = "uart-half-duplex"     # setPins(tx, tx): single wire (HDSEL), the echo, receiving on the TX pad
 test = "uart::test_uart_half_duplex"
 scope = "series"

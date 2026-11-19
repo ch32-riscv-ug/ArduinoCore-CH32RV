@@ -310,6 +310,17 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */
+#define CH32RV_MCO_PIN PC4
+#define CH32RV_MCO_AF 0
+#define CH32RV_MCO_SHIFT 24
+#define CH32RV_MCO_MASK 0x07000000u
+#define CH32RV_MCO_SYSCLK 4
+#define CH32RV_MCO_HSI 5
+#define CH32RV_MCO_HSE 6
+#define CH32RV_MCO_PLL 7
+#define CH32RV_MCO_SOURCES { 4, 5, 6, 7 }
+
 /* ---- PWM: 8 pads on TIM1/TIM2, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 8
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

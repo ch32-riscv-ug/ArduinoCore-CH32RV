@@ -3006,6 +3006,10 @@ PIOC_PADS: dict = {}
 # that puts it on OCxREF's rising edge, the one for the falling edge), from registers.csv's TIM fields DT_VLU2 and
 # DTP_MODE (H417 names it DT_MODE) / DTN_MODE. Only where the register's offset is known.
 TIM_DT2: dict = {}
+# MCO (CH32RV.setClockOutput()): family -> (field shift, width, [(name, value)]) from registers.csv's RCC CFGR0 MCO
+# field and its values; part -> {(pad, af)} from pinout's RCC MCO rows.
+MCO_FIELD: dict = {}
+MCO_PADS: dict = {}
 PIOC_BLOCK: dict = {}
 # Where each family's PIOC runs its program from: 4 KiB of SRAM the core copies the image into. Not in
 # device-data yet (asked of [data], 2026-11-19); the EVT's headers: ch32h417_pioc.h PIOC_SRAM_BASE 0x50040000 (a region
@@ -3065,6 +3069,29 @@ def load_usbpd_cc(tables: pathlib.Path) -> dict:
         if reg and clock:
             out.setdefault(r["part_number"], set()).add(((r["port"], int(r["gpio"])),) + reg + clock)
     return out
+
+
+def load_mco(tables: pathlib.Path) -> tuple:
+    """(MCO_FIELD, MCO_PADS): CFGR0's MCO field, its named sources, and the MCO pad of each part."""
+    field: dict = {}
+    values: dict = {}
+    for r in read_table(tables, "registers.csv", ("family", "type", "register", "field", "kind", "of_field", "bits",
+                                                  "value")):
+        if r["type"] != "RCC" or r["register"] != "CFGR0":
+            continue
+        if r["kind"] == "field" and r["field"] == "MCO" and ":" in r["bits"]:
+            hi, lo = (int(x) for x in r["bits"].split(":"))
+            field[r["family"]] = (lo, hi - lo + 1)
+        elif r["kind"] == "value" and r["of_field"] == "MCO" and r["value"] and r["field"] != "MCO_NOCLOCK":
+            values.setdefault(r["family"], []).append((r["field"][4:], int(r["value"], 0)))
+    out = {f: (lo, width, sorted(values.get(f, []), key=lambda v: v[1])) for f, (lo, width) in field.items()
+           if values.get(f)}
+    pads: dict = {}
+    for r in read_table(tables, "pinout.csv", ("part_number", "pad", "port", "gpio", "peripheral", "role", "route",
+                                               "af")):
+        if r["peripheral"] == "RCC" and r["role"] == "MCO" and r["port"]:
+            pads.setdefault(r["part_number"], set()).add(((r["port"], int(r["gpio"])), int(r["af"]) if r["af"] else 0))
+    return out, pads
 
 
 def load_tim_dt2(tables: pathlib.Path) -> dict:
@@ -5082,6 +5109,25 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" | ".join(f"((port) == {pi}u ? {m:#x}u : 0u)" for pi, m in sorted(masks.items())) + ")")
         out.append("")
 
+    # --- MCO: the clock output (CH32RV.setClockOutput()) on the pad every part of the series has ---
+    # The pad common to the parts that bond one out (a small package may have none: there it is just absent); the
+    # AF number from its af-N row where pads pick their function one by one.
+    mco_sets = [{pad for pad, _ in MCO_PADS[pn]} for pn in parts if MCO_PADS.get(pn)]
+    mco_common = set.intersection(*mco_sets) if mco_sets else set()
+    if family in MCO_FIELD and mco_common:
+        lo, width, sources = MCO_FIELD[family]
+        port, bit = sorted(mco_common)[0]
+        af = max((a for pn in parts for (pad, a) in MCO_PADS.get(pn, ()) if pad == (port, bit)), default=0)
+        out.append("/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */")
+        out.append(f"#define CH32RV_MCO_PIN {pad_name(port, bit)}")
+        out.append(f"#define CH32RV_MCO_AF {af}")
+        out.append(f"#define CH32RV_MCO_SHIFT {lo}")
+        out.append(f"#define CH32RV_MCO_MASK {((1 << width) - 1) << lo:#010x}u")
+        for name, value in sources:
+            out.append(f"#define CH32RV_MCO_{name} {value}")
+        out.append("#define CH32RV_MCO_SOURCES { " + ", ".join(str(v) for _, v in sources) + " }")
+        out.append("")
+
     # --- the advanced timers' second dead time (CH32RVComplementaryPwm::setDeadTime(rising, falling)) ---
     if family in TIM_DT2:
         off, shift, rise, fall = TIM_DT2[family]
@@ -5793,6 +5839,9 @@ def main() -> int:
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     TIM_DT2.update(load_tim_dt2(args.tables))
+    _mco_field, _mco_pads = load_mco(args.tables)
+    MCO_FIELD.update(_mco_field)
+    MCO_PADS.update(_mco_pads)
     _pioc_pads, _pioc_block = load_pioc(args.tables)
     PIOC_PADS.update(_pioc_pads)
     PIOC_BLOCK.update(_pioc_block)

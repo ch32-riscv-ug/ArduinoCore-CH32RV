@@ -1,6 +1,7 @@
 #include "CH32RVSystem.h"
 
 #include "Arduino.h"
+#include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_stack.h"
 #include "internal/ch32rv_rtc.h"
@@ -295,6 +296,34 @@ bool CH32RVSystem::setRtcCalibration(int32_t ppm)
 bool CH32RVSystem::setRtcOutput(CH32RVRtcOutput what)
 {
     return ch32rv_rtc_output((int)what) != 0;
+}
+
+bool CH32RVSystem::setClockOutput(uint8_t source)
+{
+#if defined(CH32RV_MCO_PIN)
+    static const uint8_t sources[] = CH32RV_MCO_SOURCES;
+    bool known = source == 0;
+    for (uint8_t s : sources) {
+        known |= s == source;
+    }
+    if (!known) {
+        return false;
+    }
+    const uint8_t port = (uint8_t)CH32RV_PIN_PORT(CH32RV_MCO_PIN), bit = (uint8_t)CH32RV_PIN_BIT(CH32RV_MCO_PIN);
+    CH32RV_RCC_CFGR0 = (CH32RV_RCC_CFGR0 & ~CH32RV_MCO_MASK) | ((uint32_t)source << CH32RV_MCO_SHIFT);
+    ch32rv_gpio_clock_enable(port);
+    if (source) {
+        ch32rv_pin_set_af(CH32RV_MCO_PIN, CH32RV_MCO_AF);
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_AF_PP_50M);
+    } else {
+        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
+        ch32rv_pin_set_af(CH32RV_MCO_PIN, 0);
+    }
+    return true;
+#else
+    (void)source;
+    return false;
+#endif
 }
 
 CH32RVClockSource CH32RVSystem::clockSource()

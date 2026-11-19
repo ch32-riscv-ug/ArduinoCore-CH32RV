@@ -580,6 +580,17 @@ static const uint8_t SS = PIN_SPI_SS;
 /* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
 #define CH32RV_OPA_LAYOUT { 0x40023804u, 0, 0u, 0, 4, 4, 1, 3, 2, 0xFF, 0xFF, 0, { 0, 0, 0 }, 0xFu }
 
+/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */
+#define CH32RV_MCO_PIN PA8
+#define CH32RV_MCO_AF 0
+#define CH32RV_MCO_SHIFT 24
+#define CH32RV_MCO_MASK 0x07000000u
+#define CH32RV_MCO_SYSCLK 4
+#define CH32RV_MCO_HSI 5
+#define CH32RV_MCO_HSE 6
+#define CH32RV_MCO_PLL 7
+#define CH32RV_MCO_SOURCES { 4, 5, 6, 7 }
+
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u
 /* CAN1: route default, on every part */

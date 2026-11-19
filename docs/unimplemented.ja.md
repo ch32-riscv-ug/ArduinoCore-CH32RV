@@ -22,7 +22,7 @@
 |---|---|---|---|---|---|
 | HSE（外付け水晶）の残りの系列 | M030、X315（X305）、V407/V467 | 実装済み（2026-11-17、ビルドのみ。水晶は EVT の前提と回路図の Y1: M030 8 MHz、X3x5 20 MHz、V4x7 25 MHz。X3x5・V4x7 は EVT の HSE の手順。V4x7 の 20 MHz は HSI のまま。selfcheck::test_clock_source を clocksrc=hse で流す） | 単発→自動 | 水晶の載った板（EVT 板）。自己（selfcheck-clocks で RCC を読む＋時間の速さ） | PS:62, PM:294 |
 | HSE の周波数の選択（EVT の前提以外の水晶） | HSE のある全系列 | 2 | 単発→自動 | 別の周波数の水晶の板。自己 | README.ja.md:49 |
-| HSI の外での MCO（クロック出力） | 全 12 family | 2 | 自動 | プローブ 1 本（周波数を測る） | PS:61, PM:292 |
+| HSI の外での MCO（クロック出力） | 全 12 family | 実装済み（2026-11-19、`CH32RV.setClockOutput(CH32RV_MCO_SYSCLK / _HSI / _HSE / _PLL …)`。源の名前・値・端子は生成の `CH32RV_MCO_*`（registers.csv の CFGR0 の MCO、pinout の RCC MCO）。X035 の PB9 に HSI（48 MHz）が出ることをプローブで確認。system::test_clock_output は 25 MHz 以下の源を 100 MS/s で判定するので、今のベンチで流せるのは V003（PC4 の HSI 24 MHz）） | 自動 | プローブ 1 本（周波数を測る） | PS:61, PM:292 |
 | 実行中のクロック変更 | 全系列 | 決定済み: 作らない（SYS-05） | — | 自己（変更前後で millis・Serial・PWM の selfcheck） | PS:40, FC:33 |
 | H41x・X305 の CPU Clock メニュー | H415/H416/H417、X305 | 実装済み（2026-11-17、ビルドのみ。H41x は V5F / V3F の組で 400/100（既定）・200/50・25/25 MHz、F_CPU は CPU Core で決まる。X305 は X315 と同じ 240 / 20 MHz） | 自動 | 自己（selfcheck） | PS:40, TODO:504 |
 | HSI / LSI の校正（トリム）API | V103、V20x、V205、V30x、V407、L103、M030、H417 | 実装済み（2026-11-18、`hsiTrim()` / `setHsiTrim()` / `calibrateHsi()`（LSE を基準）。LSI は RTC が起動時に測る。V203・V103 で selfcheck::test_hsi_calibration（rtcclock=lse）） | 自動 | 自己（HSE か RTC と比べる）、またはプローブで周波数 | EVT RCC/HSI_Calibration, RCC/LSI_Calibration |

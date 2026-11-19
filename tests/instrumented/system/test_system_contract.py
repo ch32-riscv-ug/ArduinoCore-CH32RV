@@ -379,3 +379,50 @@ def timed(dut, oep_host, ws_run, record_property, part):
         pytest.skip("n/a: wdtEnable() refuses on this family")
     if part == "alarm" and facts.get("alarm") == "unsupported":
         pytest.skip("n/a: setAlarm() refuses on this family (no RTC)")
+
+
+MCO_RATE = 100_000_000          # one-shot: 4 samples a period at 25 MHz
+MCO_TOP_HZ = 25_000_000         # faster sources would alias at MCO_RATE
+
+
+def _pad(number):
+    return f"P{'ABCDEFGHIJK'[(number >> 5) - 2]}{number & 31}"
+
+
+def test_clock_output(dut, oep_host, ws_run, record_property):
+    """CH32RV.setClockOutput() (MCO): the slowest of the sources the DUT reports (SYSCLK, HSI) that is no faster than
+    25 MHz, on the MCO pad when the probe labels it as a plain line - captured once at 100 MS/s and judged by
+    WireSkein's `pulses` (the period within 10 % of the source's nominal frequency); then setClockOutput(0) and the
+    pad still. Skips where the series has no MCO pad, the probe has no line on it, or every source is too fast."""
+    from wireskein.runlog import pulses
+    case = settings(__file__)
+    boot(dut, case)
+    dut.write("mcohz\n")
+    m = dut.expect(rb"MCOHZ (\d+)((?: \d+:\d+)*)\r?\n", timeout=5)
+    pin = int(m.group(1))
+    if not pin:
+        pytest.skip("the series has no MCO pad (CH32RV_MCO_PIN)")
+    sources = [tuple(int(x) for x in s.split(":")) for s in m.group(2).split()]
+    pad = _pad(pin)
+    line = next((l for l in gpio_lines(oep_host, case["target"]) if l["pad"].upper() == pad), None)
+    if line is None:
+        pytest.skip(f"the probe labels no plain line on the MCO pad {pad}")
+    usable = sorted((hz, src) for src, hz in sources if hz <= MCO_TOP_HZ)
+    if not usable:
+        pytest.skip(f"every MCO source is faster than {MCO_TOP_HZ // 1_000_000} MHz: {sources}")
+    hz, src = usable[0]
+    record_property("mco", json.dumps({"pad": pad, "source": src, "hz": hz}))
+    try:
+        dut.write(f"mco {src}\n")
+        assert dut.expect(rb"MCO (\d)\r?\n", timeout=5).group(1) == b"1", f"setClockOutput({src}) refused"
+        time.sleep(0.01)
+        with ws_run.section(1, f"MCO {pad} source {src} {hz} Hz",
+                            expect=[pulses(pad, period_s=1 / hz, period_rel=0.1)]):
+            ws_capture.capture(ws_run, oep_host, [line], rate=MCO_RATE, samples=200_000)
+        dut.write("mco 0\n")
+        assert dut.expect(rb"MCO (\d)\r?\n", timeout=5).group(1) == b"1", "setClockOutput(0) refused"
+        time.sleep(0.01)
+        with ws_run.section(1, f"MCO {pad} off", expect=[pulses(pad, count=0)]):
+            ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=10_000)
+    finally:
+        dut.write("mco 0\n")

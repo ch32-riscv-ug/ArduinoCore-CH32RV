@@ -449,6 +449,16 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_USBPD_CC_PORT_MASK(port) ( \
 ((port) == 0u ? 0xfu : 0u))
 
+/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */
+#define CH32RV_MCO_PIN PA8
+#define CH32RV_MCO_AF 0
+#define CH32RV_MCO_SHIFT 24
+#define CH32RV_MCO_MASK 0x07000000u
+#define CH32RV_MCO_SYSCLK 4
+#define CH32RV_MCO_HSI 5
+#define CH32RV_MCO_HSE 6
+#define CH32RV_MCO_SOURCES { 4, 5, 6 }
+
 /* ---- PWM: 9 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 9
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

@@ -443,6 +443,17 @@ static const uint8_t SS = PIN_SPI_SS;
 /* where the op-amp's fields are (opa/opa_layout.csv; CH32RVOpamp's Layout, in order) */
 #define CH32RV_OPA_LAYOUT { 0x40024004u, 0, 0x40024010u, 0, 0, 1, 1, 4, 8, 11, 8, 3, { 4, 0, 0 }, 0x1F37u }
 
+/* ---- MCO, the clock output (device-data registers.csv: RCC CFGR0 MCO; pinout: RCC MCO) ---- */
+#define CH32RV_MCO_PIN PC4
+#define CH32RV_MCO_AF 0
+#define CH32RV_MCO_SHIFT 24
+#define CH32RV_MCO_MASK 0x07000000u
+#define CH32RV_MCO_SYSCLK 4
+#define CH32RV_MCO_HSI 5
+#define CH32RV_MCO_HSE 6
+#define CH32RV_MCO_PLL 7
+#define CH32RV_MCO_SOURCES { 4, 5, 6, 7 }
+
 /* ---- PWM: 8 pads on TIM1/TIM2, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 8
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

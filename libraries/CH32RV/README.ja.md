@@ -22,6 +22,7 @@ CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // RTCのアラーム。time()の
 CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clock Source メニュー）
 CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE（RTC Clock メニュー）
 CH32RV.calibrateHsi(&ppm);               // HSI を LSE と比べて HSITRIM を合わせる（hsiTrim() / setHsiTrim() も）
+CH32RV.setClockOutput(CH32RV_MCO_HSI);    // MCO の端子（CH32RV_MCO_PIN）に HSI を出す。0 で止める
 CH32RV.setRtcCalibration(20);            // LSE の RTC を 20 ppm 遅く（負なら速く）。setRtcOutput() で 512 Hz を TAMPER に
 CH32RV.getVddMillivolts();               // 電源電圧(mV)、ADCの内部基準から
 CH32RV.getHeapSize();                    // ヒープの大きさと、malloc() がまだ渡せる量
