@@ -456,14 +456,14 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   `MutualTlsClient`（NetworkClientSecure、クライアント証明書、手元の Python のサーバーと組）は CH32V307 で確かめた。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
   取りこぼし）、`SensorConsole` は既存の ButtonBlinkConsole（周期・ISR からの通知・コマンド）が同じことを示すので作らない。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
   `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
-- [ ] **TLS の 2 つの問題（2026-11-20、CH32V307 で見つけた）**:
+- [x] **TLS の 2 つの問題（2026-11-20、CH32V307 で見つけた。どちらも V307 の 128 KB のヒープ不足）**:
   - [x] HttpsGet が `TLS connect failed: -0x2700, verify flags 0x8`（NOT_TRUSTED）→ 直した。試験のサイトの鎖が YR1 → Root YR
     （ISRG Root X1 の相互署名、RSA-4096）に変わり、検証の RSA-4096 が増えた。V307 の RAM 128 KB では TLS の最中の空きヒープが
     6.9 KB で、署名の検証が PSA のメモリー不足（-141）になり、NOT_TRUSTED に見えていた（DUT の上で x509 の検証だけなら通る、
     一時的な検証のコールバックで突き止めた）。V307 / V317 の 128 KB の時だけ lwIP の MEM_SIZE を 32 → 20 KB にして、
     接続前の空きが 47.5 → 59.9 KB、HTTP 200 を確かめた（libraries/Network/src/lwipopts.h）。送受信の速さへの影響は未測定。
-  - `openssl s_server` を相手にすると、TLS 1.3 でハンドシェイクのあとの記録の復号が MAC の誤り（-0x7180）になる。暗号の組・
-    チケットの数・クライアント証明書の有無に関係なく、v0.8.0 でも同じ。Python の ssl のサーバー（同じ OpenSSL）とは通る。
+  - [x] `openssl s_server -www` を相手にすると、TLS 1.3 でハンドシェイクのあとの記録の復号が MAC の誤り（-0x7180）になっていた
+    （v0.8.0 から）→ 同じヒープ不足だった。上の lwIP の変更のあと、`-www` で返事を読めた（大きなページを 1 つの記録で返す相手）。
   - ついでに分かったこと: V307 で eth の自動の試験は Flash / RAM Split の既定（RAM 64 KB）でヒープ不足として記録されるだけで、
     TLS を確かめていない。クライアント証明書のハンドシェイクはスタックを約 4.2 KB 使う（予約 4 KB より深い。Stack Check を付けると
     panic になる）。

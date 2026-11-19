@@ -3,7 +3,7 @@
 [日本語](README.ja.md)
 
 TLS with a client certificate (mutual TLS): the board checks the server against your CA, and the server checks the
-board's own certificate. It talks to a local server ([mtls_server.py](mtls_server.py)) and prints whether the
+board's own certificate. It talks to a local server ([mtls_server.py](mtls_server.py), or `openssl s_server -Verify 1 -www`) and prints whether the
 handshake passed, the TLS version, and the server's first reply line - or why it failed.
 
 ## What you need and the wiring
@@ -62,5 +62,3 @@ board prints `mutual TLS 0x304` and then `server says: (nothing)` (closed withou
 All three are kept by pointer: keep them valid while connected. The key sits in the flash in the clear; for a key
 that must not be read out, consider read protection (ch32rv's `target option`).
 
-- **Known problem:** against `openssl s_server`, TLS 1.3 fails to decrypt the reply after the handshake with a MAC
-  error (-0x7180) - since v0.8.0; a Python ssl server works. Under investigation.
