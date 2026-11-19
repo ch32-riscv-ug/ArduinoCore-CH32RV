@@ -137,6 +137,8 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [MIDIController](MIDIController/README.md) | A potentiometer controlling CC74 and a button controlling Note 60 over USB MIDI. |
 | [MidiChannelsAndReceive](MidiChannelsAndReceive/README.md) | Two MIDI ports (cables): notes on port 1 light an LED, the cable and channel are logged, and notes go back on port 2. |
 | [MIDIInterface](MIDIInterface/README.md) | A bidirectional bridge between USB MIDI and 31250-baud UART MIDI messages. |
+| [MidiEcho](MidiEcho/README.md) | Echoes every MIDI packet from the PC, none lost. |
+| [CompositeCdcMidi](CompositeCdcMidi/README.md) | A named CDC port and MIDI in one device, each echoing with its own back-pressure. |
 | [MSC](MSC/README.md) | An eight-KiB RAM-backed raw block device for SCSI and block-transfer checks. |
 | [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a `CONFIG.TXT` file written by the PC. |
 | [MSCFileSystem](MSCFileSystem/README.md) | One FAT volume (the FS library) for the sketch and a PC, handed over at eject. |

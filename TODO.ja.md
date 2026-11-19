@@ -688,7 +688,8 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - [ ] スタックの予約（Stack Size メニュー、既定は RAM の 16 分の 1、2026-11-14）より深く使うコードは、ヒープを黙って上書きする（Stack Check メニューを On にすると、はみ出しでリセットし、次の起動の resetReason() が panic になる）。TLS は、セッションの間 `_sbrk` に sp から 6 KB の余白を求めさせて直した（2026-11-03。V307 の 224k_96k の MAC エラーは、きれいなメモリー不足に変わった。H417 の HTTPS はそのまま通る）。ほかに深いスタックを使うライブラリが出たら、同じ `ch32rv_heap_stack_margin` を使う。
   V307 の eth の試験の HTTPS は、224k_96k でも 192k_128k でもメモリーが足りない（ヒープは 192k_128k で約 45 KB）。収める工夫（lwIP の大きさ、`MBEDTLS_SSL_IN_CONTENT_LEN` の縮小と max_fragment_length）は、必要になったら。
 
-- [ ] EspUsbDevice との差の残り（Info の例 3 本は 2026-11-20 に済み: UsbBringUpCheck・UsbConsole を移植、DescriptorDump は既にあった）:ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
+- [ ] EspUsbDevice との差の残り（Info の例 3 本は 2026-11-20 に済み: UsbBringUpCheck・UsbConsole を移植、DescriptorDump は既にあった。MidiEcho・CompositeCdcMidi も移植。CdcConsole と VendorEcho は
+  SerialUSBEcho と VendorBulkPeer が同じことを示す。M5 と P4 の例は板に固有）:ホストの Audio / Video / Network、複数リスナー、キュー、64 ビット LBA、CCID の追加 API、例 30 本ほど。
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
   （85f96bb で直した）。H417 では、その後の DETACH → DFU を 10 回ほど続けて通した。PC ホストの X035 で確かめれば閉じられる。

@@ -156,6 +156,8 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [MIDIController](MIDIController/README.ja.md) | 可変抵抗で CC74、ボタンで Note 60 を送る USB MIDI コントローラです。 |
 | [MidiChannelsAndReceive](MidiChannelsAndReceive/README.ja.md) | MIDI の口（cable）2 つ。口 1 で受けた音で LED を光らせ、cable と channel を表示し、口 2 から返します。 |
 | [MIDIInterface](MIDIInterface/README.ja.md) | USB MIDI と 31250 bps UART の MIDI メッセージを双方向に変換する例です。 |
+| [MidiEcho](MidiEcho/README.ja.md) | PC から来た MIDI の packet を取りこぼさずに返します。 |
+| [CompositeCdcMidi](CompositeCdcMidi/README.ja.md) | 名前つきの CDC と MIDI の複合機器。どちらもエコー、機能ごとに押し戻し。 |
 | [MSC](MSC/README.ja.md) | RAM を16×512 bytesの raw block device として公開します。SCSI やブロック転送の確認用です。 |
 | [MSCFatRamDisk](MSCFatRamDisk/README.ja.md) | 10 KiB の RAM に FAT12 を作り、PC が書いた `CONFIG.TXT` を取り出す例です。 |
 | [MSCFileSystem](MSCFileSystem/README.ja.md) | スケッチと PC で 1 つの FAT のボリューム（FS ライブラリ）を使い、取り外しで受け渡す例です。 |
