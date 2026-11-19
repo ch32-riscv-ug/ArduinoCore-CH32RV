@@ -11,6 +11,44 @@ it; V205: the bottom, `.data` and the rest above it). The linker sets it aside o
 one that does not keeps all its RAM. X035's pads are chosen by the PCFR1 remap (IO0 / IO1 on PC18 / PC19, or IO0 on
 PC7); PC18 / PC19 are SWD's too. The bench test passes on H417, X035 and V205 (PA0, PC7, PB10; 2026-11-19).
 
+## What it is for, and its limits
+
+The PIOC is "a small 8-bit CPU with two pads that keeps time to the clock". It takes one fixed job - usually a pad
+waveform - off the main core. It does not run anything you like.
+
+**Good for**
+- One- or two-wire protocols the hardware has no peripheral for, without stopping the main core's interrupts:
+  many WS2812 LEDs, 1-Wire (DS18B20), NEC IR send / receive, home-made single-wire links, Manchester coding.
+- Measuring or making pulse widths and gaps that the main core's interrupts (USB, millis()) would jitter.
+- Watching the pads and telling the main core only when something happens (`onDone()`'s interrupt).
+
+**Not for**
+- What a hardware peripheral does (USART, I2C, SPI, timer PWM / capture): faster, and any routed pad.
+- Three or more wires (4-wire SPI, parallel buses): the PIOC has IO0 and IO1, on a few pads only (X035: IO0 on PC18
+  or PC7, IO1 on PC19; PC18 / PC19 are SWD's too).
+- Streaming a lot of data: no DMA, no FIFO; the main core and the PIOC share 32 bytes of registers and a command
+  byte. Long data goes into the PIOC's 4 KiB SRAM, which also holds the program.
+- Heavy computation: 8 bits, no multiply, a 6-deep stack.
+- Several jobs at once: one program runs; another job means loading another image.
+
+**Timing**: the PIOC runs at HCLK (measured: H417 about 100 MHz, X035 48 MHz, V205 160 MHz). Instructions take 1 to 3
+cycles (a taken branch, CALL, RET: 2; RDCODE: 3), so on X035 an instruction is about 21 ns and a loop that toggles a pad
+takes a few cycles at least. Waits are made of instructions, so another clock means another speed (count again per
+family).
+
+**Against the Raspberry Pi Pico's PIO**: PIO has four small one-instruction-per-clock state machines per block, any
+GPIOs several at a time, and FIFOs and DMA for fast streams - but 32 instructions per block and next to no
+computation or decisions. The PIOC is the other way round: one of it, two pads, no FIFO or DMA, but a plain CPU of
+2048 instructions with compares, arithmetic and subroutines. PIO programs do not carry over, and "fast, wide,
+streaming" PIO-style jobs do not fit. Its place is "a slower protocol with decisions in it, on one or two wires,
+done to the clock instead of by the main core".
+
+**Against the ESP32's ULP**: both are a small core that runs apart from the main one and reports when done. But the
+ULP is mainly a watcher while the main core is in deep sleep (low power); the PIOC runs on HCLK, so it presumably
+stops in deep sleep (Standby) [not checked], and whether it keeps running and can wake the main core from its light
+WFI sleep is [not checked] either. It is less a low-power watcher than a stand-in for timing-critical pad work while
+the main core runs.
+
 ## Writing the program
 
 ```c
