@@ -79,7 +79,7 @@
 | 利用者向けタイマー API（周期・単発・時間単位） | 全系列 | 実装済み（2026-11-17、arduino-esp32 3.x の `timerBegin()`・`timerAlarm()` など、`CH32RVHwTimer.h`。ベンチ未確認） | 自動 | プローブ（線を取り込む）。signals::test_hw_timer | cores/arduino/ch32rv_hw_timer.c, FC:66 |
 | Ticker 相当 | 全系列 | 実装済み（2026-11-17、Ticker ライブラリ、arduino-esp32 の API。ベンチ未確認） | 自動 | プローブ（線を取り込む）。signals::test_ticker | libraries/Ticker, FC:67 |
 | ADC をタイマーで捕捉（TIM/ADC_Capture） | M030 | 2 | 自動 | プローブ | EVT CH32M030 TIM/ADC_Capture |
-| 32 bit の TIM4 | V205、X315、L103 | 2 | 自動 | 自己 | UNUSED:85 |
+| 32 bit の TIM4 | V205、X315、L103 | 2 | 実装済み（timers.csv の counter_width_bits からコアの表の counter_bits。analogWrite()・tone()・ADC のトリガ・CH32RVTimerInput / CH32RVTimerOutput が 32 bit で書く。selfcheck の pwm で L103 の TIM4・H417 の TIM9 / TIM10 を確認、8676c905） | 自己 | UNUSED:85 |
 | LPTIM（休止中の計時・起床、PWM・ワンパルス） | L103、H417 | 2 | 自動 | プローブ（起床・波形） | PS:49, PM:200 |
 | SLTIM（V006 の小さいタイマー）と ADC トリガ | V006（V00x） | 2 | 自動 | プローブ | EVT CH32V006 TIM/SLTIM_DMA, ADC/SLTIM_Trigger |
 | SoftPWM | 全系列 | 2 | 自動 | プローブ | docs/software-peripherals.ja.md:20, FC:73 |
