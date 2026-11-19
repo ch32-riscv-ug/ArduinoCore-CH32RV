@@ -18,7 +18,7 @@ The operation is the same as [FlashSettings](../FlashSettings/README.md): send a
 
 ## Cost
 
-The load and save part alone adds about 670 B on V003 and 730 B on X035. RAM does not grow. It reserves twice the flash of FlashSettings (8 KB on series that erase by 4 KB, 16 KB on H415/H417). Per-series values are in [storing in flash](../../../../docs/flash-store.ja.md).
+The load and save part called from `setup()` alone adds about 670 B on V003 and 730 B on X035. RAM does not grow. It reserves twice the flash of FlashSettings (8 KB on series that erase by 4 KB, 16 KB on H415/H417). Per-series values are in [storing in flash](../../../../docs/flash-store.ja.md).
 
 ## Before running
 

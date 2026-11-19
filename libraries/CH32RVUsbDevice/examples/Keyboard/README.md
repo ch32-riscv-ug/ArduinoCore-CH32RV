@@ -13,7 +13,7 @@ A PC text editor and UART monitor. Focus the editor before connecting: the sketc
 1. Check UART for `USB keyboard ready`.
 2. Observe `Hi from CH32RVUsbDevice` and the following symbol input in the editor.
 3. Toggle Caps Lock to see `LEDS num=... caps=...` on UART.
-4. The sketch switches its conversion table US→JIS→US and also sends the LANG1 usage.
+4. The sketch switches its conversion table US→JIS→US and also sends the `LANG1` usage.
 
 ## Settings and limits
 

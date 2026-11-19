@@ -7,7 +7,7 @@ Observe the independent watchdog resetting the chip after the application stops 
 ## Operation
 
 1. Reset and read the reason. The watchdog is not started automatically by this sketch.
-2. Send `e`. If `wdtEnable(2000)` succeeds, the loop feeds the watchdog with `wdtFeed()` and the board keeps running.
+2. Send `e`. If `wdtEnable(2000)` succeeds, `loop()` feeds the watchdog with `wdtFeed()` and the board keeps running.
 3. Send `x`. Feeding stops while `loop()` continues. After the watchdog expires, startup runs again and reports the watchdog reset.
 4. The restarted sketch waits for `e` again, allowing inspection without a reset loop. If the API reports unavailable, this demonstration cannot run on that target.
 

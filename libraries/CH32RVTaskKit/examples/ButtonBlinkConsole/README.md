@@ -37,7 +37,7 @@ Change the pins in the `.ino`. Runs on every series, CH32V003 included.
 
 ## Settings and limits
 
-- The press times are data, in the `Queue`; "please handle them" is `post()`. Posts are not counted,
+- The press times are data, in the `Queue`; "please handle them" is `post()`. `post()` calls are not counted,
   so one run of `button` drains every queued time.
 - A press when the `Queue` is full (8 entries) is dropped: the ISR does not wait.
 - `isrCount` and `isrLastMs` are written together by the ISR, so `stats` copies both inside a

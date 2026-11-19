@@ -29,7 +29,7 @@ API channel 0 corresponds to conventional MIDI channel 1; cable defaults to 0. M
 
 User-facing channel 1 is API channel `0`. Inspect Note On, Note Off and CC in a MIDI monitor before testing a sound generator. Send from the PC as well and check `MIDI_RX`.
 
-The periodic log records a transmission attempt, not the success of every send. Check boolean results for performance use; a lost Note Off can leave a note sounding.
+The periodic log records a transmission attempt, not the success of every send. Check the `bool` results for performance use; a lost Note Off can leave a note sounding.
 
 ## Related documentation
 

@@ -6,7 +6,7 @@ Records too big to copy: the ISR borrows a block from a pool, fills it and sends
 
 ## Hardware and connections
 
-A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on RX/TX.
+A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 

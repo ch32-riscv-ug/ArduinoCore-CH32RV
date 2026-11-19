@@ -6,7 +6,7 @@ Messages of different lengths, each kept whole: `trySend()` stores all or nothin
 
 ## Hardware and connections
 
-A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on RX/TX.
+A push button between `BUTTON_PIN` (default `PA1`) and GND, and a 115200-baud 8N1 UART monitor on `RX` / `TX`.
 
 ## Steps and expected results
 

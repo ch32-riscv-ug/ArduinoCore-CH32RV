@@ -29,7 +29,7 @@ Declare both functions on the same `device` and call `begin()` once. The combine
 
 The functions share an HID interface and are distinguished by Report ID. Raw-report applications must inspect the report descriptor rather than infer functions from interface count alone.
 
-Movement and a click follow keyboard input and may change focus. For physical controls, replace periodic actions with input changes and check each API's boolean result.
+Movement and a click follow keyboard input and may change focus. For physical controls, replace periodic actions with input changes and check each API's `bool` result.
 
 ## Related documentation
 

@@ -20,7 +20,7 @@ A power cut while saving loses the settings (the next start uses the defaults). 
 
 ## Cost
 
-The load and save part alone adds about 440 B on V003 and 500 B on X035. RAM does not grow (one page of stack while saving). Per-series values are in [storing in flash](../../../../docs/flash-store.ja.md).
+The load and save part called from `setup()` alone adds about 440 B on V003 and 500 B on X035. RAM does not grow (one page of stack while saving). Per-series values are in [storing in flash](../../../../docs/flash-store.ja.md).
 
 ## Before running
 

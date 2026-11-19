@@ -18,7 +18,7 @@ Inspect `HSADC at ... samples/s` and PC0 readings on UART. On initialization fai
 
 ## Adapting the example
 
-Input limits follow the pin supply. Voltage conversion depends on its reference, so inspect raw counts as well. Do not combine single reads with active continuous capture; see the [library README](../../README.md).
+Input limits follow the pin supply. Voltage conversion depends on its reference, so inspect raw counts as well. Do not combine single `read()` calls with active continuous capture; see the [library README](../../README.md).
 
 ## Related documentation
 

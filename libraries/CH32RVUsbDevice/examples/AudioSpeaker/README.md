@@ -17,7 +17,7 @@ A PC audio player and UART monitor. No audio hardware is needed. See the accompa
 
 ## Settings and limits
 
-Format fields are `{sampleRate, channels, bytesPerSample, bitsPerSample}`. Forward read PCM to DAC/I2S for physical audio. Volume is a control value in 1/256 dB, not automatic PCM processing. The format fits X035 at 64 B/ms; raising it to 48-kHz stereo requires a suitable controller/endpoint.
+Format fields are `{sampleRate, channels, bytesPerSample, bitsPerSample}`. Forward the PCM from `read()` to DAC/I2S for physical audio. Volume is a control value in 1/256 dB, not automatic PCM processing. The format fits X035 at 64 B/ms; raising it to 48-kHz stereo requires a suitable controller/endpoint.
 
 ## API usage and adaptation
 

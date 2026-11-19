@@ -10,7 +10,7 @@ Provide an SDI debug connection. Connect UART too if inspecting the initial and 
 
 ## Steps and expected results
 
-At startup, output moves UART → SDI → UART; later ticks go to UART. See [HelloSDI](../HelloSDI/README.md) for the monitor.
+At startup, output moves UART → SDI → UART; later `tick` lines go to UART. See [HelloSDI](../HelloSDI/README.md) for the monitor.
 
 ## API and processing flow
 

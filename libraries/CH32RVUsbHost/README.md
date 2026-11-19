@@ -100,7 +100,7 @@ class buffers stay full speed's 64 bytes (a sketch on USBFS alone grows by
 nothing); an endpoint with 512-byte high-speed packets gets heap buffers when
 it opens (CDC, MIDI, vendor, CCID; HID reports stay within 64 bytes).
 
-On every port only the driver of the port a sketch picks is linked (begin()
+On every port only the driver of the port a sketch picks is linked (`begin()`
 picks it in the sketch; with a constant port the others stay out).
 
 On H416 / H417, `SUPER_SPEED` runs the USBSS controller as a SuperSpeed
