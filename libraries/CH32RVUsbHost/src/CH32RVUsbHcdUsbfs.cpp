@@ -898,14 +898,13 @@ static bool hcd_port_suspend(bool on)
         for (const uint32_t t0 = micros(); (uint32_t)(micros() - t0) < RESUME_SIGNAL_US;) {
         }
         lock(&was);
-        /* The EOP: SE0 for two low-speed bits (1.33 us), well under the 2.5 us that a device takes for a bus
-         * reset - delayMicroseconds(2) and the register writes around it made L103's longer, and the peer came
-         * back unaddressed (no answer to any token after the resume, 2026-11-19). About 0.7 us of loop here,
-         * with interrupts off so nothing stretches it. */
+        /* The EOP: SE0, then the bus back to the block, with interrupts off and nothing between - the two
+         * writes' own gap is the SE0 (a full-speed device takes 160 ns for an EOP). Anything longer read as a
+         * bus reset: delayMicroseconds(2) on L103, and a 4-turn loop at 48 MHz on X035, left the peer
+         * unaddressed - no answer to any token after the resume (2026-11-19); with none, L103, V205 and X035
+         * all resume. */
         const uint32_t irq = ch32rv_irq_save();
         BASE_CTRL = (uint8_t)((BASE_CTRL & ~UC_SYS_CTRL_MASK) | UC_SYS_FORCE_SE0);
-        for (volatile uint32_t i = 0; i < F_CPU / 10000000u; i++) {
-        }
         BASE_CTRL &= (uint8_t)~UC_SYS_CTRL_MASK;
         ch32rv_irq_restore(irq);
         const bool attached = (MIS_ST & UMS_DEV_ATTACH) != 0;
