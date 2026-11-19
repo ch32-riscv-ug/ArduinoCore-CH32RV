@@ -330,13 +330,14 @@ def test_adc_pads(dut, ready, record_property):
 
 
 def test_rtc(dut, ready, record_property):
-    m = ask(dut, "rtc", rb"RTC (?:(NONE)|(\d+) (\d+))")
+    m = ask(dut, "rtc", rb"RTC (?:(NONE)|(\d+) (\d+) ([01]))")
     if m.group(1):
         pytest.skip("no RTC on this family")
+    record_property("rtc_clock", "LSE" if m.group(4) == b"1" else "LSI (no crystal started)")
     t0 = time.monotonic()
     s0 = int(m.group(2)) + int(m.group(3)) / 1e6
     time.sleep(3)
-    m = ask(dut, "rtc", rb"RTC (\d+) (\d+)")
+    m = ask(dut, "rtc", rb"RTC (\d+) (\d+) [01]")
     host = time.monotonic() - t0
     rtc = int(m.group(1)) + int(m.group(2)) / 1e6 - s0
     record_property("rtc", json.dumps(dict(rtc_s=round(rtc, 3), host_s=round(host, 3))))

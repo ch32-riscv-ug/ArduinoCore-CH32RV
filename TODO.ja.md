@@ -23,7 +23,9 @@
   寄稿（外に出す作業なのでユーザーに聞く）。
 - [x] FS の FS_SMALL_FLASH は、小さい系列に加えて、選んだ品の書き込みの上限（`CH32RV_UPLOAD_MAXIMUM_SIZE`）が 64 KB 以下でも
   小さい設定になる（L103、V103、V203C8 など。libraries/FS/src/FSConfig.h。2026-11-20 に済んでいたのを確かめた）。
-- [ ] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。X305 / X315
+- [x] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。
+  → 2026-11-20: selfsys の rtc が LSE か LSI かを返すようにした。常駐ベンチの v205rct6-pico と h417qeu6-pico は LSE が
+  起動せず LSI に戻り、selfsys::test_rtc（3 秒でホストの時計と 10 % 以内）が通る（3.045 / 3.052 秒）。X305 / X315
   には LSE が無い（RTC_CTLRL の RTCSEL は LSI か HSE ÷512 だけ、CH32X315RM 6.3.2）。HSE ÷512 は休止で止まり 39062.5 Hz で割り切れない
   ので作らない。
 - [x] SoftSPI: H417 の読み取りが 1 ビットずれる（2026-11-14 から）は、DUT ではなくプローブの spi-target が H417 の遅い SCK の縁を

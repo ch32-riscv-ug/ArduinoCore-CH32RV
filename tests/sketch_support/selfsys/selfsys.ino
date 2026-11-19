@@ -13,7 +13,8 @@
  *   adcpins                   ADCPINS <pin> ...: every bonded pad with an ADC channel
  *   adc <pin>                 the pad driven 1 then 0, each converted after another channel:
  *                             ADC <pin> <channel> <at 1> <at 0> <full scale>, ADC <pin> HELD / NONE
- *   rtc                       RTC <gettimeofday() seconds> <microseconds> on the RTC families, else RTC NONE
+ *   rtc                       RTC <gettimeofday() seconds> <microseconds> <1: it counts LSE, 0: LSI> on the RTC
+ *                             families, else RTC NONE
  *   pad <pin>                 PAD <pin> <1 when the board holds it: the pulls do not move it>
  *   rgbhw <pin>               RGBHW <pin> <1 when rgbLedWrite() sends there by the WS2812 block>
  *   rgbirq <pin> <leds>       ch32rv_rgb_led_write() of leds (<= 100) LEDs while a hardware timer's 100 us
@@ -347,7 +348,8 @@ static void reply(char *command)
 #ifdef CH32RV_HAS_RTC
         struct timeval tv;
         gettimeofday(&tv, nullptr);
-        SerialDMSeq.printf("RTC %lu %lu\r\n", (unsigned long)tv.tv_sec, (unsigned long)tv.tv_usec);
+        SerialDMSeq.printf("RTC %lu %lu %d\r\n", (unsigned long)tv.tv_sec, (unsigned long)tv.tv_usec,
+                           ch32rv_rtc_on_lse() ? 1 : 0);
 #else
         SerialDMSeq.printf("RTC NONE\r\n");
 #endif
