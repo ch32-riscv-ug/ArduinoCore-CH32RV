@@ -479,6 +479,16 @@ static const uint8_t SS = PIN_SPI_SS;
 /* where the comparator's fields are (opa/cmp_layout.csv; CH32RVComparator's Layout, in order) */
 #define CH32RV_CMP_LAYOUT { 0x40026008u, 0x40026010u, 0u, 0, 5, 3, 1, 2, 3, 0, 0xFF, 0xFF, { 20, 0, 0 }, 0x1Fu, 0, 4, 0xFF, 0xFF, 0xFF, 0xFF }
 
+/* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */
+#define CH32RV_PIOC_BASE 0x40026c00u
+#define CH32RV_PIOC_IRQN 47
+#define CH32RV_PIOC_SRAM_BASE 0x20004000u
+/* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */
+#define CH32RV_PIOC_PADS { \
+    { 0, PC18, 0 }, \
+    { 1, PC19, 0 }, \
+}
+
 /* ---- PWM: 7 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 7
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \

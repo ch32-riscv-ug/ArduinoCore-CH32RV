@@ -2999,6 +2999,14 @@ OPA_PINS: dict = {}
 # The USB PD CC pads: each one's PORT_CCx register (its Rd, the ~5.1 kOhm pull-down the chips switch on at
 # reset, CCx_PD bit 1) and the USBPD block's clock. part -> [((port, bit), address, width, clock address, mask)].
 USBPD_CC: dict = {}
+# PIOC (the RISC8B I/O processor, CH32RVPioc): part -> {(role 0 IO0 / 1 IO1, (port, bit), value)}, the value the AF
+# number (per-pin families) or the remap field's (X035); family -> (SFR base, IRQ number).
+PIOC_PADS: dict = {}
+PIOC_BLOCK: dict = {}
+# Where each family's PIOC runs its program from: 4 KiB of SRAM the core copies the image into. Not in
+# device-data yet (asked of [data], 2026-11-19); the EVT's headers: ch32h417_pioc.h PIOC_SRAM_BASE 0x50040000 (a region
+# of its own), ch32x035 PIOC 0x20004000 (the top 4 KiB of the 20 KiB RAM), ch32v205 0x20000000 (the bottom 4 KiB).
+PIOC_SRAM = {"CH32H417": 0x50040000, "CH32X035": 0x20004000, "CH32V205": 0x20000000}
 
 
 # The ADC's injected group: its JEXTSEL field and what each value starts it from (adc_triggers.csv, group
@@ -3048,6 +3056,28 @@ def load_usbpd_cc(tables: pathlib.Path) -> dict:
         if reg and clock:
             out.setdefault(r["part_number"], set()).add(((r["port"], int(r["gpio"])),) + reg + clock)
     return out
+
+
+def load_pioc(tables: pathlib.Path) -> tuple:
+    """(PIOC_PADS, PIOC_BLOCK): the PIOC's IO0 / IO1 pads per part, from pinout's PIOC rows (the AF number, or the
+    remap value), and each family's SFR base (memory_map) and interrupt (interrupts)."""
+    rows = read_table(tables, "pinout.csv", ("part_number", "family", "pad", "port", "gpio", "peripheral", "role",
+                                             "route", "value", "af"))
+    pads: dict = {}
+    for r in rows:
+        if r["peripheral"] != "PIOC" or r["role"] not in ("IO0", "IO1") or not r["port"]:
+            continue
+        value = r["af"] if r["af"] else r["value"]
+        if value == "":
+            continue
+        pads.setdefault(r["part_number"], set()).add((int(r["role"][2]), (r["port"], int(r["gpio"])), int(value)))
+    base = {r["family"]: int(r["base_address"], 16)
+            for r in read_table(tables, "memory_map.csv", ("family", "region", "base_address"))
+            if r["region"] == "PIOC"}
+    irq = {r["family"]: int(r["number"])
+           for r in read_table(tables, "interrupts.csv", ("family", "number", "name")) if r["name"] == "PIOC"}
+    block = {f: (b, irq[f]) for f, b in base.items() if f in irq}
+    return pads, block
 
 
 def load_opa_pins(tables: pathlib.Path) -> dict:
@@ -5021,6 +5051,23 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" | ".join(f"((port) == {pi}u ? {m:#x}u : 0u)" for pi, m in sorted(masks.items())) + ")")
         out.append("")
 
+    # --- PIOC ---
+    # The I/O processor (CH32RVPioc): its SFRs, interrupt, program SRAM (PIOC_SRAM above) and the IO0 / IO1 pads with
+    # the value that routes them (the AF number on the per-pin families, the remap field's value on X035).
+    pioc_pads = sorted({row for pn in parts for row in PIOC_PADS.get(pn, ())}, key=lambda r: (r[0], r[1], r[2]))
+    if family in PIOC_BLOCK and family in PIOC_SRAM and pioc_pads:
+        pbase, pirq = PIOC_BLOCK[family]
+        out.append("/* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */")
+        out.append(f"#define CH32RV_PIOC_BASE {pbase:#010x}u")
+        out.append(f"#define CH32RV_PIOC_IRQN {pirq}")
+        out.append(f"#define CH32RV_PIOC_SRAM_BASE {PIOC_SRAM[family]:#010x}u")
+        out.append("/* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */")
+        out.append("#define CH32RV_PIOC_PADS { \\")
+        for role, (port, bit), value in pioc_pads:
+            out.append(f"    {{ {role}, {pad_name(port, bit)}, {value} }}, \\")
+        out.append("}")
+        out.append("")
+
     # --- CAN ---
     # As I2C: RX and TX from one route the core can select (the HardwareCAN
     # object in libraries/CAN). Only where the series has the block's clock.
@@ -5694,6 +5741,9 @@ def main() -> int:
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
+    _pioc_pads, _pioc_block = load_pioc(args.tables)
+    PIOC_PADS.update(_pioc_pads)
+    PIOC_BLOCK.update(_pioc_block)
     ADC_JTRIGGERS.update(load_adc_jtriggers(args.tables))
     OPA_CMP_SELECTS.update(load_opa_cmp_selects(args.tables))
     CMP_PADS.update(load_cmp_pads(args.tables))

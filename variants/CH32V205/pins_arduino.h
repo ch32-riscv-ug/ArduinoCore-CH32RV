@@ -962,6 +962,22 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_USBPD_CC_PORT_MASK(port) ( \
 ((port) == 0u ? 0x3u : 0u))
 
+/* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */
+#define CH32RV_PIOC_BASE 0x40025c00u
+#define CH32RV_PIOC_IRQN 63
+#define CH32RV_PIOC_SRAM_BASE 0x20000000u
+/* { role (0 IO0, 1 IO1), pad, the AF number or remap value that routes it } */
+#define CH32RV_PIOC_PADS { \
+    { 0, PA11, 4 }, \
+    { 0, PB10, 4 }, \
+    { 0, PD3, 4 }, \
+    { 0, PE3, 4 }, \
+    { 1, PA12, 4 }, \
+    { 1, PB11, 4 }, \
+    { 1, PD4, 4 }, \
+    { 1, PE4, 4 }, \
+}
+
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u
 /* CAN1: route af-6, on every part */
