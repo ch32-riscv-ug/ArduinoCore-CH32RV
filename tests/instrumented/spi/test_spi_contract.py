@@ -35,8 +35,10 @@ import ws_capture
 from oep_client import core
 from oep_client.fixture import SpiTarget
 
-RATE = 40_000_000          # tests/README.ja.md 取り込みの速さ: T = 500 ns, 1 MHz SCK's half period, 20 / T. CS glitches under
-                           # 12.5 ns (6-2) are below 5 / T of any rate the probe streams: not judged here
+RATE = 20_000_000          # tests/README.ja.md 取り込みの速さ: T = 500 ns, 1 MHz SCK's half period, 10 / T (it was 40 MS/s,
+                           # 20 / T: 4 lines at 20 MB/s outran the host's reading at a load of 11 and the probe dropped
+                           # segments, [oep] 2026-11-19). CS glitches under 12.5 ns (6-2) are below 5 / T of any rate the
+                           # probe streams: not judged here
 # The slave's MISO changes some 25 ns after the sampling edge at each byte boundary (CH32V103, 2026-11-07): at
 # 10 MS/s that falls in the edge's own sample and WireSkein reads it as changing at the edge (no mode reads it).
 SLAVE_RATE = 40_000_000    # T = 5 us (100 kHz SCK's half period) and the 20 us CS setup: well over 20 / T
