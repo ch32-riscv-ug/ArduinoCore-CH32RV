@@ -23,6 +23,9 @@
  *   iso            ISO <alt> <packets an interval> <IN buffers>
  *                      <IN submitted> <IN refused>
  *                      <OUT intervals> <OUT whole> <OUT short> <OUT bad>
+ *                      <IN: the longest gap between two completions, us>
+ *                      <IN: gaps over 1.5 intervals (187 us)>
+ *                      <IN: the longest from a completion to the next submit, us>
  *                  (counts since the last SET_INTERFACE; OUT short: fewer
  *                  bytes than the interval's packets, bad: a header or last
  *                  byte out of place) */
@@ -70,6 +73,7 @@ public:
     bool inBusy = false, outBusy = false;
     uint32_t inSerial = 0;
     uint32_t inSubmitted = 0, inRefused = 0;
+    uint32_t inLastDone = 0, inGapMax = 0, inGapsLong = 0, inResubmitMax = 0;
     uint32_t outIntervals = 0, outWhole = 0, outShort = 0, outBad = 0;
 
     /* Packets an interval in this speed's form: SuperSpeed's companion, one
@@ -167,6 +171,7 @@ protected:
         release();
         alt = a;
         inSubmitted = inRefused = 0;
+        inLastDone = inGapMax = inGapsLong = inResubmitMax = 0;
         outIntervals = outWhole = outShort = outBad = 0;
         if (!a) {
             return true;
@@ -199,8 +204,17 @@ protected:
     void usbTransferred(uint8_t address, uint16_t length) override
     {
         if (address & 0x80) {
+            const uint32_t now = micros();
+            if (inLastDone) {
+                const uint32_t gap = now - inLastDone;
+                inGapMax = gap > inGapMax ? gap : inGapMax;
+                inGapsLong += gap > 187u;
+            }
+            inLastDone = now;
             inBusy = false;
             sendNext();
+            const uint32_t took = micros() - now;
+            inResubmitMax = took > inResubmitMax ? took : inResubmitMax;
         } else {
             outBusy = false;
             if (outBuf) {
@@ -262,10 +276,11 @@ static void reply(const char *command)
         SerialDMSeq.print(' ');
         SerialDMSeq.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "iso") == 0) {
-        SerialDMSeq.printf("ISO %u %u %u %lu %lu %lu %lu %lu %lu\n", iso.alt, iso.alt ? iso.packets : 0,
+        SerialDMSeq.printf("ISO %u %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\n", iso.alt, iso.alt ? iso.packets : 0,
                            iso.inBuffers, (unsigned long)iso.inSubmitted, (unsigned long)iso.inRefused,
                            (unsigned long)iso.outIntervals, (unsigned long)iso.outWhole,
-                           (unsigned long)iso.outShort, (unsigned long)iso.outBad);
+                           (unsigned long)iso.outShort, (unsigned long)iso.outBad, (unsigned long)iso.inGapMax,
+                           (unsigned long)iso.inGapsLong, (unsigned long)iso.inResubmitMax);
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }

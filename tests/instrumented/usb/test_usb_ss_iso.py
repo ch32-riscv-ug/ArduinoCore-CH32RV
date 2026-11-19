@@ -83,9 +83,9 @@ def _ready(dut):
 
 def _dut_iso(dut):
     dut.write("iso\n")
-    m = dut.expect(rb"ISO (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=5)
+    m = dut.expect(rb"ISO" + rb" (\d+)" * 12 + rb"\r?\n", timeout=5)
     keys = ("alt", "packets", "in_buffers", "in_submitted", "in_refused", "out_intervals", "out_whole", "out_short",
-            "out_bad")
+            "out_bad", "in_gap_max_us", "in_gaps_long", "in_resubmit_max_us")
     return dict(zip(keys, (int(g) for g in m.groups())))
 
 
