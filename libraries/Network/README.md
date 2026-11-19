@@ -90,7 +90,7 @@ Over TLS, connect by host name: the certificate is checked against it.
 
 ## Size (CH32V208, 2026-10-21)
 
-For a sketch using DHCP, a TCP server and client, UDP and DNS, the network adds about 44 KB of flash (lwIP about 37 KB, this library about 6 KB) and about 22 KB of static RAM (lwIP's 10 KB transmit heap, 9 KB receive pool ...), plus 2.9 KB per open connection. The V407 and H41x get larger windows and pools (about 60 KB static; 12 TCP connections instead of 6), and so do the V307/V317 with 128 KB of RAM or more in the Flash / RAM Split menu (TcpEchoServer: 37 KB of static RAM at 64 KB, 77 KB at 128 KB). The configuration is `src/lwipopts.h`.
+For a sketch using DHCP, a TCP server and client, UDP and DNS, the network adds about 44 KB of flash (lwIP about 37 KB, this library about 6 KB) and about 22 KB of static RAM (lwIP's 10 KB transmit heap, 9 KB receive pool ...), plus 2.9 KB per open connection. The V407 and H41x get larger windows and pools (about 60 KB static; 12 TCP connections instead of 6), and so do the V307/V317 with 128 KB of RAM or more in the Flash / RAM Split menu, but with 20 KB of transmit heap to leave an HTTPS handshake its heap (TcpEchoServer: 37 KB of static RAM at 64 KB, 65 KB at 128 KB; 2026-11-20). The configuration is `src/lwipopts.h`.
 
 ## Calling lwIP directly
 
