@@ -297,6 +297,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   最長 3〜10 µs で間に合っている。部分の間隔の数（14〜16）と、完了の間隔が 1.5 間隔を超えた数（14〜16、最長 246〜424 µs）が
   そろうので、チェーンが 1 間隔で出切らずに次の間隔へまたがっている（ソフトの遅れではない。Mult 0 では起きない）。PC とは
   SS のハブ 2 段を通る。残り: usbmon（root）でホストが各間隔に何パケット求めたかを見る、ハブを通さない口で比べる（配線）。
+  → 同日の夕方に V5F で HSE と HSI を交互に 2 回ずつ流すと、部分の間隔はどれも 0〜3（in[2] 0〜2 / 512）で、昼の 8〜15 より
+  ずっと少なかった。時計の源ではなく、時間帯（ホストの負荷やハブの先の他の機器）で変わっている。
 - [x] ch32-device-data cb02bca / 3c9ed13 の取り込み（lock は 3c9ed13）。pvd_levels.csv は生成器の load_pvd に、pinout.csv の
   condition の列は SDIO の経路の一般の規則にした（SDIO_ROUTE_FIXES をやめた）。2026-11-18 に残りの表をコアと突き合わせた:
   adc_triggers.csv は ch32rv_adc_trigger.h と値がすべて一致（値 6 の TKEY / OPA はコアが使わない）。exti_lines.csv は
@@ -772,7 +774,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   V006 の 8 MHz は、SystemInit() が flash の待ちを先に 0 へ下げてから HPRE /3 を書いていたので、リセットの直後の HSI 24 MHz を
   待ち 0 で走り、SysTick が止まったり起動しなかったりした（待ちは上げるときだけ先に、下げるのは分周のあと。CFGR0 も 1 回で書く）。
   X035 の 8 MHz は ADC のクロックが下限（3 MHz）に届かず変換が終わらない。項目を「no ADC」にし、ADC の呼び出しをビルドエラーにした。
-- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、USB を各項目で確かめること。→ 2026-11-17: H41x に CPU Clock（V5F / V3F が 400/100・200/50・25/25 MHz。F_CPU は CPU Core の選ぶコアのもの）、X305 に X315 と同じ 240 / 20 MHz、M030・X3x5・V4x7 に Clock Source（HSE）を入れた（ビルドのみ）。実機で selfcheck（time_rate・clocks・clock_source）とselfsys を各項目で流すこと。→ 2026-11-14: H41x（CPU Clock のメニューは無く、CPU Core × Clock Source）は nano で V5F / V3F × HSE / HSI の 4 つとも selfcheck・selfsys が PASS。USB は nano に相手が無いので未確認。X305 はベンチに無い。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
+- [ ] クロック: H41x と X305 の CPU Clock のメニュー、HSE、USB を各項目で確かめること。→ 2026-11-17: H41x に CPU Clock（V5F / V3F が 400/100・200/50・25/25 MHz。F_CPU は CPU Core の選ぶコアのもの）、X305 に X315 と同じ 240 / 20 MHz、M030・X3x5・V4x7 に Clock Source（HSE）を入れた（ビルドのみ）。実機で selfcheck（time_rate・clocks・clock_source）とselfsys を各項目で流すこと。→ 2026-11-14: H41x（CPU Clock のメニューは無く、CPU Core × Clock Source）は nano で V5F / V3F × HSE / HSI の 4 つとも selfcheck・selfsys が PASS。USB は nano に相手が無いので未確認。→ 2026-11-20: h417qeu6-pico の USB SS（PC）で、V5F / V3F × HSE / HSI の 4 つとも usb-ss-iso のベンダーの 3 件（halt・
+  ポートのリセット・大きさ）と等時の alt 1〜3 が通る。48 パケットの alt 4 / 5 は V3F（100 MHz）で間隔が空になる・短くなるものが出る。
+  （H41x の CPU Clock のメニューは今は 400 MHz の 1 つだけ。）X305 はベンチに無い。L103 の 72 / 96 MHz は、OEP probe（RP2350）が動いている L103 に接続できない（試すイメージには `CH32RV_BOOT_HOLD_MS` を付ける、docs/upload-routes.ja.md）。
 - PD の他系列（L103 / M103、V205、X305 / X315、H41x、M030 の USBPD0）: 2026-10-22 に入れた（ビルドのみ）。BMC の
   クロックは F_CPU から計算する（EVT の表は 10〜240 MHz。8 MHz の L103 / V205 / M030 で通るかは実機で確かめる。
   試験は `--case pd`）。M030 の USBPD1 は未対応。
