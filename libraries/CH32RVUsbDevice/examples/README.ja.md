@@ -169,6 +169,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [SerialUSBEcho](SerialUSBEcho/README.ja.md) | 定義済みの `SerialUSB` だけで始める CDC ACM の最小例です。受信したバイトをそのまま返し、端末を開いている間は毎秒カウンタを送ります。 |
 | [SmartCardReader](SmartCardReader/README.ja.md) | カード自体をスケッチで模擬する1スロットの CCID リーダーです。実カードや接触型カード回路は接続しません。 |
 | [USBVendor](USBVendor/README.ja.md) | HID ではない vendor-specific interface に bulk IN/OUT と EP0 vendor request を用意します。WebUSB と WinUSB 用の descriptor も有効にします。 |
+| [VendorBulkPeer](VendorBulkPeer/README.ja.md) | 失わないベンダーの bulk のエコーと PC の PyUSB のスクリプト。部分転送と送り手の詰まりを再現します。 |
 | [UsbNetworkPing](UsbNetworkPing/README.ja.md) | CDC-NCM の Ethernet フレームから ARP と IPv4 ping に応答します。IP スタックを持たず、Web サーバーやインターネット接続は提供しません。 |
 | [VendorHID](VendorHID/README.ja.md) | vendor-defined HID の Input、Output、Feature report を観察します。bulk を使う USBVendor とは別の例です。 |
 | [VideoCamera](VideoCamera/README.ja.md) | カメラセンサなしで YUY2 カラーバーと動く白いブロックを生成する UVC デバイスです。 |

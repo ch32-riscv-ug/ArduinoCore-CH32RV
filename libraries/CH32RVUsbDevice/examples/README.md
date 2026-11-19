@@ -150,6 +150,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [SerialUSBEcho](SerialUSBEcho/README.md) | A minimal CDC ACM device using the predefined `SerialUSB`. It echoes received bytes and sends a counter once a second while the terminal is open. |
 | [SmartCardReader](SmartCardReader/README.md) | A one-slot CCID reader whose card is emulated in software; no physical card interface is needed. |
 | [USBVendor](USBVendor/README.md) | A non-HID vendor interface with bulk IN/OUT, EP0 vendor requests and WebUSB/WinUSB descriptors. |
+| [VendorBulkPeer](VendorBulkPeer/README.md) | A lossless vendor bulk echo with a PyUSB script on the PC: partial transfers and a stalled sender. |
 | [UsbNetworkPing](UsbNetworkPing/README.md) | A CDC-NCM device answering ARP and IPv4 ping directly from Ethernet frames, without an IP stack, web server or Internet connection. |
 | [VendorHID](VendorHID/README.md) | Vendor-defined HID input, output and feature reports, distinct from the bulk-based USBVendor example. |
 | [VideoCamera](VideoCamera/README.md) | A sensor-free UVC device generating YUY2 color bars and a moving white block. |
