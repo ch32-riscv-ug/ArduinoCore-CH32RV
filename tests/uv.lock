@@ -21,7 +21,7 @@ hardware = [
 
 [package.metadata]
 requires-dist = [
-    { name = "oep-client-python", extras = ["pytest"], marker = "extra == 'hardware'", specifier = "==0.0.58" },
+    { name = "oep-client-python", extras = ["pytest"], marker = "extra == 'hardware'", specifier = "==0.0.59" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-embedded-arduino-cli", marker = "extra == 'hardware'", specifier = "==1.12.0" },
     { name = "pytest-embedded-arduino-cli-ch32rv", marker = "extra == 'hardware'", specifier = "==0.0.10" },
@@ -170,7 +170,7 @@ wheels = [
 
 [[package]]
 name = "oep-client-python"
-version = "0.0.58"
+version = "0.0.59"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "hidapi" },
@@ -178,9 +178,9 @@ dependencies = [
     { name = "pyserial" },
     { name = "pyusb" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/28/1858bbea3cf2b0f1fe79cd0bfc0945a23415dbad1dcdf31c9b2d4bb33b36/oep_client_python-0.0.58.tar.gz", hash = "sha256:f2b5a8ec8abb1153f85aa00775cf87159b750d8a089f822d2a58fc5f612b602d", size = 2121677, upload-time = "2026-11-18T05:02:11.752Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/54/9d4090c34a2a77a6a9d15489f6072319de26cbf0bffcb6649d7402302528/oep_client_python-0.0.59.tar.gz", hash = "sha256:52c4e8a1456669546d9d50eed9628519707a5cef4da6f52a2c06a5007902caa6", size = 2288235, upload-time = "2026-11-19T01:17:53.527Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/13/e2e85b8d924d7baeaf6beef52884aff9fb35a54c4b25a07c50404769ba08/oep_client_python-0.0.58-py3-none-any.whl", hash = "sha256:89725b4570faf1a128a5ccd7dd3f6712df70deb5d095ab2b6d409289a10aed8b", size = 974292, upload-time = "2026-11-18T05:02:09.889Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/5e/88353c3313e2ab9d2bfd25ea0922db559adbd2ae1e0ae1a97bd6128f2e49/oep_client_python-0.0.59-py3-none-any.whl", hash = "sha256:1ad156b1b60f225b72a54d577327126e8af97803522a2a33232602f7872874f9", size = 977217, upload-time = "2026-11-19T01:17:51.847Z" },
 ]
 
 [package.optional-dependencies]

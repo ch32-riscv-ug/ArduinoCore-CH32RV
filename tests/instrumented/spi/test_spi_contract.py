@@ -22,7 +22,6 @@ their tests."""
 import json
 import pathlib
 import secrets
-import struct
 import sys
 import time
 
@@ -130,16 +129,11 @@ def open_bus(dut, oep_host, case, record_property):
 def configure_target(target, mode, lsb, soft):
     """The probe's spi-target in this mode and bit order. A SoftSPI's SCK is a GPIO with slow edges (H417's 10 MHz
     pads) that the target counted twice now and then: there it filters SCK pulses under 25 ns (sck_filter, oep-spec
-    baa2605 fixture section 4; [oep] 2026-11-18), which holds up to about 16 MHz. Until an oep-client-python release has
-    configure(sck_filter=...), the option goes as that TLV (tag 0x01 critical, one byte 1)."""
-    if not soft:
-        target.configure(mode=mode, bit_order=lsb)
-        return
-    try:
+    baa2605 fixture section 4; [oep] 2026-11-18), which holds up to about 16 MHz."""
+    if soft:
         target.configure(mode=mode, bit_order=lsb, sck_filter=True)
-    except TypeError:
-        from oep_client import message
-        target._call(target.CONFIGURE, struct.pack("<BB", mode, lsb) + message.tlv(0x01, b"\x01", critical=True))
+    else:
+        target.configure(mode=mode, bit_order=lsb)
 
 
 def wait_reply(dut, wait, pattern, timeout=3.0):
