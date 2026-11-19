@@ -86,6 +86,13 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]
 
 [[item]]
+id = "pioc-ir-nec"          # the PiocIrNec example's program: NEC frames with the 38 kHz carrier on IO0
+test = "pioc::test_pioc_ir_nec"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"

@@ -15,7 +15,10 @@
  *                        uart_tx.S (a copy of the PiocUartTx example's), begun on that pad once and left running
  *                        (another command that begins an image ends it): n bytes (i * 37 + seed) at baud, 24 at a
  *                        time through d8 .. d31 as the example sends them: PUART <begun> 1 <cmd.out or -1>
- *                        <clockHz()> <cycles a bit> */
+ *                        <clockHz()> <cycles a bit>
+ *   pnec <pin> <address> <command>
+ *                        ir_nec.S (a copy of the PiocIrNec example's) on that pad, one frame as the example sends it
+ *                        (address above 0xFF: extended): PNEC <begun> <cmd.out or -1> <clockHz()> <cycles a period> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVPioc.h>
@@ -30,7 +33,9 @@
 PIOC_IMAGE(bench_pulses);
 PIOC_IMAGE(ws2812);
 PIOC_IMAGE(uart_tx);
+PIOC_IMAGE(ir_nec);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
+int necPin = -1;             // the same for ir_nec
 CH32RVPioc pioc;
 volatile int irqStatus = -1;
 volatile uint8_t irqCalls;
@@ -64,6 +69,7 @@ void reply(char *command) {
   } else if (strncmp(command, "pbegin ", 7) == 0) {
     SerialDMSeq.print("PBEGIN ");
     uartPin = -1;
+    necPin = -1;
     SerialDMSeq.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
   } else if (strncmp(command, "pws ", 4) == 0) {
     char *p;
@@ -76,6 +82,7 @@ void reply(char *command) {
       bytes[i] = (uint8_t)(i * 37u + seed);
     }
     uartPin = -1;
+    necPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(ws2812), pin);
     const bool loaded = begun && pioc.loadSram(0x400, bytes, count);
     auto turns = [](uint32_t ns, uint32_t fixed) -> uint8_t {
@@ -112,6 +119,7 @@ void reply(char *command) {
     /* begun once and left running: a begin (or loadSram) holds the PIOC in reset, the pad floating */
     bool begun = uartPin == pin;
     if (!begun) {
+      necPin = -1;
       begun = pioc.begin(PIOC_IMAGE_OF(uart_tx), pin);
       uartPin = begun ? pin : -1;
       delay(1);
@@ -132,6 +140,42 @@ void reply(char *command) {
     }
     SerialDMSeq.printf("PUART %d %d %d %lu %lu\r\n", begun ? 1 : 0, 1, status,
                        (unsigned long)CH32RVPioc::clockHz(), (unsigned long)(3 * lo + 770 * hi + 11));
+  } else if (strncmp(command, "pnec ", 5) == 0) {
+    char *p;
+    const int pin = (int)strtol(command + 5, &p, 10);
+    const uint16_t address = (uint16_t)strtoul(p, &p, 0);
+    const uint8_t cmd = (uint8_t)strtoul(p, nullptr, 0);
+    auto split = [](int32_t cycles, uint8_t *out) {
+      int32_t hi = cycles > 3 ? (cycles - 3) / 770 : 0;
+      int32_t lo = (cycles - 770 * hi + 1) / 3;
+      lo = lo < 1 ? 1 : lo > 256 ? 256 : lo;
+      out[0] = (uint8_t)lo;
+      out[1] = (uint8_t)hi;
+    };
+    /* begun once and left running, as uart_tx: a begin is a reset */
+    if (necPin != pin) {
+      uartPin = -1;
+      necPin = pioc.begin(PIOC_IMAGE_OF(ir_nec), pin) ? pin : -1;
+      delay(1);
+    }
+    const int32_t period = (int32_t)((CH32RVPioc::clockHz() + 19000u) / 38000u);
+    uint8_t frame[8];
+    frame[0] = (uint8_t)address;
+    frame[1] = address > 0xFF ? (uint8_t)(address >> 8) : (uint8_t)~address;
+    frame[2] = cmd;
+    frame[3] = (uint8_t)~cmd;
+    split(period / 3 - 11, frame + 4);
+    split(period - 25 - (3 * (frame[4] ? frame[4] : 256) + 770 * frame[5]), frame + 6);
+    int status = -1;
+    if (necPin == pin) {
+      pioc.writeData(0, frame, sizeof frame);
+      pioc.command(1);
+      status = pioc.waitDone(500);
+    }
+    const uint32_t cycles = 3u * (frame[4] ? frame[4] : 256) + 770u * frame[5] + 3u * (frame[6] ? frame[6] : 256) +
+                            770u * frame[7] + 25u;
+    SerialDMSeq.printf("PNEC %d %d %lu %lu\r\n", necPin == pin ? 1 : 0, status,
+                       (unsigned long)CH32RVPioc::clockHz(), (unsigned long)cycles);
   } else if (strncmp(command, "pcmd ", 5) == 0) {
     char *p;
     const unsigned long n = strtoul(command + 5, &p, 10);
@@ -170,6 +214,7 @@ void reply(char *command) {
     SerialDMSeq.println(pioc.read(1));
   } else if (strcmp(command, "pend") == 0) {
     uartPin = -1;
+    necPin = -1;
     pioc.end();
     SerialDMSeq.println("PEND");
   } else {

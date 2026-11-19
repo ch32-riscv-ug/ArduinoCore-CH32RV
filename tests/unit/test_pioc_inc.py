@@ -8,6 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 COPIES = [
     ("tests/sketch_support/pioc/ws2812.S", "libraries/CH32RVPioc/examples/PiocWs2812/ws2812.S"),
     ("tests/sketch_support/pioc/uart_tx.S", "libraries/CH32RVPioc/examples/PiocUartTx/uart_tx.S"),
+    ("tests/sketch_support/pioc/ir_nec.S", "libraries/CH32RVPioc/examples/PiocIrNec/ir_nec.S"),
 ]
 
 

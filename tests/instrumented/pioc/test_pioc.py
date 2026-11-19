@@ -200,3 +200,58 @@ def test_pioc_uart_tx(dut, ws_run, request, record_property):
     record_property("replies", json.dumps(got))
     for baud, (begun, loaded, status, hz, cycles) in got.items():
         assert (begun, loaded, status) == (1, 1, 0), f"{baud}: begun {begun}, loaded {loaded}, cmd.out {status}"
+
+
+NEC_RATE = 4_000_000        # 4 MS/s: about 100 samples a carrier period
+NEC_FRAMES = ((0x00, 0x45), (0x1234, 0x5A))     # (address, command): a plain and an extended address
+
+
+def test_pioc_ir_nec(dut, ws_run, request, record_property):
+    """The PiocIrNec example's program (ir_nec.S, a copy beside pioc.ino): IO0 on the first PIOC pad the probe labels
+    as a plain line, begun once (before the capture) and left running; one frame per command as the example sends it
+    (a plain address, then an extended one): WireSkein's `ir` (NEC, as an IR LED is driven) finds those frames with
+    each command's inverse, the carrier within 5 % of what the PIOC makes (its clock over the period's cycles, the
+    sketch reports both) and every mark and space within 10 % of NEC's; IO0 low at the section's start and end."""
+    from wireskein.runlog import ends, ir, starts
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    record_property("io0", io0["pad"])
+    m = _ask_now(dut, f"pnec {io0['pin']} 0 0", rb"PNEC (\d) (-?\d+) (\d+) (\d+)")   # begun before the capture
+    carrier = int(m.group(3)) / int(m.group(4))
+    got = {}
+
+    def steps(wait):
+        low = {io0["pad"]: 0}
+        with ws_run.section(1, f"pioc ir_nec IO0 {io0['pad']}"):
+            for address, command in NEC_FRAMES:
+                frames = [{"addr": address, "cmd": command}]
+                with ws_run.section(2, f"NEC {address:#x} {command:#x}",
+                                    expect=[ir(io0["pad"], frames=frames, carrier_hz=carrier), starts(low), ends(low)]):
+                    wait(0.01)
+                    line = f"pnec {io0['pin']} {address} {command}"
+                    ws_run.command(line)
+                    m = _ask(dut, wait, line, rb"PNEC (\d) (-?\d+) (\d+) (\d+)")
+                    ws_run.reply(m.group(0).decode())
+                    got[f"{address:#x}/{command:#x}"] = [int(x) for x in m.groups()]
+                    wait(0.02)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [io0], rate=NEC_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("replies", json.dumps(got))
+    record_property("carrier_hz", round(carrier, 1))
+    for name, (begun, status, hz, cycles) in got.items():
+        assert (begun, status) == (1, 0), f"{name}: begun {begun}, cmd.out {status}"
