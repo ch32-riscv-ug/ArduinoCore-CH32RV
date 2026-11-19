@@ -277,6 +277,12 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
   it shares with its handlers by masking every interrupt, which holds at any level, but no driver is re-entrant -
   a handler that can interrupt a driver's handler must not call that driver. `noInterrupts()` masks every level.
   On H41x each core has its own. V103 (no HPE) nests by the PFIC as the EVT says; not yet checked on the board.
+- **A faster way in (VTF)** (the same `ch32rv_priority.h`): `ch32rv_irq_set_fast(irqn, true)` puts the interrupt
+  in a VTF slot, so the PFIC enters its handler without fetching it from the vector table (the handler stays the
+  same; only the way in changes). There are `CH32RV_IRQ_FAST_SLOTS` (2 on V00x and M007, 0 on V103, 4 elsewhere);
+  false when they are taken. `false` gives the slot back, `ch32rv_irq_is_fast()` tells. A timer's interrupt came in
+  sooner: 43 -> 42 counts on H417, 80 -> 72 on V006, 72 -> 70 on V203, 172 -> 165 on X035 (2026-11-19,
+  selfapi::test_vtf).
 
 ### H41x's two cores (V5F and V3F)
 

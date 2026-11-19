@@ -14,6 +14,11 @@
  *                             fast one (every 100 us), 50 ms in each of three settings - slow less urgent than fast,
  *                             both the same, slow more urgent: PRIO <preemption levels> then <slow handlers run>
  *                             <of them interrupted by the fast one> for each setting; PRIO NONE without two timers
+ *   vtf                       ch32rv_irq_set_fast(): a timer's update interrupt at its full clock, 300 entries with the
+ *                             vector table and 300 with a VTF slot, the counter read first thing in the handler:
+ *                             VTF <slots> <set 1/0> <is_fast() after 1/0> <least count, table> <least count, VTF>
+ *                             <entries, table> <entries, VTF> <is_fast() after it is given back 1/0>, VTF NONE without
+ *                             a free timer
  *   cores                     CORES V5F <ports> (CH32H41x, the sketch on the V5F and the V3F to start: the commands
  *                             below), CORES V3F (H41x with CPU Core = V3F: hsem and ipc alone), CORES NONE
  *   hsem                      the HSEM between the cores, step by step (hsem_check(): the reply's fields), or on one
@@ -258,6 +263,65 @@ static void prio_check()
                        (unsigned long)nested[1], (unsigned long)runs[2], (unsigned long)nested[2]);
 }
 
+
+/* VTF: the counter as the handler first sees it, after the update that raised it (counts at the timer's clock). */
+static volatile uint32_t vtf_base, vtf_least, vtf_entries;
+
+static void on_vtf(void *)
+{
+    const uint32_t c = CH32RV_TIM_CNT(vtf_base);
+    vtf_least = c < vtf_least ? c : vtf_least;
+    vtf_entries++;
+}
+
+static uint8_t vtf_identity;
+
+static void vtf_check()
+{
+    const CH32RVTimerOwner owner = {&vtf_identity, on_quiesce, nullptr};
+    CH32RVTimerLease lease;
+    const CH32RVTimerCapability *cap = nullptr;
+    for (size_t i = 0; i < ch32rv_timer_count(); i++) {
+        const CH32RVTimerCapability *c = ch32rv_timer_capability(i);
+        const CH32RVTimerRequest request = {c->number, CH32RV_TIMER_WHOLE, {0u, 9999u, 0u}};   /* full clock */
+        lease = ch32rv_timer_try_acquire(&request, &owner);
+        if (ch32rv_timer_lease_valid(&lease)) {
+            cap = c;
+            break;
+        }
+    }
+    if (!cap) {
+        SerialDMSeq.printf("VTF NONE\r\n");
+        return;
+    }
+    vtf_base = cap->register_base;
+    ch32rv_timer_apply_base(&lease);
+    ch32rv_timer_attach_update_interrupt(&lease, on_vtf, nullptr);
+    uint32_t least[2], entries[2];
+    bool set = false, fastAfter = false;
+    for (int k = 0; k < 2; k++) {
+        if (k == 1) {
+            set = ch32rv_irq_set_fast(cap->update_irq, true);
+            fastAfter = ch32rv_irq_is_fast(cap->update_irq);
+        }
+        vtf_least = 0xFFFFFFFFu;
+        vtf_entries = 0;
+        ch32rv_timer_start(&lease);
+        const uint32_t t0 = millis();
+        while (vtf_entries < 300u && millis() - t0 < 500u) {
+        }
+        ch32rv_timer_stop(&lease);
+        least[k] = vtf_least;
+        entries[k] = vtf_entries;
+    }
+    ch32rv_irq_set_fast(cap->update_irq, false);
+    const bool stillFast = ch32rv_irq_is_fast(cap->update_irq);
+    ch32rv_timer_detach_update_interrupt(&lease);
+    ch32rv_timer_release(&lease);
+    SerialDMSeq.printf("VTF %u %d %d %lu %lu %lu %lu %d\r\n", (unsigned)CH32RV_IRQ_FAST_SLOTS, set ? 1 : 0,
+                       fastAfter ? 1 : 0, (unsigned long)least[0], (unsigned long)least[1],
+                       (unsigned long)entries[0], (unsigned long)entries[1], stillFast ? 1 : 0);
+}
 
 /* ---- CH32H41x's two cores: the HSEM, the IPC, and the V3F's own peripherals and interrupts ---- */
 #if defined(CH32RV_HAS_HSEM)
@@ -1129,6 +1193,8 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "adcpins")) {
         SerialDMSeq.printf("ADCPINS\r\n");
 #endif
+    } else if (!strcmp(argv[0], "vtf")) {
+        vtf_check();
     } else if (!strcmp(argv[0], "prio")) {
         prio_check();
     } else if (!strcmp(argv[0], "cores")) {

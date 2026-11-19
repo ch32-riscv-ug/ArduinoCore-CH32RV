@@ -430,3 +430,23 @@ def test_gpha(dut, ready, record_property):
     right, total, wrong = int(m.group(2)), int(m.group(3)), m.group(4).decode().split()
     record_property("gpha", json.dumps(dict(right=right, total=total, wrong=wrong)))
     assert right == total, f"{right} of {total} right; wrong: {' '.join(wrong)}"
+
+
+def test_vtf(dut, ready, record_property):
+    """ch32rv_irq_set_fast() (VTF): a timer's update interrupt at the timer's full clock, 300 entries through the
+    vector table, then 300 with the interrupt in a VTF slot: the slot is taken and is_fast() says so, the handler (the
+    core's timer dispatch, the same one) runs every time, entry is no slower than through the table (the counter
+    first read in the handler: the least of each run), and the slot is given back. V103 (no slots in this form)
+    checks that it is refused."""
+    m = ask(dut, "vtf", rb"VTF (NONE|(\d+) (\d) (\d) (\d+) (\d+) (\d+) (\d+) (\d))", timeout=15)
+    if m.group(1) == b"NONE":
+        pytest.skip("no free timer for the measurement")
+    slots, ok, fast, table, vtf, n_table, n_vtf, still = (int(m.group(k)) for k in range(2, 10))
+    record_property("vtf", json.dumps(dict(slots=slots, table_counts=table, vtf_counts=vtf, entries=[n_table, n_vtf])))
+    assert n_table >= 300 and n_vtf >= 300, f"the handler ran {n_table} / {n_vtf} times"
+    assert not still, "the slot was not given back"
+    if slots == 0:
+        assert (ok, fast) == (0, 0), "a series without VTF slots took one"
+        return
+    assert (ok, fast) == (1, 1), f"ch32rv_irq_set_fast() {ok}, is_fast() {fast}"
+    assert vtf <= table, f"entry through the VTF slot took {vtf} counts, through the table {table}"

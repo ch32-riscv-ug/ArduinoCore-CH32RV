@@ -93,6 +93,27 @@ static inline uint8_t ch32rv_irq_get_priority(uint32_t irqn)
     return CH32RV_PFIC_IPRIOR(irqn);
 }
 
+/* VTF (vector table free): up to CH32RV_IRQ_FAST_SLOTS interrupts the PFIC
+ * enters at their handler's address directly, without fetching it from the
+ * vector table first - a few cycles less latency for the ones that matter
+ * (EVT INT/Interrupt_VTF). The handler stays the vector's own (the core's
+ * dispatch, attachInterrupt()'s, a library's): only the way in changes.
+ * true when `irqn` has a slot (it had one already, or a free one was taken);
+ * false when all are in use or the series has none (V103's PFIC keeps them in
+ * another form). ch32rv_irq_set_fast(irqn, false) gives the slot back. */
+#if defined(CH32RV_SERIES_CH32V103)
+#define CH32RV_IRQ_FAST_SLOTS 0
+#elif defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V004) || \
+    defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
+    defined(CH32RV_SERIES_CH32M007)
+#define CH32RV_IRQ_FAST_SLOTS 2       /* QingKe V2 (the EVTs' SetVTFIRQ: num 0 .. 1) */
+#else
+#define CH32RV_IRQ_FAST_SLOTS 4
+#endif
+bool ch32rv_irq_set_fast(uint32_t irqn, bool on);
+/* Whether `irqn` is entered by a VTF slot. */
+bool ch32rv_irq_is_fast(uint32_t irqn);
+
 /* The EXTI vector a pin's interrupt (attachInterrupt()) is taken on, or -1. */
 static inline int ch32rv_pin_irqn(uint32_t pin)
 {

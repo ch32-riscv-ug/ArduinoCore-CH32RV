@@ -41,7 +41,7 @@
 | WWDG | 全 12 family | 実装済み（2026-11-15、`CH32RV.wwdgEnable()`。2026-11-19 に V203・H417・X035 で system::test_window_watchdog が通った） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
 | IWDG のオプションバイト（Watchdog メニュー）の残り | V103、H41x | 2 | 自動 | 自己（書き換えと戻し） | docs/adr/0017-option-byte-menus.ja.md:21 |
 | PFIC の割込み優先度の設定 | 全系列 | 実装済み（2026-11-17。`ch32rv_priority.h` の `ch32rv_irq_set_priority()`、コアの割り込みとの約束は CH32RV の README） 実機で通った系列（2026-11-19 の集計）: H417・L103・V003・V006・V103・V203・V205・V307・V407・X035・X315。 | 自動 | 自己（タイマー 2 本で入れ子を確かめる）。selfapi::test_priorities | libraries/CH32RV/README.ja.md |
-| VTF（高速割込み）、割込みの入れ子、ベクタを RAM へ | 全系列 | 2 | 自動 | 自己（遅延を SysTick で測る） | EVT INT/Interrupt_VTF, INT/VectorInRAM |
+| VTF（高速割込み）、割込みの入れ子、ベクタを RAM へ | 全系列 | 一部済み（VTF は 2026-11-19 に `ch32rv_irq_set_fast()`、H417・V203・X035・V006 で selfapi::test_vtf。入れ子は `ch32rv_irq_set_priority()`（selfapi::test_priorities）。残り: ベクタを RAM へ、V103 の VTF（別の形）） | 自動 | 自己（遅延を SysTick で測る） | EVT INT/Interrupt_VTF, INT/VectorInRAM |
 | オプションバイト（読み出し保護・書き込み保護・DATA0/1・START_MODE・STANDYRST/STOPRST・USARTDLEN 等・PORCTR・RST_PIN_SEL・CFGCANM） | 全 12 family | 2 | 自動 | 自己（読み戻し）。保護は解くとフラッシュが消えるので専用チップ | PS:69, PM:308 |
 | PMP（メモリ保護） | V20x、V30x、V4x7、L103、X035、H41x | 2 | 自動 | 自己（禁止域に触れて例外） | PS:63, PM:296 |
 | フラッシュの ECC の診断 | M030 | 2 | 自動 | 自己 | EVT CH32M030 FLASH/FLASH_ECC, TODO:318 |

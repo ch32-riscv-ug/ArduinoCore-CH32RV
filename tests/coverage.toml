@@ -126,6 +126,13 @@ needs = ["DAC"]
 kind = "self"
 
 [[item]]
+id = "vtf"                  # ch32rv_irq_set_fast(): a timer's interrupt through a VTF slot, its entry no slower
+test = "selfapi::test_vtf"
+scope = "series"
+needs = ["TIM1"]
+kind = "self"
+
+[[item]]
 id = "gpha"                 # CH32RVGpha: fill, copy with conversion, blend - against the CPU's reckoning
 test = "selfapi::test_gpha"
 scope = "series"
