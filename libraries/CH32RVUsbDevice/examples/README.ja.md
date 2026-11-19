@@ -161,6 +161,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [MediaKeys](MediaKeys/README.ja.md) | 音量・再生・トラック操作の Consumer Control と、System Control の宣言例です。 |
 | [Mouse](Mouse/README.ja.md) | 相対移動、ホイール、左ボタンを順に送る USB マウスです。物理スイッチやセンサは使いません。 |
 | [SerialEvents](SerialEvents/README.ja.md) | USB の callback が `deliverEvents()` の中でだけ動くことを確かめます。`loop()` がふさがっている間に届いたデータは、待ってから 1 回で届きます。 |
+| [UsbReconnect](UsbReconnect/README.ja.md) | ポートが閉じている間の記録を輪に貯め、開き直したら古い順に送ります。バスの出来事も表示します。 |
 | [Serial](Serial/README.ja.md) | 明示的に宣言した CDC ポートの送受信と、ホストによる line coding・DTR/RTS の変更を観察します。USB 通信とハードウェア UART ログを使い分ける例です。 |
 | [SerialMulti](SerialMulti/README.ja.md) | 一つの USB デバイスに独立した二つの CDC ポートを作ります。Console と Data Link を分け、ログと機械向け通信を別の端末で確認できます。 |
 | [SerialUSBEcho](SerialUSBEcho/README.ja.md) | 定義済みの `SerialUSB` だけで始める CDC ACM の最小例です。受信したバイトをそのまま返し、端末を開いている間は毎秒カウンタを送ります。 |

@@ -142,6 +142,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [MediaKeys](MediaKeys/README.md) | Consumer media-key reports plus a declared System Control function. |
 | [Mouse](Mouse/README.md) | A USB mouse generating relative movement, a wheel event and a left-button press/release without external sensors. |
 | [SerialEvents](SerialEvents/README.md) | Where the USB callbacks run: only in `deliverEvents()`. Data sent while `loop()` is busy waits and arrives in one call. |
+| [UsbReconnect](UsbReconnect/README.md) | Keeps readings in a ring while the port is closed and sends them oldest first when it opens again; bus events logged. |
 | [Serial](Serial/README.md) | An explicitly declared CDC port with UART diagnostics for line coding, DTR/RTS and received data. |
 | [SerialMulti](SerialMulti/README.md) | Two independent CDC ports, Console and Data Link, on one USB device. |
 | [SerialUSBEcho](SerialUSBEcho/README.md) | A minimal CDC ACM device using the predefined `SerialUSB`. It echoes received bytes and sends a counter once a second while the terminal is open. |

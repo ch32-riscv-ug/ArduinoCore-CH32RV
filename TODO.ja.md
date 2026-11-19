@@ -455,8 +455,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   同じロットの F8U6 では PC16 / PC17（route 2）の I2C が通っていた（2026-09-30）ので、制限は端子によって違うのかもしれない。
 - [ ] V103R8T6（d39e、CH549 の Link）が休止の試験の最初の休止から起きず、デバッガも応答しない（2026-10-28）。Link では電源を切れず、
   ハブの口の電源でも戻らない。手で電源を入れ直してから、RTC（LSI の測定・アラーム）を調べる。それまで V103 は RTC の系列から外している。
-- [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、USB 系（`UsbReconnect` / `VendorBulkPeer`）、`TlsClient`（TLS の例が 1 つも無い。実機の Ethernet と V307 の RAM の確認が要る）。
-  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）を足した（ビルドだけ）。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
+- [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、USB 系（`VendorBulkPeer`: PC 側の道具と組）、`TlsClient`（TLS の例が 1 つも無い。実機の Ethernet と V307 の RAM の確認が要る）。
+  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）・`UsbReconnect`（CH32RVUsbDevice）を足した（ビルドだけ）。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
   取りこぼし）、`SensorConsole` は既存の ButtonBlinkConsole（周期・ISR からの通知・コマンド）が同じことを示すので作らない。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
   `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
 - [ ] 応用の候補: ESP32 の HTTPClient / WebServer や EVT の MQTT を参考にした HTTP 取得・小さな Web server・telemetry、
