@@ -28,6 +28,7 @@
 #include <Arduino.h>
 #include <string.h>
 
+#include "internal/ch32rv_irq.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_usbfs_irq.h"
 #include "internal/CH32RVUsbHcd.h"
@@ -351,6 +352,8 @@ static void schedule(void);
  * started, so wait (bounded: a full-speed transaction is well under 100 us)
  * for its end before the next start() clears the flag - a late UIF_TRANSFER
  * would otherwise be read as the next transaction's. */
+static void transfer_done(void);
+
 static void stop_active(void)
 {
     if (active < 0) {
@@ -358,6 +361,26 @@ static void stop_active(void)
     }
     HOST_EP_PID = 0;
     for (volatile uint32_t d = 0; d < 20000u && !(INT_FG & UIF_TRANSFER); d++) {
+    }
+    INT_EN &= (uint8_t)~UIE_TRANSFER;
+    active = -1;
+}
+
+/* For a suspend: the transaction on the wire is let end and its result kept. An IN that brought data was
+ * acknowledged and the device has moved its toggle on - thrown away, that packet was lost (a CDC echo after a
+ * suspend never came back, L103 / V205, 2026-11-19). Called with the port already down, so transfer_done()'s
+ * schedule() starts nothing. */
+static void finish_active(void)
+{
+    if (active < 0) {
+        return;
+    }
+    HOST_EP_PID = 0;
+    for (volatile uint32_t d = 0; d < 20000u && !(INT_FG & UIF_TRANSFER); d++) {
+    }
+    if (INT_FG & UIF_TRANSFER) {
+        transfer_done();
+        return;
     }
     INT_EN &= (uint8_t)~UIE_TRANSFER;
     active = -1;
@@ -861,7 +884,7 @@ static bool hcd_port_suspend(bool on)
         ok = port_up;
         if (ok) {
             port_up = false;
-            stop_active();
+            finish_active();
             HOST_SETUP &= ~UH_SOF_EN;
             suspend_irq = on_suspend_irq;
             INT_FG = UIF_SUSPEND;
@@ -875,9 +898,16 @@ static bool hcd_port_suspend(bool on)
         for (const uint32_t t0 = micros(); (uint32_t)(micros() - t0) < RESUME_SIGNAL_US;) {
         }
         lock(&was);
+        /* The EOP: SE0 for two low-speed bits (1.33 us), well under the 2.5 us that a device takes for a bus
+         * reset - delayMicroseconds(2) and the register writes around it made L103's longer, and the peer came
+         * back unaddressed (no answer to any token after the resume, 2026-11-19). About 0.7 us of loop here,
+         * with interrupts off so nothing stretches it. */
+        const uint32_t irq = ch32rv_irq_save();
         BASE_CTRL = (uint8_t)((BASE_CTRL & ~UC_SYS_CTRL_MASK) | UC_SYS_FORCE_SE0);
-        delayMicroseconds(2);
+        for (volatile uint32_t i = 0; i < F_CPU / 10000000u; i++) {
+        }
         BASE_CTRL &= (uint8_t)~UC_SYS_CTRL_MASK;
+        ch32rv_irq_restore(irq);
         const bool attached = (MIS_ST & UMS_DEV_ATTACH) != 0;
         if (attached) {
             HOST_SETUP |= UH_SOF_EN;
