@@ -38,7 +38,10 @@ void ch32rv_usbpd_cc_release(uint8_t port, uint8_t bit);
 #endif
 #endif
 
-static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cfg)
+/* The nibble alone (and X035's USB pad errata), for a pad already given to its function: what an open-drain
+ * write switches per bit on the parts without open drain (ch32rv_gpio_od_write()). The first configuration goes
+ * through ch32rv_gpio_set_config(), which also lets go of a USB PD CC pad's Rd. */
+static inline void ch32rv_gpio_write_config(uint8_t port, uint8_t bit, uint32_t cfg)
 {
     volatile uint32_t *reg;
     uint32_t shift;
@@ -64,13 +67,6 @@ static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cf
     const uint32_t lock = ch32rv_cores_lock();
     *reg = (*reg & ~(0xFu << shift)) | ((cfg & 0xFu) << shift);
     ch32rv_cores_unlock(lock);
-#if defined(CH32RV_USBPD_CC_PORT_MASK)
-    /* A USB PD CC pad: the chip switches its Rd (~5.1 kOhm to ground) on at reset, which holds a GPIO, I2C or
-     * UART there low. A pad given another function drops it (CH32RVUsbPd sets PORT_CCx itself). */
-    if (CH32RV_USBPD_CC_PORT_MASK(port) & (1u << bit)) {
-        ch32rv_usbpd_cc_release(port, bit);
-    }
-#endif
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
     /* errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY pads. With
      * AFIO_CTLR.USB_PHY_V33 set (reset default 0x45) a GPIO or AF open-drain
@@ -79,6 +75,18 @@ static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cf
      * whenever either pad becomes an output; USB init sets it again itself. */
     if (port == 2u && (bit == 16u || bit == 17u) && (cfg & 0x3u) != 0u) {
         CH32RV_AFIO_CTLR &= ~CH32RV_AFIO_CTLR_USB_PHY_V33;
+    }
+#endif
+}
+
+static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cfg)
+{
+    ch32rv_gpio_write_config(port, bit, cfg);
+#if defined(CH32RV_USBPD_CC_PORT_MASK)
+    /* A USB PD CC pad: the chip switches its Rd (~5.1 kOhm to ground) on at reset, which holds a GPIO, I2C or
+     * UART there low. A pad given another function drops it (CH32RVUsbPd sets PORT_CCx itself). */
+    if (CH32RV_USBPD_CC_PORT_MASK(port) & (1u << bit)) {
+        ch32rv_usbpd_cc_release(port, bit);
     }
 #endif
 }
@@ -171,11 +179,14 @@ static inline uint8_t ch32rv_gpio_read(uint8_t port, uint8_t bit)
 static inline void ch32rv_gpio_od_write(uint8_t port, uint8_t bit, int high)
 {
 #if CH32RV_GPIO_NO_OPEN_DRAIN
+    /* The pad is the GPIO's since pinMode(): only the nibble here. SoftWire's target answers within SCL's low
+     * from this (X035 at 48 MHz): the CC pad check of ch32rv_gpio_set_config() in it made the reads too late
+     * (softwire::test_wire_slave, 2026-11-20). */
     if (high) {
-        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
+        ch32rv_gpio_write_config(port, bit, CH32RV_GPIO_CFG_IN_FLOAT);
     } else {
         ch32rv_gpio_clear(port, bit);
-        ch32rv_gpio_set_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
+        ch32rv_gpio_write_config(port, bit, CH32RV_GPIO_CFG_OUT_PP_10M);
     }
 #else
     if (high) {

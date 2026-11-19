@@ -349,10 +349,16 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] V205 の signals::test_timer_sync が「区間の端しだいで判定が変わる」で未判定になった（2026-11-20）。WireSkein が直した
   （区間の両端の、組を探す窓の中の相手のいない縁を数えない。wireskein aab7eb7、0.0.33 から）。0.0.33 が出たら上げて V205 の
   signals を流し直す。
-- [ ] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
+- [x] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
   core-20261117T034033Z-6f14bd0b）。X035 の SoftWire target は SDA を SCL の立ち上がりの約 1.5 µs 前に変える（規格の
   setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した
   （未リリース）。リリースが出たら上げ、X035 の softwire を流し直す。
+  → 2026-11-20 に 0.0.32 で流し直すと、解読ではなく DUT の側で落ちていた（プローブのマスターが読んで何も来ない、2 回とも）。
+  二分探索で 8ca5bfef（USB PD の CC の端子の Rd を切る処理を ch32rv_gpio_set_config() に入れた）から。X035 は開放ドレインが
+  無く、SoftWire の target は 1 ビットごとに設定の nibble を書き換えるので、その経路に入った CC の確認で応答が遅れた。
+  ch32rv_gpio_write_config()（nibble と X035 の USB の端子の errata だけ）を分け、ch32rv_gpio_od_write() はそれを使うようにした
+  （CC の Rd は pinMode() の最初の設定で切れている）。X035 の softwire の wire_slave が 2 回とも通り、X035・V205・H417 の
+  softwire・wire・gpio も通る（H417 のハードの Wire は既知の潰れたクロック）。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。2026-11-18 にログを
   読んだ: キー 47 の押下は DUT に届き、離した報告を Pico が 2 秒送れなかった（DUT のホストが割り込み IN を取りに来ない）。
