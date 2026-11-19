@@ -23,6 +23,8 @@
  *                             below), CORES V3F (H41x with CPU Core = V3F: hsem and ipc alone), CORES NONE
  *   hsem                      the HSEM between the cores, step by step (hsem_check(): the reply's fields), or on one
  *                             core with CPU Core = V3F
+ *   heap                      HEAP <V5F rounds> <V5F bad> <V3F rounds> <V3F bad>: both cores allocate and free (8 to
+ *                             256 B, a pattern checked before each free) for a second; HEAP NONE without the V3F
  *   ipc <n>                   n round trips V5F -> V3F (its handler answers m + 1) -> V5F, then one message the V5F
  *                             polls for; IPC V3F 0 0 0 with CPU Core = V3F (no other core)
  *   v3fport <k>               V3FPORT <USARTn> <RX pin>: port k (Serial, Serial1, ...)
@@ -450,6 +452,78 @@ static void hsem_check()
                        (unsigned long)cores_result[0], (unsigned long)cores_result[1], e,
                        (unsigned long)cores_result[2], g, h, (unsigned long)waited, (unsigned long)cores_result[3],
                        i, (unsigned long)cores_count, (unsigned long)(2u * CORES_ADDS), (unsigned long)raw);
+}
+
+/* The heap from both cores (ch32rv_heap_lock.c): 16 slots each, malloc'd 8 to 256 B with a pattern, checked
+ * and freed at random, for heap_ms. */
+struct HeapChurn {
+    uint8_t *slot[16];
+    uint16_t size[16];
+    uint8_t tag[16];
+    uint32_t seed, rounds, bad;
+    void step()
+    {
+        seed = seed * 1103515245u + 12345u;
+        const unsigned k = (seed >> 16) & 15u;
+        if (slot[k]) {
+            for (unsigned i = 0; i < size[k]; i++) {
+                if (slot[k][i] != (uint8_t)(tag[k] + i)) {
+                    bad++;
+                    break;
+                }
+            }
+            free(slot[k]);
+            slot[k] = nullptr;
+        } else {
+            size[k] = (uint16_t)(8u + ((seed >> 8) & 0xF8u));
+            slot[k] = (uint8_t *)malloc(size[k]);
+            if (!slot[k]) {
+                return;
+            }
+            tag[k] = (uint8_t)seed;
+            for (unsigned i = 0; i < size[k]; i++) {
+                slot[k][i] = (uint8_t)(tag[k] + i);
+            }
+        }
+        rounds++;
+    }
+    void clear()
+    {
+        for (unsigned k = 0; k < 16u; k++) {
+            free(slot[k]);
+            slot[k] = nullptr;
+        }
+    }
+};
+static HeapChurn heap_v5f, heap_v3f_churn;
+
+static void heap_v3f(void *)
+{
+    v3f_await(1);
+    while (cores_step == 1u) {
+        heap_v3f_churn.step();
+    }
+    heap_v3f_churn.clear();
+}
+
+static void heap_check()
+{
+    heap_v5f = HeapChurn{{}, {}, {}, 1u, 0u, 0u};
+    heap_v3f_churn = HeapChurn{{}, {}, {}, 2u, 0u, 0u};
+    if (!cores_start(heap_v3f)) {
+        SerialDMSeq.printf("HEAP BUSY\r\n");
+        return;
+    }
+    cores_step = 1;
+    const uint32_t t0 = millis();
+    while ((uint32_t)(millis() - t0) < 1000u) {
+        heap_v5f.step();
+    }
+    cores_step = 2;
+    cores_finish(2000);
+    heap_v5f.clear();
+    SerialDMSeq.printf("HEAP %lu %lu %lu %lu\r\n", (unsigned long)heap_v5f.rounds, (unsigned long)heap_v5f.bad,
+                       (unsigned long)heap_v3f_churn.rounds, (unsigned long)heap_v3f_churn.bad);
 }
 
 /* ---- IPC ---- */
@@ -1224,6 +1298,8 @@ static void reply(char *command)
         ipc_check(strtoul(argv[1], nullptr, 10));
 #endif
 #if defined(CH32RV_HAS_V3F)
+    } else if (!strcmp(argv[0], "heap")) {
+        heap_check();
     } else if (!strcmp(argv[0], "v3fport") && argc == 2) {
         v3f_port(atoi(argv[1]));
     } else if (!strcmp(argv[0], "v3fser") && argc == 2) {

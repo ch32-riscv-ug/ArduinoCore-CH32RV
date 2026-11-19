@@ -251,7 +251,7 @@
 | HSEM・IPC の公開 API | H417/H416 | 実装済み（2026-11-17。`CH32RV.hsemTake/TryTake/Release()`・`ipcSend/Receive/OnReceive()`、C は ch32rv_multicore.h。CPU Core = V3F では IPC は false） 実機で通った系列（2026-11-19 の集計）: H417。 | 自動 | 自己（selfapi::test_cores_hsem・test_cores_ipc） | PS:66, PM:269-271 |
 | V3F から使える周辺（Serial など） | H41x | 実装済み（2026-11-17。V3F の関数は割り込み有効で動き、V3F で始めた周辺の割り込みは V3F へ。共有のレジスタ（RCC・GPIO の設定・AFIO・EXTI）はコアのロック。約束は internal/ch32rv_v3f.h と CH32RV の README。V3F のヒープは未対応） 実機で通った系列（2026-11-19 の集計）: H417。 | 自動 | 自己（selfapi::test_cores_v3f_serial） | libraries/CH32RV/src/CH32RVSystem.h:201-202 |
 | CPU Core = V3F のときに V5F を 2 つ目のコアにする（V3F が主の形の `setup1()` / `loop1()`・`startV5F()`。今は V5F が眠ったままで IPC は false） | H41x | 2（案） | 自動 | 自己（selfapi の cores を CPU Core = V3F でも 2 コアで） | docs/h417-cores-design.ja.md（C7）、ch32rv_multicore.h |
-| V3F のヒープ（malloc・new・String を 2 つのコアから。picolibc の malloc にロックが無い） | H41x | 2（案） | 自動 | 自己（2 つのコアで割り当てと解放を繰り返し、壊れないこと） | internal/ch32rv_v3f.h、libraries/CH32RV/README.ja.md |
+| V3F のヒープ（malloc・new・String を 2 つのコアから。picolibc の malloc にロックが無い） | H41x | 実装済み（2026-11-20、CPU Core = V5F のビルドで malloc の入口を HSEM のチャネル 30 のロックで包む（ch32rv_heap_lock.c）。V3F を起こさなければ消える。h417qeu6-pico で両コアから壊れ 0） | 自動 | 自己（2 つのコアで割り当てと解放を繰り返し、壊れないこと） | internal/ch32rv_v3f.h、libraries/CH32RV/README.ja.md |
 | V3F を外から止める・起動し直す（arduino-pico の `restartCore1()` / `idleOtherCore()` に当たるもの） | H41x | 2（案） | 自動 | 自己（止めて、もう一度 `startV3F()` が通ること） | docs/h417-cores-design.ja.md:153 |
 | V5F で休止・restart・WDT・フラッシュ、DFU の BOOT 域からの V5F | H41x | 2 | 自動 | 自己＋PC（DFU） | TODO:165-166 |
 | H41x の休止で V5F・V3F を分けて止める | H41x | 2 | 単発 | 電流計 | libraries/CH32RV/README.ja.md:71 |

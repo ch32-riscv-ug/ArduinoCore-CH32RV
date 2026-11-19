@@ -260,7 +260,7 @@ CH32RV.ipcSend(42);                 // 相手のコアへ（前のメッセー�
 uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
 ```
 
-- **HSEM**（`hsemCount()` = 31。チャネル 31 はコアが使う）: 取ったコアだけが離せます。相手のコアのチャネルを
+- **HSEM**（`hsemCount()` = 30。チャネル 30 と 31 はコアが使う: ヒープとレジスタのロック）: 取ったコアだけが離せます。相手のコアのチャネルを
   `hsemRelease()` しても false で、取られたままです。チャネルはコアのもので、同じコアの割り込み処理は、そのコアの
   ループが持つチャネルを取れません（`hsemTryTake()` が false。割り込みの中で待たないこと）。`hsemTake(ch, ms)` は
   `ms` で諦め（既定は無期限）、このコアが既に持つチャネルにはすぐ false です。
@@ -278,9 +278,12 @@ uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
   1 つの EXTI のベクタのグループ（EXTI9_5、EXTI15_10）も 1 つのコアのものです。複数のドライバーが共有するレジスタ
   （RCC のクロック許可、ポートの設定、AFIO、EXTI）は、V3F を起こしたあと、コアがロック（HSEM のチャネル 31）の中で書くので（V3F を使わないスケッチには入らない）、同じ
   ポートの別の端子を 2 つのコアで分けてかまいません。
+- **ヒープ（`malloc`・`new`・`String`）は両方のコアで使えます**（2026-11-20）。CPU Core = V5F のビルドは picolibc の malloc の入口を
+  ロック（そのコアの割り込みを止めて HSEM のチャネル 30）で包みます。V3F を起こさないスケッチではロックが消え、大きさは変わりません
+  （起こすスケッチで +396 B）。h417qeu6-pico で両方のコアから 5 秒割り当てと解放を続けて、壊れ 0（ロックなしは壊れて V3F が止まった）。
+  割り込みを止めて取るので、同じコアの割り込み処理の中の `malloc` も守られます。
 - **V3F で使わないもの:** システムのサービス（USB、IP のスタック、USB PD）、休止・`restart()`・ウォッチドッグ・
-  RTC・フラッシュ（`CH32RV.*`）、命令の数で時間を作るもの（`rgbLedWrite()`：`F_CPU` は V5F の 400 MHz）、ヒープ
-  （`malloc`・`new`・`String`。picolibc の malloc にロックが無い）。
+  RTC・フラッシュ（`CH32RV.*`）、命令の数で時間を作るもの（`rgbLedWrite()`：`F_CPU` は V5F の 400 MHz）。
 - 例: [DualCoreMessages](examples/DualCoreMessages/README.ja.md)。試験は selfapi の `test_cores_hsem`・
   `test_cores_ipc`・`test_cores_v3f_serial`（1 つのイメージに両方のコアのコードが入るので、書き込みは 1 回）。
 

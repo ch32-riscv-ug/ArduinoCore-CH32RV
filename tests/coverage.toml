@@ -944,6 +944,14 @@ also = ["CH32H415", "CH32H416", "CH32H417"]
 kind = "self"
 
 [[item]]
+id = "selfapi-cores-heap"   # the heap from both cores: a second of malloc / free on each, no block corrupted
+test = "selfapi::test_cores_heap"
+scope = "series"
+needs = ["HSEM"]
+also = ["CH32H415", "CH32H416", "CH32H417"]
+kind = "self"
+
+[[item]]
 id = "selfapi-cores-ipc"    # IPC: a message raises the other core's own interrupt, round trips, a polled message
 test = "selfapi::test_cores_ipc"
 scope = "series"

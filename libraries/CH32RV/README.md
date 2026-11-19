@@ -301,7 +301,7 @@ CH32RV.ipcSend(42);                 // to the other core (waits while its last m
 uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
 ```
 
-- **HSEM** (`hsemCount()` = 31; channel 31 is the core's): only the core that took a channel can release it -
+- **HSEM** (`hsemCount()` = 30; channels 30 and 31 are the core's: the heap's lock and the registers'): only the core that took a channel can release it -
   `hsemRelease()` of the other core's returns false and leaves it taken. A channel belongs to a core: an interrupt
   handler cannot take what its own core's loop holds (`hsemTryTake()` is false; never wait for it there).
   `hsemTake(ch, ms)` gives up after `ms` (no limit by default) and returns false at once for a channel this core
@@ -320,9 +320,14 @@ uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
   group (EXTI9_5, EXTI15_10) belong to one core too. The registers several drivers share - RCC's clock enables, a
   port's configuration, AFIO, EXTI - are written by the core under a lock (HSEM channel 31) once the V3F has been started (a sketch that never starts it has none of this), so the pins of one port
   may be split between the cores.
+- **The heap (`malloc`, `new`, `String`) works from both cores** (2026-11-20). A CPU Core = V5F build wraps picolibc's
+  malloc entry points in a lock (this core's interrupts masked, HSEM channel 30). A sketch that never starts the V3F
+  has the lock folded away, at no size (one that starts it: +396 B). On h417qeu6-pico both cores allocating and
+  freeing for 5 s corrupted nothing (without the lock blocks were corrupted and the V3F stopped). With the
+  interrupts masked, a `malloc` in this core's own interrupt handler is covered too.
 - **Not on the V3F:** the system services (USB, the IP stack, USB PD), sleep, `restart()`, the watchdogs, the RTC
   and the flash (`CH32RV.*`), anything timed by counting instructions (`rgbLedWrite()`: `F_CPU` is the V5F's 400
-  MHz), and the heap (`malloc`, `new`, `String`: picolibc's malloc has no lock).
+  MHz).
 - Example: [DualCoreMessages](examples/DualCoreMessages/README.md). Tests: selfapi's `test_cores_hsem`,
   `test_cores_ipc` and `test_cores_v3f_serial` (one image holds both cores' code, so one write).
 

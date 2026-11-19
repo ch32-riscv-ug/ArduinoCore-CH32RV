@@ -31,8 +31,10 @@ extern "C" {
 #if defined(CH32RV_IRQN_HSEM)
 
 #define CH32RV_HSEM_CHANNELS     32u
-/* The one the core takes for its own lock; a sketch has the others (0 to 30). */
+/* The ones the core takes: 31 for its own lock (below), 30 for the heap's (ch32rv_heap_lock.c). A sketch has the
+ * others (0 to 29). */
 #define CH32RV_HSEM_CORE_CHANNEL 31u
+#define CH32RV_HSEM_HEAP_CHANNEL 30u
 #define CH32RV_HSEM_RX(n)  (*(volatile uint32_t *)(0xE000C000u + 4u * (uint32_t)(n)))
 #define CH32RV_HSEM_RLR(n) (*(volatile uint32_t *)(0xE000C100u + 4u * (uint32_t)(n)))
 #define CH32RV_HSEM_LOCK   (1u << 31)

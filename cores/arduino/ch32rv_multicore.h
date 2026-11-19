@@ -3,7 +3,8 @@
  *
  *     #include <ch32rv_multicore.h>
  *
- * HSEM (CH32RV_HAS_HSEM): channels 0 to CH32RV_HSEM_USER_CHANNELS - 1 (30); 31 is the core's own lock.
+ * HSEM (CH32RV_HAS_HSEM): channels 0 to CH32RV_HSEM_USER_CHANNELS - 1 (29); 30 and 31 are the core's (the heap's
+ * lock and its own).
  *  - ch32rv_hsem_try_take(ch): takes the channel if it is free - 1 - or leaves it - 0. One read of the HSEM, no
  *    waiting.
  *  - ch32rv_hsem_take(ch, timeout_ms): tries until it has it or timeout_ms has passed (CH32RV_WAIT_FOREVER: no
@@ -43,7 +44,7 @@ extern "C" {
 
 #if defined(CH32RV_IRQN_HSEM)
 #define CH32RV_HAS_HSEM 1
-#define CH32RV_HSEM_USER_CHANNELS CH32RV_HSEM_CORE_CHANNEL
+#define CH32RV_HSEM_USER_CHANNELS CH32RV_HSEM_HEAP_CHANNEL
 int ch32rv_hsem_try_take(uint32_t channel);
 int ch32rv_hsem_take(uint32_t channel, uint32_t timeout_ms);
 int ch32rv_hsem_release(uint32_t channel);

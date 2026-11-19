@@ -425,8 +425,8 @@ public:
 #endif
 
 #if defined(CH32RV_HAS_HSEM)
-    /* CH32H41x: the hardware semaphore between the V5F and the V3F, channels 0 to hsemCount() - 1 (31 is the
-     * core's). hsemTryTake() takes a free channel or returns false at once; hsemTake() tries until it has it or
+    /* CH32H41x: the hardware semaphore between the V5F and the V3F, channels 0 to hsemCount() - 1 (30 and 31
+     * are the core's). hsemTryTake() takes a free channel or returns false at once; hsemTake() tries until it has it or
      * timeoutMs has passed (CH32RV_WAIT_FOREVER: no limit), false at once when this core holds it already;
      * hsemRelease() gives back a channel this core holds (false for one it does not: the other core's stay
      * taken). A channel belongs to a core: an interrupt handler cannot take what its own core's loop holds.

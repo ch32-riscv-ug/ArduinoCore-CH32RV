@@ -298,6 +298,20 @@ def test_cores_hsem(dut, ready, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_cores_heap(dut, ready, record_property):
+    mode, _ = cores(dut)
+    if mode != "V5F":
+        pytest.skip("one core runs the sketch here: the heap has no second user")
+    m = ask(dut, "heap", rb"HEAP (?:(BUSY)|(\d+) (\d+) (\d+) (\d+))", timeout=10)
+    assert not m.group(1), "the V3F was busy: startV3F() refused"
+    v5f, v5f_bad, v3f, v3f_bad = (int(x) for x in m.groups()[1:5])
+    record_property("heap", json.dumps(dict(v5f_rounds=v5f, v5f_bad=v5f_bad, v3f_rounds=v3f, v3f_bad=v3f_bad)))
+    # Both cores allocate and free for a second under the core's heap lock (ch32rv_heap_lock.c). Without it the V5F
+    # found corrupted blocks and the V3F stopped within 165 rounds (2026-11-19); with it none in 600,000 + 116,000.
+    assert v5f_bad == 0 and v3f_bad == 0, f"corrupted blocks: V5F {v5f_bad}, V3F {v3f_bad}"
+    assert v5f > 10000 and v3f > 10000, f"too few rounds to tell (V5F {v5f}, V3F {v3f}): one core stalled"
+
+
 def test_cores_ipc(dut, ready, record_property):
     mode, _ = cores(dut)
     n = 1000
