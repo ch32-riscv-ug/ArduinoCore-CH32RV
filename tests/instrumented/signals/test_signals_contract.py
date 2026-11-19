@@ -874,7 +874,8 @@ def test_six_step(dut, oep_host, ws_run, record_property):
     try:
         replies = sweep(dut, ws_run, oep_host, order, f"six step TIM{timer}", conditions, rate=10_000_000, moving=6,
                         quiet=[])
-        assert all(m.group(1) == b"1" for m in replies), "the DUT refused a command"
+        # SIXOFF carries no result
+        assert all(m.group(1) == b"1" for m in replies if m.re.groups), "the DUT refused a command"
     finally:
         ask(dut, "sixoff", rb"SIXOFF")
 

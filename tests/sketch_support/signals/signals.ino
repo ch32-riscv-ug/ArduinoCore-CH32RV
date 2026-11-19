@@ -262,7 +262,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "phsoff")) {
         phaseShift.end();
         SerialDMSeq.println("PHSOFF");
-    } else if (!strcmp(argv[0], "six") && argc == 10) {
+    } else if (!strcmp(argv[0], "six") && argc == 9) {
         /* six <uh> <ul> <vh> <vl> <wh> <wl> <hz> <duty of 256>: all off until sixstep */
         const bool ok = sixStep.begin(pin, (int)a2, (int)a3, (int)a4, (int)a5, atoi(argv[6]), (uint32_t)atol(argv[7])) &&
                         sixStep.write((uint32_t)atol(argv[8]));
