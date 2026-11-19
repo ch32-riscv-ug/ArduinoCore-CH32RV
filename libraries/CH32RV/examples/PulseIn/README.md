@@ -29,3 +29,4 @@ The trigger sequence and distance conversion assume an HC-SR04-style ultrasonic 
 - [Sketch](PulseIn.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

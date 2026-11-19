@@ -25,3 +25,4 @@ The ISR only counts. `onQuiesce()` runs synchronously and must not re-enter time
 - [Sketch](TimerResource.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

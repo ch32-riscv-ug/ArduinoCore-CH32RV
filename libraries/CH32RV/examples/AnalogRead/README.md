@@ -25,3 +25,4 @@ The mV value is within the internal reference's spread plus the converter's erro
 - [Sketch](AnalogRead.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

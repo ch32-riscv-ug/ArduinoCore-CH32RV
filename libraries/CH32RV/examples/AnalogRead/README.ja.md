@@ -24,4 +24,5 @@ mV の値には、内部の基準電圧のばらつきと変換器の誤差の�
 
 - [スケッチ](AnalogRead.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

@@ -37,3 +37,4 @@ Replace both the board selection and PC13 with your actual target. An equivalent
 - [Sketch](Blink.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

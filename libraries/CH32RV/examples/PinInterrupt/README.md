@@ -25,3 +25,4 @@ Do not print or wait in the ISR. `volatile` does not make multiple operations at
 - [Sketch](PinInterrupt.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

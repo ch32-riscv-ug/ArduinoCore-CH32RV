@@ -44,4 +44,5 @@ DOWNLOADキーは基板の工場書き込み入口に関わります。通常の
 
 - [スケッチ](BoardWeActCH32X035.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

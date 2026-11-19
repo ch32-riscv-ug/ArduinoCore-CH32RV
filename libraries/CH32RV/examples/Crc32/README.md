@@ -25,3 +25,4 @@ This is not zlib's or Ethernet's CRC-32 (the same polynomial, reflected, with a 
 - [Sketch](Crc32.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

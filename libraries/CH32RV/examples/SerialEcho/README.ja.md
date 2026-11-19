@@ -24,4 +24,5 @@
 
 - [スケッチ](SerialEcho.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

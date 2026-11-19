@@ -25,3 +25,4 @@ Compare unsigned elapsed time as `now - last >= interval`. `millis()` uses ms, `
 - [Sketch](Timing.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

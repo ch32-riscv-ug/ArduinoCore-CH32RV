@@ -45,3 +45,4 @@ The DOWNLOAD key participates in the board's factory-upload entry. Follow the [u
 - [Sketch](BoardWeActCH32X035.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

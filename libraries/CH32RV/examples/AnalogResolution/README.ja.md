@@ -24,4 +24,5 @@ UART に8 bitと12 bitでの読み取り値が出ます。PWM は指定分解能
 
 - [スケッチ](AnalogResolution.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

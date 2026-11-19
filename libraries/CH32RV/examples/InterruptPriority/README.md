@@ -25,3 +25,4 @@ A handler that can be interrupted by another must not call the driver whose inte
 - [Sketch](InterruptPriority.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

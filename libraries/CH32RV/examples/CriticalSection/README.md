@@ -25,3 +25,4 @@ This pair does not manage nesting. For reusable code, see [SyncKit CriticalSecti
 - [Sketch](CriticalSection.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

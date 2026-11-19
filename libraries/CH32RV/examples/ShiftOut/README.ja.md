@@ -28,4 +28,5 @@ Q0～Q7 に接続した LED の点灯が順に移ります。ビット順と LED
 
 - [スケッチ](ShiftOut.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

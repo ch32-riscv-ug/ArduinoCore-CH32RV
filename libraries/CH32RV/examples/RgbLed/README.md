@@ -25,3 +25,4 @@ Interrupts are off for 30 us per LED for the whole chain (100 LEDs: 3 ms). On CH
 - [Sketch](RgbLed.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

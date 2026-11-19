@@ -42,3 +42,4 @@ The maker's NSS alternatives PC1 and PC0 conflict with I2C SDA and the LED respe
 - [Sketch](BoardUIAPduinoProMicro.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

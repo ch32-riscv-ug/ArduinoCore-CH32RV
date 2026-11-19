@@ -25,3 +25,4 @@ This describes the variant used for compilation, not electrical discovery. Check
 - [Sketch](PinCapabilities.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

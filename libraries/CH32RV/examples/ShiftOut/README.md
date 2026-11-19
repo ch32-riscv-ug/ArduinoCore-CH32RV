@@ -29,3 +29,4 @@ For a 16-pin 74HC595 pinout, DS is pin 14, SHCP 11, STCP 12, OE 13 and MR 10. Ke
 - [Sketch](ShiftOut.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

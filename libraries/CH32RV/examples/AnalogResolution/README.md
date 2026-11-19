@@ -25,3 +25,4 @@ Increasing the numeric width does not improve physical ADC precision. PWM freque
 - [Sketch](AnalogResolution.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

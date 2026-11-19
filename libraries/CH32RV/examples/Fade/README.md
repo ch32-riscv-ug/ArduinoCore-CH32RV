@@ -25,3 +25,4 @@ Check PWM routing when changing pins. For interaction with tone or Servo, see [t
 - [Sketch](Fade.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

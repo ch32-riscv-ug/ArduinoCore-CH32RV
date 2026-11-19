@@ -25,3 +25,4 @@ The first received byte does not establish a complete line. For responsive proce
 - [Sketch](SerialEcho.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

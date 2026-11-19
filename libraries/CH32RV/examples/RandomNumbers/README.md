@@ -25,3 +25,4 @@ Where there is no hardware generator, `ch32rv_random()` mixes the chip's unique 
 - [Sketch](RandomNumbers.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

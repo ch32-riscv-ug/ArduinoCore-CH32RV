@@ -25,3 +25,4 @@ Display digits do not establish measurement accuracy. Allow room for sign, decim
 - [Sketch](PrintFormatting.ino)
 - [Basic example setup and index](../README.md)
 - [Example guide](../../../../docs/examples.md)
+- [Sketch composition guide (Japanese)](../../../../docs/sketch-guide.ja.md)

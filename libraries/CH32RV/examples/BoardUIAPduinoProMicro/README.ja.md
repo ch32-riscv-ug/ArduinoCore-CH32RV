@@ -41,4 +41,5 @@ LED・PWM の変化と UART の状態表示を確認します。SPI のループ
 
 - [スケッチ](BoardUIAPduinoProMicro.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)

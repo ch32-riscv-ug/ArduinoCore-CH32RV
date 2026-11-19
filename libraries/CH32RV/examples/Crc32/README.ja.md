@@ -24,4 +24,5 @@ zlib や Ethernet の CRC-32（同じ多項式を反転し、最後に XOR す�
 
 - [スケッチ](Crc32.ino)
 - [基本サンプルの準備と一覧](../README.ja.md)
+- [サンプルの案内](../../../../docs/examples.ja.md)
 - [スケッチの組み立て方](../../../../docs/sketch-guide.ja.md)
