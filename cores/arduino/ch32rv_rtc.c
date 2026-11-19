@@ -474,4 +474,17 @@ int ch32rv_rtc_output(int mode)
     return 0;
 }
 
+/* No RTC: the counter stays at 0 (the declarations are the same everywhere, so a sketch that reads it still links). */
+void ch32rv_rtc_raw(uint32_t *sec, uint32_t *ms)
+{
+    *sec = 0;
+    *ms = 0;
+}
+
+void ch32rv_rtc_raw_us(uint32_t *sec, uint32_t *us)
+{
+    *sec = 0;
+    *us = 0;
+}
+
 #endif
