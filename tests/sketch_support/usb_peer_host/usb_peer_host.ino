@@ -47,7 +47,8 @@
  *   resume               H RESUME <ok> <last error>
  *   power                H POWER <suspended 0/1> <remote wakeups seen>
  * Built with USB_HOST_FS (case usb-peer-host-fs) only - the FS library is more than the 64 KB parts' other host
- * cases can carry:
+ * cases can carry; that build leaves out the commands of the other classes (CDC, HID, MIDI, CCID, vendor,
+ * suspend), keeping ready, dev, where, msc, msclun, msctur and these:
  *   fsmount <lun> <fmt>  H FSMOUNT <ok> <FAT type 0..4> <total bytes>   (CH32RVUsbHostMscFS on that LUN of the
  *                        first stick; with fmt 1 a unit that holds no volume is formatted first)
  *   fswrite <name> <hex> H FSWRITE <bytes written>     (FILE_WRITE: the file made anew)
@@ -418,6 +419,7 @@ static void reply(char *cmd)
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {
         cmd_where(arg);
+#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "suspend") == 0 || strcmp(cmd, "resume") == 0) {
         const bool s = cmd[0] == 's';
         const bool ok = s ? usb.suspend() : usb.resume();
@@ -455,6 +457,7 @@ static void reply(char *cmd)
         const unsigned vel = strtoul(end, &end, 10);
         SerialDMSeq.print("H MIDI_SENT ");
         SerialDMSeq.println(usb.midiSendNoteOn(ch, note, vel) ? 1 : 0);
+#endif
     } else if (strcmp(cmd, "msc") == 0) {
         cmd_msc();
 #if defined(USB_HOST_FS)
@@ -475,6 +478,7 @@ static void reply(char *cmd)
         stick.end();
         SerialDMSeq.println("H FSEND");
 #endif
+#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "mscraw") == 0) {
         cmd_mscraw(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "vend") == 0) {
@@ -634,6 +638,7 @@ static void reply(char *cmd)
         SerialDMSeq.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
         SerialDMSeq.println();
+#endif
     } else if (strcmp(cmd, "msclun") == 0) {
         SerialDMSeq.print("H MSCLUN ");
         SerialDMSeq.println(usb.mscSelectLun((uint8_t)strtoul(arg, nullptr, 10)) ? 1 : 0);
@@ -652,6 +657,7 @@ static void reply(char *cmd)
         SerialDMSeq.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
         SerialDMSeq.println();
+#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "midicc") == 0 || strcmp(cmd, "midipc") == 0 || strcmp(cmd, "midipb") == 0) {
         char *end;
         const uint8_t ch = (uint8_t)strtoul(arg, &end, 10);
@@ -708,6 +714,7 @@ static void reply(char *cmd)
         SerialDMSeq.print(' ');
         hex(rx, ok ? got : 0);
         SerialDMSeq.println();
+#endif
     } else {
         SerialDMSeq.println("ERROR COMMAND");
     }
