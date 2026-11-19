@@ -366,7 +366,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] H41x の HSEM・IPC の公開 API と V3F の周辺（2026-11-17、ビルドのみ）: `CH32RV.hsem*()` / `ipc*()`（ch32rv_multicore.h）、
   V3F の関数は割り込み有効、共有レジスタ（RCC・ポートの設定・AFIO・EXTI）はコアのロック（HSEM 31）、例 DualCoreMessages。
   実機: selfapi の test_cores_hsem・test_cores_ipc・test_cores_v3f_serial を H417（CPU Core = V5F と V3F）で。HSEM の 1 ステップの
-  ロックの読みの値（RM は 0、EVT は LOCK | CID）を test_cores_hsem の raw で記録する。残り: V3F を外から止める仕組み、CPU Core = V3F のときに V5F を 2 つ目のコアにする形（今は眠ったままで IPC は false）。
+  ロックの読みの値（RM は 0、EVT は LOCK | CID）を test_cores_hsem の raw で記録する。→ 2026-11-20 に h417qeu6-pico で、
+  V5F の版は 4 件（hsem・heap・ipc・v3f_serial）、V3F の版は hsem・ipc が通った（V3F の版の heap と v3f_serial は対象外）。raw は
+  どちらも 00000000（RM の読み）。IPC の往復は 4.75 µs。残り: V3F を外から止める仕組み、CPU Core = V3F のときに V5F を 2 つ目のコアにする形（今は眠ったままで IPC は false）。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
 - [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
   V5F で確かめる。2026-11-13: restart()・WDT と CH32RV_FLASH_STORE（flash）は V5F で PASS。2026-11-14: lightSleep()・deepSleep() は
