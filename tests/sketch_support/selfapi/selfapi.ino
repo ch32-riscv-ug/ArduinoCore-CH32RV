@@ -47,7 +47,7 @@
  *                             ECDC NONE without the module
  *   gpha                      CH32RVGpha against the CPU's own reckoning: fill() into RGB565 and ARGB8888, copy()
  *                             ARGB8888 -> RGB565, RGB565 -> ARGB8888 and L8 through a 256-colour setPalette() ->
- *                             RGB565 (exact), blend() of ARGB8888 layers with their
+ *                             RGB565, A8 with setLayerColor() -> ARGB8888 (exact), blend() of ARGB8888 layers with their
  *                             own alpha and a global one (each channel 3 below .. 1 above the exact mix), each with
  *                             the pixels around the rectangle untouched: GPHA <right> <of> <the wrong ones' names>,
  *                             GPHA NONE without the block */
@@ -1017,6 +1017,24 @@ static void gphaCheck()
             }
         }
         check("copyL8to565", ok);
+    }
+    {
+        alignas(4) static uint8_t alpha[8];
+        for (auto &v : alpha) {
+            v = (uint8_t)(next() >> 24);
+        }
+        for (auto &v : fb32) {
+            v = 0xEEEEEEEE;
+        }
+        ok = gpha.setLayerColor(0x3366CC) &&
+             gpha.copy(CH32RVGpha::Surface{alpha, CH32RVGpha::A8, 8}, 0, 0, s32, 4, 6, 8, 1);
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 16; x++) {
+                const uint32_t want = inside(x, y, 4, 6, 8, 1) ? (uint32_t)alpha[x - 4] << 24 | 0x3366CCu : 0xEEEEEEEEu;
+                ok &= fb32[y * 16 + x] == want;
+            }
+        }
+        check("copyA8to8888", ok);
     }
     for (uint8_t global : {(uint8_t)255, (uint8_t)128}) {
         for (int i = 0; i < 16; i++) {

@@ -32,6 +32,8 @@
 #define GPHA_OMAR     GPHA(0x3Cu)
 #define GPHA_OOR      GPHA(0x40u)
 #define GPHA_NLR      GPHA(0x44u)
+#define GPHA_FGCOLR   GPHA(0x20u)
+#define GPHA_BGCOLR   GPHA(0x28u)
 #define GPHA_FGCWRS   GPHA(0x50u)
 #define GPHA_FGCDAT   GPHA(0x54u)
 #define GPHA_BGCWRS   GPHA(0x58u)
@@ -126,6 +128,13 @@ bool CH32RVGpha::setPalette(const uint32_t *argb, uint16_t count, bool backgroun
     return true;
 }
 
+bool CH32RVGpha::setLayerColor(uint32_t rgb, bool background)
+{
+    ch32rv_clock_enable(GPHA);
+    (background ? GPHA_BGCOLR : GPHA_FGCOLR) = rgb & 0xFFFFFFu;
+    return true;
+}
+
 bool CH32RVGpha::fill(const Surface &to, uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint32_t argb)
 {
     if (!fits(to, x, w) || !h || !output(to.format)) {
@@ -180,6 +189,7 @@ uint8_t CH32RVGpha::bitsOf(Format) { return 0; }
 bool CH32RVGpha::run(uint32_t, uint16_t, uint16_t) { return false; }
 bool CH32RVGpha::fill(const Surface &, uint16_t, uint16_t, uint16_t, uint16_t, uint32_t) { return false; }
 bool CH32RVGpha::setPalette(const uint32_t *, uint16_t, bool) { return false; }
+bool CH32RVGpha::setLayerColor(uint32_t, bool) { return false; }
 bool CH32RVGpha::copy(const Surface &, uint16_t, uint16_t, const Surface &, uint16_t, uint16_t, uint16_t, uint16_t)
 {
     return false;

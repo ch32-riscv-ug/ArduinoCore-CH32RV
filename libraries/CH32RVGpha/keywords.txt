@@ -5,3 +5,4 @@ blend	KEYWORD2
 bitsOf	KEYWORD2
 Surface	KEYWORD1
 setPalette	KEYWORD2
+setLayerColor	KEYWORD2

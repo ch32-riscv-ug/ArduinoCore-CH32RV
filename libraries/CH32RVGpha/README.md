@@ -22,11 +22,12 @@ gpha.blend(sprite, 0, 0, screen, 40, 40, screen, 40, 40, 32, 32, 200);   // spri
 | `copy(from, fx, fy, to, tx, ty, w, h)` | `from`'s rectangle into `to`, its pixels converted to `to`'s format |
 | `blend(fg, fx, fy, bg, bx, by, to, tx, ty, w, h, alpha)` | `fg` over `bg` into `to`, weighed by `fg`'s alpha times `alpha / 255` |
 | `setPalette(argb, count, background)` | The colour table an indexed source (L8 ...) looks up: `count` (1 .. 256) colours `0xAARRGGBB`, for the foreground (`copy()`'s source, `blend()`'s fg) or, `background` true, `blend()`'s bg |
+| `setLayerColor(rgb, background)` | The colour (`0xRRGGBB`) an A8 / A4 source takes, for the foreground or, `background` true, `blend()`'s bg |
 | `bitsOf(format)` | Bits a pixel |
 
 Formats: ARGB8888, RGB888, RGB565, ARGB1555, ARGB4444 (in and out) and L8, AL44, AL88, L4, A8, A4 (in only). The
-indexed L8, AL44, AL88 and L4 look their colours up in the table `setPalette()` loads; A8 and A4 take the layer
-colour registers, not settable yet. Every
+indexed L8, AL44, AL88 and L4 look their colours up in the table `setPalette()` loads; A8 and A4 take `setLayerColor()`'s
+colour, their pixels giving the alpha. Every
 call waits for the transfer's end. A configuration the hardware refuses (CEIF) returns false, as does every call on a
 series without the GPHA.
 
@@ -41,4 +42,4 @@ series without the GPHA.
 ## Test
 
 `selfapi::test_gpha` (tests/instrumented/selfapi) checks fills and converting copies (both ways) exactly against the
-CPU's reckoning and blends within -3 .. +1, with every pixel around the rectangles untouched, an L8 copy through a palette included: 7 of 7 on H417 (2026-11-19).
+CPU's reckoning and blends within -3 .. +1, with every pixel around the rectangles untouched, an L8 copy through a palette and an A8 copy with a layer colour included: 8 of 8 on H417 (2026-11-19).

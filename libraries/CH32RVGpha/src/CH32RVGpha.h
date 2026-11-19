@@ -57,6 +57,11 @@ public:
      * set again. */
     bool setPalette(const uint32_t *argb, uint16_t count, bool background = false);
 
+    /* The colour (0xRRGGBB) an alpha-only source (A8, A4) takes, its pixels
+     * giving the alpha: for the foreground layer, or (background true)
+     * blend()'s bg. Kept until set again. */
+    bool setLayerColor(uint32_t rgb, bool background = false);
+
     /* Bits a pixel of `format`. */
     static uint8_t bitsOf(Format format);
 
