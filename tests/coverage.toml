@@ -72,6 +72,13 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]    # no clock gate of its own (always clocked), so no PIOC clock-enable name
 
 [[item]]
+id = "pioc-ws2812"          # the PiocWs2812 example's program: WS2812 frames from bytes loaded into the PIOC's SRAM
+test = "pioc::test_pioc_ws2812"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"

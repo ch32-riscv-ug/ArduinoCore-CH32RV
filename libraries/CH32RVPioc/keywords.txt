@@ -7,3 +7,5 @@ waitDone	KEYWORD2
 result	KEYWORD2
 writeData	KEYWORD2
 readData	KEYWORD2
+loadSram	KEYWORD2
+clockHz	KEYWORD2

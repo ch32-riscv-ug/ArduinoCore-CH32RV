@@ -155,6 +155,8 @@ bool CH32RVPioc::begin(const Image &image, int io0, int io1)
     route(io0, 0);
     route(io1, 1);
     sfr(REG_SYS_CFG) = (uint8_t)(SYS_CLK_GATE | io);
+    _imageBytes = (uint16_t)image.bytes;
+    _io = io;
     _begun = true;
 #if defined(CH32RV_PIOC_IRQN)
     if (_done) {
@@ -168,6 +170,24 @@ bool CH32RVPioc::begin(const Image &image, int io0, int io1)
     (void)image;
     (void)io0;
     (void)io1;
+    return false;
+#endif
+}
+
+bool CH32RVPioc::loadSram(uint16_t offset, const void *data, size_t n)
+{
+#if defined(CH32RV_PIOC_READY)
+    if (!_begun || (!data && n) || offset < _imageBytes || (size_t)offset + n > SRAM_BYTES) {
+        return false;
+    }
+    sfr(REG_SYS_CFG) = (uint8_t)(SYS_RESET | _io);
+    memcpy(program_sram() + offset, data, n);
+    sfr(REG_SYS_CFG) = (uint8_t)(SYS_CLK_GATE | _io);
+    return true;
+#else
+    (void)offset;
+    (void)data;
+    (void)n;
     return false;
 #endif
 }

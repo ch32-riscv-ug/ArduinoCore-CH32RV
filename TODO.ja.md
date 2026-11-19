@@ -412,7 +412,8 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   スケッチの .S にコアのマクロ（cores/arduino/ch32rv_pioc.inc）で書き、コアの clang が組む（別のアセンブラは使わない）。
   CH32RVPioc がローダー、X035 / V205 の SRAM の 4 KiB は使うスケッチでだけリンカが空ける。H417・X035・V205 で pioc の試験が通る。
   EVT のバイナリも他のアセンブラの出力も内蔵しない。
-- [ ] PIOC の実用的なサンプルを増やす（ユーザー、2026-11-19）。今の例は PiocPulses（パルスを出すだけ）だけ。候補: 多数の WS2812、
+- [ ] PIOC の実用的なサンプルを増やす（ユーザー、2026-11-19）。PiocWs2812 を足した（2026-11-19。データは loadSram() で SRAM に、
+  タイミングは clockHz() から。H417・X035・V205 で pioc::test_pioc_ws2812 が WireSkein の rgb_led で通る）。残りの候補:
   1-Wire（DS18B20）、NEC 方式の IR の送受信、パルス幅の測定、追加の UART。どれも自前で書き起こす（EVT のコードは持ち込まない）。
   README の「使い道と限界」に沿って、PIOC に向いた用途を選ぶ。
 - [ ] PIOC の L2 以降のマクロ（待ち時間、構造化、部品、雛形）は設計してから入れる（ユーザー、2026-11-19）。案は

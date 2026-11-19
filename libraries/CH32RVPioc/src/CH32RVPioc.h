@@ -73,6 +73,25 @@ public:
     void onDone(DoneCallback callback);
     void service();                    /* the interrupt's, for PIOC_IRQHandler */
 
+    /* Bytes into the program SRAM past the image (offset in bytes from its
+     * start; the program reads them with RDCODE, word offset / 2). The SRAM
+     * is the PIOC's alone while it runs, so this holds it in reset, copies,
+     * and starts it again from its beginning: d0 .. d31 are cleared, write
+     * them after this. False when not begun, or the bytes would overlap the
+     * image or pass the SRAM's 4 KiB. */
+    bool loadSram(uint16_t offset, const void *data, size_t n);
+
+    /* The PIOC's clock: HCLK (the main core's clock but on H41x, where the
+     * V5F runs faster than the bus). A program's timing is counted in it. */
+    static constexpr uint32_t clockHz()
+    {
+#if defined(CH32RV_HCLK_HZ)
+        return CH32RV_HCLK_HZ;
+#else
+        return F_CPU;
+#endif
+    }
+
     /* d0 .. d31: SFR_DATA_REG0 + index. */
     void writeData(uint8_t index, const void *data, size_t n);
     void readData(uint8_t index, void *data, size_t n) const;
@@ -87,6 +106,8 @@ public:
 private:
     bool route(int pin, uint8_t role);
     int8_t _pads[2] = {-1, -1};
+    uint16_t _imageBytes = 0;
+    uint8_t _io = 0;
     bool _begun = false;
     DoneCallback _done;
 };
