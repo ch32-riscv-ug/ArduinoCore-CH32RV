@@ -45,3 +45,4 @@ if (Update.end()) {
 ## 例
 
 - [SerialUpdate](examples/SerialUpdate/README.ja.md): UART で長さとイメージを受け取って入れ替えます。
+- [HttpUpdate](examples/HttpUpdate/README.ja.md): イーサネットのボードが HTTP サーバーから新しいスケッチを取ってきて入れ替えます（CH32V307 で確かめた）。

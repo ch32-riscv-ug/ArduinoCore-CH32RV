@@ -46,3 +46,4 @@ Details: [the USB guide's firmware update section](../../docs/usb.ja.md#ファ�
 ## Examples
 
 - [SerialUpdate](examples/SerialUpdate/README.md): receives a length and an image over the UART and switches to it.
+- [HttpUpdate](examples/HttpUpdate/README.md): an Ethernet board fetches a new sketch from an HTTP server and switches to it (checked on a CH32V307).
