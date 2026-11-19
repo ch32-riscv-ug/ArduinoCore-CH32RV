@@ -3088,20 +3088,23 @@ PIOC_REMAP: dict = {}
 # The ADC's injected group: its JEXTSEL field and what each value starts it from (adc_triggers.csv, group
 # "injected"). family -> {"shift", "bits", "software", "timers": {value: (timer, event)}} (event 0: TRGO, n: CCn).
 ADC_JTRIGGERS: dict = {}
+# The regular group's the same way (EXTSEL, SWSTART): CH32RVAdcStream's beginTimer() (ch32rv_adc_trigger.h).
+ADC_TRIGGERS: dict = {}
 
 
-def load_adc_jtriggers(tables: pathlib.Path) -> dict:
+def load_adc_jtriggers(tables: pathlib.Path, group: str = "injected", field: str = "JEXTSEL",
+                       software: str = "JSWSTART") -> dict:
     out: dict = {}
     seen: dict = {}
     for r in read_table(tables, "adc_triggers.csv", ("family", "group", "field", "bits", "value", "trigger")):
-        if r["group"] != "injected" or r["field"] != "JEXTSEL":
+        if r["group"] != group or r["field"] != field:
             continue
         hi, _, lo = r["bits"].partition(":")
         f = out.setdefault(r["family"], {"shift": int(lo or hi), "bits": int(hi) - int(lo or hi) + 1,
                                          "software": None, "timers": {}})
         v = int(r["value"])
         seen.setdefault((r["family"], v), set()).add(r["trigger"])
-        if r["trigger"] == "JSWSTART":
+        if r["trigger"] == software:
             f["software"] = v
             continue
         m = re.fullmatch(r"TIM(\d+)_(TRGO|CC(\d))", r["trigger"])
@@ -5551,6 +5554,22 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("/* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */")
         out.append("#define CH32RV_TIMER_ITR { " + ", ".join(f"{{{s}, {i}, {m}}}" for s, i, m in sorted(itr)) + " }")
     out.append("")
+    # --- ADC regular group: the timer sources beginTimer() tries, in its order - TRGO first (no channel taken),
+    # then a channel's compare; the higher-numbered timers first (TIM1's pads carry the default PWM), a timer's
+    # channels from 1 ---
+    rfams = [ADC_TRIGGERS.get(f) for f in sorted({r.get("family", "") for r in rows})]
+    if rfams and all(rfams):
+        rcommon = set(rfams[0]["timers"].items())
+        for f in rfams[1:]:
+            rcommon &= set(f["timers"].items())
+        # channels 1 .. 4 (M030's TIM1 CC5 is a compare of its own, not a CHCTLR channel; left out as before)
+        rcommon = [(t, e, v) for v, (t, e) in rcommon if t in timer_caps and e <= 4]
+        rcommon.sort(key=lambda s: (s[1] != 0, -s[0], s[1]))
+        if rcommon:
+            out.append("/* ---- ADC regular group's timer sources (device-data adc_triggers.csv): X(timer, event (0 TRGO, "
+                       "n CCn), EXTSEL value), tried in this order ---- */")
+            out.append("#define CH32RV_ADC_TIMER_SOURCES(X) " + " ".join(f"X({t}, {e}, {v})" for t, e, v in rcommon))
+            out.append("")
     # --- ADC injected group ---
     # The sources every family of the series agrees on (V203 spans V20x and V205's die).
     fams = [ADC_JTRIGGERS.get(f) for f in sorted({r.get("family", "") for r in rows})]
@@ -5964,6 +5983,7 @@ def main() -> int:
     PIOC_PADS.update(_pioc_pads)
     PIOC_BLOCK.update(_pioc_block)
     ADC_JTRIGGERS.update(load_adc_jtriggers(args.tables))
+    ADC_TRIGGERS.update(load_adc_jtriggers(args.tables, "regular", "EXTSEL", "SWSTART"))
     OPA_CMP_SELECTS.update(load_opa_cmp_selects(args.tables))
     CMP_PADS.update(load_cmp_pads(args.tables))
     TIMER_ITR.update(load_timer_itr(args.tables))

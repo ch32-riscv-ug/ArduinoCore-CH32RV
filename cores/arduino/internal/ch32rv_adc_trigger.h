@@ -3,11 +3,11 @@
  * CTLR2.EXTSEL names them (ch32rv_adc_trigger.c sets the source up;
  * ch32rv_adc_run.h runs the ADC on it).
  *
- * The sources differ between families. The table is here, from the EVT
- * headers' ADC_ExternalTrigConv_* (ch32*_adc.h) and the reference manuals,
- * and matches ch32-device-data's index/adc_triggers.csv (checked 2026-11-18;
- * the CSV also lists value 6's other sources - V205's TKEY / OPA, V006's OPA
- * - which this core does not use):
+ * The sources differ between families. The timers are the variant's
+ * CH32RV_ADC_TIMER_SOURCES, generated from ch32-device-data's
+ * index/adc_triggers.csv; the pads below are written here (the CSV also lists
+ * value 6's other sources - V205's TKEY / OPA, V006's OPA - which this core
+ * does not use). For reference, from the EVT headers' ADC_ExternalTrigConv_*:
  *
  *   F1 layout (V103, V20x, V205, V30x, V4x7, L103 / M103, H41x, X305 / X315):
  *     0 TIM1 CC1, 1 TIM1 CC2, 2 TIM1 CC3, 3 TIM2 CC2, 4 TIM3 TRGO, 5 TIM4 CC4,
@@ -58,20 +58,11 @@ extern "C" {
  * are tried: TRGO first (no channel taken), the high-numbered timers before
  * TIM1 (whose pads carry the default PWM). */
 #define CH32RV_ADC_TRGO 0u
-#if defined(CH32RV_SERIES_CH32M030)
-#define CH32RV_ADC_TIMER_SOURCES(X) \
-    X(3, 1, 7) X(3, 2, 8) X(2, 1, 3) X(2, 2, 4) X(2, 3, 5) X(2, 4, 6) X(1, 4, 1)
-#elif defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X035)
-#define CH32RV_ADC_TIMER_SOURCES(X) \
-    X(2, 0, 3) X(1, 0, 0) X(3, 1, 5) X(2, 1, 4) X(1, 1, 1) X(1, 2, 2)
-#elif defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V003) || defined(CH32RV_SERIES_CH32V004) || \
-    defined(CH32RV_SERIES_CH32V005) || defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007) || \
-    defined(CH32RV_SERIES_CH32M007)
-#define CH32RV_ADC_TIMER_SOURCES(X) \
-    X(2, 0, 3) X(1, 0, 0) X(2, 1, 4) X(2, 2, 5) X(1, 1, 1) X(1, 2, 2)
-#else
-#define CH32RV_ADC_TIMER_SOURCES(X) \
-    X(3, 0, 4) X(4, 4, 5) X(2, 2, 3) X(1, 3, 2) X(1, 2, 1) X(1, 1, 0)
+/* CH32RV_ADC_TIMER_SOURCES(X) comes from the variant (generated from
+ * ch32-device-data's adc_triggers.csv, 2026-11-19; it had been written here
+ * from the same EVT tables). */
+#if !defined(CH32RV_ADC_TIMER_SOURCES)
+#define CH32RV_ADC_TIMER_SOURCES(X)
 #endif
 
 /* The pad source: its EXTSEL value; which pads (CH32RV_ADC_TRIGGER_LINE: any

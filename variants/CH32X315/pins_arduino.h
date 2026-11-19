@@ -1322,6 +1322,9 @@ static const uint8_t SS = PIN_SPI_SS;
 /* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
 #define CH32RV_TIMER_ITR { {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3} }
 
+/* ---- ADC regular group's timer sources (device-data adc_triggers.csv): X(timer, event (0 TRGO, n CCn), EXTSEL value), tried in this order ---- */
+#define CH32RV_ADC_TIMER_SOURCES(X) X(3, 0, 4) X(4, 4, 5) X(2, 2, 3) X(1, 1, 0) X(1, 2, 1) X(1, 3, 2)
+
 /* ---- ADC injected group (device-data adc_triggers.csv): JEXTSEL's place, JSWSTART's value, and the timer sources: { timer, event (0 TRGO, n CCn), value } ---- */
 #define CH32RV_ADC_JEXTSEL_SHIFT 12u
 #define CH32RV_ADC_JEXTSEL_BITS 3u

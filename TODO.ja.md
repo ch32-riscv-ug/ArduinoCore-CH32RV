@@ -291,6 +291,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] EXTI の線の表（internal/ch32rv_exti_line.h）と ADC のトリガの表（internal/ch32rv_adc_trigger.h）を device-data から
   生成する。値は一致しているので、残りは device-data の名前（USBHS1_WAKEUP など）とコアの名前（CH32RV_EXTI_*、
   ベクタ名、試す順番）の対応表。[data] の線 18 の答えを待ってから。
+  → ADC の通常グループのタイマーの源は生成にした（2026-11-19、variant の CH32RV_ADC_TIMER_SOURCES。F1 型の TIM1 を試す順だけ
+  CC1→CC3 に変わった。V203・V205・H417・X035・V006 で periph が通る）。端子の源と EXTI の線は手書きのまま（EXTI は V407 の
+  線 18 が device-data でまだ conflict）。
 - [x] CH32V003 の VDD の測定が約 35 % 高かった（3.3 V の板で 4448〜4464 mV）。ADC の初期化が CTLR1 = 0 と書き、
   CALVOLSELECT（26:25、リセット値 01 = VDDA × 2/4、00 は無効）を消した状態で自己校正していたため、校正が約 100
   カウント低く残っていた（Vrefint 277 / 1023、VDDA/2 が 410。直して 378・511・767、VDD 3256 mV）。CTLR1 を書く
