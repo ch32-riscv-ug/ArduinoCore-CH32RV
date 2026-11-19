@@ -93,7 +93,7 @@ bool CH32RVPioc::route(int pin, uint8_t role)
 #if CH32RV_GPIO_PER_PIN_AF
             ch32rv_pin_set_af(want, p.value);
 #endif
-            _pads[role] = (int8_t)want;
+            _pads[role] = want;
             return true;
         }
     }
@@ -208,15 +208,32 @@ void CH32RVPioc::end()
 #if defined(CH32RV_CLKEN_PIOC_ADDR)
     CH32RV_REG32(CH32RV_CLKEN_PIOC_ADDR) &= ~CH32RV_CLKEN_PIOC_MASK;
 #endif
-    for (int8_t &pin : _pads) {
-        if (pin >= 0) {
+    for (uint8_t &pin : _pads) {
+        if (pin != NO_PAD) {
             ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
                                    CH32RV_GPIO_CFG_IN_FLOAT);
-            ch32rv_pin_set_af((uint8_t)pin, 0);
-            pin = -1;
+            ch32rv_pin_set_af(pin, 0);
+            pin = NO_PAD;
         }
     }
     _begun = false;
+#endif
+}
+
+bool CH32RVPioc::setOpenDrain(uint8_t io, bool on)
+{
+#if defined(CH32RV_PIOC_READY)
+    if (!_begun || io > 1 || _pads[io] == NO_PAD) {
+        return false;
+    }
+    const uint8_t pin = _pads[io];
+    ch32rv_gpio_set_config((uint8_t)CH32RV_PIN_PORT(pin), (uint8_t)CH32RV_PIN_BIT(pin),
+                           on ? CH32RV_GPIO_CFG_AF_OD_50M : CH32RV_GPIO_CFG_AF_PP_50M);
+    return true;
+#else
+    (void)io;
+    (void)on;
+    return false;
 #endif
 }
 

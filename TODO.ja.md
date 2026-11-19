@@ -445,7 +445,9 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   pioc::test_pioc_uart_rx）、PiocSpiTx（SPI の送信、IO0 に SCK・IO1 に MOSI。H417・V205 で pioc::test_pioc_spi_tx が
   WireSkein の spi で通る。2026-11-20）と PiocIrNecRx（NEC の受信。PIOC が 1 フレームを 32 ビットに読み解く。プローブの
   spi-controller が MOSI に受光モジュールの出力の形を出し、H417・X035・V205 で pioc::test_pioc_nec_rx が通る。2026-11-20）を足した。
-  残りの候補: 1-Wire（DS18B20。相手の石か、プローブの 1-Wire の相手役が要る）。どれも自前で書き起こす（EVT のコードは持ち込まない）。
+  PiocOneWire（1-Wire のマスター、DS18B20 の温度。端子を開放ドレインにする `setOpenDrain()` を足した。H417・X035・V205 で、
+  デバイスの無い線で pioc::test_pioc_onewire が WireSkein の onewire で通る。2026-11-20）も足した。残り: 実際の DS18B20 での確認（部品が要る）。
+  CH32RVPioc の `_pads` が int8_t で、X035 の PC7（135）を負に読み、end() が端子を戻していなかったのも直した。どれも自前で書き起こす（EVT のコードは持ち込まない）。
   README の「使い道と限界」に沿って、PIOC に向いた用途を選ぶ。
 - [ ] PIOC の L2 以降のマクロ（待ち時間、構造化、部品、雛形）は設計してから入れる（ユーザー、2026-11-19）。置き場はコアでなく
   アプリ側: スケッチのプロジェクトのファイルとして持ち、版の差や環境の差を無くす（ユーザー、2026-11-19）。案は

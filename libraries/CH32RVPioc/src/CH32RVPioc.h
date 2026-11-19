@@ -53,6 +53,13 @@ public:
     bool begin(const Image &image, int io0 = -1, int io1 = -1);
     /* Stops it (held in reset, its clock off) and gives the pads back. */
     void end();
+    /* IO0 (io 0) or IO1 (1) open drain after begin(): the pad then pulls low
+     * for an output 0 and lets go for a 1 (a bus with a pull-up: 1-Wire, a
+     * shared line). begin() makes the pads push-pull, and the PIOC's
+     * SFR_PORT_DIR does not reach a pad routed through the GPIO's AF: a
+     * program lets a line go by writing 1, not by making it an input. False
+     * before begin() or for a pad not routed. */
+    bool setOpenDrain(uint8_t io, bool on = true);
 
     /* cmd.in: the byte the program reads from SFR_CTRL_WR. */
     void command(uint8_t value);
@@ -106,7 +113,8 @@ public:
 
 private:
     bool route(int pin, uint8_t role);
-    int8_t _pads[2] = {-1, -1};
+    static constexpr uint8_t NO_PAD = 0xFF;
+    uint8_t _pads[2] = {NO_PAD, NO_PAD};   /* pin numbers reach past 127 (CH32X035's PC7 is 135) */
     uint16_t _imageBytes = 0;
     uint8_t _io = 0;
     bool _begun = false;

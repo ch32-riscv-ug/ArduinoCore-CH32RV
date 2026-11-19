@@ -29,6 +29,9 @@
  *   pnecrx <pin>         nec_rx.S (a copy of the PiocIrNecRx example's) begun on the pad, its ticks as the example
  *                        works them out, one command given: PNECRX <begun> <M> <a tick in ns>
  *   pnecget              waitDone(2000): PNECGET <cmd.out or -1> <d8 .. d11 as a 32-bit hex, the first bit lowest>
+ *   pow <pin> <hex> <n>  onewire.S (a copy of the PiocOneWire example's) begun on the pad (left running), then as the
+ *                        example: a reset, the bytes written, n bytes read:
+ *                        POW <begun> <reset's cmd.out> <write's> <read's> <the bytes read, hex>
  *   ppadsall             PPADSALL <role:pin:value>... (every PIOC pad: role 0 IO0, 1 IO1; value the AF or remap)
  *   pspi <sck> <mosi> <cs> <n> <seed> <hz>
  *                        spi_tx.S (a copy of the PiocSpiTx example's) begun on the two pads once and left running: n
@@ -53,9 +56,11 @@ PIOC_IMAGE(pulse_in);
 PIOC_IMAGE(uart_rx);
 PIOC_IMAGE(spi_tx);
 PIOC_IMAGE(nec_rx);
+PIOC_IMAGE(onewire);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
 int spiSck = -1;             // the same for spi_tx (its SCK pad)
+int owPin = -1;              // the same for onewire
 CH32RVPioc pioc;
 volatile int irqStatus = -1;
 volatile uint8_t irqCalls;
@@ -99,6 +104,7 @@ void reply(char *command) {
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     SerialDMSeq.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
   } else if (strncmp(command, "pws ", 4) == 0) {
     char *p;
@@ -113,6 +119,7 @@ void reply(char *command) {
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(ws2812), pin);
     const bool loaded = begun && pioc.loadSram(0x400, bytes, count);
     auto turns = [](uint32_t ns, uint32_t fixed) -> uint8_t {
@@ -213,6 +220,7 @@ void reply(char *command) {
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
     SerialDMSeq.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
     for (unsigned long k = 0; begun && k < count; k++) {
@@ -243,6 +251,7 @@ void reply(char *command) {
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(uart_rx), pin);
     const int32_t bit = (int32_t)((CH32RVPioc::clockHz() + baud / 2) / baud);
     uint8_t params[5] = {(uint8_t)(n > 24 ? 24 : n)};
@@ -300,11 +309,58 @@ void reply(char *command) {
     SerialDMSeq.print(irqCalls);
     SerialDMSeq.print(' ');
     SerialDMSeq.println(pioc.read(1));
+  } else if (strncmp(command, "pow ", 4) == 0) {
+    char *p;
+    const int pin = (int)strtol(command + 4, &p, 10);
+    while (*p == ' ') {
+      p++;
+    }
+    char *count = strchr(p, ' ');
+    if (count) {
+      *count++ = '\0';
+    }
+    const uint8_t n = count ? (uint8_t)strtoul(count, nullptr, 10) : 0;
+    uint8_t out[24], in[24];
+    uint8_t k = 0;
+    for (; p[0] && p[1] && k < sizeof out; p += 2) {
+      char pair[3] = {p[0], p[1], 0};
+      out[k++] = (uint8_t)strtoul(pair, nullptr, 16);
+    }
+    bool begun = owPin == pin;
+    if (!begun) {
+      uartPin = -1;
+      necPin = -1;
+      spiSck = -1;
+      begun = pioc.begin(PIOC_IMAGE_OF(onewire), pin) && pioc.setOpenDrain(0);
+      owPin = begun ? pin : -1;
+    }
+    int32_t turns = (int32_t)((CH32RVPioc::clockHz() / 1000000 - 4 + 1) / 3);
+    const uint8_t us = (uint8_t)(turns < 1 ? 1 : turns > 255 ? 255 : turns);
+    auto run = [&](uint8_t cmd, uint8_t c) {
+      pioc.write(0, c);
+      pioc.write(1, us);
+      pioc.command(cmd);
+      return pioc.waitDone(100);
+    };
+    int reset = -1, wrote = -1, read = -1;
+    if (begun) {
+      reset = run(1, 0);
+      pioc.writeData(8, out, k);
+      wrote = k ? run(2, k) : 0;
+      read = n ? run(3, n > 24 ? 24 : n) : 0;
+      pioc.readData(8, in, n > 24 ? 24 : n);
+    }
+    SerialDMSeq.printf("POW %d %d %d %d ", begun ? 1 : 0, reset, wrote, read);
+    for (uint8_t i = 0; i < n && i < 24; i++) {
+      SerialDMSeq.printf("%02x", in[i]);
+    }
+    SerialDMSeq.printf("\r\n");
   } else if (strncmp(command, "pnecrx ", 7) == 0) {
     const int pin = (int)strtol(command + 7, nullptr, 10);
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(nec_rx), pin);
     const uint32_t clk = CH32RVPioc::clockHz();
     uint32_t m = (uint32_t)((uint64_t)clk * 75 / 1000000 / 773);
@@ -367,6 +423,7 @@ void reply(char *command) {
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
+    owPin = -1;
     pioc.end();
     SerialDMSeq.println("PEND");
   } else {

@@ -287,6 +287,69 @@ def test_pioc_nec_rx(dut, request, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+ONEWIRE_RATE = 4_000_000     # 4 MS/s: 24 samples in the 6 us a 1 or a read slot is held low
+ONEWIRE_SENDS = ("cc44", "ccbe", "33")          # Skip ROM + Convert T, Skip ROM + Read Scratchpad, Read ROM
+ONEWIRE_READ = 2
+
+
+def test_pioc_onewire(dut, ws_run, request, record_property):
+    """The PiocOneWire example's program (onewire.S, a copy beside pioc.ino) on IO0's line (the first PIOC pad the
+    probe labels as a plain line), with no device on it: the probe's GPIO pulls the line up as a 1-Wire bus's
+    resistor would. Each section is one command: a reset, the bytes written, 2 read. WireSkein's `onewire`
+    (standard speed) finds the reset with no presence pulse and exactly those bytes then ff ff (a read slot with
+    nobody answering carries a 1), every slot and low within the standard's limits; the program answers 1 for the
+    reset (no presence) and 0 for the write and the read, which give ff ff."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import onewire
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    record_property("io0", io0["pad"])
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, io0["channel"])])
+    pattern = rb"POW (\d) (-?\d+) (-?\d+) (-?\d+) ([0-9a-f]*)"
+    got = {}
+    try:
+        gpio.configure(io0["channel"], Gpio.INPUT_PULLUP)
+        _ask_now(dut, f"pow {io0['pin']} - 0", pattern)        # begun before the capture: the line let go
+
+        def steps(wait):
+            with ws_run.section(1, f"pioc onewire IO0 {io0['pad']}"):
+                for sent in ONEWIRE_SENDS:
+                    want = [onewire(io0["pad"], data=[sent + "ff" * ONEWIRE_READ], presence=False)]
+                    with ws_run.section(2, f"reset, {sent}, read {ONEWIRE_READ}", expect=want):
+                        wait(0.01)
+                        command = f"pow {io0['pin']} {sent} {ONEWIRE_READ}"
+                        ws_run.command(command)
+                        m = _ask(dut, wait, command, pattern, timeout=5.0)
+                        ws_run.reply(m.group(0).decode())
+                        got[sent] = [int(x) for x in m.groups()[:4]] + [m.group(5).decode()]
+                        wait(0.01)
+
+        ws_capture.stream(ws_run, oep_host, [io0], rate=ONEWIRE_RATE, steps=steps)
+    finally:
+        gpio.configure(io0["channel"], Gpio.INPUT)
+        core.plan_release(host, [gpio.fn])
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("replies", json.dumps(got))
+    for sent, (begun, reset, wrote, read, data) in got.items():
+        assert (begun, reset, wrote, read, data) == (1, 1, 0, 0, "ff" * ONEWIRE_READ), \
+            f"{sent}: begun {begun}, reset {reset} (1: no presence), write {wrote}, read {read} gave {data}"
+
+
 SPI_RATE = 20_000_000        # 20 MS/s as the SPI contract: 10 samples in 1 MHz SCK's half period
 SPI_SENDS = ((40, 5, 100_000), (60, 9, 1_000_000))   # (bytes, seed, SCK Hz)
 

@@ -113,6 +113,7 @@ void loop() {
 |---|---|
 | `begin(image, io0, io1)` | Stops the PIOC, copies the image into its SRAM, hands the pads to it and runs it from word 1. -1: that pad unused. False on a part without a PIOC, an empty or over-4-KiB image, or a pad the PIOC does not reach |
 | `end()` | Stops it (held in reset, its clock off) and gives the pads back |
+| `setOpenDrain(io, on)` | After `begin()`, IO0's (io 0) or IO1's (1) pad open drain: an output 0 pulls low, a 1 lets go (a bus with a pull-up: 1-Wire, a shared line). `begin()` makes the pads push-pull, and the PIOC's `SFR_PORT_DIR` does not reach a pad routed through the GPIO's AF, so a program lets a line go by writing 1, not by making it an input (checked on V205 and H417, 2026-11-20). False before `begin()` or for a pad not given |
 | `command(v)` | Writes cmd.in; the program waits with `WAITB WB_DATA_MW_SR_1` and reads it with `MOV SFR_CTRL_WR, A` |
 | `done()` | The program set `SB_INT_REQ` |
 | `waitDone(ms)` | Until `done()`, then cmd.out with the request taken down; -1 on a time-out |
@@ -133,5 +134,6 @@ PC0, PC2, PE4, PF13, PF14; PB8 / PB9 are SWD's too).
 - [PiocUartTx](examples/PiocUartTx/README.md): one more serial transmitter (IO0, 8N1), the bytes through the shared registers 24 at a time. WireSkein's `uart` passes at 9600 .. 1 Mbaud on H417, X035 and V205 (2026-11-19).
 - [PiocIrNec](examples/PiocIrNec/README.md): NEC infrared remote frames with the 38 kHz carrier. WireSkein's `ir` passes on H417, X035 and V205 (2026-11-19).
 - [PiocIrNecRx](examples/PiocIrNecRx/README.md): NEC infrared remote frames received (an IR receiver module's output on IO0, the PIOC decoding a whole frame into 32 bits). On H417, X035 and V205 a plain and an extended address and a repeat code from the probe come out right (2026-11-20).
+- [PiocOneWire](examples/PiocOneWire/README.md): a 1-Wire master (a DS18B20's temperature), the reset, write and read slots timed by the PIOC to the microsecond, the pad open drain by `setOpenDrain()`. WireSkein's `onewire` passes on H417, X035 and V205 on a line with no device (2026-11-20).
 - [PiocPulseIn](examples/PiocPulseIn/README.md): `pulseIn()` that interrupts do not shake: one period's high and low on IO0 in 8-cycle turns. The probe's PWM measured within 0.5 % on H417, X035 and V205 (2026-11-19).
 - [PiocUartRx](examples/PiocUartRx/README.md): one more serial receiver (IO0, 8N1, up to 24 bytes at a time). Takes the probe's UART at 9600 .. 1 Mbaud on H417, X035 and V205 (2026-11-19).
