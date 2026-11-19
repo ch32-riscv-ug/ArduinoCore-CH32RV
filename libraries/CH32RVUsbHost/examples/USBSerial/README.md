@@ -16,7 +16,9 @@ A CDC-ACM, FTDI, CP210x, CH34x or PL2303 device, powered host wiring and a 11520
 
 ## Settings and limits
 
-Serial is the log UART; port is the hosted USB serial stream. begin(115200) stores settings before connection. The first matching port is selected unless setAddress/setPort pins it. Instead of setRxBufferSize, port.setBuffer(array, size) makes a sketch array the receive ring. Handle partial write results when adapting this byte bridge to bulk traffic.
+`Serial` is the log UART; `port` is the hosted USB serial stream. `port.begin(115200)` stores settings before connection. The first matching port is selected unless `setAddress()` / `setPort()` picks one.
+
+Instead of the Esp side's `setRxBufferSize()`, `port.setBuffer(array, size)` makes a sketch array the receive ring. For bulk transfers that must handle `write()`'s return value, extend this one-byte relay.
 
 ## API usage and adaptation
 
@@ -30,7 +32,7 @@ Serial is the log UART; port is the hosted USB serial stream. begin(115200) stor
 
 `Serial` and `port` have independent baud settings. Match the downstream UART voltage and communication settings, and check whether CDC needs DTR or other control lines.
 
-This example consumes input before writing each byte and does not retain failed writes. For continuous forwarding, keep a pending buffer and advance only by the returned write length. Decide whether pending bytes survive disconnection.
+This example consumes input before writing each byte and does not retain failed writes. For continuous forwarding, keep a pending buffer and advance only by the length `write()` returned. Decide whether pending bytes survive disconnection.
 
 ## Related documentation
 

@@ -18,7 +18,7 @@ CDC-ACM / FTDI / CP210x / CH34x / PL2303 の機器、Host の VBUS、115200 bps 
 
 `Serial` はログ/UART、`port` は Host が開く USB シリアルです。`port.begin(115200)` は接続前でも設定を保持します。既定では最初に見つかった対応ポートを使い、`setAddress()` / `setPort()` で指定できます。
 
-Esp 側の `setRxBufferSize()` の代わりに、`port.setBuffer(配列, 大きさ)` でスケッチの配列を受信リングにできます。`write()` の戻り値を扱う必要がある大量転送には、この1-byte中継を拡張してください。
+Esp 側の `setRxBufferSize()` の代わりに、`port.setBuffer(array, size)` でスケッチの配列を受信リングにできます。`write()` の戻り値を扱う必要がある大量転送には、この1-byte中継を拡張してください。
 
 ## API の使い方と改造のポイント
 
