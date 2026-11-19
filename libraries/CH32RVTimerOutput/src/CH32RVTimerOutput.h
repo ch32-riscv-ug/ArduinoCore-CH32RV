@@ -56,7 +56,7 @@ public:
      * the timer's dead time (setDeadTime()'s), the shorter its second dead
      * time in that one's steps (at least one step, at most one step less).
      * False where the timer has no second dead time (CH32RV_TIM_DT2_OFFSET:
-     * H41x; CH32M030's TIM1 has one, not yet in device-data) unless the two
+     * H41x, M030's TIM1) unless the two
      * are equal, which is setDeadTime(). deadTime() / deadTimeShort() then
      * tell what was set. Before or after begin(). */
     bool setDeadTime(uint32_t risingNs, uint32_t fallingNs);

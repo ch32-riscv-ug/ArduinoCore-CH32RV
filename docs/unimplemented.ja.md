@@ -65,7 +65,7 @@
 | 機能 | 系列 | 優先 | 試験 | 要るもの | 根拠 |
 |---|---|---|---|---|---|
 | 相補PWM（CHxN）・デッドタイム・ブレーキ | 全 12 family | 実装済み（2026-11-17、CH32RVTimerOutput の `CH32RVComplementaryPwm`。ベンチ未確認） | 自動 | プローブ 2〜3 本（CHx と CHxN の重なり）。ブレーキはプローブが BKIN を動かす。signals::test_complementary | libraries/CH32RVTimerOutput, PS:59, PM:280 |
-| 非対称デッドタイム | M030、H417 | 実装済み（2026-11-19、`CH32RVComplementaryPwm::setDeadTime(risingNs, fallingNs)`。2 つ目のデッドタイムの位置は生成の `CH32RV_TIM_DT2_*`（registers.csv）。H41x のみ、M030 は device-data に AUX2 の位置が無く依頼中。ベンチ未確認: H417 の台に CHx と CHxN の組の線が無い。WireSkein の dead_time に向きごとの範囲を依頼中） | 自動 | プローブ（CHx と CHxN、向きごとの隙間） | UNUSED:85, EVT TIM/Dead_Asymmetry |
+| 非対称デッドタイム | M030、H417 | 実装済み（2026-11-19、`CH32RVComplementaryPwm::setDeadTime(risingNs, fallingNs)`。2 つ目のデッドタイムの位置は生成の `CH32RV_TIM_DT2_*`（registers.csv）。H41x と M030（AUX2 0x54）。ベンチ未確認: H417 の台に CHx と CHxN の組の線が無く、M030 はモーター基板で端子を出力にしない。試験は signals::test_asymmetric_dead_time（WireSkein 0.0.32 の向きごとの dead_time）） | 自動 | プローブ（CHx と CHxN、向きごとの隙間） | UNUSED:85, EVT TIM/Dead_Asymmetry |
 | ワンパルス | 全系列 | 実装済み（2026-11-17、`CH32RVOnePulse`。`fire()` と CH1/CH2 のエッジでの開始。ベンチ未確認、試験は `fire()` だけ） | 自動 | プローブ（幅を測る）。signals::test_one_pulse | libraries/CH32RVTimerOutput, PS:59, EVT TIM/One_Pulse |
 | 出力比較（Output Compare） | 全系列 | 実装済み（2026-11-17、`CH32RVOutputCompare`。ベンチ未確認） | 自動 | プローブ。signals::test_output_compare | libraries/CH32RVTimerOutput, PS:59, EVT TIM/Output_Compare_Mode |
 | 6 ステップ PWM、位相シフト PWM、中央揃え、独立出力 | V003、V103、V20x、V205、V30x、V407、M030 | 実装済み（2026-11-19、CH32RVSixStep・CH32RVPhaseShift・CH32RVPwmTimer（EDGE / CENTER、チャネルごとの write）。signals::test_pwm_timer・test_phase_shift を V203・X035 で確認。6 ステップは 6 本の線のある台が無く、V203 で DUT の自己読みで確認） | 自動 | プローブ | libraries/CH32RVTimerOutput |

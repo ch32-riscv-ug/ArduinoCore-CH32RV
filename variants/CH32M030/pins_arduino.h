@@ -459,6 +459,12 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_MCO_HSE 6
 #define CH32RV_MCO_SOURCES { 4, 5, 6 }
 
+/* ---- the advanced timers' second dead time (device-data registers.csv: DT_VLU2, DTP / DTN_MODE) ---- */
+#define CH32RV_TIM_DT2_OFFSET 0x54u
+#define CH32RV_TIM_DT2_SHIFT 0
+#define CH32RV_TIM_DT2_RISING (1u << 8)
+#define CH32RV_TIM_DT2_FALLING (1u << 9)
+
 /* ---- PWM: 9 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 9
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
