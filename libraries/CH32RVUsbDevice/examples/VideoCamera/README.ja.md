@@ -17,7 +17,7 @@ UVC を扱える PC アプリと UART モニタ。80×60 YUY2を選べるアプ�
 
 ## 設定と制約
 
-1 frame は9600 bytesですが、`onFillPayload()` が payloadごとに生成するため frame全体の RAM buffer は使いません。`sendGeneratedFrame()` は loop 側で周期投入し、完了 callback は短く保ちます。
+1 frame は9600 bytesですが、`onFillPayload()` が payloadごとに生成するため frame全体の RAM buffer は使いません。`sendGeneratedFrame()` は `loop()` 側で周期投入し、完了 callback は短く保ちます。
 
 ISO に切り替えるには `device.begin()` の前に `transport = CH32RVUsbVideoTransport::Isochronous` にした `CH32RVUsbVideoConfig` を `Camera.configure()` に渡します。X035 の64 B/msではヘッダも必要なので、10 fps の維持は期待できません。frame rate を下げて転送量に合わせます。
 

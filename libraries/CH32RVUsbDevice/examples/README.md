@@ -66,20 +66,20 @@ Attach functions to the same `device`. See [SerialUSBEcho](SerialUSBEcho/README.
 | `device.begin(config)` returns `true` | Internal startup succeeded; host enumeration need not be complete |
 | `device.started()` | The stack has started |
 | `device.ready()` | The host configured the device (still true while the bus is suspended) |
-| CDC `connected()` / boolean conversion | Host DTR is active, commonly used to check whether a terminal opened the port |
+| CDC `connected()` / `operator bool` | Host DTR is active, commonly used to check whether a terminal opened the port |
 | A successful send API | The API accepted data; it does not prove the PC application interpreted or processed it |
 
-CDC `begin(baud)` does not change USB bus speed. A bridge sets hardware UART baud separately. `write()` sends bytes; `print()` formats values as text. Waiting and return conventions differ between CDC, Vendor and Audio writes.
+CDC `begin(baud)` does not change USB bus speed. A bridge sets hardware UART baud separately. `write()` sends bytes; `print()` formats values as text. Waiting and return conventions differ between the `write()` of CDC, Vendor and Audio.
 
 ## Internal processing and callbacks
 
-USB processing runs after `loop()` and during `delay()`. `device.task()` can advance it during long calculations, but the usual approach is to split work and return regularly.
+USB processing runs after `loop()` and during `delay()`. `device.task()` can advance it during long calculations, but the usual approach is to split work and return to `loop()` regularly.
 
 | Kind | Examples | Execution and use |
 |---|---|---|
-| Notification | CDC receive, HID Output, bus events, video completion | Runs inside `deliverEvents()` called by `loop()`; some notifications coalesce to latest state |
+| Notification | CDC `onRx()`, HID Output, bus events, video completion | Runs inside `deliverEvents()` (the core calls it after `loop()`); some notifications coalesce to latest state |
 | Response provider or decision | MSC block/START STOP handlers, CCID APDU, vendor control, video payload generation, DFU detach decision | Runs inside USB processing while an answer is needed; keep it short, without `delay()` or waiting loops |
-| Polling | CDC `available()`, MIDI `readPacket()`, Audio `pollEvent()` | Read explicitly; polling alone does not require notification delivery |
+| Polling | CDC `available()`, MIDI `readPacket()`, Audio `pollEvent()` | Read explicitly; polling alone does not require `deliverEvents()` |
 
 Pending storage is finite. Depending on the class, the peer may wait, notifications may coalesce, or observation records may be dropped. An `onRx()` amount is not a message boundary. Use actual read lengths, and copy callback data if it must outlive the callback.
 
@@ -138,7 +138,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [MidiChannelsAndReceive](MidiChannelsAndReceive/README.md) | Two MIDI ports (cables): notes on port 1 light an LED, the cable and channel are logged, and notes go back on port 2. |
 | [MIDIInterface](MIDIInterface/README.md) | A bidirectional bridge between USB MIDI and 31250-baud UART MIDI messages. |
 | [MSC](MSC/README.md) | An eight-KiB RAM-backed raw block device for SCSI and block-transfer checks. |
-| [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a CONFIG.TXT file written by the PC. |
+| [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a `CONFIG.TXT` file written by the PC. |
 | [MSCFileSystem](MSCFileSystem/README.md) | One FAT volume (the FS library) for the sketch and a PC, handed over at eject. |
 | [MSCSdCard](MSCSdCard/README.md) | An SPI SD card exposed as USB mass storage; the PC owns the filesystem. |
 | [MediaKeys](MediaKeys/README.md) | Consumer media-key reports plus a declared System Control function. |

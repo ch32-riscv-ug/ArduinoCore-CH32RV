@@ -10,11 +10,11 @@ Connect a UART monitor and ensure the formatting routines fit the target memory.
 
 ## Steps and expected results
 
-At startup, compare integer bases, decimal places, `dtostrf()` output, and the different results of printing and writing 65.
+At startup, compare integer bases, decimal places, `dtostrf` output, and the different results of `print()` and `write()` for `65`.
 
 ## API and processing flow
 
-For integers, `print(value, HEX)` selects a base; for floating point, the second argument selects decimal places. `write()` does not format text. `dtostrf()` writes into a caller-provided array.
+For integers, `print(value, HEX)` selects a base; for floating point, `print(value, digits)` selects decimal places. `write()` does not format text. `dtostrf()` writes into a caller-provided array.
 
 ## Adapting the example
 
