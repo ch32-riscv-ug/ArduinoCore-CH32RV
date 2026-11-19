@@ -2954,6 +2954,32 @@ def load_opa_select() -> dict:
 OPA_PINS: dict = {}
 
 
+# The USB PD CC pads: each one's PORT_CCx register (its Rd, the ~5.1 kOhm pull-down the chips switch on at
+# reset, CCx_PD bit 1) and the USBPD block's clock. part -> [((port, bit), address, width, clock address, mask)].
+USBPD_CC: dict = {}
+
+
+def load_usbpd_cc(tables: pathlib.Path) -> dict:
+    regs = {(r["family"], r["block"], r["register"]): (int(r["address"], 16), int(r["width_bits"]))
+            for r in read_table(tables, "register_map.csv", ("family", "block", "register", "address", "width_bits"))
+            if r["type"] == "USBPD" and r["register"] in ("PORT_CC1", "PORT_CC2")}
+    clocks = {(r["family"], r["peripheral"]): (int(r["address"], 16), int(r["mask"], 16))
+              for r in read_table(tables, "clock_enables.csv", ("family", "peripheral", "address", "mask"))}
+    out: dict = {}
+    _, functions = load_pin_functions(tables)
+    for r in functions:
+        if r["peripheral"] != "USBPD" or not re.fullmatch(r"CC[1-4]", r["role"]) or not r["port"]:
+            continue
+        n = int(r["role"][2])
+        # Two blocks (M030): CC1 / CC2 on USBPD0, CC3 / CC4 on USBPD1; else the one USBPD.
+        block = ("USBPD0" if n <= 2 else "USBPD1") if (r["family"], "USBPD0", "PORT_CC1") in regs else "USBPD"
+        reg = regs.get((r["family"], block, f"PORT_CC{2 - n % 2}"))
+        clock = clocks.get((r["family"], block))
+        if reg and clock:
+            out.setdefault(r["part_number"], set()).add(((r["port"], int(r["gpio"])),) + reg + clock)
+    return out
+
+
 def load_opa_pins(tables: pathlib.Path) -> dict:
     _, functions = load_pin_functions(tables)
     out: dict = {}
@@ -4899,6 +4925,27 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
             out.append(f"#define CH32RV_CMP_LAYOUT {layout}")
         out.append("")
 
+    # --- USB PD CC pads ---
+    # The chip switches each CC pad's Rd on at reset (dead-battery sink). A pad the sketch makes a GPIO or another
+    # function has it switched off (internal/ch32rv_gpio.h, ch32rv_usbpd_cc_release()), else it holds the pad
+    # near ground through ~5.1 kOhm.
+    cc = {}
+    for pn in parts:
+        for row in USBPD_CC.get(pn, ()):
+            cc[row[0]] = row
+    if cc:
+        out.append("/* ---- USB PD CC pads (device-data): pad, its PORT_CCx, the register's bits, the block's clock ---- */")
+        out.append("#define CH32RV_USBPD_CC_PADS { \\")
+        for (port, bit), addr, width, clk, mask in sorted(cc.values()):
+            out.append(f"    {{ {pad_name(port, bit)}, {addr:#010x}u, {width}, {clk:#010x}u, {mask:#010x}u }}, \\")
+        out.append("}")
+        masks: dict = {}
+        for (port, bit) in cc:
+            masks[ord(port) - ord("A")] = masks.get(ord(port) - ord("A"), 0) | (1 << bit)
+        out.append("#define CH32RV_USBPD_CC_PORT_MASK(port) ( \\")
+        out.append(" | ".join(f"((port) == {pi}u ? {m:#x}u : 0u)" for pi, m in sorted(masks.items())) + ")")
+        out.append("")
+
     # --- CAN ---
     # As I2C: RX and TX from one route the core can select (the HardwareCAN
     # object in libraries/CAN). Only where the series has the block's clock.
@@ -5554,6 +5601,7 @@ def main() -> int:
     dacs = load_dac_pins(args.tables, route_alts)
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
+    USBPD_CC.update(load_usbpd_cc(args.tables))
     ch32rv = load_ch32rv_chips()
     remap = load_remap_fields(args.tables)
     wide_timers = load_wide_timers(args.tables)

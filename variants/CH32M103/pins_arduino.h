@@ -484,6 +484,14 @@ static const uint8_t SS = PIN_SPI_SS;
 /* where the comparator's fields are (opa/cmp_layout.csv; CH32RVComparator's Layout, in order) */
 #define CH32RV_CMP_LAYOUT { 0x40026008u, 0x40026014u, 0u, 0, 8, 3, 1, 3, 4, 2, 0xFF, 0xFF, { 15, 0, 0 }, 0x7Fu, 0, 5, 0xFF, 0xFF, 0xFF, 0xFF }
 
+/* ---- USB PD CC pads (device-data): pad, its PORT_CCx, the register's bits, the block's clock ---- */
+#define CH32RV_USBPD_CC_PADS { \
+    { PB6, 0x4002700cu, 16, 0x40021014u, 0x00020000u }, \
+    { PB7, 0x4002700eu, 16, 0x40021014u, 0x00020000u }, \
+}
+#define CH32RV_USBPD_CC_PORT_MASK(port) ( \
+((port) == 1u ? 0xc0u : 0u))
+
 /* ---- CAN pins (device-data; one route per instance) ---- */
 #define CH32RV_CAN1_BASE 0x40006400u
 /* CAN1: route default, on every part */

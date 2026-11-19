@@ -116,6 +116,11 @@ def open_bus(dut, oep_host, case, record_property):
             f"SoftWire refused SDA {sda} / SCL {scl}"
         record_property("bus", "SoftWire")
     else:
+        # The board's record: a defect that takes the hardware I2C's pads (a pull-down on them, x035-usb-pads,
+        # l103-evt-cc-rd) leaves Wire untestable there; SoftWire runs on other lines.
+        for defect in case["target"].get("record", {}).get("defects", []):
+            if "i2c" in defect.get("lose", []):
+                pytest.skip(f"Wire's pins {wire_sda} / {wire_scl}: defect {defect.get('id')} ({defect.get('why', '')})")
         # Wire anew as a controller: a test before may have left it a target (wire.slave)
         ask(dut, "controller", rb"CONTROLLER")
         sda, scl = wire_sda, wire_scl

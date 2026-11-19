@@ -27,6 +27,17 @@ static inline void ch32rv_gpio_clock_enable(uint8_t port)
 }
 
 /* Write the 4-bit configuration nibble for one pin. */
+#if defined(CH32RV_USBPD_CC_PORT_MASK)
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* ch32rv_usbpd_cc.c: the pad's Rd off (its PORT_CCx.CCx_PD), the USBPD block's clock on for the write. */
+void ch32rv_usbpd_cc_release(uint8_t port, uint8_t bit);
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cfg)
 {
     volatile uint32_t *reg;
@@ -53,6 +64,13 @@ static inline void ch32rv_gpio_set_config(uint8_t port, uint8_t bit, uint32_t cf
     const uint32_t lock = ch32rv_cores_lock();
     *reg = (*reg & ~(0xFu << shift)) | ((cfg & 0xFu) << shift);
     ch32rv_cores_unlock(lock);
+#if defined(CH32RV_USBPD_CC_PORT_MASK)
+    /* A USB PD CC pad: the chip switches its Rd (~5.1 kOhm to ground) on at reset, which holds a GPIO, I2C or
+     * UART there low. A pad given another function drops it (CH32RVUsbPd sets PORT_CCx itself). */
+    if (CH32RV_USBPD_CC_PORT_MASK(port) & (1u << bit)) {
+        ch32rv_usbpd_cc_release(port, bit);
+    }
+#endif
 #if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
     /* errata x035-usb-pads-open-drain: PC16/PC17 are the USB PHY pads. With
      * AFIO_CTLR.USB_PHY_V33 set (reset default 0x45) a GPIO or AF open-drain

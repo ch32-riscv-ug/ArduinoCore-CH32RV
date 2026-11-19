@@ -425,6 +425,16 @@ static const uint8_t MOSI = PIN_SPI_MOSI;
 static const uint8_t SS = PIN_SPI_SS;
 #endif
 
+/* ---- USB PD CC pads (device-data): pad, its PORT_CCx, the register's bits, the block's clock ---- */
+#define CH32RV_USBPD_CC_PADS { \
+    { PA0, 0x4002400cu, 8, 0x40021014u, 0x00000010u }, \
+    { PA1, 0x4002400eu, 8, 0x40021014u, 0x00000010u }, \
+    { PA2, 0x4002440cu, 8, 0x40021014u, 0x00000020u }, \
+    { PA3, 0x4002440eu, 8, 0x40021014u, 0x00000020u }, \
+}
+#define CH32RV_USBPD_CC_PORT_MASK(port) ( \
+((port) == 0u ? 0xfu : 0u))
+
 /* ---- PWM: 9 pads on TIM1/TIM2/TIM3, default route ---- */
 #define CH32RV_PWM_PIN_COUNT 9
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
