@@ -143,7 +143,9 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [UsbBringUpCheck](UsbBringUpCheck/README.ja.md) | 新しい板やケーブルで最初に動かす立ち上げの確認。始まった・列挙された・休止・ホストからの向きを分けて示し、列挙されなければ確認項目を出します。 |
 | [UsbConsole](UsbConsole/README.ja.md) | UART の端末から HID とベンダーの転送を 1 つずつ送り、ホストから来るものを全部表示します。 |
 | [FirmwareDFU](FirmwareDFU/README.ja.md) | 動いたまま DFU で新しいファームウェアを受け取り、確かめてから入れ替えます。 |
+| [FirmwareBootMode](FirmwareBootMode/README.ja.md) | 動いているスケッチから工場出荷の USB ブートローダーへ入ります。1200 bps のタッチ、DFU_DETACH、自前の命令（X035 / X033）。 |
 | [FirmwareCDC](FirmwareCDC/README.ja.md) | USB のシリアルで新しいスケッチを受け取り、確かめて入れ替えます（PC の側のスクリプト付き）。 |
+| [FirmwareVendor](FirmwareVendor/README.ja.md) | ベンダーのインタフェースのバルク OUT で新しいスケッチを受け取ります。命令は EP0（USB でいちばん速い道。PC の側のスクリプト付き）。 |
 | [FirmwareMSC](FirmwareMSC/README.ja.md) | `.uf2`（または `.bin`）をコピーすると入れ替わる USB ドライブです。 |
 | [DfuRuntime](DfuRuntime/README.ja.md) | CDC を持たない DFU runtime インターフェースで、USB から ISP への移行を試します。PA1 が Low の間は `onDetach()` が移行を拒否します。 |
 | [ButtonKeyboard](ButtonKeyboard/README.ja.md) | チャタリングを除いたスイッチでキーを押下・解放し、未送信の状態を再試行します。 |

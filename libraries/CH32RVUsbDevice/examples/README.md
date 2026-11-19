@@ -124,7 +124,9 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [UsbBringUpCheck](UsbBringUpCheck/README.md) | The first sketch for a new board or cable: started, enumerated, suspended and host -> device shown apart, and a checklist when it never enumerates. |
 | [UsbConsole](UsbConsole/README.md) | Sends HID and vendor transfers one at a time from a UART terminal and logs everything the host sends. |
 | [FirmwareDFU](FirmwareDFU/README.md) | Takes a new firmware over DFU while running, checks it, then switches to it. |
+| [FirmwareBootMode](FirmwareBootMode/README.md) | Enters the factory USB bootloader from the running sketch: the 1200 bps touch, DFU_DETACH or a command of its own (X035 / X033). |
 | [FirmwareCDC](FirmwareCDC/README.md) | Receives a new sketch over a USB serial port, checks and installs it (with the PC-side script). |
+| [FirmwareVendor](FirmwareVendor/README.md) | Receives a new sketch on a vendor interface's bulk OUT, commands on EP0 (the fastest USB route, with the PC-side script). |
 | [FirmwareMSC](FirmwareMSC/README.md) | A USB drive: copy a `.uf2` (or the `.bin`) onto it and the board switches to it. |
 | [DfuRuntime](DfuRuntime/README.md) | A CDC-free DFU runtime upload entry. Holding PA1 low makes `onDetach()` refuse the transition. |
 | [ButtonKeyboard](ButtonKeyboard/README.md) | Hold and release a keyboard key with a debounced switch, retrying unsent state. |
