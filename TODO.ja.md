@@ -451,10 +451,21 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   同じロットの F8U6 では PC16 / PC17（route 2）の I2C が通っていた（2026-09-30）ので、制限は端子によって違うのかもしれない。
 - [ ] V103R8T6（d39e、CH549 の Link）が休止の試験の最初の休止から起きず、デバッガも応答しない（2026-10-28）。Link では電源を切れず、
   ハブの口の電源でも戻らない。手で電源を入れ直してから、RTC（LSI の測定・アラーム）を調べる。それまで V103 は RTC の系列から外している。
-- [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、`TlsClient`（TLS の例が 1 つも無い。実機の Ethernet と V307 の RAM の確認が要る）。
-  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）・`UsbReconnect` / `VendorBulkPeer`（CH32RVUsbDevice、後者は PC の PyUSB のスクリプトと組）を足した（ビルドだけ）。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
+- [ ] まだ無い例（下の表 A）: `PeripheralRoutes`（配線が要る）、`TlsClient` は既存の HttpsGet（CA の検証・時刻・誤りの表示）が示している。
+  2026-11-20: `MidiChannelsAndReceive`・`UsbNcmNetwork`（Network）・`PpsVoltageControl`（CH32RVUsbPd）・`HostHidReports` / `HostHubDevices`（CH32RVUsbHost）・`UsbReconnect` / `VendorBulkPeer`（CH32RVUsbDevice、後者は PC の PyUSB のスクリプトと組）を足した（ビルドだけ）。
+  `MutualTlsClient`（NetworkClientSecure、クライアント証明書、手元の Python のサーバーと組）は CH32V307 で確かめた。`AdcBlockStatistics` は既存の AdcStreamStats（最小・最大・平均・
   取りこぼし）、`SensorConsole` は既存の ButtonBlinkConsole（周期・ISR からの通知・コマンド）が同じことを示すので作らない。2026-11-19: `RgbLed` は既にあった。`SerialBridge`（CH32RV）・`I2CEeprom`・
   `SoftI2CRegisterRead`（Wire）・`SpiSharedBus`・`SoftSpiDevice`（SPI）を足した（ビルドだけ確認。部品・配線での動作は未確認）。
+- [ ] **TLS の 2 つの問題（2026-11-20、CH32V307 で見つけた）**:
+  - HttpsGet が `TLS connect failed: -0x2700, verify flags 0x8`（NOT_TRUSTED）。試験のサイト valid-isrgrootx1.letsencrypt.org の
+    鎖が YR1 → Root YR（ISRG Root X1 の相互署名、2026-05-13 から）に変わった。PC の openssl は X1 だけで検証が通る。DUT の時計は
+    合っている（SNTP）。中間の CA の数・受信の大きさ・時刻の設定は問題なし。mbedtls の debug の出力で、どの段で親が見つからないかを
+    見る。V407 / H417 でも同じかを確かめる（ベンチの eth の試験は手元の CA なので、この変化を捕まえない）。
+  - `openssl s_server` を相手にすると、TLS 1.3 でハンドシェイクのあとの記録の復号が MAC の誤り（-0x7180）になる。暗号の組・
+    チケットの数・クライアント証明書の有無に関係なく、v0.8.0 でも同じ。Python の ssl のサーバー（同じ OpenSSL）とは通る。
+  - ついでに分かったこと: V307 で eth の自動の試験は Flash / RAM Split の既定（RAM 64 KB）でヒープ不足として記録されるだけで、
+    TLS を確かめていない。クライアント証明書のハンドシェイクはスタックを約 4.2 KB 使う（予約 4 KB より深い。Stack Check を付けると
+    panic になる）。
 - [ ] 応用の候補: ESP32 の HTTPClient / WebServer や EVT の MQTT を参考にした HTTP 取得・小さな Web server・telemetry、
   SDK の ETH↔UART 中継、audio 録音、camera 表示。TCP / TLS があるだけで HTTP / MQTT の公開 library もあるとは扱わず、
   library の採用とメモリ・接続復旧を先に確認する。
