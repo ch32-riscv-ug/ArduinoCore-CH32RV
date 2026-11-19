@@ -13,7 +13,7 @@ PC7); PC18 / PC19 are SWD's too. The bench test passes on H417, X035 and V205 (P
 
 ## What it is for, and its limits
 
-The PIOC is "a small 8-bit CPU with two pads that keeps time to the clock". It takes one fixed job - usually a pad
+The PIOC is "a small 8-bit core with two pads that keeps time to the clock". It takes one fixed job - usually a pad
 waveform - off the main core. It does not run anything you like.
 
 **Good for**
@@ -38,8 +38,9 @@ family).
 
 **Against the Raspberry Pi Pico's PIO**: PIO has four small one-instruction-per-clock state machines per block, any
 GPIOs several at a time, and FIFOs and DMA for fast streams - but 32 instructions per block and next to no
-computation or decisions. The PIOC is the other way round: one of it, two pads, no FIFO or DMA, but a plain CPU of
-2048 instructions with compares, arithmetic and subroutines. PIO programs do not carry over, and "fast, wide,
+computation or decisions. The PIOC is the other way round: one of it, two pads, no FIFO or DMA, but general instructions -
+compares, add / subtract, conditional jumps, subroutines (6 deep) - so decisions can be written; its program lives
+in 4 KiB of SRAM (at most 2048 words, fewer when long data shares it). PIO programs do not carry over, and "fast, wide,
 streaming" PIO-style jobs do not fit. Its place is "a slower protocol with decisions in it, on one or two wires,
 done to the clock instead of by the main core".
 
