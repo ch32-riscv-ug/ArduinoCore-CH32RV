@@ -10,14 +10,14 @@ A PC libusb/WinUSB/WebUSB client or the Host VendorBulk example on another board
 
 ## Steps and expected results
 
-1. Open the vendor interface with class 0xff; discover endpoint addresses from its descriptors.
-2. Send hello on bulk OUT; bulk IN returns echo: hello followed by CRLF.
+1. Open the vendor interface with class `0xff`; discover endpoint addresses from its descriptors.
+2. Send `hello` on bulk OUT; bulk IN returns `echo: hello` followed by CRLF.
 3. Bulk IN also carries `status rx=... control=...` about every three seconds.
-4. Vendor IN request 0x01 returns CH32RVUsbDeviceVendor. OUT request 0x02 is a no-data status acknowledgement.
+4. Vendor IN request `0x01` returns `CH32RVUsbDeviceVendor`. OUT request `0x02` is a no-data status acknowledgement.
 
 ## Settings and limits
 
-The RX callback reads at most 64 bytes at a time and prefixes each chunk with echo:. Bulk USB does not preserve application line boundaries. IN mixes echo and periodic status, so the first read is not necessarily the echo. The WebUSB URL is placeholder text, not a supplied web application. Use your own browser client/permission flow. A serial terminal cannot open this interface; check Linux access permissions or Windows WinUSB binding.
+The RX callback reads at most 64 bytes at a time and prefixes each chunk with `echo: `. Bulk USB does not preserve application line boundaries. IN mixes echo and periodic status, so the first read is not necessarily the echo. `webusbUrl` is placeholder text, not a supplied web application. Use your own browser client/permission flow. A serial terminal cannot open this interface; check Linux access permissions or Windows WinUSB binding.
 
 ## PC check with PyUSB
 
@@ -49,7 +49,7 @@ finally:
     usb.util.dispose_resources(dev)
 ```
 
-0xc1/0x41 select vendor interface IN/OUT requests. For access/claim failures,
+`0xc1` / `0x41` select vendor interface IN/OUT requests. For access/claim failures,
 check host permissions, driver binding and competing applications. Read again
 if queued status messages precede the echo.
 
@@ -62,13 +62,13 @@ if queued status messages precede the echo.
 | `flush()` / `waitWritable(bytes, timeoutMs)` | Start short pending output or wait for room with a deadline. Neither clears receive data. |
 | `onControlRequest()` / `sendControlResponse()` | Answer EP0 vendor requests as a provider inside USB processing. |
 
-The echo does not check every write length. For larger replies, advance by the accepted length and retain the remainder for later iterations. Decide what happens on timeout or when the host stops reading IN.
+The echo does not check every `write()` return value. For larger replies, advance by the accepted length and leave the remainder to the next `loop()`. Decide what happens on timeout or when the host stops reading IN.
 
 For new control requests, validate direction, recipient, `bRequest`, `wIndex` and `wLength`; return `false` for unsupported requests. Prepare the response at SETUP and avoid repeating side effects at later stages. Request `0x02` has no data in this example; it is not a general variable-length OUT handler.
 
 ### Switching to direct transmission
 
-`writeDirect(buffer, length)` transmits from the caller's array. Success does not release the buffer: retain it unchanged until `onDirectTxComplete()` hands it back. That happens exactly once per accepted transfer - sent (`Success`), a bus reset (`BusReset`, from `deliverEvents()`), `end()` (`Stopped`, from inside `end()`) or `cancelDirectTx()` (`Cancelled`, from inside it). A refused transfer borrows nothing; the returned submission's `error` says why. The length goes up to `maxDirectTransfer()`; past 65535 bytes it is still one transfer with no short packet inside.
+`writeDirect(buffer, length)` transmits from the caller's array, unlike the usual `write()`. Success does not release the buffer: retain it unchanged until `onDirectTxComplete()` hands it back. That happens exactly once per accepted transfer - sent (`Success`), a bus reset (`BusReset`, from `deliverEvents()`), `end()` (`Stopped`, from inside `end()`) or `cancelDirectTx()` (`Cancelled`, from inside it). A refused transfer borrows nothing; the returned submission's `error` says why. The length goes up to `maxDirectTransfer()`; past 65535 bytes it is still one transfer with no short packet inside.
 
 Receiving works the same way. Set `rxMode = CH32RVUsbBulkRxMode::Borrowed` with `configure()` and register `onDirectRxComplete()` before `begin()`. `readDirect(buffer, capacity)` posts one buffer; it comes back to `onDirectRxComplete()` when full or on a short packet (`actualBytes` is the data). Nothing is received until the next `readDirect()`, so the host's writes wait. `capacity` is a multiple of the packet size.
 
