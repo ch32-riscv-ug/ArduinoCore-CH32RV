@@ -65,8 +65,10 @@
   - [ ] 計画にあって試験の無い契約: Wire のデータの NACK・timeout・バスの回復・clock stretch（プローブの i2c-target に
     SDA を握らせる・NACK させる条件）、USB の STALL の解除・相手のリセット後の再通信・コアとの共存、pulseInLong、
     shiftIn / shiftOut。
-  - [ ] TEST_PLAN の「ベンチの X035C8T6 は I2C が使えない」と X035 の wire ✓ の食い違い（どの台で通ったか）、V205 の
-    periph の serial_routes で通した route を結果から確かめる。
+  - [x] TEST_PLAN の「ベンチの X035C8T6 は I2C が使えない」と X035 の wire ✓ の食い違い（どの台で通ったか）、V205 の
+    periph の serial_routes で通した route を結果から確かめる。→ 2026-11-20: TEST_PLAN にその記述はもう無い。V205 の
+    serial_routes は通っていて、record_property の routes に通した組が残る（2026-11-19 の実行: PA6/PA7 で USART1 route 2・
+    USART7 route 3、PA2/PA3 で USART2 route 2 など）。
 - [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）。
 
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの
