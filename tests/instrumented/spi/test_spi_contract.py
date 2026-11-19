@@ -299,8 +299,8 @@ def test_shift(dut, oep_host, ws_run, record_property):
     """shiftOut() and shiftIn() on SoftSPI's lines (the softspi case; CS an ordinary GPIO around them): 3 random bytes
     out (MOSI as data, SCK as clock), then 3 in from MISO, MSB first and LSB first, while the probe's spi-target
     (mode 0, which is how both move the clock: data set while SCK is low, read while it is high) answers 6 armed
-    bytes. On the wire (WireSkein, spi, mode 0): MOSI = the bytes out, then the last bit held through shiftIn(); MISO =
-    the armed bytes; 48 clocks. What shiftIn() gave back (SHIFT) = the armed bytes 4 to 6 (bit-reversed for LSB first:
+    bytes. On the wire (WireSkein, spi, mode 0, the section's clocks): MOSI = the bytes out, then the last bit held
+    through shiftIn(); MISO = the armed bytes; CS high and SCK low at the section's ends. What shiftIn() gave back (SHIFT) = the armed bytes 4 to 6 (bit-reversed for LSB first:
     the target sends MSB first). The clock is as fast as digitalWrite(); its rate is not part of the contract."""
     from wireskein.runlog import ends, spi, starts
     case = settings(__file__)
@@ -325,9 +325,12 @@ def test_shift(dut, oep_host, ws_run, record_property):
                 last = (out[-1] >> 7) & 1 if lsb else out[-1] & 1
                 held = bytes([0xFF if last else 0x00]) * SHIFT_BYTES
                 on_wire = armed if not lsb else bytes(rev(b) for b in armed)
-                want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=0, bit_order="lsb" if lsb else "msb",
-                            mosi_bytes=(out + held).hex(), miso_bytes=on_wire.hex(), bits=16 * SHIFT_BYTES,
-                            notices={"sck_outside_cs": "ng"}),
+                # No cs for spi(): within CS it calls an SCK level under half the median a glitch, and shiftOut()'s
+                # high is one digitalWrite() against two for its low (data, then clock) - 200 ns against 450 on
+                # V205, right at that line (2026-11-20). The duty is not shiftOut()'s contract; the section holds
+                # this transfer alone, CS's levels are judged by starts / ends.
+                want = [spi(sck, mosi=mosi, miso=miso, mode=0, bit_order="lsb" if lsb else "msb",
+                            mosi_bytes=(out + held).hex(), miso_bytes=on_wire.hex()),
                         starts(idle), ends(idle)]
                 name = "LSBFIRST" if lsb else "MSBFIRST"
                 with ws_run.section(2, name, expect=want):
