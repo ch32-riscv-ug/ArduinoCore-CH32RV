@@ -269,6 +269,10 @@ handle_reset:
     .section  .text.ch32rv_loadcode_ram, "ax", @progbits
     .align    1
 ch32rv_loadcode_ram:
+#ifdef CH32RV_IWDG_USER
+/* The Watchdog menu (ch32rv_option_user.c), from RAM: the stack is set. */
+    call ch32rv_iwdg_check
+#endif
 #else
 .option push
 .option norelax

@@ -7038,7 +7038,7 @@ CH32H415.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 CH32H415.menu.core.v5f=V5F
 CH32H415.menu.core.v5f.build.f_cpu={build.clock_v5f_hz}L
 CH32H415.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ={build.clock_hclk_hz}
-CH32H415.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H415.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions -Wl,--wrap=malloc -Wl,--wrap=free -Wl,--wrap=realloc -Wl,--wrap=memalign -Wl,--wrap=aligned_alloc -Wl,--wrap=mallinfo
 CH32H415.menu.core.v3f=V3F
 CH32H415.menu.core.v3f.build.f_cpu={build.clock_hclk_hz}L
 CH32H415.menu.core.v3f.build.core_run_defines=
@@ -7054,6 +7054,13 @@ CH32H415.menu.vio18.1v8=1.8 V
 CH32H415.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H415.menu.vio18.1v2=1.2 V
 CH32H415.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H415.menu.iwdg.keep=Leave as set on the chip (default)
+CH32H415.menu.iwdg.keep.build.iwdg_defines=
+CH32H415.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32H415.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
+CH32H415.menu.iwdg.hw=Running from power-on (set at boot)
+CH32H415.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32H415.menu.erase.keep=Keep Store (default)
 CH32H415.menu.erase.keep.upload.erase_args=
@@ -7416,7 +7423,7 @@ CH32H416.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 CH32H416.menu.core.v5f=V5F
 CH32H416.menu.core.v5f.build.f_cpu={build.clock_v5f_hz}L
 CH32H416.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ={build.clock_hclk_hz}
-CH32H416.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H416.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions -Wl,--wrap=malloc -Wl,--wrap=free -Wl,--wrap=realloc -Wl,--wrap=memalign -Wl,--wrap=aligned_alloc -Wl,--wrap=mallinfo
 CH32H416.menu.core.v3f=V3F
 CH32H416.menu.core.v3f.build.f_cpu={build.clock_hclk_hz}L
 CH32H416.menu.core.v3f.build.core_run_defines=
@@ -7432,6 +7439,13 @@ CH32H416.menu.vio18.1v8=1.8 V
 CH32H416.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H416.menu.vio18.1v2=1.2 V
 CH32H416.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H416.menu.iwdg.keep=Leave as set on the chip (default)
+CH32H416.menu.iwdg.keep.build.iwdg_defines=
+CH32H416.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32H416.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
+CH32H416.menu.iwdg.hw=Running from power-on (set at boot)
+CH32H416.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32H416.menu.erase.keep=Keep Store (default)
 CH32H416.menu.erase.keep.upload.erase_args=
@@ -7738,7 +7752,7 @@ CH32H417.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 CH32H417.menu.core.v5f=V5F
 CH32H417.menu.core.v5f.build.f_cpu={build.clock_v5f_hz}L
 CH32H417.menu.core.v5f.build.core_run_defines=-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ={build.clock_hclk_hz}
-CH32H417.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions
+CH32H417.menu.core.v5f.build.ld_layout_flags="-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions -Wl,--wrap=malloc -Wl,--wrap=free -Wl,--wrap=realloc -Wl,--wrap=memalign -Wl,--wrap=aligned_alloc -Wl,--wrap=mallinfo
 CH32H417.menu.core.v3f=V3F
 CH32H417.menu.core.v3f.build.f_cpu={build.clock_hclk_hz}L
 CH32H417.menu.core.v3f.build.core_run_defines=
@@ -7754,6 +7768,13 @@ CH32H417.menu.vio18.1v8=1.8 V
 CH32H417.menu.vio18.1v8.build.vio18_defines=-DCH32RV_VIO18_MV=1800
 CH32H417.menu.vio18.1v2=1.2 V
 CH32H417.menu.vio18.1v2.build.vio18_defines=-DCH32RV_VIO18_MV=1200
+
+CH32H417.menu.iwdg.keep=Leave as set on the chip (default)
+CH32H417.menu.iwdg.keep.build.iwdg_defines=
+CH32H417.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)
+CH32H417.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u
+CH32H417.menu.iwdg.hw=Running from power-on (set at boot)
+CH32H417.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
 CH32H417.menu.erase.keep=Keep Store (default)
 CH32H417.menu.erase.keep.upload.erase_args=

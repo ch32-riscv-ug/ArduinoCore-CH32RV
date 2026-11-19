@@ -99,11 +99,16 @@ static void rewrite(uint32_t value, uint32_t mask)
     wait_ready();
     FLASH_CTLR |= CR_OPTER;
     FLASH_CTLR |= CR_STRT;
+    __asm__ volatile("fence rw, rw" ::: "memory");
     wait_ready();
     FLASH_CTLR &= ~CR_OPTER;
     FLASH_CTLR |= CR_OPTPG;
     for (int i = 0; i < 8; i++) {
         ob[i] = v[i];
+        /* the store out before the busy flag is read: the V5F (H41x) may hold
+         * it back, and a read of STATR that passes it sees an idle flash
+         * (the EVT's FLASH_UserOptionByteConfig() fences here under Core_V5F) */
+        __asm__ volatile("fence rw, rw" ::: "memory");
         wait_ready();
     }
     FLASH_CTLR &= ~CR_OPTPG;

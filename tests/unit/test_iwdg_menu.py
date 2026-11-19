@@ -10,7 +10,8 @@ import re
 REPO = pathlib.Path(__file__).resolve().parents[2]
 SERIES = {"CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007",
           "CH32X033", "CH32X035", "CH32X305", "CH32X315", "CH32V303", "CH32V305", "CH32V307", "CH32V317",
-          "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467"}
+          "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467",
+          "CH32H415", "CH32H416", "CH32H417"}
 
 
 def test_the_series_open_on_keep_and_set_bit_0_either_way():

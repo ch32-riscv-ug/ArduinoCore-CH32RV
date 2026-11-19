@@ -632,14 +632,17 @@ def debug_speed_menu(board: str) -> list[str]:
 # The Watchdog of the series whose USER option byte writer (ch32rv_option_user.c)
 # has run on the chip through Reset Pin or Flash / RAM Split: USER bit 0 IWDG_SW,
 # 1 (factory) started by CH32RV.wdtEnable(), 0 running from power-on
-# (device-data option_byte_fields.csv, every family with the bit). V103 and H41x
-# have the bit too and get the menu once the writer has run on them (V103's
-# two bench parts would not take a flash write, 2026-11-03); M030 has none
+# (device-data option_byte_fields.csv, every family with the bit). H41x runs it
+# from the LOADCODE path in RAM (crt0), with a fence after each store (the V5F),
+# and set and restored the bit on h417qeu6-pico from both cores (2026-11-19).
+# V103 has the bit too and gets the menu once the writer has run on it (its two
+# bench parts would not take a flash write, 2026-11-03); M030 has none
 # (docs/adr/0017-option-byte-menus.ja.md).
 IWDG_SERIES = ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32V007", "CH32M007",
                "CH32X033", "CH32X035", "CH32X305", "CH32X315",
                "CH32V303", "CH32V305", "CH32V307", "CH32V317",
-               "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467")
+               "CH32V203", "CH32V208", "CH32L103", "CH32M103", "CH32V205", "CH32V407", "CH32V467",
+               "CH32H415", "CH32H416", "CH32H417")
 
 
 def iwdg_menu(board: str) -> list[str]:
@@ -663,6 +666,9 @@ def iwdg_menu(board: str) -> list[str]:
 # the V3F's clock (/ FPRE). Without it (the V3F entry, every other board) the
 # two are the same and the core takes HCLK = F_CPU. Both numbers are the CPU
 # Clock entry's (build.clock_v5f_hz / clock_hclk_hz, h41x_clock_hz).
+HEAP_WRAP_FLAGS = " ".join(f"-Wl,--wrap={name}"
+                           for name in ("malloc", "free", "realloc", "memalign", "aligned_alloc", "mallinfo"))
+
 CORE_MENU = (
     ("v5f", "V5F", True),
     ("v3f", "V3F", False),
@@ -677,8 +683,11 @@ def core_menu(board: str, fam: dict) -> list[str]:
             lines.append(f"{board}.menu.core.{key}.build.f_cpu={{build.clock_v5f_hz}}L")
             lines.append(f"{board}.menu.core.{key}.build.core_run_defines="
                          "-DCH32RV_RUN_V5F=1 -DCH32RV_HCLK_HZ={build.clock_hclk_hz}")
+            # The heap's entry points wrapped by the lock across the cores (ch32rv_heap_lock.c): the V3F may
+            # allocate too. A jump each until the V3F runs.
             lines.append(f"{board}.menu.core.{key}.build.ld_layout_flags="
-                         '"-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions')
+                         '"-L{build.core.path}/v5f" -Wl,--enable-non-contiguous-regions '
+                         + HEAP_WRAP_FLAGS)
         else:
             lines.append(f"{board}.menu.core.{key}.build.f_cpu={{build.clock_hclk_hz}}L")
             lines.append(f"{board}.menu.core.{key}.build.core_run_defines=")
