@@ -321,6 +321,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   APB のクロック）。コアに `Serial.baudRate()`（arduino-esp32 と同じ。USART のクロック / BRR）を足し、試験のスケッチが
   ucfg・uhd・dbegin の答えに入れ、ホストはそれを使う。H417（PCLK 100 MHz、F_CPU 400 MHz）と V203 で uart・uart-dma が
   通る（2026-11-18、core-20261117T221139Z-0d30325f）。
+- [ ] V205 の signals::test_timer_sync が「区間の端しだいで判定が変わる」で未判定になった（2026-11-20）。WireSkein が直した
+  （区間の両端の、組を探す窓の中の相手のいない縁を数えない。wireskein aab7eb7、0.0.33 から）。0.0.33 が出たら上げて V205 の
+  signals を流し直す。
 - [ ] X035 の softwire の wire_slave「read 4」の NG は、WireSkein 0.0.28 の解読の不具合（2026-11-17、
   core-20261117T034033Z-6f14bd0b）。X035 の SoftWire target は SDA を SCL の立ち上がりの約 1.5 µs 前に変える（規格の
   setup の内）。窓に読み出しが 1 つだけだと、縁を立ち下がりと見誤って 0 件になる。[wireskein] が main で直した
