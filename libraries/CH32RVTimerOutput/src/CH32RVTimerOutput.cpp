@@ -60,6 +60,7 @@ bool CH32RVComplementaryPwm::begin(const CH32RVTimerPad &pad, const CH32RVTimerP
     _steps = steps;
     _bits = resolution;
     _break = false;
+    _live = false;                  /* both idle (low) until the first write() */
     if (_dt2Edge) {
         /* asked for before begin(): the clock is known now */
         const uint32_t longer = _deadAsk, shorter = _dead2Ask;
@@ -85,7 +86,7 @@ void CH32RVComplementaryPwm::applyBdtr()
     if (!isAttached()) {
         return;
     }
-    uint16_t bdtr = (uint16_t)(_dtg | BDTR_OSSI | BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+    uint16_t bdtr = (uint16_t)(_dtg | BDTR_OSSI | BDTR_OSSR | (_live ? CH32RV_TIM_BDTR_MOE : 0u));
     if (_break) {
         bdtr |= (uint16_t)(BDTR_BKE | (_breakHigh ? BDTR_BKP : 0u));
     }
@@ -103,6 +104,7 @@ void CH32RVComplementaryPwm::end()
         padLow(_pad.pin);
         padLow(_padN.pin);
     }
+    _live = false;
     ch32rv_timer_release(&_lease);
 }
 
@@ -117,6 +119,14 @@ bool CH32RVComplementaryPwm::write(uint32_t duty)
     }
     /* full is a power of two; at 100 % the compare is past the period's end. */
     setCompare(_base, _pad.channel, (uint32_t)(((uint64_t)duty * _steps) >> _bits), false);
+    if (!_live) {
+        /* The first duty: loaded now (UG, the period restarting) and only then
+         * the outputs on, so the bridge starts on it - not on a part period
+         * of begin()'s 0, CHxN high (V205, 1.6 us between begin() and write()). */
+        CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+        _live = true;
+        applyBdtr();
+    }
     return true;
 }
 
@@ -217,6 +227,9 @@ bool CH32RVComplementaryPwm::resume()
     }
     /* While the break input is active the hardware keeps MOE clear. */
     CH32RV_TIM_INTFR(_base) = (uint16_t)~INT_BIF;
+    if (!_live) {
+        return true;                /* no write() yet: the outputs stay idle */
+    }
     CH32RV_TIM_BDTR(_base) |= CH32RV_TIM_BDTR_MOE;
     return (CH32RV_TIM_BDTR(_base) & CH32RV_TIM_BDTR_MOE) != 0u;
 }

@@ -550,7 +550,10 @@ def test_complementary(dut, oep_host, ws_run, record_property):
                            [trim(dead_time(hi, lo, dead_min_s=(got - 100) * 1e-9, dead_max_s=(got + 100) * 1e-9),
                                  head_s=0.002)], 0.01),
                           ("stopped", "compoff", rb"COMPOFF", off, 0.005)]
-            sweep(dut, ws_run, oep_host, [a, b], f"dead time {got} ns {hi} {lo}", conditions, rate=100_000_000,
+            # T = the dead time's +-100 ns band; 50 MS/s is 5 / T, the least tests/README.ja.md allows. 100 MS/s
+            # (10 / T) on two lines outran the host's reading under load and the probe dropped segments ([oep],
+            # 2026-11-19: 25 MB/s against 4.9 MB/s read).
+            sweep(dut, ws_run, oep_host, [a, b], f"dead time {got} ns {hi} {lo}", conditions, rate=50_000_000,
                   moving=2, quiet=[])
     finally:
         ask(dut, "compoff", rb"COMPOFF")

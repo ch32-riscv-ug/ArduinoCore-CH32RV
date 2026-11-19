@@ -43,7 +43,8 @@ public:
     bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
 
     /* CHx high for duty / 2^resolution of each period (0: CHx low and CHxN
-     * high; 2^resolution: the other way round), less the dead time. */
+     * high; 2^resolution: the other way round), less the dead time. Both stay
+     * low from begin() to the first write(), which starts them on its duty. */
     bool write(uint32_t duty);
     /* The dead time in ns, the nearest the timer's dead-time field reaches
      * at or above it (in steps of the timer clock, coarser for long ones; the
@@ -88,6 +89,7 @@ private:
     uint32_t _dead2Ns = 0;
     uint8_t _dt2Edge = 0;           /* 0: none, 1: on the rising edge, 2: on the falling edge */
     uint8_t _dtg = 0;               /* BDTR's dead-time field */
+    bool _live = false;             /* write() since begin(): MOE on */
     uint8_t _bits = 8;
     bool _break = false, _breakHigh = false;
 };
