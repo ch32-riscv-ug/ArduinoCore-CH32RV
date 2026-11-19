@@ -152,6 +152,7 @@ callback の受信ポインタをあとで使う場合は自分の配列へコ�
 | [KeyboardNKRO](KeyboardNKRO/README.ja.md) | NKRO の bitmap report で10キーと Left Shift を同時送信します。boot protocol では6キー形式に切り替わることも観察できます。 |
 | [MIDI](MIDI/README.ja.md) | USB MIDI 1.0 の Note / Control Change を自動送信し、受信 packet を UART に表示します。 |
 | [MIDIController](MIDIController/README.ja.md) | 可変抵抗で CC74、ボタンで Note 60 を送る USB MIDI コントローラです。 |
+| [MidiChannelsAndReceive](MidiChannelsAndReceive/README.ja.md) | MIDI の口（cable）2 つ。口 1 で受けた音で LED を光らせ、cable と channel を表示し、口 2 から返します。 |
 | [MIDIInterface](MIDIInterface/README.ja.md) | USB MIDI と 31250 bps UART の MIDI メッセージを双方向に変換する例です。 |
 | [MSC](MSC/README.ja.md) | RAM を16×512 bytesの raw block device として公開します。SCSI やブロック転送の確認用です。 |
 | [MSCFatRamDisk](MSCFatRamDisk/README.ja.md) | 10 KiB の RAM に FAT12 を作り、PC が書いた `CONFIG.TXT` を取り出す例です。 |

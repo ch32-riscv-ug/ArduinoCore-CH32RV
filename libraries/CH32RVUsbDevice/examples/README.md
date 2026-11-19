@@ -133,6 +133,7 @@ Update entry and actual programming method depend on the series. See [USB upload
 | [KeyboardNKRO](KeyboardNKRO/README.md) | An NKRO bitmap report holding ten keys plus Left Shift, with six-key reports retained for boot protocol. |
 | [MIDI](MIDI/README.md) | Generated USB MIDI 1.0 notes and control changes, with received packets logged on UART. |
 | [MIDIController](MIDIController/README.md) | A potentiometer controlling CC74 and a button controlling Note 60 over USB MIDI. |
+| [MidiChannelsAndReceive](MidiChannelsAndReceive/README.md) | Two MIDI ports (cables): notes on port 1 light an LED, the cable and channel are logged, and notes go back on port 2. |
 | [MIDIInterface](MIDIInterface/README.md) | A bidirectional bridge between USB MIDI and 31250-baud UART MIDI messages. |
 | [MSC](MSC/README.md) | An eight-KiB RAM-backed raw block device for SCSI and block-transfer checks. |
 | [MSCFatRamDisk](MSCFatRamDisk/README.md) | A ten-KiB FAT12 RAM disk that reads back a CONFIG.TXT file written by the PC. |
