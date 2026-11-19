@@ -143,3 +143,60 @@ def test_pioc_ws2812(dut, ws_run, request, record_property):
     record_property("replies", json.dumps(got))
     for n, (begun, loaded, status, h0, h1, lo, us) in got.items():
         assert (begun, loaded, status) == (1, 1, 0), f"{n} bytes: begun {begun}, loaded {loaded}, cmd.out {status}"
+
+
+UART_RATE = 4_000_000       # 4 MS/s: 35 samples a bit at 115200, 4 at 1 Mbaud
+UART_SENDS = ((40, 3, 9600), (60, 7, 115200), (60, 11, 1_000_000))   # (bytes, seed, baud)
+
+
+def test_pioc_uart_tx(dut, ws_run, request, record_property):
+    """The PiocUartTx example's program (uart_tx.S, a copy beside pioc.ino): IO0 on the first PIOC pad the probe
+    labels as a plain line, begun once (before the capture) and left running; n bytes (byte i = i * 37 + seed), 24 at
+    a time through the shared registers as the example sends them, the bit time worked out from clockHz() likewise, at 9600, 115200 and 1 Mbaud: WireSkein's `uart` at the rate the PIOC really
+    makes (its clock over the bit's cycles, the sketch reports both) finds exactly those bytes, 8N1, no framing
+    error, the line high at the section's start and end; the program answers 0."""
+    from wireskein.runlog import ends, starts, uart
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    record_property("io0", io0["pad"])
+    # the rate each baud really gets: one probe run first (the sketch reports the clock and the bit's cycles)
+    actual = {}
+    for n, seed, baud in UART_SENDS:
+        m = _ask_now(dut, f"puart {io0['pin']} 1 0 {baud}", rb"PUART (\d) (\d) (-?\d+) (\d+) (\d+)")
+        actual[baud] = int(m.group(4)) / int(m.group(5))
+    got = {}
+
+    def steps(wait):
+        high = {io0["pad"]: 1}
+        with ws_run.section(1, f"pioc uart_tx IO0 {io0['pad']}"):
+            for n, seed, baud in UART_SENDS:
+                data = "".join(f"{(i * 37 + seed) & 0xFF:02x}" for i in range(n))
+                with ws_run.section(2, f"{n} bytes at {baud}",
+                                    expect=[uart(io0["pad"], actual[baud], data=data), starts(high), ends(high)]):
+                    wait(0.01)
+                    command = f"puart {io0['pin']} {n} {seed} {baud}"
+                    ws_run.command(command)
+                    m = _ask(dut, wait, command, rb"PUART (\d) (\d) (-?\d+) (\d+) (\d+)", timeout=5.0)
+                    ws_run.reply(m.group(0).decode())
+                    got[baud] = [int(x) for x in m.groups()]
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [io0], rate=UART_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("replies", json.dumps(got))
+    for baud, (begun, loaded, status, hz, cycles) in got.items():
+        assert (begun, loaded, status) == (1, 1, 0), f"{baud}: begun {begun}, loaded {loaded}, cmd.out {status}"

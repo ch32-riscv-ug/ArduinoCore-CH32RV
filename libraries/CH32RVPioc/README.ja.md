@@ -114,7 +114,7 @@ void loop() {
 | `result()` | 今の cmd.out。要求も下ろす（`SB_INT_REQ` はホストが cmd.out に書くと消え、読むだけでは消えない。2026-11-19 に X035 で確認） |
 | `onDone(cb)` | 要求を割込みで受ける。割込みが cmd.out を読んで要求を下ろし、`cb(cmd.out)` を呼ぶ（割込みの中なので短く）。`nullptr` で `waitDone()` に戻る |
 | `writeData(i, p, n)` / `readData(i, p, n)` / `write(i, v)` / `read(i)` | 共有のレジスタ d0〜d31（`SFR_DATA_REG0` + i） |
-| `loadSram(offset, p, n)` | プログラム SRAM のイメージより後ろ（`offset` バイト目から）にデータを写す。プログラムは `RDCODE` で語（`offset / 2`）ごとに読む。PIOC が走っている間 SRAM は PIOC 専用なので、リセットして写し、最初から走らせ直す（d0〜d31 も消えるので、そのあとで書く）。イメージと重なる・4 KiB を超えるときは false |
+| `loadSram(offset, p, n)` | プログラム SRAM のイメージより後ろ（`offset` バイト目から）にデータを写す。プログラムは `RDCODE` で語（`offset / 2`）ごとに読む。PIOC が走っている間 SRAM は PIOC 専用なので、リセットして写し、最初から走らせ直す（d0〜d31 も消えるので、そのあとで書く）。リセットの間は端子が浮くので、アイドルを High に保つ線（UART など）には向かない。イメージと重なる・4 KiB を超えるときは false |
 | `clockHz()` | PIOC のクロック（HCLK。H41x ではメインのコアより遅い）。プログラムの時間はこのサイクルで数える |
 
 PIOC の届く端子は variant の `CH32RV_PIOC_PADS` です（H417 は IO0 が PA0・PB8・PC1・PE3・PF12、IO1 が PB9・PC0・PC2・PE4・
@@ -124,3 +124,4 @@ PF13・PF14。PB8 / PB9 は SWD と兼用）。
 
 - [PiocPulses](examples/PiocPulses/README.ja.md): コマンド n ごとに IO0 に n 個のパルスを出す。
 - [PiocWs2812](examples/PiocWs2812/README.ja.md): WS2812（NeoPixel）を PIOC で光らせる。色のデータは `loadSram()` で SRAM に置き、待ちの回数は `clockHz()` から計算する。H417・X035・V205 で WireSkein の `rgb_led` が通っています（2026-11-19）。
+- [PiocUartTx](examples/PiocUartTx/README.ja.md): シリアルの送信をもう 1 つ（IO0、8N1）。データは共有レジスタで 24 バイトずつ渡す。H417・X035・V205 で 9600〜1M bps の送信が WireSkein の `uart` で通っています（2026-11-19）。

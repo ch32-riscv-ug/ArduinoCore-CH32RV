@@ -7,6 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 # (the test sketch's copy, the example's original)
 COPIES = [
     ("tests/sketch_support/pioc/ws2812.S", "libraries/CH32RVPioc/examples/PiocWs2812/ws2812.S"),
+    ("tests/sketch_support/pioc/uart_tx.S", "libraries/CH32RVPioc/examples/PiocUartTx/uart_tx.S"),
 ]
 
 

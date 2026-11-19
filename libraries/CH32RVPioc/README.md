@@ -119,7 +119,7 @@ void loop() {
 | `result()` | cmd.out now, the request taken down (`SB_INT_REQ` falls when the host writes cmd.out, not when it reads it; measured on X035 2026-11-19) |
 | `onDone(cb)` | The requests by interrupt: it reads cmd.out, takes the request down and calls `cb(cmd.out)` (in the interrupt: keep it short). `nullptr` goes back to `waitDone()` |
 | `writeData(i, p, n)` / `readData(i, p, n)` / `write(i, v)` / `read(i)` | The shared registers d0 .. d31 (`SFR_DATA_REG0` + i) |
-| `loadSram(offset, p, n)` | Data into the program SRAM past the image (from byte `offset`); the program reads it with `RDCODE`, a word (`offset / 2`) at a time. The SRAM is the PIOC's alone while it runs, so this holds it in reset, copies and starts it again from its beginning (d0 .. d31 are cleared too: write them after). False when it would overlap the image or pass 4 KiB |
+| `loadSram(offset, p, n)` | Data into the program SRAM past the image (from byte `offset`); the program reads it with `RDCODE`, a word (`offset / 2`) at a time. The SRAM is the PIOC's alone while it runs, so this holds it in reset, copies and starts it again from its beginning (d0 .. d31 are cleared too: write them after). The pads float during the reset, so it does not suit a line that must idle high (a UART). False when it would overlap the image or pass 4 KiB |
 | `clockHz()` | The PIOC's clock (HCLK; slower than the main core on H41x). A program's timing is counted in its cycles |
 
 The pads the PIOC reaches are the variant's `CH32RV_PIOC_PADS` (H417: IO0 on PA0, PB8, PC1, PE3, PF12; IO1 on PB9,
@@ -129,3 +129,4 @@ PC0, PC2, PE4, PF13, PF14; PB8 / PB9 are SWD's too).
 
 - [PiocPulses](examples/PiocPulses/README.md): n pulses on IO0 for each command n.
 - [PiocWs2812](examples/PiocWs2812/README.md): WS2812 (NeoPixel) LEDs by the PIOC; the colours go into the SRAM by `loadSram()` and the waits are worked out from `clockHz()`. WireSkein's `rgb_led` passes on H417, X035 and V205 (2026-11-19).
+- [PiocUartTx](examples/PiocUartTx/README.md): one more serial transmitter (IO0, 8N1), the bytes through the shared registers 24 at a time. WireSkein's `uart` passes at 9600 .. 1 Mbaud on H417, X035 and V205 (2026-11-19).

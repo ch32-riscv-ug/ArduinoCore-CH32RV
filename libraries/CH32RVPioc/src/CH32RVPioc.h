@@ -77,7 +77,8 @@ public:
      * start; the program reads them with RDCODE, word offset / 2). The SRAM
      * is the PIOC's alone while it runs, so this holds it in reset, copies,
      * and starts it again from its beginning: d0 .. d31 are cleared, write
-     * them after this. False when not begun, or the bytes would overlap the
+     * them after this; the pads float meanwhile (no use for a line that must
+     * idle high). False when not begun, or the bytes would overlap the
      * image or pass the SRAM's 4 KiB. */
     bool loadSram(uint16_t offset, const void *data, size_t n);
 
