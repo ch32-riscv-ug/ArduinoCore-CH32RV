@@ -402,7 +402,7 @@ def test_clock_output(dut, oep_host, ws_run, record_property):
     pin = int(m.group(1))
     if not pin:
         pytest.skip("the series has no MCO pad (CH32RV_MCO_PIN)")
-    sources = [tuple(int(x) for x in s.split(":")) for s in m.group(2).split()]
+    sources = [tuple(int(x) for x in s.split(":")) for s in m.group(2).decode().split()]
     pad = _pad(pin)
     line = next((l for l in gpio_lines(oep_host, case["target"]) if l["pad"].upper() == pad), None)
     if line is None:
