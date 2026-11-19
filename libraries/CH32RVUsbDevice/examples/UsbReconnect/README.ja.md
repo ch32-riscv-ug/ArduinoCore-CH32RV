@@ -34,3 +34,7 @@
 | `USBDevice.onBusEvent()` | リセット・設定・休止・再開を、起きた順に `deliverEvents()` から受けます。 |
 
 閉じていたことの判断は DTR です。DTR を上げない端末（一部の道具）では、開いても `connected()` が false のままです。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20）: 3 秒閉じて `resumed: 15 kept, 0 lost`、10 秒で `32 kept, 18 lost`、
+取っておいた分が先に来ました。`resumed` の行はポートを開いた瞬間に来るので、pyserial の `open()`（最後に入力を空にする）や
+TCSAFLUSH で raw にする開き方では消えます。ターミナルのソフトでは見えます。

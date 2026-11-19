@@ -35,3 +35,7 @@ Bus events (reset, configured, suspended, resumed) are logged on the hardware UA
 | `USBDevice.onBusEvent()` | Reset, configured, suspended and resumed, in order, from `deliverEvents()`. |
 
 Closed is told by DTR. A terminal that never raises DTR (some tools) keeps `connected()` false even when open.
+
+Checked on CH32H417 over SuperSpeed (2026-11-20): closed 3 s, `resumed: 15 kept, 0 lost`; closed 10 s, `32 kept, 18 lost`,
+the kept readings first. The `resumed` line comes the moment the port opens: pyserial's `open()` empties its input
+buffer at the end and drops it (as does a raw mode set with TCSAFLUSH); a terminal program shows it.
