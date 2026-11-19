@@ -379,3 +379,35 @@ def test_usb_vendor_bulk_sizes(dut, record_property):
         usb.util.dispose_resources(dev)
     record_property("bulk", json.dumps(seen))
     assert not wrong, " | ".join(wrong)
+
+
+RESTARTS = 10
+
+
+def test_usb_ss_enumeration_after_restart(dut, record_property):
+    """The DUT restarts itself (CH32RV.restart()) ten times; each time the host enumerates it again at SuperSpeed
+    (the bench once saw 1 in 4-5 resets fall back to full speed, the kernel reporting -71 on the descriptors,
+    2026-11-11) and the vendor bulk echo works. Records each round's speed."""
+    settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
+    host = _ready(dut)
+    speeds, wrong = [], []
+    for round_ in range(RESTARTS):
+        dut.write("restart\n")
+        dut.expect(rb"STARTUP", timeout=15)
+        host = _ready(dut)
+        dev = host.device()
+        speeds.append(dev.speed)
+        if dev.speed != usb.util.SPEED_SUPER:
+            wrong.append(f"round {round_}: enumerated at speed {dev.speed}, not SuperSpeed")
+            continue
+        number, out, inn = _bulk(dev)
+        usb.util.claim_interface(dev, number)
+        try:
+            ok, n = _echo(dev, out, inn)
+        finally:
+            usb.util.release_interface(dev, number)
+            usb.util.dispose_resources(dev)
+        if not ok:
+            wrong.append(f"round {round_}: the echo gave {n} of 100 bytes back")
+    record_property("speeds", json.dumps(speeds))
+    assert not wrong, " | ".join(wrong)

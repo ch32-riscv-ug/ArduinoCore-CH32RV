@@ -26,6 +26,7 @@
  * (CH32RVUsbDevice::stall()), 0x52 answers 1 byte, whether it is halted
  * (stalled()).
  *
+ *   restart        CH32RV.restart() (no reply; STARTUP comes back)
  *   ready <nonce>  READY <nonce> <build id> <USB started 0/1> <last error>
  *   iso            ISO <alt> <packets an interval> <IN buffers>
  *                      <IN submitted> <IN refused>
@@ -283,6 +284,9 @@ static void reply(const char *command)
         SerialDMSeq.print(USBDevice.started() ? 1 : 0);
         SerialDMSeq.print(' ');
         SerialDMSeq.println(USBDevice.lastErrorName());
+    } else if (strcmp(command, "restart") == 0) {
+        SerialDMSeq.flush();
+        CH32RV.restart();
     } else if (strcmp(command, "iso") == 0) {
         SerialDMSeq.printf("ISO %u %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\n", iso.alt, iso.alt ? iso.packets : 0,
                            iso.inBuffers, (unsigned long)iso.inSubmitted, (unsigned long)iso.inRefused,
