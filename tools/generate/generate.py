@@ -3011,10 +3011,9 @@ TIM_DT2: dict = {}
 MCO_FIELD: dict = {}
 MCO_PADS: dict = {}
 PIOC_BLOCK: dict = {}
-# Where each family's PIOC runs its program from: 4 KiB of SRAM the core copies the image into. Not in
-# device-data yet (asked of [data], 2026-11-19); the EVT's headers: ch32h417_pioc.h PIOC_SRAM_BASE 0x50040000 (a region
-# of its own), ch32x035 PIOC 0x20004000 (the top 4 KiB of the 20 KiB RAM), ch32v205 0x20000000 (the bottom 4 KiB).
-PIOC_SRAM = {"CH32H417": 0x50040000, "CH32X035": 0x20004000, "CH32V205": 0x20000000}
+# Where each family's PIOC runs its program from: 4 KiB of SRAM the core copies the image into (device-data
+# memory_map's PIOC_SRAM: H417 a region of its own, X035 the top 4 KiB of the 20 KiB RAM, V205 the bottom 4 KiB).
+PIOC_SRAM: dict = {}
 # Where that SRAM sits in the sketch's RAM, for the linker (sections.ld): "high" the top 4 KiB of RAM (X035: the stack
 # moves below it), "low" the bottom 4 KiB (V205: .data and the rest move above it); none: a region of its own (H41x).
 PIOC_SRAM_PLACE = {"CH32X035": "high", "CH32V205": "low"}
@@ -3131,6 +3130,9 @@ def load_pioc(tables: pathlib.Path) -> tuple:
     irq = {r["family"]: int(r["number"])
            for r in read_table(tables, "interrupts.csv", ("family", "number", "name")) if r["name"] == "PIOC"}
     block = {f: (b, irq[f]) for f, b in base.items() if f in irq}
+    for r in read_table(tables, "memory_map.csv", ("family", "region", "base_address")):
+        if r["region"] == "PIOC_SRAM":
+            PIOC_SRAM[r["family"]] = int(r["base_address"], 16)
     for r in read_table(tables, "routes.csv", ("series", "selector", "controller", "register", "bits", "peripheral")):
         m = re.fullmatch(r"(PCFR\d):(\d+)", r["bits"])
         if r["peripheral"] == "PIOC" and r["controller"] == "afio" and m:
@@ -5144,7 +5146,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     pioc_pads = sorted({row for pn in parts for row in PIOC_PADS.get(pn, ())}, key=lambda r: (r[0], r[1], r[2]))
     if family in PIOC_BLOCK and family in PIOC_SRAM and pioc_pads:
         pbase, pirq = PIOC_BLOCK[family]
-        out.append("/* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */")
+        out.append("/* ---- PIOC (device-data memory_map / interrupts / pinout) ---- */")
         out.append(f"#define CH32RV_PIOC_BASE {pbase:#010x}u")
         out.append(f"#define CH32RV_PIOC_IRQN {pirq}")
         out.append(f"#define CH32RV_PIOC_SRAM_BASE {PIOC_SRAM[family]:#010x}u")

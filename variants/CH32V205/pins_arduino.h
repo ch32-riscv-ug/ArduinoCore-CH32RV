@@ -973,7 +973,7 @@ static const uint8_t SS = PIN_SPI_SS;
 #define CH32RV_MCO_PLL_DIV2 7
 #define CH32RV_MCO_SOURCES { 4, 5, 6, 7 }
 
-/* ---- PIOC (device-data memory_map / interrupts / pinout; the SRAM: EVT headers, generate.py) ---- */
+/* ---- PIOC (device-data memory_map / interrupts / pinout) ---- */
 #define CH32RV_PIOC_BASE 0x40025c00u
 #define CH32RV_PIOC_IRQN 63
 #define CH32RV_PIOC_SRAM_BASE 0x20000000u
