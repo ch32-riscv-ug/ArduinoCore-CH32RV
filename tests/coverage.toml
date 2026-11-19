@@ -91,6 +91,13 @@ needs = ["DAC"]
 kind = "self"
 
 [[item]]
+id = "ecdc"                 # CH32RVEcdc: AES-128 / 192 / 256 and SM4, ECB and CTR, against the standards' vectors
+test = "selfapi::test_ecdc"
+scope = "series"
+needs = ["ECDC"]
+kind = "self"
+
+[[item]]
 id = "adc-dual"             # CH32RVAdcStream: ADC1 + ADC2 simultaneous (free and on a timer) and fast interleaved
 test = "analog::test_adc_dual"
 scope = "series"

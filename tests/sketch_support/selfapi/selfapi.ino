@@ -32,7 +32,14 @@
  *                             <read() with + low> <edges on the output pad (attachInterrupt CHANGE)>
  *   canlb <bitrate>           CAN (Arduino_CAN) in silent loopback: 20 frames - standard and extended identifiers in
  *                             turn, 0 .. 8 bytes - each read back: CANLB <begun 1/0> <right> <tx errors> <rx errors>,
- *                             CANLB NONE without a CAN */
+ *                             CANLB NONE without a CAN
+ *   ecdc                      CH32RVEcdc against the standards' vectors - FIPS-197 C.1 / C.2 / C.3 (AES-128 / 192 /
+ *                             256), GB/T 32907 A.1 (SM4), each encrypted and decrypted back, AES-128 over three blocks
+ *                             (a pair memory to memory, one through the registers), and NIST SP 800-38A F.5.1
+ *                             (AES-128 CTR, 64 bytes) on 32-byte boundaries (memory to memory), one byte off and 16
+ *                             bytes off (block by block, nothing around it touched), 50 bytes (three blocks and a
+ *                             tail) and in place: ECDC <right> <of> <the wrong ones' names>,
+ *                             ECDC NONE without the module */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVTimer.h>
@@ -42,6 +49,7 @@
 #include <Arduino_CAN.h>
 #include <CH32RVOpamp.h>
 #include <CH32RVComparator.h>
+#include <CH32RVEcdc.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -744,6 +752,95 @@ static void cores_mode()
 #endif
 }
 
+static void hexIn(const char *hex, uint8_t *out)
+{
+    for (size_t i = 0; hex[2 * i]; i++) {
+        char two[3] = {hex[2 * i], hex[2 * i + 1], 0};
+        out[i] = (uint8_t)strtoul(two, nullptr, 16);
+    }
+}
+
+static void ecdcCheck()
+{
+    CH32RVEcdc ecdc;
+    uint8_t probe[16] = {};
+    if (!ecdc.begin(CH32RVEcdc::AES, probe, 16)) {
+        SerialDMSeq.printf("ECDC NONE\r\n");
+        return;
+    }
+    static const struct {
+        const char *name;
+        CH32RVEcdc::Algorithm algorithm;
+        const char *key, *plain, *cipher;
+    } ecb[] = {
+        {"aes128", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f", "00112233445566778899aabbccddeeff",
+         "69c4e0d86a7b0430d8cdb78070b4c55a"},
+        {"aes192", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f1011121314151617",
+         "00112233445566778899aabbccddeeff", "dda97ca4864cdfe06eaf70a0ec0d7191"},
+        {"aes256", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+         "00112233445566778899aabbccddeeff", "8ea2b7ca516745bfeafc49904b496089"},
+        {"sm4", CH32RVEcdc::SM4, "0123456789abcdeffedcba9876543210", "0123456789abcdeffedcba9876543210",
+         "681edf34d206965e86b3e94f536e4246"},
+    };
+    alignas(32) static uint8_t key[32], plain[96], cipher[96], out[96];
+    int right = 0, total = 0;
+    char wrong[160] = "";
+    auto check = [&](const char *name, bool ok) {
+        total++;
+        if (ok) {
+            right++;
+        } else if (strlen(wrong) + strlen(name) + 2 < sizeof wrong) {
+            strcat(wrong, " ");
+            strcat(wrong, name);
+        }
+    };
+    for (const auto &v : ecb) {
+        hexIn(v.key, key);
+        hexIn(v.plain, plain);
+        hexIn(v.cipher, cipher);
+        const bool begun = ecdc.begin(v.algorithm, key, strlen(v.key) / 2);
+        memset(out, 0, 16);
+        check(v.name, begun && ecdc.encrypt(plain, out, 16) && !memcmp(out, cipher, 16));
+        memset(out, 0, 16);
+        char back[16];
+        snprintf(back, sizeof back, "%s-dec", v.name);
+        check(back, begun && ecdc.decrypt(cipher, out, 16) && !memcmp(out, plain, 16));
+    }
+    /* ECB over three blocks: a pair memory to memory and one through the registers */
+    hexIn(ecb[0].key, key);
+    for (int k = 0; k < 3; k++) {
+        hexIn(ecb[0].plain, plain + 16 * k);
+        hexIn(ecb[0].cipher, cipher + 16 * k);
+    }
+    memset(out, 0xEE, sizeof out);
+    check("ecb-48", ecdc.begin(CH32RVEcdc::AES, key, 16) && ecdc.encrypt(plain, out, 48) && !memcmp(out, cipher, 48) &&
+                        out[48] == 0xEE);
+    /* SP 800-38A F.5.1 */
+    uint8_t iv[16];
+    hexIn("2b7e151628aed2a6abf7158809cf4f3c", key);
+    hexIn("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", iv);
+    hexIn("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e51"
+          "30c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710", plain);
+    hexIn("874d6191b620e3261bef6864990db6ce9806f66b7970fdff8617187bb9fffdff"
+          "5ae4df3edbd5d35e5b4f09020db03eab1e031dda2fbe03d1792170a0f3009cee", cipher);
+    const bool begun = ecdc.begin(CH32RVEcdc::AES, key, 16);
+    memset(out, 0, sizeof out);
+    check("ctr", begun && ecdc.ctr(iv, plain, out, 64) && !memcmp(out, cipher, 64));
+    static uint8_t shifted[68];
+    memcpy(shifted + 1, plain, 64);
+    memset(out, 0, sizeof out);
+    check("ctr-unaligned", begun && ecdc.ctr(iv, shifted + 1, out + 1, 64) && !memcmp(out + 1, cipher, 64));
+    memset(out, 0xEE, sizeof out);
+    check("ctr-16off", begun && ecdc.ctr(iv, plain, out + 16, 64) && !memcmp(out + 16, cipher, 64) && out[15] == 0xEE &&
+                           out[80] == 0xEE);
+    memset(out, 0xEE, sizeof out);
+    check("ctr-50", begun && ecdc.ctr(iv, plain, out, 50) && !memcmp(out, cipher, 50) && out[50] == 0xEE);
+    memcpy(out, cipher, 64);
+    check("ctr-inplace", begun && ecdc.ctr(iv, out, out, 64) && !memcmp(out, plain, 64));
+    ecdc.end();
+    SerialDMSeq.printf("ECDC %d %d%s\r\n", right, total, wrong);
+}
+
 static void reply(char *command)
 {
     char *argv[4];
@@ -846,6 +943,8 @@ static void reply(char *command)
             pinMode(minus, INPUT);
         }
         SerialDMSeq.printf("CMP %d %d %d %d\r\n", ok ? 1 : 0, level[0], level[1], (int)cmp_edges);
+    } else if (!strcmp(argv[0], "ecdc")) {
+        ecdcCheck();
     } else if (!strcmp(argv[0], "canlb") && argc == 2) {
 #if defined(CH32RV_CAN1_BASE)
         CAN.setLoopback(true, true);

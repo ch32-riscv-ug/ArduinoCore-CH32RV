@@ -229,7 +229,7 @@
 | DMA の公開 API（メモリ間、ダブルバッファ、周辺へ） | 全系列 | 2 | 自動 | 自己 | PS:50, PM:201 |
 | CRC の公開 API | V103、V20x、V205、V30x、V4x7、L103、X3x5、H41x | 実装済み（2026-11-17、ビルドのみ。`CH32RV.crc32()`、ほかの系列はソフトで同じ値） | 自動 | 自己（既知のデータ）。selfapi::test_crc | libraries/CH32RV/README.ja.md |
 | RNG の公開 API（`esp_random()`、`randomSeed()` の種） | V30x、V4x7、H41x | 実装済み（2026-11-17、ビルドのみ。`ch32rv_random()` / `ch32rv_fill_random()`、ほかの系列は暗号に使えないソフトの値。`random()` は Arduino のとおり） | 自動 | 自己。selfapi::test_rng | libraries/CH32RV/README.ja.md |
-| ECDC（AES-128/192/256、SM4、ECB・CTR） | H417 | 2 | 自動 | 自己（既知のベクトル） | PS:56, PM:211 |
+| ECDC（AES-128/192/256、SM4、ECB・CTR） | H417 | 2 | 実装済み（2026-11-19、`CH32RVEcdc`。H417 で selfapi::test_ecdc、規格のベクトル 14 件） | 自己（既知のベクトル） | libraries/CH32RVEcdc |
 | PIOC（RISC8B の 8 bit コア） | X035、V205、H41x | 試作中（2026-11-19、ユーザー: 試作して基本は入れる方向。保留を解除）。`cores/arduino/ch32rv_pioc.inc`（全命令のマクロ、WCH の名前、分岐の範囲・語の幅・4 KiB の検査）と `CH32RVPioc`（ローダー。X035 / X033 は PCFR1 の remap と RAM の上端 4 KiB、V205 は下端 4 KiB を、使うスケッチでだけリンカが空ける）。完了は待ち合わせ（`waitDone()`）か割込み（`onDone()`）。pioc::test_pioc_pulses が H417（PA0）・X035（PC7）・V205（PB10）で通る。EVT の 15 本（X035・V205・H417 の各 5 本）を移した .S の出力がベンダーの .BIN とバイト単位で一致（リポジトリの外で突き合わせ。EVT のバイナリも Rust の pioc の出力も内蔵しない、ユーザーの方針）。残り: エミュレータと pytest の sim は後で検討（ユーザー、2026-11-19） | 自動 | プローブ（1-Wire・IR・UART の波形） | PS:79, PM:215 |
 | ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 実装済み（2026-11-17。LED 1 個は 7 系列でベンチ確認。チェーンは `ch32rv_rgb_led_write()` で 1 つのフレーム。72 MHz 以上は SysTick、それ未満は RAM の命令の数で時間を作る） | 自動 | プローブ（60 MS/s、WireSkein の rgb_led）。signals::test_rgb_led | libraries/CH32RV/README.ja.md |
 | DVP（カメラ入力） | V30x（100 ピン）、V4x7、H417 | 2 | 単発→自動 | カメラ、またはプローブが PCLK・データを出す | PS:111, PM:256 |

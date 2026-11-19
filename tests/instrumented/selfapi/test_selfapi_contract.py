@@ -401,3 +401,18 @@ def test_cores_v3f_serial(dut, ready, record_property):
     assert results, "no port could be used: " + ", ".join(left)
     assert any("received" in r for r in results.values()), "no port's RX pad could be driven: " + json.dumps(results)
     assert not wrong, " | ".join(wrong)
+
+
+def test_ecdc(dut, ready, record_property):
+    """CH32RVEcdc (H41x's encryption module) against the standards' vectors: FIPS-197 C.1 / C.2 / C.3 (AES-128 / 192 /
+    256) and GB/T 32907 A.1 (SM4), each encrypted and decrypted back; AES-128 ECB over three blocks (a pair memory to
+    memory, the third through the registers, nothing past it); NIST SP 800-38A F.5.1 (AES-128 CTR, 64 bytes)
+    on 32-byte boundaries (memory to memory), one byte off and 16 bytes off (block by block: memory to memory would
+    write 16 bytes early there; nothing around it touched), 50 bytes (three blocks and a tail, nothing written past
+    it) and in place. A series without the module skips."""
+    m = ask(dut, "ecdc", rb"ECDC (NONE|(\d+) (\d+)([^\r\n]*))", timeout=15)
+    if m.group(1) == b"NONE":
+        pytest.skip("no ECDC on this series")
+    right, total, wrong = int(m.group(2)), int(m.group(3)), m.group(4).decode().split()
+    record_property("ecdc", json.dumps(dict(right=right, total=total, wrong=wrong)))
+    assert right == total, f"{right} of {total} vectors right; wrong: {' '.join(wrong)}"

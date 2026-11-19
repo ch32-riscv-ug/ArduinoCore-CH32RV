@@ -1506,6 +1506,11 @@ DMAMUX_UART_CHANNELS = [(1, c) for c in range(2, 9)] + [(2, c) for c in range(1,
 DMAMUX_UART8 = {"RX": (2, 8), "TX": (1, 1)}
 
 
+# Blocks whose library needs only the base address (their registers' offsets are the library's, from the RM).
+BASE_ONLY_BLOCKS = ("ECDC",)
+REG_BLOCKS: dict = {}
+
+
 def load_dma_blocks(tables: pathlib.Path) -> dict:
     """family -> {block: base address} from register_blocks.csv (the DMA
     controllers and channels dma_line() reads)."""
@@ -5228,6 +5233,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define CH32RV_TIM_DT2_FALLING (1u << {fall})")
         out.append("")
 
+    # --- blocks a library drives by its base alone (CH32RVEcdc: the encryption module) ---
+    # Where the series clocks the block (its CH32RV_CLKEN_ above) and register_blocks.csv places it.
+    for block in BASE_ONLY_BLOCKS:
+        if block in REG_BLOCKS.get(family, {}) and any(f"CH32RV_CLKEN_{block}_ADDR " in line for line in out):
+            out.append(f"#define CH32RV_{block}_BASE {REG_BLOCKS[family][block]:#010x}u   /* register_blocks.csv */")
+            out.append("")
+
     # --- PIOC ---
     # The I/O processor (CH32RVPioc): its SFRs, interrupt, program SRAM (PIOC_SRAM above) and the IO0 / IO1 pads with
     # the value that routes them (the AF number on the per-pin families, the remap field's value on X035).
@@ -5973,6 +5985,7 @@ def main() -> int:
     DAC_DMA.update(load_dac_dma(args.tables))
     DAC_TRIGGERS.update(load_dac_triggers(args.tables))
     ADC_DUAL.update(load_adc_dual(args.tables))
+    REG_BLOCKS.update(load_dma_blocks(args.tables))
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
     gpio_speed = load_gpio_speed(args.tables)
