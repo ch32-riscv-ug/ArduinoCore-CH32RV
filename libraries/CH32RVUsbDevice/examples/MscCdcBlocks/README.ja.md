@@ -25,3 +25,6 @@ PC には 8 KB のドライブ（`CH32RV` / `RAM blocks`）と、シリアルの
 | `CH32RVUsbDeviceCdcSerial console(device, "disk statistics")` | 名前つきのシリアル。数は読み書きの関数の呼ばれた回数で、バイト数ではない。 |
 
 ファイルとして扱うなら [MSCFatRamDisk](../MSCFatRamDisk/README.ja.md)、残すなら SD などの記憶を `onRead()` / `onWrite()` に置きます。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20、PyUSB から Bulk-Only Transport で SCSI）: 512 バイトの 16 ブロック、書いた
+ブロックがそのまま読めて、シリアルの `?` が書き込みと読み出し（OS が載せたときの読み出しを含む）を数えていました。

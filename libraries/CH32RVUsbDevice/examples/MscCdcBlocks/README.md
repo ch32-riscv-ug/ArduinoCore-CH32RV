@@ -26,3 +26,7 @@ once on `?`. The counts grow as the PC reads and writes the drive.
 
 For files use [MSCFatRamDisk](../MSCFatRamDisk/README.md); to keep the data, put a store such as an SD card behind
 `onRead()` / `onWrite()`.
+
+Checked on CH32H417 over SuperSpeed (2026-11-20, SCSI over Bulk-Only Transport from PyUSB): 16 blocks of 512 bytes, a
+block written and read back unchanged, and `?` on the serial port counted the write and the reads (the OS's own reads
+when it mounted the drive included).
