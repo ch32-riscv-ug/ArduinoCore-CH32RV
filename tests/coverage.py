@@ -18,6 +18,10 @@ outcome comes from its junit file; the target's series from its chip (places.jso
   counted in the wanted numbers - a feature not built is a gap, never n/a (only BLE is left out, the user).
 - an item with no `test` is a feature the tests do not cover yet: "no test" in each cell it applies to, counted in the
   wanted numbers, so the gap shows.
+- the USB cases also get a table of their own, one row per series, controller and peer: which controller of the DUT
+  (the record's usb key; "auto" for the one-port form, the series' usual one) and what is at its other end (PC, Pico,
+  S3, P4, CH32RV, through a hub when the record says) - from the target's record in places.json, the port the case
+  runs on (the host cases on the {to: host} port, usb-peer* on the peer's), as run_hardware.py picks it.
 
 Exit status 0; the report is the output (stdout, or --markdown)."""
 import argparse
@@ -30,6 +34,7 @@ import xml.etree.ElementTree as ET
 HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(HERE))
+from harness.records import usb_ports  # noqa: E402
 from harness.series import series_capabilities  # noqa: E402
 
 RANK = {"PASS": 4, "FAIL": 3, "SKIP": 2, "NA": 1}
@@ -66,8 +71,28 @@ def junit_outcomes(path):
     return out
 
 
-def collect(paths, names):
-    """[(series, target, case, test name, outcome, run)] over the runs, the oldest run first (result.json's time)."""
+PEER_NAMES = {"host": "PC", "rp2040": "Pico", "esp32-s3": "S3", "esp32-p4": "P4", "ch32rv": "CH32RV"}
+HOST_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
+
+
+def usb_axis(record, case):
+    """"<controller> -> <peer>" of the port a USB case ran on (the target's record), None for other cases."""
+    if case not in HOST_CASES and not case.startswith("usb-peer"):
+        return None
+    ports = usb_ports((record or {}).get("usb"))
+    want_host = case in HOST_CASES
+    for port, entry in ports.items():
+        to = entry.get("to")
+        if (to == "host") == want_host and to in PEER_NAMES:
+            hub = f" via {entry['hub']} hub" if entry.get("hub") else ""
+            wires = " (SuperSpeed wires only)" if entry.get("ss_only") else ""
+            return f"{port} -> {PEER_NAMES[to]}{hub}{wires}"
+    return "? (no such port in the record)"
+
+
+def collect(paths, names, axes=None):
+    """[(series, target, case, test name, outcome, run)] over the runs, the oldest run first (result.json's time).
+    `axes`, when given, gets {(run, target, case): usb_axis()} for the USB cases."""
     rows = []
     def when(p):
         p = pathlib.Path(p)
@@ -91,6 +116,10 @@ def collect(paths, names):
             target, case = entry["target"], entry["case"]
             chip = (targets.get(target) or {}).get("chip", "")
             series = series_of(chip, names)
+            if axes is not None:
+                axis = usb_axis((targets.get(target) or {}).get("record"), case)
+                if axis:
+                    axes[(run.name, target, case)] = axis
             tests = junit_outcomes(run / "cases" / target / case / "junit.xml")
             if not tests:   # compile-only, not run, or the case failed before pytest: the case's own status
                 status = {"PASS": "PASS", "FAIL": "FAIL", "SKIP": "SKIP"}.get(entry.get("status"))
@@ -148,7 +177,30 @@ def cell(now, better):
     return MARK[now] + (f" ({MARK[better]} before)" if better else "")
 
 
-def report(rows, items, caps):
+def usb_table(rows, items, axes):
+    """The USB items by series, controller and peer (only the pairs some run had)."""
+    usb_items = [i for i in items if any(t.split("::")[0] in HOST_CASES or t.startswith("usb-peer")
+                                         for t in tests_of(i))]
+    keyed = [(ser, axes[(run, target, case)], case, name, o, run) for (ser, target, case, name, o, run) in rows
+             if (run, target, case) in axes]
+    pairs = sorted({(ser or "?", axis) for ser, axis, *_ in keyed})
+    if not pairs or not usb_items:
+        return []
+    used = [i for i in usb_items if any(matches(i, case, name) for _, _, case, name, _, _ in keyed)]
+    lines = ["## USB, by controller and peer", "",
+             "| series | controller -> peer | " + " | ".join(i["id"] for i in used) + " |",
+             "|---|---|" + "---|" * len(used)]
+    for ser, axis in pairs:
+        cells = []
+        for item in used:
+            now, better, _ = latest([(o, run, None) for (s, a, case, name, o, run) in keyed
+                                     if (s or "?") == ser and a == axis and matches(item, case, name)])
+            cells.append(cell(now, better) if now else "")
+        lines.append(f"| {ser} | {axis} | " + " | ".join(cells) + " |")
+    return lines + [""]
+
+
+def report(rows, items, caps, axes=None):
     series_list = sorted(s for s in caps if s.startswith("CH32"))
     lines = ["# Hardware test coverage", ""]
     once = [i for i in items if i["scope"] == "once"]
@@ -186,6 +238,7 @@ def report(rows, items, caps):
         lines.append("")
         passed += sum(done.values())
         wanted_total += sum(wanted.values())
+    lines += usb_table(rows, items, axes or {})
     lines.append("## Anywhere (scope = once)")
     lines.append("")
     lines.append("| item | result | where |")
@@ -212,7 +265,8 @@ def main(argv=None):
     ap.add_argument("--markdown", type=pathlib.Path, help="write the report here instead of stdout")
     args = ap.parse_args(argv)
     caps = {s: set(c) for s, c in series_capabilities().items()}
-    text = report(collect(args.runs, list(caps)), load_items(), caps)
+    axes = {}
+    text = report(collect(args.runs, list(caps), axes), load_items(), caps, axes)
     if args.markdown:
         args.markdown.write_text(text, encoding="utf-8")
     else:

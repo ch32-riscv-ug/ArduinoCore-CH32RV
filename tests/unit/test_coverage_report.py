@@ -105,3 +105,14 @@ def test_na_skip_and_a_case_that_failed_before_pytest(tmp_path):
     v003 = dict(zip(cols, [c.strip() for c in next(line for line in text.splitlines()
                                                      if line.startswith("| CH32V003 |")).strip("|").split("|")]))
     assert v003["uart"] == "✗" and v003["uart-formats"] == "✗"
+
+
+def test_usb_axis():
+    """The port a USB case ran on: the host cases on {to: host}, usb-peer* on the peer's; other cases have none."""
+    per_port = {"usb": {"full_speed": {"to": "rp2040", "port": "rp2040-h417", "hub": "hs-mtt"},
+                        "super_speed": {"to": "host", "ss_only": True}}}
+    assert coverage.usb_axis(per_port, "usb-ss-iso") == "super_speed -> PC (SuperSpeed wires only)"
+    assert coverage.usb_axis(per_port, "usb-peer-host") == "full_speed -> Pico via hs-mtt hub"
+    assert coverage.usb_axis({"usb": {"to": "esp32-s3", "mac": "0"}}, "usb-peer") == "auto -> S3"
+    assert coverage.usb_axis({"usb": {"to": "esp32-s3", "mac": "0"}}, "usb") == "? (no such port in the record)"
+    assert coverage.usb_axis(per_port, "signals") is None

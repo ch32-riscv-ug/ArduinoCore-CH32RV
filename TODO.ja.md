@@ -63,7 +63,9 @@
   TEST_PLAN・tests/README・docs/test-coverage の古い記述（2026-11-05 の実機待ちの表、「新 suite では未整備」の列など）。
   残り:
   - [ ] USB の項目に controller（full_speed …）と対向（S3 / P4 / Pico / PC）の軸。junit に record_property で残し、
-    coverage の欄を分ける。同じ相手の口が複数ある記録で、口ごとに case を流す。
+    coverage の欄を分ける。同じ相手の口が複数ある記録で、口ごとに case を流す。→ 2026-11-20: coverage.py に「USB, by controller
+    and peer」の表を足した（places.json の記録から、case が流れた口の `<controller> -> <peer>`、ハブと SS だけの線も）。残り:
+    同じ相手の口が複数ある記録で口ごとに case を流すこと（今は最初の口だけ流し、ほかは skip と書く。そういう記録の台はまだ無い）。
   - [ ] 計画にあって試験の無い契約: USB のコアとの共存（何との共存かを決めてから）。STALL の解除と相手のリセット後の
     再通信は 2026-11-20 に usb-ss-iso::test_usb_vendor_halt・test_usb_vendor_after_reset（PC の libusb、H417 の SS）を足して
     通った。FS / HS の DCD は PC につながる口が無く未確認（ピアの Pico / P4 にはホストの CLEAR_FEATURE とポートのリセットの
