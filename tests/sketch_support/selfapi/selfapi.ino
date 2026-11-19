@@ -39,7 +39,12 @@
  *                             (AES-128 CTR, 64 bytes) on 32-byte boundaries (memory to memory), one byte off and 16
  *                             bytes off (block by block, nothing around it touched), 50 bytes (three blocks and a
  *                             tail) and in place: ECDC <right> <of> <the wrong ones' names>,
- *                             ECDC NONE without the module */
+ *                             ECDC NONE without the module
+ *   gpha                      CH32RVGpha against the CPU's own reckoning: fill() into RGB565 and ARGB8888, copy()
+ *                             ARGB8888 -> RGB565 and RGB565 -> ARGB8888 (exact), blend() of ARGB8888 layers with their
+ *                             own alpha and a global one (each channel 3 below .. 1 above the exact mix), each with
+ *                             the pixels around the rectangle untouched: GPHA <right> <of> <the wrong ones' names>,
+ *                             GPHA NONE without the block */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVTimer.h>
@@ -50,6 +55,7 @@
 #include <CH32RVOpamp.h>
 #include <CH32RVComparator.h>
 #include <CH32RVEcdc.h>
+#include <CH32RVGpha.h>
 #include <stdlib.h>
 #include <string.h>
 #include "internal/ch32rv_ticks.h"
@@ -841,6 +847,120 @@ static void ecdcCheck()
     SerialDMSeq.printf("ECDC %d %d%s\r\n", right, total, wrong);
 }
 
+static uint16_t to565(uint32_t c)
+{
+    return (uint16_t)(((c >> 19) & 0x1Fu) << 11 | ((c >> 10) & 0x3Fu) << 5 | ((c >> 3) & 0x1Fu));
+}
+
+static uint32_t from565(uint16_t p)
+{
+    const uint32_t r = p >> 11, g = (p >> 5) & 0x3Fu, b = p & 0x1Fu;
+    return 0xFF000000u | ((r << 3) | (r >> 2)) << 16 | ((g << 2) | (g >> 4)) << 8 | ((b << 3) | (b >> 2));
+}
+
+static void gphaCheck()
+{
+    CH32RVGpha gpha;
+    alignas(4) static uint16_t fb16[16 * 8];
+    alignas(4) static uint32_t fb32[16 * 8], src32[6 * 4], fg[16], bg[16];
+    alignas(4) static uint16_t src16[6 * 4];
+    CH32RVGpha::Surface s16{fb16, CH32RVGpha::RGB565, 16}, s32{fb32, CH32RVGpha::ARGB8888, 16};
+    for (auto &v : fb16) {
+        v = 0xEEEE;
+    }
+    if (!gpha.fill(s16, 3, 2, 5, 3, 0xFF2040C0)) {
+        SerialDMSeq.printf("GPHA NONE\r\n");
+        return;
+    }
+    int right = 0, total = 0;
+    char wrong[160] = "";
+    auto check = [&](const char *name, bool ok) {
+        total++;
+        if (ok) {
+            right++;
+        } else if (strlen(wrong) + strlen(name) + 2 < sizeof wrong) {
+            strcat(wrong, " ");
+            strcat(wrong, name);
+        }
+    };
+    auto inside = [](int x, int y, int x0, int y0, int w, int h) { return x >= x0 && x < x0 + w && y >= y0 && y < y0 + h; };
+    bool ok = true;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 16; x++) {
+            ok &= fb16[y * 16 + x] == (inside(x, y, 3, 2, 5, 3) ? to565(0xFF2040C0) : 0xEEEE);
+        }
+    }
+    check("fill565", ok);
+    for (auto &v : fb32) {
+        v = 0xEEEEEEEE;
+    }
+    ok = gpha.fill(s32, 0, 5, 16, 2, 0x80A0B0C0);
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 16; x++) {
+            ok &= fb32[y * 16 + x] == (inside(x, y, 0, 5, 16, 2) ? 0x80A0B0C0u : 0xEEEEEEEEu);
+        }
+    }
+    check("fill8888", ok);
+    uint32_t seed = 12345;
+    auto next = [&]() { seed = seed * 1103515245u + 12345u; return seed; };
+    for (auto &v : src32) {
+        v = next();
+    }
+    for (auto &v : fb16) {
+        v = 0xEEEE;
+    }
+    ok = gpha.copy(CH32RVGpha::Surface{src32, CH32RVGpha::ARGB8888, 6}, 1, 1, s16, 9, 4, 5, 3);
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 16; x++) {
+            const uint16_t want = inside(x, y, 9, 4, 5, 3) ? to565(src32[(y - 4 + 1) * 6 + (x - 9 + 1)]) : 0xEEEE;
+            ok &= fb16[y * 16 + x] == want;
+        }
+    }
+    check("copy8888to565", ok);
+    for (auto &v : src16) {
+        v = (uint16_t)next();
+    }
+    for (auto &v : fb32) {
+        v = 0xEEEEEEEE;
+    }
+    ok = gpha.copy(CH32RVGpha::Surface{src16, CH32RVGpha::RGB565, 6}, 0, 0, s32, 2, 1, 6, 4);
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 16; x++) {
+            const uint32_t want = inside(x, y, 2, 1, 6, 4) ? from565(src16[(y - 1) * 6 + (x - 2)]) : 0xEEEEEEEEu;
+            ok &= fb32[y * 16 + x] == want;
+        }
+    }
+    check("copy565to8888", ok);
+    for (uint8_t global : {(uint8_t)255, (uint8_t)128}) {
+        for (int i = 0; i < 16; i++) {
+            fg[i] = next();
+            bg[i] = next() | 0xFF000000u;
+        }
+        for (auto &v : fb32) {
+            v = 0xEEEEEEEE;
+        }
+        ok = gpha.blend(CH32RVGpha::Surface{fg, CH32RVGpha::ARGB8888, 16}, 0, 0, CH32RVGpha::Surface{bg, CH32RVGpha::ARGB8888, 16},
+                        0, 0, s32, 0, 3, 16, 1, global);
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 16; x++) {
+                const uint32_t got = fb32[y * 16 + x];
+                if (y != 3) {
+                    ok &= got == 0xEEEEEEEEu;
+                    continue;
+                }
+                const uint32_t a = (fg[x] >> 24) * global / 255u;
+                for (int sh = 0; sh < 24; sh += 8) {
+                    const int f = (fg[x] >> sh) & 0xFF, b = (bg[x] >> sh) & 0xFF;
+                    const int want = (int)((a * f + (255u - a) * b) / 255u), c = (got >> sh) & 0xFF;
+                    ok &= c >= want - 3 && c <= want + 1;
+                }
+            }
+        }
+        check(global == 255 ? "blend" : "blend-global", ok);
+    }
+    SerialDMSeq.printf("GPHA %d %d%s\r\n", right, total, wrong);
+}
+
 static void reply(char *command)
 {
     char *argv[4];
@@ -943,6 +1063,8 @@ static void reply(char *command)
             pinMode(minus, INPUT);
         }
         SerialDMSeq.printf("CMP %d %d %d %d\r\n", ok ? 1 : 0, level[0], level[1], (int)cmp_edges);
+    } else if (!strcmp(argv[0], "gpha")) {
+        gphaCheck();
     } else if (!strcmp(argv[0], "ecdc")) {
         ecdcCheck();
     } else if (!strcmp(argv[0], "canlb") && argc == 2) {

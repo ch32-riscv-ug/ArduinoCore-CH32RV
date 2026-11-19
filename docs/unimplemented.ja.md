@@ -234,7 +234,7 @@
 | ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 実装済み（2026-11-17。LED 1 個は 7 系列でベンチ確認。チェーンは `ch32rv_rgb_led_write()` で 1 つのフレーム。72 MHz 以上は SysTick、それ未満は RAM の命令の数で時間を作る） | 自動 | プローブ（60 MS/s、WireSkein の rgb_led）。signals::test_rgb_led | libraries/CH32RV/README.ja.md |
 | DVP（カメラ入力） | V30x（100 ピン）、V4x7、H417 | 2 | 単発→自動 | カメラ、またはプローブが PCLK・データを出す | PS:111, PM:256 |
 | LTDC（RGB の LCD 出力） | V4x7、H417 | 2 | 単発→自動 | プローブ（取り込み）か LCD | PS:112, PM:257 |
-| GPHA（2D DMA） | H417 | 2 | 自動 | 自己（メモリ間） | PS:113, PM:258 |
+| GPHA（2D DMA） | H417 | 2 | 実装済み（2026-11-19、`CH32RVGpha` の fill / copy / blend。H417 で selfapi::test_gpha 6 件。残り: CLUT（L8 などの索引の形式の表の読み込み）、割込み・ウォーターマーク、待たない呼び出し） | 自己（メモリ間） | libraries/CH32RVGpha |
 | SerDes（1.5 Gbps） | H417 | 2 | 自動 | 2 台目の H417 と差動の線 | PS:107, PM:252 |
 | UHSIF の残り（スレーブのモード、出力、外部クロック、24 bit、制御線の出力） | H41x | 2 | 単発→自動 | 外のマスター（FPGA）か 2 台目、プローブ | PS:106, libraries/CH32RVUhsif/README.ja.md:19 |
 | CH32RVLogicCapture の残り（深いリング、外部クロック、8/32 bit、出力） | 全系列 | 2 | 自動 | プローブ | TODO:147,424 |

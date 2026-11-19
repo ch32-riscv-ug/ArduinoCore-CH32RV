@@ -894,6 +894,8 @@ static const uint8_t SS = PIN_SPI_SS;
 
 #define CH32RV_ECDC_BASE 0x40016c00u   /* register_blocks.csv */
 
+#define CH32RV_GPHA_BASE 0x40016800u   /* register_blocks.csv */
+
 /* ---- PIOC (device-data memory_map / interrupts / pinout) ---- */
 #define CH32RV_PIOC_BASE 0x40025c00u
 #define CH32RV_PIOC_IRQN 122

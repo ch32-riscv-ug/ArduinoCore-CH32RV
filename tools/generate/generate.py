@@ -1507,7 +1507,7 @@ DMAMUX_UART8 = {"RX": (2, 8), "TX": (1, 1)}
 
 
 # Blocks whose library needs only the base address (their registers' offsets are the library's, from the RM).
-BASE_ONLY_BLOCKS = ("ECDC",)
+BASE_ONLY_BLOCKS = ("ECDC", "GPHA")
 REG_BLOCKS: dict = {}
 
 
@@ -5233,7 +5233,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(f"#define CH32RV_TIM_DT2_FALLING (1u << {fall})")
         out.append("")
 
-    # --- blocks a library drives by its base alone (CH32RVEcdc: the encryption module) ---
+    # --- blocks a library drives by its base alone (CH32RVEcdc: the encryption module; CH32RVGpha: the 2D DMA) ---
     # Where the series clocks the block (its CH32RV_CLKEN_ above) and register_blocks.csv places it.
     for block in BASE_ONLY_BLOCKS:
         if block in REG_BLOCKS.get(family, {}) and any(f"CH32RV_CLKEN_{block}_ADDR " in line for line in out):

@@ -126,6 +126,13 @@ needs = ["DAC"]
 kind = "self"
 
 [[item]]
+id = "gpha"                 # CH32RVGpha: fill, copy with conversion, blend - against the CPU's reckoning
+test = "selfapi::test_gpha"
+scope = "series"
+needs = ["GPHA"]
+kind = "self"
+
+[[item]]
 id = "ecdc"                 # CH32RVEcdc: AES-128 / 192 / 256 and SM4, ECB and CTR, against the standards' vectors
 test = "selfapi::test_ecdc"
 scope = "series"

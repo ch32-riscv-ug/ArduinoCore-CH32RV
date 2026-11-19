@@ -416,3 +416,16 @@ def test_ecdc(dut, ready, record_property):
     right, total, wrong = int(m.group(2)), int(m.group(3)), m.group(4).decode().split()
     record_property("ecdc", json.dumps(dict(right=right, total=total, wrong=wrong)))
     assert right == total, f"{right} of {total} vectors right; wrong: {' '.join(wrong)}"
+
+
+def test_gpha(dut, ready, record_property):
+    """CH32RVGpha (H41x's graphics DMA) against the CPU's own reckoning: fill() into RGB565 and ARGB8888, copy() from
+    ARGB8888 into RGB565 and from RGB565 into ARGB8888 (the manual's expansion: the high bits copied low), exactly;
+    blend() of ARGB8888 layers by their own alpha and by a global one, each channel 3 below to 1 above the exact mix
+    (the hardware rounds down a little); every pixel around each rectangle untouched. A series without it skips."""
+    m = ask(dut, "gpha", rb"GPHA (NONE|(\d+) (\d+)([^\r\n]*))", timeout=15)
+    if m.group(1) == b"NONE":
+        pytest.skip("no GPHA on this series")
+    right, total, wrong = int(m.group(2)), int(m.group(3)), m.group(4).decode().split()
+    record_property("gpha", json.dumps(dict(right=right, total=total, wrong=wrong)))
+    assert right == total, f"{right} of {total} right; wrong: {' '.join(wrong)}"
