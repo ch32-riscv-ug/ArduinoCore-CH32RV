@@ -36,3 +36,8 @@ pyserial on the PC.
 Other ways in: DFU is [FirmwareDFU](../FirmwareDFU/README.md), a copy to a drive is [FirmwareMSC](../FirmwareMSC/README.md),
 the UART is the Update library's SerialUpdate. Power lost during the swap (the copy to the start) leaves the sketch
 half written (a probe recovers it).
+
+Checked on CH32H417 over SuperSpeed (2026-11-20): a 32 KB sketch accepted in 0.1 s and started; a file that is not a
+sketch refused with `ERR Wrong Magic Byte` and the sketch kept. The device reads the rest of a refused image as command
+lines; firmware_cdc.py sends a newline and waits for the port to go quiet before `FW`, so the next try is not taken for
+one of them.

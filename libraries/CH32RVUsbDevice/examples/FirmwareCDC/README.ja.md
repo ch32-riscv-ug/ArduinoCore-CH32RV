@@ -35,3 +35,7 @@ USB デバイスのある石と、PC への USB の線。進み具合は 115200 
 ほかの入れ方: DFU は [FirmwareDFU](../FirmwareDFU/README.ja.md)、ドライブへのコピーは [FirmwareMSC](../FirmwareMSC/README.ja.md)、
 UART は Update ライブラリの SerialUpdate。入れ替え（先頭へのコピー）の間に電源が切れると、スケッチは書きかけになります
 （プローブで直せる）。
+
+CH32H417 の SuperSpeed で確かめました（2026-11-20）: 32 KB のスケッチを 0.1 秒で受けて起動し、スケッチでない中身は
+`ERR Wrong Magic Byte` で断ってこのスケッチのままでした。断ったイメージの残りはデバイスが命令の行として読むので、
+firmware_cdc.py は `FW` の前に改行を送ってポートが静かになるまで待ち、次の試みがそれと混ざらないようにしています。

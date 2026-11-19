@@ -34,7 +34,15 @@ def main():
     path, image_path = sys.argv[1], sys.argv[2]
     image = open(image_path, "rb").read()
     port = serial.Serial(path, 115200, timeout=0.2)
+    # An image the device refused part way leaves its rest read as command lines: a newline ends the last of them, and
+    # their ERR replies are read until the port has been quiet for 0.3 s.
+    port.write(b"\n")
+    port.flush()
     port.reset_input_buffer()
+    quiet = time.time() + 0.3
+    while time.time() < quiet:
+        if port.read(256):
+            quiet = time.time() + 0.3
     port.write(f"FW {len(image)}\n".encode())
     port.flush()
     reply = read_line(port)
