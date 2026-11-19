@@ -267,7 +267,13 @@ uint8_t CH32RVHardwareSerial::transferSynchronous(uint8_t data)
     /* RX is sampled on the same eight clocks. */
     while (!(CH32RV_USART_STATR(base) & CH32RV_USART_STATR_RXNE)) {
     }
-    return (uint8_t)CH32RV_USART_DATAR(base);
+    const uint8_t got = (uint8_t)CH32RV_USART_DATAR(base);
+    /* And the frame's end: with CPHA 0 the byte is in at the eighth leading edge, before its trailing edge - a CS
+     * raised on the return cut the last clock off (V205 at 250 kHz, 2026-11-20). TC (cleared by the status read
+     * and the data write above) comes after it; the next frame could not start before then anyway. */
+    while (!(CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TC)) {
+    }
+    return got;
 }
 
 int CH32RVHardwareSerial::synchronousClockPin(void) const
