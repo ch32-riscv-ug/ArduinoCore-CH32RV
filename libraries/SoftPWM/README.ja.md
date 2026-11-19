@@ -25,7 +25,7 @@ void setup() {
 | `SoftPWMEnd(pin)` | 止めて無効のレベルにする。`ALL` は全部止めてタイマーを返す |
 
 - 周波数は `SOFTPWM_FREQ`（既定 60 Hz）、256 段階、端子は `SOFTPWM_MAXCHANNELS`（既定 16）まで。
-- 割り込みは `SOFTPWM_FREQ × 256` 回/秒（60 Hz で 15.4 kHz）。縁は割り込みの遅れ（数 µs、ほかの割り込みの間はもっと）だけ動きます。
+- 割り込みは `SOFTPWM_FREQ x 256` 回/秒（60 Hz で 15.4 kHz）。縁は割り込みの遅れ（数 µs、ほかの割り込みの間はもっと）だけ動きます。
 - 元のライブラリとの違い: 端子の引数は `int8_t` ではなく `int`（このコアでは PC0 以降の番号が 128 以上）。`SoftPWMBegin()` は bool を返す。
 - ハードの PWM（`analogWrite()`）が使える端子では、そちらの方が正確で CPU を使いません。
 

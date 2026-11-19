@@ -189,7 +189,7 @@ Operations return `bool`; `lastError()` and `lastErrorName()` say why.
 
 ## Other notes
 
-- There is one UHSIF: only one object can be begun at a time.
+- There is one UHSIF: only one object can `begin()` at a time.
 - Into SRAM, two threads ran at 400 MHz (800 MB/s),
   but at 400 MHz one period of a 390 kHz PWM came split in two (taken near
   an edge, we think); at 200 MHz and below none did.

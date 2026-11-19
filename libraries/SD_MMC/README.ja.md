@@ -46,7 +46,7 @@ ESP32 の SD_MMC と同じ名前と形です。
 | | |
 |---|---|
 | `setPins(clk, cmd, d0)` / `setPins(clk, cmd, d0, d1, d2, d3)` | `begin()` の前に。3 本なら 1 ビット。系列がそこに SDIO を出せないときは false |
-| `setPins(clk, cmd, d0, …, d7)` | 8 ビット（MMC / eMMC）。ESP32 には無い、このコアの足し |
+| `setPins(clk, cmd, d0, ..., d7)` | 8 ビット（MMC / eMMC）。ESP32 には無い、このコアの足し |
 | `begin(mountpoint, mode1bit = false, format_if_mount_failed = false, sdmmc_frequency = BOARD_MAX_SDMMC_FREQ, maxOpenFiles)` | カードを識別してマウントする。`sdmmc_frequency` は kHz の上限で、既定は ESP32 と同じ `SDMMC_FREQ_HIGHSPEED`（40000）。default speed（SD 25 MHz、MMC 26 MHz）を超える上限のときは high speed に切り替える（SD は CMD6 で 50 MHz、MMC は HS_TIMING で 52 / 26 MHz）。クロックは HCLK / n で、上限とカードの上限の低い方の下。`mountpoint` と `maxOpenFiles` は ESP32 の引数で、使わない |
 | `end()`、`cardType()`、`cardSize()`、`numSectors()`、`sectorSize()`、`readRAW()`、`writeRAW()` | SD と同じ |
 | `card()` | `SDIOBlockDevice`: `clockHz()`、`busWidth()`（1 / 4 / 8）、`wide()`、`highSpeed()`、`dma()`、`dmaBlocks()` / `cpuBlocks()`（`begin()` からのブロック数）。`begin()` の前に `setDMA(false)`（すべて CPU で）、`setFlowControl(false)`（ハードのフロー制御を切る） |
