@@ -122,10 +122,17 @@ bool CH32RVComplementaryPwm::write(uint32_t duty)
     if (!_live) {
         /* The first duty: loaded now (UG, the period restarting) and only then
          * the outputs on, so the bridge starts on it - not on a part period
-         * of begin()'s 0, CHxN high (V205, 1.6 us between begin() and write()). */
-        CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+         * of begin()'s 0, CHxN high (V205, 1.6 us between begin() and write()).
+         * BDTR is worked out first and written right after UG: applyBdtr()
+         * between them took 5.7 us off the first high on X035 at 48 MHz. */
         _live = true;
-        applyBdtr();
+        uint16_t bdtr = (uint16_t)(_dtg | BDTR_OSSI | BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+        if (_break) {
+            bdtr |= (uint16_t)(BDTR_BKE | (_breakHigh ? BDTR_BKP : 0u));
+        }
+        CH32RV_TIM_INTFR(_base) = (uint16_t)~INT_BIF;
+        CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+        CH32RV_TIM_BDTR(_base) = bdtr;
     }
     return true;
 }
