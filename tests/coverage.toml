@@ -93,6 +93,13 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]
 
 [[item]]
+id = "pioc-pulse-in"        # the PiocPulseIn example's program: one period's high and low counted by the PIOC
+test = "pioc::test_pioc_pulse_in"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"

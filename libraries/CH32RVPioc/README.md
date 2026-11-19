@@ -131,3 +131,4 @@ PC0, PC2, PE4, PF13, PF14; PB8 / PB9 are SWD's too).
 - [PiocWs2812](examples/PiocWs2812/README.md): WS2812 (NeoPixel) LEDs by the PIOC; the colours go into the SRAM by `loadSram()` and the waits are worked out from `clockHz()`. WireSkein's `rgb_led` passes on H417, X035 and V205 (2026-11-19).
 - [PiocUartTx](examples/PiocUartTx/README.md): one more serial transmitter (IO0, 8N1), the bytes through the shared registers 24 at a time. WireSkein's `uart` passes at 9600 .. 1 Mbaud on H417, X035 and V205 (2026-11-19).
 - [PiocIrNec](examples/PiocIrNec/README.md): NEC infrared remote frames with the 38 kHz carrier. WireSkein's `ir` passes on H417, X035 and V205 (2026-11-19).
+- [PiocPulseIn](examples/PiocPulseIn/README.md): `pulseIn()` that interrupts do not shake: one period's high and low on IO0 in 8-cycle turns. The probe's PWM measured within 0.5 % on H417, X035 and V205 (2026-11-19).

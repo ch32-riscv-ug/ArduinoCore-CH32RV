@@ -18,7 +18,10 @@
  *                        <clockHz()> <cycles a bit>
  *   pnec <pin> <address> <command>
  *                        ir_nec.S (a copy of the PiocIrNec example's) on that pad, one frame as the example sends it
- *                        (address above 0xFF: extended): PNEC <begun> <cmd.out or -1> <clockHz()> <cycles a period> */
+ *                        (address above 0xFF: extended): PNEC <begun> <cmd.out or -1> <clockHz()> <cycles a period>
+ *   pin <pin> <count>    pulse_in.S (a copy of the PiocPulseIn example's) begun on that pad, then count periods
+ *                        measured: PIN <begun> <clockHz()> then <high turns>:<low turns> per period (-1:-1 for one
+ *                        that timed out after 200 ms); each turn is 8 cycles */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVPioc.h>
@@ -34,6 +37,7 @@ PIOC_IMAGE(bench_pulses);
 PIOC_IMAGE(ws2812);
 PIOC_IMAGE(uart_tx);
 PIOC_IMAGE(ir_nec);
+PIOC_IMAGE(pulse_in);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
 CH32RVPioc pioc;
@@ -176,6 +180,27 @@ void reply(char *command) {
                             770u * frame[7] + 25u;
     SerialDMSeq.printf("PNEC %d %d %lu %lu\r\n", necPin == pin ? 1 : 0, status,
                        (unsigned long)CH32RVPioc::clockHz(), (unsigned long)cycles);
+  } else if (strncmp(command, "pin ", 4) == 0) {
+    char *p;
+    const int pin = (int)strtol(command + 4, &p, 10);
+    const unsigned long count = strtoul(p, nullptr, 10);
+    uartPin = -1;
+    necPin = -1;
+    const bool begun = pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
+    SerialDMSeq.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
+    for (unsigned long k = 0; begun && k < count; k++) {
+      pioc.command(1);
+      if (pioc.waitDone(200) != 0) {
+        pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
+        SerialDMSeq.printf(" -1:-1");
+        continue;
+      }
+      uint8_t c[6];
+      pioc.readData(1, c, sizeof c);
+      SerialDMSeq.printf(" %lu:%lu", (unsigned long)(c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16),
+                         (unsigned long)(c[3] | (uint32_t)c[4] << 8 | (uint32_t)c[5] << 16));
+    }
+    SerialDMSeq.printf("\r\n");
   } else if (strncmp(command, "pcmd ", 5) == 0) {
     char *p;
     const unsigned long n = strtoul(command + 5, &p, 10);

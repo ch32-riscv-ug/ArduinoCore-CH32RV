@@ -255,3 +255,70 @@ def test_pioc_ir_nec(dut, ws_run, request, record_property):
     record_property("carrier_hz", round(carrier, 1))
     for name, (begun, status, hz, cycles) in got.items():
         assert (begun, status) == (1, 0), f"{name}: begun {begun}, cmd.out {status}"
+
+
+PULSE_WAVES = ((1_000, 0.25), (10_000, 0.5), (40_000, 0.75))     # (Hz, duty) the probe drives
+PULSE_PERIODS = 5
+
+
+def test_pioc_pulse_in(dut, request, record_property):
+    """The PiocPulseIn example's program (pulse_in.S, a copy beside pioc.ino): the probe's PWM fixture drives IO0's
+    line (the first PIOC pad the probe labels as a plain line) at 1 kHz 25 %, 10 kHz 50 % and 40 kHz 75 %; the PIOC
+    counts five periods' high and low in turns of 8 of its cycles. The median high and low, turned into time by the
+    PIOC's clock, within 2 % (and 3 turns: the edges are seen within a turn) of what the probe says it made."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and its PWM fixture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    host = getattr(oep_host, "host", oep_host)
+    try:
+        pwm = Pwm(host)
+    except LookupError:
+        pytest.skip("the probe has no PWM fixture")
+    record_property("io0", io0["pad"])
+    seen, wrong = {}, []
+    # the DUT's pad an input before the probe drives it: pulse_in.S makes IO0 one at its start
+    assert _ask_now(dut, f"pin {io0['pin']} 0", rb"PIN (\d) (\d+)").group(1) == b"1", "begin() refused pulse_in"
+    core.plan_apply(host, [(pwm.fn, 1, io0["channel"])])
+    try:
+        for hz, duty in PULSE_WAVES:
+            made = pwm.start(1, hz, round(duty * 65535))
+            real_hz, real_duty = made.hz, made.duty / 65535
+            time.sleep(0.05)
+            m = _ask_now(dut, f"pin {io0['pin']} {PULSE_PERIODS}", rb"PIN (\d) (\d+)((?: -?\d+:-?\d+)*)")
+            clock = int(m.group(2))
+            pairs = [tuple(int(x) for x in p.split(":")) for p in m.group(3).decode().split()]
+            ok = [p for p in pairs if p[0] >= 0]
+            name = f"{hz} Hz {duty:.0%}"
+            if len(ok) < PULSE_PERIODS:
+                wrong.append(f"{name}: {len(ok)} of {PULSE_PERIODS} periods measured")
+                if not ok:
+                    continue
+            turn_ns = 8e9 / clock
+            high = sorted(p[0] for p in ok)[len(ok) // 2] * turn_ns
+            low = sorted(p[1] for p in ok)[len(ok) // 2] * turn_ns
+            want_high = real_duty / real_hz * 1e9
+            want_low = (1 - real_duty) / real_hz * 1e9
+            seen[name] = dict(real_hz=round(real_hz, 2), real_duty=round(real_duty, 4), high_ns=round(high),
+                              low_ns=round(low), want_high_ns=round(want_high), want_low_ns=round(want_low))
+            for what, got, want in (("high", high, want_high), ("low", low, want_low)):
+                if abs(got - want) > 0.02 * want + 3 * turn_ns:
+                    wrong.append(f"{name}: {what} {got:.0f} ns, the probe made {want:.0f} ns")
+    finally:
+        pwm.stop(1)
+        core.plan_release(host, [pwm.fn])
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("pulses", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
