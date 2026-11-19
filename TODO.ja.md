@@ -367,8 +367,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   レジスタが無いので RAM に置く）とストップ（V3F も待機中はストップ）を入れ、nano で V5F・V3F とも selfsys（RTC、200 ms の
   lightSleep）が通り、2.5 秒の lightSleep で石がストップに入ってクロックを立て直すこと、deepSleep のあとタイマーの起床で
   再起動することを確かめた。残りは端子での起床（system の case、6-2）と DFU。
-- [ ] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
-  0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。
+- [x] DTCM の使い道（読むだけの定数、頻繁に読む変数）。V5F の HPE のハードウェアスタックは DTCM の先頭を使う（INTSYSCR
+  0x0F、CSR 0xBC4）。DMA が要るものは共有 SRAM に残す。→ 2026-11-20: 今は仕組みを足さない。共有 SRAM も V5F から待ち無しで
+  （docs/h417-cores-design.ja.md）、置き場で速さは変わらない。差が出るのは V3F とのバンクの取り合いだけで、測った取り合い
+  （V5F の待ちのループが同じバンクを読み続ける）は待ちに休みを入れて直してある（wiring_time.c）。DTCM は DMA が届かないので、
+  一般の変数の置き場にはしない。取り合いが見える用途が出たら、その変数に付ける印（.dtcm の節）を考える。
 - [x] 利用者向けの文書（2026-11-14: README の CPU Core の行に全部あり、V3F を 2 つ目のコアとして使う案内も足した）: CPU Core メニュー、F_CPU と CH32RV_HCLK_HZ の違い、V5F では `mcycle` が読めない、デバッグは
   `--core 1` と `dbg resume --all`。
 - [x] ITCM（128 KB）からあふれたコードは共有 SRAM で動き、命令キャッシュに収まらないと 2.5 倍遅い。どのコードを ITCM に
