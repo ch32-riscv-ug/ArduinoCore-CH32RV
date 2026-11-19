@@ -6,7 +6,7 @@ A PIOC program written in the sketch's `pulses.S` puts n pulses on IO0 for each 
 
 ## What you need and wiring
 
-A part with a PIOC (X035 / X033, V205, H41x). IO0's pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PB10 on CH32V205) to a logic analyser or a scope.
+A part with a PIOC (X035 / X033, V205, H41x). IO0's pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205) to a logic analyser or a scope.
 
 ## Operation and expected result
 

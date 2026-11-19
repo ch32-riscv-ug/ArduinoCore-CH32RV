@@ -14,10 +14,12 @@
 PIOC_IMAGE(spi_tx);
 CH32RVPioc pioc;
 
-// en: IO0 / IO1 pads: PA0 / PC0 on CH32H417, PC7 / PC19 on CH32X035, PB10 / PB11 on CH32V205. CS: any pin.
-// ja: IO0 / IO1 の端子。CH32H417 は PA0 / PC0、CH32X035 は PC7 / PC19、CH32V205 は PB10 / PB11。CS はどの端子でもよい。
-#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+// en: IO0 / IO1 pads: PA0 / PC0 on CH32H417, PC7 / PC19 on CH32X035, PC18 / PC19 on CH32X033, PB10 / PB11 on CH32V205. CS: any pin.
+// ja: IO0 / IO1 の端子。CH32H417 は PA0 / PC0、CH32X035 は PC7 / PC19、CH32X033 は PC18 / PC19、CH32V205 は PB10 / PB11。CS はどの端子でもよい。
+#if defined(CH32RV_SERIES_CH32X035)
 static const int SCK_PIN = PC7, MOSI_PIN = PC19, CS_PIN = PA1;
+#elif defined(CH32RV_SERIES_CH32X033)
+static const int SCK_PIN = PC18, MOSI_PIN = PC19, CS_PIN = PA1;   // en: PC18 is SWD's too / ja: PC18 は SWD と兼用
 #elif defined(CH32RV_SERIES_CH32V205)
 static const int SCK_PIN = PB10, MOSI_PIN = PB11, CS_PIN = PB2;
 #else

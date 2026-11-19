@@ -8,7 +8,7 @@ prints them on `Serial` eight at a time (after 2 s without them, whatever came).
 ## What you need and wiring
 
 A chip with a PIOC (X035 / X033, V205, H41x). The sender's TX (a USB serial adapter or the like, at 3.3 V) to IO0's
-pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PB10 on CH32V205), GND shared; the rate is the
+pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205), GND shared; the rate is the
 sketch's `BAUD` (115200).
 
 ## Operation and expected result

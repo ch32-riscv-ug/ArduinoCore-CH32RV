@@ -8,7 +8,7 @@ WS2812 (NeoPixel) LEDs driven by the PIOC. While `ws2812.S` sends a frame, the m
 ## What you need and wiring
 
 A chip with a PIOC (X035 / X033, V205, H41x) and WS2812 LEDs (a strip or one). IO0's pad (the sketch's `IO0_PIN`: PA0
-on CH32H417, PC7 on CH32X035, PB10 on CH32V205) to the LEDs' DIN, their supply and GND shared. Add a level shifter
+on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205) to the LEDs' DIN, their supply and GND shared. Add a level shifter
 where 5 V LEDs do not take a 3.3 V signal.
 
 ## Operation and expected result

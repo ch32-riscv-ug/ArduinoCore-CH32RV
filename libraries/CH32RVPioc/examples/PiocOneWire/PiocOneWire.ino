@@ -12,10 +12,12 @@
 PIOC_IMAGE(onewire);
 CH32RVPioc pioc;
 
-// en: IO0's pad: PA0 on CH32H417, PC7 on CH32X035, PB10 on CH32V205. A 4.7 kOhm pull-up to 3.3 V on it.
-// ja: IO0 の端子。CH32H417 は PA0、CH32X035 は PC7、CH32V205 は PB10。3.3 V への 4.7 kΩ のプルアップを付ける。
-#if defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32X033)
+// en: IO0's pad: PA0 on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205. A 4.7 kOhm pull-up to 3.3 V on it.
+// ja: IO0 の端子。CH32H417 は PA0、CH32X035 は PC7、CH32X033 は PC18（SWD と兼用）、CH32V205 は PB10。3.3 V への 4.7 kΩ のプルアップを付ける。
+#if defined(CH32RV_SERIES_CH32X035)
 static const int IO0_PIN = PC7;
+#elif defined(CH32RV_SERIES_CH32X033)
+static const int IO0_PIN = PC18;   // en: its only IO0 pad, SWD's too / ja: 唯一の IO0 の端子で、SWD と兼用
 #elif defined(CH32RV_SERIES_CH32V205)
 static const int IO0_PIN = PB10;
 #else

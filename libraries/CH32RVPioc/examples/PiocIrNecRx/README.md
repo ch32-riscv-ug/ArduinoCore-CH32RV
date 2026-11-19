@@ -9,7 +9,7 @@ and command go to Serial.
 ## What you need and wiring
 
 A chip with a PIOC (X035 / X033, V205, H41x) and a 38 kHz IR receiver module. The module's output to IO0's pad (the
-sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PB10 on CH32V205), its supply the chip's 3.3 V, GND shared. The
+sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205), its supply the chip's 3.3 V, GND shared. The
 output is low while the carrier is on and high between (most modules pull their output up).
 
 ## Operation and expected result

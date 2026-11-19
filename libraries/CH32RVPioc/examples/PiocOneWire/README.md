@@ -8,7 +8,7 @@ interrupts on the main core cannot stretch them. Reads a DS18B20's temperature e
 ## What you need and wiring
 
 A chip with a PIOC (X035 / X033, V205, H41x) and a DS18B20 (other 1-Wire devices work with other commands). The
-DS18B20's DQ to IO0's pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PB10 on CH32V205), a 4.7 kOhm
+DS18B20's DQ to IO0's pad (the sketch's `IO0_PIN`: PA0 on CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205), a 4.7 kOhm
 pull-up from DQ to 3.3 V, VDD at 3.3 V, GND shared (parasite power is not supported).
 
 ## Operation and expected result

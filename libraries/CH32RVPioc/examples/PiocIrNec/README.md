@@ -8,7 +8,7 @@ high). Every second it sends address 0x00, command 0x45.
 ## What you need and wiring
 
 A chip with a PIOC (X035 / X033, V205, H41x) and an IR LED, driven from IO0's pad (the sketch's `IO0_PIN`: PA0 on
-CH32H417, PC7 on CH32X035, PB10 on CH32V205) through a transistor (NPN or an N-channel MOSFET); the pad alone gives too
+CH32H417, PC7 on CH32X035, PC18 on CH32X033 (SWD's too), PB10 on CH32V205) through a transistor (NPN or an N-channel MOSFET); the pad alone gives too
 little current for any range.
 
 ## Operation and expected result
