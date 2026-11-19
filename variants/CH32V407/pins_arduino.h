@@ -380,6 +380,7 @@ static const uint8_t A15 = PIN_A15;
 #define CH32RV_ADC_DUALMOD_SHIFT 16u
 #define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
 #define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u
+#define CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS 5u
 
 /* ---- USART pins (device-data; one route per USART, chosen for
  *      the whole series - see choose_uarts in generate.py) ---- */

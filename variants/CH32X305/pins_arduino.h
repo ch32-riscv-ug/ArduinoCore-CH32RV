@@ -347,6 +347,7 @@ static const uint8_t A11 = PIN_A11;
 #define CH32RV_ADC_DUALMOD_SHIFT 16u
 #define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS 6u
 #define CH32RV_ADC_DUAL_FAST_INTERLEAVED 7u
+#define CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS 5u
 
 /* Pads take their output speed from GPIOx_SPEED, two bits a pad (00 10 MHz,
  * 01 50, 10 100, 11 180 MHz; ch32rv_gpio_set_speed()). */

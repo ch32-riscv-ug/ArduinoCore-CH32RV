@@ -25,12 +25,16 @@
  *   dacboth <hz>              CH32RVDac::playBoth(): DAC1 and DAC2 swap 500 and 3595 at hz (a square each, opposite),
  *                             read by ADC1 and ADC2 simultaneously, free-running, 256 rounds: DACBOTH <1> <rounds>
  *                             <rounds whose sum is off 4095 by more than 400> <DAC1 min> <max> <DAC2 min> <max>
- *                             (DACBOTH 0 when refused or no half came) */
+ *                             (DACBOTH 0 when refused or no half came)
+ *   injdual <v1> <v2>         CH32RVAdcInjected with simultaneous(): DAC1 holds v1, DAC2 v2 (analogWrite, 12 bits);
+ *                             ADC1's injected group on DAC1's pad and ADC2's on DAC2's, eight convert()s:
+ *                             INJDUAL 1 <ADC1 mean> <min> <max> <ADC2 mean> <min> <max> (INJDUAL 0 when refused) */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <SerialDMSeq.h>
 #include <CH32RVDac.h>
 #include <CH32RVAdcStream.h>
+#include <CH32RVAdcInjected.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -122,6 +126,35 @@ static void dualReply(char **argv, int argc)
     }
     adc.end();
     SerialDMSeq.printf("ADCDUAL 0\r\n");
+}
+
+static void injReply(int v1, int v2)
+{
+    analogWriteResolution(12);
+    analogWrite(CH32RV_DAC1_PIN, v1);
+    analogWrite(CH32RV_DAC2_PIN, v2);
+    delay(2);
+    CH32RVAdcInjected inj;
+    const pin_size_t one = CH32RV_DAC1_PIN, two = CH32RV_DAC2_PIN;
+    bool ok = inj.begin(&one, 1) && inj.simultaneous(&two, 1);
+    uint32_t sum[2] = {0, 0};
+    int lo[2] = {0x7FFF, 0x7FFF}, hi[2] = {0, 0};
+    for (int k = 0; ok && k < 8; k++) {
+        uint16_t out[2];
+        ok = inj.convert(out);
+        for (int j = 0; ok && j < 2; j++) {
+            sum[j] += out[j];
+            lo[j] = out[j] < lo[j] ? out[j] : lo[j];
+            hi[j] = out[j] > hi[j] ? out[j] : hi[j];
+        }
+    }
+    inj.end();
+    if (!ok) {
+        SerialDMSeq.printf("INJDUAL 0\r\n");
+        return;
+    }
+    SerialDMSeq.printf("INJDUAL 1 %lu %d %d %lu %d %d\r\n", (unsigned long)(sum[0] / 8u), lo[0], hi[0],
+                       (unsigned long)(sum[1] / 8u), lo[1], hi[1]);
 }
 
 static void bothReply(uint32_t hz)
@@ -253,6 +286,8 @@ static void reply(char *command)
 #if defined(ANALOG_DUAL)
     } else if (!strcmp(argv[0], "adcdual") && argc >= 3) {
         dualReply(argv, argc);
+    } else if (!strcmp(argv[0], "injdual") && argc == 3) {
+        injReply(atoi(argv[1]), atoi(argv[2]));
     } else if (!strcmp(argv[0], "dacboth") && argc == 2) {
         bothReply((uint32_t)atol(argv[1]));
 #endif

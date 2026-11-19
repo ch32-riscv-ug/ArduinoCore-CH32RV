@@ -13,6 +13,10 @@ namespace {
 
 #define ADC_JSQR  CH32RV_REG32(CH32RV_ADC1_BASE + 0x38u)
 #define ADC_JDR(i) CH32RV_REG32(CH32RV_ADC1_BASE + 0x3Cu + 4u * (i))
+#if defined(CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS)
+#define ADC2_JSQR  CH32RV_REG32(CH32RV_ADC2_BASE + 0x38u)
+#define ADC2_JDR(i) CH32RV_REG32(CH32RV_ADC2_BASE + 0x3Cu + 4u * (i))
+#endif
 constexpr uint32_t STATR_JEOC = 1u << 2;
 constexpr uint32_t CTLR1_JEOCIE = 1u << 7, CTLR1_SCAN = 1u << 8;
 constexpr uint32_t CTLR2_JEXTTRIG = 1u << 15, CTLR2_JSWSTART = 1u << 21;
@@ -41,15 +45,25 @@ void CH32RVAdcInjected::service()
     if (!(CH32RV_ADC_STATR & STATR_JEOC)) {
         return;
     }
-    uint16_t v[4];
+    uint16_t v[8];
     for (uint8_t i = 0; i < _count; i++) {
         v[i] = (uint16_t)ADC_JDR(i);
         _values[i] = v[i];
     }
+#if defined(CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS)
+    if (_dual) {
+        /* ADC2 converted at the same moment and ends with ADC1 (the groups are the same length) */
+        for (uint8_t i = 0; i < _count; i++) {
+            v[_count + i] = (uint16_t)ADC2_JDR(i);
+            _values[_count + i] = v[_count + i];
+        }
+        CH32RV_ADC_STATR_AT(CH32RV_ADC2_BASE) = ~STATR_JEOC;
+    }
+#endif
     CH32RV_ADC_STATR = ~STATR_JEOC;
     _rounds = _rounds + 1u;
     if (_callback) {
-        _callback(v, _count);
+        _callback(v, (uint8_t)(_dual ? 2u * _count : _count));
     }
 }
 
@@ -98,12 +112,70 @@ bool CH32RVAdcInjected::begin(const pin_size_t *pins, uint8_t count)
 #endif
 }
 
+bool CH32RVAdcInjected::simultaneous(const pin_size_t *pins2, uint8_t count)
+{
+#if defined(INJECTED_READY) && defined(CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS)
+    if (!_begun || !pins2 || count != _count || ch32rv_timer_lease_valid(&_lease)) {
+        return false;
+    }
+    uint8_t channels[4];
+    for (uint8_t i = 0; i < count; i++) {
+        const pin_size_t pad = CH32RV_PIN_RESOLVE(pins2[i]);
+        const unsigned channel = CH32RV_PIN_TO_ADC_CHANNEL(pad);
+        if (channel == NOT_AN_ANALOG_PIN) {
+            return false;
+        }
+#ifdef CH32RV_PIN_TO_ADC_INSTANCE
+        if (CH32RV_PIN_TO_ADC_INSTANCE(pad) != 2) {
+            return false;                    /* X305 / X315: ADC2's own pads */
+        }
+#else
+        if (channel == _channels[i]) {
+            return false;                    /* one channel on both at once: the manual forbids it */
+        }
+#endif
+        channels[i] = (uint8_t)channel;
+        (void)analogRead(pins2[i]);          /* the pad in analog mode, ADC1's regular group only */
+    }
+    ch32rv_adc2_begin();
+    /* ADC2: the same round on its channels, software-started (the manual's slave), the longest sample time
+     * as analogRead() left both */
+    uint32_t jsqr = (uint32_t)(count - 1u) << 20;
+    for (uint8_t i = 0; i < count; i++) {
+        jsqr |= (uint32_t)channels[i] << (5u * (4u - count + i));
+    }
+    ADC2_JSQR = jsqr;
+    CH32RV_ADC_CTLR1_AT(CH32RV_ADC2_BASE) |= CTLR1_SCAN;
+    const uint32_t mask = ((1u << CH32RV_ADC_JEXTSEL_BITS) - 1u) << CH32RV_ADC_JEXTSEL_SHIFT;
+    CH32RV_ADC_CTLR2_AT(CH32RV_ADC2_BASE) = (CH32RV_ADC_CTLR2_AT(CH32RV_ADC2_BASE) & ~mask) |
+                                            (uint32_t)CH32RV_ADC_JSWSTART_VALUE << CH32RV_ADC_JEXTSEL_SHIFT |
+                                            CTLR2_JEXTTRIG;
+    CH32RV_ADC_STATR_AT(CH32RV_ADC2_BASE) = ~STATR_JEOC;
+    CH32RV_ADC_CTLR1 = (CH32RV_ADC_CTLR1 & ~(0xFu << CH32RV_ADC_DUALMOD_SHIFT)) |
+                       (CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS << CH32RV_ADC_DUALMOD_SHIFT);
+    _dual = true;
+    return true;
+#else
+    (void)pins2;
+    (void)count;
+    return false;
+#endif
+}
+
 void CH32RVAdcInjected::end()
 {
     if (!_begun) {
         return;
     }
     stop();
+#if defined(INJECTED_READY) && defined(CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS)
+    if (_dual) {
+        CH32RV_ADC_CTLR1 &= ~(0xFu << CH32RV_ADC_DUALMOD_SHIFT);
+        CH32RV_ADC_CTLR1_AT(CH32RV_ADC2_BASE) &= ~CTLR1_SCAN;
+        CH32RV_ADC_CTLR2_AT(CH32RV_ADC2_BASE) &= ~CTLR2_JEXTTRIG;
+        _dual = false;
+    }
+#endif
 #if defined(INJECTED_READY)
     CH32RV_ADC_CTLR1 &= ~(CTLR1_JEOCIE | CTLR1_SCAN);
     ch32rv_irq_disable(CH32RV_ADC_IRQN);
@@ -127,7 +199,7 @@ bool CH32RVAdcInjected::convert(uint16_t *out)
             return false;
         }
     }
-    for (uint8_t i = 0; out && i < _count; i++) {
+    for (uint8_t i = 0; out && i < (_dual ? 2u * _count : _count); i++) {
         out[i] = _values[i];
     }
     return true;
@@ -220,7 +292,7 @@ void CH32RVAdcInjected::onRound(Callback callback)
 
 uint16_t CH32RVAdcInjected::value(uint8_t i) const
 {
-    return i < _count ? _values[i] : 0;
+    return i < (_dual ? 2u * _count : _count) ? _values[i] : 0;
 }
 
 uint8_t CH32RVAdcInjected::bits() const

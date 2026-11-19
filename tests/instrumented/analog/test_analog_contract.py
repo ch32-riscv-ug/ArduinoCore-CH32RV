@@ -173,3 +173,30 @@ def test_dac_both(dut, record_property):
     if bad > 3:
         wrong.append(f"{bad} of {rounds} rounds sum away from 4095: the two did not change together")
     assert not wrong, " | ".join(wrong)
+
+
+def test_adc_injected_dual(dut, record_property):
+    """CH32RVAdcInjected::simultaneous(): ADC1's injected group on DAC1's pad and ADC2's on DAC2's, started together
+    (injected simultaneous mode), with the DACs holding two different values both ways round: each side reads its own
+    DAC (within 4 % of full scale, steady within 1 %) - swapped or stale values would show the other one. The series
+    without two DAC pads or the dual ADC skip."""
+    case = settings(__file__)
+    nonce = secrets.token_hex(4)
+    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    seen, wrong = {}, []
+    for v1, v2 in ((800, 3300), (3300, 800)):
+        m = ask(dut, f"injdual {v1} {v2}", rb"(INJDUAL [^\r\n]*|UNKNOWN injdual)")
+        if m.group(1).startswith(b"UNKNOWN"):
+            pytest.skip("n/a: no dual ADC (CH32RV_ADC_DUALMOD_SHIFT) or no two DAC pads")
+        fields = m.group(1).split()[1:]
+        assert fields[0] == b"1", "begin() / simultaneous() / convert() refused"
+        m1, lo1, hi1, m2, lo2, hi2 = (int(x) for x in fields[1:])
+        seen[f"{v1}/{v2}"] = dict(adc1=[m1, lo1, hi1], adc2=[m2, lo2, hi2])
+        for side, want, mean, lo, hi in (("ADC1", v1, m1, lo1, hi1), ("ADC2", v2, m2, lo2, hi2)):
+            if abs(mean - want) > 0.04 * 4095:
+                wrong.append(f"{v1}/{v2}: {side} read {mean}, its DAC holds {want}")
+            if hi - lo > 0.01 * 4095:
+                wrong.append(f"{v1}/{v2}: {side} {lo}..{hi} does not hold steady")
+    record_property("injected_dual", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)

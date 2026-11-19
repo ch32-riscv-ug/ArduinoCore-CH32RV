@@ -14,7 +14,14 @@
  * Values are the ADC's raw counts (analogReadResolution() does not apply):
  * 0 .. 2^bits() - 1. The timer is one of the chip's injected-group sources
  * (the variant's CH32RV_ADC_JTRIGGERS: a timer's TRGO or a channel's compare
- * event), taken whole through CH32RVTimer.h's lease. */
+ * event), taken whole through CH32RVTimer.h's lease.
+ *
+ * simultaneous(pins2, count) after begin() adds ADC2 (dual mode, on the
+ * series with CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS): ADC2 converts pins2[i]
+ * at the same moment ADC1 converts pin i, on the same start. A round then has
+ * twice the values - ADC1's count, then ADC2's - in convert()'s `out`, in
+ * value(), and in the callback's (values, 2 * count). Not together with a
+ * dual CH32RVAdcStream (the two set the same mode). */
 #pragma once
 
 #include <Arduino.h>
@@ -30,6 +37,9 @@ public:
      * ADC1 channel. */
     bool begin(const pin_size_t *pins, uint8_t count);
     bool begin(pin_size_t pin) { return begin(&pin, 1); }
+    /* ADC2's pins beside ADC1's (dual mode); false without a second ADC, for
+     * a pin that is no ADC2 input, or one of ADC1's channel at the same place. */
+    bool simultaneous(const pin_size_t *pins2, uint8_t count);
     void end();
 
     /* One round now (software start), waited for: the values into `out`
@@ -45,7 +55,8 @@ public:
 
     /* Called from the ADC's interrupt after each round; nullptr: none. */
     void onRound(Callback callback);
-    /* The last round's value of the i-th pin, and the rounds so far. */
+    /* The last round's value of the i-th pin (after simultaneous(): ADC1's
+     * 0 .. count - 1, then ADC2's), and the rounds so far. */
     uint16_t value(uint8_t i) const;
     uint32_t rounds() const { return _rounds; }
     uint8_t bits() const;
@@ -58,9 +69,10 @@ private:
     CH32RVTimerLease _lease = {};
     uint8_t _channels[4] = {};
     uint8_t _count = 0;
+    bool _dual = false;
     bool _begun = false;
     uint32_t _rate = 0;
     volatile uint32_t _rounds = 0;
-    volatile uint16_t _values[4] = {};
+    volatile uint16_t _values[8] = {};
     Callback _callback;
 };

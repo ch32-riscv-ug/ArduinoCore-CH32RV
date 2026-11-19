@@ -111,6 +111,11 @@ ADC1 の注入グループです。`analogRead()` やストリームの通常の
 V203・X035 で、プローブが線を Low / High に保ったときの値と、1 kHz で 500 ms に 499 回を確かめました
 （2026-11-19、periph::test_adc_injected）。
 
+`simultaneous(pins2, count)` を `begin()` のあとに呼ぶと、ADC2 の注入グループが `pins2[i]` を ADC1 の i 番目と同時に
+変換します（デュアルの注入の同時変換）。1 回分の値は ADC1 の `count` 個、続いて ADC2 の `count` 個で、`convert()`・`value()`・
+コールバック（`2 * count` 個）に並びます。デュアルの `CH32RVAdcStream` とは一緒に使えません（同じモードの欄を使うため）。
+V407 と H417 で、2 本の DAC の値をそれぞれの側が読むことを確かめました（2026-11-19、analog::test_adc_injected_dual）。
+
 ## サンプル
 
 - [AdcStreamStats](examples/AdcStreamStats/README.ja.md): 1 本の端子を取り込み、1 秒ごとに数、最小・最大・平均、取りこぼしを表示します。

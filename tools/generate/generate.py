@@ -4731,9 +4731,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     families = {r.get("family", "") for r in duals}
     if duals and all(f in ADC_DUAL and 2 in adc_bases.get(f, {}) for f in families):
         dual = {(ADC_DUAL[f][0], ADC_DUAL[f][1].get("regular_simultaneous"),
-                 ADC_DUAL[f][1].get("fast_interleaved"), adc_bases[f][2]) for f in families}
+                 ADC_DUAL[f][1].get("fast_interleaved"), adc_bases[f][2],
+                 ADC_DUAL[f][1].get("injected_simultaneous")) for f in families}
         if len(dual) == 1:
-            shift, simultaneous, interleaved, base2 = dual.pop()
+            shift, simultaneous, interleaved, base2, injected = dual.pop()
             if simultaneous is not None and interleaved is not None:
                 out.append("/* ---- dual ADC: ADC2 converts with ADC1, its result in RDATAR's upper half")
                 out.append(" *      (device-data adc_dual_modes.csv, register_blocks.csv, parts.csv adc_units) ---- */")
@@ -4746,6 +4747,8 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                 out.append(f"#define CH32RV_ADC_DUALMOD_SHIFT {shift}u")
                 out.append(f"#define CH32RV_ADC_DUAL_REGULAR_SIMULTANEOUS {simultaneous}u")
                 out.append(f"#define CH32RV_ADC_DUAL_FAST_INTERLEAVED {interleaved}u")
+                if injected is not None:
+                    out.append(f"#define CH32RV_ADC_DUAL_INJECTED_SIMULTANEOUS {injected}u")
                 if some:
                     out.append("#endif")
                 out.append("")
