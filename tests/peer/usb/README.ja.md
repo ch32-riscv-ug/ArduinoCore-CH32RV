@@ -128,7 +128,7 @@ DUT の USB の口を別の CH32RV の基板の口につなぎ、記録に `usb:
 
 - DUT の USB（D+ / D- / GND）を S3 の USB OTG ポートへ。VBUS は使いません（DUT と S3 はそれぞれ給電）。
 - S3 の制御は UART0（ボードの USB シリアル）。ベンチ設定の target に `usb_peer_port`（安定した by-id のパス）を書きます。
-- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 3.3.12、EspUsbHost 2.10.0、EspUsbDevice 3.1.0）。
+- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 3.3.13、EspUsbHost 2.10.2、EspUsbDevice 3.3.0）。
   run_hardware.py は Arduino の data / downloads を `~/.cache/ch32rv-core-bench/arduino` に置き、実行のたびに
   ESP32 のツールチェーンを取り直さないようにしています（~/.arduino15 には触れません）。
 
