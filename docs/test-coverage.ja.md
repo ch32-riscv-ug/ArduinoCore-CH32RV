@@ -122,8 +122,8 @@ hardware の厳密な周波数期待値をそのまま適用しません。
 | 契約 | 実装 | 現行の試験 / 旧検証の参考 | 不足する保証 / 必要設備 |
 |---|---|---|---|
 | analogRead、channel/pad | あり | 現行: periph::test_adc（プローブが動かす線を読む）、selfsys::test_adc_pads（自己検査）、selfcheck::test_vref | 中間電圧、精度（手動の試験。外部の電圧源でカーブを取る）、instance 選択、他 channel 干渉 |
-| analogReadResolution | あり | 専用検証なし | 拡張/縮小、範囲/丸め、series の物理分解能との差 |
-| analogReference | 互換用 no-op | 専用検証なし | 選択可能な基準電圧ではない。no-op 契約と実 ADC 基準を確認 |
+| analogReadResolution | あり（狭くは下位を捨て、広くは左へずらす） | 現行: periph::test_adc_resolution（プローブが Low / High に保つ線を 8・10・16 ビットと石の幅で読む: 幅に収まる、広げた分の下位は 0、Low は 1/4 未満・High は 3/4 超。2026-11-20 に X035・V205・H417） | 中間電圧での換算の誤差（精度は手動の試験） |
+| analogReference | 互換用 no-op | 現行: periph::test_adc_resolution（0〜3 を渡しても High の線は 3/4 超のまま） | 実 ADC 基準（アナログの電源）の精度は手動の試験 |
 | PWM analogWrite | あり（remap 先・端子ごとの AF・CHxN も、2026-11-17） | 現行: signals::test_pwm（1 kHz の 64・128・192、端値、止めた後）、signals::test_pwm_route（既定の PWM の無い、別の経路の端子）、signals::test_pwm_complementary（CHxN 単独）、selfcheck::test_pwm（自己検査） | 経路の切り替えで古い経路の PWM が止まること、負荷、他 channel との共有条件 |
 | analogWriteFrequency / Resolution | あり | 現行: signals::test_pwm（2 kHz と 500 Hz への変更）、analog::test_dac（12 bit） | 丸め、限界、他 channel への影響 |
 | DAC analogWrite | DAC のある系列（V30x・V317・V4x7・H41x） | 現行: analog::test_dac（同じ端子を analogRead で読み戻す） | 外部の電圧計/基準 ADC での照合 |

@@ -10,6 +10,8 @@
  *   stop                      STOP <bytes echoed>
  *   adc <pin>                 ADC <reading> <full scale> <VDD mV from Vrefint, 0 unknown>
  *   acaps <pin>               ACAPS <ADC channel of the pad, or -1>
+ *   ares <pin> <bits> <ref>   analogReference(ref) and analogReadResolution(bits), one analogRead(), the
+ *                             width put back: ARES <reading> <the ADC's own bits>
  *   inj <pin>                CH32RVAdcInjected on the pin: INJ <begun> <convert()'s value> <startTimer(1000) ok> <rate>
  *                            <rounds in the 500 ms after> <their us> <the last round's value> <the ADC's bits>
  *   awd <pin> <band>         CH32RVAdcStream on the pin at 50 kHz with its watchdog's window the lowest
@@ -390,6 +392,14 @@ static void reply(char *command)
         const int reading = analogRead(pin);
         SerialDMSeq.printf("ADC %d %d %lu\r\n", reading, (1 << CH32RV_ADC_BITS) - 1,
                            (unsigned long)ch32rv_adc_vdd_millivolts());
+    } else if (!strcmp(argv[0], "ares") && argc == 4) {
+        const pin_size_t pin = (pin_size_t)atoi(argv[1]);
+        pinMode(pin, INPUT);
+        analogReference((uint8_t)atoi(argv[3]));
+        analogReadResolution(atoi(argv[2]));
+        const unsigned long reading = (unsigned long)analogRead(pin);
+        analogReadResolution(CH32RV_ADC_BITS);
+        SerialDMSeq.printf("ARES %lu %d\r\n", reading, CH32RV_ADC_BITS);
     } else if (!strcmp(argv[0], "hscaps") && argc == 2) {
 #if PERIPH_HSADC
         SerialDMSeq.printf("HSCAPS %d\r\n", CH32RVHsAdc::channelOf((pin_size_t)atoi(argv[1])));

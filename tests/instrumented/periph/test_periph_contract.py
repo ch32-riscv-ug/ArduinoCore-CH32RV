@@ -190,6 +190,60 @@ def test_adc(dut, oep_host, record_property):
         core.plan_release(host, [gpio.fn])
 
 
+ADC_WIDTHS = (8, 10, 16)       # with the ADC's own width: narrower (the low bits dropped) and wider (zeros below)
+
+
+def test_adc_resolution(dut, oep_host, record_property):
+    """analogReadResolution() and analogReference() on a labelled ADC pad the probe's GPIO holds low, then high. At
+    8, 10, 16 bits and the ADC's own: the reading fits the width, a wider one than the ADC's has zeros in the bits
+    it adds (the reading shifted up), the low line reads under a quarter of that width's full scale and the high one
+    over three quarters (whether it works, as test_adc; accuracy is a manual test). analogReference() is a no-op on
+    CH32 (no selectable reference): with 0 .. 3 passed the high line still reads over three quarters."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    case = settings(__file__)
+    lost = {int(f.split(":")[1]) for d in case["target"].get("record", {}).get("defects", [])
+            for f in d.get("lose", []) if f.startswith("adc:")}
+    ready(dut, case)
+    line = None
+    for candidate in gpio_lines(oep_host, case["target"]):
+        channel = int(ask(dut, f"acaps {candidate['pin']}", rb"ACAPS (-?\d+)").group(1))
+        if channel >= 0 and channel not in lost:
+            line = candidate
+            break
+    if line is None:
+        pytest.skip("no labelled <port>@<pad> line is an ADC channel")
+    record_property("line", f"{line['pad']} channel {channel}")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
+    wrong, seen = [], {}
+    try:
+        for level, mode in ((0, Gpio.OUTPUT_LOW), (1, Gpio.OUTPUT_HIGH)):
+            gpio.configure(line["channel"], mode)
+            time.sleep(0.01)
+            native = int(ask(dut, f"ares {line['pin']} 12 0", rb"ARES (\d+) (\d+)").group(2))
+            for bits in sorted(set(ADC_WIDTHS + (native,))):
+                for ref in ((0, 1, 2, 3) if level and bits == native else (0,)):
+                    value = int(ask(dut, f"ares {line['pin']} {bits} {ref}", rb"ARES (\d+) (\d+)").group(1))
+                    seen[f"{level} {bits} ref {ref}"] = value
+                    full = (1 << bits) - 1
+                    name = f"{line['pad']} driven {'high' if level else 'low'} at {bits} bits (ref {ref})"
+                    if value > full:
+                        wrong.append(f"{name}: {value} is wider than {bits} bits")
+                    if bits > native and value % (1 << (bits - native)):
+                        wrong.append(f"{name}: {value} has bits under the ADC's {native}")
+                    if level and value <= full * 3 / 4:
+                        wrong.append(f"{name}: {value} of {full}")
+                    if not level and value >= full / 4:
+                        wrong.append(f"{name}: {value} of {full}")
+    finally:
+        gpio.configure(line["channel"], Gpio.INPUT)
+        core.plan_release(host, [gpio.fn])
+    record_property("readings", json.dumps(seen))
+    assert not wrong, " | ".join(wrong)
+
+
 def test_adc_watchdog(dut, oep_host, record_property):
     """periph.adc-watchdog: CH32RVAdcStream.setWatchdog() on a labelled ADC pad the probe's GPIO holds low, then
     high. The window is the lowest quarter of full scale or the highest; the flag must rise exactly when the line sits
