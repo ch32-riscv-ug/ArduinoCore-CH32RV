@@ -12,12 +12,12 @@ A USB CCID reader and compatible card, powered host wiring and a UART monitor. T
 
 1. Reader connection or card insertion triggers processing.
 2. Successful card power-on prints `ATR: ...`.
-3. The sketch sends `00 A4 00 00 02 3F 00` (SELECT MF) and prints its status word after a successful exchange.
+3. The sketch sends `00 A4 00 00 02 3F 00` (SELECT MF) and prints `SELECT MF: SW=...` after a successful exchange.
 4. Removing the card prints `card removed`.
 
 ## Settings and limits
 
-Transport success is distinct from APDU success. The SmartCardReader device demo does not implement SELECT MF and returns `6D00`. ccidApdu separates response data and SW, but responseCapacity must also accommodate the two status bytes.
+Transport success is distinct from APDU success: status words other than `9000` come back too. The SmartCardReader device demo does not implement SELECT MF and returns `6D00`. `ccidApdu()` separates response data and SW, but responseCapacity must also accommodate the two status bytes.
 
 ## API usage and adaptation
 
@@ -28,7 +28,7 @@ Transport success is distinct from APDU success. The SmartCardReader device demo
 | `ccidApdu(..., response, capacity, &length, &sw)` | Exchanges an APDU, separating response data from its status word. |
 | `onCcidCardInserted()` / `onCcidCardRemoved()` | Deliver card events to schedule subsequent work. |
 
-A successful `ccidApdu()` exchange does not mean the card accepted the instruction. Check `sw` separately from USB/CCID success. Allocate capacity including room for SW1/SW2, and use only the returned data length.
+`ccidApdu()` returning `true` does not mean the card accepted the instruction. Check `sw` separately from USB/CCID success. Allocate capacity including room for SW1/SW2, and use only the returned data length.
 
 SELECT MF support depends on the card. The emulated [SmartCardReader](../../../CH32RVUsbDevice/examples/SmartCardReader/README.md) does not implement this instruction and returns an unsupported status. For ambiguous `no card` failures, also print `lastErrorName()` and `ccidLastError()`.
 

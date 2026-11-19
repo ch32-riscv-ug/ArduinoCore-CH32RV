@@ -2,7 +2,7 @@
 
 日本語: [README.ja.md](README.ja.md)
 
-A ten-KiB FAT12 RAM disk that reads back a CONFIG.TXT file written by the PC.
+A ten-KiB FAT12 RAM disk that reads back a `CONFIG.TXT` file written by the PC.
 
 ## Hardware and connections
 
@@ -10,8 +10,8 @@ A device board with sufficient RAM, a PC file browser and a UART monitor.
 
 ## Steps and expected results
 
-1. Find the CH32RV volume and README.TXT.
-2. Copy a short CONFIG.TXT into its root.
+1. Find the `CH32RV` volume and `README.TXT`.
+2. Copy a short `CONFIG.TXT` into its root.
 3. Eject the volume from the PC.
 4. Observe UART `MSC_EJECT`, `CONFIG_SIZE`, and `CONFIG_BEGIN`/`CONFIG_END`.
 
@@ -30,7 +30,7 @@ Eject flushes PC caches before the sketch inspects files. Only the first 255 byt
 
 Immediately after copying, data may still be pending in host caches. Eject before the sketch reads the file. Unplugging the cable is not equivalent: some removal paths do not send the notification.
 
-For text, leave one byte for a terminator and write `\0` after the returned length. The sample displays only an initial portion; compare `fileSize()` and the read length when full contents are needed. Follow the FAT RAM disk API's filename and directory restrictions.
+For text, leave one byte for a terminator and write `\0` at the length `readFile()` returned. The sample displays only an initial portion; compare `fileSize()` and the read length when full contents are needed. Follow the FAT RAM disk API's filename and directory restrictions.
 
 ## Related documentation
 

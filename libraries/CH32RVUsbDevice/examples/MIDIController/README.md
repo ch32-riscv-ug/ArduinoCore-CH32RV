@@ -6,7 +6,7 @@ A potentiometer controlling CC74 and a button controlling Note 60 over USB MIDI.
 
 ## Hardware and connections
 
-Wire a potentiometer between the board ADC supply/reference level and GND, with its wiper on A0. Connect a button between PA1 and GND. Use PC MIDI and UART monitors.
+Wire a potentiometer between the board ADC supply/reference level and GND, with its wiper on `A0`. Connect a button between `PA1` and GND. Use PC MIDI and UART monitors.
 
 ## Steps and expected results
 
@@ -16,7 +16,7 @@ Wire a potentiometer between the board ADC supply/reference level and GND, with 
 
 ## Settings and limits
 
-The mapping assumes a 12-bit ADC, while this core defaults to 10 bits. For the full 0–127 CC range, add `analogReadResolution(12);` before the first analogRead in setup, or change the mapping input maximum to 1023. ADC readings use a 15/16 smoothing filter. The button has no dedicated debounce; add it if the physical switch generates repeated events.
+The code's `map(..., 0, 4095, 0, 127)` assumes a 12-bit ADC, while this core defaults to 10 bits. For the full 0–127 CC range, add `analogReadResolution(12);` before the first `analogRead()` in `setup()`, or change the mapping input maximum to `1023`. ADC readings use a 15/16 smoothing filter. The button has no dedicated debounce; add it if the physical switch generates repeated events.
 
 ## API usage and adaptation
 

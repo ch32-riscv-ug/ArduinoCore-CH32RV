@@ -33,7 +33,7 @@ APDU 交換成功と命令成功は別で、`9000` 以外の SW も返ります�
 
 SELECT MF に応じるかはカードによります。Device の [SmartCardReader](../../../CH32RVUsbDevice/examples/SmartCardReader/README.ja.md)
 と組み合わせると、その模擬カードはこの命令へ未対応の SW を返すため、正常終了と同じ結果にはなりません。
-「no card」だけでは分からない失敗を調べる場合は `lastErrorName()` と `ccidLastError()` を表示します。
+`no card` だけでは分からない失敗を調べる場合は `lastErrorName()` と `ccidLastError()` を表示します。
 
 ## 関連資料
 
