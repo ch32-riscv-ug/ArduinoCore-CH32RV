@@ -40,6 +40,8 @@ from usb_iso import iso_transfer  # noqa: E402
 #   The DUT arms the next interval as soon as the last completes, from its USB task, with nothing else in its loop,
 #   so that race is rare; a Mult the controller does not serve makes every interval partial. 1 % separates the two
 #   by two orders of magnitude.
+#   Not counted as partial: the rest of a chain after an interval the host saw as an error (its first burst there), a
+#   link error showing twice, not Mult (iso_in_spilled).
 # - WHOLE_MIN: empty intervals are the DUT's task timing and link errors (the usb-media microphone at SuperSpeed
 #   loses about 0.1 % to the latter), not what this case asks; 90 % still needs the driver to keep up interval
 #   after interval.
@@ -149,7 +151,8 @@ def _stream(dut, record_property, alt, direction):
 def test_usb_ss_iso_in(dut, record_property, alt):
     packets, mps, intervals, got, _, statuses, served = _stream(dut, record_property, alt, "in")
     whole = empty = partial = errors = 0
-    sizes, last = {}, -1
+    sizes, last, spills = {}, -1, []
+    spilled = 0
     disorder = []
     for i, (p, st) in enumerate(zip(got, statuses)):
         sizes[len(p)] = sizes.get(len(p), 0) + 1
@@ -160,7 +163,20 @@ def test_usb_ss_iso_in(dut, record_property, alt):
             empty += 1
             continue
         if len(p) != packets * mps:
+            # The rest of a chain whose first burst came in an interval the host saw as an error: the DUT cannot know
+            # of that error and goes on with the chain (2026-11-20: every such partial starts past packet 0 and follows
+            # an error of the same number). The error is counted there; this is not a Mult left unserved.
+            first = struct.unpack_from("<IH", p) if len(p) >= 6 else (None, 0)
+            if i and statuses[i - 1] != 0 and first[1] > 0:
+                spilled += 1
+                continue
             partial += 1
+            if len(spills) < 8:     # what a partial interval and the next one carry: (serial, packet) of each packet
+                heads = lambda q: [struct.unpack_from("<IH", q, k * mps) for k in range(len(q) // mps)]
+                nxt = got[i + 1] if i + 1 < len(got) else b""
+                prev = got[i - 1] if i else b""
+                spills.append(dict(at=i, prev=heads(prev)[:3] + heads(prev)[-2:], partial=heads(p)[:4],
+                                   next=heads(nxt)[:3], statuses=statuses[max(0, i - 1):i + 2]))
             continue
         serial = struct.unpack_from("<I", p)[0]
         for k in range(packets):
@@ -177,8 +193,10 @@ def test_usb_ss_iso_in(dut, record_property, alt):
     record_property("iso_in_whole", whole)
     record_property("iso_in_empty", empty)
     record_property("iso_in_partial", partial)
+    record_property("iso_in_spilled", spilled)
     record_property("iso_in_errors", errors)
     record_property("iso_in_sizes", json.dumps(sizes))
+    record_property("iso_in_partial_heads", json.dumps(spills))
     assert not disorder, "packets out of place: " + "; ".join(disorder[:5])
     assert partial <= intervals * PARTIAL_MAX, \
         f"{partial} of {intervals} intervals came with part of their {packets} packets (sizes {sizes}): " \
