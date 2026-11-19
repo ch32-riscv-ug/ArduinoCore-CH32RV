@@ -713,6 +713,9 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 
 [docs/peripheral-support.ja.md](docs/peripheral-support.ja.md) の ○ / ◐ の中身と、[docs/peripheral-plan.ja.md](docs/peripheral-plan.ja.md) の B（後で）。
 
+- [ ] V003・V203 で `lightSleep()` の間に DMA が進むか（ch32-hal の README: WFI の間 DMA が止まる。[docs/vs-ch32-hal.ja.md](docs/vs-ch32-hal.ja.md)）。
+  Serial の DMA バッファ・ADC のストリーム・DAC の再生と組み合わせて確かめ、止まるなら文書に書くか眠りを浅くする。
+
 - [ ] X305 / X315 の Wire（プルアップの配線が要る）と、既定以外の route。V205 は常駐ベンチの v205rct6-pico（PB9 / PB8）で wire の 3 件が通る（2026-11-14）。V205 は LinkE の接続で s0 が壊れるので、結果はリセットごとに 1 回だけ読む。
 - [ ] V20x / V30x の ADC の校正値（EVT の Get_CalibrationValue）。V307 ではその値が 1728 で、当てると VDD が 2.64 V になり不自然（当てない今は 3.19 V）。外部の電圧計と照合して決める。
 - [x] CPU Clock の全部の項目を、ベンチの DUT で selfcheck（時計・Serial・SPI・GPIO・PWM・ADC）で確かめた（2026-11-13）。

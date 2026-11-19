@@ -43,6 +43,7 @@
 | [h417-uhsif.ja.md](h417-uhsif.ja.md) | CH32H417 の UHSIF の解析（FX3 の GPIF II と同じ作り）と、CH32RVUhsif の根拠 |
 | [h417-cores-design.ja.md](h417-cores-design.ja.md) | CH32H417 の V5F・V3F・PIOC をどう組むかの調査（ほかのコアの例、候補の比較、推奨） |
 | [clang-evaluation.ja.md](clang-evaluation.ja.md) | GCC から clang（LLVM 23）へ移したときの調査と実機の結果（記録。今の形は toolchain.ja.md） |
+| [vs-ch32-hal.ja.md](vs-ch32-hal.ja.md) | ch32-rs（Rust の ch32-hal・BLE の wchble）と実装の範囲の比較、拾える知見（2026-11-20） |
 | [libc-runtime-plan.ja.md](libc-runtime-plan.ja.md) | newlib と libgcc から picolibc と compiler-rt へ移す計画と測定（記録。今の形は toolchain.ja.md） |
 | [../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) | テストの保証対象、設備、環境分離、責務分担 |
 | [../tests/RECORDS.ja.md](../tests/RECORDS.ja.md) | OEP プローブのメモ欄に置く、口ごとの記録の決まり（名前、形、メンバー、読み方と書き方） |
