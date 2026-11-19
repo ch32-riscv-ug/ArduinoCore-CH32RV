@@ -38,7 +38,7 @@
 | RTC のカレンダー・アラームの公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。暦は POSIX、`CH32RV.setAlarm()`・`enableAlarmWakeup()`） | 自動 | 自己＋プローブ。system::test_rtc_alarm、selfsys::test_rtc_alarm | libraries/CH32RV/README.ja.md |
 | RTC の校正・校正クロック出力 | V103、V20x、V205、V30x、V407、H417、X315 | 実装済み（2026-11-18、`setRtcCalibration(ppm)`（分周＋CAL、V103・H41x・X3x5 は分周だけ）と `setRtcOutput()`（TAMPER に ÷64・アラーム・秒）。selfcheck::test_rtc_calibration / test_rtc_output を V203・V103・H417 で（rtcclock=lse,clocksrc=hse）） | 自動 | プローブ（1 Hz / 512 Hz を測る） | EVT RTC/RTC_Calibrations, RTC/RTC_OutputCalibrateClock（V205） |
 | BKP の公開 API | RTC の系列 | 実装済み（2026-11-15、ビルドのみ。`CH32RV.get/setBackupRegister()`。H41x・X3x5 は .noinit の RAM） | 自動 | 自己（リセットをまたいで読む）。system::test_backup_registers、selfsys::test_backup_registers | libraries/CH32RV/README.ja.md |
-| WWDG | 全 12 family | 実装済み（2026-11-15、ビルドのみ。`CH32RV.wwdgEnable()`） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
+| WWDG | 全 12 family | 実装済み（2026-11-15、`CH32RV.wwdgEnable()`。2026-11-19 に V203・H417・X035 で system::test_window_watchdog が通った） | 自動 | 自己（窓の外で餌→リセット理由）とプローブ（餌からリセットまで）。system::test_window_watchdog、selfsys::test_window_watchdog | libraries/CH32RV/README.ja.md |
 | IWDG のオプションバイト（Watchdog メニュー）の残り | V103、H41x | 2 | 自動 | 自己（書き換えと戻し） | docs/adr/0017-option-byte-menus.ja.md:21 |
 | PFIC の割込み優先度の設定 | 全系列 | 実装済み（2026-11-17、ビルドのみ。`ch32rv_priority.h` の `ch32rv_irq_set_priority()`、コアの割り込みとの約束は CH32RV の README） | 自動 | 自己（タイマー 2 本で入れ子を確かめる）。selfapi::test_priorities | libraries/CH32RV/README.ja.md |
 | VTF（高速割込み）、割込みの入れ子、ベクタを RAM へ | 全系列 | 2 | 自動 | 自己（遅延を SysTick で測る） | EVT INT/Interrupt_VTF, INT/VectorInRAM |
