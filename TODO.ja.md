@@ -235,6 +235,16 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   UAS は BOT で動くことだけ、試験のハーネス（記録の usb.super_speed で usb-peer-host-* を SS で）。2026-11-20 の終わりに
   メモリは OEP 側の H417（640eb63c）の SS の口へ移した。この板は別電源で、メモリの電源を切れないので、挿したまま
   始めても SS で見えない（確認用のスケッチで RxDetect のまま）。
+  → 2026-11-20 夜、SS を H417 同士の直結に戻した（ホストは OEP 側の 640eb63c、デバイスは A94B の相手用スケッチ）。
+  usb-peer-host は列挙できず。ホストの足跡: 191 ms で U0・LMP（PORT_CFG_RES まで）の後、1 ms ほどで U0 と Recovery を
+  何度も行き来して SS.Inactive、warm reset で約 87 ms ごとに繰り返す。ホストの de-emphasis（LINK_CFG[9:8]）を変えると:
+  0x100（今の 3.5 dB）と 0x0 は Inactive に落ちる、0x200 と 0x300 は U0 を保ち、列挙・MSC の INQUIRY（CH32RV RAM disk）・
+  容量・先頭ブロックの読み出しまで通る（64 ブロックの読み出しで STALL、未調査）。ただし Recovery が 1 ms に数回続く。
+  デバイス側の de-emphasis（0x100 / 0x200 / 0x300）と、ホストが U1/U2 を受け入れるかどうかでは Recovery の数は変わらない
+  （誤りによる Recovery）。PHY の設定は EVT のホストと同じ。メモリ相手ではホストに Recovery は無く、PC 相手ではデバイスに
+  無いので、H417 同士の直結（A–A のケーブル、両方の PHY）の組み合わせの問題。次: ケーブルを替える、受信の等化
+  （LINK_RX_EQ_EN と PHY の 0x03 / 0x0D / 0x15）を振る、ホストの既定の de-emphasis をメモリ相手でも 0x300 で確かめてから
+  決める。実験の切り替えは外した（コードは元のまま）。
 - [ ] **USB の試験の配線（2026-11-14 ユーザー: すぐには配線できない。USB のケーブルは入れ替えやすく、OEP の端子の線が高い）**。
   網羅の軸・相手の役割・3 台の H417 のつなぎ方の案は tests/TEST_PLAN.ja.md の「USB の網羅の軸」。要るもの:
   - H417 の 3 台目（A、LinkE で OEP に相乗り）。A の SS → USB3 の PPPS ハブ → C（6-1 の nano）の SS と USB3 メモリ（UAS）。
