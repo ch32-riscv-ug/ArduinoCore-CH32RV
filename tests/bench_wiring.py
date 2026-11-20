@@ -32,7 +32,6 @@ BENCH = [
     ("CH32V103R8T6", "80f1b2d80a34", "v103r8t6-evt"),
     ("CH32V203C8T6", "e8f60ae84e28", "v203c8t6"),
     ("CH32V205RCT6", "30eda0e31108", "v205rct6-pico"),
-    ("CH32V208WBU6", None, None),   # off the bench (2026-11-20)
     ("CH32V307VCT6", None, None),
     ("CH32V407WEU6", "30eda0ea068b", "v407weu6-yd-p4"),
     ("CH32L103C8T6", "e8f60ae84dc6", "l103c8t6-pico"),
