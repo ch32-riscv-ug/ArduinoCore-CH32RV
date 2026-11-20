@@ -238,7 +238,15 @@ bool CH32RVComplementaryPwm::resume()
         return true;                /* no write() yet: the outputs stay idle */
     }
     CH32RV_TIM_BDTR(_base) |= CH32RV_TIM_BDTR_MOE;
-    return (CH32RV_TIM_BDTR(_base) & CH32RV_TIM_BDTR_MOE) != 0u;
+    /* MOE shows a timer clock after the write: H417 at 400 MHz read it
+     * back clear once, then set; with the break still active it never
+     * shows (100000 reads). */
+    for (uint8_t i = 0; i < 64u; i++) {
+        if ((CH32RV_TIM_BDTR(_base) & CH32RV_TIM_BDTR_MOE) != 0u) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /* ---- CH32RVOnePulse ---- */

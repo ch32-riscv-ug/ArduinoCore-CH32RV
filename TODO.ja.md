@@ -101,6 +101,9 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   消えない。ハブ 7 の port 3（3-2.3 の 3、プローブごと）を切り入れしても同じ。このチップの ADC の校正が壊れたとみる。
   コアは直さない。別の L103 で、同じ試験が通るかを確かめる（ユーザーにチップの交換を相談）。
 - [ ] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
+  → 2026-11-21 も同じ（3 回目）。idle の区間（RWU だけ、WAKE 0）は通るので、受信と mute() は動き、アドレスで起きない。
+  WCH の例（USART_MultiProcessorCommunication）の順の UE を立ててから RWU も試したが同じ（戻した）。次は DUT の CTLR1 /
+  CTLR2 / STATR を muted のまま OEP で読み、アドレスの枠（8O1、9 ビット目 1）が来たときに RWU が落ちるかを見る。
 - [x] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
   → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
 - [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
@@ -109,7 +112,10 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
 - [ ] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
   から 2 回とも。17:55 には列挙できていた）。プローブの線は PD3 / PD4 に無い。
-- [ ] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
+- [x] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
+  → 2026-11-21: 誤り 32 はバッファあふれで、線は正しい（WireSkein ok）。1 バイトごとの available() が毎回 DMA の旗・USART の
+  誤りまで見ていて、読み手が 1 Mbaud に追いつかなかった。available() は CNTR だけを読み、半分・終わりの点を過ぎたときだけ
+  全部見るように。V003 で 2 回とも通り、X035・V006・H417 の uart-dma も通る。
 - [ ] **M030**: run_hardware を `--env-file tests/.env` なしで起動し、defect が効かないまま logic が PA7（板が保持している
   端子）に PWM を数秒出した（2026-11-21）。基板の確認待ち。正しい記録で流し直すかは確認の後に決める。
 - [ ] **1 台も走らない case**: pd（pd の記録の台が無い。機材が要る）。usb-peer 系は V103・V203C8T6・V307 に USB の線が無い。
@@ -130,6 +136,9 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
   unplug とも通り、in[4]・out[5] の submit -1 だけが残った（下の「USBSS の等時 Mult>0」と同じ形）。restart で戻らないのは 1 回だけ。
 - [ ] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
   隣の PA6（break）の線か、止めた相の出力か。
+  → 2026-11-21: 3 回中 2 回（流し直しの 1 回は通った）。2 回目の取り込みでは PA7 のパルスが 10 MS/s の 1 サンプル（0.1 µs）で
+  2 つ、約 600 µs 離れて出た。begin() は 6 本を数 µs でつなぐので間隔が合わない。同じ取り込みの別の区間で PE11 と PE13 にも
+  同時刻の 0.1 µs が出ており、線か取り込みのひげに見える。次は 100 MS/s で幅を測る。
 
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの
 
@@ -475,6 +484,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     （RESUME 0。BRKSTATE は latched 1・端子 1）。CH3N の PB1 に線がついて初めて走った組（TIM1 CH3 PE13 / CH3N PB1 /
     break PA6、route 1）。H417 の TIM1 には AUX の BK_SEL（BKIN1 / BKIN2 / 両方、DFSDM）があり、BKIN2 は PA5 / PE6 /
     PA12。次は失敗した状態で TIM1 の AUX・BDTR・INTFR を OEP で読み、BKIN が何を見ているかを決める。
+    → 直した（2026-11-21）: resume() は効いていた（後で BDTR=9c00、MOE 1。AUX=0 で BKIN だけ）。MOE を書いた直後の読み返しが
+    古い値で、resume() が 0 を返していた（H417 400 MHz、1 回読み直すと 1。break を保ったままだと 10 万回読んでも 0）。読み返しを
+    最大 64 回に。h417qeu6-pico の test_complementary が通る。
   - periph の test_hsadc（PF8）: プローブの PWM の始まりの過渡（約 10 周期が別の duty）で落ちていた。PWM を区間の前に
     始めて通る（add84fc9）。プローブの側は [oep] に伝えた。
   - wire の 7 件は前からの「潰れたクロック」（外付けのプルアップの台で測り直す）。software-serial と spi は 1 回目だけ

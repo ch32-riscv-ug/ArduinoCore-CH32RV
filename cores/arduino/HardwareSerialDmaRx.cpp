@@ -10,9 +10,9 @@
  * One channel in circular mode from the data register into the buffer,
  * started at begin() and not stopped until end(): the bytes keep coming in
  * whatever the CPU does, interrupts off included. The reader takes the DMA's
- * place from its count (CNTR) when it looks - available(), and peek() /
- * read() once the bytes of the last look are read, onReceive()'s delivery
- * after loop() - with no interrupt per byte and none from the DMA (its
+ * place from its count (CNTR) - available() (the count alone between the
+ * DMA's half and end points), and peek() / read() once the bytes of the last
+ * look are read, onReceive()'s delivery after loop() - with no interrupt per byte and none from the DMA (its
  * vectors stay the libraries': CH32RVAdcStream, CH32RVLogicCapture).
  *
  * The DMA cannot be refused a byte, so an overrun is noticed instead: at a
@@ -136,13 +136,25 @@ struct CH32RVSerialDmaRx {
         return pos >= t ? pos - t : pos + n - t;
     }
 
-    /* Always a fresh look: onReceive() takes its FIFO-full count and its
-     * callback's available() from here (counting only what an earlier look
-     * saw broke both, bench 2026-11-17). read() and peek() skip the look
-     * while bytes of the last one remain. */
+    /* Always the DMA's count now: onReceive() takes its FIFO-full count and
+     * its callback's available() from here (counting only what an earlier
+     * look saw broke both, bench 2026-11-17). The full look (the flags twice,
+     * the USART's errors) only once the DMA passed its half or end point - a
+     * lap always passes one - and in read() / peek() past the last look's
+     * bytes: a full look per available() kept CH32V003 at 48 MHz below
+     * 1 Mbaud reading byte by byte (UART_BUFFER_FULL_ERROR, 3756 of 4096,
+     * bench 2026-11-21). */
     static int available(CH32RVHardwareSerial &port)
     {
-        return (int)look(port);
+        Rx &r = of(port);
+        const ch32rv_dma_line_t *l = line(port);
+        const uint32_t count = CH32RV_DMA_CNTR(l);
+        if ((CH32RV_DMA_INTFR(l) >> l->shift) & (CH32RV_DMA_HTIF | CH32RV_DMA_TCIF)) {
+            return (int)look(port);
+        }
+        __asm__ volatile("fence rw, rw" ::: "memory");
+        const uint32_t n = r.size, pos = place(n, count), t = r.tail;
+        return (int)(pos >= t ? pos - t : pos + n - t);
     }
 
     static int peek(CH32RVHardwareSerial &port)
