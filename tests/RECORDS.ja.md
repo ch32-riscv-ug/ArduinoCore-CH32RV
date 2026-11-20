@@ -224,17 +224,17 @@ OEP の口の欄です。spi の試験が SPI の CS に使うラベル付きの
 
 ```sh
 # 見る
-uv run --project tests --locked --extra hardware python tests/bench_record.py show oep://30eda0e31108/x035f8u6-s3
+uv run --project tests --locked --extra hardware python tests/bench_record.py show oep://80f1b2d835d6/x035c8t6-pico
 
 # 書く（--target auto はチップを読んで target を入れる）
-uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035f8u6-s3 \
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://80f1b2d835d6/x035c8t6-pico \
   --target auto --board weact:CH32X035-CoreBoard-V1.0 --supply usb --usb esp32-s3,serial=58FA041040,mac=e4b063b49f2c
 
 # メンバーを消す
-uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://30eda0e31108/x035c8t6-s3 --remove pd
+uv run --project tests --locked --extra hardware python tests/bench_record.py set oep://80f1b2d835d6/x035c8t6-pico --remove pd
 
 # その口で何が流れるか（流さずに見る）
-uv run --project tests --locked --extra hardware python tests/bench_record.py plan oep://30eda0e31108/x035c8t6-s3
+uv run --project tests --locked --extra hardware python tests/bench_record.py plan oep://80f1b2d835d6/x035c8t6-pico
 ```
 
 ## 7. 例

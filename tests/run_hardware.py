@@ -2,7 +2,7 @@
 """Run the hardware cases on bench targets named by their addresses alone.
 
   uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py [--execute]
-  ... python tests/run_hardware.py --probe oep://30eda0e31108/x035c8t6-s3 --probe wchlink://FB868F068059 --case gpio
+  ... python tests/run_hardware.py --probe oep://80f1b2d835d6/x035c8t6-pico --probe wchlink://A94B8F062EE9 --case gpio
 
 A target is its address (CH32RV_PROBE in tests/.env, or --probe; oep://<unit>/<port>[/<target>] or
 wchlink://<serial>): the probe, the chip and the probe's memo records say the rest (harness/place.py), and the cases
