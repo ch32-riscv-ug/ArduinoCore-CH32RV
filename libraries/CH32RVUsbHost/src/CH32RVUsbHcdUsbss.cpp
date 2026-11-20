@@ -3,9 +3,13 @@
  * same connector is the USBHS controller's (CH32RVUsbHcdUsbhs2.cpp, PB8 /
  * PB9), a host of its own.
  *
- * FIRST DRAFT, BUILT BUT NOT YET RUN ON HARDWARE (2026-11-14). Every
- * "guess:" below is a reading of the RM or the EVT that a bench run has to
- * confirm; "measure:" says what to look at.
+ * Bench state (2026-11-20, nanoCH32H417 with a USB 3 memory on its SS port):
+ * link training, LMP, enumeration, SET_SEL / U1 / U2 enable and the MSC
+ * mount (BOT commands, bulk OUT, bulk IN with NRDY / ERDY) run. Not yet run:
+ * bursts, interrupt and isochronous endpoints, hubs, U1 / U2 / U3 exits, and
+ * this host against the H417's own device role. Every "guess:" below is a
+ * reading of the RM or the EVT that a bench run has to confirm; "measure:"
+ * says what to look at.
  *
  * Sources: CH32H417RM V1.8 chapter 27 (27.2.5 the host registers, 27.2.6 the
  * link) and the EVT's USBSS host demos (EXAM/USBSS/HOST/..., Common/
@@ -664,9 +668,12 @@ void rx_done()
             return;
         }
         ep->seq = (uint8_t)((ep->seq + got) & 0x1Fu);
-        if (eob) {
-            ep->fc = true;                               /* EOB: in flow control (RM HOST_STATUS.EOB_LPF) */
-        }
+        /* EOB in the middle of a transfer: the device has no more for now
+         * and sends an ERDY when it has (RM HOST_STATUS.EOB_LPF). EOB on the
+         * packet that ends the transfer is not flow control: a USB memory sets
+         * it on every CSW and then never sends an ERDY for the next command's
+         * data (bench 2026-11-20, each data stage waited ERDY_RETRY_MS). The
+         * next transfer simply asks; a device not ready answers NRDY. */
         if (last < ep->mps || ep->done >= ep->len) {
             finish(ep, CH32RV_USBH_OK);
         } else if (eob) {
@@ -856,6 +863,15 @@ void link_isr(void)
             }
             if (retrain_fail >= 3) {
                 release_at = (millis() + 20u) | 1u;
+                /* A device in SS.Inactive (it gave up training first) never
+                 * answers Polling; only a warm reset brings it back, and the
+                 * host does not see Inactive itself - it only fails Polling
+                 * (bench 2026-11-20: H417 against H417, the device Inactive,
+                 * the host cycling Polling -> Disabled). As an xHCI does after
+                 * failed training: a warm reset on every third failure. */
+                if (retrain_fail % 3 == 0) {
+                    inactive = true;
+                }
             } else {
                 LINK_CTRL &= ~LINK_GO_DISABLED;
             }
