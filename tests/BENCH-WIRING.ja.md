@@ -34,7 +34,7 @@
 | CH32V307VCT6（口なし） | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
 | CH32V407WEU6（v407weu6-yd-p4） | 4 本: `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4.nrst` | なし |
 | CH32L103C8T6（l103c8t6-pico） | 0 本: なし | なし |
-| CH32X035C8T6（x035c8t6-pico） | 1 本: `x035c8t6-pico@pa13` | なし |
+| CH32X035C8T6（x035c8t6-pico） | 0 本: なし | なし |
 | CH32X315MCU6（x315mcu6-pico） | 0 本: なし | なし |
 | CH32H417QEU6（h417qeu6-pico） | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | なし |
 
@@ -328,10 +328,10 @@
 ## CH32X035C8T6（x035c8t6-pico）
 
 - 口: `oep://80f1b2d835d6/x035c8t6-pico`
-- いまの線: PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA10, PA11, PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7, PB8, PB9, PC6, PC7
+- いまの線: PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA10, PA11, PA13, PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7, PB8, PB9, PC6, PC7
 - コンソール（rx / tx）: PB10, PB11
 - 触らない端子: PA21, PC14, PC15, PC16, PC17, PC18, PC19
-- 足す線（1 本、端子順）: `x035c8t6-pico@pa13`
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -348,7 +348,7 @@
 | ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
-| コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PA13 |
+| コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
 | コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 済 |  |
 | PIOC の IO0 | pioc::test_pioc_pulses | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
