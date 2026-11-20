@@ -788,10 +788,12 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
         with ws_run.section(1, f"hsadc {line['pad']}"):
             for rate, hz, duty in conditions:
                 name = f"{rate // 1000} ksps, {hz // 1000} kHz duty {duty}"
+                # Started before the section: the probe's PWM starts with about ten periods at another duty (1 MHz
+                # / 0.25 began at 0.975, H417 2026-11-20); the section judges the steady wave the DUT samples.
+                made = pwm.start(0, round(hz), round(duty * Pwm.FULL))           # whole Hz: the fixture packs it as u32
+                wait(0.02)
                 with ws_run.section(2, name, expect=[becomes(line["pad"], freq_hz=hz, duty=duty, irregular_max=3,
                                                              min_periods=20, duty_abs=0.01)]):
-                    made = pwm.start(0, round(hz), round(duty * Pwm.FULL))       # whole Hz: the fixture packs it as u32
-                    wait(0.02)
                     command = f"hstream {rate} 8 {line['pin']}"
                     ws_run.command(command)
                     dut.write(command + "\n")
