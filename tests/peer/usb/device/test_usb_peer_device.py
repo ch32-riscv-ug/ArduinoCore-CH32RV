@@ -89,8 +89,10 @@ def test_usb_peer_device(dut, peers, record_property):
     # upload it hands back to this build; elsewhere enterBootloader() is a plain reset (CH32RVUsbDevicePort.h:
     # the other series reach their bootloader by BOOT0 alone), so this build comes straight back.
     wait_enumerated(peer, build_id)
-    command(peer, "dfu", rb"DFU 1 \d")
-    peer.expect(rb"DISCONNECTED \d+ 1209 0001", timeout=10)
+    # The reply and the device leaving, in either order: a part that resets at once (H417 on its FS port) is gone
+    # before the peer prints DFU's reply (2026-11-20).
+    peer.write("dfu\n")
+    peer.expect(rb"(DFU 1 \d[\s\S]*?DISCONNECTED \d+ 1209 0001|DISCONNECTED \d+ 1209 0001[\s\S]*?DFU 1 \d)", timeout=10)
     if settings(__file__)["target"]["family"].startswith("CH32X03"):
         peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     peer.expect(rb"CONNECTED \d+ 1209 0001", timeout=40)
