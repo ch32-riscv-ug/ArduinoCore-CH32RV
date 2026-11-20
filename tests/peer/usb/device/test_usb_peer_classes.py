@@ -145,6 +145,11 @@ def test_usb_peer_classes(dut, peers):
         peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)
     peer.expect(rb"CONNECTED \d+ 1209 0001", timeout=40)
     wait_enumerated(peer, build_id)
+    if settings(__file__)["target"]["family"].startswith("CH32H41"):
+        # H41x comes back in DFU mode (it rewrites its own flash), and that departure goes on: end() leaves it be
+        # and returns.
+        dut.expect(rb"DETACHEND RETURNED", timeout=5)
+        return
     # The reset came from end() itself: it never returned to print this.
     with pytest.raises(Exception):
         dut.expect(rb"DETACHEND RETURNED", timeout=1)

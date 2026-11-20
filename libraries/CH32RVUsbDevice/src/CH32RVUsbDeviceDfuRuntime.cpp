@@ -128,6 +128,7 @@ void CH32RVUsbDeviceDfuRuntime::usbTask()
     if (!device().restartWithOnly(*this)) {
         CH32RVUsbDevice::enterBootloader();             /* nothing to come back as: reset */
     }
+    ch32rv_usb_dfu_departed = true;
 #endif
 }
 

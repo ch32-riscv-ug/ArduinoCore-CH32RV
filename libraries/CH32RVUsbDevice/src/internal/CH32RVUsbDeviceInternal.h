@@ -81,6 +81,9 @@ static inline uint8_t ch32rv_usb_interval(CH32RVUsbSpeed speed, uint8_t ms)
  * USB callback (CH32RVUsbDeviceDfuRuntime's switch to DFU mode, which ends and
  * begins the device). */
 extern void (*volatile ch32rv_usb_deferred)(void);
+/* Set once DFU_DETACH has brought the device back in DFU mode (H41x, CH32RVUsbDeviceDfuRuntime.cpp): the departure
+ * the host was told of goes on, and end() leaves it be (CH32RVUsbDeviceCore.cpp). */
+extern bool ch32rv_usb_dfu_departed;
 
 /* A firmware update through USB is accepted: `ms` from now, leave the bus and
  * install it (CH32RVUsbDeviceFirmware.cpp). */

@@ -889,6 +889,7 @@ extern "C" void ch32rv_usb_task(void)
 }
 
 void (*volatile ch32rv_usb_deferred)(void);
+bool ch32rv_usb_dfu_departed;
 
 /* ------------------------------------------------------------ the device's API */
 /* The stack's system service (ch32rv_service.h): begin() attaches it. end()
@@ -966,6 +967,13 @@ bool CH32RVUsbDevice::begin(const CH32RVUsbDeviceConfig &config)
 void CH32RVUsbDevice::end()
 {
     if (!_started || Core::device != this) {
+        return;
+    }
+    /* Back in DFU mode after an accepted DFU_DETACH (H41x): that is the
+     * departure, and it stays on the bus until its download resets it - a
+     * sketch's end() right after the detach ended it, and the host found no
+     * device (usb-peer-classes on H417, 2026-11-20). */
+    if (ch32rv_usb_dfu_departed) {
         return;
     }
     /* A departure the host was told of goes on (DFU_DETACH accepted, the

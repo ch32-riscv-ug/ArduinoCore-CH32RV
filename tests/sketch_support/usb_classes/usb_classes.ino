@@ -62,7 +62,10 @@ static uint32_t pulledReads;   /* readThenPull() calls: none comes after the med
 static int32_t readThenPull(uint32_t lba, uint32_t offset, void *buffer, uint32_t size)
 {
     pulledReads++;
-    const int32_t n = disk.read(lba, offset, buffer, size);
+    /* The first block only: a larger buffer (H417) asks for both blocks in one call, and the medium would go after
+     * the whole READ(10) instead of in its middle (2026-11-20). */
+    const uint32_t first = 512u - offset % 512u;
+    const int32_t n = disk.read(lba, offset, buffer, size < first ? size : first);
     msc.mediaPresent(false);
     return n;
 }
