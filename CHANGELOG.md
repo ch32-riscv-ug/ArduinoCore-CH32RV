@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.9.0
 - (EN) PIOC (X035 / X033, V205, H41x): programs in the sketch's `.S` assembled by the core's clang (`<ch32rv_pioc.inc>`), loaded and driven by the new CH32RVPioc library (`begin()`, `command()`, `waitDone()`, `onDone()`, `loadSram()`, `setOpenDrain()`, `clockHz()`); examples PiocPulses, PiocWs2812, PiocUartTx, PiocUartRx, PiocSpiTx, PiocIrNec, PiocIrNecRx, PiocPulseIn and PiocOneWire.
 - (JA) PIOC（X035 / X033、V205、H41x）: スケッチの `.S` に書いたプログラムをコアの clang で組み（`<ch32rv_pioc.inc>`）、新しい CH32RVPioc ライブラリで読み込んで動かす（`begin()`・`command()`・`waitDone()`・`onDone()`・`loadSram()`・`setOpenDrain()`・`clockHz()`）。例は PiocPulses・PiocWs2812・PiocUartTx・PiocUartRx・PiocSpiTx・PiocIrNec・PiocIrNecRx・PiocPulseIn・PiocOneWire。
 - (EN) New libraries: CH32RVDac (triangle, noise, DMA-played samples and `playBoth()` on a timer's trigger), CH32RVEcdc (H41x's AES-128 / 192 / 256 and SM4, ECB and CTR), CH32RVGpha (H41x's graphics DMA: fill, converting copy, blend, palettes), Arduino_CAN (bxCAN), SoftPWM, CH32RVComparator and CH32RVOpamp on more families.
