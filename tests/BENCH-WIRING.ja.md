@@ -30,7 +30,7 @@
 | CH32V103R8T6（v103r8t6-evt） | 0 本: なし | なし |
 | CH32V203C8T6（v203c8t6） | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
 | CH32V205RCT6（v205rct6-pico） | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
-| CH32V208WBU6（v208wbu6） | 17 本: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6.rx@pa9`, `v208wbu6.tx@pa10`, `v208wbu6.swdio@pa13`, `v208wbu6.swclk@pa14`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst` | なし |
+| CH32V208WBU6（口なし） | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa3`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pb13`, `<口>.nrst` | なし |
 | CH32V307VCT6（口なし） | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
 | CH32V407WEU6（v407weu6-yd-p4） | 4 本: `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4.nrst` | なし |
 | CH32L103C8T6（l103c8t6-pico） | 0 本: なし | なし |
@@ -202,13 +202,13 @@
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
 
-## CH32V208WBU6（v208wbu6）
+## CH32V208WBU6（口なし）
 
-- 口: `oep://30eda0e31451/v208wbu6`
+- 口: OEP 未接続（WCH-Link のみ）
 - いまの線: なし
 - コンソール（rx / tx）: PA9, PA10（未配線: Serial の既定の端子）
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15
-- 足す線（17 本、端子順）: `v208wbu6@pa0`, `v208wbu6@pa1`, `v208wbu6@pa2`, `v208wbu6@pa3`, `v208wbu6@pa5`, `v208wbu6@pa6`, `v208wbu6@pa7`, `v208wbu6@pa8`, `v208wbu6.rx@pa9`, `v208wbu6.tx@pa10`, `v208wbu6.swdio@pa13`, `v208wbu6.swclk@pa14`, `v208wbu6@pa15`, `v208wbu6@pb6`, `v208wbu6@pb7`, `v208wbu6@pb13`, `v208wbu6.nrst`
+- 足す線（17 本、端子順）: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa3`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pb13`, `<口>.nrst`
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
