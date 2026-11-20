@@ -498,13 +498,20 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   V203RBT6（Ethernet、4-3）で見る。V208 だけのもので、実機で確かめられずビルドだけになるもの: (1) Clock Source の HSE
   （32 MHz の水晶から作る PLL、boards.txt の CH32V208.build.clock_hse_defines）、(2) variants/CH32V208 の型番ごと
   （CBU6・GBU6・RBT6・WBU6）の既定の端子。
-- [ ] V006 の signals の test_pwm_timer（中央揃え）が、コードの配置しだいで落ちる（2026-11-20）。SixStep の止めた相を
+- [x] V006 の signals の test_pwm_timer（中央揃え）が、コードの配置しだいで落ちる（2026-11-20）。SixStep の止めた相を
   直した（下の行）だけで、触っていない CH32RVPwmTimer の試験が 3 回とも落ち、戻すと 3 回とも通る。落ち方は、pwmt の直後に
   PC0 に 10〜15 µs の余分なパルス、約 3 周期の空白、write() の値が頂点で入った半分のパルス（許容は 1 つ）。直前は端揃えの
   pwmt と pwmtoff。試して効かなかったもの: connect() で比較値 0 をプリロードなしで書く、begin() で restartCounter() を呼んで
   から開始（どちらも戻した）。次は pwmt の各段（begin・attach・write）の直後に CNT・CCR・CTLR1・CCER をプローブで読み、
   余分なパルスがどの段で出るかを取り込みのマーカーで区切って見る。同じ試験の test_timer_sync（PC0 / PB1 のずれ 200 ns、
   許容 ±200 ns の境目で判定保留）は前から。
+  → 直した（2026-11-21）: V006 では begin() 128 µs・attach() 113 µs・write() 12 µs かかり、カウンタが走ってから値が入るまで約
+  150 µs。始まりの余分なパルスは、止まったタイマーの出力が前の使用（端揃え）の High を保ったまま端子を AF につないだもの
+  （UG で比較値 0 を入れるだけでは 10.9 µs 残った）。begin() は UG で比較値 0 を入れ、カウンタを 1 つ進めてから端子をつなぐ。
+  test_timer_sync: 10 MS/s では V006 の 120〜140 ns が 200 ns に量子化されて境目だった → 50 MS/s（±200 ns の 10 / T）。端子を
+  後でつなぐと X035 の timer_sync が落ちた: startWith() は走っている主タイマーを 0 から始め直すので、High の途中なら切れた
+  パルスが出る（位相しだい）。スケッチの pwmsync を begin・begin・startWith・write の順に、ヘッダーに「走っている PWM は
+  切れる」を足した。V006・X035・V205 の signals が全部通る。
 - [x] CH32RVSixStep の止めた相が浮いていた: CCxE と CCxNE を両方 0 にすると、OSSR=1 でも出力は無効（端子は浮く）。止めた相は
   強制非アクティブで CCxE だけ立て、CHxN も OSSR で Low に駆動する。begin() の直後も同じ。V205（PC3〜PC8 の線を足した
   2026-11-20）で止めた相の端子に雑音のパルスと High のままが出て見つかった。V205 と V006 で six_step が通る。

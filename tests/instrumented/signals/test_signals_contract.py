@@ -751,7 +751,9 @@ def test_timer_sync(dut, oep_host, ws_run, record_property):
         ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(A, level=0), becomes(B, level=0)], 0.005),
     ]
     try:
-        replies = sweep(dut, ws_run, oep_host, [a, b], f"timer sync {A} {B}", conditions, rate=10_000_000, moving=2,
+        # 50 MS/s, 10 / T of the +-200 ns band: at 10 MS/s V006's 120-140 ns read as 200 ns, on the band's edge
+        # (unchecked, 2026-11-21)
+        replies = sweep(dut, ws_run, oep_host, [a, b], f"timer sync {A} {B}", conditions, rate=50_000_000, moving=2,
                         quiet=[])
         m = next(m for m in replies if m.group(0).startswith(b"PWMSYNC"))
         assert m.group(1) == b"1", "begin() or startWith() refused"

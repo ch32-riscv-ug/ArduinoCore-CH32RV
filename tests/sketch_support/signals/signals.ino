@@ -245,10 +245,10 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         /* itr <slave timer> <master timer> */
         say("ITR", 1, ch32rv_timer_trigger_from((uint8_t)pin, (uint8_t)a2));
     } else if (!strcmp(argv[0], "pwmsync") && argc == 4) {
-        /* pwmsync <a> <b> <hz>: 50 % on each, b's timer started with a's */
-        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10) && pwmTimer.write(pin, 512) &&
-                        pwmTimer2.begin((int)a2, (uint32_t)a3, 10) && pwmTimer2.write((int)a2, 512) &&
-                        pwmTimer2.startWith(pwmTimer);
+        /* pwmsync <a> <b> <hz>: 50 % on each, b's timer started with a's. startWith() before the duties: a's
+         * counter restarts there, and a PWM already high would be cut short wherever it was (X035, 2026-11-21) */
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10) && pwmTimer2.begin((int)a2, (uint32_t)a3, 10) &&
+                        pwmTimer2.startWith(pwmTimer) && pwmTimer.write(pin, 512) && pwmTimer2.write((int)a2, 512);
         say("PWMSYNC", 3, ok, pwmTimer.timer(), pwmTimer2.timer());
     } else if (!strcmp(argv[0], "pwmtrig") && argc == 4) {
         /* pwmtrig <out> <trigger> <hz>: 50 % on out, started by a rising edge on trigger */

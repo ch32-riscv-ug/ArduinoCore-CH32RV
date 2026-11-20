@@ -84,12 +84,22 @@ bool CH32RVPwmTimer::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_
     if (_advanced) {
         CH32RV_TIM_BDTR(_base) = (uint16_t)(BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
     }
-    connect(pad);
+    /* The pad last: a stopped timer's output keeps what its last clock left
+     * (an earlier user's PWM high), and only a running counter brings the
+     * reference to the new compare. UG loads the compare 0, the counter
+     * moves once, and then the pad is the timer's - connected first, V006
+     * held PC0 high the ~11 us to the start (center-aligned after an
+     * edge-aligned run, signals::test_pwm_timer, 2026-11-21). */
+    connect(pad, false);
+    CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
     ch32rv_timer_start(&_lease);
+    for (uint32_t spin = 0; spin < 100000u && (_wide ? CH32RV_TIM_CNT32(_base) : CH32RV_TIM_CNT(_base)) == 0; spin++) {
+    }
+    ch32rv_timer_pad_connect(&pad, true);
     return true;
 }
 
-bool CH32RVPwmTimer::connect(const CH32RVTimerPad &pad)
+bool CH32RVPwmTimer::connect(const CH32RVTimerPad &pad, bool pin)
 {
     if (_count >= sizeof _pads / sizeof _pads[0]) {
         return false;
@@ -103,7 +113,9 @@ bool CH32RVPwmTimer::connect(const CH32RVTimerPad &pad)
         setCompare(_base, pad.channel, 0, _wide);
     }
     ccerBit(_base, pad.channel, pad.role == CH32RV_TIMER_PAD_CHN ? 2u : 0u, true);
-    ch32rv_timer_pad_connect(&pad, true);
+    if (pin) {
+        ch32rv_timer_pad_connect(&pad, true);
+    }
     _pads[_count++] = pad;
     return true;
 }
