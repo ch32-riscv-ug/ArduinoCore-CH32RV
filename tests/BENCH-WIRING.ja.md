@@ -28,8 +28,8 @@
 | CH32V003F4P6（v003f4p6） | 0 本: なし | なし |
 | CH32V006K8U6（v006k8u6） | 0 本: なし | なし |
 | CH32V103R8T6（v103r8t6-evt） | 0 本: なし | なし |
-| CH32V203C8T6（v203c8t6） | 3 本: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13` | なし |
-| CH32V205RCT6（v205rct6-pico） | 6 本: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8` | なし |
+| CH32V203C8T6（v203c8t6） | 0 本: なし | なし |
+| CH32V205RCT6（v205rct6-pico） | 0 本: なし | なし |
 | CH32V208WBU6（口なし） | 17 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa3`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pb13`, `<口>.nrst` | なし |
 | CH32V307VCT6（口なし） | 26 本: `<口>@pa0`, `<口>@pa1`, `<口>@pa2`, `<口>@pa4`, `<口>@pa5`, `<口>@pa6`, `<口>@pa7`, `<口>@pa8`, `<口>.rx@pa9`, `<口>.tx@pa10`, `<口>.swdio@pa13`, `<口>.swclk@pa14`, `<口>@pa15`, `<口>@pb6`, `<口>@pb7`, `<口>@pc0`, `<口>@pc1`, `<口>@pc4`, `<口>@pd1`, `<口>@pd3`, `<口>@pd5`, `<口>@pe2`, `<口>@pe3`, `<口>@pe4`, `<口>@pe5`, `<口>.nrst` | なし |
 | CH32V407WEU6（v407weu6-yd-p4） | 4 本: `v407weu6-yd-p4@pa7`, `v407weu6-yd-p4@pb6`, `v407weu6-yd-p4@pb7`, `v407weu6-yd-p4.nrst` | なし |
@@ -145,10 +145,10 @@
 ## CH32V203C8T6（v203c8t6）
 
 - 口: `oep://e8f60ae84e28/v203c8t6`
-- いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1, PB6, PB7
+- いまの線: PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA15, PB0, PB1, PB6, PB7, PB13
 - コンソール（rx / tx）: PA9, PA10
 - 触らない端子: PA11, PA12, PA13, PA14, PB2, PB6, PB7, PC14, PC15
-- 足す線（3 本、端子順）: `v203c8t6@pa8`, `v203c8t6@pa15`, `v203c8t6@pb13`
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -158,15 +158,15 @@
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |
 | タイマーの CH1 か CH2 | signals（PWM・捕捉・ワンパルスのトリガ・timerPulseIn） | 済 |  |
 | 1 つのタイマー・経路の CH1 と CH2 | signals::test_pwm_timer、test_phase_shift | 済 |  |
-| CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 未 | PA8 |
+| CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 済 |  |
 | CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 該当なし | 候補は触らない端子かコンソールだけ: PA10, PA9 |
-| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 未 | PB13 |
-| remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 未 | PA15 |
+| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 済 |  |
+| remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 済 |  |
 | ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
 | コンソールの USART の CTS か RTS | uart::test_uart_flow | 該当なし | 候補は触らない端子かコンソールだけ: PA11, PA12 |
-| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 未 | PA8 |
+| コンソールの USART の CK（同じ経路） | uart-sync::test_uart_synchronous（UsartSPI） | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
@@ -175,10 +175,10 @@
 ## CH32V205RCT6（v205rct6-pico）
 
 - 口: `oep://30eda0e31108/v205rct6-pico`
-- いまの線: PA2, PA3, PA6, PA7, PA8, PA9, PA10, PA14, PA15, PB2, PB3, PB4, PB5, PB8, PB9, PB10, PB11, PC0
+- いまの線: PA2, PA3, PA6, PA7, PA8, PA9, PA10, PA14, PA15, PB2, PB3, PB4, PB5, PB8, PB9, PB10, PB11, PC0, PC3, PC4, PC5, PC6, PC7, PC8
 - コンソール（rx / tx）: PB6, PB7
 - 触らない端子: PA0, PA1, PA11, PA12, PA13, PA14, PB6, PB7, PC14, PC15
-- 足す線（6 本、端子順）: `v205rct6-pico@pc3`, `v205rct6-pico@pc4`, `v205rct6-pico@pc5`, `v205rct6-pico@pc6`, `v205rct6-pico@pc7`, `v205rct6-pico@pc8`
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -189,8 +189,8 @@
 | タイマーの CH1 か CH2 | signals（PWM・捕捉・ワンパルスのトリガ・timerPulseIn） | 済 |  |
 | 1 つのタイマー・経路の CH1 と CH2 | signals::test_pwm_timer、test_phase_shift | 済 |  |
 | CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 該当なし | この型番に条件を満たす端子が無い |
-| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 未 | PC6, PC3, PC7, PC4, PC8, PC5 |
-| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 未 | PC3 |
+| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 済 |  |
+| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 済 |  |
 | remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 済 |  |
 | ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
