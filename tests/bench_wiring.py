@@ -37,7 +37,7 @@ BENCH = [
     ("CH32V407WEU6", "30eda0ea068b", "v407weu6-yd-p4"),
     ("CH32L103C8T6", "e8f60ae84dc6", "l103c8t6-pico"),
     ("CH32X035C8T6", "80f1b2d835d6", "x035c8t6-pico"),
-    ("CH32X315MCU6", None, None),
+    ("CH32X315MCU6", "80f1b2d80946", "x315mcu6-pico"),
     ("CH32H417QEU6", "e8f60ae84dc2", "h417qeu6-pico"),
 ]
 UNITS = sorted({entry[1] for entry in BENCH if entry[1]})
