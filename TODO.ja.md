@@ -91,10 +91,12 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   1523〜1587（PA4 は 1190）、High は 4095。selfapi の millivolts（2069 mV at 1、0 at 0）・opamp も同じ原因に見える。2 回とも
   再現。OEP の下に移した 11-18 以降、L103 で ADC の試験が通った記録は無い。ADC の CTLR1 / CTLR2・ADCPRE・校正の値を実機で読む。
 - [ ] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
-- [ ] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
+- [x] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
+  → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
 - [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
   付けたときと同じ形（プローブの線の雑音か）。
-- [ ] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）と software-serial: PB1 を外した版で流し直して見る。
+- [ ] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
+  「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
 - [ ] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
   から 2 回とも。17:55 には列挙できていた）。プローブの線は PD3 / PD4 に無い。
 - [ ] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
@@ -102,6 +104,22 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   端子）に PWM を数秒出した（2026-11-21）。基板の確認待ち。正しい記録で流し直すかは確認の後に決める。
 - [ ] **1 台も走らない case**: pd（pd の記録の台が無い。機材が要る）。usb-peer 系は V103・V203C8T6・V307 に USB の線が無い。
   usb-peer-media は RP2040 の相手では走らず V407 だけ。
+
+H417 の 2 台（2026-11-21、646c1824、h417qeu6-pico と nanoH417）: PASS 51・FAIL 7・SKIP 1。wire（既知の潰れたクロック）、
+analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementary（break の resume()、上の既知）、usb-peer-firmware
+（UF2 が 141 ブロック中 0、下の既知の項目の 4 回目）は既知のまま。新しく見えたもの:
+
+- [x] **periph でプローブ e8f60ae84dc2 が再起動した**（01:28、test_adc_stream）: [oep] の調べで task-wdt。0.0.59+32bbd37 の
+  PWM が、止めた時刻を 32 ビットの micros() で比べており、止めて 36 分以上たって使い直すと最大 36 分空回りする。[oep] が
+  64 ビットに直した版（0.0.59+cca98b1）を 11 台に焼いた（2026-11-21）。そのあと periph は通った。
+- [ ] **nanoH417 の sd のカードが応答しなくなった**: 全体の実行では SDIO の 6 件が通り、最後の test_sd_spi（SoftSPI）で
+  「カードが応答しない」。その後は SDIO も 400 kHz・1 ビットのカードの初期化から通らない（内蔵 LinkE の口を 3 秒・10 秒切って
+  も同じ。VIO18 は PWR_CTLR=0x0E00 で 3.3 V）。11-17 は同じ順で全部通った。カードの抜き差しをユーザーに頼む。
+- [ ] **H417 の usb-ss-iso**: test_usb_ss_iso_out[5] が libusb_submit_transfer -1、そのあと CH32RV.restart() で DUT が USB から
+  消えて戻らない（カーネルにも再接続が無い）。11-20 は restart 10 回とも SS で戻った。→ 2026-11-21 の流し直しでは restart・
+  unplug とも通り、in[4]・out[5] の submit -1 だけが残った（下の「USBSS の等時 Mult>0」と同じ形）。restart で戻らないのは 1 回だけ。
+- [ ] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
+  隣の PA6（break）の線か、止めた相の出力か。
 
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの
 
