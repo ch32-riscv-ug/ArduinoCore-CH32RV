@@ -26,7 +26,7 @@ OUT = REPO / "tests/BENCH-WIRING.ja.md"
 
 # (probe unit, port) of each bench DUT; None: on a WCH-Link only (no OEP port yet).
 BENCH = [
-    ("CH32V003F4U6", "30eda0ea068b", "v003f4u6-uia", place.UIAPDUINO_BOARD),
+    ("CH32V003F4U6", "0070070d9394", "v003f4u6-uia", place.UIAPDUINO_BOARD),
     ("CH32V003F4P6", "30eda0e34a0e", "v003f4p6"),
     ("CH32V006K8U6", "30eda0e343c6", "v006k8u6"),
     ("CH32V103R8T6", "80f1b2d80a34", "v103r8t6-evt"),
@@ -41,6 +41,8 @@ BENCH = [
     ("CH32H417QEU6", "e8f60ae84dc2", "h417qeu6-pico"),
 ]
 UNITS = sorted({entry[1] for entry in BENCH if entry[1]})
+# A probe reached only over its UART (an ESP32 without USB OTG behind a CH340): the route to open it by.
+VIA = {"0070070d9394": "tty:/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394"}
 # A product board's variant, for its reserved pads (the "Board-level reserved functions" its pins_arduino.h names).
 BOARD_VARIANTS = {place.UIAPDUINO_BOARD: "UIAPduino_Pro_Micro_CH32V003_V14"}
 
@@ -60,7 +62,8 @@ def read_labels():
     out = {}
     for unit in UNITS:
         try:
-            host = link.open_host(f"oep://{unit}", keep_session=False)
+            route = f"?via={VIA[unit]}" if unit in VIA else ""
+            host = link.open_host(f"oep://{unit}{route}", keep_session=False)
             try:
                 out[unit] = settings.labels(host)
             finally:
