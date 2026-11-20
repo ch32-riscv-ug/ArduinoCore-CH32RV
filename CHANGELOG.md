@@ -26,5 +26,7 @@ workflow がそれを版の節に移し、その節を GitHub の Release の本
 - (JA) CH32RVDma（メモリ間の写しと塗りつぶし。待つ形と、裏で動かしてコールバック）、`ch32rv_irq_attach()` / `ch32rv_irq_detach()`（割り込みのハンドラーを実行時に付ける）、H41x の両方のコアからのヒープ、H41x の Watchdog メニュー、PMP のある石での Stack Check のあふれの即時の検出。
 - (EN) CH32RVComplementaryPwm keeps both outputs low from `begin()` to the first `write()`, which starts them on its duty; `hsemCount()` is 30 (channel 30 is the heap's lock).
 - (JA) CH32RVComplementaryPwm は `begin()` から最初の `write()` まで両方 Low で、最初の `write()` がその duty で出し始める。`hsemCount()` は 30（チャネル 30 はヒープのロック）。
+- (EN) `CH32RV_FLASH_SIZE` and `CH32RV_RAM_SIZE`: the flash and RAM the chosen part leaves a sketch, in bytes (ANY: the series' smallest part; V30x / V4x7: as the RAM split menu says), for sizing buffers per part. They replace `CH32RV_UPLOAD_MAXIMUM_SIZE`.
+- (JA) `CH32RV_FLASH_SIZE` と `CH32RV_RAM_SIZE`: 選んだ品でスケッチが使える flash と RAM のバイト数（ANY はその系列でいちばん小さい品、V30x / V4x7 は RAM の分け方のメニューのとおり）。品ごとにバッファの大きさを決めるのに使う。`CH32RV_UPLOAD_MAXIMUM_SIZE` はこれに置き換えた。
 - (EN) Fixes: V003's ADC calibration (about 100 counts low), the USB host's resume timing, the RTC alarm after a stop on H417, H41x's 480K flash erase, SPI's NSS before the first transaction, a CDC / vendor receive ring smaller than a high-speed or SuperSpeed packet (it never received), quoted paths where a library name has a space, and more.
 - (JA) 修正: V003 の ADC の校正（約 100 カウント低かった）、USB ホストの resume のタイミング、H417 の停止明けの RTC のアラーム、H41x の 480K の flash の消去、最初の転送の前の SPI の NSS、高速・SuperSpeed の 1 パケットより小さい CDC / ベンダーの受信の輪（何も受けなかった）、ほか。

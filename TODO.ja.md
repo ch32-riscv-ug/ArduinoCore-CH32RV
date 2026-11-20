@@ -21,7 +21,7 @@
   （RTC Clock メニュー、7b313e9a）。CH32RVUsbHostMscFS（0548a945、usb-peer-host-fs）。eth-libs（PubSubClient など、V407 / V208）。
 - [ ] Adafruit NeoPixel は `ARDUINO_ARCH_CH32RV` の送信コードが無く `#error Architecture not supported`。動かすには Adafruit への
   寄稿（外に出す作業なのでユーザーに聞く）。
-- [x] FS の FS_SMALL_FLASH は、小さい系列に加えて、選んだ品の書き込みの上限（`CH32RV_UPLOAD_MAXIMUM_SIZE`）が 64 KB 以下でも
+- [x] FS の FS_SMALL_FLASH は、小さい系列に加えて、選んだ品の書き込みの上限（`CH32RV_FLASH_SIZE`）が 64 KB 以下でも
   小さい設定になる（L103、V103、V203C8 など。libraries/FS/src/FSConfig.h。2026-11-20 に済んでいたのを確かめた）。
 - [x] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。
   → 2026-11-20: selfsys の rtc が LSE か LSI かを返すようにした。常駐ベンチの v205rct6-pico と h417qeu6-pico は LSE が

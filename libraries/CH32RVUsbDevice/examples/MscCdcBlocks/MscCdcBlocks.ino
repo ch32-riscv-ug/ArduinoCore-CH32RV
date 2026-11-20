@@ -13,10 +13,10 @@ CH32RVUsbDevice device;
 CH32RVUsbDeviceCdcSerial console(device, "disk statistics");
 CH32RVUsbDeviceMsc disk(device);
 
-// en: 8 KB; 4 KB on CH32V103 / V203, whose smallest parts' 10 KB of RAM does not hold 8 beside the serial port's
-//     buffers.
-// ja: 8 KB。CH32V103 / V203 は 4 KB（いちばん小さい品の RAM が 10 KB で、シリアルのバッファと並べて 8 KB は入らない）。
-#if defined(CH32RV_SERIES_CH32V103) || defined(CH32RV_SERIES_CH32V203)
+// en: 8 KB; 4 KB on a part with less than 16 KB of RAM (CH32RV_RAM_SIZE): 10 KB does not hold 8 beside the serial
+//     port's buffers.
+// ja: 8 KB。RAM が 16 KB 未満の品（CH32RV_RAM_SIZE）は 4 KB（10 KB では、シリアルのバッファと並べて 8 KB は入らない）。
+#if CH32RV_RAM_SIZE < 16 * 1024
 static constexpr uint32_t BLOCK_BYTES = 512, BLOCK_COUNT = 8;
 #else
 static constexpr uint32_t BLOCK_BYTES = 512, BLOCK_COUNT = 16;
