@@ -437,6 +437,10 @@ bool CH32RVSixStep::begin(int uHigh, int uLow, int vHigh, int vLow, int wHigh, i
         CH32RV_TIM_CCER(_base) = 0;
         TIM_CTLR2(_base) = (uint16_t)((TIM_CTLR2(_base) & ~0x3F00u) | CTLR2_CCPC);   /* idle low, preloaded */
         CH32RV_TIM_BDTR(_base) = (uint16_t)(_dtg | BDTR_OSSI | BDTR_OSSR | CH32RV_TIM_BDTR_MOE);
+        for (uint8_t k = 0; k < 3; k++) {
+            channelEnable(_base, h[k].channel, 0x1);                /* off until the first step: driven low */
+        }
+        CH32RV_TIM_SWEVGR(_base) = SWEVGR_COMG;
         for (uint8_t k = 0; k < 6; k++) {
             ch32rv_timer_pad_connect(&_pads[k], true);
         }
@@ -469,7 +473,11 @@ bool CH32RVSixStep::step(uint8_t n)
     static const uint8_t pwm[6] = {0, 0, 1, 1, 2, 2}, low[6] = {1, 2, 2, 0, 0, 1};
     for (uint8_t k = 0; k < 3; k++) {
         const uint8_t ch = _pads[2 * k].channel;
-        uint8_t mode = OCM_FORCE_INACTIVE, ccer = 0;             /* off: both at their inactive (low) level */
+        /* Off: OCxREF forced inactive with CCxE alone, so OSSR drives CHxN to its
+         * inactive level too. CCxE and CCxNE both clear disable the outputs
+         * whatever OSSR says, and the pads float (V205 2026-11-20: the off
+         * phases' pads showed noise pulses and ended high). */
+        uint8_t mode = OCM_FORCE_INACTIVE, ccer = 0x1;
         if (n < 6u && pwm[n] == k) {
             mode = OCM_PWM1;
             ccer = 0x1;                                          /* CCxE: the high side */

@@ -398,6 +398,20 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   持ち、CNT を動かしても強制 Low にしても止まったままでは変わらない（UG のときの CNT 0 < 比較値で High）。restartCounter() で
   強制 Low にしてカウンタを数カウント走らせ、止めて PWM モード 1 に戻す。V006 で timer_trigger・pwm_timer・phase_shift・six_step、
   X035・V205・H417 でタイマーの 4 件が通る。
+- [ ] V006 の signals の test_pwm_timer（中央揃え）が、コードの配置しだいで落ちる（2026-11-20）。SixStep の止めた相を
+  直した（下の行）だけで、触っていない CH32RVPwmTimer の試験が 3 回とも落ち、戻すと 3 回とも通る。落ち方は、pwmt の直後に
+  PC0 に 10〜15 µs の余分なパルス、約 3 周期の空白、write() の値が頂点で入った半分のパルス（許容は 1 つ）。直前は端揃えの
+  pwmt と pwmtoff。試して効かなかったもの: connect() で比較値 0 をプリロードなしで書く、begin() で restartCounter() を呼んで
+  から開始（どちらも戻した）。次は pwmt の各段（begin・attach・write）の直後に CNT・CCR・CTLR1・CCER をプローブで読み、
+  余分なパルスがどの段で出るかを取り込みのマーカーで区切って見る。同じ試験の test_timer_sync（PC0 / PB1 のずれ 200 ns、
+  許容 ±200 ns の境目で判定保留）は前から。
+- [x] CH32RVSixStep の止めた相が浮いていた: CCxE と CCxNE を両方 0 にすると、OSSR=1 でも出力は無効（端子は浮く）。止めた相は
+  強制非アクティブで CCxE だけ立て、CHxN も OSSR で Low に駆動する。begin() の直後も同じ。V205（PC3〜PC8 の線を足した
+  2026-11-20）で止めた相の端子に雑音のパルスと High のままが出て見つかった。V205 と V006 で six_step が通る。
+- [x] periph の test_serial_routes: 経路の端子が 16 本を超えると 1 回の取り込みに入らない（プローブが unsupported で断る）。
+  端子が 16 本に収まるまとまりごとに取り込む。V205 に PC3〜PC8 を足して 19 本になって見つかった。V205 で通る。
+- [ ] X035 の softspi が 5 回中 2 回、1 ビット化ける（2026-11-20、PA13 の線を足した日）: shiftOut / shiftIn の LSBFIRST が
+  モード 3 と読まれた、SPI のモード 2 LSBFIRST で 1 ビット違い。残り 3 回は通った。線を足す前の頻度と比べる。
 - [ ] H417 の usb-peer-firmware（Pico は FS の口、2026-11-20 に初めて流した）が 3 回とも別の所で落ちる: DFU の 12 ブロック目の
   DNLOAD / GETSTATUS、UF2 の書き込みが 141 ブロック中 0、DFU の st。usb-peer・usb-peer-classes・usb-peer-net・-fs・-input と
   ホストの側の 5 case は通る。フラッシュを自分で書き換えている間（H41x は RAM から走って flash を消す・書く）の FS の制御転送の

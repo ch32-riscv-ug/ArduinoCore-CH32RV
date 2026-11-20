@@ -48,6 +48,9 @@ def ready(dut, case):
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
 
 
+CAPTURE_MAX_CHANNELS = 16   # one OEP capture's channels (oep-probe-arduino docs/guide/capture.ja.md)
+
+
 def test_serial_routes(dut, oep_host, ws_run, record_property):
     from oep_client import core, fixture, host as oh, registry
     from oep_client.fixture import Gpio
@@ -73,6 +76,13 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
     uarts = core.find_all(host, "oep.fixture.uart")
     f_cpu = int(target["f_cpu"])
     pads = sorted({p for pair in pairs for p in pair})
+    # One capture takes at most 16 channels (oep-probe-arduino docs/guide/capture.ja.md): the pairs in groups whose
+    # pads fit, a capture each (V205 with PC3-PC8 labelled has 19 pads on its routes).
+    groups = [{}]
+    for pair, nk in pairs.items():
+        if len({p for q in [*groups[-1], pair] for p in q}) > CAPTURE_MAX_CHANNELS:
+            groups.append({})
+        groups[-1][pair] = nk
     wrong = []
 
     gpio = Gpio(host)
@@ -94,10 +104,17 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
             return fixture.FixtureUartIO(host, fn), fn
         raise AssertionError("no free oep.fixture.uart on the probe for Serial1")
 
-    def steps(wait):
-        idle = {p: 1 for p in pads}
-        with ws_run.section(1, f"Serial1 routes {' '.join(f'{tx}/{rx}' for tx, rx in pairs)}"):
-            for (tx, rx), usarts in pairs.items():
+    def steps_of(group):
+        group_pads = sorted({p for pair in group for p in pair})
+
+        def steps(wait):
+            run_group(group, group_pads, wait)
+        return group_pads, steps
+
+    def run_group(group, group_pads, wait):
+        idle = {p: 1 for p in group_pads}
+        with ws_run.section(1, f"Serial1 routes {' '.join(f'{tx}/{rx}' for tx, rx in group)}"):
+            for (tx, rx), usarts in group.items():
                 payload = bytes([0, 0x55, 0xAA, 0xFF]) + secrets.token_bytes(60)
                 io, used = probe_uart(tx, rx)
                 try:
@@ -131,7 +148,9 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
                     core.plan_release(host, [used])
 
     try:
-        ws_capture.stream(ws_run, oep_host, [lines[p] for p in pads], rate=5_000_000, steps=steps)
+        for group in groups:
+            group_pads, steps = steps_of(group)
+            ws_capture.stream(ws_run, oep_host, [lines[p] for p in group_pads], rate=5_000_000, steps=steps)
     finally:
         for p in pads:
             try:
