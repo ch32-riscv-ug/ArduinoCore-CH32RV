@@ -89,7 +89,14 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
 
 - [ ] **L103 の ADC が 0 V で約 1550 を読む**（l103c8t6-pico）: selfsys の adc_pads で、DUT 自身が出力 Low にした端子が全部
   1523〜1587（PA4 は 1190）、High は 4095。selfapi の millivolts（2069 mV at 1、0 at 0）・opamp も同じ原因に見える。2 回とも
-  再現。OEP の下に移した 11-18 以降、L103 で ADC の試験が通った記録は無い。ADC の CTLR1 / CTLR2・ADCPRE・校正の値を実機で読む。
+  再現。ADC の CTLR1 / CTLR2・ADCPRE・校正の値を実機で読む。
+  → 2026-11-21 の実機の調べ（scratchpad のスケッチ）: コードの退行ではない。同じ EVT の板で adc_pads が通った 11-19 の版
+  （ad1e2cd）のコアでも、今は同じ形で落ちる。プローブは端子を駆動していない（浮かせて 0、プルアップで 1）。TSVREFE・BUFEN・
+  CFG の FIFO_EN（EVT の例は入れる）・CPU 48 MHz・ADCPRE /2〜/8 のどれでも直らない。読みは「直前の変換の値＋今の入力」のように
+  見える（Low の読み = 直前の ch17 の値、ch18 の VDDA/2 ≒ ch17 の値＋2048、High は 4095 で頭打ち）。ADC を切り入れして校正し直すと、
+  0・11・2048・4095 に張り付く。CFG（0x50）は 0。端子をアナログのモードにして analogRead() すれば Low は 0 と読めるが、
+  analogReadVref() は 237〜3041 とばらつく。11-19 から 11-20 のあいだに、板かチップの状態が変わったとみる。次は L103 の板の
+  電源の切り入れ（給電はプローブからではない）で戻るかを確かめ、戻らなければ ADC が傷んだとして別の L103 で確かめる。
 - [ ] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
 - [x] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
   → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
