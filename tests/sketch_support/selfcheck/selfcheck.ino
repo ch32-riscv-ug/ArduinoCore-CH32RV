@@ -45,6 +45,10 @@
 #include "internal/ch32rv_rtc.h"
 #include "internal/ch32rv_irq.h"
 
+/* hsical, rtccal and rtcout are built where there is an RTC: on V003 they
+ * took the build past its 16 KB (2026-11-21), and rtcsrc's NONE skips their
+ * tests there before they are asked. */
+#if defined(CH32RV_HAS_RTC)
 /* HSI's error in ppm against the RTC's LSE, as CH32RV.calibrateHsi() measures it. */
 static int32_t hsi_error(uint32_t ms)
 {
@@ -61,6 +65,7 @@ static int32_t hsi_error(uint32_t ms)
     const int64_t ticks = (int64_t)(l1 - l0);
     return ticks > 0 ? (int32_t)(((int64_t)(t1 - t0) * 32768 - ticks * 1000000) / ticks) : 0;
 }
+#endif
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -487,6 +492,7 @@ static void reply(char *command)
         const int asked = 0;
 #endif
         SerialDMSeq.printf("RTCSRC %d %d\r\n", asked, (int)CH32RV.rtcClock());
+#if defined(CH32RV_HAS_RTC)
     } else if (!strcmp(argv[0], "hsical")) {
         /* From three steps off, calibrateHsi(); then the error of the trim it
          * chose and of its two neighbours, measured the same way. */
@@ -552,6 +558,7 @@ static void reply(char *command)
 #endif
         CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_NONE);
         SerialDMSeq.printf("RTCOUT %d %d\r\n", ok ? 1 : 0, edges);
+#endif
     } else if (!strcmp(argv[0], "ports")) {
         SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {

@@ -419,6 +419,7 @@ def test_adc_injected(dut, oep_host, record_property):
     from oep_client.fixture import Gpio
     case = settings(__file__)
     ready(dut, case)
+    built(dut, "inj")
     found = adc_pads(dut, oep_host, case, 1)
     if not found:
         pytest.skip("no labelled <port>@<pad> line is an ADC channel")
@@ -468,8 +469,8 @@ def adc_pads(dut, oep_host, case, n, skip_pads=()):
 def built(dut, command):
     """Skip unless this periph build holds `command` (the DUT says, has: a build for a small flash leaves some out,
     periph.ino)."""
-    m = ask(dut, "has", rb"HAS (\d) (\d) (\d)")
-    held = dict(zip(("atimer", "aext", "acont"), (g == b"1" for g in m.groups())))
+    m = ask(dut, "has", rb"HAS (\d) (\d) (\d) (\d)")
+    held = dict(zip(("atimer", "aext", "acont", "inj"), (g == b"1" for g in m.groups())))
     if not held[command]:
         pytest.skip(f"{command} is not in this periph build (the DUT says so: has; periph.ino leaves it out of a "
                     "16 KB flash)")

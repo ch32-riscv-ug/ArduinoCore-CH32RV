@@ -29,9 +29,9 @@
  *                             <pin1 min> <pin1 max> <full scale> <pin1 rounds over
  *                             3/4> <pin1 rounds under 1/4> (rounds counted from the
  *                             first read; ASTREAM 0 when begin() refused)
- *   has                       HAS <atimer> <aext> <acont>: 1 for each of those commands this
- *                             build holds, 0 for one it leaves out (V003's 16 KB: atimer
- *                             and acont; a part without ADC: all three)
+ *   has                       HAS <atimer> <aext> <acont> <inj>: 1 for each of those commands
+ *                             this build holds, 0 for one it leaves out (V003's 16 KB: atimer,
+ *                             acont and inj; a part without ADC: all four)
  *   atimer <rate> <halves> <pin>
  *                             CH32RVAdcStream.beginTimer() on the pin at <rate>, read as
  *                             astream does (one pin): ATIMER <ok> <rate got> <timer>
@@ -80,6 +80,11 @@
 #define PERIPH_ATIMER 1
 #define PERIPH_ACONT 1
 #endif
+#endif
+/* CH32RVAdcInjected (inj): about 3.2 KB on V003, which passed its 16 KB by
+ * 2.6 KB with it (2026-11-21); V203 and X035 run it. */
+#if defined(NUM_ANALOG_INPUTS) && !defined(CH32RV_VARIANT_CH32V003)
+#define PERIPH_INJ 1
 #endif
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 #define PERIPH_HSADC 1
@@ -428,7 +433,12 @@ static void reply(char *command)
 #else
         const int acont_in = 0;
 #endif
-        SerialDMSeq.printf("HAS %d %d %d\r\n", atimer_in, aext_in, acont_in);
+#if PERIPH_INJ
+        const int inj_in = 1;
+#else
+        const int inj_in = 0;
+#endif
+        SerialDMSeq.printf("HAS %d %d %d %d\r\n", atimer_in, aext_in, acont_in, inj_in);
     } else if (!strcmp(argv[0], "atimer") && argc == 4) {
 #if PERIPH_ATIMER
         atimer((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (pin_size_t)atoi(argv[3]));
@@ -492,7 +502,7 @@ static void reply(char *command)
         SerialDMSeq.printf("AWD 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "inj") && argc == 2) {
-#if defined(NUM_ANALOG_INPUTS)
+#if PERIPH_INJ
         /* the injected group: one round by software, then rounds at 1 kHz from a timer for 500 ms */
         static CH32RVAdcInjected inj;
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
