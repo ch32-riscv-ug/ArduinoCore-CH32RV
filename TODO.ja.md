@@ -415,6 +415,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   持ち、CNT を動かしても強制 Low にしても止まったままでは変わらない（UG のときの CNT 0 < 比較値で High）。restartCounter() で
   強制 Low にしてカウンタを数カウント走らせ、止めて PWM モード 1 に戻す。V006 で timer_trigger・pwm_timer・phase_shift・six_step、
   X035・V205・H417 でタイマーの 4 件が通る。
+- [ ] V208 はベンチから外し、今後も置かない（2026-11-20 ユーザー）。BLE は対応しない。ほかの周辺は V20x の V203C8T6（OEP）と
+  V203RBT6（Ethernet、4-3）で見る。V208 だけのもので、実機で確かめられずビルドだけになるもの: (1) Clock Source の HSE
+  （32 MHz の水晶から作る PLL、boards.txt の CH32V208.build.clock_hse_defines）、(2) variants/CH32V208 の型番ごと
+  （CBU6・GBU6・RBT6・WBU6）の既定の端子。
 - [ ] V006 の signals の test_pwm_timer（中央揃え）が、コードの配置しだいで落ちる（2026-11-20）。SixStep の止めた相を
   直した（下の行）だけで、触っていない CH32RVPwmTimer の試験が 3 回とも落ち、戻すと 3 回とも通る。落ち方は、pwmt の直後に
   PC0 に 10〜15 µs の余分なパルス、約 3 周期の空白、write() の値が頂点で入った半分のパルス（許容は 1 つ）。直前は端揃えの
