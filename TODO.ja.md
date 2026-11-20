@@ -415,6 +415,19 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   持ち、CNT を動かしても強制 Low にしても止まったままでは変わらない（UG のときの CNT 0 < 比較値で High）。restartCounter() で
   強制 Low にしてカウンタを数カウント走らせ、止めて PWM モード 1 に戻す。V006 で timer_trigger・pwm_timer・phase_shift・six_step、
   X035・V205・H417 でタイマーの 4 件が通る。
+- [ ] H417（h417qeu6-pico）に 9 本（PA4・PA5・PB0・PB1・PD15・PE9・PE11・PE13・PF8）を足して流した（2026-11-20）。
+  - analog の test_dac・test_dac_both・test_adc_dual・test_adc_injected_dual が、値が揺れて落ちる（2〜7 %、2 回とも）。
+    PA4 / PA5（DAC1 / DAC2）にプローブの線がついてから。DAC の出力バッファ（BOFF=0、有効）が線の容量を駆動して
+    発振している見込み。確かめ方: 線の側のプローブの端子の設定（入力・プルなし）を確かめ、DAC を 1 つの値に止めて
+    取り込みで波形を見る。直らない配線なら、DAC の自己試験は線の無い DAC の端子で、とする。
+  - signals の test_complementary（break）: PA6 を TIM1_BKIN にして Low → High に戻した後、resume() で MOE が立たない
+    （RESUME 0。BRKSTATE は latched 1・端子 1）。CH3N の PB1 に線がついて初めて走った組（TIM1 CH3 PE13 / CH3N PB1 /
+    break PA6、route 1）。H417 の TIM1 には AUX の BK_SEL（BKIN1 / BKIN2 / 両方、DFSDM）があり、BKIN2 は PA5 / PE6 /
+    PA12。次は失敗した状態で TIM1 の AUX・BDTR・INTFR を OEP で読み、BKIN が何を見ているかを決める。
+  - periph の test_hsadc（PF8）: プローブの PWM の始まりの過渡（約 10 周期が別の duty）で落ちていた。PWM を区間の前に
+    始めて通る（add84fc9）。プローブの側は [oep] に伝えた。
+  - wire の 7 件は前からの「潰れたクロック」（外付けのプルアップの台で測り直す）。software-serial と spi は 1 回目だけ
+    落ちた（spi は裏のフルテストと重なって取り込みが欠けた回も）。
 - [ ] V208 はベンチから外し、今後も置かない（2026-11-20 ユーザー）。BLE は対応しない。ほかの周辺は V20x の V203C8T6（OEP）と
   V203RBT6（Ethernet、4-3）で見る。V208 だけのもので、実機で確かめられずビルドだけになるもの: (1) Clock Source の HSE
   （32 MHz の水晶から作る PLL、boards.txt の CH32V208.build.clock_hse_defines）、(2) variants/CH32V208 の型番ごと
