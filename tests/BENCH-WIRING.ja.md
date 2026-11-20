@@ -36,7 +36,7 @@
 | CH32L103C8T6（l103c8t6-pico） | 0 本: なし | なし |
 | CH32X035C8T6（x035c8t6-pico） | 0 本: なし | なし |
 | CH32X315MCU6（x315mcu6-pico） | 0 本: なし | なし |
-| CH32H417QEU6（h417qeu6-pico） | 9 本: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8` | なし |
+| CH32H417QEU6（h417qeu6-pico） | 0 本: なし | なし |
 
 ## CH32V003F4U6（v003f4u6-uia）
 
@@ -389,10 +389,10 @@
 ## CH32H417QEU6（h417qeu6-pico）
 
 - 口: `oep://e8f60ae84dc2/h417qeu6-pico`
-- いまの線: PA0, PA1, PA6, PA7, PA13, PA14, PB8, PB10, PB11, PC0, PD4, PD5, PD6, PD7, PF3, PF5
+- いまの線: PA0, PA1, PA4, PA5, PA6, PA7, PA13, PA14, PB0, PB1, PB8, PB10, PB11, PC0, PD4, PD5, PD6, PD7, PD15, PE9, PE11, PE13, PF3, PF5, PF8
 - コンソール（rx / tx）: PB14, PB15
 - 触らない端子: PA11, PA12, PB3, PB4, PB8, PB9, PC14, PC15
-- 足す線（9 本、端子順）: `h417qeu6-pico@pa4`, `h417qeu6-pico@pa5`, `h417qeu6-pico@pb0`, `h417qeu6-pico@pb1`, `h417qeu6-pico@pd15`, `h417qeu6-pico@pe9`, `h417qeu6-pico@pe11`, `h417qeu6-pico@pe13`, `h417qeu6-pico@pf8`
+- 足す線（0 本、端子順）: なし
 
 | 条件 | 使う試験 | いま | 足す端子 |
 |---|---|---|---|
@@ -402,21 +402,21 @@
 | GPIO の線 2 本 | gpio、periph（sleep / watchdog）、SoftwareSerial | 済 |  |
 | タイマーの CH1 か CH2 | signals（PWM・捕捉・ワンパルスのトリガ・timerPulseIn） | 済 |  |
 | 1 つのタイマー・経路の CH1 と CH2 | signals::test_pwm_timer、test_phase_shift | 済 |  |
-| CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 未 | PE9 |
-| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 未 | PE9, PE11, PB0, PE13, PB1 |
-| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 未 | PA5 |
+| CHx・CHxN・BKIN（同じ経路） | signals::test_complementary（BKIN でブレーキも） | 済 |  |
+| CH1〜CH3 と CH1N〜CH3N（同じ経路） | signals::test_six_step | 済 |  |
+| CHxN だけの端子（analogWrite() が CHxN を取る） | signals::test_pwm_complementary | 済 |  |
 | remap 先にだけあるタイマーの端子 | signals::test_pwm_route | 済 |  |
 | ADC のチャネル | periph（analogRead・ストリーム・ウォッチドッグ）、adc | 済 |  |
 | ADC の外部トリガの端子と別のチャネル | adc（beginExternal） | 該当なし | この型番に条件を満たす端子が無い |
-| DAC の出力 | periph（analogWrite の DAC） | 未 | PA4 |
+| DAC の出力 | periph（analogWrite の DAC） | 済 |  |
 | 2 本目の USART（TX と RX） | uart（Serial2 など）、IrDA、RS485 の DE と合わせて | 済 |  |
-| コンソールの USART の CTS か RTS | uart::test_uart_flow | 未 | PD15 |
+| コンソールの USART の CTS か RTS | uart::test_uart_flow | 済 |  |
 | PIOC の IO0 | pioc::test_pioc_pulses | 済 |  |
 | Wire の既定の SDA・SCL | wire | 済 |  |
 | SoftWire の 2 本（Wire の端子以外、EXTI の番号が別） | softwire | 済 |  |
 | SPI の既定の SCK・MISO・MOSI と CS（NSS の端子なら setHwCs も） | spi（transferAsync・setHwCs） | 済 |  |
 | SoftSPI の 4 本（SCK と CS の EXTI の番号が別） | softspi | 済 |  |
-| HSADC の入力（PF8〜PF10、VDDIO） | hsadc | 未 | PF8 |
+| HSADC の入力（PF8〜PF10、VDDIO） | hsadc | 済 |  |
 
 ## M030
 
