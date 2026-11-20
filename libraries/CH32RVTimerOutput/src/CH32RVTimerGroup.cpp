@@ -156,6 +156,23 @@ void CH32RVPwmTimer::restartCounter()
     ch32rv_timer_stop(&_lease);
     CH32RV_TIM_SMCFGR(_base) = 0;
     CH32RV_TIM_SWEVGR(_base) = SWEVGR_UG;
+    /* The outputs low while the counter waits. A stopped timer's outputs keep
+     * what its last clock left there, and the UG above, at 0 below each
+     * compare, can leave them active: V006 held PC0 high while startOn()
+     * waited, and neither forcing the reference inactive nor moving the count
+     * changed the pad until the counter ran (registers read through the
+     * probe, 2026-11-20). So: forced inactive, a few counts run, stopped, PWM
+     * mode 1 again - the pads stay low until the counter starts. */
+    for (uint8_t k = 0; k < _count; k++) {
+        channelMode(_base, _pads[k].channel, (uint8_t)(OCM_FORCE_INACTIVE << 4 | OCPE));
+    }
+    CH32RV_TIM_CTLR1(_base) |= CH32RV_TIM_CTLR1_CEN;
+    for (uint32_t spin = 0; spin < 100000u && (_wide ? CH32RV_TIM_CNT32(_base) : CH32RV_TIM_CNT(_base)) == 0; spin++) {
+    }
+    CH32RV_TIM_CTLR1(_base) &= (uint16_t)~CH32RV_TIM_CTLR1_CEN;
+    for (uint8_t k = 0; k < _count; k++) {
+        channelMode(_base, _pads[k].channel, (uint8_t)(OCM_PWM1 << 4 | OCPE));
+    }
     if (_wide) {
         CH32RV_TIM_CNT32(_base) = 0;
     } else {
