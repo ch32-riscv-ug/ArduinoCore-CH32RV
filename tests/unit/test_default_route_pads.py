@@ -118,3 +118,20 @@ def test_every_default_pad_is_bonded_and_not_a_debug_or_strap_pad(clang_cmd, pin
                 wrong.append(f"{part} {name} {pad}: its own debug / strap pad")
     assert checked > 500
     assert not wrong, "\n".join(wrong)
+
+
+def test_every_part_compiles_the_pin_names(clang_cmd, tmp_path):
+    """Every part's pins_arduino.h compiles (TX / RX, SDA / SCL, SCK ... are constants, so a name standing on a
+    default route the part does not have fails here, not only in a sketch: M030G8R7 has no I2C1 default)."""
+    source = tmp_path / "names.c"
+    source.write_text("#include <stdint.h>\n#include \"pins_arduino.h\"\n")
+    wrong = []
+    for board, series, variant, part in parts():
+        result = subprocess.run([*clang_cmd, "-fsyntax-only", "-Werror=implicit-function-declaration",
+                                 f"-DCH32RV_SERIES_{series}", f"-DCH32RV_PART_{part}",
+                                 "-I", str(REPO / "variants" / variant), "-I", str(REPO / "cores" / "arduino"),
+                                 str(source)], capture_output=True, text=True)
+        if result.returncode:
+            wrong.append(f"{board} {part}: " + " / ".join(
+                line for line in result.stderr.splitlines() if "error:" in line)[:300])
+    assert not wrong, "\n".join(wrong)

@@ -375,7 +375,7 @@ static const uint8_t A9 = PIN_A9;
     { 1, { PA6, CH32RV_ROUTE_NO_PIN, CH32RV_ROUTE_NO_PIN }, 0x00000000u, 0x00010000u }, \
 }
 /* Arduino's standard names for the first USART's default pads. */
-#ifndef PIN_SERIAL_TX
+#if !defined(PIN_SERIAL_TX) && defined(CH32RV_SERIAL1_TX)
 #define PIN_SERIAL_TX CH32RV_SERIAL1_TX
 #define PIN_SERIAL_RX CH32RV_SERIAL1_RX
 #endif
@@ -409,12 +409,14 @@ static const uint8_t RX = PIN_SERIAL_RX;
 /* Arduino's standard names for the first bus (Wire). These are
  * the pads of I2C1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
-#ifndef PIN_WIRE_SCL
+#if !defined(PIN_WIRE_SCL) && defined(CH32RV_I2C1_SCL)
 #define PIN_WIRE_SCL CH32RV_I2C1_SCL
 #define PIN_WIRE_SDA CH32RV_I2C1_SDA
 #endif
+#if defined(PIN_WIRE_SCL)
 static const uint8_t SCL = PIN_WIRE_SCL;
 static const uint8_t SDA = PIN_WIRE_SDA;
+#endif
 
 /* ---- SPI pins (device-data; one route per instance,
  *      chosen for the whole series - see choose_spis).
@@ -447,15 +449,17 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */
-#ifndef PIN_SPI_SCK
+#if !defined(PIN_SPI_SCK) && defined(CH32RV_SPI1_SCK)
 #define PIN_SPI_SCK CH32RV_SPI1_SCK
 #define PIN_SPI_MISO CH32RV_SPI1_MISO
 #define PIN_SPI_MOSI CH32RV_SPI1_MOSI
 #define PIN_SPI_SS PA4
 #endif
+#if defined(PIN_SPI_SCK)
 static const uint8_t SCK = PIN_SPI_SCK;
 static const uint8_t MISO = PIN_SPI_MISO;
 static const uint8_t MOSI = PIN_SPI_MOSI;
+#endif
 #if defined(PIN_SPI_SS)
 static const uint8_t SS = PIN_SPI_SS;
 #endif

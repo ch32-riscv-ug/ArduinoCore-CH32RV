@@ -4905,7 +4905,9 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         # the chip, not a claim about how a board is wired.
         first = min(with_default)
         out.append("/* Arduino's standard names for the first USART's default pads. */")
-        out.append("#ifndef PIN_SERIAL_TX")
+        # A part with no default route (emit_misfit_defaults) gets no PIN_*
+        # and no constant: begin() has to name the pins there.
+        out.append(f"#if !defined(PIN_SERIAL_TX) && defined(CH32RV_SERIAL{first}_TX)")
         out.append(f"#define PIN_SERIAL_TX CH32RV_SERIAL{first}_TX")
         out.append(f"#define PIN_SERIAL_RX CH32RV_SERIAL{first}_RX")
         out.append("#endif")
@@ -4991,12 +4993,14 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" * the pads of I2C%d's default route above - a fact about"
                    % first)
         out.append(" * the chip, NOT a claim about how any board is wired. */")
-        out.append("#ifndef PIN_WIRE_SCL")
+        out.append(f"#if !defined(PIN_WIRE_SCL) && defined(CH32RV_I2C{first}_SCL)")
         out.append(f"#define PIN_WIRE_SCL CH32RV_I2C{first}_SCL")
         out.append(f"#define PIN_WIRE_SDA CH32RV_I2C{first}_SDA")
         out.append("#endif")
+        out.append("#if defined(PIN_WIRE_SCL)")
         out.append("static const uint8_t SCL = PIN_WIRE_SCL;")
         out.append("static const uint8_t SDA = PIN_WIRE_SDA;")
+        out.append("#endif")
         out.append("")
 
     # --- SPI ---
@@ -5097,7 +5101,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(" * the pads of SPI%d's default route above - a fact about"
                    % first)
         out.append(" * the chip, NOT a claim about how any board is wired. */")
-        out.append("#ifndef PIN_SPI_SCK")
+        out.append(f"#if !defined(PIN_SPI_SCK) && defined(CH32RV_SPI{first}_SCK)")
         out.append(f"#define PIN_SPI_SCK CH32RV_SPI{first}_SCK")
         out.append(f"#define PIN_SPI_MISO CH32RV_SPI{first}_MISO")
         out.append(f"#define PIN_SPI_MOSI CH32RV_SPI{first}_MOSI")
@@ -5134,9 +5138,11 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if own:
             out.append("#endif")
         out.append("#endif")
+        out.append("#if defined(PIN_SPI_SCK)")
         out.append("static const uint8_t SCK = PIN_SPI_SCK;")
         out.append("static const uint8_t MISO = PIN_SPI_MISO;")
         out.append("static const uint8_t MOSI = PIN_SPI_MOSI;")
+        out.append("#endif")
         out.append("#if defined(PIN_SPI_SS)")
         out.append("static const uint8_t SS = PIN_SPI_SS;")
         out.append("#endif")
