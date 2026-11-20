@@ -25,7 +25,7 @@ from harness import place, records  # noqa: E402
 
 def open_host(parsed):
     from oep_client import link
-    return link.open_host(f"oep://{parsed['unit']}")
+    return link.open_host(place.probe_url(parsed))
 
 
 def port_of(host, parsed):

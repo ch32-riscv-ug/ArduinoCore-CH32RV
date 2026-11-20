@@ -86,15 +86,23 @@ class PlaceError(ValueError):
     pass
 
 
+def probe_url(parsed):
+    """The probe's own address (no port), with the route the place named."""
+    return f"oep://{parsed['unit']}" + (f"?via={parsed['via']}" if parsed.get("via") else "")
+
+
 def parse(address):
     """{'kind': 'oep', 'unit', 'port', 'target'} or {'kind': 'wchlink', 'serial'}."""
-    m = re.fullmatch(r"oep://([0-9A-Fa-f]{12,32})/([A-Za-z][A-Za-z0-9-]{0,15})(?:/([A-Za-z0-9.-]+))?", address)
+    m = re.fullmatch(r"oep://([0-9A-Fa-f]{12,32})/([A-Za-z][A-Za-z0-9-]{0,15})(?:/([A-Za-z0-9.-]+))?(?:\?via=(\S+))?",
+                     address)
     if m:
-        return dict(kind="oep", unit=m.group(1).lower(), port=m.group(2), target=(m.group(3) or "").lower() or None)
+        # via: a probe reached only by a route the host cannot find on its own (an ESP32 behind a CH340: tty:<path>)
+        return dict(kind="oep", unit=m.group(1).lower(), port=m.group(2), target=(m.group(3) or "").lower() or None,
+                    via=m.group(4))
     m = re.fullmatch(r"wchlink://([0-9A-Za-z]{8,32})", address)
     if m:
         return dict(kind="wchlink", serial=m.group(1).upper())
-    raise PlaceError(f"{address!r}: an address is oep://<unit>/<port>[/<target>] or wchlink://<serial> "
+    raise PlaceError(f"{address!r}: an address is oep://<unit>/<port>[/<target>][?via=<route>] or wchlink://<serial> "
                      "(a probe without a port has no target)")
 
 
@@ -111,6 +119,18 @@ def usb_device(serial, sysfs=SYSFS):
     if len(hits) != 1:
         raise PlaceError(f"USB serial {serial}: {'not connected' if not hits else 'on several devices: ' + str(hits)}")
     return hits[0]
+
+
+def usb_device_of_tty(path, sysfs=SYSFS):
+    """The USB device a serial port is on (a probe reached by via=tty:<path>, behind a USB-UART bridge without a serial
+    of its own): (topology, vid, pid, serial)."""
+    name = pathlib.Path(os.path.realpath(path)).name
+    dev = pathlib.Path(os.path.realpath(pathlib.Path("/sys/class/tty") / name / "device"))
+    for up in (dev, *dev.parents):
+        if (up / "idVendor").exists():
+            serial = (up / "serial").read_text().strip() if (up / "serial").exists() else ""
+            return (up.name, (up / "idVendor").read_text().strip(), (up / "idProduct").read_text().strip(), serial)
+    raise PlaceError(f"{path}: no USB device under it")
 
 
 def tty_of(topology, interface=None, sysfs=SYSFS):
@@ -433,7 +453,7 @@ def probe_facts(address, parsed):
     """What the probe holds: labels, records, its own description (lock-free, no session)."""
     from oep_client import link, settings
     from harness.provenance import oep_snapshot
-    host = link.open_host(f"oep://{parsed['unit']}", keep_session=False)
+    host = link.open_host(probe_url(parsed), keep_session=False)
     try:
         labels = settings.labels(host)
         ports = settings.ports_named(labels)
@@ -454,7 +474,7 @@ def probe_facts(address, parsed):
                 pads[pad.lower()] = channel
     finally:
         host.link.close()
-    snapshot = oep_snapshot(f"oep://{parsed['unit']}")
+    snapshot = oep_snapshot(probe_url(parsed))
     return dict(port=port, labels=labels, lines=lines, pads=pads, port_record=port_rec, record=core_rec,
                 warnings=warnings, snapshot=snapshot)
 
@@ -500,7 +520,8 @@ def resolve(address, tool, env, logs, *, chip=None, record=None):
     parsed = parse(address)
     place = dict(address=address, kind=parsed["kind"], warnings=[])
     if parsed["kind"] == "oep":
-        topology, vid, pid, serial = usb_device(parsed["unit"])
+        via = parsed.get("via") or ""
+        topology, vid, pid, serial = (usb_device_of_tty(via[4:]) if via.startswith("tty:") else usb_device(parsed["unit"]))
         facts = probe_facts(address, parsed)
         place.update(name=facts["port"].lower(), port_name=facts["port"], upload_port=address,
                      probe_unit_id=parsed["unit"], lines=facts["lines"], pads=facts["pads"],

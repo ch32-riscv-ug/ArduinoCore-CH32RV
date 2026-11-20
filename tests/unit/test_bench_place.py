@@ -23,7 +23,11 @@ def sysfs(tmp_path, devices):
 
 
 def test_addresses():
-    assert place.parse("oep://30EDA0E31108/x035") == dict(kind="oep", unit="30eda0e31108", port="x035", target=None)
+    assert place.parse("oep://30EDA0E31108/x035") == dict(kind="oep", unit="30eda0e31108", port="x035", target=None,
+                                                         via=None)
+    tty = place.parse("oep://0070070d9394/v003f4u6-uia?via=tty:/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394")
+    assert tty["port"] == "v003f4u6-uia" and tty["via"] == "tty:/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394"
+    assert place.probe_url(tty) == "oep://0070070d9394?via=tty:/run/board-identify/by-id/esp32-d0wd-v3-0070070d9394"
     assert place.parse("oep://30eda0e31108/x035c8t6-s3/ch32x035-1FF9")["target"] == "ch32x035-1ff9"
     assert place.parse("wchlink://fb868f068059") == dict(kind="wchlink", serial="FB868F068059")
     for bad in ("oep://30eda0e31108", "/dev/ttyACM0", "oep://x/x035", "usb", "wchlink://"):
