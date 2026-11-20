@@ -7,7 +7,8 @@
  *   file            FILE <size> <first line of HOST.TXT>, or FILE NONE
  *   card            CARD <present 0/1> <powered 0/1> <APDUs answered>
  *   ccidsize        CCIDSIZE <messageCapacity()> <dwMaxCCIDMessageLength> <bulk OUT
- *                   wMaxPacketSize>, the last two from the configuration descriptor in use
+ *                   wMaxPacketSize> <USBDevice.maxPacketSize()>, the middle two from the
+ *                   configuration descriptor in use, the last the controller's largest
  *   events          EVENTS <configured> <resets> <observed requests> <ACKs>
  *                   <configuration length> <VID:PID from deviceDescriptor()>
  *                   <HID report length> - onBusEvent(), onAnyControlRequest()
@@ -233,7 +234,9 @@ static void reply(const char *command)
         SerialDMSeq.print(' ');
         SerialDMSeq.print((unsigned long)maxMessage);
         SerialDMSeq.print(' ');
-        SerialDMSeq.println(outPacket);
+        SerialDMSeq.print(outPacket);
+        SerialDMSeq.print(' ');
+        SerialDMSeq.println((unsigned long)USBDevice.maxPacketSize());
     } else if (strcmp(command, "events") == 0) {
         const uint8_t *cfg = USBDevice.configurationDescriptor(0);
         const uint16_t cfgLen = cfg ? (uint16_t)(cfg[2] | cfg[3] << 8) : 0;

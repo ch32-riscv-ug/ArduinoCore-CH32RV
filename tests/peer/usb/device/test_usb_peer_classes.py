@@ -93,13 +93,16 @@ def test_usb_peer_classes(dut, peers):
     dut.write("card\n")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
-    # messageBytes 0 (automatic): 271 at full speed, the bulk OUT packet at high speed (512: the ESP32-P4 on the
-    # DUT's USBHS) and SuperSpeed (1024), told the host as dwMaxCCIDMessageLength - at least that packet (CCID 1.1
-    # section 5.1).
+    # messageBytes 0 (automatic): 271, or the controller's largest bulk packet when that is larger (512 on USBHS,
+    # 1024 on USBSS), decided at begin() whatever speed the host then takes, told the host as
+    # dwMaxCCIDMessageLength - at least the bulk OUT packet (CCID 1.1 section 5.1). The controller's packet is the
+    # DUT's to say (X315's USBHS on the RP2040 runs at full speed: 512, 512, 64).
     dut.write("ccidsize\n")
-    m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+)\r?\n", timeout=5)
-    expected = {1: (271, 271, 64), 2: (512, 512, 512), 3: (1024, 1024, 1024)}[link_speed(__file__)]
-    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == expected
+    m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=5)
+    top = int(m.group(4))
+    packet = {1: 64, 2: 512, 3: 1024}[link_speed(__file__)]
+    expected = (max(271, top), max(271, top), packet)
+    assert (int(m.group(1)), int(m.group(2)), int(m.group(3))) == expected, f"controller packet {top}"
 
     # Taken out after the first block of a two-block READ(10): the rest fails
     # and the second block is never asked of the backend. Its sense (02/3A/00)
