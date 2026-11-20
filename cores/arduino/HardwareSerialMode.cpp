@@ -488,16 +488,25 @@ void CH32RVSerialMode::start(CH32RVHardwareSerial &port)
     m.pending = 0;
 
     /* CTLR3 with the USART off (HDSEL, CTSE and RTSE are set up before UE,
-     * as begin() does); what was enabled comes back with it. */
+     * as begin() does); what was enabled comes back with it. TE and RE go
+     * off too: CH32V103 changes M (setAddress()'s 9-bit word) only in a
+     * write after one that left both clear, and sets RWU only in a write
+     * after the one that set UE (registers read on the bench, 2026-11-21:
+     * M stayed 0 and the receiver never woke on its address). */
     const uint32_t irq = ch32rv_irq_save();
     const uint16_t ctlr1 = CH32RV_USART_CTLR1(base);
-    CH32RV_USART_CTLR1(base) = (uint16_t)(ctlr1 & ~CH32RV_USART_CTLR1_UE);
+    CH32RV_USART_CTLR1(base) = (uint16_t)(ctlr1 & ~(CH32RV_USART_CTLR1_UE | CH32RV_USART_CTLR1_TE |
+                                                    CH32RV_USART_CTLR1_RE));
     CH32RV_USART_CTLR3(base) = ctlr3;
     uint16_t keep = (uint16_t)(ctlr1 & ~(CH32RV_USART_CTLR1_IDLEIE | CH32RV_USART_CTLR1_TCIE));
     if (address_ops) {
         keep = address_ops->format(port, base, keep);
     }
-    CH32RV_USART_CTLR1(base) = (uint16_t)(keep | ie | CH32RV_USART_CTLR1_UE);
+    const uint16_t word = (uint16_t)(keep | ie | CH32RV_USART_CTLR1_UE);
+    CH32RV_USART_CTLR1(base) = (uint16_t)(word & ~CH32RV_USART_CTLR1_RWU);
+    if (word & CH32RV_USART_CTLR1_RWU) {
+        CH32RV_USART_CTLR1(base) = word;
+    }
     /* A port on DMA (HardwareSerialDmaRx.cpp / Tx.cpp): its requests back,
      * no interrupt per received byte, and a transmit run in flight keeps its
      * transmit-complete interrupt. Interrupts still off: nothing saw the

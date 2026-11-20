@@ -100,10 +100,13 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   約 1500 と読み、全チャンネルが「入力＋約 1500」。CAL をかけ直すたびにオフセットが変わり（1558 → 1175 → 1330）、RSTCAL だけでは
   消えない。ハブ 7 の port 3（3-2.3 の 3、プローブごと）を切り入れしても同じ。このチップの ADC の校正が壊れたとみる。
   コアは直さない。別の L103 で、同じ試験が通るかを確かめる（ユーザーにチップの交換を相談）。
-- [ ] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
+- [x] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
   → 2026-11-21 も同じ（3 回目）。idle の区間（RWU だけ、WAKE 0）は通るので、受信と mute() は動き、アドレスで起きない。
   WCH の例（USART_MultiProcessorCommunication）の順の UE を立ててから RWU も試したが同じ（戻した）。次は DUT の CTLR1 /
   CTLR2 / STATR を muted のまま OEP で読み、アドレスの枠（8O1、9 ビット目 1）が来たときに RWU が落ちるかを見る。
+  → 直した（2026-11-21）: setAddress() のあとの CTLR1 が 282E で、9 ビット語の M が立っていなかった（X035 は 382E）。V103 の
+  USART は、TE と RE を両方 0 にした書き込みのあとでしか M を変えない（UE だけ落としても変わらない）。RWU も UE を立てた書き込みの
+  次でないと立たない。モードの start() で TE / RE も落とし、RWU は別に書くように。V103・X035・H417 の uart が全部通る。
 - [x] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
   → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
 - [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
