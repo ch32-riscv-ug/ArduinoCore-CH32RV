@@ -379,10 +379,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   DNLOAD / GETSTATUS、UF2 の書き込みが 141 ブロック中 0、DFU の st。usb-peer・usb-peer-classes・usb-peer-net・-fs・-input と
   ホストの側の 5 case は通る。フラッシュを自分で書き換えている間（H41x は RAM から走って flash を消す・書く）の FS の制御転送の
   答えが遅れる・抜ける見込み。次は DUT の側で、DNLOAD ごとの消去・書き込みの時間と、その間の USB の割り込みの遅れを測る。
-- [ ] X315 の usb-peer / usb-peer-host（6-3、Pico とつないだ、2026-11-20）が、どちらの向きでも列挙しない。DUT の USBHS（PD6 /
-  PD7）は有効でプルアップを出し、UTMI のクロックも入っている（HSE・HSI とも）。Pico がどのコネクタにつながっているか、
-  評価ボードに USB の切り替え（ジャンパー・Type-C の mux）があるかを、ユーザーに確かめてもらう。X315 の第 2 世代 USBHS は
-  これまでビルドだけ。
+- [x] X315 の usb-peer / usb-peer-host（6-3、Pico とつないだ、2026-11-20）が、どちらの向きでも列挙しない。DUT の USBHS（PD6 /
+  PD7）は有効でプルアップを出し、UTMI のクロックも入っている（HSE・HSI とも）。→ 2026-11-20: ユーザーが Pico の線を Type-C から
+  USB-A のコネクタに替え、usb-peer（デバイス）・usb-peer-host（ホスト）とも通った（436afff4）。X315 の第 2 世代 USBHS の初の実機確認。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。2026-11-18 にログを
   読んだ: キー 47 の押下は DUT に届き、離した報告を Pico が 2 秒送れなかった（DUT のホストが割り込み IN を取りに来ない）。
@@ -707,7 +706,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - isochronous の IN は、転送が終わっても最後のパケットを TX_LEN のまま返し続けていた（映像の最後のペイロードが毎マイクロフレーム届く）。転送が無いときは TX_LEN を 0 にして、長さ 0 のパケットを返す。
   - 試験の側: CCID の自動の大きさは HS で 512（ライブラリの決めたとおり）。Borrowed の受け皿は HS のパケットの倍数が要る（スケッチの 64 → `CH32RV_USB_MAX_PACKET`）。DFU_DETACH で工場のブートローダーが出るのは X035 だけ。
 - [ ] 新しい系列の実機確認（ベンチの DUT の USB 端子を配線してから）。HSI から作る 48 MHz の精度、V103 の EP4〜7 の
-  自動トグル、HS の PHY と HSE。第2世代 USBHS（V467、X305 / X315、V205）と X315 の USBSS はビルドだけ（V407 は HS で確認済み）。
+  自動トグル、HS の PHY と HSE。第2世代 USBHS（V467、X305、V205）と X315 の USBSS はビルドだけ（V407 は HS で確認済み。X315 の USBHS は 2026-11-20 に Pico と usb-peer / usb-peer-host が通った。HS ではなく Pico の FS）。
 - H417:
   - [x] USBSS のデバイスの実機の続き（列挙と CDC、DFU までは確認済み）。→ 2026-11-20、h417qeu6-pico の SS の口（PC）で
     usb・usb-classes・usb-media の case と、usb-ss-iso（等時の Mult、ベンダーのバルクの halt・リセット・大きさ・再起動後の列挙）が
