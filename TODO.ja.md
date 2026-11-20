@@ -375,6 +375,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   持ち、CNT を動かしても強制 Low にしても止まったままでは変わらない（UG のときの CNT 0 < 比較値で High）。restartCounter() で
   強制 Low にしてカウンタを数カウント走らせ、止めて PWM モード 1 に戻す。V006 で timer_trigger・pwm_timer・phase_shift・six_step、
   X035・V205・H417 でタイマーの 4 件が通る。
+- [ ] H417 の usb-peer-firmware（Pico は FS の口、2026-11-20 に初めて流した）が 3 回とも別の所で落ちる: DFU の 12 ブロック目の
+  DNLOAD / GETSTATUS、UF2 の書き込みが 141 ブロック中 0、DFU の st。usb-peer・usb-peer-classes・usb-peer-net・-fs・-input と
+  ホストの側の 5 case は通る。フラッシュを自分で書き換えている間（H41x は RAM から走って flash を消す・書く）の FS の制御転送の
+  答えが遅れる・抜ける見込み。次は DUT の側で、DNLOAD ごとの消去・書き込みの時間と、その間の USB の割り込みの遅れを測る。
+- [ ] X315 の usb-peer / usb-peer-host（6-3、Pico とつないだ、2026-11-20）が、どちらの向きでも列挙しない。DUT の USBHS（PD6 /
+  PD7）は有効でプルアップを出し、UTMI のクロックも入っている（HSE・HSI とも）。Pico がどのコネクタにつながっているか、
+  評価ボードに USB の切り替え（ジャンパー・Type-C の mux）があるかを、ユーザーに確かめてもらう。X315 の第 2 世代 USBHS は
+  これまでビルドだけ。
 - [ ] V205 の usb-peer-host-input が 3 回に 1 回、Pico の答えが「PD KEY 0」で落ちる（2026-11-15、core-20261114T151528Z-87219abd。
   流し直し 2 回は通った）。どの手順の何を待っているかを見て、DUT と Pico のどちらかを切り分ける。2026-11-18 にログを
   読んだ: キー 47 の押下は DUT に届き、離した報告を Pico が 2 秒送れなかった（DUT のホストが割り込み IN を取りに来ない）。
