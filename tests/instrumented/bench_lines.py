@@ -80,18 +80,25 @@ RESERVED = {"swio", "swdio", "swclk", "nrst", "rx", "tx"}
 
 def port_lines(oep_host, target):
     """Every labelled line of the target's port that reaches a pad: [{"channel", "pad", "pin", "role", "label"}], role
-    None for a plain `<port>@<pad>`; label is the probe's label text (what oep_client.acquire names a line by)."""
+    None for a plain `<port>@<pad>`; label is the probe's label text (what oep_client.acquire names a line by).
+    Pads the board's record takes (a defect's lose "pad:PB6": L103's EVT board holds PB6 / PB7 low through 5.1 kOhm
+    on its CC lines, V407's YD board ties PB1 to PA7) are left out: no test drives or reads them."""
     from oep_client import settings
     port = port_of(target)
     host = getattr(oep_host, "host", oep_host)
     out = []
     if port is None or host is None:
         return out
+    lost = {f.split(":", 1)[1].strip().upper() for d in (target.get("record", {}).get("defects", [])
+                                                         if isinstance(target, dict) else [])
+            for f in d.get("lose", []) if f.startswith("pad:")}
     for channel, text in settings.labels(host):
         parsed = settings.parse_label(text)
         if parsed and settings.fold_name(parsed[0]) == settings.fold_name(port) and parsed[2] \
                 and re.fullmatch(r"p[a-k]\d{1,2}", parsed[2], re.I):   # one pad (not "pc16-pc11")
             pad = parsed[2].upper()
+            if pad in lost:
+                continue
             role = settings.fold_name(parsed[1]) if parsed[1] else None
             out.append(dict(channel=channel, pad=pad, pin=pin_number(pad), role=role, label=text))
     return sorted(out, key=lambda line: line["channel"])
@@ -103,13 +110,8 @@ def gpio_lines(oep_host, target):
     # The chip's debug pads (run_hardware's debug_pads): a probe writing over one wire may label the other plain,
     # but the core never turns SWD off, so the pad is no GPIO.
     debug = set(target.get("debug_pads") or []) if isinstance(target, dict) else set()
-    # Pads the board's record takes (a defect's lose "pad:PB6": L103's EVT board holds PB6 / PB7 low through
-    # 5.1 kOhm on its CC lines): no test drives or reads them.
-    lost = {f.split(":", 1)[1].strip().upper() for d in (target.get("record", {}).get("defects", [])
-                                                         if isinstance(target, dict) else [])
-            for f in d.get("lose", []) if f.startswith("pad:")}
     return [line for line in port_lines(oep_host, target)
-            if line["pad"] not in debug and line["pad"] not in lost
+            if line["pad"] not in debug
             and (line["role"] is None or (line["role"] not in RESERVED and line["role"] not in device_roles
                                           and not line["role"].startswith("power")))]
 

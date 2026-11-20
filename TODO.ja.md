@@ -80,6 +80,29 @@
     USART7 route 3、PA2/PA3 で USART2 route 2 など）。
 - [ ] **TST-05 機材台帳と配線**、**TST-06 初回測定**（実機が要る）。
 
+### フルテスト（2026-11-20、f90df6d3、H417 を除く 14 台）で残ったもの
+
+直したもの: M030 の全 case がビルドで落ちた（既定の口の無い石の SDA / SCL、b7088f5c）、V003 の periph / selfcheck が 16 KB を
+超えた（ecdd198b）、X315 の CCID の期待値（72377c2c）、V407 の PB1（板で PA7 とつながる。defect `pad:PB1`、`pad:` を
+port_lines で除くように）。流し直して通ったもの（1 回だけの失敗）: V003 uart（IrDA / multiprocessor）、V006 selfapi の VTF
+（81 対 80）、V205 / X035 signals、X035 softwire、V203RB usb-peer-host-input。
+
+- [ ] **L103 の ADC が 0 V で約 1550 を読む**（l103c8t6-pico）: selfsys の adc_pads で、DUT 自身が出力 Low にした端子が全部
+  1523〜1587（PA4 は 1190）、High は 4095。selfapi の millivolts（2069 mV at 1、0 at 0）・opamp も同じ原因に見える。2 回とも
+  再現。OEP の下に移した 11-18 以降、L103 で ADC の試験が通った記録は無い。ADC の CTLR1 / CTLR2・ADCPRE・校正の値を実機で読む。
+- [ ] **V103 の uart multiprocessor**: addressed / mute の区間で DUT が 1 バイトも受けない（2 回とも）。V103 では初めて流した。
+- [ ] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
+- [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
+  付けたときと同じ形（プローブの線の雑音か）。
+- [ ] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）と software-serial: PB1 を外した版で流し直して見る。
+- [ ] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
+  から 2 回とも。17:55 には列挙できていた）。プローブの線は PD3 / PD4 に無い。
+- [ ] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
+- [ ] **M030**: run_hardware を `--env-file tests/.env` なしで起動し、defect が効かないまま logic が PA7（板が保持している
+  端子）に PWM を数秒出した（2026-11-21）。基板の確認待ち。正しい記録で流し直すかは確認の後に決める。
+- [ ] **1 台も走らない case**: pd（pd の記録の台が無い。機材が要る）。usb-peer 系は V103・V203C8T6・V307 に USB の線が無い。
+  usb-peer-media は RP2040 の相手では走らず V407 だけ。
+
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの
 
 全台を流して見つかったものの多くは直した（コア: H417 の Wire が I2C1 を取って動かなかった、SS の Video の記述子の長さ、
