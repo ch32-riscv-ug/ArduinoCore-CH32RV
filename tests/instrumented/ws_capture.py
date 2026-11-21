@@ -15,18 +15,20 @@ def _channels(lines):
     return [(line["pad"], line["label"]) for line in lines]
 
 
-def capture(ws_run, oep_host, lines, *, rate, samples, trigger=None, pretrigger=None):
+def capture(ws_run, oep_host, lines, *, rate, samples, trigger=None, pretrigger=None, glitch_filter_ns=None):
     """Capture `lines` (bench_lines.port_lines entries) once and add it to the open section of ws_run.
-    trigger: (pad, kind) as oep_client.acquire.Request takes it (kind one of acquire.TRIGGERS)."""
+    trigger: (pad, kind) as oep_client.acquire.Request takes it (kind one of acquire.TRIGGERS). glitch_filter_ns: the
+    probe's glitch filter on every line (WireSkein records the width it used)."""
     from oep_client import acquire
     from wireskein.sources.oep import capture_of
-    req = acquire.Request(_channels(lines), rate, samples, trigger=trigger, pretrigger=pretrigger)
+    req = acquire.Request(_channels(lines), rate, samples, trigger=trigger, pretrigger=pretrigger,
+                          glitch_filter_ns=glitch_filter_ns)
     t = ws_run.armed()
     res = acquire.capture(_host(oep_host), req)
     return ws_run.add(t, capture_of(res))
 
 
-def stream(ws_run, oep_host, lines, *, rate, steps):
+def stream(ws_run, oep_host, lines, *, rate, steps, glitch_filter_ns=None):
     """One capture of `lines` that runs while steps(wait) does: steps opens and closes ws_run's sections (put on the
     probe's clock here, so WireSkein cuts each one out of this capture), sends the DUT its commands and calls
     wait(seconds) to let the stream be read while it waits (oep_client.acquire's during). The capture is added to
@@ -42,7 +44,7 @@ def stream(ws_run, oep_host, lines, *, rate, steps):
             steps(wait)
         finally:
             ws_run.use_clock(None)
-    req = acquire.Request(_channels(lines), rate, 0, mode="stream", during=during)
+    req = acquire.Request(_channels(lines), rate, 0, mode="stream", during=during, glitch_filter_ns=glitch_filter_ns)
     t = ws_run.armed()
     res = acquire.capture(host, req)
     return ws_run.add(t, capture_of(res))

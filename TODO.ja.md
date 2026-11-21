@@ -154,7 +154,7 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
 - [ ] **H417 の usb-ss-iso**: test_usb_ss_iso_out[5] が libusb_submit_transfer -1、そのあと CH32RV.restart() で DUT が USB から
   消えて戻らない（カーネルにも再接続が無い）。11-20 は restart 10 回とも SS で戻った。→ 2026-11-21 の流し直しでは restart・
   unplug とも通り、in[4]・out[5] の submit -1 だけが残った（下の「USBSS の等時 Mult>0」と同じ形）。restart で戻らないのは 1 回だけ。
-- [ ] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
+- [x] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
   隣の PA6（break）の線か、止めた相の出力か。
   → 2026-11-21: 3 回中 2 回（流し直しの 1 回は通った）。2 回目の取り込みでは PA7 のパルスが 10 MS/s の 1 サンプル（0.1 µs）で
   2 つ、約 600 µs 離れて出た。begin() は 6 本を数 µs でつなぐので間隔が合わない。同じ取り込みの別の区間で PE11 と PE13 にも
@@ -171,6 +171,10 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
 V20x の standby が RTC で起きない、HardwareSerial の end() が端子を AF のまま残す。試験: WCH-Link の台の OEP の線の case、
 デバッグの端子、隣の線のプル、SoftSPI の速さ、logic の burst、standby の端子の幅、Pico の HID の待ち）。残りは次のとおり。
 
+  → 2026-11-21: ひげは 20 ns 未満で DUT の出力ではない（6 本を 50 MS/s で取ると P4 の流しが溢れて測れない）。[wireskein] の
+  勧めで、判定でなく取り込みでプローブのグリッチフィルタ（P4 / P4X は 25 ns だけ）をかける。sweep() と ws_capture に
+  glitch_filter_ns を足し、six_step だけ 25 ns。H417・V006・V205・X315 の signals が全部通る（WireSkein の記録に
+  glitch_filter_ns 25、欠落 0）。
 - [ ] **I2C のクロックの試験と文書（2026-11-14、ユーザー: WireSkein の精度が上がってから測り直して決める）**: 保証は「設定より
   速くならない」（ハードは CCR の切り上げ、SoftWire は半周期を詰めない。どちらも済み）。コアの上限の扱いは案 A（頼まれたとおり
   設定し、頭打ちにしない。ユーザー）。試験の案（速さの段 20k〜3.4M、測った SCL ≤ 頼んだ速さ × 1.03、上限の 5 分の 1 以下では

@@ -136,7 +136,8 @@ def timer_pad(dut, lines, channels=(1, 2, 3, 4)):
 WAVE = dict(min_periods=20, within_s=0.3)
 
 
-def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, moving=1, quiet=None, gpio_taken=False):
+def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, moving=1, quiet=None, gpio_taken=False,
+          glitch_filter_ns=None):
     """Stream `lines` (the lines under test first, `moving` of them) while going through `conditions`: (name, command
     or None, reply pattern, expectations, hold s) each. Each is one section: the command is sent as it opens and the
     line held for `hold`; a callable command is the test's own action (the probe driving a line), with no reply. The
@@ -144,7 +145,8 @@ def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, mo
     probe's pull-ups hold (the neighbours, lines[moving:], by default). The moving lines have the probe's pull-down:
     undriven, a pad of the DUT's floats until it becomes the timer's, and V407's PA1 on the YD board picked up bursts
     every ~330 us (pwm_timer / phase_shift, 2026-11-21). `gpio_taken`: the test holds the probe's GPIO itself (it
-    drives a line), and no line gets a pull. Returns the replies."""
+    drives a line), and no line gets a pull. `glitch_filter_ns`: the probe's glitch filter on every line (pulses
+    shorter are not seen, so not judged; WireSkein reports a time within it as unchecked). Returns the replies."""
     replies = []
     pads = [line["pad"] for line in lines[:moving]]
 
@@ -186,7 +188,7 @@ def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, mo
             gpio.configure(ch, Gpio.INPUT_PULLUP)
         for ch in mine:
             gpio.configure(ch, Gpio.INPUT_PULLDOWN)
-        ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps)
+        ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps, glitch_filter_ns=glitch_filter_ns)
     finally:
         for ch in others + mine:
             gpio.configure(ch, Gpio.INPUT)
@@ -882,8 +884,12 @@ def test_six_step(dut, oep_host, ws_run, record_property):
         conditions.append((f"step {n}", f"sixstep {n}", rb"SIXSTEP (\d)", want, 0.01))
     conditions.append(("stopped", "sixoff", rb"SIXOFF", [becomes(x["pad"], level=0) for x in order], 0.005))
     try:
+        # The probe's glitch filter: H417's six lines carried spikes under 20 ns that the DUT did not drive (PA7 at
+        # begin()'s all off, PE13; a 10 MS/s sample caught some) - the 20 kHz steps are 25 us, and 50 MS/s over six
+        # lines overran the probe's stream ([wireskein] 2026-11-21: filter at the capture, not in the verdict). 25 ns:
+        # the only width a P4 / P4X has (oep-probe-arduino implementation-limits; 50 was refused, configure 0x13).
         replies = sweep(dut, ws_run, oep_host, order, f"six step TIM{timer}", conditions, rate=10_000_000, moving=6,
-                        quiet=[])
+                        quiet=[], glitch_filter_ns=25)
         # SIXOFF carries no result
         assert all(m.group(1) == b"1" for m in replies if m.re.groups), "the DUT refused a command"
     finally:
