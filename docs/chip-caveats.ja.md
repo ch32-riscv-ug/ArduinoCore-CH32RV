@@ -19,6 +19,26 @@
 | 休止（standby）から起きたときのリセットの印が、系列で違う。V307 は SBF、V203 は WUF だけ、V103 は何も残さない | `CH32RV.resetReason()` が `CH32RV_RESET_DEEPSLEEP` に読み替える（`ch32rv_power.c`） | RCC_RSTSCKR を自分で読んで起きた理由を決めない。`resetReason()` を使う |
 | リセットの印（RCC_RSTSCKR）は、RMVF を書くまで消えない。いちばん古いリセットのまま残る | `resetReason()` は最初の呼び出しで読み、印を消す | UIAPduino のブートローダーは、NRST の印が残っているときだけ留まる。setup() で `resetReason()` を呼ぶスケッチは、その印を消す（[uiapduino-hid-upload.ja.md](uiapduino-hid-upload.ja.md)） |
 
+## コアが補っていること（まね・代わりの処理）
+
+石に無い機能や、石のくせを、コアがソフトで補っている所です。Arduino の API はほかの環境と同じに見えますが、速さや、電源を切ったときの残り方などが違います。
+
+| 機能 | 系列 | 石の事情 | コアの処理 | 違いと費用 |
+|---|---|---|---|---|
+| `OUTPUT_OPENDRAIN` | X035 / X033 | GPIO にオープンドレインが無い | High は浮いた入力に、Low はプッシュプルの 0 に、端子のモードを切り替える（`wiring_digital.c`、`ch32rv_gpio_od_write()`） | 1 回の切り替えで設定のレジスタを読み書きするので、本物より遅い。SoftWire・1-Wire の上限が下がる。ハードウェアの I2C は石が自動でオープンドレインにするので変わらない |
+| `Serial` の送信 | X035 / X033 | 送信の割り込み（TXE）が来なくなることがある | 割り込みを使わず、1 文字ずつ TXE を待って書く（`HardwareSerial.cpp`） | `write()` がバッファにためずに待つ。115200 で 1 文字約 87 µs。DMA の送信（`setTxBufferSize()`）なら待たない |
+| `UsartSPI` の MSBFIRST | 全系列 | USART は下位ビットから送る形しか無い | 1 バイトごとにビットを並べ替える（`HardwareSerialSync.cpp`） | 1 バイトごとに数命令ぶん遅い |
+| `rgbLedWrite()` | WS2812 のブロック（ARGB）の端子以外 | WS2812 を出す周辺が無い（V4x7 の PA15、X3x5 の PA15 / PD3 / PD4 だけにある） | 割り込みを止めて、ソフトでビットを出す（`ch32rv_rgb_led.c`） | LED 1 個（24 ビット）につき約 30 µs、割り込みが止まる。その間の割り込みは遅れる |
+| `analogReference()` | 全系列 | 基準の電圧を選べない（ADC はいつもアナログの電源を基準にする） | 呼んでも何もしない（`wiring_analog.c`） | 読み値はいつも電源の電圧に対する比 |
+| `analogReadMilliVolts()` | 全系列（M030 を除く） | — | 呼ぶたびに内部の基準（Vrefint）で電源の電圧を測り、そこから mV に直す | M030 は Vrefint が無く、電源を 3300 mV と仮定する。初期のロットの X035 は IN15（Vrefint）が狂う |
+| `ch32rv_random()` | 乱数の周辺（RNG）が無い系列（V30x・V4x7・H41x 以外） | 乱数の周辺が無い | 石の ID と SysTick の値を混ぜてソフトで作る（`ch32rv_random.c`） | 暗号には使えない（知っている人には予想できる）。本物が要るときは `ch32rv_rng_read()`（無い系列では false） |
+| `CH32RV.getUniqueId()` | 全系列 | 96 ビットの ID のうち、上の 32 ビット（UNIID3）は石ごとに違わない（errata `esig-uniid3-not-unique`） | 下の 64 ビットだけを使う | ID は 64 ビット |
+| RTC のバックアップのレジスタ（`ch32rv_backup_*()`） | H41x、X305 / X315 | バックアップのデータのレジスタ（BKP）が無い | RAM の `.noinit` の領域に置く（`internal/ch32rv_rtc.h`） | RAM の電源が残るリセットでは残るが、電源を切ると消える（VBAT でも残らない）。RTC も 1970 年から数え直す |
+| `lightSleep()` / `deepSleep()` と IWDG | 全系列 | 動いている IWDG は止められない | 休止を IWDG の周期より短く区切り、間で IWDG を叩く（`internal/ch32rv_power.h`） | IWDG を使うと、休止の途中で何度も起きる（そのぶん電流が増える） |
+| 休止の間の `millis()` | 全系列 | 休止の間は SysTick が止まる | 自動起床（AWU）が測った時間を足し戻す。端子で起きて長さが分からないときは足さず、`ch32rv_time_domain` を進める | 端子で起きると、その休止の分だけ `millis()` が遅れる |
+| `attachInterrupt()` | 全系列 | EXTI の線は端子の番号ごとに 1 本（3 番の線は PA3・PB3・PC3 のどれか 1 つ） | 後から付けた端子に置き換える（`wiring_interrupts.c`） | PA3 と PB3 を同時に割り込みにできない。エラーにはならず、前の方が黙って外れる |
+| 周辺のクロックを入れた直後の書き込み | H41x | V5F は周辺のバスより 4 倍速く、書き込みが遅れて効く | RCC を読み返してから書く。MOE などは効くまで読み直す | コアの中の数命令。自分でレジスタを書くときは同じことが要る（下の H41x の節） |
+
 ## デバッガ（WCH-LinkE / WCH-Link）で接続するとき
 
 | 起きること | コア・ch32rv | 自分で書くとき |
