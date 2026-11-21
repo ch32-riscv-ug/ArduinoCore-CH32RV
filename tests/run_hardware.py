@@ -81,6 +81,21 @@ MODULES = {
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
 CONSOLE_SOURCES = {"console-rtt": "rtt", "console-dmdata": "dmdata", "console-sdi": "sdi"}
+# Cases whose console goes to the probe's UART lines (<port>.tx / .rx, the fixture UART) where the target has them:
+# the DMSeq monitor polls the debug wire all the time, and on V407 that put +-80 counts on the DAC's PA4 line beside it
+# (+-4 with the console on the UART, the monitor open; 2026-11-21). The sketch takes CONSOLE_UART_RX / _TX (its pins).
+UART_CONSOLE_CASES = ("analog",)
+
+
+def uart_console(case, target):
+    """(DUT RX pad, DUT TX pad) for a case whose console goes to the probe's UART lines, else None."""
+    lines, pads = target.get("lines") or {}, target.get("pads") or {}
+    if case not in UART_CONSOLE_CASES or "tx" not in lines or "rx" not in lines:
+        return None
+    pad_of = {v: k for k, v in pads.items()}
+    rx, tx = pad_of.get(lines["tx"]), pad_of.get(lines["rx"])     # the probe's tx reaches the DUT's RX
+    return (rx.upper(), tx.upper()) if rx and tx else None
+
 # Libraries from the Arduino library index a case's DUT sketch uses, pinned (its sketch.yaml's profile installs
 # them into the bench's Arduino cache): eth-libs runs widely used network libraries unchanged on this core.
 CASE_LIBRARIES = {"eth-libs": ("PubSubClient (2.8)", "ArduinoMqttClient (0.1.8)", "ArduinoHttpClient (0.6.2)",
@@ -396,6 +411,9 @@ def stage_case(work, name, case, target):
             opts += f"-DUSB_TEST_CONTROLLER=CH32RVUsbController::{USB_CONTROLLERS[controller]}\n"
     elif case in places.PEER_HOST_CASES and target.get("usb_peer") == "p4":
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
+    uart = uart_console(case, target)
+    if uart:
+        opts += f"-DCONSOLE_UART_RX={uart[0]}\n-DCONSOLE_UART_TX={uart[1]}\n"
     if opts:
         (directory / "build_opt.h").write_text(opts)
     # The probe's lines on the chip's debug pads are never test lines (bench_lines.gpio_lines).
@@ -426,7 +444,9 @@ def stage_case(work, name, case, target):
                       for i, lib in enumerate(CASE_LIBRARIES.get(case, ())))
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
-            f"    port_config:\n      source: {CONSOLE_SOURCES.get(case, 'dmseq')}\n"
+            f"    port_config:\n      source: {'fixture-uart' if uart_console(case, target) else CONSOLE_SOURCES.get(case, 'dmseq')}\n"
+            + ("      baudrate: 115200\n" if uart_console(case, target) else "")
+            +
             f"      chip: {target['chip']}\n"
             # The Debug Speed menu's value for the monitor too.
             + monitor_speed(target["fqbn"])

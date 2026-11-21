@@ -109,7 +109,7 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   次でないと立たない。モードの start() で TE / RE も落とし、RWU は別に書くように。V103・X035・H417 の uart が全部通る。
 - [x] **V407 の uart-sync**: mode 1 / 2 で DUT の読んだ値が 1 ビットずれる（71bfc4 → e37f89）。mode 0 / 3 は通る。
   → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
-- [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
+- [x] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
   付けたときと同じ形（プローブの線の雑音か）。
   → 原因が分かった（2026-11-21、scratchpad の dac407）: ベンチの線どうしのクロストーク。DAC1 2048・DAC2 1024 を出して同じ端子を
   500 回読むと、DMSeq のモニターがつながっている間は ±80（1942..2154）、モニターをつながず RAM にためた間は ±4（2046..2054）。
@@ -119,6 +119,10 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   雑音も、同じ問い合わせの周期とみられる。直し方の案: (1) 測る間だけモニターの問い合わせを止める仕組みを [oep] /
   pytest-embedded の側に頼む、(2) DUT が測り終えてから答える形はすでにそうなので、問い合わせの間隔を測定より長くする。
   H417 の PA4 / PA5 の揺れ（下の項目）も同じとみる。
+  → 2026-11-21: DAC の端子（PA4 / PA5）は固定なので、コンソールの側を替えた。analog の case は、台にプローブの UART の線
+  （tx / rx）があればコンソールを Serial（その端子、setPins）に出し、モニターを fixture-uart で開く（run_hardware の
+  UART_CONSOLE_CASES、スケッチは CONSOLE_UART_RX / _TX）。DMSeq の SWIO の問い合わせが無くなり、DAC の読みの揺れは
+  ±50〜80 から ±2 程度に。V407・H417 の analog が 3 回とも通る。
 - [x] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
   「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
   → 直した（2026-11-21）: PA1 は DUT が駆動していない間、約 330 µs ごとに約 200 µs の細かい動き（浮いた線が拾う雑音。DUT が

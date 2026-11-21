@@ -1,6 +1,9 @@
 /* The DAC through analogWrite() (tests/instrumented/analog), read back by the
  * ADC on the same pad - no wiring: the DAC drives its pin, which is an ADC
- * input on every family that has one. Console on SerialDMSeq:
+ * input on every family that has one. Console on SerialDMSeq, or on Serial at the
+ * pins CONSOLE_UART_RX / CONSOLE_UART_TX when the build names them (run_hardware.py:
+ * the probe's UART lines, so the monitor does not poll the debug wire while the ADC
+ * reads - V407's DMSeq polling put +-80 counts on PA4 against +-4 over the UART):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   dacpins                   DACPINS <DAC1 pin or -1> <DAC2 pin or -1>
@@ -37,6 +40,12 @@
 #include <CH32RVAdcInjected.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef CONSOLE_UART_RX
+#define CONSOLE Serial
+#else
+#define CONSOLE SerialDMSeq
+#endif
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -82,7 +91,7 @@ static void dualReply(char **argv, int argc)
                 lo[k] = v < lo[k] ? v : lo[k];
                 hi[k] = v > hi[k] ? v : hi[k];
             }
-            SerialDMSeq.printf("ADCDUAL 1 %lu %lu %d %d %lu %d %d\r\n", (unsigned long)adc.sampleRate(),
+            CONSOLE.printf("ADCDUAL 1 %lu %lu %d %d %lu %d %d\r\n", (unsigned long)adc.sampleRate(),
                                (unsigned long)(sum[0] / 128u), lo[0], hi[0], (unsigned long)(sum[1] / 128u), lo[1],
                                hi[1]);
             adc.end();
@@ -116,7 +125,7 @@ static void dualReply(char **argv, int argc)
                     run = 0;
                 }
             }
-            SerialDMSeq.printf("ADCDUAL 1 %lu %d %d %d %lu\r\n", (unsigned long)adc.sampleRate(), runs, shortest,
+            CONSOLE.printf("ADCDUAL 1 %lu %d %d %d %lu\r\n", (unsigned long)adc.sampleRate(), runs, shortest,
                                longest, (unsigned long)single);
             adc.end();
             dac.end();
@@ -125,7 +134,7 @@ static void dualReply(char **argv, int argc)
         dac.end();
     }
     adc.end();
-    SerialDMSeq.printf("ADCDUAL 0\r\n");
+    CONSOLE.printf("ADCDUAL 0\r\n");
 }
 
 static void injReply(int v1, int v2)
@@ -150,10 +159,10 @@ static void injReply(int v1, int v2)
     }
     inj.end();
     if (!ok) {
-        SerialDMSeq.printf("INJDUAL 0\r\n");
+        CONSOLE.printf("INJDUAL 0\r\n");
         return;
     }
-    SerialDMSeq.printf("INJDUAL 1 %lu %d %d %lu %d %d\r\n", (unsigned long)(sum[0] / 8u), lo[0], hi[0],
+    CONSOLE.printf("INJDUAL 1 %lu %d %d %lu %d %d\r\n", (unsigned long)(sum[0] / 8u), lo[0], hi[0],
                        (unsigned long)(sum[1] / 8u), lo[1], hi[1]);
 }
 
@@ -177,12 +186,12 @@ static void bothReply(uint32_t hz)
         }
         adc.end();
         dac.end();
-        SerialDMSeq.printf("DACBOTH 1 256 %d %d %d %d %d\r\n", bad, lo[0], hi[0], lo[1], hi[1]);
+        CONSOLE.printf("DACBOTH 1 256 %d %d %d %d %d\r\n", bad, lo[0], hi[0], lo[1], hi[1]);
         return;
     }
     adc.end();
     dac.end();
-    SerialDMSeq.printf("DACBOTH 0\r\n");
+    CONSOLE.printf("DACBOTH 0\r\n");
 }
 #endif
 
@@ -197,7 +206,7 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "dacpins")) {
 #if defined(CH32RV_DAC1_PIN)
         const int dac1 = (int)CH32RV_DAC1_PIN;
@@ -209,7 +218,7 @@ static void reply(char *command)
 #else
         const int dac2 = -1;
 #endif
-        SerialDMSeq.printf("DACPINS %d %d\r\n", dac1, dac2);
+        CONSOLE.printf("DACPINS %d %d\r\n", dac1, dac2);
     } else if (!strcmp(argv[0], "dac") && argc == 4) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         analogWriteResolution(atoi(argv[3]));
@@ -225,9 +234,9 @@ static void reply(char *command)
             lo = v < lo ? v : lo;
             hi = v > hi ? v : hi;
         }
-        SerialDMSeq.printf("DAC %lu %d %d %d\r\n", (unsigned long)(sum / 8u), lo, hi, (1 << CH32RV_ADC_BITS) - 1);
+        CONSOLE.printf("DAC %lu %d %d %d\r\n", (unsigned long)(sum / 8u), lo, hi, (1 << CH32RV_ADC_BITS) - 1);
 #else
-        SerialDMSeq.printf("DAC 0 0 0 0\r\n");
+        CONSOLE.printf("DAC 0 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "dacwave") && argc == 6) {
         const uint8_t channel = (uint8_t)atoi(argv[1]);
@@ -276,13 +285,13 @@ static void reply(char *command)
             }
             const uint32_t rate = dac.stepRate();
             dac.end();
-            SerialDMSeq.printf("DACWAVE 1 %lu %d %d %lu %d %d\r\n", (unsigned long)rate, lo, hi,
+            CONSOLE.printf("DACWAVE 1 %lu %d %d %lu %d %d\r\n", (unsigned long)rate, lo, hi,
                                (unsigned long)(sum / 200u), changes, (1 << CH32RV_ADC_BITS) - 1);
             return;
         }
 #endif
         dac.end();
-        SerialDMSeq.printf("DACWAVE 0\r\n");
+        CONSOLE.printf("DACWAVE 0\r\n");
 #if defined(ANALOG_DUAL)
     } else if (!strcmp(argv[0], "adcdual") && argc >= 3) {
         dualReply(argv, argc);
@@ -292,21 +301,24 @@ static void reply(char *command)
         bothReply((uint32_t)atol(argv[1]));
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+#ifdef CONSOLE_UART_RX
+    Serial.setPins(CONSOLE_UART_RX, CONSOLE_UART_TX);
+#endif
+    CONSOLE.begin(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {
