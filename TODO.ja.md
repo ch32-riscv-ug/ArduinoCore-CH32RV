@@ -151,9 +151,13 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
 - [ ] **nanoH417 の sd のカードが応答しなくなった**: 全体の実行では SDIO の 6 件が通り、最後の test_sd_spi（SoftSPI）で
   「カードが応答しない」。その後は SDIO も 400 kHz・1 ビットのカードの初期化から通らない（内蔵 LinkE の口を 3 秒・10 秒切って
   も同じ。VIO18 は PWR_CTLR=0x0E00 で 3.3 V）。11-17 は同じ順で全部通った。カードの抜き差しをユーザーに頼む。
-- [ ] **H417 の usb-ss-iso**: test_usb_ss_iso_out[5] が libusb_submit_transfer -1、そのあと CH32RV.restart() で DUT が USB から
+- [x] **H417 の usb-ss-iso**: test_usb_ss_iso_out[5] が libusb_submit_transfer -1、そのあと CH32RV.restart() で DUT が USB から
   消えて戻らない（カーネルにも再接続が無い）。11-20 は restart 10 回とも SS で戻った。→ 2026-11-21 の流し直しでは restart・
   unplug とも通り、in[4]・out[5] の submit -1 だけが残った（下の「USBSS の等時 Mult>0」と同じ形）。restart で戻らないのは 1 回だけ。
+  → 2026-11-21: usbmon（/dev/usbmonN は others に r があり、root は要らなかった）で見ると、in[4]・out[5] の等時の URB は
+  HCD に届いていない（S も E も無い）。libusb の errno は 12: usbfs が等時の URB のバッファを 1 つの kmalloc で取り、
+  42 間隔 × 48 KiB = 2 MiB がメモリの断片化しだいで取れない（8 間隔は通る）。usb_iso.py はバッファを
+  libusb_dev_mem_alloc（usbfs の mmap）から取るように。13 件とも通る。
 - [x] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
   隣の PA6（break）の線か、止めた相の出力か。
   → 2026-11-21: 3 回中 2 回（流し直しの 1 回は通った）。2 回目の取り込みでは PA7 のパルスが 10 MS/s の 1 サンプル（0.1 µs）で
@@ -436,6 +440,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   ではない）。試験はこれを iso_in_spilled として部分から外した。外すと部分は 0。残るのはホストが見る転送の誤りそのもので、
   Mult 0 でも 800 間隔に 35〜149 と回ごとに大きく変わる（同時に別の台の試験でホストの USB が混んでいた回が多い）。次は
   usbmon（root）で誤りの種類を見る、ハブを通さない口で比べる（配線）。
+  → 2026-11-21 usbmon（root は要らない。scratch の usbmon_iso.py で等時の記述子まで記録）: 誤りは IN だけの -71（EPROTO、
+  xHCI のトランザクションの誤り。取り逃しの -18 ではない）で、間隔の 0〜2.4 %（alt 1: 0〜0.4 %、alt 2: 0.2〜1.2 %、alt 3:
+  0.9〜2.4 %、alt 4: 2.4 %）。OUT は 2 回とも 0。-71 の間隔は短いか 0 で返る（部分の間隔の正体）。残り: ハブを通さない口で
+  比べる（配線）。
   → 同日の夕方に V5F で HSE と HSI を交互に 2 回ずつ流すと、部分の間隔はどれも 0〜3（in[2] 0〜2 / 512）で、昼の 8〜15 より
   ずっと少なかった。時計の源ではなく、時間帯（ホストの負荷やハブの先の他の機器）で変わっている。
 - [x] ch32-device-data cb02bca / 3c9ed13 の取り込み（lock は 3c9ed13）。pvd_levels.csv は生成器の load_pvd に、pinout.csv の

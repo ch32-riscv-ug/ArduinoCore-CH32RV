@@ -40,21 +40,31 @@ def iso_transfer(dev, endpoint, packet_size, packets, data=None, timeout_ms=3000
     lib.libusb_submit_transfer.argtypes = [ctypes.c_void_p]
     lib.libusb_free_transfer.argtypes = [ctypes.c_void_p]
     lib.libusb_handle_events_timeout.argtypes = [ctypes.c_void_p, ctypes.POINTER(_Timeval)]
+    lib.libusb_dev_mem_alloc.restype = ctypes.c_void_p
+    lib.libusb_dev_mem_alloc.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+    lib.libusb_dev_mem_free.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t]
+    h = handle.value if hasattr(handle, "value") else handle
+    size = packet_size * packets
     raw = lib.libusb_alloc_transfer(packets)
     if not raw:
         raise OSError("libusb_alloc_transfer failed")
     t = ctypes.cast(raw, ctypes.POINTER(Transfer)).contents
-    buffer = ctypes.create_string_buffer(packet_size * packets)
+    # The buffer from usbfs's mmap (libusb_dev_mem_alloc), taken once: otherwise usbfs kmallocs each isochronous URB's
+    # buffer in one piece, and 42 intervals of 48 KiB (2 MiB) failed with ENOMEM whenever the kernel's memory was
+    # fragmented (errno 12, which libusb reports as -1 for a split transfer; 8 intervals passed; usbmon showed no URB,
+    # 2026-11-21). Plain memory where the kernel offers no mmap.
+    mem = lib.libusb_dev_mem_alloc(h, size)
+    buffer = ctypes.cast(mem, ctypes.POINTER(ctypes.c_char * size)).contents if mem else ctypes.create_string_buffer(size)
     if data is not None:
-        ctypes.memmove(buffer, bytes(data).ljust(packet_size * packets, b"\0"), packet_size * packets)
+        ctypes.memmove(buffer, bytes(data).ljust(size, b"\0"), size)
     done = []
     callback = ctypes.CFUNCTYPE(None, ctypes.c_void_p)(lambda _p: done.append(True))
-    t.dev_handle = handle.value if hasattr(handle, "value") else handle
+    t.dev_handle = h
     t.endpoint = endpoint
     t.type = _LIBUSB_TRANSFER_TYPE_ISOCHRONOUS
     t.timeout = timeout_ms
-    t.length = packet_size * packets
-    t.buffer = ctypes.cast(buffer, ctypes.c_void_p)
+    t.length = size
+    t.buffer = ctypes.cast(buffer, ctypes.c_void_p).value if not mem else mem
     t.num_iso_packets = packets
     t.callback = ctypes.cast(callback, ctypes.c_void_p)
     for i in range(packets):
@@ -71,9 +81,11 @@ def iso_transfer(dev, endpoint, packet_size, packets, data=None, timeout_ms=3000
         out = []
         for i in range(packets):
             n = t.iso[i].actual_length
-            out.append(buffer.raw[i * packet_size:i * packet_size + n] if data is None else n)
+            out.append(ctypes.string_at(ctypes.addressof(buffer) + i * packet_size, n) if data is None else n)
             if statuses is not None:
                 statuses.append(t.iso[i].status)
         return out
     finally:
         lib.libusb_free_transfer(raw)
+        if mem:
+            lib.libusb_dev_mem_free(h, mem, size)
