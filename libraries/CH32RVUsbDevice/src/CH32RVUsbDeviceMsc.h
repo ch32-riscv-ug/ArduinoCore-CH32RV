@@ -219,7 +219,9 @@ private:
  * it is written block by block as it arrives, checked, and installed by a
  * restart. The image is never in RAM: `storage` holds the boot sector, the
  * FATs, the root directory and a scratch area for the host's own files
- * (8 KB is comfortable; at least 4 KB).
+ * (8 KB is comfortable; at least 4 KB). The FAT is there too: where it
+ * cannot describe twice the staging area (the UF2 file of a full image),
+ * the drive is as large as it can (H417's 920 KB staging in 4 KB: 679 KB).
  *
  * When an update ends: a UF2 when every block number came; a .bin when the
  * bytes reach the length in its directory entry, or the drive is ejected.

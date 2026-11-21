@@ -535,10 +535,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   端子が 16 本に収まるまとまりごとに取り込む。V205 に PC3〜PC8 を足して 19 本になって見つかった。V205 で通る。
 - [ ] X035 の softspi が 5 回中 2 回、1 ビット化ける（2026-11-20、PA13 の線を足した日）: shiftOut / shiftIn の LSBFIRST が
   モード 3 と読まれた、SPI のモード 2 LSBFIRST で 1 ビット違い。残り 3 回は通った。線を足す前の頻度と比べる。
-- [ ] H417 の usb-peer-firmware（Pico は FS の口、2026-11-20 に初めて流した）が 3 回とも別の所で落ちる: DFU の 12 ブロック目の
+- [x] H417 の usb-peer-firmware（Pico は FS の口、2026-11-20 に初めて流した）が 3 回とも別の所で落ちる: DFU の 12 ブロック目の
   DNLOAD / GETSTATUS、UF2 の書き込みが 141 ブロック中 0、DFU の st。usb-peer・usb-peer-classes・usb-peer-net・-fs・-input と
   ホストの側の 5 case は通る。フラッシュを自分で書き換えている間（H41x は RAM から走って flash を消す・書く）の FS の制御転送の
   答えが遅れる・抜ける見込み。次は DUT の側で、DNLOAD ごとの消去・書き込みの時間と、その間の USB の割り込みの遅れを測る。
+  → 2026-11-21: UF2 の 0 / 141 は、ドライブが無かったため（FW の RAM セクタ 0・ブロック 0）。staging 920 KB の 2 倍を
+  表す FAT が、スケッチの 4 KB に入らず、begin() が false だった。begin() は FAT で表せる最大の領域で立てるように
+  （4 KB で 679 KB、ほかの系列の配置は同じ）。試験はドライブの大きさを先に確かめる。H417 で DFU・UF2・.bin・family 違い
+  まで通った。DFU の 12 ブロック目の失敗は今回は出ていない。
 - [x] X315 の usb-peer / usb-peer-host（6-3、Pico とつないだ、2026-11-20）が、どちらの向きでも列挙しない。DUT の USBHS（PD6 /
   PD7）は有効でプルアップを出し、UTMI のクロックも入っている（HSE・HSI とも）。→ 2026-11-20: ユーザーが Pico の線を Type-C から
   USB-A のコネクタに替え、usb-peer（デバイス）・usb-peer-host（ホスト）とも通った（436afff4）。X315 の第 2 世代 USBHS の初の実機確認。

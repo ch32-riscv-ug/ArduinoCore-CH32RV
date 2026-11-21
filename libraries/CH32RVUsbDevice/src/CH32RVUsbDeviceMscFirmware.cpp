@@ -5,9 +5,10 @@
  * The volume: boot sector, two FATs, a root directory of 16 entries and a
  * scratch area in `storage`; after them, clusters that map onto the staging
  * flash. The cluster is the smallest of 1 to 128 sectors that lets FAT12
- * (4084 clusters at most) cover the scratch area and all of the staging
- * area: the staging writes go through the engine, which erases by itself, so
- * a cluster need not be an erase unit (ESP's starts at 4 KB for that). */
+ * (4084 clusters at most, the FAT in `storage`) cover the scratch area and
+ * twice the staging area, or as much of it as `storage` allows: the staging
+ * writes go through the engine, which erases by itself, so a cluster need
+ * not be an erase unit (ESP's starts at 4 KB for that). */
 #include "internal/CH32RVUsbDeviceInternal.h"
 
 #include <ch32rv_flash.h>
@@ -107,54 +108,50 @@ bool CH32RVUsbDeviceMscFirmwareDisk::begin(const char *volumeLabel)
     }
     const uint32_t rootSectors = (_rootEntryCount * 32u + SECTOR - 1u) / SECTOR;
     const uint32_t ramAvailable = (uint32_t)(_size / SECTOR);
-    bool laidOut = false;
-    /* Twice the staging area where the RAM's FAT can hold it, else its size
-     * (a UF2 file then fits an image up to half the staging area: V407's
-     * 484 KB at twice did not fit 4 KB of RAM). */
-    for (uint32_t span = 2u; span >= 1u && !laidOut; span--)
-    for (uint16_t spc = 1; spc <= 128 && !laidOut; spc = (uint16_t)(spc * 2)) {
+    /* The region over the staging flash: twice the staging area (a UF2
+     * block carries 256 bytes in a 512-byte sector, so the file is twice the
+     * image: CH32X035's 38 KB staging and a 25 KB image made a 49 KB file
+     * that ran off a region of the staging's size, 2026-11-17). Blocks are
+     * taken as they land, so the region costs no storage; a .bin past the
+     * staging size is refused by ch32rv_update_write().
+     *
+     * The FAT that describes it lives in `storage`. Where that cannot cover
+     * twice the staging, the region is as large as it can: H417's 920 KB
+     * staging in 4 KB gives 679 KB (a UF2 of an image up to 339 KB, a .bin
+     * up to 679 KB) instead of no drive. The smallest cluster that reaches
+     * the largest region wins, then the smallest FAT (more scratch). */
+    const uint32_t target = 2u * capacity;
+    uint32_t bestBytes = 0;
+    for (uint16_t spc = 1; spc <= 128; spc = (uint16_t)(spc * 2)) {
         const uint32_t clusterBytes = spc * SECTOR;
-        /* Room for a UF2 file: a UF2 block carries 256 bytes in a 512-byte
-         * sector, so the file is twice the image (CH32X035's 38 KB staging and
-         * a 25 KB image made a 49 KB file that ran off a region of the
-         * staging's size, 2026-11-17). Blocks are taken as they land, so the
-         * region costs no storage; a .bin past the staging size is refused by
-         * ch32rv_update_write(). */
-        const uint32_t firmwareClusters = (span * capacity + clusterBytes - 1u) / clusterBytes;
-        /* The FAT's size depends on the clusters, which depend on the RAM
-         * the FAT leaves for the scratch area: a few passes settle it. */
-        uint16_t fatSectors = 1;
-        uint32_t scratchClusters = 0;
-        bool settled = false;
-        for (int pass = 0; pass < 8; pass++) {
-            const uint32_t meta = 1u + 2u * fatSectors + rootSectors;
-            if (ramAvailable <= meta) {
-                break;
+        const uint32_t want = (2u * capacity + clusterBytes - 1u) / clusterBytes;
+        for (uint32_t fat = 1; 1u + 2u * fat + rootSectors < ramAvailable; fat++) {
+            const uint32_t meta = 1u + 2u * fat + rootSectors;
+            const uint32_t scratch = (ramAvailable - meta) / spc;   /* at least a cluster: addTextFile() */
+            const uint32_t entries = fat * SECTOR * 2u / 3u;          /* FAT12: 1.5 bytes each, clusters from 2 */
+            if (!scratch || scratch >= MAX_CLUSTERS || entries < scratch + 3u) {
+                continue;
             }
-            scratchClusters = (ramAvailable - meta) / spc;
-            if (!scratchClusters) {
-                break;
+            uint32_t firmware = entries - 2u - scratch;
+            if (firmware > MAX_CLUSTERS - scratch) {
+                firmware = MAX_CLUSTERS - scratch;
             }
-            const uint32_t fatBytes = ((scratchClusters + firmwareClusters + 2u) * 3u + 1u) / 2u;
-            const uint16_t need = (uint16_t)((fatBytes + SECTOR - 1u) / SECTOR);
-            if (need == fatSectors) {
-                settled = true;
-                break;
+            if (firmware > want) {
+                firmware = want;
             }
-            fatSectors = need;
+            const uint32_t reach = firmware * clusterBytes < target ? firmware * clusterBytes : target;
+            if (reach > bestBytes) {
+                bestBytes = reach;
+                _sectorsPerCluster = spc;
+                _sectorsPerFat = (uint16_t)fat;
+                _dataStart = meta;
+                _scratchSectors = scratch * spc;
+                _ramSectors = meta + _scratchSectors;
+                _blockCount = _ramSectors + firmware * spc;
+            }
         }
-        if (!settled || scratchClusters + firmwareClusters > MAX_CLUSTERS) {
-            continue;
-        }
-        _sectorsPerCluster = spc;
-        _sectorsPerFat = fatSectors;
-        _dataStart = 1u + 2u * fatSectors + rootSectors;
-        _scratchSectors = scratchClusters * spc;
-        _ramSectors = _dataStart + _scratchSectors;
-        _blockCount = _ramSectors + firmwareClusters * spc;
-        laidOut = true;
     }
-    if (!laidOut) {
+    if (!bestBytes) {
         return false;
     }
     memset(_storage, 0, _ramSectors * SECTOR);

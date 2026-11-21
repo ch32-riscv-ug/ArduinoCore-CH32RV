@@ -117,6 +117,11 @@ def test_usb_peer_firmware(dut, peers, record_property):
     record_property("staging_bytes", first["capacity"])
     if len(image) > first["capacity"]:
         pytest.skip(f"the image ({len(image)} B) does not fit the staging area ({first['capacity']} B) on this part")
+    # The drive past its RAM sectors must hold the UF2 file (twice the image): H417's 920 KB staging once laid out
+    # no drive at all in the sketch's 4 KB, and the UF2 step read "0 of 141 blocks".
+    assert first["ram_sectors"] > 0, "the firmware drive did not lay out (CH32RVUsbDeviceMscFirmwareDisk::begin())"
+    assert (first["blocks"] - first["ram_sectors"]) * 512 >= 2 * len(image), \
+        f"the drive's region ({first['blocks'] - first['ram_sectors']} sectors) cannot hold the image's UF2 file"
     peer_buffer = int(command(peer, "fwclr", rb"FWCLR (\d+)").group(1))
     record_property("peer_buffer", peer_buffer)
     if len(image) + 512 > peer_buffer:

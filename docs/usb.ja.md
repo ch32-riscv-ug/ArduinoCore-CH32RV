@@ -340,6 +340,9 @@ dfuMANIFEST を返し終えたら（約 20 ms 後）バスから離れてコピ�
 EspUsbDeviceMscFirmwareDisk と同じ形です。小さな FAT12 のボリュームを見せ、そのデータ領域の後半は staging の flash
 そのものです。`storage`（RAM）にはブートセクタ、FAT、ルートディレクトリと、ホストが置くファイル（`System Volume
 Information`、`.fseventsd` など）のための場所だけを置きます。8 KB が目安で、4 KB が最小です。
+ドライブの大きさは staging の 2 倍（UF2 のファイルはイメージの 2 倍）ですが、FAT も `storage` に置くので、
+staging の大きい系列で `storage` が小さいと、FAT で表せる範囲までに縮みます（H417 の 920 KB の staging は 4 KB で
+679 KB: UF2 はイメージ 339 KB まで、`.bin` は 679 KB まで。8 KB なら 2 倍の 1840 KB）。
 
 - `.uf2`: 順不同で受けます。ブロックのアドレスは `0x08000000` 起点（または 0 起点）で、イメージは flash の先頭からの
   ものに限ります。family ID が違うブロックは最初の 1 つで断ります。全ブロックがそろったら検査して、約 0.5 秒後
