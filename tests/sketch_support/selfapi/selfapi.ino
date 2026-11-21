@@ -1,5 +1,5 @@
 /* The core's utility APIs with no wiring (tests/instrumented/selfapi), beside selfcheck, selfbus and selfsys (on
- * V003 none of those has room for them). Console on SerialDMSeq:
+ * V003 none of those has room for them). Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   crc                       CRC <block 1/0> <crc32("123456789")> <crc32 of the bytes 1..128>
@@ -64,7 +64,7 @@
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVTimer.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <ch32rv_crc.h>
 #include <ch32rv_priority.h>
 #include <Arduino_CAN.h>
@@ -111,7 +111,7 @@ static void crc_check()
 #else
     const int block = 0;
 #endif
-    SerialDMSeq.printf("CRC %d %08lx %08lx %08lx %08lx\r\n", block, (unsigned long)ch32rv_crc32("123456789", 9),
+    CONSOLE.printf("CRC %d %08lx %08lx %08lx %08lx\r\n", block, (unsigned long)ch32rv_crc32("123456789", 9),
                        (unsigned long)CH32RV.crc32(buf, sizeof buf), (unsigned long)pieces,
                        (unsigned long)ch32rv_crc32(buf + 1, sizeof buf - 2u));
 }
@@ -119,20 +119,20 @@ static void crc_check()
 static void rng_check()
 {
 #ifdef CH32RV_RNG_BASE
-    SerialDMSeq.printf("RNG 1");
+    CONSOLE.printf("RNG 1");
 #else
-    SerialDMSeq.printf("RNG 0");
+    CONSOLE.printf("RNG 0");
 #endif
     for (int i = 0; i < 8; i++) {
-        SerialDMSeq.printf(" %08lx", (unsigned long)ch32rv_random());
+        CONSOLE.printf(" %08lx", (unsigned long)ch32rv_random());
     }
     uint8_t b[7];
     ch32rv_fill_random(b, sizeof b);
-    SerialDMSeq.printf(" ");
+    CONSOLE.printf(" ");
     for (unsigned i = 0; i < sizeof b; i++) {
-        SerialDMSeq.printf("%02x", b[i]);
+        CONSOLE.printf("%02x", b[i]);
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
 }
 
 #if defined(NUM_ANALOG_INPUTS) && CH32RV_ADC_CLOCK_OK
@@ -145,17 +145,17 @@ static void rng_check()
 
 static void adc_pins()
 {
-    SerialDMSeq.printf("ADCPINS");
+    CONSOLE.printf("ADCPINS");
     for (uint8_t port = 0; port < CH32RV_PORT_COUNT; port++) {
         const uint32_t mask = CH32RV_PORT_MASK(port);
         for (uint8_t bit = 0; bit < 32; bit++) {
             const pin_size_t p = (pin_size_t)CH32RV_PIN(port, bit);
             if ((mask & (1ul << bit)) && CH32RV_PIN_TO_ADC_CHANNEL(p) != NOT_AN_ANALOG_PIN) {
-                SerialDMSeq.printf(" %d", (int)p);
+                CONSOLE.printf(" %d", (int)p);
             }
         }
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
 }
 
 static void mv_check(int pin)
@@ -163,7 +163,7 @@ static void mv_check(int pin)
     const pin_size_t p = (pin_size_t)pin;
     const uint32_t channel = CH32RV_PIN_TO_ADC_CHANNEL(p);
     if (!digitalPinIsValid(p) || channel == NOT_AN_ANALOG_PIN) {
-        SerialDMSeq.printf("MV %d NONE\r\n", pin);
+        CONSOLE.printf("MV %d NONE\r\n", pin);
         return;
     }
     pinMode(p, INPUT_PULLUP);
@@ -174,7 +174,7 @@ static void mv_check(int pin)
     const int down = digitalRead(p);
     pinMode(p, INPUT);
     if (up == down) {                            /* held by the board: never driven */
-        SerialDMSeq.printf("MV %d HELD\r\n", pin);
+        CONSOLE.printf("MV %d HELD\r\n", pin);
         return;
     }
     (void)analogReadMilliVolts(p);               /* the ADC started and calibrated */
@@ -187,7 +187,7 @@ static void mv_check(int pin)
         mv[v] = ch32rv_adc_millivolts((uint8_t)(SELFAPI_ADC_INSTANCE(p) - 1u), channel);
     }
     pinMode(p, INPUT);
-    SerialDMSeq.printf("MV %d %lu %lu %lu %lu\r\n", pin, (unsigned long)channel, (unsigned long)mv[1], (unsigned long)mv[0],
+    CONSOLE.printf("MV %d %lu %lu %lu %lu\r\n", pin, (unsigned long)channel, (unsigned long)mv[1], (unsigned long)mv[0],
                        (unsigned long)CH32RV.getVddMillivolts());
 }
 #endif
@@ -239,7 +239,7 @@ static void prio_check()
         for (int k = 0; k < got; k++) {
             ch32rv_timer_release(&lease[k]);
         }
-        SerialDMSeq.printf("PRIO NONE\r\n");
+        CONSOLE.printf("PRIO NONE\r\n");
         return;
     }
     spin_ticks = CH32RV_SYSTICK_HZ / 1000000u * 300u;
@@ -269,7 +269,7 @@ static void prio_check()
         ch32rv_irq_set_priority(irq[k], CH32RV_IRQ_PRIORITY_CORE);
         ch32rv_timer_release(&lease[k]);
     }
-    SerialDMSeq.printf("PRIO %u %lu %lu %lu %lu %lu %lu\r\n", (unsigned)CH32RV_IRQ_PREEMPT_LEVELS,
+    CONSOLE.printf("PRIO %u %lu %lu %lu %lu %lu %lu\r\n", (unsigned)CH32RV_IRQ_PREEMPT_LEVELS,
                        (unsigned long)runs[0], (unsigned long)nested[0], (unsigned long)runs[1],
                        (unsigned long)nested[1], (unsigned long)runs[2], (unsigned long)nested[2]);
 }
@@ -315,7 +315,7 @@ static void dma_check()
 {
     CH32RVDma dma;
     if (!dma.begin()) {
-        SerialDMSeq.printf("DMA NONE\r\n");
+        CONSOLE.printf("DMA NONE\r\n");
         return;
     }
     alignas(4) static uint8_t src[256], dst[264];     /* small enough for the 2 KiB parts */
@@ -346,7 +346,7 @@ static void dma_check()
         chunk = dma.fill(big + 1, 0x5A, 66001u) && dma_same(big + 1, 66001u, dma_5a) ? 1 : 0;
         free(big);
     }
-    SerialDMSeq.printf("DMA %u %u %d %d %d %d %lu %lu %d\r\n", dma.dma(), dma.channel(), odd ? 1 : 0, words ? 1 : 0,
+    CONSOLE.printf("DMA %u %u %d %d %d %d %lu %lu %d\r\n", dma.dma(), dma.channel(), odd ? 1 : 0, words ? 1 : 0,
                        filled ? 1 : 0, async ? 1 : 0, (unsigned long)dma_callbacks, (unsigned long)turns, chunk);
     dma.end();
 }
@@ -374,7 +374,7 @@ static void attach_raise(uint32_t irqn)
 static void irq_attach_check()
 {
 #if defined(CH32RV_SERIES_CH32V103)
-    SerialDMSeq.printf("IRQATTACH NONE\r\n");
+    CONSOLE.printf("IRQATTACH NONE\r\n");
 #else
     uint32_t irqn = 0;
     for (uint32_t n = 127; n >= 16u && !irqn; n--) {
@@ -383,7 +383,7 @@ static void irq_attach_check()
         }
     }
     if (!irqn) {
-        SerialDMSeq.printf("IRQATTACH NONE\r\n");
+        CONSOLE.printf("IRQATTACH NONE\r\n");
         return;
     }
     attach_runs = 0;
@@ -397,7 +397,7 @@ static void irq_attach_check()
     attach_raise(irqn);
     const uint32_t after = attach_runs;
     ch32rv_irq_clear_pending(irqn);
-    SerialDMSeq.printf("IRQATTACH %lu %d %lu %d %d %lu\r\n", (unsigned long)irqn, ok ? 1 : 0, (unsigned long)runs,
+    CONSOLE.printf("IRQATTACH %lu %d %lu %d %d %lu\r\n", (unsigned long)irqn, ok ? 1 : 0, (unsigned long)runs,
                        attach_arg_seen ? 1 : 0, refused ? 1 : 0, (unsigned long)after);
 #endif
 }
@@ -419,7 +419,7 @@ static void vtf_check()
         }
     }
     if (!cap) {
-        SerialDMSeq.printf("VTF NONE\r\n");
+        CONSOLE.printf("VTF NONE\r\n");
         return;
     }
     vtf_base = cap->register_base;
@@ -446,7 +446,7 @@ static void vtf_check()
     const bool stillFast = ch32rv_irq_is_fast(cap->update_irq);
     ch32rv_timer_detach_update_interrupt(&lease);
     ch32rv_timer_release(&lease);
-    SerialDMSeq.printf("VTF %u %d %d %lu %lu %lu %lu %d\r\n", (unsigned)CH32RV_IRQ_FAST_SLOTS, set ? 1 : 0,
+    CONSOLE.printf("VTF %u %d %d %lu %lu %lu %lu %d\r\n", (unsigned)CH32RV_IRQ_FAST_SLOTS, set ? 1 : 0,
                        fastAfter ? 1 : 0, (unsigned long)least[0], (unsigned long)least[1],
                        (unsigned long)entries[0], (unsigned long)entries[1], stillFast ? 1 : 0);
 }
@@ -553,7 +553,7 @@ static void hsem_check()
     cores_count = 0;
     const uint32_t raw = cores_raw_lock();
     if (!cores_start(hsem_v3f)) {
-        SerialDMSeq.printf("HSEM V5F BUSY\r\n");
+        CONSOLE.printf("HSEM V5F BUSY\r\n");
         return;
     }
     const int a = CH32RV.hsemTryTake(CORES_HSEM_CH);
@@ -574,7 +574,7 @@ static void hsem_check()
     cores_step = 4;
     cores_add(CORES_ADDS);
     cores_finish(5000);
-    SerialDMSeq.printf("HSEM V5F %d %d %lu %lu %d %lu %d %d %lu %lu %d %lu %lu %08lx\r\n", a, b,
+    CONSOLE.printf("HSEM V5F %d %d %lu %lu %d %lu %d %d %lu %lu %d %lu %lu %08lx\r\n", a, b,
                        (unsigned long)cores_result[0], (unsigned long)cores_result[1], e,
                        (unsigned long)cores_result[2], g, h, (unsigned long)waited, (unsigned long)cores_result[3],
                        i, (unsigned long)cores_count, (unsigned long)(2u * CORES_ADDS), (unsigned long)raw);
@@ -637,7 +637,7 @@ static void heap_check()
     heap_v5f = HeapChurn{{}, {}, {}, 1u, 0u, 0u};
     heap_v3f_churn = HeapChurn{{}, {}, {}, 2u, 0u, 0u};
     if (!cores_start(heap_v3f)) {
-        SerialDMSeq.printf("HEAP BUSY\r\n");
+        CONSOLE.printf("HEAP BUSY\r\n");
         return;
     }
     cores_step = 1;
@@ -648,7 +648,7 @@ static void heap_check()
     cores_step = 2;
     cores_finish(2000);
     heap_v5f.clear();
-    SerialDMSeq.printf("HEAP %lu %lu %lu %lu\r\n", (unsigned long)heap_v5f.rounds, (unsigned long)heap_v5f.bad,
+    CONSOLE.printf("HEAP %lu %lu %lu %lu\r\n", (unsigned long)heap_v5f.rounds, (unsigned long)heap_v5f.bad,
                        (unsigned long)heap_v3f_churn.rounds, (unsigned long)heap_v3f_churn.bad);
 }
 
@@ -697,7 +697,7 @@ static void ipc_v3f(void *)
  * before its answer - what the bench needs to see when an interrupt does not come. */
 static void ipc_regs()
 {
-    SerialDMSeq.printf("IPCREGS %08lx %08lx %08lx %08lx %08lx\r\n", (unsigned long)CH32RV_REG32(0xE000D000u),
+    CONSOLE.printf("IPCREGS %08lx %08lx %08lx %08lx %08lx\r\n", (unsigned long)CH32RV_REG32(0xE000D000u),
                        (unsigned long)CH32RV_REG32(0xE000D010u), (unsigned long)CH32RV_REG32(0xE000D014u),
                        (unsigned long)CH32RV_REG32(0xE000D004u), (unsigned long)CH32RV_REG32(0xE000D008u));
 }
@@ -709,7 +709,7 @@ static void ipc_check(uint32_t n)
     while (CH32RV.ipcReceive(stale)) {
     }
     if (!cores_start(ipc_v3f)) {
-        SerialDMSeq.printf("IPC V5F BUSY\r\n");
+        CONSOLE.printf("IPC V5F BUSY\r\n");
         return;
     }
     cores_wait(&cores_done, 1, 1000);
@@ -746,7 +746,7 @@ static void ipc_check(uint32_t n)
         delayMicroseconds(2);
     }
     cores_finish(1000);
-    SerialDMSeq.printf("IPC V5F %lu %lu %lu %08lx %lu %08lx %lu %lu %08lx %d\r\n", (unsigned long)n,
+    CONSOLE.printf("IPC V5F %lu %lu %lu %08lx %lu %08lx %lu %lu %08lx %d\r\n", (unsigned long)n,
                        (unsigned long)ok, (unsigned long)took, (unsigned long)ipc_v3f_cause,
                        (unsigned long)ipc_v3f_core, (unsigned long)ipc_v5f_cause, (unsigned long)ipc_v5f_core,
                        (unsigned long)ipc_v3f_count, (unsigned long)polled, to_v5f ? 1 : 0);
@@ -949,13 +949,13 @@ static void serial_v3f(void *)
 static void v3f_port(int k)
 {
     if (k < 0 || k >= CORES_PORTS) {
-        SerialDMSeq.printf("V3FPORT 0 -1\r\n");
+        CONSOLE.printf("V3FPORT 0 -1\r\n");
         return;
     }
     cores_ports[k]->begin(9600);
     const uint8_t number = cores_ports[k]->peripheral();
     cores_ports[k]->end();
-    SerialDMSeq.printf("V3FPORT %u %d\r\n", number, number ? usart_rx_pin(number) : -1);
+    CONSOLE.printf("V3FPORT %u %d\r\n", number, number ? usart_rx_pin(number) : -1);
 }
 
 /* V3FSER <USARTn> CLOSED | <USARTn> <sent> <us> <IALLOC> HELD | <USARTn> <sent> <us> <IALLOC> <received>
@@ -963,22 +963,22 @@ static void v3f_port(int k)
 static void v3f_serial(int k)
 {
     if (k < 0 || k >= CORES_PORTS) {
-        SerialDMSeq.printf("V3FSER 0 CLOSED\r\n");
+        CONSOLE.printf("V3FSER 0 CLOSED\r\n");
         return;
     }
     cores_port = k;
     if (!cores_start(serial_v3f) || !cores_finish(5000)) {
-        SerialDMSeq.printf("V3FSER 0 BUSY\r\n");
+        CONSOLE.printf("V3FSER 0 BUSY\r\n");
         return;
     }
     const uint32_t r0 = cores_result[0], r1 = cores_result[1], r2 = cores_result[2], r3 = cores_result[3];
     if (!r1 && !r2) {
-        SerialDMSeq.printf("V3FSER %lu CLOSED\r\n", (unsigned long)r0);
+        CONSOLE.printf("V3FSER %lu CLOSED\r\n", (unsigned long)r0);
     } else if (cores_result[4]) {
-        SerialDMSeq.printf("V3FSER %lu %lu %lu %lu HELD\r\n", (unsigned long)r0, (unsigned long)r1,
+        CONSOLE.printf("V3FSER %lu %lu %lu %lu HELD\r\n", (unsigned long)r0, (unsigned long)r1,
                            (unsigned long)r2, (unsigned long)r3);
     } else {
-        SerialDMSeq.printf("V3FSER %lu %lu %lu %lu %lu %lu %lx\r\n", (unsigned long)r0, (unsigned long)r1,
+        CONSOLE.printf("V3FSER %lu %lu %lu %lu %lu %lu %lx\r\n", (unsigned long)r0, (unsigned long)r1,
                            (unsigned long)r2, (unsigned long)r3, (unsigned long)cores_result[5],
                            (unsigned long)cores_result[6], (unsigned long)cores_result[7]);
     }
@@ -996,7 +996,7 @@ static void hsem_check()
     const int d = CH32RV.hsemRelease(CORES_HSEM_CH);
     const int e = CH32RV.hsemTake(CORES_HSEM_CH, 20);
     CH32RV.hsemRelease(CORES_HSEM_CH);
-    SerialDMSeq.printf("HSEM V3F %d %d %d %d %d %08lx\r\n", a, b, c, d, e, (unsigned long)raw);
+    CONSOLE.printf("HSEM V3F %d %d %d %d %d %08lx\r\n", a, b, c, d, e, (unsigned long)raw);
 }
 
 /* IPC V3F <send> <onReceive> <receive>: no other core, all 0. */
@@ -1006,7 +1006,7 @@ static void ipc_check(uint32_t)
     const int s = CH32RV.ipcSend(1, 10);
     const int o = CH32RV.ipcOnReceive(nullptr);
     const int r = CH32RV.ipcReceive(m);
-    SerialDMSeq.printf("IPC V3F %d %d %d\r\n", s, o, r);
+    CONSOLE.printf("IPC V3F %d %d %d\r\n", s, o, r);
 }
 #endif
 #endif
@@ -1015,11 +1015,11 @@ static void ipc_check(uint32_t)
 static void cores_mode()
 {
 #if defined(CH32RV_HAS_V3F)
-    SerialDMSeq.printf("CORES V5F %d\r\n", CORES_PORTS);
+    CONSOLE.printf("CORES V5F %d\r\n", CORES_PORTS);
 #elif defined(CH32RV_HAS_HSEM)
-    SerialDMSeq.printf("CORES V3F\r\n");
+    CONSOLE.printf("CORES V3F\r\n");
 #else
-    SerialDMSeq.printf("CORES NONE\r\n");
+    CONSOLE.printf("CORES NONE\r\n");
 #endif
 }
 
@@ -1036,7 +1036,7 @@ static void ecdcCheck()
     CH32RVEcdc ecdc;
     uint8_t probe[16] = {};
     if (!ecdc.begin(CH32RVEcdc::AES, probe, 16)) {
-        SerialDMSeq.printf("ECDC NONE\r\n");
+        CONSOLE.printf("ECDC NONE\r\n");
         return;
     }
     static const struct {
@@ -1109,7 +1109,7 @@ static void ecdcCheck()
     memcpy(out, cipher, 64);
     check("ctr-inplace", begun && ecdc.ctr(iv, out, out, 64) && !memcmp(out, plain, 64));
     ecdc.end();
-    SerialDMSeq.printf("ECDC %d %d%s\r\n", right, total, wrong);
+    CONSOLE.printf("ECDC %d %d%s\r\n", right, total, wrong);
 }
 
 static uint16_t to565(uint32_t c)
@@ -1134,7 +1134,7 @@ static void gphaCheck()
         v = 0xEEEE;
     }
     if (!gpha.fill(s16, 3, 2, 5, 3, 0xFF2040C0)) {
-        SerialDMSeq.printf("GPHA NONE\r\n");
+        CONSOLE.printf("GPHA NONE\r\n");
         return;
     }
     int right = 0, total = 0;
@@ -1263,7 +1263,7 @@ static void gphaCheck()
         }
         check(global == 255 ? "blend" : "blend-global", ok);
     }
-    SerialDMSeq.printf("GPHA %d %d%s\r\n", right, total, wrong);
+    CONSOLE.printf("GPHA %d %d%s\r\n", right, total, wrong);
 }
 
 static void reply(char *command)
@@ -1277,20 +1277,20 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "opapads")) {
 #if defined(CH32RV_OPA_PADS) && defined(NUM_ANALOG_INPUTS)
         struct Pad { uint8_t unit, role, index, pin; };
         static const Pad table[] = CH32RV_OPA_PADS;
-        SerialDMSeq.print("OPAPADS");
+        CONSOLE.print("OPAPADS");
         for (const Pad &e : table) {
             if (e.unit == 1) {
-                SerialDMSeq.printf(" %d:%d", e.role, e.pin);
+                CONSOLE.printf(" %d:%d", e.role, e.pin);
             }
         }
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("\r\n");
 #else
-        SerialDMSeq.printf("OPAPADS NONE\r\n");
+        CONSOLE.printf("OPAPADS NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "opa") && argc == 4) {
         /* opa <+ pin> <- pin, or g<gain> for the PGA> <out pin> */
@@ -1317,20 +1317,20 @@ static void reply(char *command)
         if (!pga) {
             pinMode(minus, INPUT);
         }
-        SerialDMSeq.printf("OPA %d %d %d\r\n", ok ? 1 : 0, level[0], level[1]);
+        CONSOLE.printf("OPA %d %d %d\r\n", ok ? 1 : 0, level[0], level[1]);
     } else if (!strcmp(argv[0], "cmppads")) {
 #if defined(CH32RV_CMP_PADS)
         struct Pad { uint8_t unit, role, value, af, pin; };
         static const Pad table[] = CH32RV_CMP_PADS;
-        SerialDMSeq.print("CMPPADS");
+        CONSOLE.print("CMPPADS");
         for (const Pad &e : table) {
             if (e.unit == 1) {
-                SerialDMSeq.printf(" %d:%d", e.role, e.pin);
+                CONSOLE.printf(" %d:%d", e.role, e.pin);
             }
         }
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("\r\n");
 #else
-        SerialDMSeq.printf("CMPPADS NONE\r\n");
+        CONSOLE.printf("CMPPADS NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "cmp") && argc == 4) {
         /* cmp <+ pin> <- pin> <out pin, -1 none> */
@@ -1367,7 +1367,7 @@ static void reply(char *command)
         if (pad) {
             pinMode(minus, INPUT);
         }
-        SerialDMSeq.printf("CMP %d %d %d %d\r\n", ok ? 1 : 0, level[0], level[1], (int)cmp_edges);
+        CONSOLE.printf("CMP %d %d %d %d\r\n", ok ? 1 : 0, level[0], level[1], (int)cmp_edges);
     } else if (!strcmp(argv[0], "gpha")) {
         gphaCheck();
     } else if (!strcmp(argv[0], "ecdc")) {
@@ -1393,10 +1393,10 @@ static void reply(char *command)
                 right += m.id == id && m.data_length == len && !memcmp(m.data, d, len);
             }
         }
-        SerialDMSeq.printf("CANLB %d %d %u %u\r\n", ok ? 1 : 0, right, CAN.txErrors(), CAN.rxErrors());
+        CONSOLE.printf("CANLB %d %d %u %u\r\n", ok ? 1 : 0, right, CAN.txErrors(), CAN.rxErrors());
         CAN.end();
 #else
-        SerialDMSeq.printf("CANLB NONE\r\n");
+        CONSOLE.printf("CANLB NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "crc")) {
         crc_check();
@@ -1409,7 +1409,7 @@ static void reply(char *command)
         mv_check(atoi(argv[1]));
 #else
     } else if (!strcmp(argv[0], "adcpins")) {
-        SerialDMSeq.printf("ADCPINS\r\n");
+        CONSOLE.printf("ADCPINS\r\n");
 #endif
     } else if (!strcmp(argv[0], "dma")) {
         dma_check();
@@ -1436,21 +1436,21 @@ static void reply(char *command)
         v3f_serial(atoi(argv[1]));
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

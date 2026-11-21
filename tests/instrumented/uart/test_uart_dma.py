@@ -68,12 +68,12 @@ def _expect(dut, wait, pattern, timeout=3.0):
 
 
 def _ask(dut, wait, line, reply, timeout=3.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return _expect(dut, wait, reply, timeout)
 
 
 def _ask_now(dut, line, reply, timeout=5.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 

@@ -61,7 +61,7 @@ def boot(dut, case, wait=time.sleep, tries=12):
     """The DUT's answer once it runs (lines sent while it restarts are lost): (reset reason, wakeup cause)."""
     for attempt in range(tries):
         nonce = secrets.token_hex(4)
-        dut.write(f"ready {nonce}\n")
+        dut.write(f"ready {nonce}")
         end = time.monotonic() + 1.0
         while time.monotonic() < end:
             try:
@@ -98,7 +98,7 @@ def test_reset_reasons(dut, oep_host, record_property):
     from oep_client.fixture import Gpio
     case = settings(__file__)
     boot(dut, case)
-    dut.write("restart\n")
+    dut.write("restart")
     time.sleep(0.3)
     software = boot(dut, case)[0]
     nrst = case["target"].get("nrst_channel")
@@ -132,15 +132,15 @@ def test_backup_registers(dut, record_property):
     case = settings(__file__)
     boot(dut, case)
     seed = secrets.randbelow(0x10000)
-    dut.write(f"bkpw {seed}\n")
+    dut.write(f"bkpw {seed}")
     m = expect(dut, time.sleep, rb"BKPW (\d+) (\d)")
     count, keeps = int(m.group(1)), m.group(2) == b"1"
     if count == 0:
         pytest.skip("n/a: backupRegisterCount() is 0 on this family (no RTC domain)")
-    dut.write("restart\n")
+    dut.write("restart")
     time.sleep(0.3)
     reason = boot(dut, case)[0]
-    dut.write(f"bkpr {seed}\n")
+    dut.write(f"bkpr {seed}")
     m = expect(dut, time.sleep, rb"BKPR (\d+) (\d+)")
     same = int(m.group(2))
     record_property("backup", json.dumps(dict(count=count, keeps_power=keeps, same=same, reason=reason)))
@@ -200,7 +200,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                 command = f"wdt {ms} 50 600 {timing['pin']}"
                 ws_run.command(command)
-                dut.write(command + "\n")
+                dut.write(command)
                 ok = expect(dut, wait, rb"WDT (\d)").group(1) == b"1"
                 if not ok:
                     facts[name] = "wdtEnable() refused"
@@ -221,7 +221,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
             with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                 command = f"wwdg {mode} {timing['pin']}"
                 ws_run.command(command)
-                dut.write(command + "\n")
+                dut.write(command)
                 m = expect(dut, wait, rb"WWDG (\d+) (\d+) (\d+)")
                 t_us, w_us, max_us = (int(x) for x in m.groups())
                 try:
@@ -233,7 +233,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
                     pass
                 wait(0.3 + t_us / 1e6 + 0.3)
                 reason, _ = boot(dut, case, wait)
-                dut.write("ewi\n")
+                dut.write("ewi")
                 ewi, span, steps = (int(x) for x in expect(dut, wait, rb"EWI (\d+) (\d+) (\d+)").groups())
                 ws_run.reply(f"reset reason {reason} early warnings {ewi} counter {steps} steps in {span} us")
                 facts[name] = dict(timeout_us=t_us, window_us=w_us, max_us=max_us, reason=reason, ewi=ewi,
@@ -257,7 +257,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"alarm 2 {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             if expect(dut, wait, rb"ALARM (\d)").group(1) == b"0":
                 facts["alarm"] = "unsupported"
                 return
@@ -275,7 +275,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"asleep 2 {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             m = expect(dut, wait, rb"ASLEEP (\d+) (\d+) (\d+)", timeout=12)
             ws_run.reply(m.group(0).decode())
             result, cause, slept = (int(x) for x in m.groups())
@@ -288,7 +288,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"adeep 2 {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             wait(3.5)
             reason, cause = boot(dut, case, wait)
             ws_run.reply(f"reset reason {reason} wakeup cause {cause}")
@@ -304,7 +304,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"tsleep 200000 {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             m = expect(dut, wait, rb"TSLEEP (\d+) (\d+) (\d+)")
             ws_run.reply(m.group(0).decode())
             result, cause, slept = (int(x) for x in m.groups())
@@ -320,7 +320,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"psleep {wake['pin']} {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             expect(dut, wait, rb"PSLEEP READY")
             wait(0.2)
             gpio.configure(wake["channel"], Gpio.OUTPUT_LOW)
@@ -337,7 +337,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
         with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
             command = f"dsleep 200000 {timing['pin']}"
             ws_run.command(command)
-            dut.write(command + "\n")
+            dut.write(command)
             wait(0.6)
             reason, cause = boot(dut, case, wait)
             ws_run.reply(f"reset reason {reason} wakeup cause {cause}")
@@ -397,7 +397,7 @@ def test_clock_output(dut, oep_host, ws_run, record_property):
     from wireskein.runlog import pulses
     case = settings(__file__)
     boot(dut, case)
-    dut.write("mcohz\n")
+    dut.write("mcohz")
     m = dut.expect(rb"MCOHZ (\d+)((?: \d+:\d+)*)\r?\n", timeout=5)
     pin = int(m.group(1))
     if not pin:
@@ -413,16 +413,16 @@ def test_clock_output(dut, oep_host, ws_run, record_property):
     hz, src = usable[0]
     record_property("mco", json.dumps({"pad": pad, "source": src, "hz": hz}))
     try:
-        dut.write(f"mco {src}\n")
+        dut.write(f"mco {src}")
         assert dut.expect(rb"MCO (\d)\r?\n", timeout=5).group(1) == b"1", f"setClockOutput({src}) refused"
         time.sleep(0.01)
         with ws_run.section(1, f"MCO {pad} source {src} {hz} Hz",
                             expect=[pulses(pad, period_s=1 / hz, period_rel=0.1)]):
             ws_capture.capture(ws_run, oep_host, [line], rate=MCO_RATE, samples=200_000)
-        dut.write("mco 0\n")
+        dut.write("mco 0")
         assert dut.expect(rb"MCO (\d)\r?\n", timeout=5).group(1) == b"1", "setClockOutput(0) refused"
         time.sleep(0.01)
         with ws_run.section(1, f"MCO {pad} off", expect=[pulses(pad, count=0)]):
             ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=10_000)
     finally:
-        dut.write("mco 0\n")
+        dut.write("mco 0")

@@ -3,7 +3,7 @@
  * its USARTs' receivers fed from their own RX pads, the ADC's internal
  * reference. What
  * only the outside can tell (which pad a signal leaves on, its levels, a
- * partner) stays with the wired cases. Console on SerialDMSeq:
+ * partner) stays with the wired cases. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   clocks                    CLOCKS <F_CPU> <HCLK> <PCLK1> <PCLK2> <CFGR0 hex> <PCLK2 from CFGR0, or 0>
@@ -32,7 +32,7 @@
  *                             or VREF -1 0 0 without an ADC */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <stdlib.h>
 #include <string.h>
 #include <SPI.h>
@@ -212,7 +212,7 @@ static void transmit(int k, unsigned long baud, int n)
     const uint32_t base = number ? usart_base(number) : 0;
     if (!port || !base) {
         port.end();
-        SerialDMSeq.printf("TX %u CLOSED\r\n", number);
+        CONSOLE.printf("TX %u CLOSED\r\n", number);
         return;
     }
     int sent = 0;
@@ -224,7 +224,7 @@ static void transmit(int k, unsigned long baud, int n)
     const uint32_t took = micros() - t0;
     const unsigned brr = CH32RV_USART_BRR(base);
     port.end();
-    SerialDMSeq.printf("TX %u %d %lu %u\r\n", number, sent, (unsigned long)took, brr);
+    CONSOLE.printf("TX %u %d %lu %u\r\n", number, sent, (unsigned long)took, brr);
 }
 
 /* Whether something on the board holds the pad (a driver, a strong pull):
@@ -249,7 +249,7 @@ static void rx_pin_of(int k)
     port.begin(9600);
     const uint8_t number = port.peripheral();
     port.end();
-    SerialDMSeq.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
+    CONSOLE.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
 }
 
 /* The receiver: its RX pad made a GPIO output, which the USART still hears
@@ -264,13 +264,13 @@ static void receive(int k, int n)
     const int pin = number ? rx_pin(number) : -1;
     if (!port || pin < 0) {
         port.end();
-        SerialDMSeq.printf("RX %u CLOSED\r\n", number);
+        CONSOLE.printf("RX %u CLOSED\r\n", number);
         return;
     }
     int up, down;
     if (held((pin_size_t)pin, &up, &down)) {
         port.end();
-        SerialDMSeq.printf("RX %u HELD\r\n", number);
+        CONSOLE.printf("RX %u HELD\r\n", number);
         return;
     }
     port.begin(9600);                   /* held() left the pad an input */
@@ -335,7 +335,7 @@ static void receive(int k, int n)
     }
     const unsigned errors = port.takeErrors();
     port.end();
-    SerialDMSeq.printf("RX %u %d %d %u %02x%02x%02x%02x\r\n", number, received, matching, errors,
+    CONSOLE.printf("RX %u %d %d %u %02x%02x%02x%02x\r\n", number, received, matching, errors,
                        first[0], first[1], first[2], first[3]);
 }
 
@@ -351,7 +351,7 @@ static void gpio(int pin)
     const pin_size_t p = (pin_size_t)pin;
     int up, down;
     if (held(p, &up, &down)) {
-        SerialDMSeq.printf("GPIO %d HELD %d\r\n", pin, up);
+        CONSOLE.printf("GPIO %d HELD %d\r\n", pin, up);
         return;
     }
     pinMode(p, OUTPUT);
@@ -379,23 +379,23 @@ static void gpio(int pin)
     }
     digitalWrite(p, LOW);
     pinMode(p, INPUT);
-    SerialDMSeq.printf("GPIO %d %d %d %u %u %u %d %d\r\n", pin, high, low, counts[0], counts[1], counts[2], up, down);
+    CONSOLE.printf("GPIO %d %d %d %u %u %u %d %d\r\n", pin, high, low, counts[0], counts[1], counts[2], up, down);
 }
 
 /* Every pad the part bonds (the variant's port masks); the test leaves out
  * the debug, reset, strap, crystal and USB pads before asking for any. */
 static void all_pins(void)
 {
-    SerialDMSeq.printf("ALLPINS");
+    CONSOLE.printf("ALLPINS");
     for (uint8_t port = 0; port < CH32RV_PORT_COUNT; port++) {
         const uint32_t mask = CH32RV_PORT_MASK(port);
         for (uint8_t bit = 0; bit < 32; bit++) {
             if (mask & (1ul << bit)) {
-                SerialDMSeq.printf(" %d", (int)CH32RV_PIN(port, bit));
+                CONSOLE.printf(" %d", (int)CH32RV_PIN(port, bit));
             }
         }
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
 }
 
 /* PWM on one pad (analogWrite at hz, 8-bit duty), read back on the pad's own
@@ -419,12 +419,12 @@ static void pwm(int pin, int duty, unsigned long hz)
     dac = dac || p == (pin_size_t)CH32RV_DAC2_PIN;
 #endif
     if (!timer || dac) {
-        SerialDMSeq.printf("PWM %d NONE\r\n", pin);
+        CONSOLE.printf("PWM %d NONE\r\n", pin);
         return;
     }
     int up, down;
     if (held(p, &up, &down)) {
-        SerialDMSeq.printf("PWM %d HELD\r\n", pin);
+        CONSOLE.printf("PWM %d HELD\r\n", pin);
         return;
     }
     analogWriteFrequency(p, hz);
@@ -442,7 +442,7 @@ static void pwm(int pin, int duty, unsigned long hz)
     }
     analogWrite(p, 0);
     pinMode(p, INPUT);
-    SerialDMSeq.printf("PWM %d %u %u %lu %lu %lu\r\n", pin, timer, channel, (unsigned long)edges,
+    CONSOLE.printf("PWM %d %u %u %lu %lu %lu\r\n", pin, timer, channel, (unsigned long)edges,
                        (unsigned long)highs, (unsigned long)samples);
 }
 
@@ -463,10 +463,10 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "clocks")) {
         const uint32_t cfgr0 = CH32RV_RCC_CFGR0;
-        SerialDMSeq.printf("CLOCKS %lu %lu %lu %lu %08lx %lu %lu\r\n", (unsigned long)F_CPU,
+        CONSOLE.printf("CLOCKS %lu %lu %lu %lu %08lx %lu %lu\r\n", (unsigned long)F_CPU,
                            (unsigned long)CH32RV_HCLK_HZ, (unsigned long)CH32RV_PCLK1_HZ,
                            (unsigned long)CH32RV_PCLK2_HZ, (unsigned long)cfgr0,
                            (unsigned long)pclk2_from_register(cfgr0),
@@ -482,7 +482,7 @@ static void reply(char *command)
         const int asked = 0;
         const int use_pll = CH32RV_CLOCK_USE_PLL;
 #endif
-        SerialDMSeq.printf("SOURCE %d %d %d %lu %d\r\n", asked, on_hse, use_pll,
+        CONSOLE.printf("SOURCE %d %d %d %lu %d\r\n", asked, on_hse, use_pll,
                            (unsigned long)((CH32RV_RCC_CFGR0 & CH32RV_RCC_CFGR0_SWS_MASK) >> 2),
                            (CH32RV_RCC_CTLR & CH32RV_RCC_CTLR_HSERDY) ? 1 : 0);
     } else if (!strcmp(argv[0], "rtcsrc")) {
@@ -491,7 +491,7 @@ static void reply(char *command)
 #else
         const int asked = 0;
 #endif
-        SerialDMSeq.printf("RTCSRC %d %d\r\n", asked, (int)CH32RV.rtcClock());
+        CONSOLE.printf("RTCSRC %d %d\r\n", asked, (int)CH32RV.rtcClock());
 #if defined(CH32RV_HAS_RTC)
     } else if (!strcmp(argv[0], "hsical")) {
         /* From three steps off, calibrateHsi(); then the error of the trim it
@@ -514,7 +514,7 @@ static void reply(char *command)
             side[k] = hsi_error(500);
         }
         CH32RV.setHsiTrim(trim);
-        SerialDMSeq.printf("HSICAL %d %u %ld %ld %ld\r\n", ok ? 1 : 0, trim, (long)err, (long)side[0], (long)side[1]);
+        CONSOLE.printf("HSICAL %d %u %ld %ld %ld\r\n", ok ? 1 : 0, trim, (long)err, (long)side[0], (long)side[1]);
     } else if (!strcmp(argv[0], "rtccal") && argc == 3) {
         /* setRtcCalibration(ppm), then the RTC against micros() over ms:
          * RTCCAL <ok> <ppm the RTC runs off micros()> */
@@ -537,7 +537,7 @@ static void reply(char *command)
         ch32rv_irq_restore(irq);
         const int64_t rtc_us = (int64_t)(s1 - s0) * 1000000 + ((int32_t)u1 - (int32_t)u0);
         const int64_t dt = (int64_t)(t1 - t0);
-        SerialDMSeq.printf("RTCCAL %d %ld\r\n", ok ? 1 : 0, (long)((rtc_us - dt) * 1000000 / dt));
+        CONSOLE.printf("RTCCAL %d %ld\r\n", ok ? 1 : 0, (long)((rtc_us - dt) * 1000000 / dt));
     } else if (!strcmp(argv[0], "rtcout")) {
         /* The RTC clock / 64 on the TAMPER pad (PC13), its rising edges read
          * back from the pad for one second: RTCOUT <ok> <edges> */
@@ -557,10 +557,10 @@ static void reply(char *command)
         }
 #endif
         CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_NONE);
-        SerialDMSeq.printf("RTCOUT %d %d\r\n", ok ? 1 : 0, edges);
+        CONSOLE.printf("RTCOUT %d %d\r\n", ok ? 1 : 0, edges);
 #endif
     } else if (!strcmp(argv[0], "ports")) {
-        SerialDMSeq.printf("PORTS %d\r\n", PORT_COUNT);
+        CONSOLE.printf("PORTS %d\r\n", PORT_COUNT);
     } else if (!strcmp(argv[0], "tx") && argc == 4 && atoi(argv[1]) < PORT_COUNT) {
         transmit(atoi(argv[1]), strtoul(argv[2], nullptr, 10), atoi(argv[3]));
     } else if (!strcmp(argv[0], "rx") && argc == 3 && atoi(argv[1]) < PORT_COUNT) {
@@ -586,9 +586,9 @@ static void reply(char *command)
                               0;
         const unsigned br = base ? (CH32RV_SPI_CTLR1(base) >> CH32RV_SPI_CTLR1_BR_SHIFT) & 7u : 0;
         SPI.end();
-        SerialDMSeq.printf("SPI %u %lu %u\r\n", number, (unsigned long)took, br);
+        CONSOLE.printf("SPI %u %lu %u\r\n", number, (unsigned long)took, br);
 #else
-        SerialDMSeq.printf("SPI 0 NONE\r\n");
+        CONSOLE.printf("SPI 0 NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "allpins")) {
         all_pins();
@@ -608,32 +608,32 @@ static void reply(char *command)
         for (volatile int i = 0; i < 1000; i++) {
         }
         const uint32_t c1 = CH32RV_SYSTICK_CNT;
-        SerialDMSeq.printf("TIME %lu %lu %lx %lx %lx\r\n", (unsigned long)ms, (unsigned long)us, (unsigned long)ctlr,
+        CONSOLE.printf("TIME %lu %lu %lx %lx %lx\r\n", (unsigned long)ms, (unsigned long)us, (unsigned long)ctlr,
                            (unsigned long)c0, (unsigned long)c1);
     } else if (!strcmp(argv[0], "vref")) {
 #if defined(NUM_ANALOG_INPUTS) && defined(CH32RV_ADC_BITS) && CH32RV_ADC_CLOCK_OK
         analogReadResolution(CH32RV_ADC_BITS);
-        SerialDMSeq.printf("VREF %d %d %lu\r\n", analogReadVref(), (1 << CH32RV_ADC_BITS) - 1,
+        CONSOLE.printf("VREF %d %d %lu\r\n", analogReadVref(), (1 << CH32RV_ADC_BITS) - 1,
                            (unsigned long)CH32RV.getVddMillivolts());
 #else
-        SerialDMSeq.printf("VREF -1 0 0\r\n");
+        CONSOLE.printf("VREF -1 0 0\r\n");
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %d [%s]\r\n", argc, whole);
+        CONSOLE.printf("UNKNOWN %d [%s]\r\n", argc, whole);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

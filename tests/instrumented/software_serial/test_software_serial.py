@@ -42,12 +42,12 @@ def _expect(dut, wait, pattern, timeout=3.0):
 
 
 def _ask(dut, wait, line, reply, timeout=3.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return _expect(dut, wait, reply, timeout)
 
 
 def _ask_now(dut, line, reply, timeout=5.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -133,7 +133,7 @@ def test_software_serial(dut, ws_run, request, record_property):
                     with ws_run.section(3, "dut receives", expect=[uart(ss_rx["pad"], probe_baud, data=back.hex(),
                                                                         **common), level(ss_tx["pad"], 1)]):
                         ws_run.command(f"ssrecv {COUNT}")
-                        dut.write(f"ssrecv {COUNT} {int(200 + 12000 * COUNT / baud)}\n")
+                        dut.write(f"ssrecv {COUNT} {int(200 + 12000 * COUNT / baud)}")
                         _expect(dut, wait, rb"SSRECV READY")
                         io.write(back)
                         m = _expect(dut, wait, rb"SSRECV (\d+) ([0-9A-F]+) (\d)", timeout=5)

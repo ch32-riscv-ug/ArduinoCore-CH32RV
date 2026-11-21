@@ -21,7 +21,7 @@
  * one event: the rest of a USB packet waits in the endpoint's buffer). */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -62,35 +62,35 @@ static void cdc_rx(const uint8_t *data, size_t length)
 static void reply(const char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "keys") == 0) {
-        SerialDMSeq.print("KEYS ");
-        SerialDMSeq.println(keyboard.write("ab", 0) ? 1 : 0);
+        CONSOLE.print("KEYS ");
+        CONSOLE.println(keyboard.write("ab", 0) ? 1 : 0);
     } else if (strcmp(command, "replug") == 0) {
         USBDevice.end();
         delay(1000);                 /* longer than a hub's status poll */
-        SerialDMSeq.print("REPLUG ");
-        SerialDMSeq.println(USBDevice.begin(config) ? 1 : 0);
+        CONSOLE.print("REPLUG ");
+        CONSOLE.println(USBDevice.begin(config) ? 1 : 0);
     } else if (strcmp(command, "mounts") == 0) {
-        SerialDMSeq.print("MOUNTS ");
-        SerialDMSeq.println((unsigned long)mounts);
+        CONSOLE.print("MOUNTS ");
+        CONSOLE.println((unsigned long)mounts);
     } else if (strcmp(command, "net") == 0) {
         static const char hex[] = "0123456789ABCDEF";
-        SerialDMSeq.print("NET ");
-        SerialDMSeq.print((unsigned long)netFrames);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("NET ");
+        CONSOLE.print((unsigned long)netFrames);
+        CONSOLE.print(' ');
         for (uint8_t i = 0; i < 6; i++) {
-            SerialDMSeq.print(hex[net.macAddress()[i] >> 4]);
-            SerialDMSeq.print(hex[net.macAddress()[i] & 15]);
+            CONSOLE.print(hex[net.macAddress()[i] >> 4]);
+            CONSOLE.print(hex[net.macAddress()[i] & 15]);
         }
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(command, "netsend") == 0) {
         static uint8_t frame[60];
         memset(frame, 0xFF, 6);
@@ -99,8 +99,8 @@ static void reply(const char *command)
         frame[12] = 0x88;
         frame[13] = 0xB5;
         memcpy(frame + 14, "CH32RV usb-contract", 19);
-        SerialDMSeq.print("NETSEND ");
-        SerialDMSeq.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
+        CONSOLE.print("NETSEND ");
+        CONSOLE.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
     } else if (strncmp(command, "cdcmode ", 8) == 0) {
         cdcDirect = strcmp(command + 8, "direct") == 0;
         if (cdcDirect) {
@@ -115,19 +115,19 @@ static void reply(const char *command)
             SerialUSB.onRxData(nullptr);
             SerialUSB.onDirectTxComplete(nullptr);
         }
-        SerialDMSeq.print("CDCMODE ");
-        SerialDMSeq.print(cdcDirect ? "direct " : "fifo ");
-        SerialDMSeq.println((unsigned long)cdcDirectDone);
+        CONSOLE.print("CDCMODE ");
+        CONSOLE.print(cdcDirect ? "direct " : "fifo ");
+        CONSOLE.println((unsigned long)cdcDirectDone);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     CH32RVUsbMidiConfig midiConfig = midi.configuration();
     midiConfig.rxPackets = 1;
     midi.configure(midiConfig);
@@ -166,8 +166,8 @@ void loop()
         packet.byte2 = (uint8_t)(packet.byte2 + 12);
         midi.writePacket(packet);
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

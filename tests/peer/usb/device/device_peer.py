@@ -48,13 +48,13 @@ def link_speed(test_file):
 
 def command(peer, line, reply, timeout=10):
     """Send `line`, return the match of `<tag><reply>` (a regex, bytes)."""
-    peer.write(line + "\n")
+    peer.write(line)
     return peer.expect(reply + rb"\r?\n", timeout=timeout)
 
 
 def dut_ready(dut, build_id):
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
@@ -64,7 +64,7 @@ def wait_enumerated(peer, build_id, timeout=20):
     """Poll `dev` until the peer lists this build; the DEV line and its ITF rows."""
     deadline = time.monotonic() + timeout
     while True:
-        peer.write("dev\n")
+        peer.write("dev")
         t = re.escape(peer.tag)
         block = peer.serial.expect(rb"(" + t + rb"DEV [^\n]*\n(?:" + t + rb"ITF [^\n]*\n)*)?" + t + rb"DEVEND (\d+)\r?\n",
                                    timeout=10)

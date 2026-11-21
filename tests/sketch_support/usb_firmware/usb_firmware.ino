@@ -19,7 +19,7 @@
  * reachable from the probe. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <ch32rv_flash.h>
 #include <string.h>
@@ -47,50 +47,50 @@ static void print_generation()
 {
     const volatile char *g = ch32_generation + 8;
     for (int i = 0; i < 16; i++) {
-        SerialDMSeq.print((char)g[i]);
+        CONSOLE.print((char)g[i]);
     }
 }
 
 static void reply(const char *command)
 {
     if (!strncmp(command, "ready ", 6)) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (!strcmp(command, "fw")) {
-        SerialDMSeq.print("FW ");
+        CONSOLE.print("FW ");
         print_generation();
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(ch32rv_flash_staging_size());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(CH32RVUsbDeviceMscFirmwareDisk::uf2FamilyId(), HEX);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(disk.ramSectorCount());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(disk.blockCount());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned)dfu.status());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(dfu.state());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(disk.lastError());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(dfuErrors);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)disk.written());
+        CONSOLE.print(' ');
+        CONSOLE.print(ch32rv_flash_staging_size());
+        CONSOLE.print(' ');
+        CONSOLE.print(CH32RVUsbDeviceMscFirmwareDisk::uf2FamilyId(), HEX);
+        CONSOLE.print(' ');
+        CONSOLE.print(disk.ramSectorCount());
+        CONSOLE.print(' ');
+        CONSOLE.print(disk.blockCount());
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned)dfu.status());
+        CONSOLE.print(' ');
+        CONSOLE.print(dfu.state());
+        CONSOLE.print(' ');
+        CONSOLE.print(disk.lastError());
+        CONSOLE.print(' ');
+        CONSOLE.print(dfuErrors);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)disk.written());
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     dfu.onError([](CH32RVUsbDfuStatus) { dfuErrors++; });
     if (disk.begin("FIRMWARE")) {
         disk.addTextFile("README.TXT", "CH32RV usb-firmware " BENCH_BUILD_ID "\r\n");
@@ -108,8 +108,8 @@ void setup()
 void loop()
 {
     deliverEvents();
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

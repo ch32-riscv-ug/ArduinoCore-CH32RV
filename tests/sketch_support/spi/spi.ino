@@ -1,6 +1,6 @@
 /* SPI contracts (tests/instrumented/spi): the hardware SPI on its default
  * pins, or a SoftSPI on the bench's pads, as the controller of an OEP probe's
- * spi-target, CS an ordinary GPIO. Console on SerialDMSeq:
+ * spi-target, CS an ordinary GPIO. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>                      READY <nonce> <build id>
  *   pins <sck> <miso> <mosi> <cs>      SoftSPI on these: PINS <1 opened / 0 refused>
@@ -47,7 +47,7 @@
  *                                      PERIPH <bytes read, hex> */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <SPI.h>
 #if defined(SPI_INTERFACES_COUNT)
 #include <CH32RVSPISlave.h>
@@ -68,7 +68,7 @@ static int softPins[3] = {-1, -1, -1};
 static void hex(uint32_t v, uint8_t digits)
 {
     while (digits--) {
-        SerialDMSeq.print((char)"0123456789abcdef"[(v >> (digits * 4)) & 0xFu]);
+        CONSOLE.print((char)"0123456789abcdef"[(v >> (digits * 4)) & 0xFu]);
     }
 }
 
@@ -109,13 +109,13 @@ static void xfer(uint8_t mode, bool lsb, uint32_t hz, uint16_t word, const char 
         digitalWrite(cs, HIGH);
     }
     bus->endTransaction();
-    SerialDMSeq.print("XFER ");
+    CONSOLE.print("XFER ");
     for (size_t i = 0; i < n; i++) {
         hex(out[i], 2);
     }
-    SerialDMSeq.print(' ');
+    CONSOLE.print(' ');
     hex(in, 4);
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 /* The buffer transfers (`blk`). The asynchronous ones are the bus object's
@@ -166,17 +166,17 @@ static void blk(char how, uint32_t hz, const char *bytes)
         digitalWrite(cs, HIGH);
     }
     bus->endTransaction();
-    SerialDMSeq.print("BLK ");
-    SerialDMSeq.print(ok ? 1 : 0);
-    SerialDMSeq.print(' ');
+    CONSOLE.print("BLK ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
     if (how == 'w' || how == 'a') {
-        SerialDMSeq.print('-');
+        CONSOLE.print('-');
     } else {
         for (size_t i = 0; i < n; i++) {
             hex(in[i], 2);
         }
     }
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 #if defined(SPI_INTERFACES_COUNT)
@@ -208,30 +208,30 @@ template <typename Slave> static void queue(Slave &s, char *p)
     if (ok) {
         slave_next = (uint8_t)((slave_next + 1) % SoftSPISlave::QUEUE_DEPTH);
     }
-    SerialDMSeq.print("SQ ");
-    SerialDMSeq.println(ok ? 1 : 0);
+    CONSOLE.print("SQ ");
+    CONSOLE.println(ok ? 1 : 0);
 }
 
 template <typename Slave> static void result(Slave &s)
 {
     typename Slave::Result r;
-    SerialDMSeq.print("SRES ");
+    CONSOLE.print("SRES ");
     if (s.poll(r)) {
-        SerialDMSeq.print((unsigned long)r.length);
-        SerialDMSeq.print(' ');
+        CONSOLE.print((unsigned long)r.length);
+        CONSOLE.print(' ');
         for (size_t i = 0; i < r.length && i < r.size; i++) {
             hex(r.rx[i], 2);
         }
         if (!r.length) {
-            SerialDMSeq.print('-');
+            CONSOLE.print('-');
         }
     } else {
-        SerialDMSeq.print("NONE -");
+        CONSOLE.print("NONE -");
     }
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print((unsigned long)s.missed());
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned long)s.overruns());
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)s.missed());
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned long)s.overruns());
 }
 };
 
@@ -247,17 +247,17 @@ static void peripheral(uint8_t mode, bool lsb, size_t n, const char *bytes)
         pinMode(cs, INPUT);            /* the master's CS: not driven here */
     }
     bus->beginTransaction(SPISettings(1000000, lsb ? LSBFIRST : MSBFIRST, mode, SPI_PERIPHERAL));
-    SerialDMSeq.println("PERIPH READY");
-    SerialDMSeq.flush();
+    CONSOLE.println("PERIPH READY");
+    CONSOLE.flush();
     for (size_t i = 0; i < n; i++) {
         data[i] = bus->transfer(data[i]);
     }
     bus->endTransaction();
-    SerialDMSeq.print("PERIPH ");
+    CONSOLE.print("PERIPH ");
     for (size_t i = 0; i < n; i++) {
         hex(data[i], 2);
     }
-    SerialDMSeq.println(n ? "" : "-");
+    CONSOLE.println(n ? "" : "-");
 }
 
 static char line[176];
@@ -265,15 +265,15 @@ static uint8_t used;
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int ch = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int ch = CONSOLE.read();
         if (ch != '\n') {
             if (ch != '\r' && used < sizeof line - 1) {
                 line[used++] = (char)ch;
@@ -284,10 +284,10 @@ void loop()
         used = 0;
         char *p = line;
         if (strncmp(line, "ready ", 6) == 0) {
-            SerialDMSeq.print("READY ");
-            SerialDMSeq.print(line + 6);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(BENCH_BUILD_ID);
+            CONSOLE.print("READY ");
+            CONSOLE.print(line + 6);
+            CONSOLE.print(' ');
+            CONSOLE.println(BENCH_BUILD_ID);
         } else if (strncmp(line, "pins ", 5) == 0) {
             p += 5;
             const long sck = strtol(p, &p, 10);
@@ -299,8 +299,8 @@ void loop()
             softPins[0] = (int)sck;
             softPins[1] = (int)miso;
             softPins[2] = (int)mosi;
-            SerialDMSeq.print("PINS ");
-            SerialDMSeq.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
+            CONSOLE.print("PINS ");
+            CONSOLE.println(soft.begin((int)sck, (int)miso, (int)mosi) ? 1 : 0);
         } else if (strncmp(line, "shift ", 6) == 0) {
             p += 6;
             const BitOrder order = strtol(p, &p, 10) ? LSBFIRST : MSBFIRST;
@@ -316,7 +316,7 @@ void loop()
             size_t k = count ? strtoul(count, nullptr, 10) : 0;
             k = k > sizeof in ? sizeof in : k;
             if (softPins[0] < 0) {
-                SerialDMSeq.println("SHIFT NONE");
+                CONSOLE.println("SHIFT NONE");
             } else {
                 soft.end();
                 pinMode(softPins[0], OUTPUT);
@@ -334,11 +334,11 @@ void loop()
                 delayMicroseconds(50);
                 digitalWrite(cs, HIGH);
                 soft.begin(softPins[0], softPins[1], softPins[2]);
-                SerialDMSeq.print("SHIFT ");
+                CONSOLE.print("SHIFT ");
                 for (size_t i = 0; i < k; i++) {
                     hex(in[i], 2);
                 }
-                SerialDMSeq.println();
+                CONSOLE.println();
             }
         } else if (strncmp(line, "hwcs ", 5) == 0) {
 #if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
@@ -348,16 +348,16 @@ void loop()
             }
             SPI.setHwCs(want);
             hwcs = SPI.hwCs();
-            SerialDMSeq.print("HWCS ");
-            SerialDMSeq.print(hwcs ? 1 : 0);
-            SerialDMSeq.print(' ');
+            CONSOLE.print("HWCS ");
+            CONSOLE.print(hwcs ? 1 : 0);
+            CONSOLE.print(' ');
 #ifdef PIN_SPI_SS
-            SerialDMSeq.println(want && hwcs ? (unsigned)PIN_SPI_SS : 0u);
+            CONSOLE.println(want && hwcs ? (unsigned)PIN_SPI_SS : 0u);
 #else
-            SerialDMSeq.println(0u);
+            CONSOLE.println(0u);
 #endif
 #else
-            SerialDMSeq.println("HWCS 0 0");
+            CONSOLE.println("HWCS 0 0");
 #endif
         } else if (strncmp(line, "blk ", 4) == 0) {
             const char how = line[4];
@@ -369,14 +369,14 @@ void loop()
             blk(how, hz, p);
         } else if (strcmp(line, "spipins") == 0) {
 #if defined(SPI_INTERFACES_COUNT)
-            SerialDMSeq.print("SPIPINS ");
-            SerialDMSeq.print(PIN_SPI_SCK);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(PIN_SPI_MISO);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(PIN_SPI_MOSI);
+            CONSOLE.print("SPIPINS ");
+            CONSOLE.print(PIN_SPI_SCK);
+            CONSOLE.print(' ');
+            CONSOLE.print(PIN_SPI_MISO);
+            CONSOLE.print(' ');
+            CONSOLE.println(PIN_SPI_MOSI);
 #else
-            SerialDMSeq.println("SPIPINS NONE");
+            CONSOLE.println("SPIPINS NONE");
 #endif
         } else if (strncmp(line, "hw ", 3) == 0) {
 #if defined(SPI_INTERFACES_COUNT)
@@ -386,14 +386,14 @@ void loop()
             digitalWrite(cs, HIGH);
             SPI.begin();
             bus = &SPI;
-            SerialDMSeq.print("HW ");
-            SerialDMSeq.print(PIN_SPI_SCK);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(PIN_SPI_MISO);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(PIN_SPI_MOSI);
+            CONSOLE.print("HW ");
+            CONSOLE.print(PIN_SPI_SCK);
+            CONSOLE.print(' ');
+            CONSOLE.print(PIN_SPI_MISO);
+            CONSOLE.print(' ');
+            CONSOLE.println(PIN_SPI_MOSI);
 #else
-            SerialDMSeq.println("HW NONE");   /* the part has no SPI (CH32RV_SPI1_ABSENT); SoftSPI still runs */
+            CONSOLE.println("HW NONE");   /* the part has no SPI (CH32RV_SPI1_ABSENT); SoftSPI still runs */
 #endif
         } else if (strncmp(line, "slave ", 6) == 0) {
             p += 6;
@@ -418,8 +418,8 @@ void loop()
 #endif
             }
             bus = &soft;
-            SerialDMSeq.print("SLAVE ");
-            SerialDMSeq.println(ok ? 1 : 0);
+            CONSOLE.print("SLAVE ");
+            CONSOLE.println(ok ? 1 : 0);
         } else if (strncmp(line, "sq ", 3) == 0) {
             if (softPins[0] >= 0) {
                 SlaveCommands::queue(softSlave, p + 3);
@@ -441,7 +441,7 @@ void loop()
 #if defined(SPI_INTERFACES_COUNT)
             slave.end();
 #endif
-            SerialDMSeq.println("SEND");
+            CONSOLE.println("SEND");
         } else if (strncmp(line, "periph ", 7) == 0) {
             p += 7;
             const unsigned long mode = strtoul(p, &p, 10);

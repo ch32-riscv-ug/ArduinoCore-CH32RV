@@ -64,7 +64,7 @@
  *                             (HSTREAM 0 when begin() refused) */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <string.h>
 #if defined(NUM_ANALOG_INPUTS)
 #include <CH32RVAdcStream.h>
@@ -91,7 +91,8 @@
 #include <CH32RVHsAdc.h>
 #endif
 /* The USART uart2 moves around: Serial1, or Serial where the part has one
- * USART (V003's Serial is USART1; this sketch's console is SerialDMSeq). */
+ * USART (V003's Serial is USART1; this sketch's console stays SerialDMSeq:
+ * run_hardware.py keeps periph off the probe's UART lines). */
 #if defined(SERIAL_PORT_HARDWARE1)
 #define ROUTED Serial1
 #elif defined(SERIAL_PORT_HARDWARE)
@@ -186,7 +187,7 @@ static void scan(uint32_t halves, uint8_t count, uint32_t timeout_ms, Scan &r)
 static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint8_t count)
 {
     if (!stream.begin(pins, count, rate)) {
-        SerialDMSeq.printf("ASTREAM 0\r\n");
+        CONSOLE.printf("ASTREAM 0\r\n");
         return;
     }
     const uint16_t full = (uint16_t)((1u << CH32RV_ADC_BITS) - 1u);
@@ -194,7 +195,7 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
     Scan r;
     scan(halves, count, 2000, r);
     stream.end();
-    SerialDMSeq.printf("ASTREAM %lu %u %lu %lu %lu %lu %lu %lu %lu %u %u %u %lu %lu\r\n", (unsigned long)stream.sampleRate(),
+    CONSOLE.printf("ASTREAM %lu %u %lu %lu %lu %lu %lu %lu %lu %u %u %u %lu %lu\r\n", (unsigned long)stream.sampleRate(),
                        stream.sampleTimeStep(), (unsigned long)stream.overruns(), (unsigned long)r.round,
                        (unsigned long)r.high, (unsigned long)r.low, (unsigned long)r.rises, (unsigned long)r.first,
                        (unsigned long)r.last, count > 1 ? r.min1 : 0, count > 1 ? r.max1 : 0, full,
@@ -205,7 +206,7 @@ static void astream(uint32_t rate, uint32_t halves, const pin_size_t *pins, uint
 static void atimer(uint32_t rate, uint32_t halves, pin_size_t pin)
 {
     if (!stream.beginTimer(pin, rate)) {
-        SerialDMSeq.printf("ATIMER 0\r\n");
+        CONSOLE.printf("ATIMER 0\r\n");
         return;
     }
     stream.startContinuous(stream_buf, ASTREAM_HALF);
@@ -215,7 +216,7 @@ static void atimer(uint32_t rate, uint32_t halves, pin_size_t pin)
     const uint32_t got = stream.sampleRate(), overruns = stream.overruns();
     const uint8_t timer = stream.triggerTimer(), step = stream.sampleTimeStep();
     stream.end();
-    SerialDMSeq.printf("ATIMER 1 %lu %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\r\n", (unsigned long)got, timer, step,
+    CONSOLE.printf("ATIMER 1 %lu %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\r\n", (unsigned long)got, timer, step,
                        (unsigned long)overruns, (unsigned long)r.round, (unsigned long)r.high, (unsigned long)r.low,
                        (unsigned long)r.rises, (unsigned long)r.first, (unsigned long)r.last,
                        (unsigned long)(r.c1 - r.c0), (unsigned long)(r.t1 - r.t0));
@@ -235,7 +236,7 @@ static void aext(pin_size_t trigger, int edge, pin_size_t pin, uint32_t max_rate
     pinMode(trigger, INPUT_PULLDOWN);
     ext_running = stream.beginExternal(pin, trigger, (PinStatus)edge, max_rate) &&
                   stream.startContinuous(stream_buf, ASTREAM_HALF);
-    SerialDMSeq.printf("AEXT %d\r\n", ext_running ? 1 : 0);
+    CONSOLE.printf("AEXT %d\r\n", ext_running ? 1 : 0);
 }
 
 static void aextread()
@@ -249,7 +250,7 @@ static void aextread()
         levels[k] = v >= full - full / 4 ? 'H' : v <= full / 4 ? 'L' : '?';
     }
     levels[k] = 0;
-    SerialDMSeq.printf("AEXTREAD %lu %s\r\n", (unsigned long)n, k ? levels : "-");
+    CONSOLE.printf("AEXTREAD %lu %s\r\n", (unsigned long)n, k ? levels : "-");
 }
 
 static void aextrate(uint32_t ms)
@@ -258,7 +259,7 @@ static void aextrate(uint32_t ms)
     while (micros() - t0 < ms * 1000u) {
     }
     const uint32_t c1 = stream.conversions(), t1 = micros();
-    SerialDMSeq.printf("AEXTRATE %lu %lu\r\n", (unsigned long)(c1 - c0), (unsigned long)(t1 - t0));
+    CONSOLE.printf("AEXTRATE %lu %lu\r\n", (unsigned long)(c1 - c0), (unsigned long)(t1 - t0));
 }
 #endif
 
@@ -278,7 +279,7 @@ static void acont(uint32_t hz, uint32_t per_pin, uint32_t frames, pin_size_t pin
 {
     const uint8_t pins[1] = {(uint8_t)pin};
     if (!analogContinuous(pins, 1, per_pin, hz, on_cont_frame)) {
-        SerialDMSeq.printf("ACONT 0\r\n");
+        CONSOLE.printf("ACONT 0\r\n");
         return;
     }
     cont_frames = 0;
@@ -291,7 +292,7 @@ static void acont(uint32_t hz, uint32_t per_pin, uint32_t frames, pin_size_t pin
     const bool read = analogContinuousRead(&result, 100);
     analogContinuousStop();
     const uint32_t seen = cont_frames, span = cont_last_us - cont_first_us;
-    SerialDMSeq.printf("ACONT 1 %lu %lu %d %d %u\r\n", (unsigned long)seen, (unsigned long)span,
+    CONSOLE.printf("ACONT 1 %lu %lu %d %d %u\r\n", (unsigned long)seen, (unsigned long)span,
                        read ? result[0].avg_read_raw : -1, read ? result[0].avg_read_mvolts : -1,
                        (1u << CH32RV_ADC_BITS) - 1u);
     analogContinuousDeinit();
@@ -307,7 +308,7 @@ static uint16_t hs_buf[2][HSTREAM_SAMPLES];
 static void hstream(uint32_t rate, uint32_t bufs, pin_size_t pin)
 {
     if (!hsadc.begin(pin, rate)) {
-        SerialDMSeq.printf("HSTREAM 0\r\n");
+        CONSOLE.printf("HSTREAM 0\r\n");
         return;
     }
     const uint16_t full = 1023, lo = full / 4, hi = (uint16_t)(full - full / 4);
@@ -346,7 +347,7 @@ static void hstream(uint32_t rate, uint32_t bufs, pin_size_t pin)
     hsadc.stop();
     const uint32_t overruns = hsadc.overruns(), got = hsadc.sampleRate();
     hsadc.end();
-    SerialDMSeq.printf("HSTREAM %lu %lu %lu %lu %lu %lu %lu %lu\r\n", (unsigned long)got,
+    CONSOLE.printf("HSTREAM %lu %lu %lu %lu %lu %lu %lu %lu\r\n", (unsigned long)got,
                        (unsigned long)overruns, (unsigned long)n, (unsigned long)high, (unsigned long)low,
                        (unsigned long)rises, (unsigned long)first, (unsigned long)last);
 }
@@ -363,7 +364,7 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "uart2") && argc == 4) {
 #if defined(ROUTED)
         ROUTED.begin((unsigned long)atol(argv[3]), SERIAL_8N1, atoi(argv[1]), atoi(argv[2]));
@@ -371,16 +372,16 @@ static void reply(char *command)
         echoed = 0;
 #endif
 #if defined(ROUTED)
-        SerialDMSeq.printf("UART2 %d %d\r\n", echoing ? 1 : 0, (int)ROUTED.peripheral());
+        CONSOLE.printf("UART2 %d %d\r\n", echoing ? 1 : 0, (int)ROUTED.peripheral());
 #else
-        SerialDMSeq.printf("UART2 0 0\r\n");
+        CONSOLE.printf("UART2 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "stop")) {
 #if defined(ROUTED)
         ROUTED.end();
 #endif
         echoing = false;
-        SerialDMSeq.printf("STOP %lu\r\n", (unsigned long)echoed);
+        CONSOLE.printf("STOP %lu\r\n", (unsigned long)echoed);
     } else if (!strcmp(argv[0], "acaps") && argc == 2) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
 #if defined(NUM_ANALOG_INPUTS)
@@ -389,13 +390,13 @@ static void reply(char *command)
         const int channel = -1;
         (void)pin;
 #endif
-        SerialDMSeq.printf("ACAPS %d\r\n", channel);
+        CONSOLE.printf("ACAPS %d\r\n", channel);
     } else if (!strcmp(argv[0], "adc") && argc == 2) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         pinMode(pin, INPUT);
         analogReadResolution(CH32RV_ADC_BITS);
         const int reading = analogRead(pin);
-        SerialDMSeq.printf("ADC %d %d %lu\r\n", reading, (1 << CH32RV_ADC_BITS) - 1,
+        CONSOLE.printf("ADC %d %d %lu\r\n", reading, (1 << CH32RV_ADC_BITS) - 1,
                            (unsigned long)ch32rv_adc_vdd_millivolts());
     } else if (!strcmp(argv[0], "ares") && argc == 4) {
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
@@ -404,18 +405,18 @@ static void reply(char *command)
         analogReadResolution(atoi(argv[2]));
         const unsigned long reading = (unsigned long)analogRead(pin);
         analogReadResolution(CH32RV_ADC_BITS);
-        SerialDMSeq.printf("ARES %lu %d\r\n", reading, CH32RV_ADC_BITS);
+        CONSOLE.printf("ARES %lu %d\r\n", reading, CH32RV_ADC_BITS);
     } else if (!strcmp(argv[0], "hscaps") && argc == 2) {
 #if PERIPH_HSADC
-        SerialDMSeq.printf("HSCAPS %d\r\n", CH32RVHsAdc::channelOf((pin_size_t)atoi(argv[1])));
+        CONSOLE.printf("HSCAPS %d\r\n", CH32RVHsAdc::channelOf((pin_size_t)atoi(argv[1])));
 #else
-        SerialDMSeq.printf("HSCAPS -1\r\n");
+        CONSOLE.printf("HSCAPS -1\r\n");
 #endif
     } else if (!strcmp(argv[0], "hstream") && argc == 4) {
 #if PERIPH_HSADC
         hstream((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (pin_size_t)atoi(argv[3]));
 #else
-        SerialDMSeq.printf("HSTREAM 0\r\n");
+        CONSOLE.printf("HSTREAM 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "has")) {
 #if PERIPH_ATIMER
@@ -438,51 +439,51 @@ static void reply(char *command)
 #else
         const int inj_in = 0;
 #endif
-        SerialDMSeq.printf("HAS %d %d %d %d\r\n", atimer_in, aext_in, acont_in, inj_in);
+        CONSOLE.printf("HAS %d %d %d %d\r\n", atimer_in, aext_in, acont_in, inj_in);
     } else if (!strcmp(argv[0], "atimer") && argc == 4) {
 #if PERIPH_ATIMER
         atimer((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (pin_size_t)atoi(argv[3]));
 #else
-        SerialDMSeq.printf("ATIMER 0\r\n");
+        CONSOLE.printf("ATIMER 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "tcaps") && argc == 2) {
 #if PERIPH_AEXT
         const pin_size_t pin = (pin_size_t)atoi(argv[1]);
         const bool valid = digitalPinIsValid(pin);
-        SerialDMSeq.printf("TCAPS %d %d\r\n", valid && CH32RVAdcStream::isExternalTriggerPin(pin) ? 1 : 0,
+        CONSOLE.printf("TCAPS %d %d\r\n", valid && CH32RVAdcStream::isExternalTriggerPin(pin) ? 1 : 0,
                            valid && CH32RVAdcStream::isExternalTriggerPin(pin, CHANGE) ? 1 : 0);
 #else
-        SerialDMSeq.printf("TCAPS 0 0\r\n");
+        CONSOLE.printf("TCAPS 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "aext") && argc >= 4) {
 #if PERIPH_AEXT
         aext((pin_size_t)atoi(argv[1]), atoi(argv[2]), (pin_size_t)atoi(argv[3]), argc > 4 ? (uint32_t)atol(argv[4]) : 0u);
 #else
-        SerialDMSeq.printf("AEXT 0\r\n");
+        CONSOLE.printf("AEXT 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "aextread")) {
 #if PERIPH_AEXT
         aextread();
 #else
-        SerialDMSeq.printf("AEXTREAD 0 -\r\n");
+        CONSOLE.printf("AEXTREAD 0 -\r\n");
 #endif
     } else if (!strcmp(argv[0], "aextrate") && argc == 2) {
 #if PERIPH_AEXT
         aextrate((uint32_t)atol(argv[1]));
 #else
-        SerialDMSeq.printf("AEXTRATE 0 0\r\n");
+        CONSOLE.printf("AEXTRATE 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "aextstop")) {
 #if PERIPH_AEXT
         stream.end();
         ext_running = false;
 #endif
-        SerialDMSeq.printf("AEXTSTOP\r\n");
+        CONSOLE.printf("AEXTSTOP\r\n");
     } else if (!strcmp(argv[0], "acont") && argc == 5) {
 #if PERIPH_ACONT
         acont((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), (uint32_t)atol(argv[3]), (pin_size_t)atoi(argv[4]));
 #else
-        SerialDMSeq.printf("ACONT 0\r\n");
+        CONSOLE.printf("ACONT 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "awd") && argc == 3) {
 #if defined(NUM_ANALOG_INPUTS)
@@ -497,9 +498,9 @@ static void reply(char *command)
         const bool again = ok && stream.watchdogTripped();
         stream.clearWatchdog();
         stream.end();
-        SerialDMSeq.printf("AWD %d %d %d\r\n", ok ? 1 : 0, tripped ? 1 : 0, again ? 1 : 0);
+        CONSOLE.printf("AWD %d %d %d\r\n", ok ? 1 : 0, tripped ? 1 : 0, again ? 1 : 0);
 #else
-        SerialDMSeq.printf("AWD 0 0 0\r\n");
+        CONSOLE.printf("AWD 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "inj") && argc == 2) {
 #if PERIPH_INJ
@@ -515,10 +516,10 @@ static void reply(char *command)
         const uint16_t last = inj.value(0);
         const uint32_t rate = inj.rate();
         inj.end();
-        SerialDMSeq.printf("INJ %d %u %d %lu %lu %lu %u %d\r\n", ok ? 1 : 0, v, timed ? 1 : 0, (unsigned long)rate,
+        CONSOLE.printf("INJ %d %u %d %lu %lu %lu %u %d\r\n", ok ? 1 : 0, v, timed ? 1 : 0, (unsigned long)rate,
                            (unsigned long)rounds, (unsigned long)us, last, CH32RV_ADC_BITS);
 #else
-        SerialDMSeq.printf("INJ 0 0 0 0 0 0 0 0\r\n");
+        CONSOLE.printf("INJ 0 0 0 0 0 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "astream") && argc >= 4) {
 #if defined(NUM_ANALOG_INPUTS)
@@ -528,18 +529,18 @@ static void reply(char *command)
         }
         astream((uint32_t)atol(argv[1]), (uint32_t)atol(argv[2]), pins, (uint8_t)(argc - 3));
 #else
-        SerialDMSeq.printf("ASTREAM 0\r\n");
+        CONSOLE.printf("ASTREAM 0\r\n");
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
@@ -550,8 +551,8 @@ void loop()
         echoed++;
     }
 #endif
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

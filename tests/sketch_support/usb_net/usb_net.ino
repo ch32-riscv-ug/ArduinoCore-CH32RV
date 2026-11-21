@@ -15,7 +15,7 @@
  * goes back out with its payload's first byte incremented. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 #include <stdlib.h>
@@ -40,25 +40,25 @@ static void reply(const char *command)
 {
     static const char hex[] = "0123456789ABCDEF";
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "net") == 0) {
-        SerialDMSeq.print("NET ");
-        SerialDMSeq.print((unsigned long)netFrames);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)netOurs);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("NET ");
+        CONSOLE.print((unsigned long)netFrames);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)netOurs);
+        CONSOLE.print(' ');
         for (uint8_t i = 0; i < 6; i++) {
-            SerialDMSeq.print(hex[net.macAddress()[i] >> 4]);
-            SerialDMSeq.print(hex[net.macAddress()[i] & 15]);
+            CONSOLE.print(hex[net.macAddress()[i] >> 4]);
+            CONSOLE.print(hex[net.macAddress()[i] & 15]);
         }
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(command, "netsend") == 0) {
         static uint8_t frame[60];
         memset(frame, 0xFF, 6);
@@ -67,8 +67,8 @@ static void reply(const char *command)
         frame[12] = 0x88;
         frame[13] = 0xB5;
         memcpy(frame + 14, "CH32RV usb-net", 14);
-        SerialDMSeq.print("NETSEND ");
-        SerialDMSeq.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
+        CONSOLE.print("NETSEND ");
+        CONSOLE.println(net.sendFrame(frame, sizeof frame, 500) ? 1 : 0);
     } else if (strncmp(command, "netburst ", 9) == 0) {
         static uint8_t frame[60];
         memset(frame, 0xFF, 6);
@@ -83,19 +83,19 @@ static void reply(const char *command)
             accepted += net.sendFrame(frame, sizeof frame, 500) ? 1 : 0;
         }
         delay(100);                              /* the last blocks go out */
-        SerialDMSeq.printf("NETBURST %u %lu %u %u %u\r\n", accepted, (unsigned long)net.stats().txFrames,
+        CONSOLE.printf("NETBURST %u %lu %u %u %u\r\n", accepted, (unsigned long)net.stats().txFrames,
                            (unsigned)net.ntbInCapacity(), (unsigned)net.txBufferCount(),
                            (unsigned)net.rxBufferCount());
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     CH32RVUsbNetConfig netConfig;
     netConfig.txBuffers = netConfig.rxBuffers = 2;
     netConfig.txBuffer = txRing;
@@ -130,8 +130,8 @@ void loop()
         net.sendFrame(echo, echoLength, 500);
         echoLength = 0;
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

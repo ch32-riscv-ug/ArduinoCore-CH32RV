@@ -29,7 +29,7 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -208,7 +208,7 @@ def test_eth_libs(dut, record_property):
         for command, tag in (("psc", "PSC"), ("amc", "AMC")):
             client = f"ch32rv-{command}-{secrets.token_hex(2)}"
             message = f"to-{secrets.token_hex(4)}".encode()
-            dut.write(f"{command} {host_ip} {broker.port} {client}\n")
+            dut.write(f"{command} {host_ip} {broker.port} {client}")
             assert broker.wait_subscribed(f"{client}/in"), f"{tag}: never subscribed"
             time.sleep(0.2)
             assert broker.send(f"{client}/in", message) == 1

@@ -23,7 +23,7 @@
  * Pins are the sketch's pin numbers. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <SD.h>
 #include <SD_MMC.h>
 #include <SoftSPI.h>
@@ -74,7 +74,7 @@ static void files(uint32_t kb)
         root.close();
         ok = mounted->remove("/CH32TEST.BIN") && ok;
     }
-    SerialDMSeq.printf("FILES %d %lu %lu %lu\r\n", ok ? 1 : 0, (unsigned long)wms, (unsigned long)rms,
+    CONSOLE.printf("FILES %d %lu %lu %lu\r\n", ok ? 1 : 0, (unsigned long)wms, (unsigned long)rms,
                        (unsigned long)entries);
 }
 
@@ -121,7 +121,7 @@ static void big(uint32_t kb)
         f.close();
         ok = mounted->remove("/CH32BIG.BIN") && ok;
     }
-    SerialDMSeq.printf("BIG %d %lu %lu %08lx %08lx %lu %lu\r\n", ok ? 1 : 0, (unsigned long)wus, (unsigned long)rus,
+    CONSOLE.printf("BIG %d %lu %lu %08lx %08lx %lu %lu\r\n", ok ? 1 : 0, (unsigned long)wus, (unsigned long)rus,
                        (unsigned long)cw, (unsigned long)cr, (unsigned long)SD_MMC.card().dmaBlocks(),
                        (unsigned long)SD_MMC.card().cpuBlocks());
 }
@@ -137,7 +137,7 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "spi") && argc == 6) {
         const int sck = atoi(argv[1]), miso = atoi(argv[2]), mosi = atoi(argv[3]);
         const bool hw = SPI.begin(sck, miso, mosi);
@@ -150,18 +150,18 @@ static void reply(char *command)
         SPIClass &bus = hw ? (SPIClass &)SPI : (SPIClass &)*soft;
         const bool ok = SD.begin((uint8_t)atoi(argv[4]), bus, (uint32_t)atol(argv[5]));
         mounted = ok ? &SD : nullptr;
-        SerialDMSeq.printf("SPI %d %d %lu %d %s\r\n", ok ? 1 : 0, (int)SD.cardType(), (unsigned long)SD.numSectors(),
+        CONSOLE.printf("SPI %d %d %lu %d %s\r\n", ok ? 1 : 0, (int)SD.cardType(), (unsigned long)SD.numSectors(),
                            (int)SD.fatType(), hw ? "hw" : "soft");
     } else if (!strcmp(argv[0], "raw") && argc == 2) {
         /* raw <sector>: after an spi that found the card, its bytes 0x1BE..0x1FF (the MBR's partition table and
          * signature) and 0x00..0x0F, to see why no FAT volume mounted. */
         static uint8_t sector[512] __attribute__((aligned(4)));
         const bool got = SD.readRAW(sector, (uint32_t)atol(argv[1]));
-        SerialDMSeq.printf("RAW %d", got ? 1 : 0);
-        for (int i = 0; i < 16; i++) SerialDMSeq.printf(" %02x", sector[i]);
-        SerialDMSeq.printf(" |");
-        for (int i = 0x1BE; i < 0x200; i++) SerialDMSeq.printf(" %02x", sector[i]);
-        SerialDMSeq.printf("\r\n");
+        CONSOLE.printf("RAW %d", got ? 1 : 0);
+        for (int i = 0; i < 16; i++) CONSOLE.printf(" %02x", sector[i]);
+        CONSOLE.printf(" |");
+        for (int i = 0x1BE; i < 0x200; i++) CONSOLE.printf(" %02x", sector[i]);
+        CONSOLE.printf("\r\n");
     } else if (!strcmp(argv[0], "sdio") && (argc == 5 || argc == 8)) {
         const bool pins = argc == 8 ? SD_MMC.setPins(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]),
                                                      atoi(argv[5]), atoi(argv[6]))
@@ -170,14 +170,14 @@ static void reply(char *command)
         SD_MMC.card().setFlowControl(sdHwfc);
         const bool ok = pins && SD_MMC.begin("/sdcard", argc == 5, false, atoi(argv[argc - 1]));
         mounted = ok ? &SD_MMC : nullptr;
-        SerialDMSeq.printf("SDIO %d %d %lu %d %lu %d %d %d\r\n", ok ? 1 : 0, (int)SD_MMC.cardType(),
+        CONSOLE.printf("SDIO %d %d %lu %d %lu %d %d %d\r\n", ok ? 1 : 0, (int)SD_MMC.cardType(),
                            (unsigned long)SD_MMC.numSectors(), (int)SD_MMC.fatType(),
                            (unsigned long)(SD_MMC.card().clockHz() / 1000u), (int)SD_MMC.card().busWidth(),
                            SD_MMC.card().highSpeed() ? 1 : 0, SD_MMC.card().dma() ? 1 : 0);
     } else if (!strcmp(argv[0], "sdopt") && argc == 3) {
         sdDma = atoi(argv[1]) != 0;
         sdHwfc = atoi(argv[2]) != 0;
-        SerialDMSeq.println("SDOPT");
+        CONSOLE.println("SDOPT");
     } else if (!strcmp(argv[0], "big") && argc == 2) {
         big((uint32_t)atol(argv[1]));
     } else if (!strcmp(argv[0], "files") && argc == 2) {
@@ -186,23 +186,23 @@ static void reply(char *command)
         SD.end();
         SD_MMC.end();
         mounted = nullptr;
-        SerialDMSeq.println("END");
+        CONSOLE.println("END");
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

@@ -67,19 +67,19 @@ def check_path(dut, dev, test_file):
 
 def host(dut, line, reply, timeout=10):
     """Send `line` to the DUT, return the match of `H <reply>` (a regex, bytes)."""
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(rb"H " + reply + rb"\r?\n", timeout=timeout)
 
 
 def device(peer, line, reply, timeout=10):
     """Send `line` to the peer, return the match of `<tag><reply>`."""
-    peer.write(line + "\n")
+    peer.write(line)
     return peer.expect(reply + rb"\r?\n", timeout=timeout)
 
 
 def dut_ready(dut, build_id):
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", ("CH32RVUsbHost.begin() failed: " + m.group(3).decode() +
@@ -90,7 +90,7 @@ def wait_device(dut, product, timeout=20):
     """Poll `dev` until the DUT lists the peer as `product`; its DEV fields and interfaces."""
     deadline = time.monotonic() + timeout
     while True:
-        dut.write("dev\n")
+        dut.write("dev")
         block = dut.expect(rb"(H DEV [^\n]*\n(?:H ITF [^\n]*\n)*)?H DEVEND (\d+)\r?\n", timeout=10)
         text = (block.group(1) or b"").decode(errors="replace")
         for dev in re.finditer(r"H DEV (\d+) (\w{4}) (\w{4}) (\d) (\w{4}) (\w+) ([^\r\n]*)", text):

@@ -86,14 +86,14 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
 def ready(dut, case):
     """Restart the DUT, then wait for its answer: each test starts from a fresh run, independent of what an earlier
     test left."""
-    dut.write("restart\n")
+    dut.write("restart")
     # Lines sent while the DUT restarts are lost; ask again until the new run answers.
     for attempt in range(8):
         time.sleep(0.5)
@@ -159,7 +159,7 @@ def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, mo
                         command()
                     elif command:
                         ws_run.command(command)
-                        dut.write(command + "\n")
+                        dut.write(command)
                         m = None
                         for _ in range(60):
                             try:
@@ -354,7 +354,7 @@ def test_capture_after_pwm(dut, oep_host, record_property):
         assert ask(dut, f"pwm {pin} 128 1000", rb"PWM (\d)").group(1) == b"1"
         held = ask(dut, f"cap {pin}", rb"CAP (\d)").group(1)
         ask(dut, "capoff", rb"CAPOFF")
-        dut.write(stop + "\n")
+        dut.write(stop)
         dut.expect(rb"(PWM \d|INPUT|LEVEL)\r?\n", timeout=10)
         back = ask(dut, f"cap {pin}", rb"CAP (\d)").group(1)
         ask(dut, "capoff", rb"CAPOFF")

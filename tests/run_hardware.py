@@ -81,16 +81,33 @@ MODULES = {
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
 CONSOLE_SOURCES = {"console-rtt": "rtt", "console-dmdata": "dmdata", "console-sdi": "sdi"}
-# Cases whose console goes to the probe's UART lines (<port>.tx / .rx, the fixture UART) where the target has them:
-# the DMSeq monitor polls the debug wire all the time, and on V407 that put +-80 counts on the DAC's PA4 line beside it
-# (+-4 with the console on the UART, the monitor open; 2026-11-21). The sketch takes CONSOLE_UART_RX / _TX (its pins).
-UART_CONSOLE_CASES = ("analog",)
+# The console of every case goes to the probe's UART lines (<port>.tx / .rx, the fixture UART) where the target has
+# them: Serial on those pins (bench_console.h, CONSOLE_UART_RX / _TX) and the monitor on fixture-uart. The DMSeq monitor
+# polls the debug wire all the time, and on V407 that put +-80 counts on the DAC's PA4 line beside it (+-4 with the
+# console on the UART, the monitor open; 2026-11-21). These stay on DMSeq: the cases that test the USARTs or the probe's
+# UARTs (uart*, periph, the self* sketches that run every HardwareSerial, software-serial and pioc against the fixture
+# UART), selfsys (it drives every pad, the console's too, and sleeps) and the console cases (the console is what they
+# test).
+DMSEQ_CONSOLE_CASES = ("uart", "uart-dma", "uart-sync", "periph", "selfcheck", "selfbus", "selfapi", "selfsys",
+                       "software-serial", "pioc", *CONSOLE_SOURCES)
+# Parts this small keep DMSeq too: Serial's code and buffers did not fit V003F4P6's 16 KB / 2 KB beside logic's and
+# wire's sketches (2026-11-21).
+UART_CONSOLE_MIN_RAM = 4096
+# The test sketches' console header, staged beside each one.
+BENCH_CONSOLE = TESTS / "sketch_support/common/bench_console.h"
 
 
 def uart_console(case, target):
     """(DUT RX pad, DUT TX pad) for a case whose console goes to the probe's UART lines, else None."""
     lines, pads = target.get("lines") or {}, target.get("pads") or {}
-    if case not in UART_CONSOLE_CASES or "tx" not in lines or "rx" not in lines:
+    if case in DMSEQ_CONSOLE_CASES or "tx" not in lines or "rx" not in lines:
+        return None
+    # CH32H41x on the V5F (the CPU Core menu's default) hangs under the USART's interrupts - running, no longer
+    # haltable - after a few hundred to a few thousand replies; the V3F and DMSeq do not (TODO, 2026-11-21).
+    if target.get("family", "").startswith("CH32H41") and "core=v3f" not in target.get("fqbn", ""):
+        return None
+    ram = places.part_ram(target.get("chip", ""))      # None: a RAM split menu sets it (V30x / V407 / V317: large)
+    if ram is not None and ram < UART_CONSOLE_MIN_RAM:
         return None
     pad_of = {v: k for k, v in pads.items()}
     rx, tx = pad_of.get(lines["tx"]), pad_of.get(lines["rx"])     # the probe's tx reaches the DUT's RX
@@ -411,13 +428,20 @@ def stage_case(work, name, case, target):
             opts += f"-DUSB_TEST_CONTROLLER=CH32RVUsbController::{USB_CONTROLLERS[controller]}\n"
     elif case in places.PEER_HOST_CASES and target.get("usb_peer") == "p4":
         opts += "-DUSB_PEER_HOST_PORT=CH32RV_USB_HOST_PORT_HIGH_SPEED\n"   # the P4 is on the DUT's USBHS
-    uart = uart_console(case, target)
+    # Only a sketch on the bench console header can move its console (power has no sketch).
+    sketch = SKETCHES.get(case, TESTS / "sketch_support/core_contracts/core_contracts.ino")
+    uart = uart_console(case, target) if case != "power" and BENCH_CONSOLE.name in sketch.read_text() else None
     if uart:
         opts += f"-DCONSOLE_UART_RX={uart[0]}\n-DCONSOLE_UART_TX={uart[1]}\n"
     if opts:
         (directory / "build_opt.h").write_text(opts)
     # The probe's lines on the chip's debug pads are never test lines (bench_lines.gpio_lines).
     target = dict(target, debug_pads=places.debug_pads(target["chip"]))
+    # A console on the probe's UART lines takes their pads: no test drives them (bench_lines.port_lines). The boards
+    # label them plain too (<port>@PB14 beside <port>.rx): H417's complementary took PB14 / PB15 as TIM1's CH2N / CH3N
+    # and the console stopped in the middle of a line (2026-11-21).
+    if uart:
+        target = dict(target, console_pads=list(uart))
     if case in ("selfcheck", "selfbus", "selfsys", "selfapi"):
         target = dict(target, gpio_keep_off=places.gpio_keep_off(target["chip"]))
     if case == "selfsys":
@@ -432,11 +456,11 @@ def stage_case(work, name, case, target):
     # The lines of gpio, spi, softspi, wire, softwire and sd come from the probe's labels (bench_lines.py).
     (directory / "case.json").write_text(json.dumps(settings, indent=2))
     if case != "power":
-        sketch = SKETCHES.get(case, TESTS / "sketch_support/core_contracts/core_contracts.ino")
         shutil.copyfile(sketch, directory / f"{case}.ino")
         # Its assembly beside it (a PIOC program, sketch_support/pioc): arduino-cli builds a sketch's .S files.
         for extra in sorted(sketch.parent.glob("*.S")):
             shutil.copyfile(extra, directory / extra.name)
+        shutil.copyfile(BENCH_CONSOLE, directory / BENCH_CONSOLE.name)
         # JSON strings are valid YAML scalars. No platform version is requested: use the isolated worktree platform.
         (directory / "sketch.yaml").write_text(
             f"profiles:\n  {name}:\n    fqbn: {json.dumps(target['fqbn'])}\n"
@@ -444,8 +468,8 @@ def stage_case(work, name, case, target):
                       for i, lib in enumerate(CASE_LIBRARIES.get(case, ())))
             + ("    protocol: ch32rv-hid\n" if case == "hid" or target.get("upload_port", "").startswith("ch32rv-hid://") else "")
             +
-            f"    port_config:\n      source: {'fixture-uart' if uart_console(case, target) else CONSOLE_SOURCES.get(case, 'dmseq')}\n"
-            + ("      baudrate: 115200\n" if uart_console(case, target) else "")
+            f"    port_config:\n      source: {'fixture-uart' if uart else CONSOLE_SOURCES.get(case, 'dmseq')}\n"
+            + ("      baudrate: 115200\n" if uart else "")
             +
             f"      chip: {target['chip']}\n"
             # The Debug Speed menu's value for the monitor too.

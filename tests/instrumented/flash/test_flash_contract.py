@@ -23,7 +23,7 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -46,7 +46,7 @@ def test_flash_contract(dut, record_property):
     # flash.kept
     value = secrets.randbelow(0xFFFFFFF0) + 1
     assert ask(dut, f"save {value}", rb"SAVE (\d)").group(1) == b"1"
-    dut.write("restart\n")
+    dut.write("restart")
     # Lines sent while the DUT restarts are lost; ask again until the new run answers.
     for attempt in range(6):
         time.sleep(1)

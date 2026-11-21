@@ -1,5 +1,5 @@
 /* SoftwareSerial (tests/instrumented/software_serial): a SoftwareSerial on two
- * plain lines, against the probe's UART. Console on SerialDMSeq; every command
+ * plain lines, against the probe's UART. Console on CONSOLE (bench_console.h); every command
  * answers one line (see each branch below):
  *
  *   ssbegin, sssend, ssrecv, ssend
@@ -8,7 +8,7 @@
  * CH32V003's 16 KB with the multiprocessor mode. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <SoftwareSerial.h>
 #include <new>
 #include <stdlib.h>
@@ -33,12 +33,12 @@ uint32_t fnv(uint32_t hash, uint8_t byte) { return (hash ^ byte) * 16777619u; }
 void reply(const char *command) {
   ++requests;
   if (strncmp(command, "ready ", 6) == 0) {
-    SerialDMSeq.print("READY ");
-    SerialDMSeq.print(command + 6);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(BENCH_BUILD_ID);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(requests);
+    CONSOLE.print("READY ");
+    CONSOLE.print(command + 6);
+    CONSOLE.print(' ');
+    CONSOLE.print(BENCH_BUILD_ID);
+    CONSOLE.print(' ');
+    CONSOLE.println(requests);
   } else if (strncmp(command, "ssbegin ", 8) == 0) {
     // ssbegin <rx> <tx> <baud> <format>: a SoftwareSerial on those pads (ucfg's formats). SSBEGIN <listening>.
     char *end;
@@ -49,22 +49,22 @@ void reply(const char *command) {
     if (soft) soft->~SoftwareSerial();
     soft = new (softStorage) SoftwareSerial((uint8_t)rx, (uint8_t)tx);
     soft->begin(baud, k < sizeof formats / sizeof formats[0] ? formats[k] : 0);
-    SerialDMSeq.print("SSBEGIN ");
-    SerialDMSeq.println(soft->isListening() ? 1 : 0);
+    CONSOLE.print("SSBEGIN ");
+    CONSOLE.println(soft->isListening() ? 1 : 0);
   } else if (strncmp(command, "sssend ", 7) == 0) {
     // sssend <n>: usend's bytes on the SoftwareSerial.
     const unsigned long n = strtoul(command + 7, nullptr, 10);
     unsigned long sent = 0;
     for (unsigned long i = 0; soft && i < n; ++i) sent += soft->write((uint8_t)(i * 37u + 11u));
-    SerialDMSeq.print("SSSEND ");
-    SerialDMSeq.println(sent);
+    CONSOLE.print("SSSEND ");
+    CONSOLE.println(sent);
   } else if (strncmp(command, "ssrecv ", 7) == 0) {
     // ssrecv <n> <ms>: urecv on the SoftwareSerial; SSRECV <count> <FNV-1a> <overflow>.
     char *end;
     const unsigned long n = strtoul(command + 7, &end, 10);
     const unsigned long ms = strtoul(end, nullptr, 10);
     while (soft && soft->available()) soft->read();
-    SerialDMSeq.println("SSRECV READY");
+    CONSOLE.println("SSRECV READY");
     uint32_t hash = 2166136261u;
     unsigned long got = 0;
     const unsigned long start = millis();
@@ -74,29 +74,29 @@ void reply(const char *command) {
         ++got;
       }
     }
-    SerialDMSeq.print("SSRECV ");
-    SerialDMSeq.print(got);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(hash, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(soft && soft->overflow() ? 1 : 0);
+    CONSOLE.print("SSRECV ");
+    CONSOLE.print(got);
+    CONSOLE.print(' ');
+    CONSOLE.print(hash, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.println(soft && soft->overflow() ? 1 : 0);
   } else if (strcmp(command, "ssend") == 0) {
     if (soft) soft->end();
-    SerialDMSeq.println("SSEND");
+    CONSOLE.println("SSEND");
   } else {
-    SerialDMSeq.println("ERROR COMMAND");
+    CONSOLE.println("ERROR COMMAND");
   }
 }
 
 void setup() {
-  SerialDMSeq.begin(115200);
-  SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-  SerialDMSeq.println(CH32RV.resetReasonName());
+  CONSOLE_BEGIN(115200);
+  CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+  CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop() {
-  while (SerialDMSeq.available()) {
-    int c = SerialDMSeq.read();
+  while (CONSOLE.available()) {
+    int c = CONSOLE.read();
     if (c == '\n') {
       line[used] = 0;
       if (used) reply(line);

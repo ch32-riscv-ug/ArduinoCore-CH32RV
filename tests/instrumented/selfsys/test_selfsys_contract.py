@@ -78,7 +78,7 @@ def pin_of(name):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -122,7 +122,7 @@ def after_reset(dut, timeout=15):
         # on the V103 EVT after restart() (2026-11-17). `why` asks again; a DUT that is not back fails there.
         pass
     t = time.monotonic()
-    dut.write("why\n")
+    dut.write("why")
     m = dut.expect(rb"WHY (\S+) (\d+)(?: ([0-9a-f]+))?\r?\n", timeout=5)
     why = m.group(1).decode()
     # An unexpected reason carries RCC_RSTSCKR as the DUT read it at boot, for the report.
@@ -130,14 +130,14 @@ def after_reset(dut, timeout=15):
 
 
 def test_restart(dut, ready):
-    dut.write("restart\n")
+    dut.write("restart")
     dut.expect(rb"RESTARTING\r?\n", timeout=10)
     _, why = after_reset(dut)
     assert why == "software", f"restart() booted with {why}"
 
 
 def test_watchdog(dut, ready, record_property):
-    dut.write("wdt 500\n")
+    dut.write("wdt 500")
     m = dut.expect(rb"WDT (FED|REFUSED)\r?\n", timeout=10)
     if m.group(1) == b"REFUSED":
         pytest.skip("wdtEnable(500) refused (CH32M030 has no IWDG)")
@@ -163,7 +163,7 @@ def wwdg_tick_us(t_us, max_us):
 def test_window_watchdog(dut, ready, record_property):
     seen, wrong = {}, []
     for mode in ("late", "early"):
-        dut.write(f"wwdg {mode}\n")
+        dut.write(f"wwdg {mode}")
         t_us, w_us, max_us = (int(x) for x in dut.expect(rb"WWDG (\d+) (\d+) (\d+)\r?\n", timeout=10).groups())
         try:
             dut.expect(rb"WWDG REFUSED\r?\n", timeout=0.5)
@@ -191,7 +191,7 @@ def test_backup_registers(dut, ready, record_property):
     count, keeps = (int(x) for x in ask(dut, f"bkpw {seed}", rb"BKPW (\d+) (\d)").groups())
     if count == 0:
         pytest.skip("n/a: backupRegisterCount() is 0 on this family (no RTC domain)")
-    dut.write("restart\n")
+    dut.write("restart")
     dut.expect(rb"RESTARTING\r?\n", timeout=10)
     _, why = after_reset(dut)
     same = int(ask(dut, f"bkpr {seed}", rb"BKPR \d+ (\d+)").group(1))

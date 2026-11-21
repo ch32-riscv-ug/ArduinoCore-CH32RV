@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,19 +22,19 @@ uint8_t used;
 void reply(const char *command) {
   ++requests;
   if (strncmp(command, "ready ", 6) == 0) {
-    SerialDMSeq.print("READY ");
-    SerialDMSeq.print(command + 6);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(BENCH_BUILD_ID);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(requests);
+    CONSOLE.print("READY ");
+    CONSOLE.print(command + 6);
+    CONSOLE.print(' ');
+    CONSOLE.print(BENCH_BUILD_ID);
+    CONSOLE.print(' ');
+    CONSOLE.println(requests);
   } else if (strcmp(command, "init") == 0) {
-    SerialDMSeq.print("INIT ");
-    SerialDMSeq.print(dataMarker, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(bssMarker);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(ctorMarker, HEX);
+    CONSOLE.print("INIT ");
+    CONSOLE.print(dataMarker, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.print(bssMarker);
+    CONSOLE.print(' ');
+    CONSOLE.println(ctorMarker, HEX);
   } else if (strcmp(command, "time") == 0) {
     unsigned long ms = millis();
     delay(50);
@@ -42,22 +42,22 @@ void reply(const char *command) {
     unsigned long us = micros();
     delayMicroseconds(1000);
     unsigned long elapsedUs = micros() - us;
-    SerialDMSeq.print("TIME ");
-    SerialDMSeq.print(elapsedMs);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(elapsedUs);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(F_CPU);
+    CONSOLE.print("TIME ");
+    CONSOLE.print(elapsedMs);
+    CONSOLE.print(' ');
+    CONSOLE.print(elapsedUs);
+    CONSOLE.print(' ');
+    CONSOLE.println(F_CPU);
   } else if (strcmp(command, "print") == 0) {
     String value = String("ch32") + String(1234);
-    SerialDMSeq.print("PRINT ");
-    SerialDMSeq.print(value);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(0x1234abcdUL, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(-42);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(13, BIN);
+    CONSOLE.print("PRINT ");
+    CONSOLE.print(value);
+    CONSOLE.print(' ');
+    CONSOLE.print(0x1234abcdUL, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.print(-42);
+    CONSOLE.print(' ');
+    CONSOLE.println(13, BIN);
   } else if (strcmp(command, "heap") == 0) {
     uint8_t *p = static_cast<uint8_t *>(malloc(32));
     unsigned sum = 0;
@@ -66,42 +66,42 @@ void reply(const char *command) {
       for (unsigned i = 0; i < 32; ++i) sum += p[i];
       free(p);
     }
-    SerialDMSeq.print("HEAP ");
-    SerialDMSeq.println(sum);
+    CONSOLE.print("HEAP ");
+    CONSOLE.println(sum);
   } else if (strncmp(command, "gpio ", 5) == 0) {
     char *end;
     unsigned long rawPin = strtoul(command + 5, &end, 10);
     if (rawPin < 64 || rawPin >= 255) {
-      SerialDMSeq.println("ERROR PIN");
+      CONSOLE.println("ERROR PIN");
       return;
     }
     pin_size_t pin = static_cast<pin_size_t>(rawPin);
     if (strcmp(end, " in") == 0) {
       pinMode(pin, INPUT);
-      SerialDMSeq.print("GPIO IN ");
-      SerialDMSeq.println(digitalRead(pin));
+      CONSOLE.print("GPIO IN ");
+      CONSOLE.println(digitalRead(pin));
     } else if (strcmp(end, " out0") == 0 || strcmp(end, " out1") == 0) {
       // Preload the level before enabling an output.
       digitalWrite(pin, end[4] == '1' ? HIGH : LOW);
       pinMode(pin, OUTPUT);
-      SerialDMSeq.println("GPIO OUT");
+      CONSOLE.println("GPIO OUT");
     } else {
-      SerialDMSeq.println("ERROR MODE");
+      CONSOLE.println("ERROR MODE");
     }
   } else {
-    SerialDMSeq.println("ERROR COMMAND");
+    CONSOLE.println("ERROR COMMAND");
   }
 }
 
 void setup() {
-  SerialDMSeq.begin(115200);
-  SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-  SerialDMSeq.println(CH32RV.resetReasonName());
+  CONSOLE_BEGIN(115200);
+  CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+  CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop() {
-  while (SerialDMSeq.available()) {
-    int c = SerialDMSeq.read();
+  while (CONSOLE.available()) {
+    int c = CONSOLE.read();
     if (c == '\n') {
       line[used] = 0;
       if (used) reply(line);

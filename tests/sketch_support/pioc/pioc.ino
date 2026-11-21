@@ -1,5 +1,5 @@
 /* PIOC (tests/instrumented/pioc): CH32RVPioc running bench_pulses.S. Console on
- * SerialDMSeq; every command answers one line:
+ * CONSOLE (bench_console.h); every command answers one line:
  *
  *   ready <nonce>        READY <nonce> <build id>
  *   ppads                PPADS <the IO0 pads the PIOC reaches, pin numbers> (PPADS alone: no PIOC)
@@ -40,7 +40,7 @@
 #include <Arduino.h>
 #include <CH32RV.h>
 #include <CH32RVPioc.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,36 +76,36 @@ static const Pad pads[] = CH32RV_PIOC_PADS;
 
 void reply(char *command) {
   if (strncmp(command, "ready ", 6) == 0) {
-    SerialDMSeq.print("READY ");
-    SerialDMSeq.print(command + 6);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(BENCH_BUILD_ID);
+    CONSOLE.print("READY ");
+    CONSOLE.print(command + 6);
+    CONSOLE.print(' ');
+    CONSOLE.println(BENCH_BUILD_ID);
   } else if (strcmp(command, "ppads") == 0) {
-    SerialDMSeq.print("PPADS");
+    CONSOLE.print("PPADS");
 #if defined(CH32RV_PIOC_PADS)
     for (const Pad &p : pads) {
       if (p.role == 0) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(p.pin);
+        CONSOLE.print(' ');
+        CONSOLE.print(p.pin);
       }
     }
 #endif
-    SerialDMSeq.println();
+    CONSOLE.println();
   } else if (strcmp(command, "ppadsall") == 0) {
-    SerialDMSeq.print("PPADSALL");
+    CONSOLE.print("PPADSALL");
 #if defined(CH32RV_PIOC_PADS)
     for (const Pad &p : pads) {
-      SerialDMSeq.printf(" %u:%u:%u", p.role, p.pin, p.value);
+      CONSOLE.printf(" %u:%u:%u", p.role, p.pin, p.value);
     }
 #endif
-    SerialDMSeq.println();
+    CONSOLE.println();
   } else if (strncmp(command, "pbegin ", 7) == 0) {
-    SerialDMSeq.print("PBEGIN ");
+    CONSOLE.print("PBEGIN ");
     uartPin = -1;
     necPin = -1;
     spiSck = -1;
     owPin = -1;
-    SerialDMSeq.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
+    CONSOLE.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
   } else if (strncmp(command, "pws ", 4) == 0) {
     char *p;
     const int pin = (int)strtol(command + 4, &p, 10);
@@ -140,7 +140,7 @@ void reply(char *command) {
       took = micros() - t0;
     }
     delayMicroseconds(300);
-    SerialDMSeq.printf("PWS %d %d %d %u %u %u %lu\r\n", begun ? 1 : 0, loaded ? 1 : 0, status, h0, h1, lo,
+    CONSOLE.printf("PWS %d %d %d %u %u %u %lu\r\n", begun ? 1 : 0, loaded ? 1 : 0, status, h0, h1, lo,
                        (unsigned long)took);
     pioc.begin(PIOC_IMAGE_OF(bench_pulses), pin);
   } else if (strncmp(command, "puart ", 6) == 0) {
@@ -175,7 +175,7 @@ void reply(char *command) {
       pioc.command(1);
       status = pioc.waitDone(2000);
     }
-    SerialDMSeq.printf("PUART %d %d %d %lu %lu\r\n", begun ? 1 : 0, 1, status,
+    CONSOLE.printf("PUART %d %d %d %lu %lu\r\n", begun ? 1 : 0, 1, status,
                        (unsigned long)CH32RVPioc::clockHz(), (unsigned long)(3 * lo + 770 * hi + 11));
   } else if (strncmp(command, "pnec ", 5) == 0) {
     char *p;
@@ -211,7 +211,7 @@ void reply(char *command) {
     }
     const uint32_t cycles = 3u * (frame[4] ? frame[4] : 256) + 770u * frame[5] + 3u * (frame[6] ? frame[6] : 256) +
                             770u * frame[7] + 25u;
-    SerialDMSeq.printf("PNEC %d %d %lu %lu\r\n", necPin == pin ? 1 : 0, status,
+    CONSOLE.printf("PNEC %d %d %lu %lu\r\n", necPin == pin ? 1 : 0, status,
                        (unsigned long)CH32RVPioc::clockHz(), (unsigned long)cycles);
   } else if (strncmp(command, "pin ", 4) == 0) {
     char *p;
@@ -222,20 +222,20 @@ void reply(char *command) {
     spiSck = -1;
     owPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
-    SerialDMSeq.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
+    CONSOLE.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
     for (unsigned long k = 0; begun && k < count; k++) {
       pioc.command(1);
       if (pioc.waitDone(200) != 0) {
         pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
-        SerialDMSeq.printf(" -1:-1");
+        CONSOLE.printf(" -1:-1");
         continue;
       }
       uint8_t c[6];
       pioc.readData(1, c, sizeof c);
-      SerialDMSeq.printf(" %lu:%lu", (unsigned long)(c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16),
+      CONSOLE.printf(" %lu:%lu", (unsigned long)(c[0] | (uint32_t)c[1] << 8 | (uint32_t)c[2] << 16),
                          (unsigned long)(c[3] | (uint32_t)c[4] << 8 | (uint32_t)c[5] << 16));
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
   } else if (strncmp(command, "prx ", 4) == 0) {
     char *p;
     const int pin = (int)strtol(command + 4, &p, 10);
@@ -261,18 +261,18 @@ void reply(char *command) {
       pioc.writeData(0, params, sizeof params);
       pioc.command(1);
     }
-    SerialDMSeq.printf("PRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz(),
+    CONSOLE.printf("PRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz(),
                        (unsigned long)(3u * (params[1] ? params[1] : 256) + 770u * params[2] + 11u));
   } else if (strcmp(command, "prxget") == 0) {
     const int status = pioc.waitDone(2000);
     const uint8_t got = pioc.read(7);
     uint8_t bytes[24];
     pioc.readData(8, bytes, got > 24 ? 24 : got);
-    SerialDMSeq.printf("PRXGET %d %u ", status, got);
+    CONSOLE.printf("PRXGET %d %u ", status, got);
     for (uint8_t i = 0; i < got && i < 24; i++) {
-      SerialDMSeq.printf("%02x", bytes[i]);
+      CONSOLE.printf("%02x", bytes[i]);
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
   } else if (strncmp(command, "pcmd ", 5) == 0) {
     char *p;
     const unsigned long n = strtoul(command + 5, &p, 10);
@@ -280,12 +280,12 @@ void reply(char *command) {
     pioc.write(0, (uint8_t)delayTurns);
     pioc.command((uint8_t)n);
     const int status = pioc.waitDone(1000);
-    SerialDMSeq.print("PCMD ");
-    SerialDMSeq.print(status);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(pioc.read(1));
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(pioc.done() ? 1 : 0);   // the request must be down once its cmd.out is taken
+    CONSOLE.print("PCMD ");
+    CONSOLE.print(status);
+    CONSOLE.print(' ');
+    CONSOLE.print(pioc.read(1));
+    CONSOLE.print(' ');
+    CONSOLE.println(pioc.done() ? 1 : 0);   // the request must be down once its cmd.out is taken
   } else if (strncmp(command, "pirq ", 5) == 0) {
     char *p;
     const unsigned long n = strtoul(command + 5, &p, 10);
@@ -303,12 +303,12 @@ void reply(char *command) {
     }
     delay(5);                                  // a second call would show
     pioc.onDone(nullptr);
-    SerialDMSeq.print("PIRQ ");
-    SerialDMSeq.print(irqStatus);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(irqCalls);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(pioc.read(1));
+    CONSOLE.print("PIRQ ");
+    CONSOLE.print(irqStatus);
+    CONSOLE.print(' ');
+    CONSOLE.print(irqCalls);
+    CONSOLE.print(' ');
+    CONSOLE.println(pioc.read(1));
   } else if (strncmp(command, "pow ", 4) == 0) {
     char *p;
     const int pin = (int)strtol(command + 4, &p, 10);
@@ -350,11 +350,11 @@ void reply(char *command) {
       read = n ? run(3, n > 24 ? 24 : n) : 0;
       pioc.readData(8, in, n > 24 ? 24 : n);
     }
-    SerialDMSeq.printf("POW %d %d %d %d ", begun ? 1 : 0, reset, wrote, read);
+    CONSOLE.printf("POW %d %d %d %d ", begun ? 1 : 0, reset, wrote, read);
     for (uint8_t i = 0; i < n && i < 24; i++) {
-      SerialDMSeq.printf("%02x", in[i]);
+      CONSOLE.printf("%02x", in[i]);
     }
-    SerialDMSeq.printf("\r\n");
+    CONSOLE.printf("\r\n");
   } else if (strncmp(command, "pnecrx ", 7) == 0) {
     const int pin = (int)strtol(command + 7, nullptr, 10);
     uartPin = -1;
@@ -373,12 +373,12 @@ void reply(char *command) {
       pioc.writeData(1, ticks, sizeof ticks);
       pioc.command(1);
     }
-    SerialDMSeq.printf("PNECRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)m, (unsigned long)(tickUs * 1000.0f));
+    CONSOLE.printf("PNECRX %d %lu %lu\r\n", begun ? 1 : 0, (unsigned long)m, (unsigned long)(tickUs * 1000.0f));
   } else if (strcmp(command, "pnecget") == 0) {
     const int status = pioc.waitDone(2000);
     uint8_t b[4];
     pioc.readData(8, b, sizeof b);
-    SerialDMSeq.printf("PNECGET %d %08lx\r\n", status,
+    CONSOLE.printf("PNECGET %d %08lx\r\n", status,
                        (unsigned long)(b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24));
   } else if (strncmp(command, "pspi ", 5) == 0) {
     char *p;
@@ -417,7 +417,7 @@ void reply(char *command) {
       status = pioc.waitDone(2000);
     }
     digitalWrite(cs, HIGH);
-    SerialDMSeq.printf("PSPI %d %d %lu %d\r\n", begun ? 1 : 0, status, (unsigned long)CH32RVPioc::clockHz(), (int)turns);
+    CONSOLE.printf("PSPI %d %d %lu %d\r\n", begun ? 1 : 0, status, (unsigned long)CH32RVPioc::clockHz(), (int)turns);
   } else if (strcmp(command, "pend") == 0) {
     spiSck = -1;
     uartPin = -1;
@@ -425,21 +425,21 @@ void reply(char *command) {
     spiSck = -1;
     owPin = -1;
     pioc.end();
-    SerialDMSeq.println("PEND");
+    CONSOLE.println("PEND");
   } else {
-    SerialDMSeq.println("ERROR COMMAND");
+    CONSOLE.println("ERROR COMMAND");
   }
 }
 
 void setup() {
-  SerialDMSeq.begin(115200);
-  SerialDMSeq.print("STARTUP ");
-  SerialDMSeq.println(CH32RV.resetReasonName());
+  CONSOLE_BEGIN(115200);
+  CONSOLE.print("STARTUP ");
+  CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop() {
-  while (SerialDMSeq.available()) {
-    int c = SerialDMSeq.read();
+  while (CONSOLE.available()) {
+    int c = CONSOLE.read();
     if (c == '\n') {
       line[used] = 0;
       if (used) reply(line);

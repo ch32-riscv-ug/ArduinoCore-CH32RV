@@ -37,7 +37,7 @@
  * an APDU with its bytes reversed followed by 90 00. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -165,19 +165,19 @@ static size_t apdu(const uint8_t *in, size_t length, uint8_t *out, size_t capaci
 static void reply(const char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "file") == 0) {
         static uint8_t text[64];
         const size_t n = disk.readFile("HOST.TXT", text, sizeof text - 1);
         if (!disk.exists("HOST.TXT")) {
-            SerialDMSeq.println("FILE NONE");
+            CONSOLE.println("FILE NONE");
             return;
         }
         text[n] = 0;
@@ -185,35 +185,35 @@ static void reply(const char *command)
         if (eol) {
             *eol = 0;
         }
-        SerialDMSeq.print("FILE ");
-        SerialDMSeq.print((unsigned)disk.fileSize("HOST.TXT"));
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((const char *)text);
+        CONSOLE.print("FILE ");
+        CONSOLE.print((unsigned)disk.fileSize("HOST.TXT"));
+        CONSOLE.print(' ');
+        CONSOLE.println((const char *)text);
     } else if (strncmp(command, "media ", 6) == 0) {
         msc.onRead(nullptr);                     /* back to the disk */
         msc.mediaPresent(command[6] == '1');
-        SerialDMSeq.print("MEDIA ");
-        SerialDMSeq.println(msc.testUnitReady() ? 1 : 0);
+        CONSOLE.print("MEDIA ");
+        CONSOLE.println(msc.testUnitReady() ? 1 : 0);
     } else if (strcmp(command, "pull") == 0) {
         msc.onRead(readThenPull);
         pulledReads = 0;
-        SerialDMSeq.println("PULL");
+        CONSOLE.println("PULL");
     } else if (strcmp(command, "pulled") == 0) {
-        SerialDMSeq.print("PULLED ");
-        SerialDMSeq.println((unsigned long)pulledReads);
+        CONSOLE.print("PULLED ");
+        CONSOLE.println((unsigned long)pulledReads);
     } else if (strcmp(command, "detach") == 0) {
-        SerialDMSeq.print("DETACH ");
-        SerialDMSeq.println((unsigned long)detachRefused);
+        CONSOLE.print("DETACH ");
+        CONSOLE.println((unsigned long)detachRefused);
     } else if (strcmp(command, "detachend") == 0) {
         detachAccept = true;
-        SerialDMSeq.println("DETACHEND");
+        CONSOLE.println("DETACHEND");
     } else if (strcmp(command, "card") == 0) {
-        SerialDMSeq.print("CARD ");
-        SerialDMSeq.print(ccid.cardPresent() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(ccid.cardPowered() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)ccid.apduCount());
+        CONSOLE.print("CARD ");
+        CONSOLE.print(ccid.cardPresent() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print(ccid.cardPowered() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)ccid.apduCount());
     } else if (strcmp(command, "ccidsize") == 0) {
         /* The CCID class descriptor (0x21, 54 bytes) and the first bulk OUT
          * endpoint after it. */
@@ -229,31 +229,31 @@ static void reply(const char *command)
                 outPacket = (uint16_t)(d[4] | d[5] << 8);
             }
         }
-        SerialDMSeq.print("CCIDSIZE ");
-        SerialDMSeq.print((unsigned long)ccid.messageCapacity());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)maxMessage);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(outPacket);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)USBDevice.maxPacketSize());
+        CONSOLE.print("CCIDSIZE ");
+        CONSOLE.print((unsigned long)ccid.messageCapacity());
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)maxMessage);
+        CONSOLE.print(' ');
+        CONSOLE.print(outPacket);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)USBDevice.maxPacketSize());
     } else if (strcmp(command, "events") == 0) {
         const uint8_t *cfg = USBDevice.configurationDescriptor(0);
         const uint16_t cfgLen = cfg ? (uint16_t)(cfg[2] | cfg[3] << 8) : 0;
         const uint8_t *dev = USBDevice.deviceDescriptor();
-        SerialDMSeq.printf("EVENTS %lu %lu %lu %lu %u %04x:%04x %u\r\n", (unsigned long)configuredEvents,
+        CONSOLE.printf("EVENTS %lu %lu %lu %lu %u %04x:%04x %u\r\n", (unsigned long)configuredEvents,
                            (unsigned long)resetEvents, (unsigned long)observed, (unsigned long)acks, cfgLen,
                            dev ? (unsigned)(dev[8] | dev[9] << 8) : 0u, dev ? (unsigned)(dev[10] | dev[11] << 8) : 0u,
                            USBDevice.hidReportDescriptorLength());
     } else if (strncmp(command, "vmode ", 6) == 0) {
         set_mode(strcmp(command + 6, "direct") == 0);
-        SerialDMSeq.print("VMODE ");
-        SerialDMSeq.print(directMode ? "direct " : "fifo ");
-        SerialDMSeq.print((unsigned long)directDone);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)peeksMatched);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)peeksMissed);
+        CONSOLE.print("VMODE ");
+        CONSOLE.print(directMode ? "direct " : "fifo ");
+        CONSOLE.print((unsigned long)directDone);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)peeksMatched);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)peeksMissed);
     } else if (strcmp(command, "vborrow") == 0) {
         USBDevice.end();
         CH32RVUsbBulkStreamConfig c;
@@ -264,7 +264,7 @@ static void reply(const char *command)
         vendor.onDirectRxComplete(borrowed_rx);
         borrowMode = true;
         posted = false;
-        SerialDMSeq.printf("VBORROW %d %d\r\n", configured ? 1 : 0, USBDevice.begin(config) ? 1 : 0);
+        CONSOLE.printf("VBORROW %d %d\r\n", configured ? 1 : 0, USBDevice.begin(config) ? 1 : 0);
     } else if (strcmp(command, "vcancel") == 0) {
         post();
         const uint32_t id = postedId;
@@ -272,18 +272,18 @@ static void reply(const char *command)
         const bool again = vendor.cancelDirectRx(id);
         post();
         const bool stale = vendor.cancelDirectRx(id);
-        SerialDMSeq.printf("VCANCEL %d %d %d %lu %lu\r\n", first ? 1 : 0, again ? 1 : 0, stale ? 1 : 0,
+        CONSOLE.printf("VCANCEL %d %d %d %lu %lu\r\n", first ? 1 : 0, again ? 1 : 0, stale ? 1 : 0,
                            (unsigned long)borrowCancelled, (unsigned long)borrowEchoes);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     disk.format("CONTRACT");
     disk.addTextFile("README.TXT", "CH32RV usb-classes " BENCH_BUILD_ID "\r\n");
     msc.vendorID("CH32RV");
@@ -339,7 +339,7 @@ void loop()
     if (detachAcked) {
         detachAcked = false;
         USBDevice.end();
-        SerialDMSeq.println("DETACHEND RETURNED");
+        CONSOLE.println("DETACHEND RETURNED");
     }
     post();
     uint8_t buffer[64];
@@ -361,8 +361,8 @@ void loop()
         }
         vendor.flush();
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

@@ -29,7 +29,7 @@ def test_usb_peer_device(dut, peers, record_property):
     if peer.kind == "s3":
         # The descriptors are this speed's: bulk endpoints 512 bytes at high speed, 64 at full speed (PR #1: the
         # USBHS bus reset can come before the high-speed handshake ends, and the speed read then is full).
-        peer.write("eps\n")
+        peer.write("eps")
         block = peer.serial.expect(rb"((?:S3 EP \d+ \w+ \w+ \d+\r?\n)*)S3 EPEND (\d+)", timeout=5)
         eps = [line.split()[2:] for line in block.group(1).decode().splitlines() if line.strip()]
         bulk = {int(mps) for itf, address, attributes, mps in eps if int(attributes, 16) & 3 == 2}
@@ -43,12 +43,12 @@ def test_usb_peer_device(dut, peers, record_property):
     assert command(peer, "baud 9600", rb"BAUD (\d)").group(1) == b"1"
     # The same echo through onRxData() and writeDirect() (CH32RVUsbDeviceBulkStream,
     # shared with Vendor), then back to the FIFOs.
-    dut.write("cdcmode direct\n")
+    dut.write("cdcmode direct")
     before = int(dut.expect(rb"CDCMODE direct (\d+)\r?\n", timeout=5).group(1))
     for _ in range(3):
         payload = secrets.token_bytes(32)
         assert command(peer, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
-    dut.write("cdcmode fifo\n")
+    dut.write("cdcmode fifo")
     assert int(dut.expect(rb"CDCMODE fifo (\d+)\r?\n", timeout=5).group(1)) - before == 3
     payload = secrets.token_bytes(32)
     assert command(peer, "cdc " + payload.hex(), rb"CDC (\w*)").group(1).decode() == payload.hex()
@@ -58,7 +58,7 @@ def test_usb_peer_device(dut, peers, record_property):
     peer.expect(rb"HIDVIN 42" + b"vendor".hex().encode(), timeout=5)
 
     # Keyboard: the DUT types "ab".
-    dut.write("keys\n")
+    dut.write("keys")
     for kind, code, ascii_ in ((b"p", 4, 97), (b"r", 4, 97), (b"p", 5, 98), (b"r", 5, 98)):
         peer.expect(b"KEY " + kind + b" %d %d" % (code, ascii_), timeout=5)
     dut.expect_exact("KEYS 1", timeout=5)
@@ -76,13 +76,13 @@ def test_usb_peer_device(dut, peers, record_property):
     peer.expect(rb"MIDI 9 90 76 127", timeout=5)
 
     # Reconnect: end() + begin() is an unplug and a plug to the S3.
-    dut.write("mounts\n")
+    dut.write("mounts")
     mounts = int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1))
-    dut.write("replug\n")
+    dut.write("replug")
     peer.expect(rb"DISCONNECTED \d+ 1209 0001", timeout=10)
     dut.expect_exact("REPLUG 1", timeout=10)
     peer.expect(rb"CONNECTED \d+ 1209 0001", timeout=15)
-    dut.write("mounts\n")
+    dut.write("mounts")
     assert int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1)) > mounts
 
     # DFU_DETACH from the peer: on the X035 the factory bootloader appears on the same port, and without an
@@ -91,7 +91,7 @@ def test_usb_peer_device(dut, peers, record_property):
     wait_enumerated(peer, build_id)
     # The reply and the device leaving, in either order: a part that resets at once (H417 on its FS port) is gone
     # before the peer prints DFU's reply (2026-11-20).
-    peer.write("dfu\n")
+    peer.write("dfu")
     peer.expect(rb"(DFU 1 \d[\s\S]*?DISCONNECTED \d+ 1209 0001|DISCONNECTED \d+ 1209 0001[\s\S]*?DFU 1 \d)", timeout=10)
     if settings(__file__)["target"]["family"].startswith("CH32X03"):
         peer.expect(rb"CONNECTED \d+ " + ISP_ID_PATTERN, timeout=10)

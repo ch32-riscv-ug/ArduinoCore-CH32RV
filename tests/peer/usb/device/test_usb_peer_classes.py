@@ -25,7 +25,7 @@ def test_usb_peer_classes(dut, peers):
     # onBusEvent() saw the configuration, onAnyControlRequest() the enumeration's
     # transfers; the descriptor getters give the device's own VID:PID and a
     # configuration of the length the S3 read (no HID here: 0).
-    dut.write("events\n")
+    dut.write("events")
     m = dut.expect(rb"EVENTS (\d+) (\d+) (\d+) (\d+) (\d+) (\w{4}):(\w{4}) (\d+)\r?\n", timeout=5)
     assert int(m.group(1)) >= 1 and int(m.group(2)) >= 1
     assert int(m.group(4)) >= 5 and int(m.group(3)) >= int(m.group(4))
@@ -34,12 +34,12 @@ def test_usb_peer_classes(dut, peers):
     assert int(m.group(8)) == 0
     # The same echo through onRxData() and writeDirect(), completions counted
     # by a capturing lambda; then back to the class FIFOs.
-    dut.write("vmode direct\n")
+    dut.write("vmode direct")
     before = int(dut.expect(rb"VMODE direct (\d+) \d+ \d+\r?\n", timeout=5).group(1))
     for _ in range(3):
         data = secrets.token_bytes(48)
         assert command(peer, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
-    dut.write("vmode fifo\n")
+    dut.write("vmode fifo")
     m = dut.expect(rb"VMODE fifo (\d+) (\d+) (\d+)\r?\n", timeout=5)
     after = int(m.group(1))
     assert after - before == 3
@@ -59,18 +59,18 @@ def test_usb_peer_classes(dut, peers):
     assert m.group(1) == b"1" and build_id.encode() in m.group(2)
     text = "from the S3 " + secrets.token_hex(4)
     assert command(peer, "mscwrite " + text, rb"MSCWRITE (\d)", timeout=20).group(1) == b"1"
-    dut.write("file\n")
+    dut.write("file")
     m = dut.expect(rb"FILE (\d+) ([^\r\n]*)\r?\n", timeout=5)
     assert m.group(2).decode() == text
     # The medium taken out reads as not ready (02/3A/00); put back, the next
     # command gets UNIT ATTENTION 06/28/00 once, then it is ready. Setting it
     # present again is no change.
     for value, sense in (("0", "02 3a 00"), ("1", "06 28 00")):
-        dut.write("media " + value + "\n")
+        dut.write("media " + value)
         dut.expect(rb"MEDIA " + value.encode() + rb"\r?\n", timeout=5)
         assert command(peer, "msctur", rb"MSCTUR (\d) (\w\w \w\w \w\w)").group(2).decode() == sense
     assert command(peer, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
-    dut.write("media 1\n")
+    dut.write("media 1")
     dut.expect(rb"MEDIA 1\r?\n", timeout=5)
     assert command(peer, "msctur", rb"MSCTUR (\d) [^\r\n]*").group(1) == b"1"
     assert command(peer, "mscblk 0 2", rb"MSCBLK (\d) [^\r\n]*", timeout=20).group(1) == b"1"
@@ -79,7 +79,7 @@ def test_usb_peer_classes(dut, peers):
     # fail), the callback ran once and the device stays, still answering.
     m = command(peer, "dfu", rb"DFU (\d) (\d)", timeout=10)
     assert (m.group(1), m.group(2)) == (b"1", b"0")
-    dut.write("detach\n")
+    dut.write("detach")
     assert dut.expect(rb"DETACH (\d+)\r?\n", timeout=5).group(1) == b"1"
     assert command(peer, "vreq", rb"VREQ (\d) (\S*)").group(2) == b"CH32"
 
@@ -90,14 +90,14 @@ def test_usb_peer_classes(dut, peers):
     m = command(peer, "apdu " + apdu.hex(), rb"APDU (\d) (\w*) (\w{4})", timeout=15)
     assert m.group(1) == b"1" and m.group(3) == b"9000"
     assert bytes.fromhex(m.group(2).decode()) == apdu[::-1]     # EspUsbHost returns SW apart
-    dut.write("card\n")
+    dut.write("card")
     m = dut.expect(rb"CARD (\d) (\d) (\d+)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1" and int(m.group(3)) >= 1
     # messageBytes 0 (automatic): 271, or the controller's largest bulk packet when that is larger (512 on USBHS,
     # 1024 on USBSS), decided at begin() whatever speed the host then takes, told the host as
     # dwMaxCCIDMessageLength - at least the bulk OUT packet (CCID 1.1 section 5.1). The controller's packet is the
     # DUT's to say (X315's USBHS on the RP2040 runs at full speed: 512, 512, 64).
-    dut.write("ccidsize\n")
+    dut.write("ccidsize")
     m = dut.expect(rb"CCIDSIZE (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=5)
     top = int(m.group(4))
     packet = {1: 64, 2: 512, 3: 1024}[link_speed(__file__)]
@@ -108,27 +108,27 @@ def test_usb_peer_classes(dut, peers):
     # and the second block is never asked of the backend. Its sense (02/3A/00)
     # is not checked, and this comes last but the restart: after the stalled
     # data stage EspUsbHost 2.10.0 reads no CSW and stays a CSW behind.
-    dut.write("pull\n")
+    dut.write("pull")
     dut.expect(rb"PULL\r?\n", timeout=5)
     assert command(peer, "mscblk 0 2", rb"MSCBLK (\d) [^\r\n]*", timeout=20).group(1) == b"0"
-    dut.write("pulled\n")
+    dut.write("pulled")
     assert dut.expect(rb"PULLED (\d+)\r?\n", timeout=5).group(1) == b"1"
     # The medium back before the restart below: TinyUSB's MSC host (the Pico) repeats TEST UNIT READY without
     # a pause while a medium is out, at enumeration, and the vendor transfers after it then failed now and then.
-    dut.write("media 1\n")
+    dut.write("media 1")
     dut.expect(rb"MEDIA 1\r?\n", timeout=5)
 
     # Borrowed receive (last: it restarts the device). The echo lands in
     # readDirect()'s buffer and goes back through writeDirect(); a posted
     # receive is cancelled and handed back before cancelDirectRx() returns.
-    dut.write("vborrow\n")
+    dut.write("vborrow")
     m = dut.expect(rb"VBORROW (\d) (\d)\r?\n", timeout=5)
     assert m.group(1) == b"1" and m.group(2) == b"1"
     wait_enumerated(peer, build_id)
     for _ in range(3):
         data = secrets.token_bytes(48)
         assert command(peer, "vend " + data.hex(), rb"VEND (\w*)").group(1).decode() == data.hex()
-    dut.write("vcancel\n")
+    dut.write("vcancel")
     m = dut.expect(rb"VCANCEL (\d) (\d) (\d) (\d+) (\d+)\r?\n", timeout=5)
     assert m.group(1, 2, 3) == (b"1", b"0", b"0")
     assert int(m.group(4)) == 1 and int(m.group(5)) == 3
@@ -139,7 +139,7 @@ def test_usb_peer_classes(dut, peers):
     # with EspUsbDevice v3): the sketch ends the device as soon as onDetach()
     # has said yes, and the factory bootloader still appears (the X035; elsewhere enterBootloader() is a plain
     # reset), then hands back.
-    dut.write("detachend\n")
+    dut.write("detachend")
     dut.expect(rb"DETACHEND\r?\n", timeout=5)
     wait_enumerated(peer, build_id)
     # The device may be gone before the S3 prints its reply: no DISCONNECTED in between.

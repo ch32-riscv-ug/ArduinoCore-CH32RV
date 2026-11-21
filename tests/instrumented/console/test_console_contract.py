@@ -30,7 +30,7 @@ def fnv(text):
 def ready(dut, case, tries=10):
     for _ in range(tries):
         nonce = secrets.token_hex(4)
-        dut.write(f"ready {nonce}\n")
+        dut.write(f"ready {nonce}")
         try:
             m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+)\r?\n", timeout=2)
             assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
@@ -48,9 +48,9 @@ def test_console_two_way(dut, record_property):
     alphabet = string.ascii_letters + string.digits + " .,:-_"
     for n in range(20):
         text = "".join(secrets.choice(alphabet) for _ in range(1 + secrets.randbelow(80))).strip() or "x"
-        dut.write(f"echo {text}\n")
+        dut.write(f"echo {text}")
         dut.expect_exact(f"ECHO {text}", timeout=5)
-    dut.write("burst 200\n")
+    dut.write("burst 200")
     for i in range(200):
         m = dut.expect(rb"BURST (\d+) ([0-9A-F]+)\r?\n", timeout=10)
         assert int(m.group(1)) == i, f"burst line {m.group(1).decode()} where {i} was due"

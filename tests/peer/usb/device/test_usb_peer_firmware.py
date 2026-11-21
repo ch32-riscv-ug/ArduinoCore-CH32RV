@@ -41,7 +41,7 @@ def fw(dut, timeout=15):
     """FW from the DUT, asked again until it answers (the console comes back after a restart)."""
     deadline = time.monotonic() + timeout
     while True:
-        dut.write("fw\n")
+        dut.write("fw")
         try:
             m = dut.expect(rb"FW ([0-9a-f]{16}) (\d+) ([0-9A-F]+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)\r?\n",
                            timeout=2)
@@ -94,7 +94,7 @@ def come_back(peer, dut, build_id, timeout=30):
     """The DUT leaves the bus to install the image and enumerates again (wait_enumerated), then FW."""
     deadline = time.monotonic() + 10
     while True:
-        peer.write("dev\n")
+        peer.write("dev")
         text = peer.serial.expect(rb"(?:[^\n]*\n)*?" + re.escape(peer.tag) + rb"DEVEND (\d+)\r?\n", timeout=10)
         if build_id.encode() not in text.group(0):
             break

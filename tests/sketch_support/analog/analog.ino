@@ -1,9 +1,6 @@
 /* The DAC through analogWrite() (tests/instrumented/analog), read back by the
  * ADC on the same pad - no wiring: the DAC drives its pin, which is an ADC
- * input on every family that has one. Console on SerialDMSeq, or on Serial at the
- * pins CONSOLE_UART_RX / CONSOLE_UART_TX when the build names them (run_hardware.py:
- * the probe's UART lines, so the monitor does not poll the debug wire while the ADC
- * reads - V407's DMSeq polling put +-80 counts on PA4 against +-4 over the UART):
+ * input on every family that has one. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   dacpins                   DACPINS <DAC1 pin or -1> <DAC2 pin or -1>
@@ -34,18 +31,13 @@
  *                             INJDUAL 1 <ADC1 mean> <min> <max> <ADC2 mean> <min> <max> (INJDUAL 0 when refused) */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVDac.h>
 #include <CH32RVAdcStream.h>
 #include <CH32RVAdcInjected.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef CONSOLE_UART_RX
-#define CONSOLE Serial
-#else
-#define CONSOLE SerialDMSeq
-#endif
 
 #ifndef BENCH_BUILD_ID
 #error BENCH_BUILD_ID must identify this compilation
@@ -307,10 +299,7 @@ static void reply(char *command)
 
 void setup()
 {
-#ifdef CONSOLE_UART_RX
-    Serial.setPins(CONSOLE_UART_RX, CONSOLE_UART_TX);
-#endif
-    CONSOLE.begin(115200);
+    CONSOLE_BEGIN(115200);
     CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
     CONSOLE.println(CH32RV.resetReasonName());
 }

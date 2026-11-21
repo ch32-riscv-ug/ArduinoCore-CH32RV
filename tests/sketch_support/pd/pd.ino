@@ -1,5 +1,5 @@
 /* USB PD sink contracts (tests/instrumented/pd): CH32RVUsbPd against the
- * charger on the DUT's USB-C. Console on SerialDMSeq; loop() calls
+ * charger on the DUT's USB-C. Console on CONSOLE (bench_console.h); loop() calls
  * nothing: the driver is a system service (begin() attached it), and the
  * return of loop() keeps a PPS contract up between commands - pd.pps checks
  * exactly that.
@@ -14,7 +14,7 @@
  *   restart                   RESTART <begin 0/1>: end() and begin() under a live contract */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbPd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,12 +29,12 @@ static uint8_t used;
 
 static void say(const char *head, const long *v, uint8_t n)
 {
-    SerialDMSeq.print(head);
+    CONSOLE.print(head);
     for (uint8_t i = 0; i < n; i++) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(v[i]);
+        CONSOLE.print(' ');
+        CONSOLE.print(v[i]);
     }
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void state()
@@ -54,10 +54,10 @@ static void reply(char *command)
 {
     char *end;
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
 #ifdef CH32RV_USBPD_BASE
         const long v[3] = {begun, (long)CH32RV_USBPD_CC1_PIN, (long)CH32RV_USBPD_CC2_PIN};
 #else
@@ -103,22 +103,22 @@ static void reply(char *command)
         const long v = begun;
         say("RESTART", &v, 1);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     begun = USBPD.begin();
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

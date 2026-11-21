@@ -19,7 +19,7 @@
  *   slots           SLOTS <used> <failed writes> */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <CH32RVUsbDeviceMscBlock.h>
 #include <FatFS.h>
@@ -153,7 +153,7 @@ static void prep()
     ok = ok && writeText("/CFG.TXT", "v1");
     fat.end();
     msc.mediaPresent(true);
-    SerialDMSeq.printf("PREP %d %u\r\n", ok ? 1 : 0, disk.inUse());
+    CONSOLE.printf("PREP %d %u\r\n", ok ? 1 : 0, disk.inUse());
 }
 
 static void take(const char *token)
@@ -180,30 +180,30 @@ static void take(const char *token)
     }
     fat.end();
     msc.mediaPresent(true);
-    SerialDMSeq.printf("TAKE %d %d %u %s\r\n", mounted ? 1 : 0, mine ? 1 : 0, files, host);
+    CONSOLE.printf("TAKE %d %d %u %s\r\n", mounted ? 1 : 0, mine ? 1 : 0, files, host);
 }
 
 static void reply(const char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.printf("READY %s %s %d %s\r\n", command + 6, BENCH_BUILD_ID, USBDevice.started() ? 1 : 0,
+        CONSOLE.printf("READY %s %s %d %s\r\n", command + 6, BENCH_BUILD_ID, USBDevice.started() ? 1 : 0,
                            USBDevice.lastErrorName());
     } else if (strcmp(command, "prep") == 0) {
         prep();
     } else if (strncmp(command, "take ", 5) == 0) {
         take(command + 5);
     } else if (strcmp(command, "slots") == 0) {
-        SerialDMSeq.printf("SLOTS %u %lu\r\n", disk.inUse(), (unsigned long)disk.failed);
+        CONSOLE.printf("SLOTS %u %lu\r\n", disk.inUse(), (unsigned long)disk.failed);
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", command);
+        CONSOLE.printf("UNKNOWN %s\r\n", command);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     msc.vendorID("CH32RV");
     msc.productID("usb-fs");
     shared.attach(msc);
@@ -219,8 +219,8 @@ void setup()
 void loop()
 {
     deliverEvents();
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[usedChars] = 0;
             if (usedChars) {

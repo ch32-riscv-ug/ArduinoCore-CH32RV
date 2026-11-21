@@ -1,7 +1,7 @@
 /* Wire contracts (tests/instrumented/wire): Wire as the controller of an
  * OEP probe's i2c-target, at 100 kHz on the default pins. The probe also
  * captures SDA and SCL, so the test sees which conditions went on the wire.
- * Console on SerialDMSeq:
+ * Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>         READY <nonce> <build id> <sda pin> <scl pin> (Wire's)
  *   end                   end() the bus that is the target (its lines let go): END
@@ -49,7 +49,7 @@
  *                         CONTEND <results 0> <2> <3> <4> <5> <other> */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <Wire.h>
 #include <stdlib.h>
 #include <string.h>
@@ -124,22 +124,22 @@ static void sequence(uint8_t address, size_t n, bool stop)
     bus->write(0x20);
     const uint8_t last = bus->endTransmission(true);
 
-    SerialDMSeq.print("SEQ ");
-    SerialDMSeq.print(first);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print((unsigned)got);
-    SerialDMSeq.print(' ');
+    CONSOLE.print("SEQ ");
+    CONSOLE.print(first);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned)got);
+    CONSOLE.print(' ');
     if (!kept) {
-        SerialDMSeq.print('-');
+        CONSOLE.print('-');
     }
     for (size_t i = 0; i < kept; i++) {
         if (data[i] < 0x10) {
-            SerialDMSeq.print('0');
+            CONSOLE.print('0');
         }
-        SerialDMSeq.print(data[i], HEX);
+        CONSOLE.print(data[i], HEX);
     }
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(last);
+    CONSOLE.print(' ');
+    CONSOLE.println(last);
 }
 
 static uint16_t addressOf(unsigned long address, unsigned long ten)
@@ -150,11 +150,11 @@ static uint16_t addressOf(unsigned long address, unsigned long ten)
 static void printHex(const uint8_t *data, size_t n)
 {
     if (!n) {
-        SerialDMSeq.print('-');
+        CONSOLE.print('-');
     }
     for (size_t i = 0; i < n; i++) {
-        SerialDMSeq.print((char)"0123456789abcdef"[data[i] >> 4]);
-        SerialDMSeq.print((char)"0123456789abcdef"[data[i] & 15]);
+        CONSOLE.print((char)"0123456789abcdef"[data[i] >> 4]);
+        CONSOLE.print((char)"0123456789abcdef"[data[i] & 15]);
     }
 }
 
@@ -214,10 +214,10 @@ static void strand(uint8_t address, uint8_t bits)
     } else {
         Wire.begin();
     }
-    SerialDMSeq.print("STRAND ");
-    SerialDMSeq.print(ack ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(level ? 1 : 0);
+    CONSOLE.print("STRAND ");
+    CONSOLE.print(ack ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.println(level ? 1 : 0);
 }
 
 static char line[96];
@@ -225,17 +225,17 @@ static uint8_t used;
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     Wire.begin();
     Wire.setClock(100000);
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int ch = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int ch = CONSOLE.read();
         if (ch != '\n') {
             if (ch != '\r' && used < sizeof line - 1) {
                 line[used++] = (char)ch;
@@ -245,21 +245,21 @@ void loop()
         line[used] = 0;
         used = 0;
         if (strncmp(line, "ready ", 6) == 0) {
-            SerialDMSeq.print("READY ");
-            SerialDMSeq.print(line + 6);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(BENCH_BUILD_ID);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(PIN_WIRE_SDA);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(PIN_WIRE_SCL);
+            CONSOLE.print("READY ");
+            CONSOLE.print(line + 6);
+            CONSOLE.print(' ');
+            CONSOLE.print(BENCH_BUILD_ID);
+            CONSOLE.print(' ');
+            CONSOLE.print(PIN_WIRE_SDA);
+            CONSOLE.print(' ');
+            CONSOLE.println(PIN_WIRE_SCL);
         } else if (strcmp(line, "end") == 0) {
             target->end();
-            SerialDMSeq.println("END");
+            CONSOLE.println("END");
         } else if (strcmp(line, "controller") == 0) {
             Wire.end();
             Wire.begin();
-            SerialDMSeq.println("CONTROLLER");
+            CONSOLE.println("CONTROLLER");
         } else if (strncmp(line, "soft ", 5) == 0) {
             char *p = line + 5;
             const long sda = strtol(p, &p, 10);
@@ -270,19 +270,19 @@ void loop()
                 busSda = (int)sda;
                 busScl = (int)scl;
             }
-            SerialDMSeq.print("SOFT ");
-            SerialDMSeq.println(ok ? 1 : 0);
+            CONSOLE.print("SOFT ");
+            CONSOLE.println(ok ? 1 : 0);
         } else if (strncmp(line, "nack ", 5) == 0) {
             const unsigned long address = strtoul(line + 5, nullptr, 0);
             bus->beginTransmission((uint8_t)address);
             bus->write(0x10);
-            SerialDMSeq.print("NACK ");
-            SerialDMSeq.println(bus->endTransmission(true));
+            CONSOLE.print("NACK ");
+            CONSOLE.println(bus->endTransmission(true));
         } else if (strncmp(line, "clock ", 6) == 0) {
             const unsigned long hz = strtoul(line + 6, nullptr, 0);
             bus->setClock((uint32_t)hz);
-            SerialDMSeq.print("CLOCK ");
-            SerialDMSeq.println(hz);
+            CONSOLE.print("CLOCK ");
+            CONSOLE.println(hz);
         } else if (strncmp(line, "slave ", 6) == 0) {
             char *p = line + 6;
             const unsigned long address7 = strtoul(p, &p, 0);
@@ -301,8 +301,8 @@ void loop()
             } else {
                 Wire.begin(address);
             }
-            SerialDMSeq.print("SLAVE ");
-            SerialDMSeq.println(ok ? 1 : 0);
+            CONSOLE.print("SLAVE ");
+            CONSOLE.println(ok ? 1 : 0);
         } else if (strncmp(line, "sreply ", 7) == 0) {
             const char *p = line + 7;
             uint8_t n = 0;
@@ -312,24 +312,24 @@ void loop()
                 p += 2;
             }
             replyLength = n;
-            SerialDMSeq.print("SREPLY ");
-            SerialDMSeq.println(n);
+            CONSOLE.print("SREPLY ");
+            CONSOLE.println(n);
         } else if (strcmp(line, "sgot") == 0) {
-            SerialDMSeq.print("SGOT ");
-            SerialDMSeq.print((unsigned long)receives);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print((unsigned long)requests);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(orderUsed ? order : "-");
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(lastCount);
-            SerialDMSeq.print(' ');
+            CONSOLE.print("SGOT ");
+            CONSOLE.print((unsigned long)receives);
+            CONSOLE.print(' ');
+            CONSOLE.print((unsigned long)requests);
+            CONSOLE.print(' ');
+            CONSOLE.print(orderUsed ? order : "-");
+            CONSOLE.print(' ');
+            CONSOLE.print(lastCount);
+            CONSOLE.print(' ');
             const int shown = lastCount < (int)sizeof lastBytes ? lastCount : (int)sizeof lastBytes;
             for (int i = 0; i < shown; i++) {
-                SerialDMSeq.print((char)"0123456789abcdef"[lastBytes[i] >> 4]);
-                SerialDMSeq.print((char)"0123456789abcdef"[lastBytes[i] & 15]);
+                CONSOLE.print((char)"0123456789abcdef"[lastBytes[i] >> 4]);
+                CONSOLE.print((char)"0123456789abcdef"[lastBytes[i] & 15]);
             }
-            SerialDMSeq.println(shown ? "" : "-");
+            CONSOLE.println(shown ? "" : "-");
         } else if (strncmp(line, "w ", 2) == 0) {
             char *p = line + 2;
             const unsigned long address = strtoul(p, &p, 0);
@@ -346,10 +346,10 @@ void loop()
             bus->beginTransmission(a);
             bus->write(data, n);
             const uint8_t rc = bus->endTransmission(stop != 0);
-            SerialDMSeq.print("W ");
-            SerialDMSeq.print(rc);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(bus->getWireTimeoutFlag() ? 1 : 0);
+            CONSOLE.print("W ");
+            CONSOLE.print(rc);
+            CONSOLE.print(' ');
+            CONSOLE.println(bus->getWireTimeoutFlag() ? 1 : 0);
             bus->clearWireTimeoutFlag();
         } else if (strncmp(line, "r ", 2) == 0) {
             char *p = line + 2;
@@ -363,21 +363,21 @@ void loop()
             while (bus->available() && kept < sizeof data) {
                 data[kept++] = (uint8_t)bus->read();
             }
-            SerialDMSeq.print("R ");
-            SerialDMSeq.print((unsigned)got);
-            SerialDMSeq.print(' ');
+            CONSOLE.print("R ");
+            CONSOLE.print((unsigned)got);
+            CONSOLE.print(' ');
             printHex(data, kept);
-            SerialDMSeq.println();
+            CONSOLE.println();
         } else if (strncmp(line, "timeout ", 8) == 0) {
             const unsigned long us = strtoul(line + 8, nullptr, 10);
             bus->setWireTimeout(us);
-            SerialDMSeq.print("TIMEOUT ");
-            SerialDMSeq.println(us);
+            CONSOLE.print("TIMEOUT ");
+            CONSOLE.println(us);
         } else if (strncmp(line, "pec ", 4) == 0) {
             const bool on = strtoul(line + 4, nullptr, 10) != 0;
             bus->setPEC(on);
-            SerialDMSeq.print("PEC ");
-            SerialDMSeq.println(bus->getPEC() ? 1 : 0);
+            CONSOLE.print("PEC ");
+            CONSOLE.println(bus->getPEC() ? 1 : 0);
         } else if (strncmp(line, "gc ", 3) == 0) {
             const bool on = strtoul(line + 3, nullptr, 10) != 0;
             if (bus == &soft) {
@@ -385,8 +385,8 @@ void loop()
             } else {
                 Wire.setGeneralCall(on);
             }
-            SerialDMSeq.print("GC ");
-            SerialDMSeq.println(on ? 1 : 0);
+            CONSOLE.print("GC ");
+            CONSOLE.println(on ? 1 : 0);
         } else if (strncmp(line, "strand ", 7) == 0) {
             char *p = line + 7;
             const unsigned long address = strtoul(p, &p, 0);
@@ -405,12 +405,12 @@ void loop()
                 const uint8_t rc = bus->endTransmission(true);
                 counts[rc == 0 ? 0 : rc >= 2 && rc <= 5 ? rc - 1 : 5]++;
             }
-            SerialDMSeq.print("CONTEND");
+            CONSOLE.print("CONTEND");
             for (uint8_t k = 0; k < 6; k++) {
-                SerialDMSeq.print(' ');
-                SerialDMSeq.print((unsigned long)counts[k]);
+                CONSOLE.print(' ');
+                CONSOLE.print((unsigned long)counts[k]);
             }
-            SerialDMSeq.println();
+            CONSOLE.println();
         } else if (strncmp(line, "seq ", 4) == 0) {
             char *p = line + 4;
             const unsigned long address = strtoul(p, &p, 0);

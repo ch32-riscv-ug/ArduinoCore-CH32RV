@@ -97,7 +97,7 @@
 #include <CH32RV.h>
 #include <CH32RVTimerInput.h>
 #include <CH32RVTimerOutput.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include "internal/ch32rv_irq.h"
 #include <Ticker.h>
 #include <SoftPWM.h>
@@ -120,13 +120,13 @@ static void counted() { edges++; }
  * formatted kind does not fit V003's 16 KB beside the rest). */
 static void say(const char *word, int n = 0, long a = 0, long b = 0, long c = 0, long d = 0)
 {
-    SerialDMSeq.print(word);
+    CONSOLE.print(word);
     const long v[4] = {a, b, c, d};
     for (int k = 0; k < n; k++) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(v[k]);
+        CONSOLE.print(' ');
+        CONSOLE.print(v[k]);
     }
-    SerialDMSeq.print("\r\n");
+    CONSOLE.print("\r\n");
 }
 
 /* ---- The timer features (2026-11-17): pads on every route, complementary
@@ -184,23 +184,23 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         /* The pad's n-th way to a timer: timer, channel, role, route. */
         CH32RVTimerPad p = {};
         const bool found = digitalPinIsValid(pin) && ch32rv_timer_pad_find(pin, 7, (uint8_t)a2, &p);
-        SerialDMSeq.print("PAD ");
-        SerialDMSeq.print(found ? p.timer : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(p.channel);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(p.role);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(p.route);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(found && ((CH32RV_PWM_TIMER_MASK >> p.timer) & 1u) ? 1 : 0);
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("PAD ");
+        CONSOLE.print(found ? p.timer : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print(p.channel);
+        CONSOLE.print(' ');
+        CONSOLE.print(p.role);
+        CONSOLE.print(' ');
+        CONSOLE.print(p.route);
+        CONSOLE.print(' ');
+        CONSOLE.print(found && ((CH32RV_PWM_TIMER_MASK >> p.timer) & 1u) ? 1 : 0);
+        CONSOLE.print("\r\n");
     } else if (!strcmp(argv[0], "route") && argc == 2) {
         say("ROUTE", 1, ch32rv_timer_route((uint8_t)pin));
     } else if (!strcmp(argv[0], "now")) {
-        SerialDMSeq.print("NOW ");
-        SerialDMSeq.print((unsigned long)micros());
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("NOW ");
+        CONSOLE.print((unsigned long)micros());
+        CONSOLE.print("\r\n");
     } else if (!strcmp(argv[0], "tpulsein") && argc == 4) {
         pinMode(pin, INPUT);
         say("TPULSEIN", 1, (long)timerPulseIn(pin, (uint8_t)a2, (unsigned long)a3));
@@ -230,7 +230,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         say("RESUME", 1, bridge.resume());
     } else if (!strcmp(argv[0], "compoff")) {
         bridge.end();
-        SerialDMSeq.println("COMPOFF");
+        CONSOLE.println("COMPOFF");
     } else if (!strcmp(argv[0], "pwmt") && argc == 7) {
         /* pwmt <a> <b> <hz> <align 0 edge / 1 center> <duty a of 1024> <duty b of 1024> */
         const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, a4 ? CH32RVPwmTimer::CENTER : CH32RVPwmTimer::EDGE) &&
@@ -240,7 +240,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "pwmtoff")) {
         pwmTimer2.end();
         pwmTimer.end();
-        SerialDMSeq.println("PWMTOFF");
+        CONSOLE.println("PWMTOFF");
     } else if (!strcmp(argv[0], "itr") && argc == 3) {
         /* itr <slave timer> <master timer> */
         say("ITR", 1, ch32rv_timer_trigger_from((uint8_t)pin, (uint8_t)a2));
@@ -261,7 +261,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         say("PHS", 1, ok);
     } else if (!strcmp(argv[0], "phsoff")) {
         phaseShift.end();
-        SerialDMSeq.println("PHSOFF");
+        CONSOLE.println("PHSOFF");
     } else if (!strcmp(argv[0], "six") && argc == 9) {
         /* six <uh> <ul> <vh> <vl> <wh> <wl> <hz> <duty of 256>: all off until sixstep */
         const bool ok = sixStep.begin(pin, (int)a2, (int)a3, (int)a4, (int)a5, atoi(argv[6]), (uint32_t)atol(argv[7])) &&
@@ -271,14 +271,14 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         say("SIXSTEP", 1, sixStep.step((uint8_t)atoi(argv[1])));
     } else if (!strcmp(argv[0], "sixoff")) {
         sixStep.end();
-        SerialDMSeq.println("SIXOFF");
+        CONSOLE.println("SIXOFF");
     } else if (!strcmp(argv[0], "shot") && argc == 4) {
         /* shot <pin> <delay us> <width us>: one pulse, started now */
         const bool ok = (shot.isAttached() || shot.begin(pin)) && shot.fire((uint32_t)a2, (uint32_t)a3);
         say("SHOT", 1, ok);
     } else if (!strcmp(argv[0], "shotoff")) {
         shot.end();
-        SerialDMSeq.println("SHOTOFF");
+        CONSOLE.println("SHOTOFF");
     } else if (!strcmp(argv[0], "oc") && argc == 5) {
         /* oc <pin> <period us> <at us> <mode> */
         const bool ok = (compare.isAttached() || compare.begin(pin, (uint32_t)a2)) &&
@@ -286,7 +286,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         say("OC", 1, ok);
     } else if (!strcmp(argv[0], "ocoff")) {
         compare.end();
-        SerialDMSeq.println("OCOFF");
+        CONSOLE.println("OCOFF");
 #endif
 #ifdef SIGNALS_EDGE_CAPTURE
     } else if (!strcmp(argv[0], "icap") && argc == 3) {
@@ -301,22 +301,22 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         while (n < 8 && edgeCapture.read(e[n])) {
             n++;
         }
-        SerialDMSeq.print("EDGES ");
-        SerialDMSeq.print(n);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(edgeCapture.lost());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(edgeCapture.tickHz());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(n ? (int)e[0].rising : -1);
+        CONSOLE.print("EDGES ");
+        CONSOLE.print(n);
+        CONSOLE.print(' ');
+        CONSOLE.print(edgeCapture.lost());
+        CONSOLE.print(' ');
+        CONSOLE.print(edgeCapture.tickHz());
+        CONSOLE.print(' ');
+        CONSOLE.print(n ? (int)e[0].rising : -1);
         for (int k = 1; k < n; k++) {
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print((unsigned long)(e[k].ticks - e[k - 1].ticks));
+            CONSOLE.print(' ');
+            CONSOLE.print((unsigned long)(e[k].ticks - e[k - 1].ticks));
         }
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("\r\n");
     } else if (!strcmp(argv[0], "icoff")) {
         edgeCapture.end();
-        SerialDMSeq.println("ICOFF");
+        CONSOLE.println("ICOFF");
     } else if (!strcmp(argv[0], "pcount") && argc == 4) {
         const int edge = a2 == 1 ? RISING : a2 == 2 ? FALLING : CHANGE;
         const bool ok = pulseCounter.begin(pin, edge);
@@ -334,12 +334,12 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
             ch32rv_irq_restore(irq2);
         }
         pulseCounter.end();
-        SerialDMSeq.print("PCOUNT ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)n);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)took);
+        CONSOLE.print("PCOUNT ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)n);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)took);
 #endif
 #ifdef SIGNALS_TICKER
     } else if (!strcmp(argv[0], "tick") && argc == 4) {
@@ -364,10 +364,10 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         say("SPWM", 1, ok);
     } else if (!strcmp(argv[0], "spwmoff")) {
         SoftPWMEnd(ALL);
-        SerialDMSeq.println("SPWMOFF");
+        CONSOLE.println("SPWMOFF");
     } else if (!strcmp(argv[0], "tickoff")) {
         ticker.detach();
-        SerialDMSeq.println("TICKOFF");
+        CONSOLE.println("TICKOFF");
     } else if (!strcmp(argv[0], "htimer") && argc == 4) {
         /* htimer <pin> <us> <0 alarm every us, toggling / 1 one alarm: high now, low at us> */
         tickPin = (uint8_t)pin;
@@ -388,7 +388,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "htimeroff")) {
         timerEnd(userTimer);
         userTimer = nullptr;
-        SerialDMSeq.println("HTIMEROFF");
+        CONSOLE.println("HTIMEROFF");
 #endif
     } else {
         return false;
@@ -408,11 +408,11 @@ static void reply(char *command)
     }
     const pin_size_t pin = argc > 1 ? (pin_size_t)atoi(argv[1]) : 0;
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(argv[1]);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("READY ");
+        CONSOLE.print(argv[1]);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print("\r\n");
     } else if (!strcmp(argv[0], "restart")) {
         CH32RV.restart();
     } else if (!strcmp(argv[0], "caps") && argc == 2) {
@@ -426,29 +426,29 @@ static void reply(char *command)
         say("SERVO", 1, ok);
     } else if (!strcmp(argv[0], "servooff")) {
         servo.detach();
-        SerialDMSeq.println("SERVOOFF");
+        CONSOLE.println("SERVOOFF");
     } else if (!strcmp(argv[0], "tone") && argc == 3) {
         tone(pin, (unsigned int)atol(argv[2]));
-        SerialDMSeq.println("TONE");
+        CONSOLE.println("TONE");
     } else if (!strcmp(argv[0], "toned") && argc == 4) {
         tone(pin, (unsigned int)atol(argv[2]), (unsigned long)atol(argv[3]));
-        SerialDMSeq.println("TONE");
+        CONSOLE.println("TONE");
     } else if (!strcmp(argv[0], "notone") && argc == 2) {
         noTone(pin);
-        SerialDMSeq.println("NOTONE");
+        CONSOLE.println("NOTONE");
     } else if (!strcmp(argv[0], "level") && argc == 3) {
         digitalWrite(pin, atoi(argv[2]) ? HIGH : LOW);
-        SerialDMSeq.println("LEVEL");
+        CONSOLE.println("LEVEL");
     } else if (!strcmp(argv[0], "pulsein") && argc == 5) {
         pinMode(pin, INPUT);
         const uint8_t state = (uint8_t)atoi(argv[2]);
         const unsigned long timeout = (unsigned long)atol(argv[3]);
         const unsigned long us = atoi(argv[4]) ? pulseInLong(pin, state, timeout) : pulseIn(pin, state, timeout);
-        SerialDMSeq.print("PULSEIN ");
-        SerialDMSeq.println(us);
+        CONSOLE.print("PULSEIN ");
+        CONSOLE.println(us);
     } else if (!strcmp(argv[0], "input") && argc == 2) {
         pinMode(pin, INPUT);
-        SerialDMSeq.println("INPUT");
+        CONSOLE.println("INPUT");
     } else if (!strcmp(argv[0], "pwm") && argc == 4) {
         /* Any pad a timer channel or complementary output reaches, on any route. */
         CH32RVTimerPad any;
@@ -466,7 +466,7 @@ static void reply(char *command)
         say("PWM", 1, ok);
     } else if (!strcmp(argv[0], "pwmoff") && argc == 2) {
         analogWrite(pin, 0);
-        SerialDMSeq.println("PWMOFF");
+        CONSOLE.println("PWMOFF");
     } else if (!strcmp(argv[0], "irq") && argc == 3) {
         const int mode = atoi(argv[2]);
         const PinStatus how = mode == 1 ? RISING : mode == 2 ? FALLING : CHANGE;
@@ -481,7 +481,7 @@ static void reply(char *command)
         say("COUNT", 1, (long)edges);
     } else if (!strcmp(argv[0], "irqoff") && argc == 2) {
         detachInterrupt(digitalPinToInterrupt(pin));
-        SerialDMSeq.println("IRQOFF");
+        CONSOLE.println("IRQOFF");
     } else if (!strcmp(argv[0], "cap") && argc == 2) {
         say("CAP", 1, pulse.begin(pin, 10));
     } else if (!strcmp(argv[0], "capread")) {
@@ -489,11 +489,11 @@ static void reply(char *command)
         if (pulse.read(p)) {
             say("PULSE", 3, (long)p.period, (long)p.high, (long)p.tickHz);
         } else {
-            SerialDMSeq.println("PULSE NONE");
+            CONSOLE.println("PULSE NONE");
         }
     } else if (!strcmp(argv[0], "capoff")) {
         pulse.end();
-        SerialDMSeq.println("CAPOFF");
+        CONSOLE.println("CAPOFF");
     } else if (!strcmp(argv[0], "rgb") && argc == 3) {
         const int n = atoi(argv[2]);
         for (int i = 0; i < n; i++) {
@@ -516,23 +516,23 @@ static void reply(char *command)
         say("RGBHW", 1, ch32rv_rgb_led_is_hardware(pin) ? 1 : 0);
     } else if (timer_reply(argc, argv, pin)) {
     } else {
-        SerialDMSeq.print("UNKNOWN ");
-        SerialDMSeq.print(argv[0]);
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("UNKNOWN ");
+        CONSOLE.print(argv[0]);
+        CONSOLE.print("\r\n");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

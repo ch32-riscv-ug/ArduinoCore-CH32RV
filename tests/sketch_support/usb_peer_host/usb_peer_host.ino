@@ -66,7 +66,7 @@
  * H HIDIN <itf> <report hex> (with hidraw 1) / H CARD <in|out> / H WAKEUP <n> (onRemoteWakeup()). */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbHost.h>
 #if defined(USB_HOST_FS)
 #include <CH32RVUsbHostMscFS.h>
@@ -98,8 +98,8 @@ static void hex(const uint8_t *d, size_t n)
 {
     static const char digits[] = "0123456789abcdef";
     for (size_t i = 0; i < n; i++) {
-        SerialDMSeq.print(digits[d[i] >> 4]);
-        SerialDMSeq.print(digits[d[i] & 15]);
+        CONSOLE.print(digits[d[i] >> 4]);
+        CONSOLE.print(digits[d[i] & 15]);
     }
 }
 
@@ -126,7 +126,7 @@ static size_t parse_hex(const char *s, uint8_t *out, size_t cap)
 static void print4(uint16_t v)
 {
     static const char digits[] = "0123456789abcdef";
-    for (int s = 12; s >= 0; s -= 4) SerialDMSeq.print(digits[(v >> s) & 15]);
+    for (int s = 12; s >= 0; s -= 4) CONSOLE.print(digits[(v >> s) & 15]);
 }
 
 static void cmd_dev()
@@ -135,45 +135,45 @@ static void cmd_dev()
     const size_t n = usb.getDevices(list, 4);
     for (size_t i = 0; i < n; i++) {
         const CH32RVUsbHostDeviceInfo &d = list[i];
-        SerialDMSeq.print("H DEV ");
-        SerialDMSeq.print(d.address);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H DEV ");
+        CONSOLE.print(d.address);
+        CONSOLE.print(' ');
         print4(d.vid);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         print4(d.pid);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(d.speed);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
+        CONSOLE.print(d.speed);
+        CONSOLE.print(' ');
         print4(d.usbVersion);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(d.deviceClass, HEX);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(d.manufacturer);
-        SerialDMSeq.print('|');
-        SerialDMSeq.print(d.product);
-        SerialDMSeq.print('|');
-        SerialDMSeq.println(d.serial);
+        CONSOLE.print(' ');
+        CONSOLE.print(d.deviceClass, HEX);
+        CONSOLE.print(' ');
+        CONSOLE.print(d.manufacturer);
+        CONSOLE.print('|');
+        CONSOLE.print(d.product);
+        CONSOLE.print('|');
+        CONSOLE.println(d.serial);
         CH32RVUsbHostInterfaceInfo itfs[8];
         const size_t ni = usb.getInterfaces(d.address, itfs, 8);
         for (size_t k = 0; k < ni; k++) {
-            SerialDMSeq.print("H ITF ");
-            SerialDMSeq.print(d.address);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(itfs[k].number);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(itfs[k].alternate);
-            SerialDMSeq.print(' ');
+            CONSOLE.print("H ITF ");
+            CONSOLE.print(d.address);
+            CONSOLE.print(' ');
+            CONSOLE.print(itfs[k].number);
+            CONSOLE.print(' ');
+            CONSOLE.print(itfs[k].alternate);
+            CONSOLE.print(' ');
             hex(&itfs[k].interfaceClass, 1);
-            SerialDMSeq.print(' ');
+            CONSOLE.print(' ');
             hex(&itfs[k].interfaceSubClass, 1);
-            SerialDMSeq.print(' ');
+            CONSOLE.print(' ');
             hex(&itfs[k].interfaceProtocol, 1);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(itfs[k].claimed ? 1 : 0);
+            CONSOLE.print(' ');
+            CONSOLE.println(itfs[k].claimed ? 1 : 0);
         }
     }
-    SerialDMSeq.print("H DEVEND ");
-    SerialDMSeq.println((unsigned)n);
+    CONSOLE.print("H DEVEND ");
+    CONSOLE.println((unsigned)n);
 }
 
 static void cmd_where(const char *arg)
@@ -185,12 +185,12 @@ static void cmd_where(const char *arg)
         parent = d.parentAddress;
         speed = hub.speed;
     }
-    SerialDMSeq.print("H WHERE ");
-    SerialDMSeq.print(address);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(parent);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(speed);
+    CONSOLE.print("H WHERE ");
+    CONSOLE.print(address);
+    CONSOLE.print(' ');
+    CONSOLE.print(parent);
+    CONSOLE.print(' ');
+    CONSOLE.println(speed);
 }
 
 static size_t collect_cdc(uint8_t *out, size_t want, uint32_t ms)
@@ -212,9 +212,9 @@ static void cmd_cdc(const char *arg)
     while (cdc.available()) cdc.read();
     cdc.write(tx, n);
     const size_t got = collect_cdc(rx, n, 2000);
-    SerialDMSeq.print("H CDC ");
+    CONSOLE.print("H CDC ");
     hex(rx, got);
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void cmd_cdcbig(size_t n)
@@ -237,12 +237,12 @@ static void cmd_cdcbig(size_t n)
         }
         delay(1);
     }
-    SerialDMSeq.print("H CDCBIG ");
-    SerialDMSeq.print((unsigned)n);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(got == n && !bad ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned)got);
+    CONSOLE.print("H CDCBIG ");
+    CONSOLE.print((unsigned)n);
+    CONSOLE.print(' ');
+    CONSOLE.print(got == n && !bad ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned)got);
 }
 
 /* setRxBufferSize(size) between end() and begin(), then n bytes out unread: the echo waits in the ring. */
@@ -274,7 +274,7 @@ static void cmd_cdcrx(const char *arg)
         if ((uint8_t)cdc.read() != (uint8_t)(got * 7 + 3)) bad++;
         got++;
     }
-    SerialDMSeq.printf("H CDCRX %d %u %d %u %u %u\n", set ? 1 : 0, (unsigned)cdc.rxBufferSize(), waiting, (unsigned)got,
+    CONSOLE.printf("H CDCRX %d %u %d %u %u %u\n", set ? 1 : 0, (unsigned)cdc.rxBufferSize(), waiting, (unsigned)got,
                        (unsigned)bad, (unsigned)sent);
 }
 
@@ -283,15 +283,15 @@ static void cmd_vend(const char *arg)
     uint8_t tx[160], rx[160];
     const size_t n = parse_hex(arg, tx, sizeof tx);
     if (!usb.vendorReady() && !usb.vendorOpen()) {
-        SerialDMSeq.print("H VEND ERR ");
-        SerialDMSeq.println(usb.lastErrorName());
+        CONSOLE.print("H VEND ERR ");
+        CONSOLE.println(usb.lastErrorName());
         return;
     }
     while (usb.vendorRead(rx, sizeof rx)) {
     }
     if (!usb.vendorWrite(tx, n)) {
-        SerialDMSeq.print("H VEND ERR ");
-        SerialDMSeq.println(usb.lastErrorName());
+        CONSOLE.print("H VEND ERR ");
+        CONSOLE.println(usb.lastErrorName());
         return;
     }
     size_t got = 0;
@@ -300,9 +300,9 @@ static void cmd_vend(const char *arg)
         got += usb.vendorRead(rx + got, n - got);
         delay(1);
     }
-    SerialDMSeq.print("H VEND ");
+    CONSOLE.print("H VEND ");
     hex(rx, got);
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void cmd_msc()
@@ -310,16 +310,16 @@ static void cmd_msc()
     CH32RVUsbHostMscInquiry inq;
     uint32_t blocks = 0, size = 0;
     const bool ok = usb.mscWaitReady() && usb.mscInquiry(inq) && usb.mscCapacity(blocks, size);
-    SerialDMSeq.print("H MSC ");
-    SerialDMSeq.print(ok ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(ok ? inq.vendor : "-");
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(ok ? inq.product : "-");
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print((unsigned long)blocks);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned long)size);
+    CONSOLE.print("H MSC ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print(ok ? inq.vendor : "-");
+    CONSOLE.print(' ');
+    CONSOLE.print(ok ? inq.product : "-");
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)blocks);
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned long)size);
 }
 
 static void cmd_mscraw(uint32_t lba)
@@ -331,8 +331,8 @@ static void cmd_mscraw(uint32_t lba)
     ok = ok && usb.mscReadBlocks(lba, block, 1);
     for (size_t i = 0; ok && i < 512; i++) ok = block[i] == (uint8_t)(i ^ (lba * 31));
     ok = usb.mscWriteBlocks(lba, keep, 1) && ok;
-    SerialDMSeq.print("H MSCRAW ");
-    SerialDMSeq.println(ok ? 1 : 0);
+    CONSOLE.print("H MSCRAW ");
+    CONSOLE.println(ok ? 1 : 0);
 }
 
 #if defined(USB_HOST_FS)
@@ -346,12 +346,12 @@ static void cmd_fsmount(char *arg)
     if (!ok && fmt && stick.device().blockCount()) {
         ok = stick.format(stick.device()) && stick.begin(usb, "/usb", CH32RV_USB_HOST_ANY_ADDRESS, lun);
     }
-    SerialDMSeq.print("H FSMOUNT ");
-    SerialDMSeq.print(ok ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print((unsigned)stick.fatType());
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned long)(ok ? stick.totalBytes() : 0));
+    CONSOLE.print("H FSMOUNT ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned)stick.fatType());
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned long)(ok ? stick.totalBytes() : 0));
 }
 
 static void cmd_fswrite(char *arg)
@@ -367,8 +367,8 @@ static void cmd_fswrite(char *arg)
     File f = stick.open(path, FILE_WRITE);
     const size_t wrote = f ? f.write(block, n) : 0;
     f.close();
-    SerialDMSeq.print("H FSWRITE ");
-    SerialDMSeq.println((unsigned long)wrote);
+    CONSOLE.print("H FSWRITE ");
+    CONSOLE.println((unsigned long)wrote);
 }
 
 static void cmd_fsread(char *arg)
@@ -378,26 +378,26 @@ static void cmd_fsread(char *arg)
     File f = stick.open(path, FILE_READ);
     const int n = f ? f.read(block, sizeof block) : -1;
     f.close();
-    SerialDMSeq.print("H FSREAD ");
-    SerialDMSeq.print(n >= 0 ? 1 : 0);
-    SerialDMSeq.print(' ');
+    CONSOLE.print("H FSREAD ");
+    CONSOLE.print(n >= 0 ? 1 : 0);
+    CONSOLE.print(' ');
     hex(block, n > 0 ? (size_t)n : 0);
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void cmd_fsls()
 {
-    SerialDMSeq.print("H FSLS");
+    CONSOLE.print("H FSLS");
     File root = stick.open("/");
     for (File e = root.openNextFile(); e; e = root.openNextFile()) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(e.name());
-        SerialDMSeq.print(':');
-        SerialDMSeq.print((unsigned long)e.size());
+        CONSOLE.print(' ');
+        CONSOLE.print(e.name());
+        CONSOLE.print(':');
+        CONSOLE.print((unsigned long)e.size());
         e.close();
     }
     root.close();
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 #endif
 
@@ -407,14 +407,14 @@ static void reply(char *cmd)
     if (arg) *arg++ = '\0';
     else arg = cmd + strlen(cmd);
     if (strcmp(cmd, "ready") == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(arg);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(began ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(usb.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(arg);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(began ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(usb.lastErrorName());
     } else if (strcmp(cmd, "dev") == 0) {
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {
@@ -423,15 +423,15 @@ static void reply(char *cmd)
     } else if (strcmp(cmd, "suspend") == 0 || strcmp(cmd, "resume") == 0) {
         const bool s = cmd[0] == 's';
         const bool ok = s ? usb.suspend() : usb.resume();
-        SerialDMSeq.print(s ? "H SUSPEND " : "H RESUME ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(usb.lastErrorName());
+        CONSOLE.print(s ? "H SUSPEND " : "H RESUME ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(usb.lastErrorName());
     } else if (strcmp(cmd, "power") == 0) {
-        SerialDMSeq.print("H POWER ");
-        SerialDMSeq.print(usb.suspended() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(wakeups);
+        CONSOLE.print("H POWER ");
+        CONSOLE.print(usb.suspended() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(wakeups);
     } else if (strcmp(cmd, "cdc") == 0) {
         cmd_cdc(arg);
     } else if (strcmp(cmd, "cdcrx") == 0) {
@@ -439,24 +439,24 @@ static void reply(char *cmd)
     } else if (strcmp(cmd, "cdcbig") == 0) {
         cmd_cdcbig(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "baud") == 0) {
-        SerialDMSeq.print("H BAUD ");
-        SerialDMSeq.println(cdc.setBaudRate(strtoul(arg, nullptr, 10)) ? 1 : 0);
+        CONSOLE.print("H BAUD ");
+        CONSOLE.println(cdc.setBaudRate(strtoul(arg, nullptr, 10)) ? 1 : 0);
     } else if (strcmp(cmd, "hidv") == 0) {
         uint8_t d[63];
         const size_t n = parse_hex(arg, d, sizeof d);
-        SerialDMSeq.print("H HIDV_SENT ");
-        SerialDMSeq.println(usb.sendHIDVendorOutput(d, n) ? 1 : 0);
+        CONSOLE.print("H HIDV_SENT ");
+        CONSOLE.println(usb.sendHIDVendorOutput(d, n) ? 1 : 0);
     } else if (strcmp(cmd, "leds") == 0) {
         const unsigned v = strtoul(arg, nullptr, 0);
-        SerialDMSeq.print("H LEDS ");
-        SerialDMSeq.println(usb.setKeyboardLeds(v & 1, v & 2, v & 4) ? 1 : 0);
+        CONSOLE.print("H LEDS ");
+        CONSOLE.println(usb.setKeyboardLeds(v & 1, v & 2, v & 4) ? 1 : 0);
     } else if (strcmp(cmd, "midi") == 0) {
         char *end;
         const unsigned ch = strtoul(arg, &end, 10);
         const unsigned note = strtoul(end, &end, 10);
         const unsigned vel = strtoul(end, &end, 10);
-        SerialDMSeq.print("H MIDI_SENT ");
-        SerialDMSeq.println(usb.midiSendNoteOn(ch, note, vel) ? 1 : 0);
+        CONSOLE.print("H MIDI_SENT ");
+        CONSOLE.println(usb.midiSendNoteOn(ch, note, vel) ? 1 : 0);
 #endif
     } else if (strcmp(cmd, "msc") == 0) {
         cmd_msc();
@@ -472,11 +472,11 @@ static void reply(char *cmd)
     } else if (strcmp(cmd, "fsrm") == 0) {
         char path[24] = "/";
         strncat(path, arg, sizeof path - 2);
-        SerialDMSeq.print("H FSRM ");
-        SerialDMSeq.println(stick.remove(path) ? 1 : 0);
+        CONSOLE.print("H FSRM ");
+        CONSOLE.println(stick.remove(path) ? 1 : 0);
     } else if (strcmp(cmd, "fsend") == 0) {
         stick.end();
-        SerialDMSeq.println("H FSEND");
+        CONSOLE.println("H FSEND");
 #endif
 #if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "mscraw") == 0) {
@@ -487,60 +487,60 @@ static void reply(char *cmd)
         char buf[16] = {};
         size_t got = 0;
         const bool ok = usb.vendorControlIn(0x10, 0, 0, (uint8_t *)buf, sizeof buf - 1, &got);
-        SerialDMSeq.print("H VREQ ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(buf);
+        CONSOLE.print("H VREQ ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(buf);
     } else if (strcmp(cmd, "ccid") == 0) {
         uint8_t atr[33];
         size_t n = 0;
         const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidPowerOn(atr, sizeof atr, &n);
-        SerialDMSeq.print("H CCID ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H CCID ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(atr, n);
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(cmd, "apdu") == 0) {
         uint8_t tx[32], rx[40];
         const size_t n = parse_hex(arg, tx, sizeof tx);
         size_t got = 0;
         uint16_t sw = 0;
         const bool ok = usb.ccidApdu(tx, n, rx, sizeof rx, &got, &sw);
-        SerialDMSeq.print("H APDU ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H APDU ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(rx, got);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         print4(sw);
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(cmd, "strings") == 0) {
         CH32RVUsbHostDeviceInfo d;
         const bool ok = usb.getDevice(usb.resolve(CH32RV_USB_HOST_ANY_ADDRESS), d);
-        SerialDMSeq.print("H STRINGS ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(d.manufacturer);
-        SerialDMSeq.print('|');
-        SerialDMSeq.print(d.product);
-        SerialDMSeq.print('|');
-        SerialDMSeq.println(d.serial);
+        CONSOLE.print("H STRINGS ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print(d.manufacturer);
+        CONSOLE.print('|');
+        CONSOLE.print(d.product);
+        CONSOLE.print('|');
+        CONSOLE.println(d.serial);
     } else if (strcmp(cmd, "ports") == 0) {
-        SerialDMSeq.print("H PORTS ");
-        SerialDMSeq.println(usb.serialPortCount());
+        CONSOLE.print("H PORTS ");
+        CONSOLE.println(usb.serialPortCount());
     } else if (strcmp(cmd, "sser") == 0) {
         char *end;
         const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
         uint8_t d[160];
         const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
-        SerialDMSeq.print("H SSER ");
-        SerialDMSeq.println(usb.sendSerial(d, n, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+        CONSOLE.print("H SSER ");
+        CONSOLE.println(usb.sendSerial(d, n, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
     } else if (strcmp(cmd, "srx") == 0) {
         const uint8_t port = (uint8_t)strtoul(arg, nullptr, 10) & 1;
-        SerialDMSeq.print("H SRX ");
-        SerialDMSeq.print(port);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H SRX ");
+        CONSOLE.print(port);
+        CONSOLE.print(' ');
         hex(serialRx[port], serialRxLength[port]);
-        SerialDMSeq.println();
+        CONSOLE.println();
         serialRxLength[port] = 0;
     } else if (strcmp(cmd, "sconf") == 0) {
         char *end;
@@ -550,15 +550,15 @@ static void reply(char *cmd)
         c.dataBits = (uint8_t)strtoul(end, &end, 10);
         c.parity = (CH32RVUsbHostSerialParity)strtoul(end, &end, 10);
         c.stopBits = (CH32RVUsbHostSerialStopBits)strtoul(end, &end, 10);
-        SerialDMSeq.print("H SCONF ");
-        SerialDMSeq.println(usb.setSerialConfig(c, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+        CONSOLE.print("H SCONF ");
+        CONSOLE.println(usb.setSerialConfig(c, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
     } else if (strcmp(cmd, "slines") == 0) {
         char *end;
         const uint8_t port = (uint8_t)strtoul(arg, &end, 10);
         const bool dtr = strtoul(end, &end, 10) != 0;
         const bool rts = strtoul(end, &end, 10) != 0;
-        SerialDMSeq.print("H SLINES ");
-        SerialDMSeq.println(usb.setSerialControlLines(dtr, rts, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
+        CONSOLE.print("H SLINES ");
+        CONSOLE.println(usb.setSerialControlLines(dtr, rts, CH32RV_USB_HOST_ANY_ADDRESS, port) ? 1 : 0);
     } else if (strcmp(cmd, "hidget") == 0) {
         char *end;
         const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
@@ -568,11 +568,11 @@ static void reply(char *cmd)
         uint8_t d[64];
         n = n > sizeof d ? sizeof d : n;
         const bool ok = usb.getHIDReport(itf, type, id, d, n, &got);
-        SerialDMSeq.print("H HIDGET ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H HIDGET ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(d, ok ? got : 0);
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(cmd, "hidset") == 0) {
         char *end;
         const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
@@ -580,83 +580,83 @@ static void reply(char *cmd)
         const uint8_t id = (uint8_t)strtoul(end, &end, 10);
         uint8_t d[64];
         const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
-        SerialDMSeq.print("H HIDSET ");
-        SerialDMSeq.println(usb.sendHIDReport(itf, type, id, d, n) ? 1 : 0);
+        CONSOLE.print("H HIDSET ");
+        CONSOLE.println(usb.sendHIDReport(itf, type, id, d, n) ? 1 : 0);
     } else if (strcmp(cmd, "hidfeat") == 0) {
         uint8_t d[63];
         const size_t n = parse_hex(arg, d, sizeof d);
-        SerialDMSeq.print("H HIDFEAT ");
-        SerialDMSeq.println(usb.sendHIDVendorFeature(d, n) ? 1 : 0);
+        CONSOLE.print("H HIDFEAT ");
+        CONSOLE.println(usb.sendHIDVendorFeature(d, n) ? 1 : 0);
     } else if (strcmp(cmd, "proto") == 0) {
         char *end;
         const uint8_t itf = (uint8_t)strtoul(arg, &end, 10);
         const bool boot = strtoul(end, &end, 10) != 0;
-        SerialDMSeq.print("H PROTO ");
-        SerialDMSeq.println(usb.sendSetProtocol(itf, any_address(), boot) ? 1 : 0);
+        CONSOLE.print("H PROTO ");
+        CONSOLE.println(usb.sendSetProtocol(itf, any_address(), boot) ? 1 : 0);
     } else if (strcmp(cmd, "layout") == 0) {
         usb.setKeyboardLayout(strcmp(arg, "jp") == 0 ? CH32RV_USB_HOST_KEYBOARD_LAYOUT_JA_JP
                                                      : CH32RV_USB_HOST_KEYBOARD_LAYOUT_EN_US);
-        SerialDMSeq.println("H LAYOUT");
+        CONSOLE.println("H LAYOUT");
     } else if (strcmp(cmd, "locks") == 0) {
-        SerialDMSeq.print("H LOCKS ");
-        SerialDMSeq.print(usb.getKeyboardNumLock() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(usb.getKeyboardCapsLock() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(usb.getKeyboardScrollLock() ? 1 : 0);
+        CONSOLE.print("H LOCKS ");
+        CONSOLE.print(usb.getKeyboardNumLock() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print(usb.getKeyboardCapsLock() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(usb.getKeyboardScrollLock() ? 1 : 0);
     } else if (strcmp(cmd, "hiddesc") == 0) {
         for (uint8_t i = 0; i < hidDescCount; i++) {
-            SerialDMSeq.print("H HIDDESC ");
-            SerialDMSeq.print(hidDescItf[i]);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(hidDescLength[i]);
+            CONSOLE.print("H HIDDESC ");
+            CONSOLE.print(hidDescItf[i]);
+            CONSOLE.print(' ');
+            CONSOLE.println(hidDescLength[i]);
         }
-        SerialDMSeq.println("H HIDDESCEND");
+        CONSOLE.println("H HIDDESCEND");
     } else if (strcmp(cmd, "hidraw") == 0) {
         hidRaw = strtoul(arg, nullptr, 10) != 0;
-        SerialDMSeq.print("H HIDRAW ");
-        SerialDMSeq.println(hidRaw ? 1 : 0);
+        CONSOLE.print("H HIDRAW ");
+        CONSOLE.println(hidRaw ? 1 : 0);
     } else if (strcmp(cmd, "mscmaxlun") == 0) {
         uint8_t lun = 0;
         const bool ok = usb.mscMaxLun(lun);
-        SerialDMSeq.print("H MSCMAXLUN ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(lun);
+        CONSOLE.print("H MSCMAXLUN ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(lun);
     } else if (strcmp(cmd, "mscrd") == 0) {
         const bool ok = usb.mscReadBlocks(strtoul(arg, nullptr, 10), block, 1);
         CH32RVUsbHostMscSense sense;
         if (!ok) {
             usb.mscRequestSense(sense);
         }
-        SerialDMSeq.print("H MSCRD ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H MSCRD ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(&sense.senseKey, 1);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         hex(&sense.additionalSenseCode, 1);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
-        SerialDMSeq.println();
+        CONSOLE.println();
 #endif
     } else if (strcmp(cmd, "msclun") == 0) {
-        SerialDMSeq.print("H MSCLUN ");
-        SerialDMSeq.println(usb.mscSelectLun((uint8_t)strtoul(arg, nullptr, 10)) ? 1 : 0);
+        CONSOLE.print("H MSCLUN ");
+        CONSOLE.println(usb.mscSelectLun((uint8_t)strtoul(arg, nullptr, 10)) ? 1 : 0);
     } else if (strcmp(cmd, "msctur") == 0) {
         const bool ok = usb.mscTestUnitReady(CH32RV_USB_HOST_ANY_ADDRESS, 2000);
         CH32RVUsbHostMscSense sense;
         if (!ok) {
             usb.mscRequestSense(sense);
         }
-        SerialDMSeq.print("H MSCTUR ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H MSCTUR ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(&sense.senseKey, 1);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         hex(&sense.additionalSenseCode, 1);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
-        SerialDMSeq.println();
+        CONSOLE.println();
 #if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "midicc") == 0 || strcmp(cmd, "midipc") == 0 || strcmp(cmd, "midipb") == 0) {
         char *end;
@@ -671,13 +671,13 @@ static void reply(char *cmd)
         } else {
             ok = usb.midiSendPitchBend(ch, (uint16_t)a);
         }
-        SerialDMSeq.print("H MIDIOUT ");
-        SerialDMSeq.println(ok ? 1 : 0);
+        CONSOLE.print("H MIDIOUT ");
+        CONSOLE.println(ok ? 1 : 0);
     } else if (strcmp(cmd, "midisx") == 0) {
         uint8_t d[32];
         const size_t n = parse_hex(arg, d, sizeof d);
-        SerialDMSeq.print("H MIDIOUT ");
-        SerialDMSeq.println(usb.midiSendSysEx(d, n) ? 1 : 0);
+        CONSOLE.print("H MIDIOUT ");
+        CONSOLE.println(usb.midiSendSysEx(d, n) ? 1 : 0);
     } else if (strcmp(cmd, "vreqout") == 0) {
         char *end;
         const uint8_t req = (uint8_t)strtoul(arg, &end, 0);
@@ -685,126 +685,126 @@ static void reply(char *cmd)
         const uint16_t index = (uint16_t)strtoul(end, &end, 0);
         uint8_t d[32];
         const size_t n = parse_hex(*end ? end + 1 : end, d, sizeof d);
-        SerialDMSeq.print("H VREQOUT ");
-        SerialDMSeq.println(usb.vendorControlOut(req, value, index, d, n) ? 1 : 0);
+        CONSOLE.print("H VREQOUT ");
+        CONSOLE.println(usb.vendorControlOut(req, value, index, d, n) ? 1 : 0);
     } else if (strcmp(cmd, "ccidstatus") == 0) {
         CH32RVUsbHostCcidStatus st;
         const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidGetStatus(st);
-        SerialDMSeq.print("H CCIDSTATUS ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned)st.iccStatus);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(st.present ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(st.active ? 1 : 0);
+        CONSOLE.print("H CCIDSTATUS ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned)st.iccStatus);
+        CONSOLE.print(' ');
+        CONSOLE.print(st.present ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(st.active ? 1 : 0);
     } else if (strcmp(cmd, "ccidpresent") == 0) {
-        SerialDMSeq.print("H CCIDPRESENT ");
-        SerialDMSeq.println((usb.ccidReady() || usb.ccidOpen()) && usb.ccidCardPresent() ? 1 : 0);
+        CONSOLE.print("H CCIDPRESENT ");
+        CONSOLE.println((usb.ccidReady() || usb.ccidOpen()) && usb.ccidCardPresent() ? 1 : 0);
     } else if (strcmp(cmd, "ccidoff") == 0) {
-        SerialDMSeq.print("H CCIDOFF ");
-        SerialDMSeq.println(usb.ccidPowerOff() ? 1 : 0);
+        CONSOLE.print("H CCIDOFF ");
+        CONSOLE.println(usb.ccidPowerOff() ? 1 : 0);
     } else if (strcmp(cmd, "ccidesc") == 0) {
         uint8_t tx[32], rx[40];
         const size_t n = parse_hex(arg, tx, sizeof tx);
         size_t got = 0;
         const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidEscape(tx, n, rx, sizeof rx, &got);
-        SerialDMSeq.print("H CCIDESC ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H CCIDESC ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
         hex(rx, ok ? got : 0);
-        SerialDMSeq.println();
+        CONSOLE.println();
 #endif
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     usb.onRemoteWakeup([] {
-        SerialDMSeq.print("H WAKEUP ");
-        SerialDMSeq.println(++wakeups);
+        CONSOLE.print("H WAKEUP ");
+        CONSOLE.println(++wakeups);
     });
     usb.onDeviceConnected([](const CH32RVUsbHostDeviceInfo &d) {
-        SerialDMSeq.print("H CONNECTED ");
-        SerialDMSeq.print(d.address);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H CONNECTED ");
+        CONSOLE.print(d.address);
+        CONSOLE.print(' ');
         print4(d.vid);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         print4(d.pid);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(d.product);
+        CONSOLE.print(' ');
+        CONSOLE.println(d.product);
     });
     usb.onDeviceDisconnected([](const CH32RVUsbHostDeviceInfo &d) {
-        SerialDMSeq.print("H DISCONNECTED ");
-        SerialDMSeq.print(d.address);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H DISCONNECTED ");
+        CONSOLE.print(d.address);
+        CONSOLE.print(' ');
         print4(d.vid);
-        SerialDMSeq.print(' ');
+        CONSOLE.print(' ');
         print4(d.pid);
-        SerialDMSeq.println();
+        CONSOLE.println();
     });
     usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) {
-        SerialDMSeq.print("H KEY ");
-        SerialDMSeq.print(e.pressed ? 'p' : 'r');
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(e.keycode);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(e.ascii);
+        CONSOLE.print("H KEY ");
+        CONSOLE.print(e.pressed ? 'p' : 'r');
+        CONSOLE.print(' ');
+        CONSOLE.print(e.keycode);
+        CONSOLE.print(' ');
+        CONSOLE.println(e.ascii);
     });
     usb.onMouse([](const CH32RVUsbHostMouseEvent &e) {
-        SerialDMSeq.print("H MOUSE ");
-        SerialDMSeq.print(e.x);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(e.y);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(e.wheel);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(e.buttons);
+        CONSOLE.print("H MOUSE ");
+        CONSOLE.print(e.x);
+        CONSOLE.print(' ');
+        CONSOLE.print(e.y);
+        CONSOLE.print(' ');
+        CONSOLE.print(e.wheel);
+        CONSOLE.print(' ');
+        CONSOLE.println(e.buttons);
     });
     usb.onConsumerControl([](const CH32RVUsbHostConsumerControlEvent &e) {
-        SerialDMSeq.print("H CONSUMER ");
-        SerialDMSeq.print(e.usage);
-        SerialDMSeq.println(e.pressed ? " p" : " r");
+        CONSOLE.print("H CONSUMER ");
+        CONSOLE.print(e.usage);
+        CONSOLE.println(e.pressed ? " p" : " r");
     });
     usb.onHIDVendorInput([](const CH32RVUsbHostHIDVendorInput &e) {
-        SerialDMSeq.print("H HIDVIN ");
+        CONSOLE.print("H HIDVIN ");
         hex(e.reportData, e.reportLength);
-        SerialDMSeq.println();
+        CONSOLE.println();
     });
     usb.onMidiMessage([](const CH32RVUsbHostMidiMessage &m) {
-        SerialDMSeq.print("H MIDI ");
-        SerialDMSeq.print(m.codeIndex);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H MIDI ");
+        CONSOLE.print(m.codeIndex);
+        CONSOLE.print(' ');
         hex(&m.status, 1);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(m.data1);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(m.data2);
+        CONSOLE.print(' ');
+        CONSOLE.print(m.data1);
+        CONSOLE.print(' ');
+        CONSOLE.println(m.data2);
     });
     usb.onGamepad([](const CH32RVUsbHostGamepadEvent &e) {
-        SerialDMSeq.print("H GAMEPAD ");
+        CONSOLE.print("H GAMEPAD ");
         hex(e.reportData, e.reportLength);
-        SerialDMSeq.println();
+        CONSOLE.println();
     });
     usb.onSystemControl([](const CH32RVUsbHostSystemControlEvent &e) {
-        SerialDMSeq.print("H SYSTEM ");
-        SerialDMSeq.print(e.usage);
-        SerialDMSeq.println(e.pressed ? " p" : " r");
+        CONSOLE.print("H SYSTEM ");
+        CONSOLE.print(e.usage);
+        CONSOLE.println(e.pressed ? " p" : " r");
     });
     usb.onHIDInput([](const CH32RVUsbHostHIDInput &e) {
         if (!hidRaw) {
             return;
         }
-        SerialDMSeq.print("H HIDIN ");
-        SerialDMSeq.print(e.interfaceNumber);
-        SerialDMSeq.print(' ');
+        CONSOLE.print("H HIDIN ");
+        CONSOLE.print(e.interfaceNumber);
+        CONSOLE.print(' ');
         hex(e.data, e.length);
-        SerialDMSeq.println();
+        CONSOLE.println();
     });
     usb.onHIDReportDescriptor([](const CH32RVUsbHostHIDReportDescriptor &e) {
         for (uint8_t i = 0; i < hidDescCount; i++) {
@@ -824,8 +824,8 @@ void setup()
             serialRx[port][serialRxLength[port]++] = e.data[i];
         }
     });
-    usb.onCcidCardInserted([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD in"); });
-    usb.onCcidCardRemoved([](const CH32RVUsbHostCcidSlotEvent &) { SerialDMSeq.println("H CARD out"); });
+    usb.onCcidCardInserted([](const CH32RVUsbHostCcidSlotEvent &) { CONSOLE.println("H CARD in"); });
+    usb.onCcidCardRemoved([](const CH32RVUsbHostCcidSlotEvent &) { CONSOLE.println("H CARD out"); });
     cdc.begin(115200);
 #ifdef USB_PEER_HOST_PORT
     CH32RVUsbHostConfig config;
@@ -839,8 +839,8 @@ void setup()
 void loop()
 {
     deliverEvents();   /* the callbacks set in setup() run here */
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

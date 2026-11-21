@@ -1,5 +1,5 @@
 /* Ethernet contracts (tests/instrumented/eth): the CH32H417's ETH with DHCP,
- * TCP and UDP servers, and HTTP / HTTPS clients. Console on SerialDMSeq:
+ * TCP and UDP servers, and HTTP / HTTPS clients. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id> <ETH.begin 0/1> <MAC as 12 hex digits>
  *   ip                        IP <address> <link Mbit/s> <full 0/1>
@@ -17,7 +17,7 @@
  * bytes i & 0xFF (i from 0) until the peer closes, UDP 9000 echoes. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <Network.h>
 /* No TLS where there is no hardware RNG (CH32V208 / V203RB): https answers HTTPS NOTLS. */
 #if defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_SERIES_CH32V203)
@@ -104,30 +104,30 @@ static void reply(char *command)
         static const char hex[] = "0123456789ABCDEF";
         uint8_t mac[6];
         ETH.macAddress(mac);
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(begun ? " 1 " : " 0 ");
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(begun ? " 1 " : " 0 ");
         for (uint8_t i = 0; i < 6; i++) {
-            SerialDMSeq.print(hex[mac[i] >> 4]);
-            SerialDMSeq.print(hex[mac[i] & 15]);
+            CONSOLE.print(hex[mac[i] >> 4]);
+            CONSOLE.print(hex[mac[i] & 15]);
         }
-        SerialDMSeq.println();
+        CONSOLE.println();
     } else if (strcmp(command, "ip") == 0) {
-        SerialDMSeq.print("IP ");
-        SerialDMSeq.print(ETH.hasIP() ? ETH.localIP().toString() : String("0.0.0.0"));
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(ETH.linkSpeed());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(ETH.fullDuplex() ? 1 : 0);
+        CONSOLE.print("IP ");
+        CONSOLE.print(ETH.hasIP() ? ETH.localIP().toString() : String("0.0.0.0"));
+        CONSOLE.print(' ');
+        CONSOLE.print(ETH.linkSpeed());
+        CONSOLE.print(' ');
+        CONSOLE.println(ETH.fullDuplex() ? 1 : 0);
     } else if (strncmp(command, "pin ", 4) == 0) {
         char ip[20];
         unsigned m[6];
         IPAddress a;
         if (sscanf(command + 4, "%19s %x:%x:%x:%x:%x:%x", ip, &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) != 7 ||
             !a.fromString(ip)) {
-            SerialDMSeq.println("ERROR ARGS");
+            CONSOLE.println("ERROR ARGS");
             return;
         }
         ip4_addr_t i4;
@@ -136,12 +136,12 @@ static void reply(char *command)
         for (int k = 0; k < 6; k++) {
             e.addr[k] = (uint8_t)m[k];
         }
-        SerialDMSeq.print("PIN ");
-        SerialDMSeq.println((int)etharp_add_static_entry(&i4, &e));
+        CONSOLE.print("PIN ");
+        CONSOLE.println((int)etharp_add_static_entry(&i4, &e));
     } else if (strcmp(command, "cab") == 0) {
         caUsed = 0;
         ca[0] = 0;
-        SerialDMSeq.println("CAB");
+        CONSOLE.println("CAB");
     } else if (strncmp(command, "cal ", 4) == 0) {
         const size_t n = strlen(command + 4);
         if (caUsed + n + 2 < sizeof ca) {
@@ -150,17 +150,17 @@ static void reply(char *command)
             ca[caUsed++] = '\n';
             ca[caUsed] = 0;
         }
-        SerialDMSeq.println("CAL");
+        CONSOLE.println("CAL");
     } else if (strcmp(command, "cae") == 0) {
-        SerialDMSeq.print("CA ");
-        SerialDMSeq.println((unsigned long)caUsed);
+        CONSOLE.print("CA ");
+        CONSOLE.println((unsigned long)caUsed);
     } else if (strncmp(command, "http ", 5) == 0 || strncmp(command, "https ", 6) == 0) {
         const bool tls = command[4] == 's';
         char ip[20], path[48], mode[4] = "c";
         unsigned port = 0;
         IPAddress a;
         if (sscanf(command + (tls ? 6 : 5), "%19s %u %47s %3s", ip, &port, path, mode) < 3 || !a.fromString(ip)) {
-            SerialDMSeq.println("ERROR ARGS");
+            CONSOLE.println("ERROR ARGS");
             return;
         }
         uint32_t status = 0, bytes = 0, crc = 0;
@@ -175,7 +175,7 @@ static void reply(char *command)
                      (unsigned long)crc, (unsigned long)(millis() - t0));
         } else {
 #if !ETH_TLS
-            SerialDMSeq.println("HTTPS NOTLS");
+            CONSOLE.println("HTTPS NOTLS");
             return;
 #else
             NetworkClientSecure c;
@@ -197,28 +197,28 @@ static void reply(char *command)
                      (unsigned long)crc, version, (unsigned long)hs, error);
 #endif
         }
-        SerialDMSeq.println(out);
+        CONSOLE.println(out);
     } else if (strcmp(command, "sink") == 0) {
-        SerialDMSeq.print("SINK ");
-        SerialDMSeq.print((unsigned long)sinkLastBytes);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)sinkLastMs);
+        CONSOLE.print("SINK ");
+        CONSOLE.print((unsigned long)sinkLastBytes);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)sinkLastMs);
     } else if (strcmp(command, "stats") == 0) {
         char out[96];
         snprintf(out, sizeof out, "STATS %lu %lu %lu %lu %lu %lu %lu", (unsigned long)ETH.framesReceived(),
                  (unsigned long)ETH.framesSent(), (unsigned long)ETH.receiveErrors(), (unsigned long)ETH.transmitBusy(),
                  (unsigned long)ETH.linkChanges(), (unsigned long)ETH.phyResets(), (unsigned long)ETH.clockRestarts());
-        SerialDMSeq.println(out);
+        CONSOLE.println(out);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     begun = ETH.begin();
     echoServer.begin();
     sinkServer.begin();
@@ -272,8 +272,8 @@ void loop()
         udp.write(buf, n > 0 ? (size_t)n : 0u);
         udp.endPacket();
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

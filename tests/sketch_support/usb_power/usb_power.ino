@@ -16,7 +16,7 @@
  * delivered by deliverEvents() in loop(). */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -32,26 +32,26 @@ static uint8_t used;
 static void reply(const char *command)
 {
     if (!strncmp(command, "ready ", 6)) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (!strcmp(command, "pm")) {
         deliverEvents();
-        SerialDMSeq.print("PM ");
-        SerialDMSeq.print(suspends);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(resumes);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.suspended() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.remoteWakeupEnabled() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(configured);
+        CONSOLE.print("PM ");
+        CONSOLE.print(suspends);
+        CONSOLE.print(' ');
+        CONSOLE.print(resumes);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.suspended() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.remoteWakeupEnabled() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(configured);
     } else if (!strcmp(command, "wake")) {
         const uint32_t t0 = millis();
         while (!(USBDevice.suspended() && USBDevice.remoteWakeupEnabled()) && millis() - t0 < 5000) {
@@ -59,18 +59,18 @@ static void reply(const char *command)
         }
         const uint32_t waited = millis() - t0;
         const bool ok = USBDevice.remoteWakeup();
-        SerialDMSeq.print("WAKE ");
-        SerialDMSeq.print(ok ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(waited);
+        CONSOLE.print("WAKE ");
+        CONSOLE.print(ok ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(waited);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     config.product = "CH32RV usb-power " BENCH_BUILD_ID;
     config.remoteWakeupSupported = true;
 #ifdef USB_TEST_CONTROLLER
@@ -95,8 +95,8 @@ void loop()
     while (SerialUSB.available()) {
         SerialUSB.write(SerialUSB.read());
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

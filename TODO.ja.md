@@ -555,6 +555,22 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2026-11-20）で止めた相の端子に雑音のパルスと High のままが出て見つかった。V205 と V006 で six_step が通る。
 - [x] periph の test_serial_routes: 経路の端子が 16 本を超えると 1 回の取り込みに入らない（プローブが unsupported で断る）。
   端子が 16 本に収まるまとまりごとに取り込む。V205 に PC3〜PC8 を足して 19 本になって見つかった。V205 で通る。
+- [ ] **CH32H41x の V5F が USART の割り込みで固まる（2026-11-21、コアの不具合）**: コンソールを UART にした signals
+  に、短いコマンドを続けて送ると、数百〜数千回で返事の途中で止まる。V5F は「走っている」（dmstatus allrunning）のに
+  デバッガで止められない（hart did not halt）。USART1 のレジスタは V3F 側から読めて、STATR 0xC0・CTLR1 0x20AC（TXEIE
+  有り）、送信のリングに 3 バイト残ったまま。切り分け（scratch の hammer.py、signals のイメージ、h417qeu6-pico）:
+  そのまま 300〜600 回、命令キャッシュ無し 9862 回、送信をポーリング 6807 回、TXEIE を ch32rv_irq_save で守る has 15000 回
+  通る・pad 262 回、割り込みの入れ子無し 615 回で止まる。DMSeq のコンソール 10000 回、V3F（core=v3f）15000 回は止まら
+  ない。V3F を止めたままでも起きる。小さなスケッチ（Serial の返事だけ、signals と同じライブラリを足しても）では 5000 回
+  止まらない。X035 の「TXE の割り込みの経路が信頼できない」（04e0ed44、ポーリングで回避）と同じ根かは未確認。
+  それまで run_hardware は H41x の V5F のコンソールを DMSeq のままにする（H417 の analog は DMSeq の雑音のまま）。
+- [x] **試験のコンソールを UART に（2026-11-21）**: 台にプローブの UART の線（tx / rx）があれば、試験のスケッチ
+  （sketch_support の 34 本、bench_console.h の CONSOLE）は Serial に出し、モニターは fixture-uart で開く。DMSeq の
+  SWIO の問い合わせが無くなる（V407 の DAC の揺れ ±80 → ±2）。DMSeq のまま: uart*・periph・self*（全部の
+  HardwareSerial を使う、selfsys は全部の端子と休止）・software-serial・pioc（プローブの UART を試験に使う）・console-*、
+  RAM 4 KB 未満の石（V003 系は入らない）、H41x の V5F（上）。コンソールの端子は試験の線から外す（console_pads）。
+  ついでに: 試験の dut.write() が改行を 2 つ送っていた（pytest-embedded が自分で足す）のを 171 か所で直した。UART では
+  2 つ目の改行の受信の割り込みが softspi の最中に入り、SCK が 1 µs 止まってモード 3 と読まれていた。
 - [ ] V006 の uart::test_uart_formats の 1 Mbaud 8N1 で、DUT が 1 バイトも受けなかったことが 1 回（2026-11-21、
   rerun-20261121-oep060、oep-client-python 0.0.60 に上げた直後）。続けて 2 回流すと通る。
 - [ ] X035 の softspi が 5 回中 2 回、1 ビット化ける（2026-11-20、PA13 の線を足した日）: shiftOut / shiftIn の LSBFIRST が

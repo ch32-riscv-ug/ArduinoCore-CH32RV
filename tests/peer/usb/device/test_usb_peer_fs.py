@@ -26,7 +26,7 @@ def test_usb_peer_fs(dut, peers):
     dut_ready(dut, build_id)
     wait_enumerated(peer, build_id)
 
-    dut.write("prep\n")
+    dut.write("prep")
     m = dut.expect(rb"PREP (\d) (\d+)\r?\n", timeout=15)
     assert m.group(1) == b"1", "FatFS could not format and write the volume"
     ready_again(peer)
@@ -42,7 +42,7 @@ def test_usb_peer_fs(dut, peers):
         assert command(peer, "mscwrite " + text, rb"MSCWRITE (\d)", timeout=20).group(1) == b"1"
 
         token = secrets.token_hex(4)
-        dut.write(f"take {token}\n")
+        dut.write(f"take {token}")
         m = dut.expect(rb"TAKE (\d) (\d) (\d+) ([^\r\n]*)\r?\n", timeout=15)
         assert m.group(1) == b"1", "FatFS could not mount what ESP-IDF's FAT left"
         assert m.group(2) == b"1", "the DUT's own files did not survive the S3's write"
@@ -53,6 +53,6 @@ def test_usb_peer_fs(dut, peers):
 
     m = command(peer, "mscread", rb"MSCREAD (\d) ([^\r\n]*)", timeout=20)
     assert m.group(1) == b"1" and m.group(2).decode() == expected
-    dut.write("slots\n")
+    dut.write("slots")
     m = dut.expect(rb"SLOTS (\d+) (\d+)\r?\n", timeout=5)
     assert m.group(2) == b"0", "the sparse medium ran out of slots"

@@ -74,7 +74,7 @@ def _ready(dut):
     build_id = settings["build_id"]
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
@@ -87,7 +87,7 @@ def _ready(dut):
 
 
 def _dut_iso(dut):
-    dut.write("iso\n")
+    dut.write("iso")
     m = dut.expect(rb"ISO" + rb" (\d+)" * 12 + rb"\r?\n", timeout=5)
     keys = ("alt", "packets", "in_buffers", "in_submitted", "in_refused", "out_intervals", "out_whole", "out_short",
             "out_bad", "in_gap_max_us", "in_gaps_long", "in_resubmit_max_us")
@@ -410,7 +410,7 @@ def test_usb_ss_enumeration_after_restart(dut, record_property):
     host = _ready(dut)
     speeds, wrong = [], []
     for round_ in range(RESTARTS):
-        dut.write("restart\n")
+        dut.write("restart")
         dut.expect(rb"STARTUP", timeout=15)
         host = _ready(dut)
         dev = host.device()

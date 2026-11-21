@@ -86,7 +86,7 @@ def keep_off():
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 

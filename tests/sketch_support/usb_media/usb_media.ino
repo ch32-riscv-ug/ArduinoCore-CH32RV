@@ -12,7 +12,7 @@
  *   video           VIDEO <frames sent> <streaming 0/1> */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -52,40 +52,40 @@ static void frameDone()
 static void reply(const char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "audio") == 0) {
-        SerialDMSeq.print("AUDIO ");
-        SerialDMSeq.print((unsigned long)speakerBytes);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)speakerSum);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)refused);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)audio.currentSampleRate());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println((unsigned long)rateChanges);
+        CONSOLE.print("AUDIO ");
+        CONSOLE.print((unsigned long)speakerBytes);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)speakerSum);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)refused);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)audio.currentSampleRate());
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)rateChanges);
     } else if (strcmp(command, "video") == 0) {
-        SerialDMSeq.print("VIDEO ");
-        SerialDMSeq.print((unsigned long)frames);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(camera.streaming() ? 1 : 0);
+        CONSOLE.print("VIDEO ");
+        CONSOLE.print((unsigned long)frames);
+        CONSOLE.print(' ');
+        CONSOLE.println(camera.streaming() ? 1 : 0);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     speaker.addFormat({RATE, 1, 2, 16});
     speaker.addFormat({RATE / 2, 1, 2, 16});
     mic.addFormat({RATE, 1, 2, 16});
@@ -162,8 +162,8 @@ void loop()
         drawing = frames;
         camera.sendGeneratedFrame(80 * 60 * 2);
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

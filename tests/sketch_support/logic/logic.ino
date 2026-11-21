@@ -1,6 +1,6 @@
 /* CH32RVLogicCapture contracts (tests/instrumented/logic): the sketch drives a
  * PWM on a pin of its own - from a timer other than the capture's - and
- * captures that pin's port, so no wiring is needed. Console on SerialDMSeq:
+ * captures that pin's port, so no wiring is needed. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id> <capture timer> <buffer samples>
  *   run <rate> <pwm hz>       LOGIC <pin> <port> <bit> <pwm timer> <rate got> <periods> <min> <max> <overruns> <halves> <bits that changed>
@@ -12,7 +12,7 @@
  * A period is counted from one rising edge of the pin's bit to the next. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVLogicCapture.h>
 #include <CH32RVTimer.h>
 #include <stdlib.h>
@@ -105,42 +105,42 @@ static void periods(const uint16_t *v, size_t n, uint32_t &count, uint32_t &lo, 
  * does not fit the V003's 16 KB beside the rest. */
 static void say(const char *head, const uint32_t *v, uint8_t n)
 {
-    SerialDMSeq.print(head);
+    CONSOLE.print(head);
     for (uint8_t i = 0; i < n; i++) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)v[i]);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)v[i]);
     }
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void reply(char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
         const uint32_t v[2] = {CH32RVLogicCapture::timer(), SAMPLES};
         say("", v, 2);
     } else if (strncmp(command, "run ", 4) == 0) {
         char *end;
         const unsigned long rate = strtoul(command + 4, &end, 10), hz = strtoul(end, &end, 10);
         if (!rate || !hz) {
-            SerialDMSeq.println("ERROR ARGS");
+            CONSOLE.println("ERROR ARGS");
             return;
         }
         if (!havePin && !findPin()) {
-            SerialDMSeq.println("LOGIC NONE");
+            CONSOLE.println("LOGIC NONE");
             return;
         }
         if (!logic.begin((CH32RVLogicPort)pwmPort, rate)) {
-            SerialDMSeq.println("LOGIC FAIL begin");
+            CONSOLE.println("LOGIC FAIL begin");
             return;
         }
         analogWriteFrequency(pwmPin, hz);
         analogWrite(pwmPin, 128);
         if (!logic.startContinuous(buf, SAMPLES)) {
-            SerialDMSeq.println("LOGIC FAIL start");
+            CONSOLE.println("LOGIC FAIL start");
             return;
         }
         uint32_t count = 0, lo = 0xFFFFFFFFu, hi = 0, halves = 0, changed = 0;
@@ -201,7 +201,7 @@ static void reply(char *command)
         say("LEVEL", v, 11);
     } else if (strncmp(command, "burst ", 6) == 0) {
         if (!havePin) {
-            SerialDMSeq.println("BURST NONE");
+            CONSOLE.println("BURST NONE");
             return;
         }
         analogWriteFrequency(pwmPin, strtoul(command + 6, nullptr, 10));
@@ -212,21 +212,21 @@ static void reply(char *command)
         const uint32_t v[4] = {rate, c, l, x};
         say("BURST", v, 4);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

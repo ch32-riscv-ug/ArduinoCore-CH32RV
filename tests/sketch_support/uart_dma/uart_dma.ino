@@ -1,5 +1,5 @@
 /* UART DMA contracts (tests/instrumented/uart/test_uart_dma.py): Serial with the buffers of setRxBufferSize() /
- * setTxBufferSize(), moved by DMA, on the probe's UART. Console on SerialDMSeq; every command answers one line:
+ * setTxBufferSize(), moved by DMA, on the probe's UART. Console on CONSOLE (bench_console.h); every command answers one line:
  *
  *   dmax                      DMAX <the highest baud Serial's USART takes: its clock / 16>
  *   dbegin <baud> <rx> <tx>   Serial again with those buffer sizes (0: the built-in path) at that baud, 8N1:
@@ -17,7 +17,7 @@
  * <errors>: Serial.takeErrors() - STATR's ORE 8 / NE 4 / FE 2 / PE 1, 16 break, 32 buffer full. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include "internal/ch32rv_registers.h"   // the USART's CTLR3: DMAR / DMAT show the DMA in use
 #include <stdlib.h>
 #include <string.h>
@@ -91,22 +91,22 @@ void reply(const char *command) {
   ++requests;
   char *end;
   if (strncmp(command, "ready ", 6) == 0) {
-    SerialDMSeq.print("READY ");
-    SerialDMSeq.print(command + 6);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(BENCH_BUILD_ID);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(requests);
+    CONSOLE.print("READY ");
+    CONSOLE.print(command + 6);
+    CONSOLE.print(' ');
+    CONSOLE.print(BENCH_BUILD_ID);
+    CONSOLE.print(' ');
+    CONSOLE.println(requests);
   } else if (strcmp(command, "dwcost") == 0) {
     const uint32_t now = writeNs();
-    SerialDMSeq.print("DWCOST ");
-    SerialDMSeq.print(plainWriteNs);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(now);
+    CONSOLE.print("DWCOST ");
+    CONSOLE.print(plainWriteNs);
+    CONSOLE.print(' ');
+    CONSOLE.println(now);
   } else if (strcmp(command, "dmax") == 0) {
     const uint32_t clock = Serial.peripheral() == 1 ? CH32RV_PCLK2_HZ : CH32RV_PCLK1_HZ;
-    SerialDMSeq.print("DMAX ");
-    SerialDMSeq.println(clock / 16u);
+    CONSOLE.print("DMAX ");
+    CONSOLE.println(clock / 16u);
   } else if (strncmp(command, "dbegin ", 7) == 0) {
     const unsigned long baud = strtoul(command + 7, &end, 10);
     const unsigned long rx = strtoul(end, &end, 10);
@@ -117,24 +117,24 @@ void reply(const char *command) {
     Serial.begin(baud);
     const uint32_t base = serialBase();
     const uint16_t ctlr3 = base ? CH32RV_USART_CTLR3(base) : 0;
-    SerialDMSeq.print("DBEGIN ");
-    SerialDMSeq.print(r);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(t);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(Serial ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(ctlr3 & CH32RV_USART_CTLR3_DMAR ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(ctlr3 & CH32RV_USART_CTLR3_DMAT ? 1 : 0);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(Serial.baudRate());
+    CONSOLE.print("DBEGIN ");
+    CONSOLE.print(r);
+    CONSOLE.print(' ');
+    CONSOLE.print(t);
+    CONSOLE.print(' ');
+    CONSOLE.print(Serial ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print(ctlr3 & CH32RV_USART_CTLR3_DMAR ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print(ctlr3 & CH32RV_USART_CTLR3_DMAT ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.println(Serial.baudRate());
   } else if (strncmp(command, "drecv ", 6) == 0) {
     const unsigned long n = strtoul(command + 6, &end, 10);
     const unsigned long ms = strtoul(end, nullptr, 10);
     while (Serial.available()) Serial.read();
     Serial.takeErrors();
-    SerialDMSeq.println("DRECV READY");
+    CONSOLE.println("DRECV READY");
     uint32_t hash = 2166136261u;
     unsigned long got = 0;
     const unsigned long start = millis();
@@ -144,19 +144,19 @@ void reply(const char *command) {
         ++got;
       }
     }
-    SerialDMSeq.print("DRECV ");
-    SerialDMSeq.print(got);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(hash, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(Serial.takeErrors());
+    CONSOLE.print("DRECV ");
+    CONSOLE.print(got);
+    CONSOLE.print(' ');
+    CONSOLE.print(hash, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.println(Serial.takeErrors());
   } else if (strncmp(command, "doff ", 5) == 0) {
     const unsigned long ms = strtoul(command + 5, &end, 10);
     const unsigned long n = strtoul(end, nullptr, 10);
     while (Serial.available()) Serial.read();
     Serial.takeErrors();
-    SerialDMSeq.println("DOFF READY");
-    SerialDMSeq.flush();
+    CONSOLE.println("DOFF READY");
+    CONSOLE.flush();
     noInterrupts();
     interruptsOff(ms);
     const int held = Serial.available();   // the DMA's count, read with interrupts still off
@@ -164,14 +164,14 @@ void reply(const char *command) {
     unsigned long count = 0;
     uint32_t hash = 2166136261u;
     drain(n, 20, count, hash);
-    SerialDMSeq.print("DOFF ");
-    SerialDMSeq.print(held);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(count);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(hash, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(Serial.takeErrors());
+    CONSOLE.print("DOFF ");
+    CONSOLE.print(held);
+    CONSOLE.print(' ');
+    CONSOLE.print(count);
+    CONSOLE.print(' ');
+    CONSOLE.print(hash, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.println(Serial.takeErrors());
   } else if (strncmp(command, "dsend ", 6) == 0) {
     const unsigned long n = strtoul(command + 6, &end, 10);
     const bool off = strtoul(end, nullptr, 10) != 0;
@@ -182,10 +182,10 @@ void reply(const char *command) {
     if (off) interrupts();
     Serial.flush();
     const uint32_t took = micros() - start;
-    SerialDMSeq.print("DSEND ");
-    SerialDMSeq.print(n);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(took);
+    CONSOLE.print("DSEND ");
+    CONSOLE.print(n);
+    CONSOLE.print(' ');
+    CONSOLE.println(took);
   } else if (strncmp(command, "devt ", 5) == 0) {
     eventCalls = 0;
     eventTotal = 0;
@@ -209,41 +209,41 @@ void reply(const char *command) {
         }
       }, only);
     }
-    SerialDMSeq.println("DEVT 1");
+    CONSOLE.println("DEVT 1");
   } else if (strcmp(command, "devq") == 0) {
     unsigned long left = 0;
     uint32_t hash = eventHash;
     drain(0xFFFFFFFFul, 5, left, hash);
-    SerialDMSeq.print("DEVQ ");
-    SerialDMSeq.print(eventCalls);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(eventTotal);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(left);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(hash, HEX);
-    SerialDMSeq.print(' ');
+    CONSOLE.print("DEVQ ");
+    CONSOLE.print(eventCalls);
+    CONSOLE.print(' ');
+    CONSOLE.print(eventTotal);
+    CONSOLE.print(' ');
+    CONSOLE.print(left);
+    CONSOLE.print(' ');
+    CONSOLE.print(hash, HEX);
+    CONSOLE.print(' ');
     for (uint8_t i = 0; i < eventCalls && i < sizeof eventSeen; ++i) {
-      if (i) SerialDMSeq.print(',');
-      SerialDMSeq.print(eventSeen[i]);
+      if (i) CONSOLE.print(',');
+      CONSOLE.print(eventSeen[i]);
     }
-    SerialDMSeq.println();
+    CONSOLE.println();
   } else {
-    SerialDMSeq.println("ERROR COMMAND");
+    CONSOLE.println("ERROR COMMAND");
   }
 }
 
 void setup() {
   Serial.begin(115200);
   plainWriteNs = writeNs();
-  SerialDMSeq.begin(115200);
-  SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-  SerialDMSeq.println(CH32RV.resetReasonName());
+  CONSOLE_BEGIN(115200);
+  CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+  CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop() {
-  while (SerialDMSeq.available()) {
-    int c = SerialDMSeq.read();
+  while (CONSOLE.available()) {
+    int c = CONSOLE.read();
     if (c == '\n') {
       line[used] = 0;
       if (used) reply(line);

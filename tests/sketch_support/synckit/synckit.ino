@@ -2,7 +2,7 @@
  * under a real interrupt. A timer's update interrupt at 10 kHz (whichever
  * timer the timer manager lends) feeds a Queue, a Notify counter and a Ring,
  * and bumps a 64-bit value whose halves always match; loop() drains and
- * checks for as long as asked. No wiring. Console on SerialDMSeq:
+ * checks for as long as asked. No wiring. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>  READY <nonce> <build id> <timer>
  *   run <ms>       RUN <isr calls> <queue sent> <queue dropped> <received> <gaps> <dups>
@@ -17,7 +17,7 @@
  *   fail <step>    when the timer cannot be had */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVSyncKit.h>
 #include <CH32RVTaskKit.h>
 #include <CH32RVTimer.h>
@@ -116,12 +116,12 @@ static bool startTimer()
 
 static void say(const char *head, const uint32_t *v, uint8_t n)
 {
-    SerialDMSeq.print(head);
+    CONSOLE.print(head);
     for (uint8_t i = 0; i < n; i++) {
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print((unsigned long)v[i]);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)v[i]);
     }
-    SerialDMSeq.println();
+    CONSOLE.println();
 }
 
 static void run(uint32_t ms)
@@ -242,15 +242,15 @@ static uint8_t used;
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int ch = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int ch = CONSOLE.read();
         if (ch != '\n') {
             if (ch != '\r' && used < sizeof line - 1) {
                 line[used++] = (char)ch;
@@ -260,26 +260,26 @@ void loop()
         line[used] = 0;
         used = 0;
         if (strncmp(line, "ready ", 6) == 0) {
-            SerialDMSeq.print("READY ");
-            SerialDMSeq.print(line + 6);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(BENCH_BUILD_ID);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println(timerNumber ? timerNumber : (startTimer() ? timerNumber : 0));
+            CONSOLE.print("READY ");
+            CONSOLE.print(line + 6);
+            CONSOLE.print(' ');
+            CONSOLE.print(BENCH_BUILD_ID);
+            CONSOLE.print(' ');
+            CONSOLE.println(timerNumber ? timerNumber : (startTimer() ? timerNumber : 0));
         } else if (strncmp(line, "run ", 4) == 0) {
             if (!timerNumber && !startTimer()) {
-                SerialDMSeq.println("FAIL timer");
+                CONSOLE.println("FAIL timer");
             } else {
                 run(strtoul(line + 4, nullptr, 10));
             }
         } else if (strncmp(line, "task ", 5) == 0) {
             if (!timerNumber && !startTimer()) {
-                SerialDMSeq.println("FAIL timer");
+                CONSOLE.println("FAIL timer");
             } else {
                 task(strtoul(line + 5, nullptr, 10));
             }
         } else if (used == 0 && line[0]) {
-            SerialDMSeq.println("ERROR COMMAND");
+            CONSOLE.println("ERROR COMMAND");
         }
     }
 }

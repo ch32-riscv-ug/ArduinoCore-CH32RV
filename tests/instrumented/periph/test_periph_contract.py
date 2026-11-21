@@ -38,7 +38,7 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -126,7 +126,7 @@ def test_serial_routes(dut, oep_host, ws_run, record_property):
                             only_moving([tx, rx]), starts(idle), ends(idle)]):
                         command = f"uart2 {lines[rx]['pin']} {lines[tx]['pin']} 115200"
                         ws_run.command(command)
-                        dut.write(command + "\n")
+                        dut.write(command)
                         m = dut.expect(rb"UART2 (\d) (\d+)\r?\n", timeout=5)
                         ws_run.reply(m.group(0).decode())
                         took = int(m.group(2))
@@ -363,7 +363,7 @@ def test_adc_stream(dut, oep_host, ws_run, record_property):
                     pins = [wave["pin"]] + ([rest[0][0]["pin"]] if second is not None else [])
                     command = f"astream 250000 16 {' '.join(str(p) for p in pins)}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     end = time.monotonic() + 5
                     while True:
                         try:
@@ -479,7 +479,7 @@ def built(dut, command):
 def until(dut, ws_run, wait, command, reply, seconds):
     """Send command, record it and its reply in the run, letting the stream be read meanwhile."""
     ws_run.command(command)
-    dut.write(command + "\n")
+    dut.write(command)
     end = time.monotonic() + seconds
     while True:
         try:
@@ -797,7 +797,7 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
                                                              min_periods=20, duty_abs=0.01)]):
                     command = f"hstream {rate} 8 {line['pin']}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     end = time.monotonic() + 5
                     while True:
                         try:

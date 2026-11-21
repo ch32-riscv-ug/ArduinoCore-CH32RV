@@ -1,6 +1,6 @@
 /* CH32RV's chip-level calls (tests/instrumented/system): the reset reasons,
  * the independent watchdog and the sleeps, on the lines the bench labels.
- * Pins are the sketch's pin numbers. Console on SerialDMSeq:
+ * Pins are the sketch's pin numbers. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>                READY <nonce> <build id> <reset reason> <wakeup cause>
  *                                (resetReason() and wakeupCause() of this boot, as numbers)
@@ -42,7 +42,7 @@
  *                                sleep; otherwise the chip starts again (READY says the cause) */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include "internal/ch32rv_clock.h"   // CH32RV_CLOCK_SYSCLK_HZ, CH32RV_HSI_HZ: what mcohz reports
 #include <stdlib.h>
 #include <string.h>
@@ -117,10 +117,10 @@ static void wwdg(bool early, pin_size_t pin)
     ewi_record.span_us = 0;
     ewi_record.steps = 0;
     /* Said before it starts: nothing slow may come between two feeds. */
-    SerialDMSeq.printf("WWDG %lu %lu %lu\r\n", (unsigned long)t, (unsigned long)w, (unsigned long)max);
-    SerialDMSeq.flush();
+    CONSOLE.printf("WWDG %lu %lu %lu\r\n", (unsigned long)t, (unsigned long)w, (unsigned long)max);
+    CONSOLE.flush();
     if (!CH32RV.wwdgEnable(t, w, on_early_warning)) {
-        SerialDMSeq.printf("WWDG REFUSED\r\n");
+        CONSOLE.printf("WWDG REFUSED\r\n");
         return;
     }
     const uint32_t start = millis();
@@ -150,9 +150,9 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s %d %d\r\n", argv[1], BENCH_BUILD_ID, reason, cause);
+        CONSOLE.printf("READY %s %s %d %d\r\n", argv[1], BENCH_BUILD_ID, reason, cause);
     } else if (!strcmp(argv[0], "restart")) {
-        SerialDMSeq.flush();
+        CONSOLE.flush();
         CH32RV.restart();
     } else if (!strcmp(argv[0], "wdt") && argc == 5) {
         const uint32_t ms = (uint32_t)atol(argv[1]), every = (uint32_t)atol(argv[2]), span = (uint32_t)atol(argv[3]);
@@ -160,7 +160,7 @@ static void reply(char *command)
         digitalWrite(pin, LOW);
         pinMode(pin, OUTPUT);
         const bool ok = CH32RV.wdtEnable(ms);
-        SerialDMSeq.printf("WDT %d\r\n", ok ? 1 : 0);
+        CONSOLE.printf("WDT %d\r\n", ok ? 1 : 0);
         if (!ok) {
             return;
         }
@@ -169,8 +169,8 @@ static void reply(char *command)
             CH32RV.wdtFeed();
             delay(every);
         }
-        SerialDMSeq.printf("FED\r\n");
-        SerialDMSeq.flush();
+        CONSOLE.printf("FED\r\n");
+        CONSOLE.flush();
         CH32RV.wdtFeed();
         digitalWrite(pin, HIGH);          /* from the last feed until the reset */
         for (;;) {
@@ -181,12 +181,12 @@ static void reply(char *command)
         pinMode(pin, OUTPUT);
         CH32RV.disableWakeup();
         CH32RV.enableTimerWakeup((uint64_t)atol(argv[1]));
-        SerialDMSeq.flush();
+        CONSOLE.flush();
         const uint32_t before = millis();
         const int result = CH32RV.lightSleep();
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
-        SerialDMSeq.printf("TSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
+        CONSOLE.printf("TSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
     } else if (!strcmp(argv[0], "psleep") && argc == 3) {
         const int wake = atoi(argv[1]);
         const pin_size_t pin = (pin_size_t)atoi(argv[2]);
@@ -195,34 +195,34 @@ static void reply(char *command)
         pinMode(wake, INPUT);
         CH32RV.disableWakeup();
         CH32RV.enablePinWakeup(wake, LOW);
-        SerialDMSeq.printf("PSLEEP READY\r\n");
-        SerialDMSeq.flush();
+        CONSOLE.printf("PSLEEP READY\r\n");
+        CONSOLE.flush();
         const uint32_t before = millis();
         const int result = CH32RV.lightSleep();
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
-        SerialDMSeq.printf("PSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
+        CONSOLE.printf("PSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
     } else if (!strcmp(argv[0], "dsleep") && argc == 3) {
         const pin_size_t pin = (pin_size_t)atoi(argv[2]);
         digitalWrite(pin, HIGH);
         pinMode(pin, OUTPUT);
         CH32RV.disableWakeup();
         CH32RV.enableTimerWakeup((uint64_t)atol(argv[1]));
-        SerialDMSeq.flush();
+        CONSOLE.flush();
         const int result = CH32RV.deepSleep();
         digitalWrite(pin, LOW);
-        SerialDMSeq.printf("DSLEEP %d\r\n", result);
+        CONSOLE.printf("DSLEEP %d\r\n", result);
     } else if (!strcmp(argv[0], "wwdg") && argc == 3) {
         wwdg(!strcmp(argv[1], "early"), (pin_size_t)atoi(argv[2]));
     } else if (!strcmp(argv[0], "ewi")) {
-        SerialDMSeq.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
+        CONSOLE.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
     } else if (!strcmp(argv[0], "bkpw") && argc == 2) {
         const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
         const uint8_t n = CH32RV.backupRegisterCount();
         for (uint8_t i = 0; i < n; i++) {
             CH32RV.setBackupRegister(i, (uint16_t)(seed + 257u * i));
         }
-        SerialDMSeq.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
+        CONSOLE.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
     } else if (!strcmp(argv[0], "bkpr") && argc == 2) {
         const uint16_t seed = (uint16_t)strtoul(argv[1], nullptr, 0);
         const uint8_t n = CH32RV.backupRegisterCount();
@@ -230,7 +230,7 @@ static void reply(char *command)
         for (uint8_t i = 0; i < n; i++) {
             same += CH32RV.getBackupRegister(i) == (uint16_t)(seed + 257u * i);
         }
-        SerialDMSeq.printf("BKPR %d %d\r\n", n, same);
+        CONSOLE.printf("BKPR %d %d\r\n", n, same);
     } else if (!strcmp(argv[0], "alarm") && argc == 3) {
         const pin_size_t pin = (pin_size_t)atoi(argv[2]);
         const uint32_t s = (uint32_t)atol(argv[1]);
@@ -240,7 +240,7 @@ static void reply(char *command)
         pinMode(pin, OUTPUT);
         const uint32_t t0 = millis();
         const bool ok = CH32RV.setAlarm(time(nullptr) + (time_t)s, on_alarm);
-        SerialDMSeq.printf("ALARM %d\r\n", ok ? 1 : 0);
+        CONSOLE.printf("ALARM %d\r\n", ok ? 1 : 0);
         if (!ok) {
             digitalWrite(pin, LOW);
             return;
@@ -248,7 +248,7 @@ static void reply(char *command)
         while (!alarm_fired && millis() - t0 < (s + 3u) * 1000u) {
         }
         digitalWrite(pin, LOW);
-        SerialDMSeq.printf("ALARM DONE %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
+        CONSOLE.printf("ALARM DONE %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
                            (long)CH32RV.getAlarm());
     } else if ((!strcmp(argv[0], "asleep") || !strcmp(argv[0], "adeep")) && argc == 3) {
         const bool deep = argv[0][1] == 'd';
@@ -256,17 +256,17 @@ static void reply(char *command)
         const uint32_t s = (uint32_t)atol(argv[1]);
         CH32RV.disableWakeup();
         if (!CH32RV.setAlarm(time(nullptr) + (time_t)s) || !CH32RV.enableAlarmWakeup()) {
-            SerialDMSeq.printf(deep ? "ADEEP REFUSED\r\n" : "ASLEEP REFUSED\r\n");
+            CONSOLE.printf(deep ? "ADEEP REFUSED\r\n" : "ASLEEP REFUSED\r\n");
             return;
         }
         CH32RV.enableTimerWakeup(10u * 1000000u);     /* a backstop, should the alarm not come */
         digitalWrite(pin, HIGH);
         pinMode(pin, OUTPUT);
-        SerialDMSeq.flush();
+        CONSOLE.flush();
         if (deep) {
             const int result = CH32RV.deepSleep();
             digitalWrite(pin, LOW);
-            SerialDMSeq.printf("ADEEP %d\r\n", result);
+            CONSOLE.printf("ADEEP %d\r\n", result);
             return;
         }
         const uint32_t before = millis();
@@ -274,24 +274,24 @@ static void reply(char *command)
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
         CH32RV.disableWakeup();
-        SerialDMSeq.printf("ASLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
+        CONSOLE.printf("ASLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
     } else if (!strcmp(argv[0], "mcohz") && argc == 1) {
 #if defined(CH32RV_MCO_PIN)
-        SerialDMSeq.printf("MCOHZ %u", (unsigned)CH32RV_MCO_PIN);
+        CONSOLE.printf("MCOHZ %u", (unsigned)CH32RV_MCO_PIN);
 #if defined(CH32RV_MCO_SYSCLK)
-        SerialDMSeq.printf(" %u:%lu", (unsigned)CH32RV_MCO_SYSCLK, (unsigned long)CH32RV_CLOCK_SYSCLK_HZ);
+        CONSOLE.printf(" %u:%lu", (unsigned)CH32RV_MCO_SYSCLK, (unsigned long)CH32RV_CLOCK_SYSCLK_HZ);
 #endif
 #if defined(CH32RV_MCO_HSI)
-        SerialDMSeq.printf(" %u:%lu", (unsigned)CH32RV_MCO_HSI, (unsigned long)CH32RV_HSI_HZ);
+        CONSOLE.printf(" %u:%lu", (unsigned)CH32RV_MCO_HSI, (unsigned long)CH32RV_HSI_HZ);
 #endif
-        SerialDMSeq.printf("\r\n");
+        CONSOLE.printf("\r\n");
 #else
-        SerialDMSeq.printf("MCOHZ 0\r\n");
+        CONSOLE.printf("MCOHZ 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "mco") && argc == 2) {
-        SerialDMSeq.printf("MCO %d\r\n", CH32RV.setClockOutput((uint8_t)atoi(argv[1])) ? 1 : 0);
+        CONSOLE.printf("MCO %d\r\n", CH32RV.setClockOutput((uint8_t)atoi(argv[1])) ? 1 : 0);
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
@@ -305,15 +305,15 @@ void setup()
         ewi_steps = ewi_record.steps;
     }
     ewi_record.magic = 0;
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

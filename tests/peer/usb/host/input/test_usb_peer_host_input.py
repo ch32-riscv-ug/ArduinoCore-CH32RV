@@ -36,7 +36,7 @@ def test_usb_peer_host_input(dut, peers):
 
     # The report descriptors the host read are the device's, byte for byte in length.
     m = device(peer, "desclen", rb"DESCLEN (\d+) (\d+)")
-    dut.write("hiddesc\n")
+    dut.write("hiddesc")
     block = dut.expect(rb"((?:H HIDDESC \d+ \d+\r?\n)*)H HIDDESCEND", timeout=5).group(1).decode()
     lengths = {int(a): int(b) for a, b in (line.split()[2:] for line in block.split("\n") if line.strip())}
     assert lengths[hid] == int(m.group(1)) and lengths[keyboard] == int(m.group(2))

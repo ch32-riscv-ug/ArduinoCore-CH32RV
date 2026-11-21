@@ -31,11 +31,11 @@ def test_usb_peer_media(dut, peers, record_property):
     # Speaker: half a second of a ramp. EspUsbHost keeps the stream going with
     # silence around it, so the DUT counts at least what was sent, and its byte
     # sum - which silence leaves alone - is exactly the ramp's.
-    dut.write("audio\n")
+    dut.write("audio")
     before = dut.expect(rb"AUDIO (\d+) (\d+) \d+ \d+ \d+\r?\n", timeout=5)
     m = command(peer, "audioout 500", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
     assert m.group(1) == b"1" and int(m.group(2)) == 32000
-    dut.write("audio\n")
+    dut.write("audio")
     after = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
     assert int(after.group(1)) - int(before.group(1)) >= int(m.group(2))
     assert (int(after.group(2)) - int(before.group(2))) & 0xFFFFFFFF == int(m.group(3))
@@ -45,7 +45,7 @@ def test_usb_peer_media(dut, peers, record_property):
     # the DUT) and half a second is half as many bytes.
     m = command(peer, "audioout 500 16000", rb"AUDIOOUT (\d) (\d+) (\d+)", timeout=10)
     assert m.group(1) == b"1" and int(m.group(2)) == 16000
-    dut.write("audio\n")
+    dut.write("audio")
     rated = dut.expect(rb"AUDIO (\d+) (\d+) \d+ (\d+) (\d+)\r?\n", timeout=5)
     assert int(rated.group(1)) - int(after.group(1)) >= int(m.group(2))
     assert (int(rated.group(2)) - int(after.group(2))) & 0xFFFFFFFF == int(m.group(3))

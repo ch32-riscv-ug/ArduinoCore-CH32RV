@@ -26,7 +26,7 @@ def test_usb_media_contract(dut, record_property):
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
@@ -86,7 +86,7 @@ def test_usb_media_contract(dut, record_property):
         record_property("audio_capture_bytes_per_200ms", len(data))
 
         # usb.audio-playback: 100 ms of speaker data arrives whole.
-        dut.write("audio\n")
+        dut.write("audio")
         before = dut.expect(rb"AUDIO (\d+) (\d+) \d+[^\r\n]*\r?\n", timeout=5)
         payload = secrets.token_bytes(6400)
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=1)
@@ -94,7 +94,7 @@ def test_usb_media_contract(dut, record_property):
         time.sleep(0.2)
         dev.set_interface_altsetting(interface=speaker.bInterfaceNumber, alternate_setting=0)
         assert sum(sent) == len(payload)
-        dut.write("audio\n")
+        dut.write("audio")
         after = dut.expect(rb"AUDIO (\d+) (\d+) \d+[^\r\n]*\r?\n", timeout=5)
         assert int(after.group(1)) - int(before.group(1)) == len(payload)
         assert (int(after.group(2)) - int(before.group(2))) & 0xFFFFFFFF == sum(payload)
@@ -119,5 +119,5 @@ def test_usb_media_contract(dut, record_property):
         for f in frames[1:]:                 # the first may have started before the commit
             assert len(f) == 80 * 60 * 2
             assert all(b == ((i * 7 + f[0]) & 0xFF) for i, b in enumerate(f)), "a frame is corrupt"
-        dut.write("video\n")
+        dut.write("video")
         assert int(dut.expect(rb"VIDEO (\d+) [01]\r?\n", timeout=5).group(1)) >= 4

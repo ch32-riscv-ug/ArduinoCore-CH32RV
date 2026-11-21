@@ -3,7 +3,7 @@
  * ArduinoMqttClient (MQTT), ArduinoHttpClient (HTTP client) and aWOT (HTTP
  * server), unchanged, on NetworkClient / NetworkServer. The case's
  * sketch.yaml pins their versions (run_hardware.py CASE_LIBRARIES). Console
- * on SerialDMSeq:
+ * on CONSOLE (bench_console.h):
  *
  *   ready <nonce>                 READY <nonce> <build id> <ETH.begin 0/1>
  *   ip                            IP <address>
@@ -18,7 +18,7 @@
  * Always: aWOT on TCP 80, GET /hello -> "hello from ch32rv", POST /echo -> the body. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <Network.h>
 #include <PubSubClient.h>
 #include <ArduinoMqttClient.h>
@@ -85,7 +85,7 @@ static void psc(const char *ip, uint16_t port, const char *id)
         delay(1);
     }
     mqtt.disconnect();
-    SerialDMSeq.printf("PSC %d %d %d %s\n", connected, subscribed, published, got ? received : "-");
+    CONSOLE.printf("PSC %d %d %d %s\n", connected, subscribed, published, got ? received : "-");
 }
 
 static void amc(const char *ip, uint16_t port, const char *id)
@@ -119,7 +119,7 @@ static void amc(const char *ip, uint16_t port, const char *id)
     }
     received[n] = 0;
     mqtt.stop();
-    SerialDMSeq.printf("AMC %d %d %d %s\n", connected, subscribed, published, have ? received : "-");
+    CONSOLE.printf("AMC %d %d %d %s\n", connected, subscribed, published, have ? received : "-");
 }
 
 /* ------------------------------------------------------------ HTTP client */
@@ -140,7 +140,7 @@ static void hget(const char *ip, uint16_t port, const char *path)
         }
     }
     http.stop();
-    SerialDMSeq.printf("HGET %d %lu %08lx\n", status, (unsigned long)bytes, (unsigned long)crc);
+    CONSOLE.printf("HGET %d %lu %08lx\n", status, (unsigned long)bytes, (unsigned long)crc);
 }
 
 static void hpost(const char *ip, uint16_t port, const char *path, const char *body)
@@ -151,7 +151,7 @@ static void hpost(const char *ip, uint16_t port, const char *path, const char *b
     const int status = http.responseStatusCode();
     const String answer = http.responseBody();
     http.stop();
-    SerialDMSeq.printf("HPOST %d %s\n", status, answer.length() ? answer.c_str() : "-");
+    CONSOLE.printf("HPOST %d %s\n", status, answer.length() ? answer.c_str() : "-");
 }
 
 /* ------------------------------------------------------------ HTTP server */
@@ -177,16 +177,16 @@ static void reply(char *command)
     char ip[20], path[64];
     unsigned port = 0;
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.printf("READY %s %s %d\n", command + 6, BENCH_BUILD_ID, begun ? 1 : 0);
+        CONSOLE.printf("READY %s %s %d\n", command + 6, BENCH_BUILD_ID, begun ? 1 : 0);
     } else if (strcmp(command, "ip") == 0) {
-        SerialDMSeq.print("IP ");
-        SerialDMSeq.println(ETH.hasIP() ? ETH.localIP().toString() : String("0.0.0.0"));
+        CONSOLE.print("IP ");
+        CONSOLE.println(ETH.hasIP() ? ETH.localIP().toString() : String("0.0.0.0"));
     } else if (strncmp(command, "pin ", 4) == 0) {
         unsigned m[6];
         IPAddress a;
         if (sscanf(command + 4, "%19s %x:%x:%x:%x:%x:%x", ip, &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) != 7 ||
             !a.fromString(ip)) {
-            SerialDMSeq.println("ERROR ARGS");
+            CONSOLE.println("ERROR ARGS");
             return;
         }
         ip4_addr_t i4;
@@ -195,8 +195,8 @@ static void reply(char *command)
         for (int k = 0; k < 6; k++) {
             e.addr[k] = (uint8_t)m[k];
         }
-        SerialDMSeq.print("PIN ");
-        SerialDMSeq.println((int)etharp_add_static_entry(&i4, &e));
+        CONSOLE.print("PIN ");
+        CONSOLE.println((int)etharp_add_static_entry(&i4, &e));
     } else if (sscanf(command, "psc %19s %u %39s", ip, &port, path) == 3) {
         psc(ip, (uint16_t)port, path);
     } else if (sscanf(command, "amc %19s %u %39s", ip, &port, path) == 3) {
@@ -208,18 +208,18 @@ static void reply(char *command)
         if (sscanf(command, "hpost %19s %u %63s %n", ip, &port, path, &at) == 3 && at > 0) {
             hpost(ip, (uint16_t)port, path, command + at);
         } else {
-            SerialDMSeq.println("ERROR ARGS");
+            CONSOLE.println("ERROR ARGS");
         }
     } else {
-        SerialDMSeq.println("ERROR UNKNOWN");
+        CONSOLE.println("ERROR UNKNOWN");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");
+    CONSOLE.println(CH32RV.resetReasonName());
     begun = ETH.begin();
     app.get("/hello", &hello);
     app.post("/echo", &echo);
@@ -233,8 +233,8 @@ void loop()
         app.process(&web);
         web.stop();
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             used = 0;

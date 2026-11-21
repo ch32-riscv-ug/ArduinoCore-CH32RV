@@ -78,7 +78,7 @@ def test_usb_classes_contract(dut, record_property):
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
@@ -166,7 +166,7 @@ def test_usb_classes_contract(dut, record_property):
         kind, status, _err, _ = ccid_exchange(c_in, c_out, 3, 0x63)
         assert kind == 0x81 and status & 3 == 1
 
-    dut.write("file\n")
+    dut.write("file")
     dut.expect_exact(f"FILE {len(text)} host {nonce}", timeout=5)
-    dut.write("card\n")
+    dut.write("card")
     dut.expect_exact("CARD 1 0 1", timeout=5)

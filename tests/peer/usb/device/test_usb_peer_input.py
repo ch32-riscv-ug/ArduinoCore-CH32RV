@@ -12,7 +12,7 @@ from device_peer import Peer, command, dut_ready, settings, wait_enumerated
 
 
 def dut_cmd(dut, line, reply, timeout=5):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 

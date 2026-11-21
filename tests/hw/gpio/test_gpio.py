@@ -26,21 +26,21 @@ def test_gpio_contract(dut, oep_host, ch32_target, record_property):
             pin, channel = p["pin"], p["channel"]
             gpio.configure(channel, Gpio.INPUT)
             for level in [0, 1, 0, 1, 0]:
-                dut.write(f"gpio {pin} out{level}\n")
+                dut.write(f"gpio {pin} out{level}")
                 dut.expect_exact("GPIO OUT", timeout=10)
                 assert gpio.read([channel]) == [level], p["pad"]
             # Release the DUT before the independent probe starts driving.
-            dut.write(f"gpio {pin} in\n")
+            dut.write(f"gpio {pin} in")
             dut.expect(rb"GPIO IN [01]\r?\n", timeout=10)
             for level in [0, 1] + [secrets.randbelow(2) for _ in range(4)]:
                 gpio.configure(channel, Gpio.OUTPUT_HIGH if level else Gpio.OUTPUT_LOW)
-                dut.write(f"gpio {pin} in\n")
+                dut.write(f"gpio {pin} in")
                 dut.expect_exact(f"GPIO IN {level}", timeout=10)
             gpio.configure(channel, Gpio.INPUT)
             record_property(p["pad"], "both directions")
     finally:
         for p in pins:
             gpio.configure(p["channel"], Gpio.INPUT)
-            dut.write(f"gpio {p['pin']} in\n")
+            dut.write(f"gpio {p['pin']} in")
             dut.expect(rb"GPIO IN [01]\r?\n", timeout=10)
         core.plan_release(host, [gpio.fn])

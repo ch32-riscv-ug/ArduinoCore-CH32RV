@@ -59,7 +59,7 @@ def pad(pin):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -321,7 +321,7 @@ def test_cores_ipc(dut, ready, record_property):
         record_property("ipc", json.dumps(dict(mode=mode, results=got)))
         assert got == [0, 0, 0], f"CPU Core = V3F (no other core): send/onReceive/receive gave {got}, want 0 0 0"
         return
-    dut.write(f"ipc {n}\n")
+    dut.write(f"ipc {n}")
     regs = []
     m = None
     while m is None:

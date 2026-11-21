@@ -187,6 +187,14 @@ def boards(path=REPO / "boards.txt"):
     return out
 
 
+def part_ram(part, path=REPO / "boards.txt"):
+    """The part's RAM in bytes (its pnum entry's upload.maximum_data_size in boards.txt), or None where the entry
+    has none (a RAM split menu sets it: V30x, V407, V317)."""
+    m = re.search(rf"^[A-Za-z0-9_]+\.menu\.pnum\.{re.escape(part)}\.upload\.maximum_data_size=(\d+)$",
+                  path.read_text(encoding="utf-8"), re.M)
+    return int(m.group(1)) if m else None
+
+
 # The option byte menus a bench build names, so no case leans on what the chip was left with (an earlier sketch's
 # menu, ch32rv): the core sets them at boot. The reset pin as NRST - the probe's reset line, system's reset
 # reasons and a recovery need it -, and the watchdog started by wdtEnable(), as system's watchdog expects (a chip

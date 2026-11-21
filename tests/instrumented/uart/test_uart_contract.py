@@ -38,7 +38,7 @@ def test_uart_contract(dut, request):
         if link and "tx" in link and "rx" in link:
             pin = lambda p: ((ord(p[1].upper()) - ord("A") + 2) << 5) | int(p[2:])   # noqa: E731 - "pa9" -> PA9
             rx, tx = pin(link["rx"]), pin(link["tx"])
-            dut.write(f"upins {rx} {tx}\n")
+            dut.write(f"upins {rx} {tx}")
             assert dut.expect(rb"UPINS (\d)\r?\n", timeout=10).group(1) == b"1", \
                 f"Serial refused {link['tx']} / {link['rx']} (the record's link_uart)"
     if oep:
@@ -51,17 +51,17 @@ def test_uart_contract(dut, request):
         uart = request.getfixturevalue("ch32_uart").open(115200)
     if link is not None and "rx" not in link:
         # The DUT's TX alone reaches the Link (M030's motor board): what the DUT sends arrives whole.
-        dut.write("usend 64\n")
+        dut.write("usend 64")
         uart.expect_exact(bytes((i * 37 + 11) & 0xFF for i in range(64)), timeout=10)
         dut.expect_exact("USEND 64", timeout=10)
         return
     payload = bytes([0, 255, 85, 170]) + secrets.token_bytes(60)
-    dut.write("uart\n")
+    dut.write("uart")
     dut.expect_exact("UART READY", timeout=15)
     uart.write(payload)
     uart.expect_exact(payload, timeout=10)
     dut.expect_exact("UART COUNT 64", timeout=10)
-    dut.write("stdio\n")
+    dut.write("stdio")
     dut.expect_exact("STDIO DONE", timeout=10)
     m = uart.expect(rb"(?s)STDIO SERIAL\r?\n(.*?)STDIO BACK", timeout=10)
     assert b"DISCARDED" not in m.group(1), m.group(1)
@@ -124,21 +124,21 @@ def test_uart_output_only(dut, ws_run, request, record_property):
                 out = bytes(b & ((1 << bits) - 1) for b in sent)
                 with ws_run.section(2, name, expect=[starts(idle), ends(idle)]):
                     ws_run.command(f"ucfg {baud} {k}")
-                    dut.write(f"ucfg {baud} {k}\n")
+                    dut.write(f"ucfg {baud} {k}")
                     dut_baud = int(_expect(dut, wait, rb"UCFG 1 (\d+)").group(1))   # what BRR makes of it
                     wait(0.02)
                     with ws_run.section(3, "dut sends", expect=[uart(dut_tx["pad"], dut_baud,
                                                                      data=out.hex(), bits=bits, parity=parity,
                                                                      stop=stop)]):
                         ws_run.command(f"usend {COUNT}")
-                        dut.write(f"usend {COUNT}\n")
+                        dut.write(f"usend {COUNT}")
                         _expect(dut, wait, rb"USEND \d+")
                         wait(0.02 + 12 * COUNT / baud)
 
     try:
         ws_capture.stream(ws_run, oep_host, [dut_tx], rate=UART_RATE, steps=steps)
     finally:
-        dut.write("ucfg 115200 0\n")
+        dut.write("ucfg 115200 0")
         dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
 
 
@@ -184,7 +184,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
     hashes = {}
 
     def ask(wait, line, reply, timeout=3.0):
-        dut.write(line + "\n")
+        dut.write(line)
         end = time.monotonic() + timeout
         while True:
             try:
@@ -222,7 +222,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
                                         expect=[uart(dut_rx["pad"], probe_baud, data=back.hex(), **common),
                                                 level(dut_tx["pad"], 1)]):
                         ws_run.command(f"urecv {COUNT}")
-                        dut.write(f"urecv {COUNT} {int(200 + 12000 * COUNT / baud)}\n")
+                        dut.write(f"urecv {COUNT} {int(200 + 12000 * COUNT / baud)}")
                         dut.expect(rb"URECV READY\r?\n", timeout=3)
                         io.write(back)
                         m = None
@@ -241,7 +241,7 @@ def test_uart_formats(dut, ws_run, request, record_property):
         ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=UART_RATE, steps=steps)
     finally:
         core.plan_release(host, [used])
-        dut.write("ucfg 115200 0\n")
+        dut.write("ucfg 115200 0")
         dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
     record_property("received", json.dumps(hashes))
     for baud, k in CONDITIONS:
@@ -338,7 +338,7 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
         ws_capture.stream(ws_run, oep_host, [dut_tx, dut_rx], rate=UART_RATE, steps=steps)
     finally:
         core.plan_release(host, [used])
-        dut.write("ucfg 115200 0\n")
+        dut.write("ucfg 115200 0")
         dut.expect(rb"UCFG \d \d+\r?\n", timeout=5)
     record_property("received", json.dumps({n: [kept, sorted(kinds)] for n, (kept, kinds) in got.items()}))
     wrong = []
@@ -352,7 +352,7 @@ def test_uart_receive_errors(dut, ws_run, request, record_property):
 
 
 def _expect_after(dut, wait, line, pattern, timeout=3.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return _expect(dut, wait, pattern, timeout)
 
 
@@ -410,12 +410,12 @@ def _plan_uart(oep_host, rx=None, tx=None):
 
 
 def _ask(dut, wait, line, reply, timeout=3.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return _expect(dut, wait, reply, timeout)
 
 
 def _ask_now(dut, line, reply, timeout=5.0):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -665,7 +665,7 @@ def test_uart_multiprocessor(dut, ws_run, request, record_property):
                 # mute() on a quiet line does not hold (the USART wakes at once, every bench part 2026-11-19): it is
                 # for the rest of a message, so the DUT mutes after the first byte of B + C, which is still coming.
                 ws_run.command("umute w")
-                dut.write("umute w\n")
+                dut.write("umute w")
                 wait(0.05)
                 io.write(B + C)
                 m = _expect(dut, wait, rb"UMUTE (\d) (-?\d+)")
@@ -742,7 +742,7 @@ def test_uart_half_duplex(dut, ws_run, request, record_property):
             with ws_run.section(2, "dut receives", expect=[uart(dut_tx["pad"], probe_baud, data=back.hex()),
                                                             starts(idle), ends(idle)]):
                 ws_run.command("urecv 16")
-                dut.write("urecv 16 3000\n")
+                dut.write("urecv 16 3000")
                 _expect(dut, wait, rb"URECV READY")
                 io.write(back)
                 m = _expect(dut, wait, rb"URECV (\d+) ([0-9A-F]+)", timeout=5)

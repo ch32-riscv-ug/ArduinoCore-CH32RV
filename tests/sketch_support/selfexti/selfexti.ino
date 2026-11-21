@@ -1,5 +1,5 @@
 /* The EXTI lines that are not pins (CH32RV.attachExtiLine(), the PVD) with no wiring (tests/instrumented/selfexti),
- * beside selfsys and selfapi (V003's 16 KB has no room left in either). Console on SerialDMSeq:
+ * beside selfsys and selfapi (V003's 16 KB has no room left in either). Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   lines                     LINES <CH32RV_EXTI_LINE_MASK in hex, 0 without> <the RTC alarm's line or -1>
@@ -24,7 +24,7 @@
  * STARTUP <resetReasonName()> comes first after every boot. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -77,7 +77,7 @@ static void swi(uint8_t n)
     calls = 0;
     CH32RV.triggerExtiLine(n);
     delay(5);
-    SerialDMSeq.printf("SWI %u %d %lu %lu %lu\r\n", (unsigned)n, ok ? 1 : 0, (unsigned long)got_all,
+    CONSOLE.printf("SWI %u %d %lu %lu %lu\r\n", (unsigned)n, ok ? 1 : 0, (unsigned long)got_all,
                        (unsigned long)us, (unsigned long)calls);
 }
 
@@ -103,7 +103,7 @@ static void rtc_line(uint32_t s)
     while (!alarm_calls && millis() - t1 < 4000u) {
     }
     delay(10);
-    SerialDMSeq.printf("RTCLINE %lu %lu %lu %lu %lu\r\n", (unsigned long)line_calls, (unsigned long)ms,
+    CONSOLE.printf("RTCLINE %lu %lu %lu %lu %lu\r\n", (unsigned long)line_calls, (unsigned long)ms,
                        (unsigned long)alarms, (unsigned long)alarm_calls, (unsigned long)calls);
     CH32RV.clearAlarm();
 }
@@ -126,7 +126,7 @@ static void wake(uint32_t s)
     CH32RV.disableWakeup();
     CH32RV.detachExtiLine(CH32RV_EXTI_RTC_ALARM);
     CH32RV.clearAlarm();
-    SerialDMSeq.printf("WAKE %d %d %lu %lu\r\n", (int)r, (int)cause, (unsigned long)took, (unsigned long)calls);
+    CONSOLE.printf("WAKE %d %d %lu %lu\r\n", (int)r, (int)cause, (unsigned long)took, (unsigned long)calls);
 }
 #endif
 
@@ -138,7 +138,7 @@ static void pvd(uint32_t mv)
     delay(50);
     const bool low = CH32RV.isLowVoltage();
     CH32RV.clearLowVoltageDetect();
-    SerialDMSeq.printf("PVD %lu %lu %lu %d\r\n", (unsigned long)at, (unsigned long)vdd, (unsigned long)pvd_calls,
+    CONSOLE.printf("PVD %lu %lu %lu %d\r\n", (unsigned long)at, (unsigned long)vdd, (unsigned long)pvd_calls,
                        low ? 1 : 0);
 }
 
@@ -153,7 +153,7 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "lines")) {
 #ifdef CH32RV_EXTI_LINE_MASK
         const unsigned long mask = CH32RV_EXTI_LINE_MASK;
@@ -170,39 +170,39 @@ static void reply(char *command)
 #else
         const int pvd_line = -1;
 #endif
-        SerialDMSeq.printf("LINES %lx %d %d\r\n", mask, rtc, pvd_line);
+        CONSOLE.printf("LINES %lx %d %d\r\n", mask, rtc, pvd_line);
     } else if (!strcmp(argv[0], "swi") && argc == 2) {
         swi((uint8_t)atoi(argv[1]));
     } else if (!strcmp(argv[0], "rtcline") && argc == 2) {
 #ifdef CH32RV_EXTI_RTC_ALARM
         rtc_line((uint32_t)atol(argv[1]));
 #else
-        SerialDMSeq.printf("RTCLINE NONE\r\n");
+        CONSOLE.printf("RTCLINE NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "wake") && argc == 2) {
 #ifdef CH32RV_EXTI_RTC_ALARM
         wake((uint32_t)atol(argv[1]));
 #else
-        SerialDMSeq.printf("WAKE NONE\r\n");
+        CONSOLE.printf("WAKE NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "pvd") && argc == 2) {
         pvd((uint32_t)atol(argv[1]));
     } else {
-        SerialDMSeq.printf("UNKNOWN %s\r\n", argv[0]);
+        CONSOLE.printf("UNKNOWN %s\r\n", argv[0]);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

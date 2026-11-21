@@ -16,17 +16,17 @@ def test_usb_peer_net(dut, peers):
 
     assert command(peer, "net", rb"NETOPEN (\d)", timeout=10).group(1) == b"1"
     command(peer, "reset", rb"RESET")
-    dut.write("net\n")
+    dut.write("net")
     before = dut.expect(rb"NET (\d+) (\d+) ([0-9A-F]{12})\r?\n", timeout=5)
 
     # S3 -> DUT, and the DUT's echo back.
     assert command(peer, "netsend", rb"NETSENT (\d)").group(1) == b"1"
-    dut.write("net\n")
+    dut.write("net")
     after = dut.expect(rb"NET (\d+) (\d+) ([0-9A-F]{12})\r?\n", timeout=5)
     assert int(after.group(2)) == int(before.group(2)) + 1
 
     # DUT -> S3.
-    dut.write("netsend\n")
+    dut.write("netsend")
     dut.expect_exact("NETSEND 1", timeout=5)
     m = command(peer, "netstat", rb"NETRX (\d+) (\d+)")
     assert int(m.group(2)) >= 2       # the echo and the DUT's own frame
@@ -34,7 +34,7 @@ def test_usb_peer_net(dut, peers):
     # 20 frames back to back: with two transmit blocks, those sent while one
     # is out go together in the next; every one reaches the S3.
     before = int(command(peer, "netstat", rb"NETRX (\d+) (\d+)").group(2))
-    dut.write("netburst 20\n")
+    dut.write("netburst 20")
     m = dut.expect(rb"NETBURST (\d+) (\d+) (\d+) (\d+) (\d+)\r?\n", timeout=15)
     assert int(m.group(1)) == 20
     assert int(m.group(3)) == 2048 and int(m.group(4)) == 2 and int(m.group(5)) == 2

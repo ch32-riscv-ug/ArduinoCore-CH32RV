@@ -82,13 +82,16 @@ def port_lines(oep_host, target):
     """Every labelled line of the target's port that reaches a pad: [{"channel", "pad", "pin", "role", "label"}], role
     None for a plain `<port>@<pad>`; label is the probe's label text (what oep_client.acquire names a line by).
     Pads the board's record takes (a defect's lose "pad:PB6": L103's EVT board holds PB6 / PB7 low through 5.1 kOhm
-    on its CC lines, V407's YD board ties PB1 to PA7) are left out: no test drives or reads them."""
+    on its CC lines, V407's YD board ties PB1 to PA7) are left out: no test drives or reads them; so are the console's
+    pads where it runs on the probe's UART lines (run_hardware's console_pads)."""
     from oep_client import settings
     port = port_of(target)
     host = getattr(oep_host, "host", oep_host)
     out = []
     if port is None or host is None:
         return out
+    # The console's pads when it runs on the probe's UART lines (run_hardware's console_pads): neither driven nor read.
+    console = {p.upper() for p in (target.get("console_pads") or [] if isinstance(target, dict) else [])}
     lost = {f.split(":", 1)[1].strip().upper() for d in (target.get("record", {}).get("defects", [])
                                                          if isinstance(target, dict) else [])
             for f in d.get("lose", []) if f.startswith("pad:")}
@@ -97,7 +100,7 @@ def port_lines(oep_host, target):
         if parsed and settings.fold_name(parsed[0]) == settings.fold_name(port) and parsed[2] \
                 and re.fullmatch(r"p[a-k]\d{1,2}", parsed[2], re.I):   # one pad (not "pc16-pc11")
             pad = parsed[2].upper()
-            if pad in lost:
+            if pad in lost or pad in console:
                 continue
             role = settings.fold_name(parsed[1]) if parsed[1] else None
             out.append(dict(channel=channel, pad=pad, pin=pin_number(pad), role=role, label=text))

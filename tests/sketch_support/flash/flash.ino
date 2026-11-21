@@ -1,7 +1,7 @@
 /* ch32rv_flash contracts (tests/instrumented/flash): every function and every
  * refusal on a scratch store, a value kept across a software reset, and how
  * one rewrite_page() treats the CPU. No wiring. About 16 erases of the stores
- * at the end of flash per run. Console on SerialDMSeq:
+ * at the end of flash per run. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>  READY <nonce> <build id> <erase size> <write size> <erased word, hex>
  *   units          UNITS <steps> <failed-step bitmap, hex>
@@ -13,7 +13,7 @@
  *                  clock's advance across one with them on */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <ch32rv_flash.h>
 #include <internal/ch32rv_irq.h>
 #include <internal/ch32rv_registers.h>
@@ -110,10 +110,10 @@ static void units()
     step(!ch32rv_flash_erase_page(off + 4));
     step(!ch32rv_flash_erase(off, 3 * CH32RV_FLASH_ERASE_SIZE + 0x100000u));
     step(!ch32rv_flash_write(off, buf, 0));
-    SerialDMSeq.print("UNITS ");
-    SerialDMSeq.print((unsigned long)steps);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned long)fails, HEX);
+    CONSOLE.print("UNITS ");
+    CONSOLE.print((unsigned long)steps);
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned long)fails, HEX);
 }
 
 static void save(uint32_t value)
@@ -124,8 +124,8 @@ static void save(uint32_t value)
     buf[0] = KEPT_MAGIC;
     buf[1] = value;
     buf[2] = ~value;
-    SerialDMSeq.print("SAVE ");
-    SerialDMSeq.println(ch32rv_flash_rewrite_page(CH32RV_FLASH_OFFSET(kept), buf) ? 1 : 0);
+    CONSOLE.print("SAVE ");
+    CONSOLE.println(ch32rv_flash_rewrite_page(CH32RV_FLASH_OFFSET(kept), buf) ? 1 : 0);
 }
 
 static void timeOne()
@@ -141,12 +141,12 @@ static void timeOne()
     const uint32_t m0 = millis(), u0 = micros();
     ch32rv_flash_rewrite_page(off, buf);
     const uint32_t u1 = micros(), m1 = millis();
-    SerialDMSeq.print("TIME ");
-    SerialDMSeq.print((unsigned long)((c1 - c0) / (F_CPU / 1000000u)));
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print((unsigned long)(m1 - m0));
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println((unsigned long)(u1 - u0));
+    CONSOLE.print("TIME ");
+    CONSOLE.print((unsigned long)((c1 - c0) / (F_CPU / 1000000u)));
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)(m1 - m0));
+    CONSOLE.print(' ');
+    CONSOLE.println((unsigned long)(u1 - u0));
 }
 
 static char line[48];
@@ -157,15 +157,15 @@ void setup()
     const uint32_t *k = (const uint32_t *)kept;
     bootFound = k[0] == KEPT_MAGIC && k[2] == ~k[1];
     bootValue = bootFound ? k[1] : 0;
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int ch = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int ch = CONSOLE.read();
         if (ch != '\n') {
             if (ch != '\r' && used < sizeof line - 1) {
                 line[used++] = (char)ch;
@@ -175,16 +175,16 @@ void loop()
         line[used] = 0;
         used = 0;
         if (strncmp(line, "ready ", 6) == 0) {
-            SerialDMSeq.print("READY ");
-            SerialDMSeq.print(line + 6);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print(BENCH_BUILD_ID);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print((unsigned long)CH32RV_FLASH_ERASE_SIZE);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.print((unsigned long)CH32RV_FLASH_WRITE_SIZE);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println((unsigned long)CH32RV_FLASH_ERASED_WORD, HEX);
+            CONSOLE.print("READY ");
+            CONSOLE.print(line + 6);
+            CONSOLE.print(' ');
+            CONSOLE.print(BENCH_BUILD_ID);
+            CONSOLE.print(' ');
+            CONSOLE.print((unsigned long)CH32RV_FLASH_ERASE_SIZE);
+            CONSOLE.print(' ');
+            CONSOLE.print((unsigned long)CH32RV_FLASH_WRITE_SIZE);
+            CONSOLE.print(' ');
+            CONSOLE.println((unsigned long)CH32RV_FLASH_ERASED_WORD, HEX);
         } else if (strcmp(line, "units") == 0) {
             units();
         } else if (strncmp(line, "save ", 5) == 0) {
@@ -192,14 +192,14 @@ void loop()
         } else if (strcmp(line, "restart") == 0) {
             CH32RV.restart();
         } else if (strcmp(line, "boot") == 0) {
-            SerialDMSeq.print("BOOT ");
-            SerialDMSeq.print(bootFound ? 1 : 0);
-            SerialDMSeq.print(' ');
-            SerialDMSeq.println((unsigned long)bootValue);
+            CONSOLE.print("BOOT ");
+            CONSOLE.print(bootFound ? 1 : 0);
+            CONSOLE.print(' ');
+            CONSOLE.println((unsigned long)bootValue);
         } else if (strcmp(line, "time") == 0) {
             timeOne();
         } else if (line[0]) {
-            SerialDMSeq.println("ERROR COMMAND");
+            CONSOLE.println("ERROR COMMAND");
         }
     }
 }

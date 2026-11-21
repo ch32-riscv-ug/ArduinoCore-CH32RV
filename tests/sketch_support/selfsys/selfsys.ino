@@ -1,5 +1,5 @@
 /* The chip-level calls with no wiring (tests/instrumented/selfsys), beside
- * selfcheck and selfbus. Console on SerialDMSeq:
+ * selfcheck and selfbus. Console on CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   id                        ID <UNIID1 UNIID2 as 16 hex digits, or -> <getFlashChipSize() or 0> <getChipModel()>
@@ -42,7 +42,7 @@
  * first bytes after a reset. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <Servo.h>
 #include <math.h>
 #include <stdlib.h>
@@ -168,11 +168,11 @@ static void adc_pad(int pin)
     const pin_size_t p = (pin_size_t)pin;
     const uint32_t channel = CH32RV_PIN_TO_ADC_CHANNEL(p);
     if (channel == NOT_AN_ANALOG_PIN || SELFSYS_ADC_INSTANCE(p) != 1u) {
-        SerialDMSeq.printf("ADC %d NONE\r\n", pin);
+        CONSOLE.printf("ADC %d NONE\r\n", pin);
         return;
     }
     if (held(p)) {
-        SerialDMSeq.printf("ADC %d HELD\r\n", pin);
+        CONSOLE.printf("ADC %d HELD\r\n", pin);
         return;
     }
     (void)analogRead(p);                         /* the ADC started and calibrated */
@@ -190,7 +190,7 @@ static void adc_pad(int pin)
         level[v] = sum / 4u;
     }
     pinMode(p, INPUT);
-    SerialDMSeq.printf("ADC %d %lu %lu %lu %d\r\n", pin, (unsigned long)channel, (unsigned long)level[1],
+    CONSOLE.printf("ADC %d %lu %lu %lu %d\r\n", pin, (unsigned long)channel, (unsigned long)level[1],
                        (unsigned long)level[0], (1 << CH32RV_ADC_BITS) - 1);
 }
 #endif
@@ -231,7 +231,7 @@ static void rgb_irq(pin_size_t p, int leds)
     }
     hw_timer_t *t = timerBegin(1000000);
     if (t == nullptr) {
-        SerialDMSeq.printf("RGBIRQ NONE\r\n");
+        CONSOLE.printf("RGBIRQ NONE\r\n");
         return;
     }
     timerAttachInterrupt(t, rgb_tick);
@@ -258,7 +258,7 @@ static void rgb_irq(pin_size_t p, int leds)
     delayMicroseconds(300);
     pinMode(p, INPUT);
     const uint32_t per_us = CH32RV_SYSTICK_HZ / 1000000u;
-    SerialDMSeq.printf("RGBIRQ %d %lu %lu %lu\r\n", ch32rv_rgb_led_is_hardware(p) ? 1 : 0, (unsigned long)n,
+    CONSOLE.printf("RGBIRQ %d %lu %lu %lu\r\n", ch32rv_rgb_led_is_hardware(p) ? 1 : 0, (unsigned long)n,
                        (unsigned long)(gap / per_us), (unsigned long)((end - start) / per_us));
 }
 #endif
@@ -277,14 +277,14 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "id")) {
 #ifdef CH32RV_HAS_UNIQUE_ID
         const uint64_t uid = CH32RV.getUniqueId();
-        SerialDMSeq.printf("ID %08lx%08lx %lu %s\r\n", (unsigned long)(uint32_t)uid, (unsigned long)(uint32_t)(uid >> 32),
+        CONSOLE.printf("ID %08lx%08lx %lu %s\r\n", (unsigned long)(uint32_t)uid, (unsigned long)(uint32_t)(uid >> 32),
                            (unsigned long)CH32RV.getFlashChipSize(), CH32RV.getChipModel());
 #else
-        SerialDMSeq.printf("ID - 0 %s\r\n", CH32RV.getChipModel());
+        CONSOLE.printf("ID - 0 %s\r\n", CH32RV.getChipModel());
 #endif
     } else if (!strcmp(argv[0], "temp")) {
 #if CH32RV_ADC_CLOCK_OK
@@ -293,29 +293,29 @@ static void reply(char *command)
         const float t = NAN;                     /* no ADC at this CPU Clock: a build error to call */
 #endif
 #ifdef CH32RV_ADC_TEMP_CAL_ADDR
-        SerialDMSeq.printf("TEMP %d %08lx\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f),
+        CONSOLE.printf("TEMP %d %08lx\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f),
                            (unsigned long)*(const volatile uint32_t *)CH32RV_ADC_TEMP_CAL_ADDR);
 #else
-        SerialDMSeq.printf("TEMP %d -\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
+        CONSOLE.printf("TEMP %d -\r\n", isnan(t) ? -9999 : (int)lroundf(t * 10.0f));
 #endif
     } else if (!strcmp(argv[0], "why")) {
-        SerialDMSeq.printf("WHY %s %d %08lx\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause(),
+        CONSOLE.printf("WHY %s %d %08lx\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause(),
                            (unsigned long)boot_rstsckr);
     } else if (!strcmp(argv[0], "restart")) {
-        SerialDMSeq.printf("RESTARTING\r\n");
+        CONSOLE.printf("RESTARTING\r\n");
         delay(50);
         CH32RV.restart();
     } else if (!strcmp(argv[0], "wdt") && argc == 2) {
         if (!CH32RV.wdtEnable((uint32_t)atol(argv[1]))) {
-            SerialDMSeq.printf("WDT REFUSED\r\n");
+            CONSOLE.printf("WDT REFUSED\r\n");
             return;
         }
         for (int i = 0; i < 6; i++) {
             delay(50);
             CH32RV.wdtFeed();
         }
-        SerialDMSeq.printf("WDT FED\r\n");
-        SerialDMSeq.printf("WDT LET GO\r\n");
+        CONSOLE.printf("WDT FED\r\n");
+        CONSOLE.printf("WDT LET GO\r\n");
         for (;;) {
         }
     } else if (!strcmp(argv[0], "sleep") && argc == 2) {
@@ -325,21 +325,21 @@ static void reply(char *command)
         const uint32_t took = millis() - t0;
         const CH32RVWakeupCause cause = CH32RV.wakeupCause();
         CH32RV.disableWakeup();
-        SerialDMSeq.printf("SLEEP %d %d %lu\r\n", (int)r, (int)cause, (unsigned long)took);
+        CONSOLE.printf("SLEEP %d %d %lu\r\n", (int)r, (int)cause, (unsigned long)took);
     } else if (!strcmp(argv[0], "adcpins")) {
-        SerialDMSeq.printf("ADCPINS");
+        CONSOLE.printf("ADCPINS");
 #if SELFSYS_ADC
         for (uint8_t port = 0; port < CH32RV_PORT_COUNT; port++) {
             const uint32_t mask = CH32RV_PORT_MASK(port);
             for (uint8_t bit = 0; bit < 32; bit++) {
                 const pin_size_t p = (pin_size_t)CH32RV_PIN(port, bit);
                 if ((mask & (1ul << bit)) && CH32RV_PIN_TO_ADC_CHANNEL(p) != NOT_AN_ANALOG_PIN) {
-                    SerialDMSeq.printf(" %d", (int)p);
+                    CONSOLE.printf(" %d", (int)p);
                 }
             }
         }
 #endif
-        SerialDMSeq.printf("\r\n");
+        CONSOLE.printf("\r\n");
 #if SELFSYS_ADC
     } else if (!strcmp(argv[0], "adc") && argc == 2) {
         adc_pad(atoi(argv[1]));
@@ -348,21 +348,21 @@ static void reply(char *command)
 #ifdef CH32RV_HAS_RTC
         struct timeval tv;
         gettimeofday(&tv, nullptr);
-        SerialDMSeq.printf("RTC %lu %lu %d\r\n", (unsigned long)tv.tv_sec, (unsigned long)tv.tv_usec,
+        CONSOLE.printf("RTC %lu %lu %d\r\n", (unsigned long)tv.tv_sec, (unsigned long)tv.tv_usec,
                            ch32rv_rtc_on_lse() ? 1 : 0);
 #else
-        SerialDMSeq.printf("RTC NONE\r\n");
+        CONSOLE.printf("RTC NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "pad") && argc == 2) {
-        SerialDMSeq.printf("PAD %d %d\r\n", atoi(argv[1]), held((pin_size_t)atoi(argv[1])) ? 1 : 0);
+        CONSOLE.printf("PAD %d %d\r\n", atoi(argv[1]), held((pin_size_t)atoi(argv[1])) ? 1 : 0);
     } else if (!strcmp(argv[0], "rgbhw") && argc == 2) {
-        SerialDMSeq.printf("RGBHW %d %d\r\n", atoi(argv[1]),
+        CONSOLE.printf("RGBHW %d %d\r\n", atoi(argv[1]),
                            ch32rv_rgb_led_is_hardware((pin_size_t)atoi(argv[1])) ? 1 : 0);
     } else if (!strcmp(argv[0], "rgbirq") && argc == 3) {
 #if CH32RV_HAS_ARGB
         rgb_irq((pin_size_t)atoi(argv[1]), atoi(argv[2]));
 #else
-        SerialDMSeq.printf("RGBIRQ NONE\r\n");
+        CONSOLE.printf("RGBIRQ NONE\r\n");
 #endif
     } else if (!strcmp(argv[0], "tone") && argc == 3) {
         const pin_size_t p = (pin_size_t)atoi(argv[1]);
@@ -379,7 +379,7 @@ static void reply(char *command)
         }
         noTone(p);
         pinMode(p, INPUT);
-        SerialDMSeq.printf("TONE %lu %lu\r\n", (unsigned long)edges, (unsigned long)samples);
+        CONSOLE.printf("TONE %lu %lu\r\n", (unsigned long)edges, (unsigned long)samples);
     } else if (!strcmp(argv[0], "servo") && argc == 3) {
         const pin_size_t p = (pin_size_t)atoi(argv[1]);
         Servo servo;
@@ -392,7 +392,7 @@ static void reply(char *command)
         }
         servo.detach();
         pinMode(p, INPUT);
-        SerialDMSeq.printf("SERVO %lu %lu %lu\r\n", w[0], w[1], w[2]);
+        CONSOLE.printf("SERVO %lu %lu %lu\r\n", w[0], w[1], w[2]);
     } else if (!strcmp(argv[0], "wwdg") && argc == 2) {
         const bool early = !strcmp(argv[1], "early");
         const uint32_t max = CH32RV.wwdgMaxTimeoutUs();
@@ -401,10 +401,10 @@ static void reply(char *command)
         ewi_record.count = 0;
         ewi_record.span_us = 0;
         ewi_record.steps = 0;
-        SerialDMSeq.printf("WWDG %lu %lu %lu\r\n", (unsigned long)t, (unsigned long)w, (unsigned long)max);
+        CONSOLE.printf("WWDG %lu %lu %lu\r\n", (unsigned long)t, (unsigned long)w, (unsigned long)max);
         delay(50);                                /* the line out before the feeds begin */
         if (!CH32RV.wwdgEnable(t, w, on_early_warning)) {
-            SerialDMSeq.printf("WWDG REFUSED\r\n");
+            CONSOLE.printf("WWDG REFUSED\r\n");
             return;
         }
         const uint32_t start = millis();
@@ -421,7 +421,7 @@ static void reply(char *command)
         for (;;) {
         }
     } else if (!strcmp(argv[0], "ewi")) {
-        SerialDMSeq.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
+        CONSOLE.printf("EWI %lu %lu %lu\r\n", (unsigned long)ewi_seen, (unsigned long)ewi_span, (unsigned long)ewi_steps);
 #ifdef CH32RV_HAS_RTC
     } else if (!strcmp(argv[0], "bkpw") && argc == 2) {
         const uint16_t seed = (uint16_t)(uint32_t)atol(argv[1]);
@@ -429,7 +429,7 @@ static void reply(char *command)
         for (uint8_t i = 0; i < n; i++) {
             CH32RV.setBackupRegister(i, (uint16_t)(seed + 257u * i));
         }
-        SerialDMSeq.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
+        CONSOLE.printf("BKPW %d %d\r\n", n, CH32RV.backupRegistersKeepPower() ? 1 : 0);
     } else if (!strcmp(argv[0], "bkpr") && argc == 2) {
         const uint16_t seed = (uint16_t)(uint32_t)atol(argv[1]);
         const uint8_t n = CH32RV.backupRegisterCount();
@@ -437,24 +437,24 @@ static void reply(char *command)
         for (uint8_t i = 0; i < n; i++) {
             same += CH32RV.getBackupRegister(i) == (uint16_t)(seed + 257u * i);
         }
-        SerialDMSeq.printf("BKPR %d %d\r\n", n, same);
+        CONSOLE.printf("BKPR %d %d\r\n", n, same);
     } else if (!strcmp(argv[0], "alarm") && argc == 2) {
         const uint32_t s = (uint32_t)atol(argv[1]);
         alarm_fired = false;
         const uint32_t t0 = millis();
         if (!CH32RV.setAlarm(time(nullptr) + (time_t)s, on_alarm)) {
-            SerialDMSeq.printf("ALARM 0 0 0\r\n");
+            CONSOLE.printf("ALARM 0 0 0\r\n");
             return;
         }
         while (!alarm_fired && millis() - t0 < (s + 3u) * 1000u) {
         }
-        SerialDMSeq.printf("ALARM 1 %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
+        CONSOLE.printf("ALARM 1 %lu %ld\r\n", alarm_fired ? (unsigned long)(alarm_at - t0) : 0ul,
                            (long)CH32RV.getAlarm());
     } else if (!strcmp(argv[0], "asleep") && argc == 2) {
         const uint32_t s = (uint32_t)atol(argv[1]);
         CH32RV.disableWakeup();
         if (!CH32RV.setAlarm(time(nullptr) + (time_t)s) || !CH32RV.enableAlarmWakeup()) {
-            SerialDMSeq.printf("ASLEEP REFUSED\r\n");
+            CONSOLE.printf("ASLEEP REFUSED\r\n");
             return;
         }
         CH32RV.enableTimerWakeup(10u * 1000000u);
@@ -463,19 +463,19 @@ static void reply(char *command)
         const uint32_t took = millis() - t0;
         const CH32RVWakeupCause cause = CH32RV.wakeupCause();
         CH32RV.disableWakeup();
-        SerialDMSeq.printf("ASLEEP %d %d %lu\r\n", (int)r, (int)cause, (unsigned long)took);
+        CONSOLE.printf("ASLEEP %d %d %lu\r\n", (int)r, (int)cause, (unsigned long)took);
 #else
     /* No RTC and no backup registers (V003, V00x, M030, X033 / X035): the
      * calls answer 0 / false there; left out to keep V003's 16 KB. */
     } else if (!strcmp(argv[0], "bkpw") || !strcmp(argv[0], "bkpr")) {
-        SerialDMSeq.printf("%s 0 0\r\n", argv[0][3] == 'w' ? "BKPW" : "BKPR");
+        CONSOLE.printf("%s 0 0\r\n", argv[0][3] == 'w' ? "BKPW" : "BKPR");
     } else if (!strcmp(argv[0], "alarm")) {
-        SerialDMSeq.printf("ALARM 0 0 0\r\n");
+        CONSOLE.printf("ALARM 0 0 0\r\n");
     } else if (!strcmp(argv[0], "asleep")) {
-        SerialDMSeq.printf("ASLEEP REFUSED\r\n");
+        CONSOLE.printf("ASLEEP REFUSED\r\n");
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %d [%s]\r\n", argc, whole);
+        CONSOLE.printf("UNKNOWN %d [%s]\r\n", argc, whole);
     }
 }
 
@@ -488,14 +488,14 @@ void setup()
         ewi_steps = ewi_record.steps;
     }
     ewi_record.magic = 0;
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.printf("STARTUP %s %d\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.printf("STARTUP %s %d\r\n", CH32RV.resetReasonName(), (int)CH32RV.wakeupCause());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

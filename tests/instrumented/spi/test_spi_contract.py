@@ -50,7 +50,7 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -177,7 +177,7 @@ def test_spi_output_only(dut, oep_host, ws_run, record_property):
                 with ws_run.section(2, name, expect=want):
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     ws_run.reply(wait_reply(dut, wait, rb"XFER \S+ [0-9a-f]{4}").group(0).decode())
                     wait(0.01)
 
@@ -220,7 +220,7 @@ def test_spi_contract(dut, oep_host, ws_run, record_property):
                     target.arm(5, armed)
                     command = f"xfer {mode} {lsb} {hz} {word:04x} {out.hex()}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     m = wait_reply(dut, wait, rb"XFER (\S+) ([0-9a-f]{4})")
                     ws_run.reply(m.group(0).decode())
                     got_bytes, got_word = bytes.fromhex(m.group(1).decode()), int(m.group(2), 16)
@@ -275,7 +275,7 @@ def test_spi_block(dut, oep_host, ws_run, record_property):
                     target.arm(BLOCK_BYTES, armed)
                     command = f"blk {how} {BLOCK_HZ} {out.hex()}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     m = wait_reply(dut, wait, rb"BLK ([01]) (-|[0-9a-f]+)")
                     ws_run.reply(m.group(0).decode())
                     if m.group(1) != b"1":
@@ -338,7 +338,7 @@ def test_shift(dut, oep_host, ws_run, record_property):
                     target.arm(2 * SHIFT_BYTES, armed)
                     command = f"shift {lsb} {out.hex()} {SHIFT_BYTES}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     m = wait_reply(dut, wait, rb"SHIFT (NONE|[0-9a-f]*)")
                     ws_run.reply(m.group(0).decode())
                     if m.group(1) != on_wire[SHIFT_BYTES:].hex().encode():
@@ -393,7 +393,7 @@ def test_spi_hw_cs(dut, oep_host, ws_run, record_property):
                     target.arm(BLOCK_BYTES, armed)
                     command = f"blk {how} {BLOCK_HZ} {out.hex()}"
                     ws_run.command(command)
-                    dut.write(command + "\n")
+                    dut.write(command)
                     m = wait_reply(dut, wait, rb"BLK ([01]) (-|[0-9a-f]+)")
                     ws_run.reply(m.group(0).decode())
                     if m.group(2) != b"-" and bytes.fromhex(m.group(2).decode()) != armed:
@@ -473,7 +473,7 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
                     for command, reply in ((f"slave {lines[cs]['pin']} {mode} {lsb} {SLAVE_FILL:02x}", rb"SLAVE (\d)"),
                                            *(((f"sq {size} {armed.hex()}", rb"SQ (\d)"),) if queued else ())):
                         ws_run.command(command)
-                        dut.write(command + "\n")
+                        dut.write(command)
                         m = wait_reply(dut, wait, reply)
                         ws_run.reply(m.group(0).decode())
                         assert m.group(1) == b"1", f"{name}: {command} refused"
@@ -481,7 +481,7 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
                     got = ctrl.transfer([SpiItem(sent, 0, SLAVE_SETUP_NS, SLAVE_SETUP_NS)])[0].rx
                     wait(0.01)
                     ws_run.command("sres")
-                    dut.write("sres\n")
+                    dut.write("sres")
                     m = wait_reply(dut, wait, rb"SRES (\S+) (\S+) (\d+) (\d+)")
                     ws_run.reply(m.group(0).decode())
                     length, kept, missed, overruns = m.groups()
@@ -500,7 +500,7 @@ def test_spi_slave(dut, oep_host, ws_run, record_property):
         ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=SLAVE_RATE, steps=steps)
     finally:
         core.plan_release(host, [ctrl.fn])
-        dut.write("send\n")
+        dut.write("send")
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
 
@@ -553,7 +553,7 @@ def test_spi_peripheral(dut, oep_host, ws_run, record_property):
                     with ws_run.section(2, name, expect=want):
                         command = f"periph {mode} {lsb} {PERIPH_BYTES} {given.hex()}"
                         ws_run.command(command)
-                        dut.write(command + "\n")
+                        dut.write(command)
                         ws_run.reply(wait_reply(dut, wait, rb"PERIPH READY").group(0).decode())
                         wait(0.01)
                         got = ctrl.transfer([SpiItem(sent, 0, SLAVE_SETUP_NS, SLAVE_SETUP_NS)])[0].rx

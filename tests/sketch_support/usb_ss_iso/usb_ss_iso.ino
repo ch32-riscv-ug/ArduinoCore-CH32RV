@@ -39,7 +39,7 @@
  *                  byte out of place) */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <stdlib.h>
 #include <string.h>
@@ -276,33 +276,33 @@ static uint8_t used;
 static void reply(const char *command)
 {
     if (strncmp(command, "ready ", 6) == 0) {
-        SerialDMSeq.print("READY ");
-        SerialDMSeq.print(command + 6);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(BENCH_BUILD_ID);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(USBDevice.started() ? 1 : 0);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(USBDevice.lastErrorName());
+        CONSOLE.print("READY ");
+        CONSOLE.print(command + 6);
+        CONSOLE.print(' ');
+        CONSOLE.print(BENCH_BUILD_ID);
+        CONSOLE.print(' ');
+        CONSOLE.print(USBDevice.started() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.println(USBDevice.lastErrorName());
     } else if (strcmp(command, "restart") == 0) {
-        SerialDMSeq.flush();
+        CONSOLE.flush();
         CH32RV.restart();
     } else if (strcmp(command, "iso") == 0) {
-        SerialDMSeq.printf("ISO %u %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\n", iso.alt, iso.alt ? iso.packets : 0,
+        CONSOLE.printf("ISO %u %u %u %lu %lu %lu %lu %lu %lu %lu %lu %lu\n", iso.alt, iso.alt ? iso.packets : 0,
                            iso.inBuffers, (unsigned long)iso.inSubmitted, (unsigned long)iso.inRefused,
                            (unsigned long)iso.outIntervals, (unsigned long)iso.outWhole,
                            (unsigned long)iso.outShort, (unsigned long)iso.outBad, (unsigned long)iso.inGapMax,
                            (unsigned long)iso.inGapsLong, (unsigned long)iso.inResubmitMax);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     config.product = "CH32RV usb-ss-iso " BENCH_BUILD_ID;
     config.selfPowered = true;
 #ifdef USB_TEST_CONTROLLER
@@ -335,8 +335,8 @@ void loop()
         bulk.write(echo, bulk.read(echo, room < sizeof echo ? room : sizeof echo));
         bulk.flush();
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

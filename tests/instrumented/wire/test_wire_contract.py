@@ -78,7 +78,7 @@ def settings(test_file):
 
 
 def ask(dut, line, reply, timeout=10):
-    dut.write(line + "\n")
+    dut.write(line)
     return dut.expect(reply + rb"\r?\n", timeout=timeout)
 
 
@@ -153,7 +153,7 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                 for hz in SPEEDS_HZ:
                     # dut.write and wait_reply, not ask(): a plain expect stops reading the stream, and at
                     # 25 MB/s the probe's buffers last a few hundred ms ([oep], 2026-11-18)
-                    dut.write(f"clock {hz}\n")
+                    dut.write(f"clock {hz}")
                     wait_reply(dut, wait, rb"CLOCK (\d+)")
                     for address in (ADDRESS, 0x13):
                         # Above PROMISED_HZ the transfer is recorded, not required: no expectation on the wire
@@ -164,7 +164,7 @@ def test_wire_output_only(dut, oep_host, ws_run, record_property):
                         name = f"{hz // 1000} kHz, address 0x{address:02x}, no target"
                         with ws_run.section(2, name, expect=want):
                             ws_run.command(f"nack 0x{address:02x}")
-                            dut.write(f"nack 0x{address:02x}\n")
+                            dut.write(f"nack 0x{address:02x}")
                             m = wait_reply(dut, wait, rb"NACK (\d+)")
                             ws_run.reply(m.group(0).decode())
                             results[name] = int(m.group(1))
@@ -260,7 +260,7 @@ def test_wire_repeated_start(dut, oep_host, ws_run, record_property):
                         with ws_run.section(2, name, expect=want):
                             command = f"seq {ADDRESS} {n} {stop}"
                             ws_run.command(command)
-                            dut.write(command + "\n")
+                            dut.write(command)
                             m = wait_reply(dut, wait, rb"SEQ (\d+) (\d+) (\S+) (\d+)")
                             ws_run.reply(m.group(0).decode())
                             first, got, hexed, last = int(m.group(1)), int(m.group(2)), m.group(3).decode(), int(m.group(4))
@@ -323,7 +323,7 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
     wrong = []
 
     def got(wait):
-        dut.write("sgot\n")
+        dut.write("sgot")
         m = wait_reply(dut, wait, rb"SGOT (\d+) (\d+) (\S+) (-?\d+) (\S+)")
         ws_run.reply(m.group(0).decode())
         return int(m.group(1)), int(m.group(2)), m.group(3).decode(), int(m.group(4)), m.group(5).decode()
@@ -336,7 +336,7 @@ def test_wire_slave(dut, oep_host, ws_run, record_property):
                 with ws_run.section(2, name, expect=[i2c(scl, sda, transactions=transactions),
                                                      starts(idle), ends(idle)]):
                     if reply is not None:
-                        dut.write(f"sreply {reply.hex() or '-'}\n")
+                        dut.write(f"sreply {reply.hex() or '-'}")
                         wait_reply(dut, wait, rb"SREPLY \d+")
                     ws_run.command(name)
                     done = ctrl.transfer(segments)
@@ -404,7 +404,7 @@ ABSENT = 0x13             # nobody answers it
 def say(ws_run, dut, wait, command, pattern, timeout=3.0):
     """Send the DUT a console command, logged in the run, and wait for its reply."""
     ws_run.command(command)
-    dut.write(command + "\n")
+    dut.write(command)
     m = wait_reply(dut, wait, pattern, timeout)
     ws_run.reply(m.group(0).decode())
     return m
@@ -1003,7 +1003,7 @@ def test_wire_controller_and_target(dut, oep_host, ws_run, record_property):
                 results = {}
                 with ws_run.section(2, f"both controllers for {CONTEND_MS} ms", expect=[ends(idle)]):
                     ws_run.command(f"contend {CONTEND_MS} 0x{ABSENT:x}")
-                    dut.write(f"contend {CONTEND_MS} 0x{ABSENT:x}\n")
+                    dut.write(f"contend {CONTEND_MS} 0x{ABSENT:x}")
                     end = time.monotonic() + CONTEND_MS / 1000 * 0.8
                     while time.monotonic() < end:
                         done = ctrl.write(ADDRESS, b"\xa5\x5a")

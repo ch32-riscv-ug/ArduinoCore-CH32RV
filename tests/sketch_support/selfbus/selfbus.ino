@@ -1,6 +1,6 @@
 /* The buses with no wiring (tests/instrumented/selfbus), selfcheck's sibling -
  * selfcheck no longer fits CH32V003's 16 KB with these too. Console on
- * SerialDMSeq:
+ * CONSOLE (bench_console.h):
  *
  *   ready <nonce>             READY <nonce> <build id>
  *   spipins                   SPIPINS <SPIn> <SCK> <MISO> <MOSI> <each held: 0 / 1>, read before SPI.begin()
@@ -23,7 +23,7 @@
  *                             SPIIN <byte received>, or SPIIN HELD when the pulls do not move MISO */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <stdlib.h>
 #include <string.h>
 #include <SPI.h>
@@ -196,13 +196,13 @@ static void rx_format(int k, const Format &f, char kind, int n)
     const int pin = number ? rx_pin(number) : -1;
     if (!port || pin < 0) {
         port.end();
-        SerialDMSeq.printf("RXFMT %u CLOSED\r\n", number);
+        CONSOLE.printf("RXFMT %u CLOSED\r\n", number);
         return;
     }
     const pin_size_t p = (pin_size_t)pin;
     if (held(p)) {
         port.end();
-        SerialDMSeq.printf("RXFMT %u HELD\r\n", number);
+        CONSOLE.printf("RXFMT %u HELD\r\n", number);
         return;
     }
     port.begin(9600, f.config);                   /* held() left the pad an input */
@@ -252,7 +252,7 @@ static void rx_format(int k, const Format &f, char kind, int n)
     const unsigned errors = port.takeErrors();
     port.end();
     pinMode(p, INPUT);
-    SerialDMSeq.printf("RXFMT %u %d %d %u\r\n", number, received, matching, errors);
+    CONSOLE.printf("RXFMT %u %d %d %u\r\n", number, received, matching, errors);
 }
 
 /* Port k sends n bytes at 115200 in format `fmt`: TXFMT <USARTn> <microseconds to the last stop bit> */
@@ -263,7 +263,7 @@ static void tx_format(int k, const Format &f, int n)
     const uint8_t number = port.peripheral();
     if (!port) {
         port.end();
-        SerialDMSeq.printf("TXFMT %u CLOSED\r\n", number);
+        CONSOLE.printf("TXFMT %u CLOSED\r\n", number);
         return;
     }
     const uint32_t t0 = micros();
@@ -273,7 +273,7 @@ static void tx_format(int k, const Format &f, int n)
     port.flush();
     const uint32_t took = micros() - t0;
     port.end();
-    SerialDMSeq.printf("TXFMT %u %lu\r\n", number, (unsigned long)took);
+    CONSOLE.printf("TXFMT %u %lu\r\n", number, (unsigned long)took);
 }
 
 /* ---- I2C: the clock registers and a transfer with nobody there ---- */
@@ -335,7 +335,7 @@ static void i2c_info(int k)
         pulls[2 * i + 1] = digitalRead((pin_size_t)pin);
         pinMode((pin_size_t)pin, INPUT);
     }
-    SerialDMSeq.printf("I2CINFO %u %d %d %d %d %d %d\r\n", n, scl, sda, pulls[0], pulls[1], pulls[2], pulls[3]);
+    CONSOLE.printf("I2CINFO %u %d %d %d %d %d %d\r\n", n, scl, sda, pulls[0], pulls[1], pulls[2], pulls[3]);
 }
 
 /* setClock(hz) and what it wrote: I2CREG <PCLK1> <CTLR2 FREQ> <CKCFGR> */
@@ -348,7 +348,7 @@ static void i2c_reg(int k, unsigned long hz)
     const unsigned freq = base ? CH32RV_I2C_CTLR2(base) & CH32RV_I2C_CTLR2_FREQ_MASK : 0;
     const unsigned ckcfgr = base ? CH32RV_I2C_CKCFGR(base) : 0;
     wires[k]->end();
-    SerialDMSeq.printf("I2CREG %lu %u %u\r\n", (unsigned long)CH32RV_PCLK1_HZ, freq, ckcfgr);
+    CONSOLE.printf("I2CREG %lu %u %u\r\n", (unsigned long)CH32RV_PCLK1_HZ, freq, ckcfgr);
 }
 
 /* A write to 0x50 with nobody on the bus: I2CNACK <endTransmission()> <microseconds> */
@@ -362,7 +362,7 @@ static void i2c_nack(int k)
     const uint8_t code = wires[k]->endTransmission();
     const uint32_t took = micros() - t0;
     wires[k]->end();
-    SerialDMSeq.printf("I2CNACK %u %lu\r\n", code, (unsigned long)took);
+    CONSOLE.printf("I2CNACK %u %lu\r\n", code, (unsigned long)took);
 }
 #else
 static const int WIRE_COUNT = 0;
@@ -436,13 +436,13 @@ static void spi_out(int mode, int lsb, int value)
         const uint32_t bit = (got >> i) & 1u;
         byte |= lsb ? bit << i : bit << (7 - i);
     }
-    SerialDMSeq.printf("SPIOUT %d %d %lu\r\n", idle, edges, (unsigned long)byte);
+    CONSOLE.printf("SPIOUT %d %d %lu\r\n", idle, edges, (unsigned long)byte);
 }
 
 static void spi_in(int level)
 {
     if (held((pin_size_t)PIN_SPI_MISO)) {
-        SerialDMSeq.printf("SPIIN HELD\r\n");
+        CONSOLE.printf("SPIIN HELD\r\n");
         return;
     }
     SPI.begin();
@@ -454,7 +454,7 @@ static void spi_in(int level)
     SPI.endTransaction();
     pinMode(PIN_SPI_MISO, INPUT);
     SPI.end();
-    SerialDMSeq.printf("SPIIN %u\r\n", got);
+    CONSOLE.printf("SPIIN %u\r\n", got);
 }
 #endif
 
@@ -475,7 +475,7 @@ static void reply(char *command)
         return;
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
-        SerialDMSeq.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+        CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
     } else if (!strcmp(argv[0], "spipins")) {
 #if SELFBUS_SPI
         /* Held first: SPI.begin() drives SCK and MOSI. */
@@ -483,13 +483,13 @@ static void reply(char *command)
         SPI.begin();
         const unsigned number = SPI.peripheral();
         SPI.end();
-        SerialDMSeq.printf("SPIPINS %u %d %d %d %d %d %d\r\n", number, (int)PIN_SPI_SCK, (int)PIN_SPI_MISO,
+        CONSOLE.printf("SPIPINS %u %d %d %d %d %d %d\r\n", number, (int)PIN_SPI_SCK, (int)PIN_SPI_MISO,
                            (int)PIN_SPI_MOSI, hs, hi, ho);
 #else
-        SerialDMSeq.printf("SPIPINS 0 -1 -1 -1 0 0 0\r\n");
+        CONSOLE.printf("SPIPINS 0 -1 -1 -1 0 0 0\r\n");
 #endif
     } else if (!strcmp(argv[0], "wires")) {
-        SerialDMSeq.printf("WIRES %d\r\n", WIRE_COUNT);
+        CONSOLE.printf("WIRES %d\r\n", WIRE_COUNT);
 #if SELFBUS_WIRES
     } else if (!strcmp(argv[0], "i2cinfo") && argc == 2 && atoi(argv[1]) < WIRE_COUNT) {
         i2c_info(atoi(argv[1]));
@@ -499,13 +499,13 @@ static void reply(char *command)
         i2c_nack(atoi(argv[1]));
 #endif
     } else if (!strcmp(argv[0], "ports")) {
-        SerialDMSeq.printf("PORTS %d %u\r\n", PORT_COUNT, (unsigned)CH32RV_SERIAL_RX_BUFFER_SIZE);
+        CONSOLE.printf("PORTS %d %u\r\n", PORT_COUNT, (unsigned)CH32RV_SERIAL_RX_BUFFER_SIZE);
     } else if (!strcmp(argv[0], "rxpin") && argc == 2 && atoi(argv[1]) < PORT_COUNT) {
         arduino::CH32RVHardwareSerial &port = *ports[atoi(argv[1])];
         port.begin(9600);
         const uint8_t number = port.peripheral();
         port.end();
-        SerialDMSeq.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
+        CONSOLE.printf("RXPIN %u %d\r\n", number, number ? rx_pin(number) : -1);
     } else if (!strcmp(argv[0], "rxfmt") && argc == 5 && atoi(argv[1]) < PORT_COUNT && format_named(argv[2])) {
         rx_format(atoi(argv[1]), *format_named(argv[2]), argv[3][0], atoi(argv[4]));
     } else if (!strcmp(argv[0], "txfmt") && argc == 4 && atoi(argv[1]) < PORT_COUNT && format_named(argv[2])) {
@@ -517,21 +517,21 @@ static void reply(char *command)
         spi_in(atoi(argv[1]));
 #endif
     } else {
-        SerialDMSeq.printf("UNKNOWN %d [%s]\r\n", argc, whole);
+        CONSOLE.printf("UNKNOWN %d [%s]\r\n", argc, whole);
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop()
 {
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {

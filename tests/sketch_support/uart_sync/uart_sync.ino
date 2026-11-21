@@ -1,6 +1,6 @@
 /* UsartSPI (tests/instrumented/uart/test_uart_sync.py): Serial's USART in its
  * synchronous mode as the controller of the probe's spi-target. Console on
- * SerialDMSeq; every command answers one line:
+ * CONSOLE (bench_console.h); every command answers one line:
  *
  *   ready <nonce>             READY <nonce> <build id> <requests>
  *   usync <cs> | usync off    UsartSPI on Serial's route, CS (a GPIO) high: USYNC <ck> <rx> <tx>
@@ -13,7 +13,7 @@
  * Its own case (uart-sync) so that uart.ino keeps CH32V003's 16 KB. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <UsartSPI.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,32 +32,32 @@ int syncCs = -1;
 void reply(const char *command) {
   ++requests;
   if (strncmp(command, "ready ", 6) == 0) {
-    SerialDMSeq.print("READY ");
-    SerialDMSeq.print(command + 6);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.print(BENCH_BUILD_ID);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(requests);
+    CONSOLE.print("READY ");
+    CONSOLE.print(command + 6);
+    CONSOLE.print(' ');
+    CONSOLE.print(BENCH_BUILD_ID);
+    CONSOLE.print(' ');
+    CONSOLE.println(requests);
   } else if (strncmp(command, "usync ", 6) == 0) {
     // usync <cs> | usync off: UsartSPI on Serial's route, CS (a GPIO) high - USYNC <ck> <rx> <tx> (USYNC NONE: no CK
     // on the route, or no synchronous mode); off: the bus ended and Serial at 115200 8N1 again - USYNC OFF.
     if (strcmp(command + 6, "off") == 0) {
       usartBus.end();
       Serial.begin(115200);
-      SerialDMSeq.println("USYNC OFF");
+      CONSOLE.println("USYNC OFF");
     } else {
       syncCs = (int)strtol(command + 6, nullptr, 10);
       pinMode(syncCs, OUTPUT);
       digitalWrite(syncCs, HIGH);
       if (usartBus.begin(-1, -1, -1, -1)) {
-        SerialDMSeq.print("USYNC ");
-        SerialDMSeq.print(Serial.synchronousClockPin());
-        SerialDMSeq.print(' ');
-        SerialDMSeq.print(PIN_SERIAL_RX);
-        SerialDMSeq.print(' ');
-        SerialDMSeq.println(PIN_SERIAL_TX);
+        CONSOLE.print("USYNC ");
+        CONSOLE.print(Serial.synchronousClockPin());
+        CONSOLE.print(' ');
+        CONSOLE.print(PIN_SERIAL_RX);
+        CONSOLE.print(' ');
+        CONSOLE.println(PIN_SERIAL_TX);
       } else {
-        SerialDMSeq.println("USYNC NONE");
+        CONSOLE.println("USYNC NONE");
       }
     }
   } else if (strncmp(command, "uxfer ", 6) == 0) {
@@ -81,30 +81,30 @@ void reply(const char *command) {
     const uint16_t in = usartBus.transfer16(word);
     digitalWrite(syncCs, HIGH);
     usartBus.endTransaction();
-    SerialDMSeq.print("UXFER ");
+    CONSOLE.print("UXFER ");
     for (size_t i = 0; i < n; ++i) {
-      if (out[i] < 16) SerialDMSeq.print('0');
-      SerialDMSeq.print(out[i], HEX);
+      if (out[i] < 16) CONSOLE.print('0');
+      CONSOLE.print(out[i], HEX);
     }
-    SerialDMSeq.print(' ');
-    for (int shift = 12; shift >= 0; shift -= 4) SerialDMSeq.print((in >> shift) & 0xF, HEX);
-    SerialDMSeq.print(' ');
-    SerialDMSeq.println(usartBus.clockHz());
+    CONSOLE.print(' ');
+    for (int shift = 12; shift >= 0; shift -= 4) CONSOLE.print((in >> shift) & 0xF, HEX);
+    CONSOLE.print(' ');
+    CONSOLE.println(usartBus.clockHz());
   } else {
-    SerialDMSeq.println("ERROR COMMAND");
+    CONSOLE.println("ERROR COMMAND");
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  SerialDMSeq.begin(115200);
-  SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-  SerialDMSeq.println(CH32RV.resetReasonName());
+  CONSOLE_BEGIN(115200);
+  CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+  CONSOLE.println(CH32RV.resetReasonName());
 }
 
 void loop() {
-  while (SerialDMSeq.available()) {
-    int c = SerialDMSeq.read();
+  while (CONSOLE.available()) {
+    int c = CONSOLE.read();
     if (c == '\n') {
       line[used] = 0;
       if (used) reply(line);

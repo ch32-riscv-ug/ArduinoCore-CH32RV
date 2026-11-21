@@ -27,7 +27,7 @@ def test_usb_contract(dut, record_property):
     # usb.enumerate: this build, at this topology, with every declared function. The sketch first (begin()'s error
     # when it failed), then the host.
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}\n")
+    dut.write(f"ready {nonce}")
     m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
@@ -64,7 +64,7 @@ def test_usb_contract(dut, record_property):
         ep_out.write(bytes([6, 0x41]) + b"vendor" + bytes(55))
         report = bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))
         assert report[:8] == bytes([6, 0x42]) + b"vendor"
-        dut.write("keys\n")
+        dut.write("keys")
         keys = [bytes(ep_in.read(ep_in.wMaxPacketSize, timeout=2000))[:4] for _ in range(4)]
         dut.expect_exact("KEYS 1", timeout=5)
         assert keys == [bytes([1, 0, 0, 0x04]), bytes([1, 0, 0, 0]), bytes([1, 0, 0, 0x05]), bytes([1, 0, 0, 0])]
@@ -80,13 +80,13 @@ def test_usb_contract(dut, record_property):
 
     # usb.net-frames: the host binds the NCM interface with the MAC the device names, frames flow
     # both ways (the host's own IPv6 traffic in; a broadcast frame out), without root.
-    dut.write("net\n")
+    dut.write("net")
     mac = dut.expect(rb"NET \d+ ([0-9A-F]{12})\r?\n", timeout=5).group(1).decode().lower()
     iface = host.net_interface(timeout=10)
     assert iface.address() == ":".join(mac[i:i + 2] for i in range(0, 12, 2))
     assert iface.wait_up(20), "the host did not bring the NCM interface up"
     before = iface.rx_packets()
-    dut.write("netsend\n")
+    dut.write("netsend")
     dut.expect_exact("NETSEND 1", timeout=5)
     deadline = time.monotonic() + 5
     while iface.rx_packets() == before and time.monotonic() < deadline:
@@ -94,7 +94,7 @@ def test_usb_contract(dut, record_property):
     assert iface.rx_packets() > before, "the device's frame did not reach the host"
     deadline = time.monotonic() + 15
     while time.monotonic() < deadline:
-        dut.write("net\n")
+        dut.write("net")
         if int(dut.expect(rb"NET (\d+) ", timeout=5).group(1)) > 0:
             break
         time.sleep(1)
@@ -105,15 +105,15 @@ def test_usb_contract(dut, record_property):
     # What the host shows depends on when its hub thread looks: gone and back, a new device number,
     # or - if it only gets to the port after the device is back - a reset and re-verify of the same
     # device. In every case the host configures the device again, which the DUT counts.
-    dut.write("mounts\n")
+    dut.write("mounts")
     mounts = int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1))
-    dut.write("replug\n")
+    dut.write("replug")
     host.wait_gone(APP, 3)
     dut.expect_exact("REPLUG 1", timeout=5)
     assert host.wait_ids(APP, 10), "the device did not come back"
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
-        dut.write("mounts\n")
+        dut.write("mounts")
         if int(dut.expect(rb"MOUNTS (\d+)\r?\n", timeout=5).group(1)) > mounts:
             break
         time.sleep(0.5)

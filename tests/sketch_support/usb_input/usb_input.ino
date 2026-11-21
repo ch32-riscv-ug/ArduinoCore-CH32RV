@@ -19,7 +19,7 @@
  * plus one. */
 #include <Arduino.h>
 #include <CH32RV.h>
-#include <SerialDMSeq.h>
+#include "bench_console.h"
 #include <CH32RVUsbDevice.h>
 #include <string.h>
 
@@ -71,7 +71,7 @@ static int hexval(char c)
 
 static void printLine(const Line &l)
 {
-    SerialDMSeq.printf(" %lu %u %u %u %u %u", (unsigned long)l.coding.baud, l.coding.dataBits, l.coding.parity,
+    CONSOLE.printf(" %lu %u %u %u %u %u", (unsigned long)l.coding.baud, l.coding.dataBits, l.coding.parity,
                        l.coding.stopBits, l.state.dtr ? 1 : 0, l.state.rts ? 1 : 0);
 }
 
@@ -81,14 +81,14 @@ static void reply(char *command)
     if (arg) *arg++ = '\0';
     else arg = command + strlen(command);
     if (strcmp(command, "ready") == 0) {
-        SerialDMSeq.printf("READY %s %s %d %s\r\n", arg, BENCH_BUILD_ID, USBDevice.started() ? 1 : 0,
+        CONSOLE.printf("READY %s %s %d %s\r\n", arg, BENCH_BUILD_ID, USBDevice.started() ? 1 : 0,
                            USBDevice.lastErrorName());
     } else if (strcmp(command, "mouse") == 0) {
         char *end;
         const int x = (int)strtol(arg, &end, 10), y = (int)strtol(end, &end, 10);
         const int w = (int)strtol(end, &end, 10), b = (int)strtol(end, &end, 10);
         const bool ok = mouse.move((int8_t)x, (int8_t)y, (int8_t)w, (uint8_t)b, 500) && mouse.releaseAll(500);
-        SerialDMSeq.printf("MOUSE %d\r\n", ok ? 1 : 0);
+        CONSOLE.printf("MOUSE %d\r\n", ok ? 1 : 0);
     } else if (strcmp(command, "pad") == 0) {
         char *end;
         CH32RVUsbDeviceGamepadReport r;
@@ -97,41 +97,41 @@ static void reply(char *command)
         r.hat = (uint8_t)strtol(end, &end, 10);
         r.buttons = strtoul(end, &end, 10);
         const bool ok = gamepad.sendReport(r, 500) && gamepad.releaseAll(500);
-        SerialDMSeq.printf("PAD %d\r\n", ok ? 1 : 0);
+        CONSOLE.printf("PAD %d\r\n", ok ? 1 : 0);
     } else if (strcmp(command, "consumer") == 0) {
-        SerialDMSeq.printf("CONSUMER %d\r\n", consumer.click((uint16_t)strtoul(arg, nullptr, 0), 20) ? 1 : 0);
+        CONSOLE.printf("CONSUMER %d\r\n", consumer.click((uint16_t)strtoul(arg, nullptr, 0), 20) ? 1 : 0);
     } else if (strcmp(command, "system") == 0) {
-        SerialDMSeq.printf("SYSTEM %d\r\n", systemControl.click((uint8_t)strtoul(arg, nullptr, 0), 20) ? 1 : 0);
+        CONSOLE.printf("SYSTEM %d\r\n", systemControl.click((uint8_t)strtoul(arg, nullptr, 0), 20) ? 1 : 0);
     } else if (strcmp(command, "nkro") == 0) {
         CH32RVUsbDeviceNkroKeyboardReport r;
         for (uint8_t usage = 0x04; usage <= 0x0D; usage++) r.bitmap[usage / 8] |= (uint8_t)(1u << (usage % 8));
         const bool ok = keyboard.sendReport(r, 500) && keyboard.releaseAll(500);
-        SerialDMSeq.printf("NKRO %d\r\n", ok ? 1 : 0);
+        CONSOLE.printf("NKRO %d\r\n", ok ? 1 : 0);
     } else if (strcmp(command, "custom") == 0) {
         uint8_t d[4] = {};
         for (size_t i = 0; i < sizeof d && arg[2 * i] && arg[2 * i + 1]; i++) {
             d[i] = (uint8_t)(hexval(arg[2 * i]) << 4 | hexval(arg[2 * i + 1]));
         }
-        SerialDMSeq.printf("CUSTOM %d\r\n", custom.sendReport(d, sizeof d, 7, 500) ? 1 : 0);
+        CONSOLE.printf("CUSTOM %d\r\n", custom.sendReport(d, sizeof d, 7, 500) ? 1 : 0);
     } else if (strcmp(command, "lines") == 0) {
-        SerialDMSeq.print("LINES");
+        CONSOLE.print("LINES");
         printLine(lineA);
         printLine(lineB);
-        SerialDMSeq.print("\r\n");
+        CONSOLE.print("\r\n");
     } else if (strcmp(command, "events") == 0) {
-        SerialDMSeq.printf("EVENTS %lu %lu %lu %lu\r\n", (unsigned long)lineA.codingEvents,
+        CONSOLE.printf("EVENTS %lu %lu %lu %lu\r\n", (unsigned long)lineA.codingEvents,
                            (unsigned long)lineA.stateEvents, (unsigned long)lineB.codingEvents,
                            (unsigned long)lineB.stateEvents);
     } else {
-        SerialDMSeq.println("ERROR COMMAND");
+        CONSOLE.println("ERROR COMMAND");
     }
 }
 
 void setup()
 {
-    SerialDMSeq.begin(115200);
-    SerialDMSeq.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
-    SerialDMSeq.println(CH32RV.resetReasonName());
+    CONSOLE_BEGIN(115200);
+    CONSOLE.print("STARTUP ");  // a restart in the middle of a test shows (run_hardware.py)
+    CONSOLE.println(CH32RV.resetReasonName());
     keyboard.enableNkro();
     SerialUSB.onLineCoding([](const CH32RVUsbDeviceCdcLineCoding &c) { lineA.coding = c; lineA.codingEvents++; });
     SerialUSB.onLineState([](const CH32RVUsbDeviceCdcLineState &s) { lineA.state = s; lineA.stateEvents++; });
@@ -154,8 +154,8 @@ void loop()
     while (portB.available()) {
         portB.write((uint8_t)(portB.read() + 1));
     }
-    while (SerialDMSeq.available()) {
-        const int c = SerialDMSeq.read();
+    while (CONSOLE.available()) {
+        const int c = CONSOLE.read();
         if (c == '\n') {
             line[used] = 0;
             if (used) {
