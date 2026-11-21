@@ -55,3 +55,43 @@ def serial_routes(series):
     for number, body in _ROUTES.findall(header.read_text(encoding="utf-8")):
         out[int(number)] = [(int(k), tx, rx) for k, tx, rx in _ROUTE.findall(body)]
     return out
+
+
+
+def bus_pads(series, macros, part=None):
+    """The pads variants/<series>/pins_arduino.h gives the CH32RV_<name> macros in `macros` (CH32RV_I2C1_SCL ...) on
+    `part`: the pads a sketch's Wire.begin() / SPI.begin() may take. Only `#if defined(CH32RV_PART_...) || ...` is
+    decided (by `part`); any other condition, or no part, counts both of its branches."""
+    header = REPO / "variants" / series / "pins_arduino.h"
+    if not header.exists():
+        return set()
+    part = (part or "").upper()
+    stack, out = [], set()   # each entry: [this branch active, an earlier branch was taken, decided]
+    for line in header.read_text(encoding="utf-8").splitlines():
+        d = line.strip()
+        m = re.match(r"#\s*(if|ifdef|ifndef|elif|else|endif)\b(.*)", d)
+        if m:
+            kind, cond = m.groups()
+            parts = re.findall(r"CH32RV_PART_(\w+)", cond)
+            decided = bool(part) and kind in ("if", "elif") and bool(parts) and \
+                re.fullmatch(r"(?:\s*defined\(CH32RV_PART_\w+\)\s*(?:\|\|)?)+", cond.strip()) is not None
+            hit = (part in parts) if decided else True
+            if kind in ("if", "ifdef", "ifndef"):
+                stack.append([hit, hit and decided, decided])
+            elif kind == "elif" and stack:
+                top = stack[-1]
+                top[0] = (not top[1]) and hit if (decided and top[2]) else True
+                top[1] = top[1] or (top[0] and decided)
+                top[2] = top[2] and decided
+            elif kind == "else" and stack:
+                top = stack[-1]
+                top[0] = not top[1] if top[2] else True
+            elif kind == "endif" and stack:
+                stack.pop()
+            continue
+        if not all(e[0] for e in stack):
+            continue
+        m = re.match(r"#define CH32RV_(\w+)\s+(P[A-K]\d+)\b", d)
+        if m and m.group(1) in macros:
+            out.add(m.group(2))
+    return out

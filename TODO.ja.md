@@ -123,6 +123,13 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   （tx / rx）があればコンソールを Serial（その端子、setPins）に出し、モニターを fixture-uart で開く（run_hardware の
   UART_CONSOLE_CASES、スケッチは CONSOLE_UART_RX / _TX）。DMSeq の SWIO の問い合わせが無くなり、DAC の読みの揺れは
   ±50〜80 から ±2 程度に。V407・H417 の analog が 3 回とも通る。
+  → 2026-11-22: case が既定の端子で始める I2C1 / SPI1 の端子（variants の CH32RV_I2C1_SCL など、品番の #if を見て）が
+  コンソールの端子と重なる case は DMSeq に戻す（run_hardware の CASE_BUS_MACROS）。X315 は I2C1 の唯一の経路が PD4 / PD5
+  （USART1 の既定、台のプローブの UART の線）で、wire・softwire が Wire.begin() にコンソールを取られて応答が無かった。
+  戻して softwire は通り、wire は前と同じ SKIP（プローブは PD4 / PD5 を <port>@pad として出さない）。
+  全台（full-20261121-bc2、M030・L103 以外）: 274 PASS・11 FAIL。流し直しで V006 spi / wire、V003F4P6 softspi、X035
+  usb-peer-firmware、V407・V203 signals は通った（一度きり）。残るのは H417 の wire（既知の 6-2）、analog（V5F で DMSeq の
+  雑音）、usb-ss-iso（ホストの -71）。
 - [x] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
   「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
   → 直した（2026-11-21）: PA1 は DUT が駆動していない間、約 330 µs ごとに約 200 µs の細かい動き（浮いた線が拾う雑音。DUT が

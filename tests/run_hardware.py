@@ -93,6 +93,11 @@ DMSEQ_CONSOLE_CASES = ("uart", "uart-dma", "uart-sync", "periph", "selfcheck", "
 # Parts this small keep DMSeq too: Serial's code and buffers did not fit V003F4P6's 16 KB / 2 KB beside logic's and
 # wire's sketches (2026-11-21).
 UART_CONSOLE_MIN_RAM = 4096
+# The buses a case's sketch starts on their default pads: where one of those is the console's (X315's only I2C route
+# is PD4 / PD5, USART1's default; 2026-11-21 Wire.begin() took the console's pads and no reply came), the case keeps
+# DMSeq.
+CASE_BUS_MACROS = {"wire": ("I2C1_SCL", "I2C1_SDA"), "softwire": ("I2C1_SCL", "I2C1_SDA"),
+                   "spi": ("SPI1_SCK", "SPI1_MISO", "SPI1_MOSI"), "sd": ("SPI1_SCK", "SPI1_MISO", "SPI1_MOSI")}
 # The test sketches' console header, staged beside each one.
 BENCH_CONSOLE = TESTS / "sketch_support/common/bench_console.h"
 
@@ -111,7 +116,13 @@ def uart_console(case, target):
         return None
     pad_of = {v: k for k, v in pads.items()}
     rx, tx = pad_of.get(lines["tx"]), pad_of.get(lines["rx"])     # the probe's tx reaches the DUT's RX
-    return (rx.upper(), tx.upper()) if rx and tx else None
+    if not (rx and tx):
+        return None
+    from harness.series import bus_pads
+    series = places.series_of(target.get("chip", ""), places.series_needs()[1]) or ""
+    if {rx.upper(), tx.upper()} & bus_pads(series, CASE_BUS_MACROS.get(case, ()), target.get("chip")):
+        return None
+    return rx.upper(), tx.upper()
 
 # Libraries from the Arduino library index a case's DUT sketch uses, pinned (its sketch.yaml's profile installs
 # them into the bench's Arduino cache): eth-libs runs widely used network libraries unchanged on this core.
