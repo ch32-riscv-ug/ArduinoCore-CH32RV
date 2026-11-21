@@ -136,12 +136,15 @@ def timer_pad(dut, lines, channels=(1, 2, 3, 4)):
 WAVE = dict(min_periods=20, within_s=0.3)
 
 
-def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, moving=1, quiet=None):
+def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, moving=1, quiet=None, gpio_taken=False):
     """Stream `lines` (the lines under test first, `moving` of them) while going through `conditions`: (name, command
     or None, reply pattern, expectations, hold s) each. Each is one section: the command is sent as it opens and the
     line held for `hold`; a callable command is the test's own action (the probe driving a line), with no reply. The
     reply is looked for in short tries with wait() between, so the stream keeps being read. `quiet`: the lines the
-    probe's pull-ups hold (the neighbours, lines[moving:], by default). Returns the replies."""
+    probe's pull-ups hold (the neighbours, lines[moving:], by default). The moving lines have the probe's pull-down:
+    undriven, a pad of the DUT's floats until it becomes the timer's, and V407's PA1 on the YD board picked up bursts
+    every ~330 us (pwm_timer / phase_shift, 2026-11-21). `gpio_taken`: the test holds the probe's GPIO itself (it
+    drives a line), and no line gets a pull. Returns the replies."""
     replies = []
     pads = [line["pad"] for line in lines[:moving]]
 
@@ -173,16 +176,21 @@ def sweep(dut, ws_run, oep_host, lines, title, conditions, *, rate=1_000_000, mo
     host = oep_host.host
     gpio = Gpio(host)
     others = [line["channel"] for line in (lines[moving:] if quiet is None else quiet)]
-    if others:
-        core.plan_apply(host, [(gpio.fn, 1, ch) for ch in others])
+    mine = [line["channel"] for line in lines[:moving]]
+    if gpio_taken:
+        others, mine = [], []
+    if others + mine:
+        core.plan_apply(host, [(gpio.fn, 1, ch) for ch in others + mine])
     try:
         for ch in others:
             gpio.configure(ch, Gpio.INPUT_PULLUP)
+        for ch in mine:
+            gpio.configure(ch, Gpio.INPUT_PULLDOWN)
         ws_capture.stream(ws_run, oep_host, lines, rate=rate, steps=steps)
     finally:
-        for ch in others:
+        for ch in others + mine:
             gpio.configure(ch, Gpio.INPUT)
-        if others:
+        if others + mine:
             core.plan_release(host, [gpio.fn])
     return replies
 
@@ -578,7 +586,7 @@ def test_complementary(dut, oep_host, ws_run, record_property):
             ("stopped", "compoff", rb"COMPOFF", off, 0.005),
         ]
         replies = sweep(dut, ws_run, oep_host, [a, b], f"break {brk['pad']}", conditions, rate=10_000_000,
-                        moving=2, quiet=[])
+                        moving=2, quiet=[], gpio_taken=True)
         said = {m.group(0).split()[0].decode(): m.group(1) for m in replies if m.re.groups}
         state = next((m for m in replies if m.group(0).startswith(b"BRKSTATE")), None)
         if state is not None:
@@ -803,7 +811,7 @@ def test_timer_trigger(dut, oep_host, ws_run, record_property):
             ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(O, level=0)], 0.005),
         ]
         replies = sweep(dut, ws_run, oep_host, [out, trig], f"timer trigger {O} by {T}", conditions,
-                        rate=10_000_000, moving=2, quiet=[])
+                        rate=10_000_000, moving=2, quiet=[], gpio_taken=True)
         assert next(m for m in replies if m.group(0).startswith(b"PWMTRIG")).group(1) == b"1", "startOn() refused"
     finally:
         ask(dut, "pwmtoff", rb"PWMTOFF")

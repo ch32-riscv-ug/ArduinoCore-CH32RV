@@ -111,8 +111,11 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   → 2026-11-21: port_lines が `pad:PB1` を除くようにしたあと、uart-sync・software-serial とも通った（PB1 が PA7 とつながる板のため）。
 - [ ] **V407 の analog**: DAC と ADC の dual が ±50 カウントほど揺れて「hold steady」で落ちる。H417 の PA4 / PA5 に線を
   付けたときと同じ形（プローブの線の雑音か）。
-- [ ] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
+- [x] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
   「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
+  → 直した（2026-11-21）: PA1 は DUT が駆動していない間、約 330 µs ごとに約 200 µs の細かい動き（浮いた線が拾う雑音。DUT が
+  駆動すれば gpio は通る）。sweep() で動かす線にプローブのプルダウンをかけた（プローブの GPIO を試験が自分で持つ
+  timer_trigger・complementary の break は gpio_taken で除く）。V407・X035・V006・H417 の signals が通る。
 - [ ] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
   から 2 回とも。17:55 には列挙できていた）。プローブの線は PD3 / PD4 に無い。
 - [x] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
@@ -142,6 +145,11 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
   → 2026-11-21: 3 回中 2 回（流し直しの 1 回は通った）。2 回目の取り込みでは PA7 のパルスが 10 MS/s の 1 サンプル（0.1 µs）で
   2 つ、約 600 µs 離れて出た。begin() は 6 本を数 µs でつなぐので間隔が合わない。同じ取り込みの別の区間で PE11 と PE13 にも
   同時刻の 0.1 µs が出ており、線か取り込みのひげに見える。次は 100 MS/s で幅を測る。
+  → 50 MS/s で 2 回（6 本ではプローブの流しがあふれて途中まで）: PA7 のパルスは「high 0.0 µs」、つまり 20 ns の 1 サンプルに
+  満たない。asymmetric_dead_time の PE13 も 50 MS/s で同じ 1 サンプル未満のひげ。DUT の出力ではなく数 ns の電気的なひげ。
+  level / becomes が WireSkein で一定の幅より短いひげを除けるか（I2C の 50 ns の除外と同じ考え）を [wireskein] に相談する。
+  同じ 2 回では、asymmetric_dead_time と phase_shift の「stopped」も落ちた: 止める命令が DUT で効くまで 4〜18 ms 遅れ、その間の
+  波形が区間に入った（触っていないクラス。プローブは再起動していない）。1 回は ready() でモニターがつながらなかった。
 
 ### 常駐ベンチの全台試験（2026-11-13）で残ったもの
 
