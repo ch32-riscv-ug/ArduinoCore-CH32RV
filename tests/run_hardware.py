@@ -503,14 +503,9 @@ def enter_hid(target):
         core.take(host, 30000, owner="ArduinoCore HID contract")
         gpio = core.find(host, "oep.fixture.gpio")
         core.plan_apply(host, [(gpio, 1, target["nrst_channel"])])
-        # enter_bootloader's own pin reset sleeps 0.3 s before PREPARE_BOOT, and a sketch of this core that reads
-        # resetReason() in setup() has cleared PINRSTF by then (read back: set at 0.18 s, clear at 0.48 s): the
-        # bootloader then leaves at once and the host meets the sketch behind the board's D- pull-up (descriptor
-        # -32, "not accepting address", 2026-10-30 to 11-21). The same parts with no pause: b803 at once.
-        wire = swio_wire(host)
-        if not uiapduino.pin_reset_flag(host, wire):
-            uiapduino.pulse_nrst(host, gpio, target["nrst_channel"])
-        uiapduino.run_payload(host, wire, uiapduino.PREPARE_BOOT)
+        # PREPARE_BOOT right after the NRST pulse (oep-client-python 0.0.60): with the 0.3 s it waited before, a sketch
+        # of this core that reads resetReason() in setup() had cleared PINRSTF first and the bootloader left at once.
+        uiapduino.enter_bootloader(host, swio_wire(host), gpio, target["nrst_channel"])
     finally:
         try:
             host.end()

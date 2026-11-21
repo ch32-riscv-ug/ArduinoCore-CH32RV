@@ -135,7 +135,7 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   消えていた）、ブートローダーがすぐアプリへ移る。ホストは D- の固定プルアップの先のアプリに当たり、-32 / -71 のあと
   口を power cycle する（カーネルのログでは 10-30 からほぼ全滅、それ以前は通っていた）。run_hardware は同じ部品を待ちなしで
   呼び、b803 の検出をデバイス番号付きに（同じ口に出直したブートローダーを見落としていた）。hid が通る。[oep] が
-  oep-client-python a713e5b で待ちを外した（未リリース）。出たら enter_bootloader に戻して確かめる。
+  oep-client-python a713e5b で待ちを外し、0.0.60 で出た。試験を 0.0.60 に上げて enter_bootloader に戻し、hid が 2 回とも通る。
 - [x] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
   → 2026-11-21: 誤り 32 はバッファあふれで、線は正しい（WireSkein ok）。1 バイトごとの available() が毎回 DMA の旗・USART の
   誤りまで見ていて、読み手が 1 Mbaud に追いつかなかった。available() は CNTR だけを読み、半分・終わりの点を過ぎたときだけ
@@ -555,8 +555,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2026-11-20）で止めた相の端子に雑音のパルスと High のままが出て見つかった。V205 と V006 で six_step が通る。
 - [x] periph の test_serial_routes: 経路の端子が 16 本を超えると 1 回の取り込みに入らない（プローブが unsupported で断る）。
   端子が 16 本に収まるまとまりごとに取り込む。V205 に PC3〜PC8 を足して 19 本になって見つかった。V205 で通る。
+- [ ] V006 の uart::test_uart_formats の 1 Mbaud 8N1 で、DUT が 1 バイトも受けなかったことが 1 回（2026-11-21、
+  rerun-20261121-oep060、oep-client-python 0.0.60 に上げた直後）。続けて 2 回流すと通る。
 - [ ] X035 の softspi が 5 回中 2 回、1 ビット化ける（2026-11-20、PA13 の線を足した日）: shiftOut / shiftIn の LSBFIRST が
   モード 3 と読まれた、SPI のモード 2 LSBFIRST で 1 ビット違い。残り 3 回は通った。線を足す前の頻度と比べる。
+  → 2026-11-21: 3 回流して 3 回とも通った。
 - [x] H417 の usb-peer-firmware（Pico は FS の口、2026-11-20 に初めて流した）が 3 回とも別の所で落ちる: DFU の 12 ブロック目の
   DNLOAD / GETSTATUS、UF2 の書き込みが 141 ブロック中 0、DFU の st。usb-peer・usb-peer-classes・usb-peer-net・-fs・-input と
   ホストの側の 5 case は通る。フラッシュを自分で書き換えている間（H41x は RAM から走って flash を消す・書く）の FS の制御転送の
