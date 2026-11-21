@@ -459,7 +459,8 @@ def hid_bootloaders():
     for dev in root.glob("*"):
         try:
             if (dev / "idVendor").read_text().strip() == "1209" and (dev / "idProduct").read_text().strip() == "b803":
-                out.add(dev.name)
+                # With its device number: a bootloader left on the bus re-enumerates under the same name.
+                out.add((dev.name, (dev / "devnum").read_text().strip()))
         except OSError:
             pass
     return out
@@ -482,7 +483,14 @@ def enter_hid(target):
         core.take(host, 30000, owner="ArduinoCore HID contract")
         gpio = core.find(host, "oep.fixture.gpio")
         core.plan_apply(host, [(gpio, 1, target["nrst_channel"])])
-        uiapduino.enter_bootloader(host, swio_wire(host), gpio, target["nrst_channel"])
+        # enter_bootloader's own pin reset sleeps 0.3 s before PREPARE_BOOT, and a sketch of this core that reads
+        # resetReason() in setup() has cleared PINRSTF by then (read back: set at 0.18 s, clear at 0.48 s): the
+        # bootloader then leaves at once and the host meets the sketch behind the board's D- pull-up (descriptor
+        # -32, "not accepting address", 2026-10-30 to 11-21). The same parts with no pause: b803 at once.
+        wire = swio_wire(host)
+        if not uiapduino.pin_reset_flag(host, wire):
+            uiapduino.pulse_nrst(host, gpio, target["nrst_channel"])
+        uiapduino.run_payload(host, wire, uiapduino.PREPARE_BOOT)
     finally:
         try:
             host.end()
@@ -495,7 +503,7 @@ def enter_hid(target):
         new = hid_bootloaders() - before
         if len(new) > 1:
             raise RuntimeError(f"several HID bootloaders appeared: {sorted(new)}")
-        usb = pathlib.Path("/sys/bus/usb/devices") / new.pop() if new else None
+        usb = pathlib.Path("/sys/bus/usb/devices") / new.pop()[0] if new else None
         time.sleep(0.1)
     if usb is None:
         raise RuntimeError("the HID bootloader did not enumerate")

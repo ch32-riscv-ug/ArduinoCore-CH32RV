@@ -124,8 +124,14 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   → 直した（2026-11-21）: PA1 は DUT が駆動していない間、約 330 µs ごとに約 200 µs の細かい動き（浮いた線が拾う雑音。DUT が
   駆動すれば gpio は通る）。sweep() で動かす線にプローブのプルダウンをかけた（プローブの GPIO を試験が自分で持つ
   timer_trigger・complementary の break は gpio_taken で除く）。V407・X035・V006・H417 の signals が通る。
-- [ ] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
+- [x] **UIAPduino の hid**: ブートローダーの USB（ハブ 3-2.4.2）が「setup address に応答しない」で列挙できない（11-20 19:31
   から 2 回とも。17:55 には列挙できていた）。プローブの線は PD3 / PD4 に無い。
+  → 2026-11-21: 原因は oep_client の uiapduino.enter_bootloader() が NRST のあと 0.3 秒待ってから PREPARE_BOOT を走らせる
+  こと。その間に書き込み済みのスケッチが setup() の resetReason() で PINRSTF を消し（0.18 秒では立っていて、0.48 秒では
+  消えていた）、ブートローダーがすぐアプリへ移る。ホストは D- の固定プルアップの先のアプリに当たり、-32 / -71 のあと
+  口を power cycle する（カーネルのログでは 10-30 からほぼ全滅、それ以前は通っていた）。run_hardware は同じ部品を待ちなしで
+  呼び、b803 の検出をデバイス番号付きに（同じ口に出直したブートローダーを見落としていた）。hid が通る。[oep] が
+  oep-client-python a713e5b で待ちを外した（未リリース）。出たら enter_bootloader に戻して確かめる。
 - [x] **V003F4P6 の uart-dma**: 1 Mbaud の受信で 4096 のうち 3912 バイト・誤り 32（2 回目。1 回目は別の所で止まった）。
   → 2026-11-21: 誤り 32 はバッファあふれで、線は正しい（WireSkein ok）。1 バイトごとの available() が毎回 DMA の旗・USART の
   誤りまで見ていて、読み手が 1 Mbaud に追いつかなかった。available() は CNTR だけを読み、半分・終わりの点を過ぎたときだけ
