@@ -22,6 +22,7 @@ import subprocess
 import threading
 import time
 import zlib
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -188,7 +189,7 @@ class Broker:
 def test_eth_libs(dut, record_property):
     build_id = settings(__file__)["build_id"]
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d)", nonce=nonce)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", "ETH.begin() failed"
     deadline = time.monotonic() + 20

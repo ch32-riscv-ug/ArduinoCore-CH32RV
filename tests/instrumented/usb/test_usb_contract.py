@@ -18,6 +18,7 @@ import usb.util
 # The runner stages usb_host.py beside this file; pytest imports tests without adding their directory.
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from usb_host import APP, ISP, PcUsbHost, endpoints, interface
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def test_usb_contract(dut, record_property):
@@ -27,8 +28,7 @@ def test_usb_contract(dut, record_property):
     # usb.enumerate: this build, at this topology, with every declared function. The sketch first (begin()'s error
     # when it failed), then the host.
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (\S+)", nonce=nonce)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])

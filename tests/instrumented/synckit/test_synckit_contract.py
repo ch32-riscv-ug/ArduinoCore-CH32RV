@@ -16,6 +16,7 @@ add up to the 100 periods; the Deadline's Work ran once, at most 5 ms late."""
 import json
 import pathlib
 import secrets
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -34,7 +35,7 @@ FIELDS = ("isr_calls", "sent", "queue_dropped", "received", "unexplained_gaps", 
 
 def test_synckit_contract(dut, record_property):
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d+)", nonce=nonce)
     assert m.group(1).decode() == settings(__file__)["build_id"], "the DUT runs another build"
     assert m.group(2) != b"0", "no timer with an update interrupt could be leased"
     record_property("timer", int(m.group(2)))
@@ -63,7 +64,7 @@ def test_synckit_contract(dut, record_property):
 
 def test_taskkit_contract(dut, record_property):
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d+)", nonce=nonce)
     assert m.group(2) != b"0", "no timer with an update interrupt could be leased"
     m = ask(dut, "task 1000", rb"TASK" + rb" (\d+)" * 7, timeout=15)
     posts, runs, seen, period_runs, missed, deadline_runs, late = (int(g) for g in m.groups())

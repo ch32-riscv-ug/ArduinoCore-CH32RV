@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_lines.py is staged beside the test
 from bench_lines import lines, pin_number
+import bench_ready   # staged beside the test (run_hardware.py)
 
 # parts.sd's members (tests/RECORDS.ja.md §4.4) as the labels' roles.
 RECORD_ROLES = {"spisd": ({"spi"}, {"sck": "spisd_sck", "miso": "spisd_miso", "mosi": "spisd_mosi", "cs": "spisd_cs"}),
@@ -56,7 +57,7 @@ def ask(dut, line, reply, timeout=10):
 
 def ready(dut, case):
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
 
 

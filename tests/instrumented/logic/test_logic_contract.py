@@ -6,6 +6,7 @@ F_CPU, every period is 100 samples. No wiring."""
 import json
 import pathlib
 import secrets
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -19,7 +20,7 @@ def ask(dut, line, reply, timeout=10):
 
 def test_logic_contract(dut, record_property):
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+) (\d+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d+) (\d+)", nonce=nonce)
     assert m.group(1).decode() == settings(__file__)["build_id"], "the DUT runs another build"
     record_property("capture_timer", int(m.group(2)))
     samples = int(m.group(3))

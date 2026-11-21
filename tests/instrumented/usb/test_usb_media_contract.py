@@ -18,6 +18,7 @@ import usb.util
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from usb_host import APP, PcUsbHost  # noqa: E402
 from usb_iso import iso_transfer  # noqa: E402
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def test_usb_media_contract(dut, record_property):
@@ -26,8 +27,7 @@ def test_usb_media_contract(dut, record_property):
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (\S+)", nonce=nonce)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
     assert host.wait_ids(APP, 10), "application device did not enumerate"

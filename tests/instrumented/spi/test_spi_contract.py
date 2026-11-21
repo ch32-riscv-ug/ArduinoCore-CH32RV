@@ -34,6 +34,7 @@ import ws_capture
 
 from oep_client import core
 from oep_client.fixture import SpiTarget
+import bench_ready   # staged beside the test (run_hardware.py)
 
 RATE = 20_000_000          # tests/README.ja.md 取り込みの速さ: T = 500 ns, 1 MHz SCK's half period, 10 / T (it was 40 MS/s,
                            # 20 / T: 4 lines at 20 MB/s outran the host's reading at a load of 11 and the probe dropped
@@ -95,7 +96,7 @@ def spread(lines):
 def open_bus(dut, oep_host, case, record_property):
     """Start the case's bus on the DUT and pick its lines: (lines by pad, sck, miso, mosi, cs, soft)."""
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     soft = case.get("case") == "softspi"
     lines = {line["pad"]: line for line in gpio_lines(oep_host, case["target"])}

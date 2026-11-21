@@ -35,6 +35,7 @@ import pathlib
 import secrets
 
 import pytest
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -61,7 +62,7 @@ def spi(dut):
     no_drive()
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     number, sck, miso, mosi, hs, hi, ho = (int(x) for x in ask(
         dut, "spipins", rb"SPIPINS (\d+) (-?\d+) (-?\d+) (-?\d+) (\d) (\d) (\d)").groups())
@@ -113,7 +114,7 @@ def uart(dut):
     no_drive()
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     count, size = (int(x) for x in ask(dut, "ports", rb"PORTS (\d+) (\d+)").groups())
     if not count:
@@ -206,7 +207,7 @@ def wires(dut):
     no_drive()
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     count = int(ask(dut, "wires", rb"WIRES (\d+)").group(1))
     if not count:

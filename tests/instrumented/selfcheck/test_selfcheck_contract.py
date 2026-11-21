@@ -59,6 +59,7 @@ import pathlib
 import secrets
 
 import pytest
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -94,7 +95,7 @@ def ask(dut, line, reply, timeout=10):
 def ready(dut):
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     f_cpu, hclk, pclk1, pclk2, cfgr0, from_reg, from_reg1 = ask(
         dut, "clocks", rb"CLOCKS (\d+) (\d+) (\d+) (\d+) ([0-9a-f]+) (\d+) (\d+)").groups()

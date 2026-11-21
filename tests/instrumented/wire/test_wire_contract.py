@@ -46,6 +46,7 @@ import ws_capture
 
 from oep_client import core
 from oep_client.fixture import Gpio, I2cTarget
+import bench_ready   # staged beside the test (run_hardware.py)
 
 ADDRESS = 0x42
 # wire.output-only: the clocks asked, up to High-speed mode's 3.4 MHz. What a part and the bench's lines reach is
@@ -100,7 +101,7 @@ def wait_reply(dut, wait, pattern, timeout=3.0):
 def open_bus(dut, oep_host, case, record_property):
     """Start the case's bus on the DUT and pick its lines: (lines by pad, sda, scl, soft)."""
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+) (\d+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d+) (\d+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     wire_sda, wire_scl = pad(int(m.group(2))), pad(int(m.group(3)))
     soft = case.get("case") == "softwire"

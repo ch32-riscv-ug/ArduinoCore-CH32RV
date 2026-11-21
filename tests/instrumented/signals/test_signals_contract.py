@@ -67,7 +67,6 @@ skips, naming what it looked for, when no labelled line is such a pad.
   the tolerances are tens of microseconds."""
 import json
 import pathlib
-import secrets
 import sys
 import time
 
@@ -79,6 +78,7 @@ import bench_lines
 from bench_lines import gpio_lines
 import ws_capture
 from wireskein.runlog import becomes, dead_time, ends, level, only_moving, phase, pulses, rgb_led, skew, trim
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -94,15 +94,9 @@ def ready(dut, case):
     """Restart the DUT, then wait for its answer: each test starts from a fresh run, independent of what an earlier
     test left."""
     dut.write("restart")
-    # Lines sent while the DUT restarts are lost; ask again until the new run answers.
-    for attempt in range(8):
-        time.sleep(0.5)
-        nonce = secrets.token_hex(4)
-        try:
-            m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=3)
-            break
-        except pexpect.TIMEOUT:
-            assert attempt < 7, "no answer after the restart"
+    # Lines sent while the DUT restarts are lost; bench_ready asks again until the new run answers.
+    time.sleep(0.5)
+    m = bench_ready.ready(dut, rb" (\S+)", timeout=15)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
 
 
@@ -691,8 +685,11 @@ def test_pwm_timer(dut, oep_host, ws_run, record_property):
         ("stopped again", "pwmtoff", rb"PWMTOFF", off, 0.005),
     ]
     try:
+        # The probe's glitch filter, as in six_step: V407's PA1 showed three 1-sample (100 ns) pulses before the PWM
+        # started, the DUT not driving it (2026-11-21, "3 pulses of neither state at the change"); a 20 kHz timer
+        # output has no pulse under 25 ns to lose.
         replies = sweep(dut, ws_run, oep_host, [a, b], f"pwm timer {A} {B}", conditions, rate=10_000_000, moving=2,
-                        quiet=[])
+                        quiet=[], glitch_filter_ns=25)
         assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PWMT ")), "begin() refused"
     finally:
         ask(dut, "pwmtoff", rb"PWMTOFF")
@@ -722,7 +719,7 @@ def test_phase_shift(dut, oep_host, ws_run, record_property):
                        (f"stopped after {deg}", "phsoff", rb"PHSOFF", off, 0.005)]
     try:
         replies = sweep(dut, ws_run, oep_host, [a, b], f"phase shift {A} {B}", conditions, rate=10_000_000,
-                        moving=2, quiet=[])
+                        moving=2, quiet=[], glitch_filter_ns=25)      # as pwm_timer
         assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PHS ")), "begin() refused"
     finally:
         ask(dut, "phsoff", rb"PHSOFF")

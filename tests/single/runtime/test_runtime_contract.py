@@ -3,13 +3,13 @@ import json
 import pathlib
 import secrets
 import time
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def test_runtime_contract(dut, record_property):
     settings = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    match = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d+)\r?\n", timeout=15)
+    match = bench_ready.ready(dut, rb" (\S+) (\d+)", nonce=nonce)
     assert match.group(1).decode() == settings["build_id"]
     assert int(match.group(2)) >= 1
     dut.write("init")

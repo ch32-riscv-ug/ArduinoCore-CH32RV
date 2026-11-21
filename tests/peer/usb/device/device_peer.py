@@ -12,6 +12,7 @@ import pathlib
 import re
 import secrets
 import time
+import bench_ready   # staged beside the test (run_hardware.py)
 
 DEVICE_VID_PID = ("1209", "0001")       # CH32RVUsbDevice's default identity
 # The CH32X035 factory bootloader: 1a86:55e0 on the F8U6, 4348:55e0 on the C8T6
@@ -54,8 +55,7 @@ def command(peer, line, reply, timeout=10):
 
 def dut_ready(dut, build_id):
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (\S+)", nonce=nonce)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
 

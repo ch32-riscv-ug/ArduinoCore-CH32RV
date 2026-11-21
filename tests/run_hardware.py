@@ -282,6 +282,8 @@ HELPERS = {
     "usb-peer-host-fs": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-power": [TESTS / "peer/usb/host/host_peer.py"],
 }
+# Beside every case's test: the first exchange with the sketch, `ready` asked until it answers.
+COMMON_HELPERS = [TESTS / "instrumented/bench_ready.py"]
 PLUGINS = ["pytest_embedded.plugin",
            "pytest_embedded_arduino_cli.plugin", "pytest_embedded_arduino_cli_ch32rv.plugin",
            "pytest_embedded_wireskein.plugin", "oep_client.pytest_plugin"]
@@ -325,6 +327,35 @@ def junit_skips(path):
     if not cases or any(s is None for s in skips):
         return None
     return [s.get("message", "") for s in skips]
+
+
+CAPTURE_LOSS = "data lost while capturing"
+# A probe that drops a capture's data (no room to send: the host fell behind reading it, on a host loaded by other
+# builds, 2026-11-21: V006's wire and V003F4P6's softspi at 0 % idle) says nothing about the DUT: such a failed test
+# runs again, up to this many times, and the case passes only if it then passes.
+CAPTURE_LOSS_RETRIES = 2
+
+
+def junit_failed(path):
+    """The names of the tests that failed or errored in a junit file ([] when there is none)."""
+    import xml.etree.ElementTree as ET
+    try:
+        cases = list(ET.parse(path).getroot().iter("testcase"))
+    except (OSError, ET.ParseError):
+        return []
+    return [c.get("name") for c in cases if c.find("failure") is not None or c.find("error") is not None]
+
+
+def capture_lost(logs, test):
+    """Whether a capture of `test` (its WireSkein report under logs) lost data on the probe."""
+    for report in pathlib.Path(logs).glob(f"pytest-embedded/*/{test}/wireskein/report.json"):
+        try:
+            results = json.loads(report.read_text()).get("results", [])
+        except (OSError, ValueError):
+            continue
+        if any(CAPTURE_LOSS in (r.get("reason") or "") for r in results):
+            return True
+    return False
 
 
 def restarts(logs):
@@ -401,7 +432,7 @@ def stage_case(work, name, case, target):
     directory.mkdir(parents=True)
     module = directory / MODULES[case].name
     shutil.copyfile(MODULES[case], module)
-    for helper in HELPERS.get(case, []):
+    for helper in COMMON_HELPERS + HELPERS.get(case, []):
         shutil.copyfile(helper, directory / helper.name)
     if case in PICO_PEERS and target.get("usb_peer") == "pico":
         peer = directory / "peer_pico"
@@ -698,8 +729,34 @@ def main(argv=None):
                     # A peer case builds the ESP32 sketch inside pytest too; on a loaded
                     # host that alone can take minutes. signals streams a capture per test (two dozen of them,
                     # 204 s on X035 with the probe busy, 2026-11-19).
-                    invoke(command, module.parent / "pytest.log", env=case_env,
-                           timeout=900 if case in PEER_CASES else 600 if case == "signals" else 300)
+                    timeout = 900 if case in PEER_CASES else 600 if case == "signals" else 300
+                    try:
+                        invoke(command, module.parent / "pytest.log", env=case_env, timeout=timeout)
+                    except RuntimeError:
+                        failed = junit_failed(module.parent / "junit.xml") if args.execute else []
+                        if not failed or case in ("power", "hid") or not all(
+                                capture_lost(module.parent / "logs", t) for t in failed):
+                            raise
+                        # Only captures that lost data failed: those tests again, on the build already made.
+                        result["capture_loss_retries"] = []
+                        for attempt in range(1, CAPTURE_LOSS_RETRIES + 1):
+                            tag = f"retry{attempt}"
+                            at = command.index(str(module))
+                            again = command[:at] + [f"{module}::{t}" for t in failed] + command[at + 1:]
+                            again[again.index("--run-mode") + 1] = "test"
+                            again[again.index("--root-logdir") + 1] = str(module.parent / f"logs-{tag}")
+                            again[again.index("--junitxml") + 1] = str(module.parent / f"junit-{tag}.xml")
+                            result["capture_loss_retries"].append(dict(tests=failed, log=f"pytest-{tag}.log"))
+                            save()
+                            try:
+                                invoke(again, module.parent / f"pytest-{tag}.log", env=case_env, timeout=timeout)
+                                break
+                            except RuntimeError:
+                                left = junit_failed(module.parent / f"junit-{tag}.xml")
+                                if attempt == CAPTURE_LOSS_RETRIES or not left or not all(
+                                        capture_lost(module.parent / f"logs-{tag}", t) for t in left):
+                                    raise
+                                failed = left
                     result["status"] = "PASS" if args.execute else "COMPILE_PASS"
                     skips = junit_skips(module.parent / "junit.xml") if args.execute else None
                     if skips:

@@ -130,6 +130,22 @@ port_lines で除くように）。流し直して通ったもの（1 回だけ�
   全台（full-20261121-bc2、M030・L103 以外）: 274 PASS・11 FAIL。流し直しで V006 spi / wire、V003F4P6 softspi、X035
   usb-peer-firmware、V407・V203 signals は通った（一度きり）。残るのは H417 の wire（既知の 6-2）、analog（V5F で DMSeq の
   雑音）、usb-ss-iso（ホストの -71）。
+  → 2026-11-22 一度きりの 6 件の原因と対策（ホストは 18:20〜18:40 に空き 0 %・負荷 15、ほかのビルドと重なった）:
+  - V006 spi: ch32rv のモニターがプローブの UART を開くのに 7 秒以上かかり（still connecting）、その間の ready が消えた。
+    X035 usb-peer-firmware: CH32RV_BOOT_HOLD_MS の起動待ちの間に ready が届いて消えた（STARTUP が ready の後）。
+    → tests/instrumented/bench_ready.py の ready(): 返事が来るまで 2 秒ごとに送り直す（最長 45 秒）。全 case に置く
+    （run_hardware の COMMON_HELPERS）。ready を 1 回送って 15 秒待っていた 25 ファイルを置き換えた。
+  - V006 wire・V003F4P6 softspi: プローブが取り込みのデータを落とした（no room to send、ホストの読みが遅れた）。DUT の
+    合否ではないので、run_hardware は落ちた試験がすべて「data lost while capturing」のときだけ、その試験を作った
+    ビルドのまま最大 2 回やり直す（CAPTURE_LOSS_RETRIES、結果に capture_loss_retries を残す）。
+  - V407 signals: pwm_timer の PA1 に PWM の前、1 サンプル（100 ns）のパルスが 3 つ。six_step と同じく
+    glitch_filter_ns=25 を pwm_timer・phase_shift に掛けた。
+  - V203 signals: phase_shift の「stopped after 270」で、区間の境目 ±100 tick で WireSkein の判定が ng / ok に分かれて
+    unchecked。前の状態の推定が境目で揺れる件として [wireskein] に送った → wireskein main 0db2b8c で直った（周期の比べ方と
+    同じ幅の余裕、預けた run は 13 ok）。版は 0.0.33 のまま、push と公開を待って取り込む。
+  確認（rerun-bc4、各 2 回）: V006 spi / wire、V003F4P6 softspi、X035 usb-peer-firmware、V203 signals は 2 回とも PASS、
+  V407 signals は 1 回 PASS（2 回目はプローブ 30eda0ea068b が mDNS から消えて流せず、[oep] に連絡）。取り込みの落ちは
+  起きず、やり直しの経路は実機ではまだ通っていない（判定の関数は full-20261121-bc2 の結果で確かめた）。
 - [x] **V407 の signals**（pwm_timer・phase_shift が各 1〜2 NG）: PB1 を外した版（2026-11-21）でも残る。PA2 / PA1 で
   「窓の中で 2 回以上変わる」「rest が 0 のままでない」。analog の揺れと同じく線の雑音か、取り込みで切り分ける。software-serial は通った。
   → 直した（2026-11-21）: PA1 は DUT が駆動していない間、約 330 µs ごとに約 200 µs の細かい動き（浮いた線が拾う雑音。DUT が
@@ -571,6 +587,19 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   ない。V3F を止めたままでも起きる。小さなスケッチ（Serial の返事だけ、signals と同じライブラリを足しても）では 5000 回
   止まらない。X035 の「TXE の割り込みの経路が信頼できない」（04e0ed44、ポーリングで回避）と同じ根かは未確認。
   それまで run_hardware は H41x の V5F のコンソールを DMSeq のままにする（H417 の analog は DMSeq の雑音のまま）。
+  → 2026-11-22 の切り分け（実験は scratch の worktree、コアは変えていない）:
+  - serviceTx が TXEIE を落とした直後に CTLR1 を読み返す（H41x の遅れて届く書き込みの対策と同じ形）: has は 10000 回 ×3
+    通る（同じ worktree で外すと 627 回・56 回で止まる）が、pad（短い print が 11 回の返事）は 468 回で止まる。write() の
+    TXEIE を立てた後にも読み返しを足しても pad 633 回。HPE を切る（INTSYSCR 0x0E、属性を普通の interrupt）と pad 188 回。
+    DMSeq のコンソールなら pad も 3000 回止まらない。
+  - 止まったときの様子（グローバル変数に印を残して、止まった後にプローブで読んだ）: USART の割り込みの入口と出口の回数は
+    同じ（割り込みの中ではない）、write() は最後まで終わっている、millis の数（SysTick の割り込み）も止まっている。
+    走っているのに止められず、どの割り込みも入らない: 割り込みの処理の誤りではなく、バスのアクセスが返らない状態とみる。
+    pad が引く表（pad_rows）もスタックも共有 SRAM（0x2010xxxx）。命令キャッシュ無し・ITCM だけキャッシュで回数が伸びた
+    のと合わせて、共有 SRAM / ITCM のアクセスと USART の受信の割り込みが重なると詰まる石の側の問題を疑う。次は印を
+    増やして止まる場所を狭めようとしたが、loop と pad の中に印（共有 SRAM への書き込み）を 8 か所足すと 5000 回 ×6 で
+    一度も止まらなくなった（印がコアの 6 か所だけなら 4 回中 1 回、2492 回で止まる）。書き込みを足すだけで消えるので、
+    手順の誤りではなくタイミングで出る問題とみる。次は EVT の同じ形（USART の受信割り込み + 共有 SRAM の読み）で再現するか。
 - [x] **試験のコンソールを UART に（2026-11-21）**: 台にプローブの UART の線（tx / rx）があれば、試験のスケッチ
   （sketch_support の 34 本、bench_console.h の CONSOLE）は Serial に出し、モニターは fixture-uart で開く。DMSeq の
   SWIO の問い合わせが無くなる（V407 の DAC の揺れ ±80 → ±2）。DMSeq のまま: uart*・periph・self*（全部の

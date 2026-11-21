@@ -7,6 +7,7 @@ import pathlib
 import re
 import secrets
 import time
+import bench_ready   # staged beside the test (run_hardware.py)
 
 # How each peer's two device configurations name themselves (its sketches set the strings; the VIDs are the
 # stacks' defaults, EspUsbDevice's and Adafruit TinyUSB's).
@@ -79,8 +80,7 @@ def device(peer, line, reply, timeout=10):
 
 def dut_ready(dut, build_id):
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (\S+)", nonce=nonce)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", ("CH32RVUsbHost.begin() failed: " + m.group(3).decode() +
                                 " (a CH32X035F8U6 / F7P6 / D8U6 or X033 has no USB host)")

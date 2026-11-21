@@ -20,6 +20,7 @@ import subprocess
 import threading
 import time
 import zlib
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -101,7 +102,7 @@ def serve(address, context=None):
 def test_eth_contract(dut, tmp_path, record_property):
     build_id = settings(__file__)["build_id"]
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d) ([0-9A-F]{12})", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) ([0-9A-F]{12})", nonce=nonce)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     assert m.group(2) == b"1", "ETH.begin() failed"
     mac = int(m.group(3), 16).to_bytes(6, "big")

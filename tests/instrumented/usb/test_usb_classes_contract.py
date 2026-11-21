@@ -17,6 +17,7 @@ import usb.util
 # The runner stages usb_host.py beside this file; pytest imports tests without adding their directory.
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from usb_host import APP, BulkOnly, PcUsbHost, endpoints, interface
+import bench_ready   # staged beside the test (run_hardware.py)
 
 GUID = "{0B1C2D3E-4F50-6172-8394-A5B6C7D8E9F0}"
 WEBUSB_UUID = bytes.fromhex("38b60834a909a0478bfda0768815b665")
@@ -78,8 +79,7 @@ def test_usb_classes_contract(dut, record_property):
     host = PcUsbHost.by_serial(settings["target"]["dut_usb_serial"])
 
     nonce = secrets.token_hex(4)
-    dut.write(f"ready {nonce}")
-    m = dut.expect(rb"READY " + nonce.encode() + rb" (\S+) (\d) (\S+)\r?\n", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (\S+)", nonce=nonce)
     assert m.group(1).decode() == build_id
     assert m.group(2) == b"1", "USBDevice.begin() failed: " + m.group(3).decode()
     assert host.wait_ids(APP, 10), "application device did not enumerate"

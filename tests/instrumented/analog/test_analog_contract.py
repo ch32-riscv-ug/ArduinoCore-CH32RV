@@ -12,6 +12,7 @@ import pathlib
 import secrets
 
 import pytest
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -26,7 +27,7 @@ def ask(dut, line, reply, timeout=10):
 def test_dac(dut, record_property):
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     pins = [int(p) for p in ask(dut, "dacpins", rb"DACPINS (-?\d+) (-?\d+)").groups() if int(p) >= 0]
     if not pins:
@@ -61,7 +62,7 @@ def test_dac_waves(dut, record_property):
     reads changing more than 50 times (it moves), and the step rate within 1 % of the one asked for."""
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     pins = ask(dut, "dacpins", rb"DACPINS (-?\d+) (-?\d+)").groups()
     channels = [k + 1 for k, p in enumerate(pins) if int(p) >= 0]
@@ -107,7 +108,7 @@ def test_adc_dual(dut, record_property):
     1.6 .. 2.4 times one ADC's alone at the same step. A series without the second ADC or the DACs skips."""
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     probe = ask(dut, "adcdual s 0 0 0", rb"(ADCDUAL [^\r\n]*|UNKNOWN adcdual)")
     if probe.group(1).startswith(b"UNKNOWN"):
@@ -157,7 +158,7 @@ def test_dac_both(dut, record_property):
     The series without two DAC pads or the dual ADC skip."""
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     m = ask(dut, f"dacboth {BOTH_HZ}", rb"(DACBOTH [^\r\n]*|UNKNOWN dacboth)")
     if m.group(1).startswith(b"UNKNOWN"):
@@ -182,7 +183,7 @@ def test_adc_injected_dual(dut, record_property):
     without two DAC pads or the dual ADC skip."""
     case = settings(__file__)
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=nonce)
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     seen, wrong = {}, []
     for v1, v2 in ((800, 3300), (3300, 800)):

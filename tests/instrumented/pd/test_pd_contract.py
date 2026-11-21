@@ -18,6 +18,7 @@ import pathlib
 import re
 import secrets
 import time
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -39,7 +40,7 @@ def test_pd_contract(dut, record_property):
     max_mv = int(target.get("pd_max_mv", 5000))
     vbus_pin, ratio = target.get("pd_vbus_pin"), target.get("pd_vbus_ratio")
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d) (-?\d+) (-?\d+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d) (-?\d+) (-?\d+)", nonce=nonce)
     assert m.group(1).decode() == settings(__file__)["build_id"], "the DUT runs another build"
     assert m.group(2) == b"1", "USBPD.begin() failed: no USBPD block on this part"
     record_property("cc_pins", f"{m.group(3).decode()} {m.group(4).decode()}")

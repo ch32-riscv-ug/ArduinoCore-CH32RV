@@ -15,7 +15,7 @@ import pathlib
 import secrets
 import time
 
-import pexpect
+import bench_ready   # staged beside the test (run_hardware.py)
 
 
 def settings(test_file):
@@ -30,7 +30,7 @@ def ask(dut, line, reply, timeout=10):
 def test_flash_contract(dut, record_property):
     build_id = settings(__file__)["build_id"]
     nonce = secrets.token_hex(4)
-    m = ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" (\S+) (\d+) (\d+) ([0-9A-F]+)", timeout=15)
+    m = bench_ready.ready(dut, rb" (\S+) (\d+) (\d+) ([0-9A-F]+)", nonce=nonce)
     assert m.group(1).decode() == build_id, "the DUT runs another build"
     erase_size, write_size, erased = int(m.group(2)), int(m.group(3)), int(m.group(4), 16)
     record_property("erase_size", erase_size)
@@ -47,15 +47,9 @@ def test_flash_contract(dut, record_property):
     value = secrets.randbelow(0xFFFFFFF0) + 1
     assert ask(dut, f"save {value}", rb"SAVE (\d)").group(1) == b"1"
     dut.write("restart")
-    # Lines sent while the DUT restarts are lost; ask again until the new run answers.
-    for attempt in range(6):
-        time.sleep(1)
-        nonce = secrets.token_hex(4)
-        try:
-            ask(dut, f"ready {nonce}", rb"READY " + nonce.encode() + rb" \S+ \d+ \d+ [0-9A-F]+", timeout=5)
-            break
-        except pexpect.TIMEOUT:
-            assert attempt < 5, "no answer after the software reset"
+    # Lines sent while the DUT restarts are lost; ready() asks again until the new run answers.
+    time.sleep(1)
+    bench_ready.ready(dut, rb" \S+ \d+ \d+ [0-9A-F]+", timeout=15)
     m = ask(dut, "boot", rb"BOOT (\d) (\d+)")
     assert m.group(1) == b"1" and int(m.group(2)) == value, "the saved value did not survive the reset"
 
