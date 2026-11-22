@@ -12,6 +12,7 @@
  *                             (HTTPS NOTLS on the parts without TLS)
  *   sink                      SINK <bytes> <ms> of the last connection on port 5001
  *   stats                     STATS <rx> <tx> <rx errors> <tx busy> <link ups> <PHY resets> <clock restarts>
+ *   mdnsq <name>              MDNSQ <address, 0.0.0.0 when nobody answered> <ms>   (MDNS.queryHost(name))
  *
  * Servers, always: TCP 7 echoes, TCP 5001 takes and counts, TCP 5002 sends
  * bytes i & 0xFF (i from 0) until the peer closes, UDP 9000 echoes. */
@@ -138,6 +139,13 @@ static void reply(char *command)
         }
         CONSOLE.print("PIN ");
         CONSOLE.println((int)etharp_add_static_entry(&i4, &e));
+    } else if (strncmp(command, "mdnsq ", 6) == 0) {
+        const uint32_t t0 = millis();
+        const IPAddress a = MDNS.queryHost(command + 6, 3000);
+        CONSOLE.print("MDNSQ ");
+        CONSOLE.print(a);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)(millis() - t0));
     } else if (strcmp(command, "cab") == 0) {
         caUsed = 0;
         ca[0] = 0;

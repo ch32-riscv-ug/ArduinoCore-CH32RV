@@ -126,6 +126,45 @@ def test_eth_contract(dut, tmp_path, record_property):
     # A host on two NICs in one subnet answers ARP on both; tie the board to the wired one.
     assert ask(dut, f"pin {host_ip} {host_mac}", rb"PIN (-?\d+)").group(1) == b"0"
 
+    # eth.mdns-query: a name only this test answers (a minimal responder beside the host's own: a legacy unicast
+    # query - the board's resolver asks from its own port - is answered to its port), asked by multicast DNS.
+    name = "ch32rv-test-" + secrets.token_hex(3)
+    seen = []
+    stop = threading.Event()
+
+    def responder():
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        s.bind(("", 5353))
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton("224.0.0.251") + socket.inet_aton(host_ip))
+        s.settimeout(0.2)
+        want = b"".join(bytes([len(p)]) + p.encode() for p in (name, "local")) + b"\0"
+        while not stop.is_set():
+            try:
+                d, src = s.recvfrom(2048)
+            except socket.timeout:
+                continue
+            if len(d) < 12 or d[2] & 0x80 or want not in d[12:].lower():
+                continue
+            seen.append(src)
+            q_end = 12 + d[12:].lower().index(want) + len(want) + 4
+            answer = d[:2] + b"\x84\x00\x00\x01\x00\x01\x00\x00\x00\x00" + d[12:q_end] + \
+                b"\xc0\x0c\x00\x01\x00\x01\x00\x00\x00\x0a\x00\x04" + socket.inet_aton(host_ip)
+            s.sendto(answer, src)
+        s.close()
+
+    t = threading.Thread(target=responder, daemon=True)
+    t.start()
+    try:
+        m = ask(dut, f"mdnsq {name}", rb"MDNSQ (\S+) (\d+)", timeout=10)
+    finally:
+        stop.set()
+        t.join(2)
+    record_property("mdns_query_ms", int(m.group(2)))
+    assert seen, "no mDNS query from the board reached this host"
+    assert m.group(1).decode() == host_ip, f"{name}.local answered {m.group(1)!r}, not {host_ip} (asked from {seen})"
+
     # eth.icmp
     out = subprocess.run(["ping", "-c", "20", "-i", "0.2", "-q", ip], capture_output=True, text=True).stdout
     assert " 0% packet loss" in out, out

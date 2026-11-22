@@ -1,4 +1,5 @@
 #include "NetworkMdns.h"
+#include "NetworkManager.h"
 #include "internal/NetworkCore.h"
 
 #include <string.h>
@@ -216,4 +217,23 @@ bool NetworkMdns::addServiceTxt(const char *service, const char *proto, const ch
         }
     }
     return true;
+}
+
+IPAddress NetworkMdns::queryHost(const char *host, uint32_t timeout)
+{
+    char name[MDNS_LABEL_MAXLEN + 8];
+    if (!host || !*host) {
+        return IPAddress((uint32_t)0);
+    }
+    const size_t n = strlen(host);
+    const bool local = n > 6 && strcmp(host + n - 6, ".local") == 0;
+    if (n + (local ? 1 : 7) > sizeof name) {
+        return IPAddress((uint32_t)0);
+    }
+    strcpy(name, host);
+    if (!local) {
+        strcat(name, ".local");
+    }
+    IPAddress ip;
+    return Network.hostByName(name, ip, timeout) ? ip : IPAddress((uint32_t)0);
 }

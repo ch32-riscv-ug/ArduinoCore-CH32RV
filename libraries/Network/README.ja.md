@@ -64,7 +64,7 @@ MDNS.addServiceTxt("http", "tcp", "path", "/");
 ```
 
 - SNTP は、コアの時計(`settimeofday()`)を合わせます。1 時間ごとに合わせ直します。`time()`、`localtime_r()`、`strftime()` がその時計を読みます。
-- mDNS は、Network ライブラリが始めたすべてのインターフェースで答えます。後から始めたものも含みます。サービスは 4 つまで、TXT は 1 つにつき 96 バイトまでです。問い合わせ(`queryHost()` など)はありません。
+- mDNS は、Network ライブラリが始めたすべてのインターフェースで答えます。後から始めたものも含みます。サービスは 4 つまで、TXT は 1 つにつき 96 バイトまでです。`MDNS.queryHost("name")` で `name.local` の IPv4 アドレスを引けます（`Network.hostByName("name.local")` も同じくマルチキャスト DNS で引く。`begin()` は要らない）。サービスの検索(`queryService()`)はまだありません。
 - 大きさ(V208、60 MHz、2026-11-12): mDNS と SNTP を両方使うと、Flash が約 23 KB 増えます(lwIP の mDNS が 12 KB、SNTP と時刻・タイムゾーンの処理が 11 KB)。使わないスケッチには入りません。
 
 ## よく使われるライブラリ

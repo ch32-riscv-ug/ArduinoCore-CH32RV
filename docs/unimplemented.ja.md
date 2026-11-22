@@ -201,7 +201,7 @@
 | MAC の無い系列の IP（USB NCM の上） | X035 ほか | 2 | 自動 | PC（NCM） | docs/network-stack.ja.md:15,18 |
 | V208 の TLS | V208 | 2 | 自動 | スイッチ＋PC | PS:99, libraries/Network/README.ja.md:8 |
 | HTTP クライアント・サーバー、MQTT | Network の系列 | 2 | 自動 | PC（eth の case） | FC:96, TODO:247,464 |
-| mDNS の問い合わせ（`queryHost()`） | Network の系列 | 2 | 自動 | PC | libraries/Network/README.ja.md:67 |
+| mDNS の問い合わせ（`queryHost()`） | Network の系列 | `queryHost()` は実装済み（2026-11-23、lwIP の `LWIP_DNS_SUPPORT_MDNS_QUERIES`。`hostByName("x.local")` も。eth で試験側の応答役の名前を H417・V407 が引けた）。`queryService()` は 2 | 自動 | PC | libraries/Network/README.ja.md:67 |
 | PTP（IEEE 1588）・MDIX の設定 | V317、V4x7、H417 | 2 | 単発 | PTP の相手 | UNUSED:51 |
 | IoCHub | H417、V407、V307 | 3（範囲の判断） | — | — | docs/wch-evt-binary-libraries.ja.md:27 |
 | ETH の IAP（ネットワーク越しの書き換え） | V20x、V307、V407、H417 | 2 | 自動 | PC | EVT ETH/ETH_IAP |

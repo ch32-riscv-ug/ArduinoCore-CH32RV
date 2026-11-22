@@ -70,6 +70,9 @@
 #define DNS_TABLE_SIZE 4
 #define DNS_MAX_NAME_LENGTH 128
 #define DNS_MAX_SERVERS 2
+/* A name ending in .local is asked by multicast DNS (224.0.0.251:5353, a legacy unicast query the responders answer
+ * to its port) instead of the DNS servers: hostByName("printer.local") and MDNS.queryHost(), as on ESP32. */
+#define LWIP_DNS_SUPPORT_MDNS_QUERIES 1
 #define ARP_TABLE_SIZE 8
 #define ARP_QUEUEING 1
 #define ETHARP_SUPPORT_STATIC_ENTRIES 1   /* etharp_add_static_entry(): a peer pinned to one MAC (a host that answers ARP on two NICs) */
