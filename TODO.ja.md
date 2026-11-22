@@ -722,6 +722,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   V3F に送り、V3F の IPC の処理がスタックを捨てて待ちに戻る（V3F が割り込みを切っていると効かない。V3F が持っている HSEM と
   コアのロックは手放させる必要がある）。arduino-pico の idleOtherCore()（相手を RAM の中で待たせる一時停止）の形もある。
   どの形にするか（止める・一時停止・作らない）はユーザーと決める。
+  → 2026-11-22 ユーザー: 今は作らない（必要が出たら作る）。arduino-pico の idleOtherCore() が要るのはフラッシュの書き換えのためで、
+  H41x は RAM から動くので当たらない。残る場面は loop1() が動いている間の deepSleep()（Stop は 2 つのコアがそろって入らないと
+  効かない）で、実機の振る舞いを見て、文書に「loop1() を待ちに戻してから眠る」と書く。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
 - [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
   V5F で確かめる。2026-11-13: restart()・WDT と CH32RV_FLASH_STORE（flash）は V5F で PASS。2026-11-14: lightSleep()・deepSleep() は

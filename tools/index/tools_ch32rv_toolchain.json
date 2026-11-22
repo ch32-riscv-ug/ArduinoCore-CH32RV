@@ -1,58 +1,58 @@
 {
   "comment": "ch32rv-toolchain <version> tool definition (the toolchain), taken from the ch32-riscv-ug/ch32rv-toolchain release v<version>: clang + lld from LLVM with picolibc, compiler-rt, libc++ and GDB for the CH32 cores. The same organisation's own release, one root directory per archive. Rebuild with tools/index/bump_tool.py ch32rv-toolchain <version>, not by hand.",
   "name": "ch32rv-toolchain",
-  "version": "23.1.5-3",
-  "upstreamTag": "v23.1.5-3",
+  "version": "23.1.6-1",
+  "upstreamTag": "v23.1.6-1",
   "systems": [
     {
       "host": "x86_64-pc-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-x86_64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:d2ceeacc3ded4f1f34896937850589227aeb69c3a0506a6a569ad7161087ca53",
-      "size": "66809495"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:9778033acd9ad19db4d32136277db1ebc014f58c6c5a1b853115af60112aff9c",
+      "size": "66814680"
     },
     {
       "host": "aarch64-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-aarch64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-aarch64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:d23095cfe4837ab5a887f79efde14b596f43ac9da9d001304848277c680330fe",
-      "size": "65181771"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:f275a4e93dbd70f4fe23b3f5428876c847eb265529ee3220c22167c413bb8044",
+      "size": "65191161"
     },
     {
       "host": "x86_64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-x86_64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:69834a91ac1d4764901b91b9f807b325c7a42b6a62b4f6e10f51d6f11b7cd15e",
-      "size": "53358603"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:2101a4e7115f0b8e7e8ff49baf6606d494a0dbcc56e60bf888dd9aa229d41bcc",
+      "size": "53360268"
     },
     {
       "host": "arm64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-aarch64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-aarch64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:51e1873b94b344afb4f228ca01c791adc4cd93b1c68a107e5ed657ecbe9af052",
-      "size": "50826260"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:ebe5b534c7f3e3f1be5f8de6454ca1c234604a8944c1dd8cc52088c1a0f4ba5f",
+      "size": "50829579"
     },
     {
       "host": "x86_64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:580af220d8bd9ea40845b36518c037c01fe68d1497955b7e0cffa9534d48d20c",
-      "size": "266565071"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+      "size": "124930346"
     },
     {
       "host": "i686-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:580af220d8bd9ea40845b36518c037c01fe68d1497955b7e0cffa9534d48d20c",
-      "size": "266565071",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+      "size": "124930346",
       "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
     },
     {
       "host": "arm64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.5-3/ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:580af220d8bd9ea40845b36518c037c01fe68d1497955b7e0cffa9534d48d20c",
-      "size": "266565071",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+      "size": "124930346",
       "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation"
     }
   ]
