@@ -36,8 +36,9 @@ static char down_storage[CH32RV_RTT_DOWN_SIZE];
 
 /* The name the host tools look for in the ELF. `used` keeps it through
  * --gc-sections, which would otherwise drop a block nothing in the program
- * reads. */
-__attribute__((used)) struct rtt_control_block _SEGGER_RTT;
+ * reads. CH32RV_DMA_MEM: on CH32H41x's V5F, in the shared SRAM rather than
+ * the DTCM, as ch32rv scans the shared SRAM (from 0x20100000) for the magic. */
+__attribute__((used)) struct rtt_control_block _SEGGER_RTT CH32RV_DMA_MEM;
 
 static unsigned int used_bytes(const struct rtt_buffer *b)
 {
