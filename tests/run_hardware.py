@@ -242,6 +242,7 @@ CH32RV_PEERS = {
     "usb-peer-input": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-firmware": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-net": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
+    "usb-peer-media": TESTS / "sketch_support/usb_peer/device/peer_ch32rv",
     "usb-peer-host": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_ch32rv",
     "usb-peer-host-input": TESTS / "sketch_support/usb_peer/host_input/peer_ch32rv",
@@ -433,6 +434,8 @@ def stage_ch32rv_peer(directory, case, target):
         if controller not in USB_HOST_PORTS:
             raise RuntimeError(f"{case}: the CH32RV peer's {controller} has no USB host the peer can run")
         opt = f"-DPEER_USB_HOST_PORT={USB_HOST_PORTS[controller]}\n"
+        if case == "usb-peer-media":
+            opt += "-DPEER_MEDIA=1\n"   # the audio and video host: only this case's build carries it (64 KB parts)
     else:
         opt = f"-DPEER_USB_CONTROLLER=CH32RVUsbController::{USB_CONTROLLERS[controller]}\n"
     (peer / "build_opt.h").write_text(opt)

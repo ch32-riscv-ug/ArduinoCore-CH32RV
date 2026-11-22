@@ -66,8 +66,6 @@ PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochro
 # libraries' gaps, not the bench's. Device cases need it as the host (CH32RVUsbHost), host cases as the device
 # (CH32RVUsbDevice).
 CH32RV_PEER_LACKS = {
-    "usb-peer-media": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no video and no peer sketch for its "
-                      "audio yet",
 }
 # The speed a controller of the record's usb runs at (USB 2.0: 1 full, 2 high; 3 SuperSpeed), as CH32RVUsbHost numbers it.
 USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 2, "super_speed": 3}

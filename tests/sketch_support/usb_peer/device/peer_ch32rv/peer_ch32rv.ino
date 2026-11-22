@@ -31,6 +31,10 @@
  *   dfu                  C DFU <found> <ok>   (DFU_DETACH to the runtime interface; ok 0 when stalled)
  *   hididle <d> <ms>     C HIDIDLE <ok> <vendor input reports in <ms>>  (SET_IDLE duration d x 4 ms,
  *                        report ID 0, to the HID interface)
+ *   audioin <ms> [rate]  C AUDIOIN <bytes> <ramp breaks>     (rate: 32000 by default)
+ *   audioout <ms> [rate] C AUDIOOUT <ok> <bytes> <byte sum>  (a 16-bit ramp, exactly ms of it)
+ *   video <ms>           C VIDEO <frames> <pattern errors> <width> <height>   (YUY2 80x60)
+ *                        (these three only in the PEER_MEDIA build, case usb-peer-media)
  *   reset                C RESET
  *   cdcports             C CDCPORTS <CDC ports of the device>
  *   cdcn <idx> <hex>     C CDCN <idx> <hex back within 2 s>   (any CDC port by its index)
@@ -129,6 +133,79 @@ static volatile uint8_t connectedAddress;   /* set by onDeviceConnected, announc
 static bool hidHasId[16];                   /* per interface: its report descriptor declares report IDs */
 static volatile uint32_t hidVendorInputs;
 static volatile uint32_t netFrames, netOurs;
+#if defined(PEER_MEDIA)   /* run_hardware.py: case usb-peer-media only (the 64 KB parts' flash) */
+static volatile uint32_t audioBytes, audioBreaks, videoFrames, videoErrors;
+static volatile int32_t audioLast = -1;
+static volatile uint16_t videoW, videoH;
+
+/* Waits that keep the callbacks coming (deliverEvents()). */
+static void waitMs(uint32_t ms)
+{
+    const uint32_t t0 = millis();
+    while (millis() - t0 < ms) {
+        deliverEvents();
+        delay(1);
+    }
+}
+
+static void cmdAudioIn(uint32_t ms, uint32_t rate)
+{
+    audioBytes = audioBreaks = 0;
+    audioLast = -1;
+    if (!usb.audioInputStart(1, 16, rate)) {
+        say("C AUDIOIN 0 0 %s\n", usb.lastErrorName());
+        return;
+    }
+    waitMs(ms);
+    usb.audioInputStop();
+    say("C AUDIOIN %lu %lu\n", (unsigned long)audioBytes, (unsigned long)audioBreaks);
+}
+
+/* Exactly ms of a ramp, queued as room allows; the output sends silence around it. */
+static void cmdAudioOut(uint32_t ms, uint32_t rate)
+{
+    uint32_t left = rate * ms / 1000u, given = 0, sum = 0;
+    uint16_t sample = 0;
+    if (!usb.audioOutputStart(1, 16, rate)) {
+        say("C AUDIOOUT 0 0 0 %s\n", usb.lastErrorName());
+        return;
+    }
+    const uint32_t t0 = millis();
+    while (left && millis() - t0 < ms + 3000) {
+        uint8_t block[64];
+        size_t n = 0;
+        while (n + 2 <= sizeof block && left && usb.audioOutputAvailableForWrite() >= n + 2) {
+            block[n++] = (uint8_t)sample;
+            block[n++] = (uint8_t)(sample >> 8);
+            sum += (uint8_t)sample + (uint8_t)(sample >> 8);
+            sample++;
+            left--;
+            given++;
+        }
+        if (n) usb.audioSend(block, n);
+        waitMs(1);
+    }
+    waitMs(400);                   /* the queued packets leave */
+    usb.audioOutputStop();
+    say("C AUDIOOUT %u %lu %lu\n", left ? 0 : 1, (unsigned long)(given * 2u), (unsigned long)sum);
+}
+
+static void cmdVideo(uint32_t ms)
+{
+    videoFrames = videoErrors = 0;
+    if (!usb.videoStart(CH32RV_USB_HOST_VIDEO_FORMAT_YUY2, 80, 60, 0)) {
+        say("C VIDEO 0 0 0 0 %s\n", usb.lastErrorName());
+        return;
+    }
+    waitMs(ms);
+    usb.videoStop();
+    say("C VIDEO %lu %lu %u %u\n", (unsigned long)videoFrames, (unsigned long)videoErrors, videoW, videoH);
+}
+#else
+static void cmdAudioIn(uint32_t, uint32_t) { say("C AUDIOIN 0 0 no-media-build\n"); }
+static void cmdAudioOut(uint32_t, uint32_t) { say("C AUDIOOUT 0 0 0 no-media-build\n"); }
+static void cmdVideo(uint32_t) { say("C VIDEO 0 0 0 0 no-media-build\n"); }
+#endif
 
 /* The device's interfaces, every alternate setting (the library's walk of its configuration). */
 static CH32RVUsbHostInterfaceInfo itfs[32];
@@ -706,6 +783,13 @@ static void run(char *cmd)
     else if (!strcmp(cmd, "cdcn")) cmdCdcN(arg);
     else if (!strcmp(cmd, "cdcline")) cmdCdcLine(arg);
     else if (!strcmp(cmd, "cdcctl")) cmdCdcCtl(arg);
+    else if (!strcmp(cmd, "audioin") || !strcmp(cmd, "audioout")) {
+        char *rest = nullptr;
+        const uint32_t ms = strtoul(arg, &rest, 10);
+        const uint32_t rate = strtoul(rest, nullptr, 10);
+        if (!strcmp(cmd, "audioin")) cmdAudioIn(ms, rate ? rate : 32000);
+        else cmdAudioOut(ms, rate ? rate : 32000);
+    } else if (!strcmp(cmd, "video")) cmdVideo(strtoul(arg, nullptr, 10));
     else if (!strcmp(cmd, "reset")) {
         netFrames = netOurs = 0;
         SerialDMSeq.println("C RESET");
@@ -744,6 +828,28 @@ void setup()
         printHex(e.data, e.length);
         SerialDMSeq.println();
     });
+#if defined(PEER_MEDIA)
+    usb.onAudioData([](const CH32RVUsbHostAudioData &d) {
+        for (size_t i = 0; i + 1 < d.length; i += 2) {
+            const uint16_t s = (uint16_t)(d.data[i] | d.data[i + 1] << 8);
+            /* The first 10 ms may still hold what the device queued before; judge from there (peer_s3's rule). */
+            if (audioLast >= 0 && s != (uint16_t)(audioLast + 1) && audioBytes >= 640) audioBreaks++;
+            audioLast = s;
+        }
+        audioBytes += d.length;
+    });
+    usb.onVideoFrame([](const CH32RVUsbHostVideoFrame &f) {
+        videoFrames++;
+        videoW = f.width;
+        videoH = f.height;
+        for (size_t i = 1; i < f.length; i++) {
+            if ((uint8_t)(f.data[i] - f.data[0]) != (uint8_t)(i * 7)) {
+                videoErrors++;
+                break;
+            }
+        }
+    });
+#endif
     usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) {
         netFrames++;
         if (f.length >= 14 && f.data[12] == 0x88 && f.data[13] == 0xB5) {

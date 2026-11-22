@@ -380,6 +380,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     スケッチ 5 つ（usb_peer/*/peer_ch32rv）を入れた。ビルド（H417 の SS / FS、X035）と単体試験だけで、実機は配線待ち。
     相手のライブラリに無いもの（ホストの isochronous）の case は飛ばす（tests/peer/usb/README.ja.md）。ホストの NCM は
     2026-11-22 に入れた（usb-peer-net の CH32RV の相手も）。CH32RV が NCM のデバイスの相手（usb-peer-host-net）のスケッチも入れた（ビルドのみ）。
+    2026-11-23: CH32RV の相手役は全 case にそろった（CH32RV_PEER_LACKS が空）。usb-peer-media のホスト役（PEER_MEDIA のビルド）は
+    X035 などの 64 KB の石には入らない（RAM でもビデオの 2 枚のバッファを持てない）。その組では place が飛ばすようにするかは配線のときに決める。
     同じ OEP プローブの 2 つの口に DUT と相手を置いたときのモニター 2 つは未確認。
     2026-11-15: 相手の試作で見つかった穴を実装した。Pico・P4・PC が相手の回帰は V205・V407・H417 で 20 件通った（CH32RV どうしは配線待ち）。ホストの長い構成記述子（窓で読み直す）と
     切らない文字列、デバイスの MSC の複数 LUN と `setSense()`、HID の `enableOwnInterface()`。usb-peer-host-storage は

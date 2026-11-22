@@ -49,12 +49,12 @@ def test_the_cases_with_a_ch32rv_peer():
     h417 = dict(chip="CH32H417QEU6", kind="oep", lines={}, record={"usb": {"super_speed": ch32rv()}},
                 usb_peer_chip="CH32H417QEU6")
     cases = place.choose_cases(h417, items, caps)
-    for case in ("usb-peer", "usb-peer-classes", "usb-peer-fs", "usb-peer-input", "usb-peer-net", "usb-peer-host",
+    for case in ("usb-peer", "usb-peer-classes", "usb-peer-fs", "usb-peer-input", "usb-peer-net", "usb-peer-media",
+                 "usb-peer-host",
                  "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage"):
         assert cases[case] == "run", case
-    # What the CH32RV libraries cannot serve yet, said so.
-    for case in ("usb-peer-media",):
-        assert cases[case] == place.CH32RV_PEER_LACKS[case]
+    # Every case has a CH32RV peer sketch now (2026-11-23): nothing left to say it lacks.
+    assert not place.CH32RV_PEER_LACKS
     # The peer must be a host for the device cases: not on its USBD, not on a part without one.
     cases = place.choose_cases(dict(h417, record={"usb": {"full_speed": ch32rv("usbd")}}), items, caps)
     assert cases["usb-peer"] == "skip: the CH32RV peer's usbd is no USB host" and cases["usb-peer-host"] == "run"
