@@ -16,6 +16,7 @@ import secrets
 import socket
 import socketserver
 import ssl
+import struct
 import subprocess
 import threading
 import time
@@ -164,6 +165,55 @@ def test_eth_contract(dut, tmp_path, record_property):
     record_property("mdns_query_ms", int(m.group(2)))
     assert seen, "no mDNS query from the board reached this host"
     assert m.group(1).decode() == host_ip, f"{name}.local answered {m.group(1)!r}, not {host_ip} (asked from {seen})"
+
+    # eth.mdns-service: the same responder offers _ch32test._tcp - an instance on this host, port 4242, TXT
+    # path=/x and v=1 - answering the board's browse (a multicast query from 5353) by multicast.
+    stop.clear()
+    browse = []
+
+    def service_responder():
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        s.bind(("", 5353))
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton("224.0.0.251") + socket.inet_aton(host_ip))
+        s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(host_ip))
+        s.settimeout(0.2)
+
+        def dn(*labels):
+            return b"".join(bytes([len(x)]) + x.encode() for x in labels) + b"\0"
+
+        def rr(owner, rtype, rdata, flush=False):
+            return owner + struct.pack(">HHIH", rtype, 0x8001 if flush else 1, 120, len(rdata)) + rdata
+
+        svc = dn("_ch32test", "_tcp", "local")
+        inst = dn("bench", "_ch32test", "_tcp", "local")
+        host = dn(name, "local")
+        txt = b"\x07path=/x\x03v=1"
+        while not stop.is_set():
+            try:
+                d, src = s.recvfrom(2048)
+            except socket.timeout:
+                continue
+            if len(d) < 12 or d[2] & 0x80 or svc not in d[12:].lower():
+                continue
+            browse.append(src)
+            body = rr(svc, 12, inst) + rr(inst, 33, struct.pack(">HHH", 0, 0, 4242) + host, True) + \
+                rr(inst, 16, txt, True) + rr(host, 1, socket.inet_aton(host_ip), True)
+            s.sendto(struct.pack(">HHHHHH", 0, 0x8400, 0, 4, 0, 0) + body, ("224.0.0.251", 5353))
+        s.close()
+
+    t = threading.Thread(target=service_responder, daemon=True)
+    t.start()
+    try:
+        m = ask(dut, "mdnssvc ch32test tcp", rb"MDNSSVC (\d+)(?: (\S+) (\S+) (\d+) (\S*) (\d+))?", timeout=10)
+    finally:
+        stop.set()
+        t.join(2)
+    assert browse, "no mDNS browse from the board reached this host"
+    assert m.group(1) == b"1", m.group(0)
+    assert (m.group(2).decode(), m.group(3).decode(), int(m.group(4))) == (name, host_ip, 4242), m.group(0)
+    assert m.group(5) == b"/x" and m.group(6) == b"2", m.group(0)
 
     # eth.icmp
     out = subprocess.run(["ping", "-c", "20", "-i", "0.2", "-q", ip], capture_output=True, text=True).stdout

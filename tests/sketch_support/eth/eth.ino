@@ -13,6 +13,8 @@
  *   sink                      SINK <bytes> <ms> of the last connection on port 5001
  *   stats                     STATS <rx> <tx> <rx errors> <tx busy> <link ups> <PHY resets> <clock restarts>
  *   mdnsq <name>              MDNSQ <address, 0.0.0.0 when nobody answered> <ms>   (MDNS.queryHost(name))
+ *   mdnssvc <service> <proto> MDNSSVC <n> then, for the first, <host> <address> <port> <TXT "path"> <TXT items>
+ *                             (MDNS.begin("ch32rv-eth") once, then MDNS.queryService(service, proto, 2000))
  *
  * Servers, always: TCP 7 echoes, TCP 5001 takes and counts, TCP 5002 sends
  * bytes i & 0xFF (i from 0) until the peer closes, UDP 9000 echoes. */
@@ -146,6 +148,32 @@ static void reply(char *command)
         CONSOLE.print(a);
         CONSOLE.print(' ');
         CONSOLE.println((unsigned long)(millis() - t0));
+    } else if (strncmp(command, "mdnssvc ", 8) == 0) {
+        static bool begun;
+        char svc[24], proto[8];
+        if (sscanf(command + 8, "%23s %7s", svc, proto) != 2) {
+            CONSOLE.println("ERROR ARGS");
+            return;
+        }
+        if (!begun) {
+            begun = MDNS.begin("ch32rv-eth");
+        }
+        const int n = MDNS.queryService(svc, proto, 2000);
+        CONSOLE.print("MDNSSVC ");
+        CONSOLE.print(n);
+        if (n > 0) {
+            CONSOLE.print(' ');
+            CONSOLE.print(MDNS.hostname(0));
+            CONSOLE.print(' ');
+            CONSOLE.print(MDNS.IP(0));
+            CONSOLE.print(' ');
+            CONSOLE.print(MDNS.port(0));
+            CONSOLE.print(' ');
+            CONSOLE.print(MDNS.txt(0, "path"));
+            CONSOLE.print(' ');
+            CONSOLE.print(MDNS.numTxt(0));
+        }
+        CONSOLE.println();
     } else if (strcmp(command, "cab") == 0) {
         caUsed = 0;
         ca[0] = 0;
