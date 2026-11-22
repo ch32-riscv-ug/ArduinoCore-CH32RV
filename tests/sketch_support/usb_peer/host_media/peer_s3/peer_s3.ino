@@ -7,7 +7,8 @@
  * Commands, one per line on Serial; answers start "S3D ":
  *   ?                    S3D READY <mounted 0/1>
  *   audstat              S3D AUDRX <playback bytes> <breaks in the host's counter> <capture underruns>
- *   audreset             S3D AUDRESET */
+ *   audreset             S3D AUDRESET
+ *   audctl               S3D AUDCTL <muted 0/1> <volume, 1/256 dB> <mute / volume changes the host made> */
 #include <Arduino.h>
 #include <EspUsbDevice.h>
 
@@ -20,6 +21,9 @@ static int16_t captureNext;
 static uint32_t rxBytes, rxBreaks;
 static int16_t rxExpect;
 static bool rxSynced;
+static bool muted;
+static int16_t volume;
+static uint32_t controlChanges;
 static char line[120];
 static size_t used;
 
@@ -31,6 +35,8 @@ static void run(char *cmd)
   else if (!strcmp(cmd, "audstat"))
     Serial.printf("S3D AUDRX %lu %lu %lu\n", (unsigned long)rxBytes, (unsigned long)rxBreaks,
                   (unsigned long)capture.stats().underrunCount);
+  else if (!strcmp(cmd, "audctl"))
+    Serial.printf("S3D AUDCTL %u %d %lu\n", muted ? 1 : 0, volume, (unsigned long)controlChanges);
   else if (!strcmp(cmd, "audreset"))
   {
     rxBytes = rxBreaks = 0;
@@ -88,6 +94,16 @@ void loop()
     if (event.type == EspUsbAudioEventType::StreamStateChanged && event.target == EspUsbAudioEventTarget::Playback &&
         event.enabled)
       rxSynced = false;            /* a new stream: the counter starts anywhere */
+    if (event.type == EspUsbAudioEventType::MuteChanged)
+    {
+      muted = event.muted;
+      controlChanges++;
+    }
+    if (event.type == EspUsbAudioEventType::VolumeChanged)
+    {
+      volume = event.volumeDb256;
+      controlChanges++;
+    }
   }
   while (Serial.available())
   {

@@ -167,8 +167,8 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   interrupt), and may call the waiting APIs. Until then reports, received data
   and packets wait in the stack's buffers (a full one holds the device off),
   and up to 4 connections and disconnections queue.
-- Audio stops at PCM streams in and out (no feedback endpoint, no Feature
-  Unit volume / mute yet). No video (UVC).
+- Audio covers PCM streams in and out, the feedback endpoint, and Feature
+  Unit mute and volume. No video (UVC).
 - USB networking: one device at a time, and an NCM block carries one frame
   when it is sent. The IP stack on top (`networkAttachNetif()`) is for the
   Network library's series only (those with an Ethernet MAC).
@@ -366,10 +366,18 @@ service interval. Received PCM waits in a ring
 `onAudioData()` (from `deliverEvents()`). The output sends what `audioSend()`
 queued, as much as the rate gives each interval (a fraction carried over),
 and silence when it runs dry, counted by `audioOutputUnderruns()`. One input
-and one output at a time. No feedback endpoint: an asynchronous device is fed
-at the nominal rate. Checked with V407 and an ESP32-P4 (EspUsbDevice's UAC1
+and one output at a time. An output alternate with an explicit feedback
+endpoint (an asynchronous device) has it read while the output runs, and the
+output follows the rate the device asks for (`audioOutputFeedbackRate()`; a
+value more than 1/8 off the nominal one is dropped), see `audioOutputRate()`.
+Mute and volume go to a Feature Unit: `audioSetMute()` / `audioGetMute()` /
+`audioSetVolume()` / `audioGetVolume()` / `audioGetVolumeRange()` (1/256 dB),
+`unitId` 0 being the first unit with the control; `getAudioFeatureUnits()`
+lists the units. Checked with V407 and an ESP32-P4 (EspUsbDevice's UAC1
 headset, 48 kHz mono 16-bit): a second each of capture and playback with no
-sample lost (2026-11-22, usb-peer-host-media).
+sample lost, and mute and volume set and read back (2026-11-23,
+usb-peer-host-media). That device has no feedback endpoint, so feedback is
+not yet checked on a board.
 
 ### USB network (CDC-NCM / CDC-ECM)
 

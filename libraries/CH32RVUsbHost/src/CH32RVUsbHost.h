@@ -440,6 +440,22 @@ struct CH32RVUsbHostAudioStreamInfo {
     uint8_t protocol = CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC1;
     uint8_t terminalLink = 0, clockSourceId = 0;   /* UAC2: the clock the rates come from */
 };
+#define CH32RV_USB_HOST_MAX_AUDIO_FEATURE_CHANNELS 8
+/* A Feature Unit of the Audio Control interface (EspUsbHostAudioFeatureUnitInfo):
+ * which controls the master (channel 0) and each channel have. UAC1 keeps one
+ * bit per control (mute bit 0, volume bit 1), UAC2 two (11: the host may set
+ * it) - CH32RVUsbHost::audioHasMute() / audioHasVolume() read them. */
+struct CH32RVUsbHostAudioFeatureUnitInfo {
+    uint8_t address = 0, interfaceNumber = 0, unitId = 0, sourceId = 0;
+    uint8_t channelCount = 0, controlSize = 0;
+    uint32_t masterControls = 0;
+    uint32_t channelControls[CH32RV_USB_HOST_MAX_AUDIO_FEATURE_CHANNELS] = {};
+    uint8_t protocol = CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC1;
+};
+/* Volume in 1/256 dB (both versions), as the device reports it. */
+struct CH32RVUsbHostAudioVolumeRange {
+    int16_t min = 0, max = 0, resolution = 0;
+};
 /* Received PCM, as it came in the isochronous packets. */
 struct CH32RVUsbHostAudioData {
     uint8_t address = 0, interfaceNumber = 0;
@@ -699,6 +715,27 @@ public:
      * no room for all of it (none is taken then). */
     bool audioSend(const uint8_t *data, size_t length, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     size_t audioOutputAvailableForWrite(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    /* An asynchronous output's explicit feedback endpoint (polled while the
+     * output runs): the rate it asks for paces the output; without one, the
+     * rate set at the start. */
+    bool audioOutputHasFeedback(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    uint32_t audioOutputFeedbackRate(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    uint32_t audioOutputRate(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    /* Feature Units: mute and volume. unitId 0: the first unit that has the
+     * control on that channel (0: the master). Volume in 1/256 dB. */
+    size_t getAudioFeatureUnits(uint8_t address, CH32RVUsbHostAudioFeatureUnitInfo *units, size_t maxUnits);
+    bool audioHasMute(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0, uint8_t channel = 0);
+    bool audioHasVolume(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0, uint8_t channel = 0);
+    bool audioGetMute(bool &mute, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0,
+                      uint8_t channel = 0, uint32_t timeoutMs = 1000);
+    bool audioSetMute(bool mute, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0,
+                      uint8_t channel = 0, uint32_t timeoutMs = 1000);
+    bool audioGetVolume(int16_t &volume, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0,
+                        uint8_t channel = 0, uint32_t timeoutMs = 1000);
+    bool audioSetVolume(int16_t volume, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint8_t unitId = 0,
+                        uint8_t channel = 0, uint32_t timeoutMs = 1000);
+    bool audioGetVolumeRange(CH32RVUsbHostAudioVolumeRange &range, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
+                             uint8_t unitId = 0, uint8_t channel = 0, uint32_t timeoutMs = 1000);
 
     /* ---- USB network: CDC-NCM and CDC-ECM (EspUsbHost's calls) ---- */
     /* Open the network function of a device (the first with one): its

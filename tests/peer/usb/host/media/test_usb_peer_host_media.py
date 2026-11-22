@@ -36,7 +36,7 @@ def test_usb_peer_host_media(dut, peers):
 
     # Playback: a second of the DUT's counter, every sample in order at the device.
     device(peer, "audreset", rb"AUDRESET")
-    m = host(dut, "audout 1000", rb"AUDOUT (\d) (\d+) (\d+)", timeout=10)
+    m = host(dut, "audout 1000", rb"AUDOUT (\d) (\d+) (\d+) (\d) (\d+)", timeout=10)
     assert m.group(1) == b"1", "audioOutputStart() failed"
     s = device(peer, "audstat", rb"AUDRX (\d+) (\d+) (\d+)")
     rx, rx_breaks = int(s.group(1)), int(s.group(2))
@@ -46,3 +46,20 @@ def test_usb_peer_host_media(dut, peers):
     under = int(m.group(3))
     assert rx_breaks <= under * 50 + 1, f"{rx_breaks} breaks at the device, {under} underruns"
     assert under <= 3, f"{under} underruns in a second"
+    print("output feedback", m.group(4), "rate", m.group(5))
+
+    # Feature Units: mute and volume set, read back, and seen by the device.
+    dut.write("audfu")
+    fus = dut.expect(rb"((?:H AUDFU [^\n]*\n)*)H AUDFUEND (\d+)\r?\n", timeout=10)
+    assert int(fus.group(2)) >= 1, "no Feature Unit"
+    before = int(device(peer, "audctl", rb"AUDCTL (\d) (-?\d+) (\d+)").group(3))
+    for want in (1, 0):
+        m = host(dut, f"audmute {want}", rb"AUDMUTE (\d) (\d) (-?\d+)")
+        assert m.group(1, 2) == (b"1", b"1") and int(m.group(3)) == want, m.group(0)
+    m = host(dut, "audvol -2560", rb"AUDVOL (\d) (\d) (-?\d+) (-?\d+) (-?\d+) (-?\d+)")
+    assert m.group(1, 2) == (b"1", b"1"), m.group(0)
+    lo, hi = int(m.group(4)), int(m.group(5))
+    assert lo <= int(m.group(3)) <= hi, m.group(0)
+    s = device(peer, "audctl", rb"AUDCTL (\d) (-?\d+) (\d+)")
+    assert s.group(1) == b"0" and int(s.group(3)) - before >= 3, s.group(0)
+    assert int(s.group(2)) == int(m.group(3)), "the device's volume is the one read back"

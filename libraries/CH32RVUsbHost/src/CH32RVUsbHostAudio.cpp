@@ -41,6 +41,12 @@ struct AudioStream {
     uint8_t *pkt, *ring;
     uint16_t head, tail, used;
     uint32_t underruns, overruns;
+    /* The output's explicit feedback endpoint (0: none) and the rate it asks for. */
+    uint8_t fbEp;
+    bool fast;
+    volatile bool fbBusy;
+    uint32_t nominal, fbRate, fbUpdates, fbRejects;
+    uint8_t fb[4] __attribute__((aligned(4)));
 };
 AudioStream streams[2];                 /* 0 input, 1 output */
 uint8_t ctl[64] __attribute__((aligned(4)));
@@ -88,6 +94,50 @@ void done(void *user, uint8_t result, uint16_t length)
     arm(s);                        /* the next interval's packet, whatever this one did */
 }
 
+/* A feedback packet: samples per frame in 10.14 (full speed, 3 bytes) or per
+ * microframe in 16.16 (high speed, 4 bytes; some full-speed devices send 16.16
+ * too). A value more than 1/8 off the nominal rate is not taken. */
+void feedback_arm(AudioStream &s);
+
+void feedback_done(void *user, uint8_t result, uint16_t length)
+{
+    AudioStream &s = *(AudioStream *)user;
+    s.fbBusy = false;
+    if (!s.running) {
+        return;
+    }
+    if (result == CH32RV_USBH_OK && length >= 3) {
+        const uint32_t v = length >= 4 ? le32(s.fb) : le24(s.fb);
+        uint32_t rate = 0;
+        if (s.fast) {
+            rate = (uint32_t)(((uint64_t)v * 8000u) >> 16);
+        } else if (length == 3) {
+            rate = (uint32_t)(((uint64_t)v * 1000u) >> 14);
+        } else {
+            rate = (uint32_t)(((uint64_t)v * 1000u) >> 16);
+        }
+        const uint32_t margin = s.nominal / 8u;
+        if (rate + margin >= s.nominal && rate <= s.nominal + margin) {
+            s.fbRate = rate;
+            s.fbUpdates++;
+        } else {
+            s.fbRejects++;
+        }
+    }
+    feedback_arm(s);
+}
+
+void feedback_arm(AudioStream &s)
+{
+    if (!s.running || !s.fbEp || s.fbBusy || !ch32rv_usb_host_connected(s.daddr)) {
+        return;
+    }
+    s.fbBusy = true;
+    if (!ch32rv_usb_host_xfer(s.daddr, s.fbEp, s.fb, s.fast ? 4 : 3, feedback_done, &s)) {
+        s.fbBusy = false;
+    }
+}
+
 /* The next packet: an input packet's room, or the output's frames for one
  * interval from the ring (silence for what it lacks). */
 void arm(AudioStream &s)
@@ -97,7 +147,7 @@ void arm(AudioStream &s)
     }
     uint16_t n = s.packet;
     if (!s.input) {
-        const uint64_t acc = (uint64_t)s.rate * s.intervalUs + s.carry;
+        const uint64_t acc = (uint64_t)(s.fbRate ? s.fbRate : s.rate) * s.intervalUs + s.carry;
         uint32_t frames = (uint32_t)(acc / 1000000u);
         s.carry = (uint32_t)(acc % 1000000u);
         n = (uint16_t)(frames * s.frameBytes);
@@ -121,6 +171,7 @@ void poll(CH32RVUsbHost &host)
     (void)host;
     for (AudioStream &s : streams) {
         arm(s);                    /* a start that could not arm from the completion */
+        feedback_arm(s);
     }
 }
 
@@ -182,6 +233,32 @@ bool find_endpoint(uint8_t daddr, uint8_t itf, uint8_t alt, uint8_t keep[13])
             }
             here = d[2] == itf && d[3] == alt;
         } else if (here && d[1] == 5 && d[0] >= 7 && (d[3] & 3) == CH32RV_USBH_ISOCHRONOUS && ((d[3] >> 4) & 3) == 0) {
+            memset(keep, 0, 13);
+            memcpy(keep, d, 7);
+            keep[0] = 7;
+            const uint16_t room = ch32rv_usb_host_config_room(w);
+            if (room >= d[0] + 6u && d[d[0]] >= 6 && d[d[0] + 1] == 0x30) {
+                memcpy(keep + 7, d + d[0], 6);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+/* The explicit feedback endpoint of (itf, alt): an isochronous IN of usage 01. */
+bool find_feedback(uint8_t daddr, uint8_t itf, uint8_t alt, uint8_t keep[13])
+{
+    CH32RVUsbHostConfigWalk w;
+    bool here = false;
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d; d = ch32rv_usb_host_config_next(w)) {
+        if (d[1] == 4 && d[0] >= 9) {
+            if (here) {
+                break;
+            }
+            here = d[2] == itf && d[3] == alt;
+        } else if (here && d[1] == 5 && d[0] >= 7 && (d[3] & 3) == CH32RV_USBH_ISOCHRONOUS && ((d[3] >> 4) & 3) == 1 &&
+                   (d[2] & 0x80)) {
             memset(keep, 0, 13);
             memcpy(keep, d, 7);
             keep[0] = 7;
@@ -293,9 +370,17 @@ bool start(CH32RVUsbHost &host, AudioStream &s, bool input, const CH32RVUsbHostA
     s.frameBytes = (uint8_t)(info.channels * info.bytesPerSample);
     s.rate = rate;
     s.intervalUs = (fast ? 125u : 1000u) << (b > 16 ? 15 : b - 1);
+    s.fast = fast;
+    s.nominal = rate;
+    uint8_t fbKeep[13];
+    if (!input && find_feedback(daddr, info.interfaceNumber, info.alternate, fbKeep) &&
+        ch32rv_usb_host_ep_open(daddr, fbKeep)) {
+        s.fbEp = fbKeep[2];
+    }
     s.running = true;
     ch32rv_usb_host_mark_claimed(daddr, info.interfaceNumber);
     arm(s);
+    feedback_arm(s);
     return host.ok();
 }
 
@@ -304,11 +389,15 @@ void stop(AudioStream &s)
     if (!s.running) {
         return;
     }
-    const uint8_t daddr = s.daddr, itf = s.itf, ep = s.ep;
+    const uint8_t daddr = s.daddr, itf = s.itf, ep = s.ep, fb = s.fbEp;
     s.running = false;
     if (ch32rv_usb_host_connected(daddr)) {
         ch32rv_usb_host_abort(daddr, ep);
         ch32rv_usb_host_ep_close(daddr, ep);
+        if (fb) {
+            ch32rv_usb_host_abort(daddr, fb);
+            ch32rv_usb_host_ep_close(daddr, fb);
+        }
         ch32rv_usb_host_control_sync(daddr, 0x01, 0x0B, 0, itf, nullptr, 0, nullptr, 1000);
     }
     release(s);
@@ -551,6 +640,242 @@ size_t CH32RVUsbHost::audioOutputAvailableForWrite(uint8_t address) const
     return matches(s, address) ? (size_t)(CH32RV_USB_HOST_AUDIO_RING_SIZE - s.used) : 0;
 }
 
+bool CH32RVUsbHost::audioOutputHasFeedback(uint8_t address) const
+{
+    return matches(streams[1], address) && streams[1].fbEp;
+}
+
+uint32_t CH32RVUsbHost::audioOutputFeedbackRate(uint8_t address) const
+{
+    return matches(streams[1], address) ? streams[1].fbRate : 0;
+}
+
+uint32_t CH32RVUsbHost::audioOutputRate(uint8_t address) const
+{
+    const AudioStream &s = streams[1];
+    return matches(s, address) ? (s.fbRate ? s.fbRate : s.rate) : 0;
+}
+
+/* ---- Feature Units ---- */
+
+namespace {
+
+constexpr uint8_t FU_MUTE = 0x01, FU_VOLUME = 0x02;   /* control selectors, both versions */
+constexpr uint8_t UAC1_GET_CUR = 0x81, UAC1_GET_MIN = 0x82, UAC1_GET_MAX = 0x83, UAC1_GET_RES = 0x84;
+
+/* Each Feature Unit of the Audio Control interface into `out` (up to max); how many. */
+size_t feature_units(uint8_t daddr, CH32RVUsbHostAudioFeatureUnitInfo *out, size_t max)
+{
+    size_t count = 0;
+    uint8_t ac = 0xFF, protocol = 0;
+    bool inAc = false;
+    CH32RVUsbHostConfigWalk w;
+    for (const uint8_t *d = ch32rv_usb_host_config_first(w, daddr); d; d = ch32rv_usb_host_config_next(w)) {
+        if (d[1] == 4 && d[0] >= 9) {
+            inAc = d[5] == 0x01 && d[6] == 0x01 && d[3] == 0 && (ac == 0xFF || ac == d[2]);
+            if (inAc) {
+                ac = d[2];
+                protocol = d[7];
+            }
+            continue;
+        }
+        if (!inAc || d[1] != 0x24 || d[2] != 0x06 || d[0] < 7) {
+            continue;
+        }
+        CH32RVUsbHostAudioFeatureUnitInfo u;
+        u.address = daddr;
+        u.interfaceNumber = ac;
+        u.unitId = d[3];
+        u.sourceId = d[4];
+        u.protocol = protocol;
+        const bool uac2 = protocol == CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC2;
+        const uint8_t size = uac2 ? 4 : d[5];
+        const uint8_t at = uac2 ? 5 : 6;
+        const uint8_t fixed = uac2 ? 6 : 7;
+        if (!size || size > 4 || d[0] < fixed + size) {
+            continue;
+        }
+        u.controlSize = size;
+        const uint8_t entries = (uint8_t)((d[0] - fixed) / size);
+        u.channelCount = (uint8_t)(entries - 1u);
+        for (uint8_t e = 0; e < entries; e++) {
+            uint32_t v = 0;
+            for (uint8_t k = 0; k < size; k++) {
+                v |= (uint32_t)d[at + e * size + k] << (8 * k);
+            }
+            if (e == 0) {
+                u.masterControls = v;
+            } else if (e - 1u < CH32RV_USB_HOST_MAX_AUDIO_FEATURE_CHANNELS) {
+                u.channelControls[e - 1u] = v;
+            }
+        }
+        if (out && count < max) {
+            out[count] = u;
+        }
+        count++;
+    }
+    return count;
+}
+
+bool has_control(const CH32RVUsbHostAudioFeatureUnitInfo &u, uint8_t channel, uint8_t selector)
+{
+    if (channel > u.channelCount || (channel && channel > CH32RV_USB_HOST_MAX_AUDIO_FEATURE_CHANNELS)) {
+        return false;
+    }
+    const uint32_t v = channel ? u.channelControls[channel - 1u] : u.masterControls;
+    if (u.protocol == CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC2) {
+        return ((v >> (2u * (selector - 1u))) & 3u) == 3u;   /* host-programmable */
+    }
+    return (v >> (selector - 1u)) & 1u;
+}
+
+/* The unit to use: unitId's, or the first with the control on the channel. */
+bool pick_unit(uint8_t daddr, uint8_t unitId, uint8_t channel, uint8_t selector, CH32RVUsbHostAudioFeatureUnitInfo &u)
+{
+    CH32RVUsbHostAudioFeatureUnitInfo list[8];
+    const size_t n = feature_units(daddr, list, 8);
+    for (size_t i = 0; i < n && i < 8; i++) {
+        if ((unitId == 0 || list[i].unitId == unitId) && has_control(list[i], channel, selector)) {
+            u = list[i];
+            return true;
+        }
+    }
+    return false;
+}
+
+}  // namespace
+
+size_t CH32RVUsbHost::getAudioFeatureUnits(uint8_t address, CH32RVUsbHostAudioFeatureUnitInfo *units, size_t maxUnits)
+{
+    uint8_t daddr;
+    if (!_started || !resolve_address(*this, address, daddr)) {
+        fail(CH32RVUsbHostError::NotConnected);
+        return 0;
+    }
+    ok();
+    return feature_units(daddr, units, maxUnits);
+}
+
+bool CH32RVUsbHost::audioHasMute(uint8_t address, uint8_t unitId, uint8_t channel)
+{
+    uint8_t daddr;
+    CH32RVUsbHostAudioFeatureUnitInfo u;
+    return _started && resolve_address(*this, address, daddr) && pick_unit(daddr, unitId, channel, FU_MUTE, u);
+}
+
+bool CH32RVUsbHost::audioHasVolume(uint8_t address, uint8_t unitId, uint8_t channel)
+{
+    uint8_t daddr;
+    CH32RVUsbHostAudioFeatureUnitInfo u;
+    return _started && resolve_address(*this, address, daddr) && pick_unit(daddr, unitId, channel, FU_VOLUME, u);
+}
+
+/* GET_CUR of the control into ctl (n bytes). */
+static bool fu_get(CH32RVUsbHost &host, uint8_t address, uint8_t unitId, uint8_t channel, uint8_t selector,
+                   uint8_t n, uint32_t timeoutMs, uint8_t uac1Request = UAC1_GET_CUR)
+{
+    uint8_t daddr;
+    CH32RVUsbHostAudioFeatureUnitInfo u;
+    if (!host._started || !resolve_address(host, address, daddr) || !pick_unit(daddr, unitId, channel, selector, u)) {
+        return host.fail(CH32RVUsbHostError::NotSupported);
+    }
+    const bool uac2 = u.protocol == CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC2;
+    size_t got = 0;
+    if (!ch32rv_usb_host_control(host, daddr, 0xA1, uac2 ? AUDIO_SET_CUR : uac1Request,
+                                 (uint16_t)(selector << 8 | channel), (uint16_t)(u.unitId << 8 | u.interfaceNumber),
+                                 ctl, n, &got, timeoutMs)) {
+        return false;
+    }
+    if (got < n) {
+        return host.fail(CH32RVUsbHostError::InvalidResponse);
+    }
+    return host.ok();
+}
+
+static bool fu_set(CH32RVUsbHost &host, uint8_t address, uint8_t unitId, uint8_t channel, uint8_t selector,
+                   uint8_t n, uint32_t timeoutMs)
+{
+    uint8_t daddr;
+    CH32RVUsbHostAudioFeatureUnitInfo u;
+    if (!host._started || !resolve_address(host, address, daddr) || !pick_unit(daddr, unitId, channel, selector, u)) {
+        return host.fail(CH32RVUsbHostError::NotSupported);
+    }
+    if (!ch32rv_usb_host_control(host, daddr, 0x21, AUDIO_SET_CUR, (uint16_t)(selector << 8 | channel),
+                                 (uint16_t)(u.unitId << 8 | u.interfaceNumber), ctl, n, nullptr, timeoutMs)) {
+        return false;
+    }
+    return host.ok();
+}
+
+bool CH32RVUsbHost::audioGetMute(bool &mute, uint8_t address, uint8_t unitId, uint8_t channel, uint32_t timeoutMs)
+{
+    if (!fu_get(*this, address, unitId, channel, FU_MUTE, 1, timeoutMs)) {
+        return false;
+    }
+    mute = ctl[0] != 0;
+    return true;
+}
+
+bool CH32RVUsbHost::audioSetMute(bool mute, uint8_t address, uint8_t unitId, uint8_t channel, uint32_t timeoutMs)
+{
+    ctl[0] = mute ? 1 : 0;
+    return fu_set(*this, address, unitId, channel, FU_MUTE, 1, timeoutMs);
+}
+
+bool CH32RVUsbHost::audioGetVolume(int16_t &volume, uint8_t address, uint8_t unitId, uint8_t channel,
+                                   uint32_t timeoutMs)
+{
+    if (!fu_get(*this, address, unitId, channel, FU_VOLUME, 2, timeoutMs)) {
+        return false;
+    }
+    volume = (int16_t)le16(ctl);
+    return true;
+}
+
+bool CH32RVUsbHost::audioSetVolume(int16_t volume, uint8_t address, uint8_t unitId, uint8_t channel,
+                                   uint32_t timeoutMs)
+{
+    ctl[0] = (uint8_t)volume;
+    ctl[1] = (uint8_t)((uint16_t)volume >> 8);
+    return fu_set(*this, address, unitId, channel, FU_VOLUME, 2, timeoutMs);
+}
+
+bool CH32RVUsbHost::audioGetVolumeRange(CH32RVUsbHostAudioVolumeRange &range, uint8_t address, uint8_t unitId,
+                                        uint8_t channel, uint32_t timeoutMs)
+{
+    uint8_t daddr;
+    CH32RVUsbHostAudioFeatureUnitInfo u;
+    if (!_started || !resolve_address(*this, address, daddr) || !pick_unit(daddr, unitId, channel, FU_VOLUME, u)) {
+        return fail(CH32RVUsbHostError::NotSupported);
+    }
+    if (u.protocol == CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC2) {
+        size_t got = 0;
+        if (!ch32rv_usb_host_control(*this, daddr, 0xA1, AUDIO2_RANGE, (uint16_t)(FU_VOLUME << 8 | channel),
+                                     (uint16_t)(u.unitId << 8 | u.interfaceNumber), ctl, 8, &got, timeoutMs)) {
+            return false;
+        }
+        if (got < 8) {
+            return fail(CH32RVUsbHostError::InvalidResponse);
+        }
+        range.min = (int16_t)le16(ctl + 2);
+        range.max = (int16_t)le16(ctl + 4);
+        range.resolution = (int16_t)le16(ctl + 6);
+        return ok();
+    }
+    int16_t v[3];
+    const uint8_t req[3] = {UAC1_GET_MIN, UAC1_GET_MAX, UAC1_GET_RES};
+    for (uint8_t i = 0; i < 3; i++) {
+        if (!fu_get(*this, address, u.unitId, channel, FU_VOLUME, 2, timeoutMs, req[i])) {
+            return false;
+        }
+        v[i] = (int16_t)le16(ctl);
+    }
+    range.min = v[0];
+    range.max = v[1];
+    range.resolution = v[2];
+    return ok();
+}
+
 #else /* no host */
 
 size_t CH32RVUsbHost::getAudioStreams(uint8_t, CH32RVUsbHostAudioStreamInfo *, size_t) { return 0; }
@@ -565,5 +890,16 @@ bool CH32RVUsbHost::audioOutputRunning(uint8_t) const { return false; }
 uint32_t CH32RVUsbHost::audioOutputUnderruns(uint8_t) const { return 0; }
 bool CH32RVUsbHost::audioSend(const uint8_t *, size_t, uint8_t) { return fail(CH32RVUsbHostError::Unsupported); }
 size_t CH32RVUsbHost::audioOutputAvailableForWrite(uint8_t) const { return 0; }
+bool CH32RVUsbHost::audioOutputHasFeedback(uint8_t) const { return false; }
+uint32_t CH32RVUsbHost::audioOutputFeedbackRate(uint8_t) const { return 0; }
+uint32_t CH32RVUsbHost::audioOutputRate(uint8_t) const { return 0; }
+size_t CH32RVUsbHost::getAudioFeatureUnits(uint8_t, CH32RVUsbHostAudioFeatureUnitInfo *, size_t) { return 0; }
+bool CH32RVUsbHost::audioHasMute(uint8_t, uint8_t, uint8_t) { return false; }
+bool CH32RVUsbHost::audioHasVolume(uint8_t, uint8_t, uint8_t) { return false; }
+bool CH32RVUsbHost::audioGetMute(bool &, uint8_t, uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::audioSetMute(bool, uint8_t, uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::audioGetVolume(int16_t &, uint8_t, uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::audioSetVolume(int16_t, uint8_t, uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::audioGetVolumeRange(CH32RVUsbHostAudioVolumeRange &, uint8_t, uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 
 #endif

@@ -71,7 +71,11 @@
  *   audstreams           H AUDSTREAM <in 1/out 0> <channels> <bits> <rate> <rates listed> <itf> <alt> <ep> <mps> <protocol>
  *                        per stream / H AUDEND <n>
  *   audin <ms>           H AUDIN <ok> <bytes> <breaks in the device's counter> (audioInputStart(1, 16, 48000), ms of it)
- *   audout <ms>          H AUDOUT <ok> <bytes queued> <underruns> (audioOutputStart(1, 16, 48000), a counter for ms)
+ *   audout <ms>          H AUDOUT <ok> <bytes queued> <underruns> <feedback 0/1> <rate> (audioOutputStart(1, 16,
+ *                        48000), a counter for ms)
+ *   audfu                H AUDFU <unit> <source> <channels> <master controls hex> <protocol> per Feature Unit / H AUDFUEND <n>
+ *   audmute <0|1>        H AUDMUTE <has> <set ok> <read back>        (the first unit with mute, master channel)
+ *   audvol <v>           H AUDVOL <has> <set ok> <read back> <min> <max> <res>   (1/256 dB, the master channel)
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -570,8 +574,48 @@ static void cmd_audout(char *arg)
         delay(1);
     }
     const uint32_t under = usb.audioOutputUnderruns();
+    const bool fb = usb.audioOutputHasFeedback();
+    const uint32_t rate = usb.audioOutputRate();
     usb.audioOutputStop();
-    CONSOLE.printf("H AUDOUT %u %lu %lu\n", ok ? 1 : 0, (unsigned long)queued, (unsigned long)under);
+    CONSOLE.printf("H AUDOUT %u %lu %lu %u %lu\n", ok ? 1 : 0, (unsigned long)queued, (unsigned long)under, fb ? 1 : 0,
+                   (unsigned long)rate);
+}
+
+static void cmd_audfu()
+{
+    CH32RVUsbHostAudioFeatureUnitInfo list[4];
+    const size_t n = usb.getAudioFeatureUnits(CH32RV_USB_HOST_ANY_ADDRESS, list, 4);
+    for (size_t i = 0; i < n && i < 4; i++) {
+        CONSOLE.printf("H AUDFU %u %u %u %lx %02x\n", list[i].unitId, list[i].sourceId, list[i].channelCount,
+                       (unsigned long)list[i].masterControls, list[i].protocol);
+    }
+    CONSOLE.print("H AUDFUEND ");
+    CONSOLE.println((unsigned long)n);
+}
+
+static void cmd_audmute(char *arg)
+{
+    const bool want = strtoul(arg, nullptr, 10) != 0;
+    const bool has = usb.audioHasMute();
+    const bool set = has && usb.audioSetMute(want);
+    bool back = !want;
+    const bool got = has && usb.audioGetMute(back);
+    CONSOLE.printf("H AUDMUTE %u %u %d\n", has ? 1 : 0, set ? 1 : 0, got ? (back ? 1 : 0) : -1);
+}
+
+static void cmd_audvol(char *arg)
+{
+    const int16_t want = (int16_t)strtol(arg, nullptr, 10);
+    const bool has = usb.audioHasVolume();
+    const bool set = has && usb.audioSetVolume(want);
+    int16_t back = 0;
+    const bool got = has && usb.audioGetVolume(back);
+    CH32RVUsbHostAudioVolumeRange r;
+    if (has) {
+        usb.audioGetVolumeRange(r);
+    }
+    CONSOLE.printf("H AUDVOL %u %u %d %d %d %d\n", has ? 1 : 0, set ? 1 : 0, got ? back : -32768, r.min, r.max,
+                   r.resolution);
 }
 #endif
 
@@ -896,6 +940,12 @@ static void reply(char *cmd)
         cmd_audin(arg);
     } else if (strcmp(cmd, "audout") == 0) {
         cmd_audout(arg);
+    } else if (strcmp(cmd, "audfu") == 0) {
+        cmd_audfu();
+    } else if (strcmp(cmd, "audmute") == 0) {
+        cmd_audmute(arg);
+    } else if (strcmp(cmd, "audvol") == 0) {
+        cmd_audvol(arg);
 #endif
 #if defined(USB_HOST_NET)
     } else if (strcmp(cmd, "netopen") == 0) {
