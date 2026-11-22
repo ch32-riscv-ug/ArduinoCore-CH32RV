@@ -16,11 +16,20 @@ PC7); PC18 / PC19 are SWD's too. The bench test passes on H417, X035 and V205 (P
 The PIOC is "a small 8-bit core with two pads that keeps time to the clock". It takes one fixed job - usually a pad
 waveform - off the main core. It does not run anything you like.
 
-**Good for**
-- One- or two-wire protocols the hardware has no peripheral for, without stopping the main core's interrupts:
-  many WS2812 LEDs, 1-Wire (DS18B20), NEC IR send / receive, home-made single-wire links, Manchester coding.
-- Measuring or making pulse widths and gaps that the main core's interrupts (USB, millis()) would jitter.
-- Watching the pads and telling the main core only when something happens (`onDone()`'s interrupt).
+The PIOC pays off less often than it seems. The examples ([Examples](#examples)) drive WS2812, 1-Wire and IR, and
+every one of those can be made with the peripherals as well ("Other ways" below). Check them first.
+
+**Good for** (what the peripherals make hard)
+- A two-way single wire read in a fixed window inside or right after a pulse of ours: WCH's one-wire debug line
+  (SWIO) is one, and the EVT's PIOC_Single_Wire is that shape. A USART in single-wire half duplex cannot read at a
+  set time during or just after its own sending.
+- No SPI, USART or timer pad free for the job, or theirs taken - and the PIOC's own pad free (X035: IO0 on PC18 or
+  PC7, IO1 on PC19).
+- An open-drain single wire (1-Wire and the like) on X033 / X035, whose USART has no open drain: its single-wire
+  half duplex stays push-pull (docs/peripheral-support.ja.md, "USART 1線半二重"). The PIOC's pads can be open
+  drain (`setOpenDrain()`; the PiocOneWire example passes on X035 too).
+- A long frame that must not break while the main core is busy with interrupts: SPI + DMA in halves (below) breaks
+  the frame when an interrupt comes too late; the PIOC sends from its own SRAM.
 
 **Not for**
 - What a hardware peripheral does (USART, I2C, SPI, timer PWM / capture): faster, and any routed pad.
@@ -30,6 +39,31 @@ waveform - off the main core. It does not run anything you like.
   byte. Long data goes into the PIOC's 4 KiB SRAM, which also holds the program.
 - Heavy computation: 8 bits, no multiply, a 6-deep stack.
 - Several jobs at once: one program runs; another job means loading another image.
+
+**Other ways** (before choosing the PIOC)
+- Most single-wire sending is SPI + DMA (`SPI.transferAsync()`, MOSI only). WS2812 takes 3 or 4 SPI bits per bit
+  (the sketch spreads them). On V4x7's PA15 and X3x5's PA15 / PD3 / PD4 `rgbLedWrite()` already sends through the
+  WS2812 block (ARGB) and DMA without stopping interrupts.
+- 1-Wire is a USART in single-wire half duplex (`setPins(p, p)`; the reset pulse at 9600 bps, bits at 115200).
+  It needs open drain, so not on X033 / X035 (above).
+- Pulse widths and periods: timer capture (`CH32RVPulseCapture`, CH32RVTimerInput). Every pulse of a train takes
+  timer capture read by DMA (no API for it in the libraries yet).
+- A received waveform can be sampled fast on SPI's MISO and decoded afterwards.
+
+**RAM** (X035 / X033, V205): the PIOC takes 4 KiB of the ordinary RAM whatever it does. WS2812 sent by SPI in one
+go takes 9 bytes an LED (3 bits a bit: 48 MHz / 16 = 3 MHz, T0H 333 ns, T1H 667 ns, 1.0 us a bit) or 12 (4 bits),
+so the break-even is about 455 or 340 LEDs. SPI's DMA sent in halves on its half-transfer interrupt needs about 100
+bytes, and then the PIOC saves no RAM (but a late interrupt breaks the frame: there the PIOC wins). Worked out, not
+measured.
+
+**By family**
+- H41x: two cores (V5F and V3F) and many peripherals - next to no reason for the PIOC. A pad job that keeps time
+  can go to the V3F (`setup1()` / `loop1()`).
+- V205: the main core runs at 160 MHz too; bit-banging keeps up with much of it.
+- V4x7 / X3x5 (no PIOC): WS2812 through the ARGB block.
+- X035 / X033: `rgbLedWrite()` has no ARGB block and sends in software with interrupts off (about 30 us an LED,
+  about 3 ms for 100). A long chain that must not hold interrupts off is the PIOC's (or SPI + DMA's) case, and so is
+  an open-drain single wire (above).
 
 **Timing**: the PIOC runs at HCLK (measured: H417 about 100 MHz, X035 48 MHz, V205 160 MHz). Instructions take 1 to 3
 cycles (a taken branch, CALL, RET: 2; RDCODE: 3), so on X035 an instruction is about 21 ns and a loop that toggles a pad
