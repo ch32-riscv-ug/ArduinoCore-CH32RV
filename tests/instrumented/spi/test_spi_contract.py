@@ -573,3 +573,147 @@ def test_spi_peripheral(dut, oep_host, ws_run, record_property):
         core.plan_release(host, [ctrl.fn])
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
+
+
+I2S_RATE = 32_000           # 16-bit slots: SYSCLK / 32 / 32 kHz is within the divider on every family (H41x's
+                            # 400 MHz reaches down to 24.5 kHz); BCLK 1.024 / 2.048 MHz
+I2S_CONDITIONS = [          # name, bits, format (0 Philips, 1 MSB, 2 LSB), mono, WireSkein's format, slot
+    ("16-bit Philips", 16, 0, 0, "i2s", 16),
+    ("32-bit Philips", 32, 0, 0, "i2s", 32),
+    ("24-bit MSB-justified", 24, 1, 0, "left", 32),
+    ("24-bit LSB-justified", 24, 2, 0, "right", 32),
+    ("16-bit mono", 16, 0, 1, "i2s", 16),
+]
+
+
+def i2s_frames(bits, mono, n=8):
+    """n frames of random samples: the bytes write() takes, and the (left, right) WireSkein reads back."""
+    import random
+    out, want = b"", []
+    for _ in range(n):
+        vals = [random.randrange(-(1 << (bits - 1)), 1 << (bits - 1)) for _ in range(1 if mono else 2)]
+        for v in vals:
+            out += (v & ((1 << bits) - 1)).to_bytes(bits // 8, "little")
+        want.append((vals[0], vals[0]) if mono else tuple(vals))
+    return out, want
+
+
+def test_i2s(dut, oep_host, ws_run, record_property):
+    """spi.i2s (the I2S library, 2026-11-23): an I2S output on three labelled lines that are one of the DUT's I2S
+    pads (I2SFIND: CK, WS, SD), playing eight random frames over and over from loop() at 32 kHz. One capture of
+    BCLK, WS and SD; a WireSkein section per condition judging the frames (i2s: the format, the slot's BCLKs, the
+    sample rate within 1 %, the eight frames in a row among those read) - 16- and 32-bit Philips, 24-bit MSB- and
+    LSB-justified in 32-bit slots, 16-bit mono (the sample on both slots). Underruns are recorded, not judged."""
+    from wireskein.runlog import i2s
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: I2S is the spi case's")
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=secrets.token_hex(4))
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    if ask(dut, "i2s 0 0 0 16 32000 0 0 00", rb"I2S (NONE|\d \d+ -?\d+)").group(1) == b"NONE":
+        pytest.skip("n/a: the part has no I2S")
+    lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
+    m = ask(dut, "i2sfind " + " ".join(str(p) for p in lines), rb"I2SFIND (NONE|\d+ \d+ \d+)")
+    if m.group(1) == b"NONE":
+        pytest.skip("no three labelled lines are one I2S's CK, WS and SD: " + ", ".join(l["pad"] for l in lines.values()))
+    route = tuple(int(n) for n in m.group(1).split())
+    ck, ws, sd = (lines[p]["pad"] for p in route)
+    record_property("pins", json.dumps({"ck": ck, "ws": ws, "sd": sd}))
+    rates = {}
+
+    def steps(wait):
+        with ws_run.section(1, f"i2s {ck} {ws} {sd}"):
+            for name, bits, fmt, mono, ws_fmt, slot in I2S_CONDITIONS:
+                data, want = i2s_frames(bits, mono)
+                expect = [i2s(ck, ws, sd, format=ws_fmt, bits=bits, fs_hz=I2S_RATE, slot_bits=slot, samples=want)]
+                with ws_run.section(2, name, expect=expect):
+                    command = f"i2s {route[0]} {route[1]} {route[2]} {bits} {I2S_RATE} {fmt} {mono} {data.hex()}"
+                    ws_run.command(command)
+                    dut.write(command)
+                    m = wait_reply(dut, wait, rb"I2S (\d) (\d+) (-?\d+)")
+                    ws_run.reply(m.group(0).decode())
+                    assert m.group(1) == b"1", f"{name}: begin() failed, lastError() {m.group(3).decode()}"
+                    rates[name] = int(m.group(2))
+                    wait(0.05)
+            dut.write("i2stat")
+            rates["underruns"] = int(wait_reply(dut, wait, rb"I2STAT (\d+)").group(1))
+            dut.write("i2send")
+            wait_reply(dut, wait, rb"I2SEND")
+
+    ws_capture.stream(ws_run, oep_host, [lines[p] for p in route], rate=RATE, steps=steps)
+    record_property("sample_rates", json.dumps(rates))
+
+
+def test_i2s_input(dut, oep_host, ws_run, record_property):
+    """spi.i2s-input (the I2S library's input, 2026-11-23): the DUT's I2S as a stereo input (Philips) on the pads
+    test_i2s found, its SD driven by the probe's PWM - a square wave not locked to the DUT's clock, so each slot reads
+    as all ones, all zeros, or (where an edge falls inside it) mixed. The DUT reads 0.1 s of frames with readBytes()
+    and counts them; judged here against what the probe made: the frames all read, the left slot's rises from zeros to
+    ones as many as the wave's periods in that time (+-2), ones / (ones + zeros) its duty within 0.03, no more mixed
+    slots than two a period, no overrun. One capture of the three lines beside it, judged by WireSkein (i2s: the
+    DUT's BCLK and WS at the rate, 16 / 32 BCLKs a slot - what SD carries is the probe's)."""
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import i2s
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: I2S is the spi case's")
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=secrets.token_hex(4))
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    if ask(dut, "i2s 0 0 0 16 32000 0 0 00", rb"I2S (NONE|\d \d+ -?\d+)").group(1) == b"NONE":
+        pytest.skip("n/a: the part has no I2S")
+    lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
+    m = ask(dut, "i2sfind " + " ".join(str(p) for p in lines), rb"I2SFIND (NONE|\d+ \d+ \d+)")
+    if m.group(1) == b"NONE":
+        pytest.skip("no three labelled lines are one I2S's CK, WS and SD: " + ", ".join(l["pad"] for l in lines.values()))
+    route = tuple(int(n) for n in m.group(1).split())
+    ck, ws, sd = (lines[p]["pad"] for p in route)
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(lines[route[2]]["channel"]))
+    pwm.start(0, 500, 0)
+    results, wrong = {}, []
+    frames = I2S_RATE // 10
+
+    def steps(wait):
+        with ws_run.section(1, f"i2s input {ck} {ws} {sd}"):
+            for bits, hz, duty in ((16, 500, 0.5), (32, 300, 0.25)):
+                name = f"{bits}-bit, SD {hz} Hz duty {duty}"
+                expect = [i2s(ck, ws, sd, bits=bits, fs_hz=I2S_RATE, slot_bits=bits)]
+                with ws_run.section(2, name, expect=expect):
+                    made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                    wait(0.01)
+                    command = f"i2srx {route[0]} {route[1]} {route[2]} {bits} {I2S_RATE} {frames}"
+                    ws_run.command(command)
+                    dut.write(command)
+                    m = wait_reply(dut, wait, rb"I2SRX ([\d ]+)", timeout=5.0)
+                    ws_run.reply(m.group(0).decode())
+                    ok, rate, got, ones, zeros, mixed, rises, overruns = (int(v) for v in m.group(1).split())
+                    periods = got / rate * made.hz if rate else 0
+                    results[name] = dict(rate=rate, frames=got, ones=ones, zeros=zeros, mixed=mixed, rises=rises,
+                                         overruns=overruns, probe_hz=made.hz, probe_duty=made.duty / Pwm.FULL,
+                                         periods=round(periods, 2))
+                    if not ok:
+                        wrong.append(f"{name}: begin() failed")
+                        continue
+                    if got != frames:
+                        wrong.append(f"{name}: {got} of {frames} frames read")
+                    if abs(rises - periods) > 2:
+                        wrong.append(f"{name}: {rises} rises in the left slot, the wave has {periods:.1f} periods")
+                    if ones + zeros == 0 or abs(ones / (ones + zeros) - made.duty / Pwm.FULL) > 0.03:
+                        wrong.append(f"{name}: {ones} slots of ones, {zeros} of zeros against a duty of "
+                                     f"{made.duty / Pwm.FULL:.3f}")
+                    if mixed > 2 * periods * 2 + 2:
+                        wrong.append(f"{name}: {mixed} mixed slots for {periods:.1f} periods")
+                    if overruns:
+                        wrong.append(f"{name}: {overruns} overruns")
+                    wait(0.01)
+            dut.write("i2send")                    # the lines let go outside the sections: undriven they float
+            wait_reply(dut, wait, rb"I2SEND")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in route], rate=RATE, steps=steps)
+    finally:
+        pwm.start(0, 0, 0)
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)

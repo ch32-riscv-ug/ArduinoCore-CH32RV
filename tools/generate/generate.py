@@ -3272,6 +3272,14 @@ CAN_ROUTE_ORDER = ("default", "main") + ALL_REMAPS
 CAN_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in CAN_ROUTE_ORDER)
 # part -> {(can index, route): {"RX": .., "TX": ..}} (main(); gen_pins reads it).
 CAN_PINS: dict = {}
+# Set by main(): part -> {(I2S index, route): {"CK"|"WS"|"SD"|"MCK": pad}}.
+# I2Sn is SPIn in I2S mode, on pads of its own naming (WS is the SPI's NSS,
+# SD its MOSI) and with a master clock pad the SPI does not have.
+I2S_PINS: dict = {}
+I2S_SIGNAL_RE = [
+    (re.compile(r"^I2S(\d+)_(CK|WS|SD|MCK)$"), lambda m: (int(m.group(1)), m.group(2))),
+]
+I2S_ROUTE_ORDER = ("default", "main") + tuple(f"af-{n}" for n in range(16)) + ALL_REMAPS
 
 # DAC. One pad per channel, no remap to speak of - the output is wired to a
 # fixed pin - so this is only about naming the pad analogWrite() should treat
@@ -3741,6 +3749,61 @@ def af_route_table(series: str, parts: list, pins: dict, kind: str,
         for pads in first + sorted(rest - set(first)):
             rows.append((af, pads, af, 0))
     return rows
+
+
+def emit_i2s(out: list, series: str, parts: list, remap: dict, index: int) -> None:
+    """I2Sn's pads, when SPIn has an I2S mode on this series, for the I2S
+    library: { role (0 CK, 1 WS, 2 SD, 3 MCK), pad, value, value2 }.
+
+    On the per-pin families value is the pad's own function number and any
+    CK, WS and SD go together (PA14 af-1 with PA4 af-6 on CH32H417: the
+    route table's one-number rows could not say that). On the AFIO families
+    value / value2 are what the route the pad is on writes into PCFR1 /
+    PCFR2 (SPIn's field), and CK, WS, SD and MCK have to share them - a pad
+    on two routes is listed once for each."""
+    if not any(i == index for pn in parts for (i, _r) in I2S_PINS.get(pn, {})):
+        return
+    rows = set()
+    per_pin = series in PER_PIN_AF_SERIES
+    bits = remap.get((series, "spi", index))
+    for pn in parts:
+        for (i, route), entry in I2S_PINS.get(pn, {}).items():
+            if i != index:
+                continue
+            if per_pin:
+                v1, v2 = route_af_value(route), 0
+                if v1 is None:
+                    continue
+            elif route in ("default", "main"):
+                v1 = v2 = 0
+                if bits:
+                    mv = remap_mask_value(bits, 0)
+                    v1, v2 = mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]
+            else:
+                rv = route_remap_value(route)
+                if rv is None or not bits:
+                    continue
+                mv = remap_mask_value(bits, rv)
+                v1, v2 = mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]
+            for n, role in enumerate(("CK", "WS", "SD", "MCK")):
+                if role not in entry:
+                    continue
+                for pad in ROUTE_ALTS.get(("i2s", pn, index, route, role)) or [entry[role]]:
+                    rows.add((n, pad, v1, v2))
+    have = {n for n, *_ in rows}
+    if not {0, 1, 2} <= have:
+        return
+    out.append(f"/* I2S{index} (SPI{index} in I2S mode), for the I2S library: role (0 CK, 1 WS,")
+    if per_pin:
+        out.append(" * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */")
+    else:
+        out.append(" * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one")
+        out.append(" * route go together). */")
+    out.append(f"#define CH32RV_I2S{index}_PAD_COUNT {len(rows)}")
+    out.append(f"#define CH32RV_I2S{index}_PADS {{ \\")
+    for n, pad, v1, v2 in sorted(rows, key=lambda r: (r[0], r[2], r[3], r[1])):
+        out.append(f"    {{ {n}, {pad_name(*pad)}, 0x{v1:08x}u, 0x{v2:08x}u }}, \\")
+    out.append("}")
 
 
 def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
@@ -5127,6 +5190,12 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                     dma, ch, cbase, flags, shift, request = spi_dma[role]
                     out.append(f"#define CH32RV_SPI{index}_DMA_{role} CH32RV_DMA_LINE({dma}, {ch}, "
                                f"{cbase:#010x}u, {flags:#010x}u, {shift}u, {request}u)")
+                # the channel's vector, as the stem of its IRQn and handler
+                # names (the I2S library's half / full buffer interrupts)
+                for role in ("RX", "TX"):
+                    dma, ch = spi_dma[role][:2]
+                    out.append(f"#define CH32RV_SPI{index}_DMA_{role}_IRQ DMA{dma}_Channel{ch}")
+            emit_i2s(out, series, parts, remap, index)
         first = min(spi_with_default)
         out.append("/* Arduino's standard names for the first bus (SPI). These are")
         out.append(" * the pads of SPI%d's default route above - a fact about"
@@ -6048,6 +6117,7 @@ def main() -> int:
     spis = load_spi_pins(args.tables, route_alts)
     dacs = load_dac_pins(args.tables, route_alts)
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
+    I2S_PINS.update(load_pin_routes(args.tables, I2S_SIGNAL_RE, I2S_ROUTE_ORDER, "i2s", route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     TIM_DT2.update(load_tim_dt2(args.tables))
@@ -6117,7 +6187,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

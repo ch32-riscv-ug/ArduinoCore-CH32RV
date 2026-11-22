@@ -139,7 +139,7 @@
 | CAN の時間トリガ（TTCAN）・CAN 起床 | 上と同じ（起床は L103） | 2 | 単発 | 同上 | EVT CAN/Time-triggered, CAN/CAN_Wakeup |
 | CAN FD | L103（C8T6、K8U6） | 2 | 単発 | FD 対応トランシーバー、相手 | FC:55, UNUSED:55 |
 | CFGCANM（CAN のオプションバイト） | L103、V205 | 2 | 自動 | 自己 | docs/adr/0017-option-byte-menus.ja.md:26 |
-| I2S | V30x、V4x7、H41x | 2 | 自動 | プローブ（BCLK・WS・SD を取り込む）。受信はプローブが I2S を出す | PS:100, PM:243 |
+| I2S | V30x、V4x7、H41x | 実装済み（2026-11-23、ライブラリ I2S（arduino-esp32 の ESP_I2S の形、`I2SClass`）。マスターの出力・入力、16・24・32 bit、Philips・左詰め・右詰め・PCM、MCK。端子は variant の CH32RV_I2Sn_PADS。H417 で spi::test_i2s（WireSkein の i2s）・spi::test_i2s_input（プローブの PWM を読む）が通る。V30x・V4x7 はビルドのみ。スレーブは未実装） | 自動 | プローブ（BCLK・WS・SD を取り込む）。受信はプローブの PWM を SD に | PS:100, PM:243 |
 | SAI（TDM、SPDIF 出力） | H417 | 2 | 自動 | プローブ（取り込み） | PS:104, PM:247 |
 | I3C（controller・target、IBI、Hot-Join） | V4x7、H41x | 2 | 自動 | I3C の相手（2 台目の H417 か V407）、プローブで取り込み | PS:110, PM:255 |
 | SWPMI（SWP master） | H417 | 2 | 自動 | SWP のカードか 2 台目 | PS:105, PM:248 |

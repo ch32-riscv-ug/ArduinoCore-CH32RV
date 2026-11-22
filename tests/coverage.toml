@@ -250,6 +250,13 @@ scope = "series"
 needs = ["SPI1"]
 
 [[item]]
+id = "i2s"                  # the I2S library: frames out in each format (WireSkein i2s), a wave on SD read back
+test = ["spi::test_i2s", "spi::test_i2s_input"]
+scope = "series"
+any_of = ["I2S"]            # no clock of its own (SPI2 / SPI3): the series by name
+also = ["CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H415", "CH32H416", "CH32H417"]
+
+[[item]]
 id = "wire-clock"           # SCL as setClock() asked, 20 kHz .. 3.4 MHz, nobody else driving
 test = "wire::test_wire_output_only"
 scope = "series"
@@ -647,14 +654,6 @@ id = "can"                  # Arduino_CAN in silent loopback: frames of both ide
 test = "selfapi::test_can_loopback"
 scope = "series"
 any_of = ["CAN1", "CAN"]
-
-[[item]]
-id = "i2s"
-test = "periph::test_planned[i2s]"
-scope = "series"
-any_of = ["I2S"]            # no clock of its own (SPI2 / SPI3): the series by name
-also = ["CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H415", "CH32H416", "CH32H417"]
-missing = ["CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467", "CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]
 id = "rs485"

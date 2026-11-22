@@ -38,6 +38,25 @@
  *                                      (SRES NONE - <missed> <overruns> when none)
  *   send                               slave.end(): SEND
  *
+ * I2S (the I2S library, I2S2 / I2S3 of V30x, V4x7, H41x; I2S NONE elsewhere):
+ *
+ *   i2sfind <pin>...                   three of these pins that are one I2S's CK, WS and SD (the
+ *                                      variant's CH32RV_I2Sn_PADS; on the AFIO families on one
+ *                                      route), nothing driven: I2SFIND <ck> <ws> <sd> (I2SFIND NONE)
+ *   i2s <ck> <ws> <sd> <bits> <rate> <format> <mono> <frames hex>
+ *                                      setFormat(format: 0 Philips, 1 MSB, 2 LSB), begin() as an
+ *                                      output, then the frames (the samples as write() takes them,
+ *                                      up to 64 bytes) played over and over from loop():
+ *                                      I2S <1 / 0> <sampleRate()> <lastError()>
+ *   i2srx <ck> <ws> <sd> <bits> <rate> <frames>
+ *                                      begin() as a stereo input (Philips), readBytes() that many
+ *                                      frames (the input left running until i2send); each slot counted as all ones, all zeros or
+ *                                      mixed, and the left slot's rises from zeros to ones:
+ *                                      I2SRX <1 / 0> <sampleRate()> <frames read> <ones> <zeros>
+ *                                      <mixed> <rises> <overruns>
+ *   i2stat                             I2STAT <underruns>
+ *   i2send                             end(): I2SEND
+ *
  * The bus itself as a peripheral (SPI_HAS_PERIPHERAL_MODE): SPI after `hw`, SoftSPI after
  * `pins`, CS left to the master (the DUT's CS pin an input):
  *
@@ -52,6 +71,12 @@
 #if defined(SPI_INTERFACES_COUNT)
 #include <CH32RVSPISlave.h>
 #endif
+#include <I2S.h>
+/* a row of the variant's CH32RV_I2Sn_PADS (here: the prototypes the IDE adds come first) */
+struct I2SPad {
+    uint8_t role, pad;
+    uint32_t value, value2;
+};
 #include <stdlib.h>
 #include <string.h>
 
@@ -270,8 +295,187 @@ void setup()
     CONSOLE.println(CH32RV.resetReasonName());
 }
 
+#if CH32RV_HAS_I2S
+static I2SClass i2s;
+static uint8_t i2sFrames[64];
+static size_t i2sLen;
+static bool i2sOn;
+
+/* The first CK, WS, SD of one I2S among pins[], as the I2S library pairs
+ * them: any on the per-pin families, one route's on the AFIO ones. */
+static bool i2sFindIn(const I2SPad *t, size_t n, const long *pins, size_t count, long out[3])
+{
+    auto listed = [&](long pin) {
+        for (size_t i = 0; i < count; i++) {
+            if (pins[i] == pin) {
+                return true;
+            }
+        }
+        return false;
+    };
+    for (size_t a = 0; a < n; a++) {
+        if (t[a].role != 0 || !listed(t[a].pad)) {
+            continue;
+        }
+        for (size_t b = 0; b < n; b++) {
+            for (size_t c = 0; c < n; c++) {
+                if (t[b].role != 1 || t[c].role != 2 || !listed(t[b].pad) || !listed(t[c].pad)) {
+                    continue;
+                }
+#if !CH32RV_GPIO_PER_PIN_AF
+                if (t[b].value != t[a].value || t[c].value != t[a].value || t[b].value2 != t[a].value2 ||
+                    t[c].value2 != t[a].value2) {
+                    continue;
+                }
+#endif
+                out[0] = t[a].pad;
+                out[1] = t[b].pad;
+                out[2] = t[c].pad;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void i2sFind(char *p)
+{
+    long pins[32];
+    size_t count = 0;
+    while (count < 32) {
+        char *end;
+        const long v = strtol(p, &end, 10);
+        if (end == p) {
+            break;
+        }
+        pins[count++] = v;
+        p = end;
+    }
+    long got[3];
+    bool ok = false;
+#ifdef CH32RV_I2S2_PADS
+    static const I2SPad t2[] = CH32RV_I2S2_PADS;
+    ok = i2sFindIn(t2, CH32RV_I2S2_PAD_COUNT, pins, count, got);
+#endif
+#ifdef CH32RV_I2S3_PADS
+    static const I2SPad t3[] = CH32RV_I2S3_PADS;
+    ok = ok || i2sFindIn(t3, CH32RV_I2S3_PAD_COUNT, pins, count, got);
+#endif
+    if (!ok) {
+        CONSOLE.println("I2SFIND NONE");
+        return;
+    }
+    CONSOLE.print("I2SFIND ");
+    CONSOLE.print(got[0]);
+    CONSOLE.print(' ');
+    CONSOLE.print(got[1]);
+    CONSOLE.print(' ');
+    CONSOLE.println(got[2]);
+}
+
+static void i2sCommand(char *p)
+{
+    i2s.end();
+    i2sOn = false;
+    const long ck = strtol(p, &p, 10);
+    const long ws = strtol(p, &p, 10);
+    const long sd = strtol(p, &p, 10);
+    const long bits = strtol(p, &p, 10);
+    const unsigned long rate = strtoul(p, &p, 10);
+    const long format = strtol(p, &p, 10);
+    const long mono = strtol(p, &p, 10);
+    while (*p == ' ') {
+        p++;
+    }
+    i2sLen = unhex(p, i2sFrames, sizeof i2sFrames);
+    i2s.setPins((int)ck, (int)ws, (int)sd);
+    i2s.setFormat((CH32RVI2SFormat)format);
+    const bool ok = i2sLen && i2s.begin(I2S_MODE_STD, (uint32_t)rate, (i2s_data_bit_width_t)bits,
+                                        mono ? I2S_SLOT_MODE_MONO : I2S_SLOT_MODE_STEREO);
+    i2sOn = ok;
+    CONSOLE.print("I2S ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)i2s.sampleRate());
+    CONSOLE.print(' ');
+    CONSOLE.println(i2s.lastError());
+}
+
+static void i2sReceive(char *p)
+{
+    i2s.end();
+    i2sOn = false;
+    const long ck = strtol(p, &p, 10);
+    const long ws = strtol(p, &p, 10);
+    const long sd = strtol(p, &p, 10);
+    const long bits = strtol(p, &p, 10);
+    const unsigned long rate = strtoul(p, &p, 10);
+    const unsigned long want = strtoul(p, &p, 10);
+    i2s.setPins((int)ck, (int)ws, -1, (int)sd);
+    i2s.setFormat(I2S_FORMAT_PHILIPS);
+    const bool ok = i2s.begin(I2S_MODE_STD, (uint32_t)rate, (i2s_data_bit_width_t)bits, I2S_SLOT_MODE_STEREO);
+    unsigned long got = 0, ones = 0, zeros = 0, mixed = 0, rises = 0;
+    const size_t sb = (size_t)bits / 8u;
+    int last = -1;
+    while (ok && got < want) {
+        uint8_t frame[8];
+        if (i2s.readBytes(frame, 2 * sb) != 2 * sb) {
+            break;
+        }
+        got++;
+        for (uint8_t s = 0; s < 2; s++) {
+            bool all1 = true, all0 = true;
+            for (size_t k = 0; k < sb; k++) {
+                all1 = all1 && frame[s * sb + k] == 0xFF;
+                all0 = all0 && frame[s * sb + k] == 0x00;
+            }
+            ones += all1;
+            zeros += all0;
+            mixed += !all1 && !all0;
+            if (s == 0 && (all1 || all0)) {
+                if (last == 0 && all1) {
+                    rises++;
+                }
+                last = all1;
+            }
+        }
+    }
+    const unsigned long overruns = i2s.overruns();
+    const unsigned long actual = i2s.sampleRate();
+    /* left running (the lines driven) until the next i2s command or i2send:
+     * undriven, WS and BCLK pick up the lines beside them */
+    CONSOLE.print("I2SRX ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print(actual);
+    CONSOLE.print(' ');
+    CONSOLE.print(got);
+    CONSOLE.print(' ');
+    CONSOLE.print(ones);
+    CONSOLE.print(' ');
+    CONSOLE.print(zeros);
+    CONSOLE.print(' ');
+    CONSOLE.print(mixed);
+    CONSOLE.print(' ');
+    CONSOLE.print(rises);
+    CONSOLE.print(' ');
+    CONSOLE.println(overruns);
+}
+
+/* The frames again whenever a whole copy fits: write() never waits here. */
+static void i2sService()
+{
+    while (i2sOn && i2s.availableForWrite() >= (int)i2sLen) {
+        i2s.write(i2sFrames, i2sLen);
+    }
+}
+#endif
+
 void loop()
 {
+#if CH32RV_HAS_I2S
+    i2sService();
+#endif
     while (CONSOLE.available()) {
         const int ch = CONSOLE.read();
         if (ch != '\n') {
@@ -442,6 +646,37 @@ void loop()
             slave.end();
 #endif
             CONSOLE.println("SEND");
+        } else if (strncmp(line, "i2sfind ", 8) == 0) {
+#if CH32RV_HAS_I2S
+            i2sFind(p + 8);
+#else
+            CONSOLE.println("I2SFIND NONE");
+#endif
+        } else if (strncmp(line, "i2s ", 4) == 0) {
+#if CH32RV_HAS_I2S
+            i2sCommand(p + 4);
+#else
+            CONSOLE.println("I2S NONE");
+#endif
+        } else if (strncmp(line, "i2srx ", 6) == 0) {
+#if CH32RV_HAS_I2S
+            i2sReceive(p + 6);
+#else
+            CONSOLE.println("I2SRX 0 0 0 0 0 0 0 0");
+#endif
+        } else if (strcmp(line, "i2stat") == 0) {
+            CONSOLE.print("I2STAT ");
+#if CH32RV_HAS_I2S
+            CONSOLE.println((unsigned long)i2s.underruns());
+#else
+            CONSOLE.println(0);
+#endif
+        } else if (strcmp(line, "i2send") == 0) {
+#if CH32RV_HAS_I2S
+            i2s.end();
+            i2sOn = false;
+#endif
+            CONSOLE.println("I2SEND");
         } else if (strncmp(line, "periph ", 7) == 0) {
             p += 7;
             const unsigned long mode = strtoul(p, &p, 10);

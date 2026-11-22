@@ -793,6 +793,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI1's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(2, 6, 0x4002046cu, 0x40020400u, 20u, 64u)
 #define CH32RV_SPI1_DMA_TX CH32RV_DMA_LINE(2, 7, 0x40020480u, 0x40020400u, 24u, 63u)
+#define CH32RV_SPI1_DMA_RX_IRQ DMA2_Channel6
+#define CH32RV_SPI1_DMA_TX_IRQ DMA2_Channel7
 /* SPI2: route af-5, on every part */
 #define CH32RV_SPI2_SCK PD3
 #define CH32RV_SPI2_MISO PC2
@@ -943,6 +945,26 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI2's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI2_DMA_RX CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 66u)
 #define CH32RV_SPI2_DMA_TX CH32RV_DMA_LINE(2, 3, 0x40020430u, 0x40020400u, 8u, 65u)
+#define CH32RV_SPI2_DMA_RX_IRQ DMA2_Channel2
+#define CH32RV_SPI2_DMA_TX_IRQ DMA2_Channel3
+/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS,
+ * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */
+#define CH32RV_I2S2_PAD_COUNT 13
+#define CH32RV_I2S2_PADS { \
+    { 0, PA9, 0x00000005u, 0x00000000u }, \
+    { 0, PA12, 0x00000005u, 0x00000000u }, \
+    { 0, PB10, 0x00000005u, 0x00000000u }, \
+    { 0, PB13, 0x00000005u, 0x00000000u }, \
+    { 0, PD3, 0x00000005u, 0x00000000u }, \
+    { 1, PA11, 0x00000005u, 0x00000000u }, \
+    { 1, PB9, 0x00000005u, 0x00000000u }, \
+    { 1, PB12, 0x00000005u, 0x00000000u }, \
+    { 1, PB4, 0x00000007u, 0x00000000u }, \
+    { 2, PB15, 0x00000005u, 0x00000000u }, \
+    { 2, PC1, 0x00000005u, 0x00000000u }, \
+    { 2, PC3, 0x00000005u, 0x00000000u }, \
+    { 3, PC6, 0x00000005u, 0x00000000u }, \
+}
 /* SPI3: route af-6, on every part */
 #define CH32RV_SPI3_SCK PC10
 #define CH32RV_SPI3_MISO PC11
@@ -981,6 +1003,22 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI3's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI3_DMA_RX CH32RV_DMA_LINE(1, 8, 0x40020094u, 0x40020000u, 28u, 68u)
 #define CH32RV_SPI3_DMA_TX CH32RV_DMA_LINE(2, 1, 0x40020408u, 0x40020400u, 0u, 67u)
+#define CH32RV_SPI3_DMA_RX_IRQ DMA1_Channel8
+#define CH32RV_SPI3_DMA_TX_IRQ DMA2_Channel1
+/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS,
+ * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */
+#define CH32RV_I2S3_PAD_COUNT 9
+#define CH32RV_I2S3_PADS { \
+    { 0, PA14, 0x00000001u, 0x00000000u }, \
+    { 0, PB3, 0x00000006u, 0x00000000u }, \
+    { 0, PC10, 0x00000006u, 0x00000000u }, \
+    { 1, PA4, 0x00000006u, 0x00000000u }, \
+    { 1, PA15, 0x00000006u, 0x00000000u }, \
+    { 2, PA13, 0x00000001u, 0x00000000u }, \
+    { 2, PC12, 0x00000006u, 0x00000000u }, \
+    { 3, PB6, 0x00000005u, 0x00000000u }, \
+    { 3, PC7, 0x00000006u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */

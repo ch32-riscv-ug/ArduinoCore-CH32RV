@@ -671,6 +671,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI1's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI1_DMA_RX CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
 #define CH32RV_SPI1_DMA_TX CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)
+#define CH32RV_SPI1_DMA_RX_IRQ DMA1_Channel2
+#define CH32RV_SPI1_DMA_TX_IRQ DMA1_Channel3
 /* SPI2: route default, on every part */
 #define CH32RV_SPI2_SCK PB13
 #define CH32RV_SPI2_MISO PB14
@@ -684,6 +686,18 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI2's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI2_DMA_RX CH32RV_DMA_LINE(1, 4, 0x40020044u, 0x40020000u, 12u, 0u)
 #define CH32RV_SPI2_DMA_TX CH32RV_DMA_LINE(1, 5, 0x40020058u, 0x40020000u, 16u, 0u)
+#define CH32RV_SPI2_DMA_RX_IRQ DMA1_Channel4
+#define CH32RV_SPI2_DMA_TX_IRQ DMA1_Channel5
+/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS,
+ * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one
+ * route go together). */
+#define CH32RV_I2S2_PAD_COUNT 4
+#define CH32RV_I2S2_PADS { \
+    { 0, PB13, 0x00000000u, 0x00000000u }, \
+    { 1, PB12, 0x00000000u, 0x00000000u }, \
+    { 2, PB15, 0x00000000u, 0x00000000u }, \
+    { 3, PC6, 0x00000000u, 0x00000000u }, \
+}
 /* SPI3: route default, on every part */
 #define CH32RV_SPI3_SCK PB3
 #define CH32RV_SPI3_MISO PB4
@@ -710,6 +724,23 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 /* SPI3's DMA requests (the SPI library's buffer transfers). */
 #define CH32RV_SPI3_DMA_RX CH32RV_DMA_LINE(2, 1, 0x40020408u, 0x40020400u, 0u, 0u)
 #define CH32RV_SPI3_DMA_TX CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 0u)
+#define CH32RV_SPI3_DMA_RX_IRQ DMA2_Channel1
+#define CH32RV_SPI3_DMA_TX_IRQ DMA2_Channel2
+/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS,
+ * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one
+ * route go together). */
+#define CH32RV_I2S3_PAD_COUNT 9
+#define CH32RV_I2S3_PADS { \
+    { 0, PB3, 0x00000000u, 0x00000000u }, \
+    { 0, PC10, 0x10000000u, 0x00000000u }, \
+    { 1, PA15, 0x00000000u, 0x00000000u }, \
+    { 1, PA4, 0x10000000u, 0x00000000u }, \
+    { 2, PA9, 0x00000000u, 0x00000000u }, \
+    { 2, PB5, 0x00000000u, 0x00000000u }, \
+    { 2, PC12, 0x10000000u, 0x00000000u }, \
+    { 3, PA8, 0x00000000u, 0x00000000u }, \
+    { 3, PC7, 0x00000000u, 0x00000000u }, \
+}
 /* Arduino's standard names for the first bus (SPI). These are
  * the pads of SPI1's default route above - a fact about
  * the chip, NOT a claim about how any board is wired. */

@@ -835,7 +835,7 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
-@pytest.mark.parametrize("feature", ["can", "i2s", "rs485", "qspi"])
+@pytest.mark.parametrize("feature", ["can", "rs485", "qspi"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""
     case = settings(__file__)

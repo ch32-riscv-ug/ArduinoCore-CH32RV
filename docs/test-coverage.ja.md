@@ -101,6 +101,7 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | SoftSPI master | あり | 現行: softspi（spi と同じ問いを任意の端子で） | 8/16/32-bit/block、MISO 無し、clock floor |
 | SPI slave（CH32RVSPISlave）、SoftSPI slave（SoftSPISlave） | どちらもあり（SoftSPISlave は 2026-11-15、V203・V006・V205・V103 で確認） | 現行: spi::test_spi_slave（プローブが master）。現行: softspi::test_spi_slave（同じ問いを SoftSPI の 4 本で、50 kHz） | SPI slave の DMA 境界、復旧。SoftSPISlave の上限のクロック |
 | SPI ライブラリの peripheral モード（`SPI_HAS_PERIPHERAL_MODE`、`SPI_PERIPHERAL`） | あり（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 現行: spi::test_spi_peripheral、softspi::test_spi_peripheral（プローブが master、4 モード・2 つのビット順で 4 バイト） | バイトの間を詰めた master、長い転送 |
+| I2S（I2S ライブラリ、V30x・V4x7・H41x） | あり（2026-11-23、マスターの出力・入力。H417 で確認、V30x・V4x7 はビルドのみ） | 現行: spi::test_i2s（16・32 bit の Philips、24 bit の左詰め・右詰め、16 bit モノラルの 8 フレームの乱数、32 kHz、WireSkein の i2s）、spi::test_i2s_input（プローブの PWM を SD に入れ、読んだスロットの 1・0 の割合と立ち上がりの数） | 実データの入力（プローブに I2S の出力が要る）、PCM、MCK、V30x・V4x7 の実機 |
 | SerialDMSeq | あり | 間接利用: 多くの sketch の Console | 損失、buffer、host 不在、再接続、reset の独立契約。対応 probe と別観測経路 |
 | SerialSDI | あり | 現行: console-sdi::test_console_sdi | buffer、host 不在、reset。RX を想定しない |
 | SerialDMDATA / SerialRTT | あり | 現行: console-dmdata / console-rtt::test_console_two_way | 容量・host 不在・再接続 |
