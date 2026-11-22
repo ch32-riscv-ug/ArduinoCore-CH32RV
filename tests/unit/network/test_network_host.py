@@ -36,7 +36,8 @@ def build(out: pathlib.Path) -> pathlib.Path:
     c_sources = sorted((LIB / "lwip-src").rglob("*.c")) + sorted((TLS / "mbedtls-src").glob("*.c")) + [
         HERE / "host/link.c", REPO / "cores/arduino/itoa.c", REPO / "cores/arduino/dtostrf.c",
         REPO / "cores/arduino/ch32rv_service.c", REPO / "cores/arduino/ch32rv_format.c"]
-    cxx_sources = (sorted(LIB.glob("*.cpp")) + sorted(TLS.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
+    # NetworkUsbHost.cpp is the glue to CH32RVUsbHost (another library, the controller's): nothing of it runs here
+    cxx_sources = (sorted(p for p in LIB.glob("*.cpp") if p.name != "NetworkUsbHost.cpp") + sorted(TLS.glob("*.cpp")) + sorted((HERE / "host").glob("*.cpp")) + [HERE / "app.cpp"]
                    + [REPO / f"cores/arduino/api/{name}.cpp" for name in API]
                    + [REPO / "cores/arduino/ch32rv_printf.cpp"])   # Print::printFloat's text
     # Mbed TLS's configuration checks: compile-time only, built here so a bad
