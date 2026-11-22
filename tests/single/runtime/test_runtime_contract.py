@@ -3,7 +3,9 @@ import json
 import pathlib
 import secrets
 import time
-import bench_ready   # staged beside the test (run_hardware.py)
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).parent))   # bench_ready.py is staged beside the test (run_hardware.py)
+import bench_ready  # noqa: E402
 
 
 def test_runtime_contract(dut, record_property):

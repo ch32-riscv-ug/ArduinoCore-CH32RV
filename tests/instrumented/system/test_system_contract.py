@@ -422,7 +422,19 @@ def test_clock_output(dut, oep_host, ws_run, record_property):
         dut.write("mco 0")
         assert dut.expect(rb"MCO (\d)\r?\n", timeout=5).group(1) == b"1", "setClockOutput(0) refused"
         time.sleep(0.01)
-        with ws_run.section(1, f"MCO {pad} off", expect=[pulses(pad, count=0)]):
-            ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=10_000)
+        # Off, the pad is no longer driven: the probe's pull-down holds it, or it floats and picks up its neighbours
+        # (V205's PA8 beside the console's PA9 / PA10: 24 one-sample pulses, 2026-11-22), as signals' sweep() does.
+        from oep_client import core
+        from oep_client.fixture import Gpio
+        host = oep_host.host
+        gpio = Gpio(host)
+        core.plan_apply(host, [(gpio.fn, 1, line["channel"])])
+        try:
+            gpio.configure(line["channel"], Gpio.INPUT_PULLDOWN)
+            with ws_run.section(1, f"MCO {pad} off", expect=[pulses(pad, count=0)]):
+                ws_capture.capture(ws_run, oep_host, [line], rate=1_000_000, samples=10_000)
+        finally:
+            gpio.configure(line["channel"], Gpio.INPUT)
+            core.plan_release(host, [gpio.fn])
     finally:
         dut.write("mco 0")
