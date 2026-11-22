@@ -152,6 +152,9 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   as in EspUsbHost), escape, slot state, card insertion and removal.
 - **USB audio**: UAC1 / UAC2 PCM streams (`getAudioStreams` /
   `audioInputStart` / `onAudioData` / `audioOutputStart` / `audioSend`).
+- **USB video**: UVC cameras (uncompressed YUY2 / NV12 and MJPEG,
+  isochronous and bulk) as frames (`getVideoStreams` / `videoStart` /
+  `onVideoFrame` / `videoStats`).
 - **USB network**: CDC-NCM and CDC-ECM devices (USB Ethernet adapters, an
   ESP32's or a CH32RV's NCM device) as raw Ethernet frames (`networkOpen` /
   `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`).
@@ -168,7 +171,9 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   and packets wait in the stack's buffers (a full one holds the device off),
   and up to 4 connections and disconnections queue.
 - Audio covers PCM streams in and out, the feedback endpoint, and Feature
-  Unit mute and volume. No video (UVC).
+  Unit mute and volume.
+- Video takes one camera's frames (no camera controls - brightness and the
+  like - and no still images yet).
 - USB networking: one device at a time, and an NCM block carries one frame
   when it is sent. The IP stack on top (`networkAttachNetif()`) is for the
   Network library's series only (those with an Ethernet MAC).
@@ -378,6 +383,27 @@ headset, 48 kHz mono 16-bit): a second each of capture and playback with no
 sample lost, and mute and volume set and read back (2026-11-23,
 usb-peer-host-media). That device has no feedback endpoint, so feedback is
 not yet checked on a board.
+
+### USB video (UVC)
+
+```cpp
+usb.onVideoFrame([](const CH32RVUsbHostVideoFrame &f) { /* f.data, f.length, f.complete */ });
+usb.videoStart(CH32RV_USB_HOST_VIDEO_FORMAT_YUY2, 160, 120, 15);   // format, width, height, fps (0: any)
+```
+
+`getVideoStreams()` returns the format / frame pairs of the VideoStreaming
+interface (uncompressed by GUID - YUY2, NV12 - and MJPEG). `videoStart()`
+follows UVC: SET_CUR / GET_CUR on Probe to learn what the camera will send,
+SET_CUR on Commit, then the narrowest alternate setting that carries the
+committed payload, and the endpoint kept busy (one isochronous packet, or a
+bulk transfer of the committed payload). Frames are assembled from the
+payload headers' frame ID, end-of-frame and error bits into two heap buffers
+of the committed frame size: one fills while the other waits for
+`onVideoFrame()` (from `deliverEvents()`); a frame that finds both busy is
+dropped and counted in `videoStats()`' `framesDropped`. Checked with V407 and
+an ESP32-P4 (EspUsbDevice's camera, YUY2 160x120 at 15 fps, isochronous,
+512 bytes): 30 frames in 2 s, every one whole and in order (2026-11-23,
+usb-peer-host-media).
 
 ### USB network (CDC-NCM / CDC-ECM)
 

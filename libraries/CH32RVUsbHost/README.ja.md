@@ -123,6 +123,8 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   カードの抜き差し。
 - **USB オーディオ**: UAC1 / UAC2 の PCM のストリーム（`getAudioStreams` / `audioInputStart` / `onAudioData` /
   `audioOutputStart` / `audioSend`）。
+- **USB ビデオ**: UVC のカメラ（非圧縮の YUY2 / NV12、MJPEG。等時とバルク）のフレーム（`getVideoStreams` /
+  `videoStart` / `onVideoFrame` / `videoStats`）。
 - **USB ネットワーク**: CDC-NCM と CDC-ECM の機器（USB の LAN アダプター、ESP32 や CH32RV の NCM のデバイス）を、生の
   Ethernet のフレームで（`networkOpen` / `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`）。
 
@@ -133,7 +135,8 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   コールバックはスケッチが呼ぶ `deliverEvents()` から呼ばれ（`delay()` や割り込みの中ではありません）、待つ API を
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
   接続と切断は 4 件まで溜まります。
-- オーディオは PCM のストリームの入出力、フィードバックの端点、Feature Unit のミュートと音量までです。ビデオ（UVC）はありません。
+- オーディオは PCM のストリームの入出力、フィードバックの端点、Feature Unit のミュートと音量までです。
+- ビデオは 1 台のカメラのフレームを受けるまでです（カメラの制御（明るさなど）と静止画はまだ）。
 - USB ネットワークは、開けるのは 1 台で、NCM のブロックは 1 つに 1 フレームで送ります。IP のつなぎ込み
   （`networkAttachNetif()`）は Network ライブラリの対象の系列（Ethernet の MAC のある石）だけです。
 - MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
@@ -302,6 +305,22 @@ usb.audioSend(pcm, sizeof pcm);          // 出す PCM をためる（フレー�
 `unitId` 0 はその制御を持つ最初のユニットです。`getAudioFeatureUnits()` でユニットの一覧を読めます。V407 と ESP32-P4（EspUsbDevice の UAC1 のヘッドセット、48 kHz・モノラル・
 16 ビット）の組で、1 秒ずつの録音と再生をサンプルの欠けなく、ミュートと音量の設定と読み戻しを確かめています
 （2026-11-23、usb-peer-host-media）。フィードバックの端点は、その相手が持たないので実機では未確認です。
+
+### USB ビデオ（UVC）
+
+```cpp
+usb.onVideoFrame([](const CH32RVUsbHostVideoFrame &f) { /* f.data, f.length, f.complete */ });
+usb.videoStart(CH32RV_USB_HOST_VIDEO_FORMAT_YUY2, 160, 120, 15);   // 形式、幅、高さ、fps（0 はどれでも）
+```
+
+`getVideoStreams()` は VideoStreaming のインターフェースの形式（非圧縮は GUID で YUY2 / NV12、MJPEG）とフレームの
+組を返します。`videoStart()` は UVC の手順どおり、Probe に SET_CUR / GET_CUR してカメラの出す大きさを聞き、Commit に
+SET_CUR し、確定したペイロードの大きさを運べる最も細い alternate を選んで、端点を動かし続けます（等時は 1 パケット、
+バルクは確定したペイロードの大きさを 1 回の転送で）。ペイロードのヘッダーのフレーム ID・フレームの終わり・誤りの
+ビットでフレームを組み立てます。フレームのバッファは確定したフレームの大きさで 2 つヒープから取り、1 つを満たす間
+もう 1 つが `onVideoFrame()`（`deliverEvents()` から）を待ちます。両方ふさがっていればそのフレームは捨て、
+`videoStats()` の `framesDropped` に数えます。V407 と ESP32-P4（EspUsbDevice のカメラ、YUY2・160×120・15 fps・
+等時・512 バイト）の組で、2 秒に 30 フレームを、全部完全で順に受けています（2026-11-23、usb-peer-host-media）。
 
 ### USB ネットワーク（CDC-NCM / CDC-ECM）
 

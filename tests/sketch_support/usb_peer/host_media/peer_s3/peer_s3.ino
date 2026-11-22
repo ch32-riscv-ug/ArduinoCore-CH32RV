@@ -1,5 +1,7 @@
-/* The ESP32-S3 (or the ESP32-P4 on its OTG HS port) as a USB audio device for tests/peer/usb/host/media: a UAC1
- * headset (EspUsbAudioFunction), 48000 Hz, mono, 16-bit, both ways. The DUT (CH32RVUsbHost) is the host.
+/* The ESP32-S3 (or the ESP32-P4 on its OTG HS port) as a USB audio and video device for tests/peer/usb/host/media:
+ * a UAC1 headset (EspUsbAudioFunction), 48000 Hz, mono, 16-bit, both ways, and a UVC camera (EspUsbDeviceVideo,
+ * YUY2 160x120 at 15 fps, isochronous, 512-byte payloads) whose frame N starts with bytes N, ~N, 0x5A, 0xA5 and is
+ * colour bars after them. The DUT (CH32RVUsbHost) is the host.
  *
  * Capture (to the host) carries a counter, one 16-bit sample after another, so the host can tell a lost packet.
  * Playback (from the host) is checked for the host's counter the same way.
@@ -8,7 +10,8 @@
  *   ?                    S3D READY <mounted 0/1>
  *   audstat              S3D AUDRX <playback bytes> <breaks in the host's counter> <capture underruns>
  *   audreset             S3D AUDRESET
- *   audctl               S3D AUDCTL <muted 0/1> <volume, 1/256 dB> <mute / volume changes the host made> */
+ *   audctl               S3D AUDCTL <muted 0/1> <volume, 1/256 dB> <mute / volume changes the host made>
+ *   vidstat              S3D VIDSTAT <frames sent> <frames not completed> <streaming 0/1> */
 #include <Arduino.h>
 #include <EspUsbDevice.h>
 
@@ -16,6 +19,12 @@ EspUsbDevice device;
 EspUsbAudioFunction audio(device);
 EspUsbAudioPlaybackStream &playback = audio.addPlaybackStream();
 EspUsbAudioCaptureStream &capture = audio.addCaptureStream();
+EspUsbDeviceVideo camera(device, "S3 peer camera");
+
+static constexpr uint16_t VW = 160, VH = 120;
+static uint8_t vframe[VW * VH * 2];
+static volatile uint32_t vSent, vFailed;
+static uint32_t vDrawn, vDue;
 
 static int16_t captureNext;
 static uint32_t rxBytes, rxBreaks;
@@ -37,6 +46,8 @@ static void run(char *cmd)
                   (unsigned long)capture.stats().underrunCount);
   else if (!strcmp(cmd, "audctl"))
     Serial.printf("S3D AUDCTL %u %d %lu\n", muted ? 1 : 0, volume, (unsigned long)controlChanges);
+  else if (!strcmp(cmd, "vidstat"))
+    Serial.printf("S3D VIDSTAT %lu %lu %u\n", (unsigned long)vSent, (unsigned long)vFailed, camera.streaming() ? 1 : 0);
   else if (!strcmp(cmd, "audreset"))
   {
     rxBytes = rxBreaks = 0;
@@ -56,6 +67,22 @@ void setup()
   ac.playbackBufferFrames = 960;
   ac.captureBufferFrames = 960;
   if (audio.configure(ac) != ESP_OK) Serial.println("S3D AUDIO_CONFIG_FAILED");
+  EspUsbVideoConfig vc;
+  vc.transport = EspUsbVideoTransport::Isochronous;
+  vc.payloadBytes = 512;
+  if (camera.configure(vc) != ESP_OK || !camera.setFormat(EspUsbDeviceVideoFormat::Yuy2) ||
+      !camera.setFrameSize(VW, VH) || !camera.setFrameRate(15))
+    Serial.println("S3D VIDEO_CONFIG_FAILED");
+  camera.onFrameResult([](const EspUsbTransferResult &r)
+                       { if (r.status == EspUsbTransferStatus::Success) vSent++; else vFailed++; });
+  for (size_t i = 4; i < sizeof vframe; i += 4)
+  {
+    const uint8_t y = (uint8_t)(16 + 27 * ((i / 2 % VW) / (VW / 8)));
+    vframe[i] = y;
+    vframe[i + 1] = 128;
+    vframe[i + 2] = y;
+    vframe[i + 3] = 128;
+  }
   EspUsbDeviceConfig config;
   config.product = "S3 peer media";
   config.manufacturer = "EspUsbDevice";
@@ -70,6 +97,16 @@ void setup()
 
 void loop()
 {
+  if (camera.streaming() && !camera.frameInFlight() && (int32_t)(millis() - vDue) >= 0)
+  {
+    vDue = millis() + 1000u / 15u;
+    vframe[0] = (uint8_t)vDrawn;
+    vframe[1] = (uint8_t)~vDrawn;
+    vframe[2] = 0x5A;
+    vframe[3] = 0xA5;
+    vDrawn++;
+    camera.submitFrame(vframe, sizeof vframe);
+  }
   int16_t block[48];
   while (capture.availableForWrite() >= sizeof block)
   {

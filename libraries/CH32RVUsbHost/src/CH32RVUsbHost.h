@@ -463,6 +463,59 @@ struct CH32RVUsbHostAudioData {
     size_t length = 0;
 };
 
+/* ------------------------------------------------------------- video (UVC) */
+#define CH32RV_USB_HOST_VIDEO_FORMAT_UNKNOWN 0
+#define CH32RV_USB_HOST_VIDEO_FORMAT_MJPEG 1
+#define CH32RV_USB_HOST_VIDEO_FORMAT_YUY2 2
+#define CH32RV_USB_HOST_VIDEO_FORMAT_NV12 3
+#define CH32RV_USB_HOST_VIDEO_FORMAT_H264 4
+#define CH32RV_USB_HOST_VIDEO_FORMAT_UNCOMPRESSED 5
+#define CH32RV_USB_HOST_MAX_VIDEO_FRAME_INTERVALS 8
+/* One format / frame pair of a camera's VideoStreaming interface
+ * (EspUsbHostVideoStreamInfo). Intervals in 100 ns. */
+struct CH32RVUsbHostVideoStreamInfo {
+    uint8_t address = 0, interfaceNumber = 0, alternate = 0, endpointAddress = 0;
+    bool isochronous = true;
+    uint8_t format = CH32RV_USB_HOST_VIDEO_FORMAT_UNKNOWN;
+    uint8_t formatIndex = 0, frameIndex = 0, frameCount = 0, defaultFrameIndex = 0;
+    uint16_t width = 0, height = 0;
+    uint8_t bitsPerPixel = 0;
+    uint32_t frameInterval = 0;          /* dwDefaultFrameInterval */
+    uint8_t frameIntervalCount = 0;      /* 0: continuous, min .. max in steps */
+    uint32_t frameIntervals[CH32RV_USB_HOST_MAX_VIDEO_FRAME_INTERVALS] = {};
+    uint32_t frameIntervalMin = 0, frameIntervalMax = 0, frameIntervalStep = 0;
+    uint32_t maxVideoFrameBufferSize = 0;
+    uint32_t maxPayloadSize = 0;         /* the widest alternate's bytes per (micro)frame */
+    uint8_t interval = 0;
+    bool startable = true;
+};
+/* One assembled frame (onVideoFrame()); data is the library's until the
+ * callback returns. complete is false for a frame cut short (a payload
+ * flagged bad, the buffer overrun, the frame ID toggling before its end). */
+struct CH32RVUsbHostVideoFrame {
+    uint8_t address = 0, interfaceNumber = 0;
+    const uint8_t *data = nullptr;
+    size_t length = 0;
+    uint16_t width = 0, height = 0;
+    uint8_t format = CH32RV_USB_HOST_VIDEO_FORMAT_UNKNOWN;
+    uint32_t sequence = 0;
+    bool complete = true;
+    bool hasPresentationTime = false;
+    uint32_t presentationTime = 0;
+};
+struct CH32RVUsbHostVideoStats {
+    uint32_t frames = 0, framesIncomplete = 0, framesDropped = 0, payloads = 0;
+    uint32_t headerErrors = 0, payloadErrors = 0, packetErrors = 0, overflows = 0;
+    uint64_t bytes = 0;
+};
+/* The Probe / Commit control as the camera answered (EspUsbHostVideoProbeControl). */
+struct CH32RVUsbHostVideoProbeControl {
+    uint16_t hint = 0x0001;
+    uint8_t formatIndex = 0, frameIndex = 0;
+    uint32_t frameInterval = 0;
+    uint32_t maxVideoFrameSize = 0, maxPayloadTransferSize = 0;
+};
+
 /* ------------------------------------------------------------- CCID */
 enum CH32RVUsbHostCcidIccStatus : uint8_t {
     CH32RV_USB_HOST_CCID_ICC_ACTIVE = 0,
@@ -521,6 +574,7 @@ public:
     typedef CH32RVCallback<void(const CH32RVUsbHostCcidSlotEvent &event)> CcidSlotChangeCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostNetworkFrame &frame)> NetworkFrameCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostAudioData &data)> AudioDataCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostVideoFrame &frame)> VideoFrameCallback;
     typedef CH32RVCallback<void()> RemoteWakeupCallback;
 
     CH32RVUsbHost();
@@ -737,6 +791,25 @@ public:
     bool audioGetVolumeRange(CH32RVUsbHostAudioVolumeRange &range, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                              uint8_t unitId = 0, uint8_t channel = 0, uint32_t timeoutMs = 1000);
 
+    /* ---- USB video: UVC cameras (EspUsbHost's calls) ---- */
+    /* Every format / frame pair (uncompressed YUY2 / NV12, MJPEG ...). */
+    size_t getVideoStreams(uint8_t address, CH32RVUsbHostVideoStreamInfo *streams, size_t maxStreams);
+    /* Probe, Commit, then the alternate setting whose bandwidth covers what
+     * the camera committed to (isochronous; a bulk camera has none), and the
+     * stream kept running. fps 0: the frame's default. Two frame buffers of
+     * the committed size come from the heap: one fills while the other waits
+     * for onVideoFrame() (from deliverEvents()); a frame that finds both busy
+     * is dropped (framesDropped). One camera at a time. */
+    void onVideoFrame(VideoFrameCallback cb) { _videoFrame = cb; }
+    bool videoStart(const CH32RVUsbHostVideoStreamInfo &stream, uint32_t fps = 0,
+                    uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool videoStart(uint8_t format, uint16_t width, uint16_t height, uint32_t fps,
+                    uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool videoStop(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool videoStreaming(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    bool videoCommitted(CH32RVUsbHostVideoProbeControl &control, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    bool videoStats(CH32RVUsbHostVideoStats &stats, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+
     /* ---- USB network: CDC-NCM and CDC-ECM (EspUsbHost's calls) ---- */
     /* Open the network function of a device (the first with one): its
      * control and data interfaces, the block sizes (NCM), the packet filter,
@@ -806,6 +879,7 @@ public:
     NetworkFrameCallback _networkFrame = nullptr;
     NetworkUsbHost *_networkIf = nullptr;
     AudioDataCallback _audioData = nullptr;
+    VideoFrameCallback _videoFrame = nullptr;
     CcidSlotChangeCallback _ccidInserted = nullptr, _ccidRemoved = nullptr;
     CH32RVUsbHostError _error = CH32RVUsbHostError::None;
     uint8_t _ccidError = 0;

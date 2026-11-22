@@ -76,6 +76,10 @@
  *   audfu                H AUDFU <unit> <source> <channels> <master controls hex> <protocol> per Feature Unit / H AUDFUEND <n>
  *   audmute <0|1>        H AUDMUTE <has> <set ok> <read back>        (the first unit with mute, master channel)
  *   audvol <v>           H AUDVOL <has> <set ok> <read back> <min> <max> <res>   (1/256 dB, the master channel)
+ *   vidstreams           H VIDSTREAM <format> <w> <h> <format idx> <frame idx> <interval> <max frame> <max payload>
+ *                        <isochronous> per stream / H VIDEND <n>
+ *   vidrun <ms>          H VIDRUN <ok> <frames> <complete> <first frame's length> <bytes 0..3 of the last, hex>
+ *                        <in sequence> <dropped> <header errors> <packet errors>  (videoStart(YUY2, 160, 120, 15))
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -581,6 +585,45 @@ static void cmd_audout(char *arg)
                    (unsigned long)rate);
 }
 
+static uint32_t vidFrames, vidComplete, vidLength, vidInOrder;
+static uint8_t vidHead[4];
+static int vidLastIndex = -1;
+
+static void cmd_vidstreams()
+{
+    CH32RVUsbHostVideoStreamInfo list[6];
+    const size_t n = usb.getVideoStreams(CH32RV_USB_HOST_ANY_ADDRESS, list, 6);
+    for (size_t i = 0; i < n && i < 6; i++) {
+        const CH32RVUsbHostVideoStreamInfo &v = list[i];
+        CONSOLE.printf("H VIDSTREAM %u %u %u %u %u %lu %lu %lu %u\n", v.format, v.width, v.height, v.formatIndex,
+                       v.frameIndex, (unsigned long)v.frameInterval, (unsigned long)v.maxVideoFrameBufferSize,
+                       (unsigned long)v.maxPayloadSize, v.isochronous ? 1 : 0);
+    }
+    CONSOLE.print("H VIDEND ");
+    CONSOLE.println((unsigned long)n);
+}
+
+static void cmd_vidrun(char *arg)
+{
+    const uint32_t ms = strtoul(arg, nullptr, 10) ? strtoul(arg, nullptr, 10) : 2000;
+    vidFrames = vidComplete = vidLength = vidInOrder = 0;
+    vidLastIndex = -1;
+    memset(vidHead, 0, sizeof vidHead);
+    const bool ok = usb.videoStart(CH32RV_USB_HOST_VIDEO_FORMAT_YUY2, 160, 120, 15);
+    const uint32_t t0 = millis();
+    while (ok && millis() - t0 < ms) {
+        deliverEvents();
+        delay(1);
+    }
+    CH32RVUsbHostVideoStats st;
+    usb.videoStats(st);
+    usb.videoStop();
+    CONSOLE.printf("H VIDRUN %u %lu %lu %lu %02x%02x%02x%02x %lu %lu %lu %lu\n", ok ? 1 : 0, (unsigned long)vidFrames,
+                   (unsigned long)vidComplete, (unsigned long)vidLength, vidHead[0], vidHead[1], vidHead[2], vidHead[3],
+                   (unsigned long)vidInOrder, (unsigned long)st.framesDropped, (unsigned long)st.headerErrors,
+                   (unsigned long)st.packetErrors);
+}
+
 static void cmd_audfu()
 {
     CH32RVUsbHostAudioFeatureUnitInfo list[4];
@@ -942,6 +985,10 @@ static void reply(char *cmd)
         cmd_audout(arg);
     } else if (strcmp(cmd, "audfu") == 0) {
         cmd_audfu();
+    } else if (strcmp(cmd, "vidstreams") == 0) {
+        cmd_vidstreams();
+    } else if (strcmp(cmd, "vidrun") == 0) {
+        cmd_vidrun(arg);
     } else if (strcmp(cmd, "audmute") == 0) {
         cmd_audmute(arg);
     } else if (strcmp(cmd, "audvol") == 0) {
@@ -1083,6 +1130,23 @@ void setup()
         }
     });
 #if defined(USB_HOST_AUDIO)
+    usb.onVideoFrame([](const CH32RVUsbHostVideoFrame &f) {
+        vidFrames++;
+        if (f.complete) {
+            vidComplete++;
+        }
+        if (!vidLength) {
+            vidLength = (uint32_t)f.length;
+        }
+        if (f.length >= 4) {
+            memcpy(vidHead, f.data, 4);
+            /* The camera's frame index: one more than the last, frame after frame. */
+            if (f.data[1] == (uint8_t)~f.data[0] && vidLastIndex >= 0 && f.data[0] == (uint8_t)(vidLastIndex + 1)) {
+                vidInOrder++;
+            }
+            vidLastIndex = f.data[0];
+        }
+    });
     usb.onAudioData([](const CH32RVUsbHostAudioData &d) {
         audBytes += d.length;
         for (size_t i = 0; i + 1 < d.length; i += 2) {

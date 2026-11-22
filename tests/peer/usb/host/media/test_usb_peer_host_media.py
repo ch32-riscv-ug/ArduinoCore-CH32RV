@@ -63,3 +63,19 @@ def test_usb_peer_host_media(dut, peers):
     s = device(peer, "audctl", rb"AUDCTL (\d) (-?\d+) (\d+)")
     assert s.group(1) == b"0" and int(s.group(3)) - before >= 3, s.group(0)
     assert int(s.group(2)) == int(m.group(3)), "the device's volume is the one read back"
+
+    # Video: the camera's YUY2 160x120 stream, 2 s at 15 fps, every frame whole and in order.
+    dut.write("vidstreams")
+    vs = dut.expect(rb"((?:H VIDSTREAM [^\n]*\n)*)H VIDEND (\d+)\r?\n", timeout=10)
+    assert int(vs.group(2)) >= 1, "no video stream"
+    assert re.search(rb"H VIDSTREAM 2 160 120 ", vs.group(1)), vs.group(1)
+    m = host(dut, "vidrun 2000", rb"VIDRUN (\d) (\d+) (\d+) (\d+) (\w{8}) (\d+) (\d+) (\d+) (\d+)", timeout=15)
+    assert m.group(1) == b"1", "videoStart() failed"
+    frames, complete, length = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    assert frames >= 20, f"{frames} frames in 2 s at 15 fps"
+    assert complete == frames, f"{frames - complete} frames incomplete"
+    assert length == 160 * 120 * 2, f"a frame of {length} bytes"
+    head = bytes.fromhex(m.group(5).decode())
+    assert head[1] == head[0] ^ 0xFF and head[2:] == b"\x5a\xa5", head.hex()
+    assert int(m.group(6)) >= frames - 2, f"only {m.group(6)} of {frames} frames followed the one before"
+    assert int(m.group(8)) == 0 and int(m.group(9)) == 0, m.group(0)
