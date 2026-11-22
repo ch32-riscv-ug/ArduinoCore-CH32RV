@@ -658,6 +658,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   RAM に置くことだけ。X035 は RAM 20 KB で 160 B は 0.8 %。V003 の 2 KB には重い。採るかはユーザーと決める（系列ごとに
   待ちの数と RAM で分けるか、全系列でやらないか）。
   → 2026-11-22 ユーザー: digitalWrite() は RAM に置かない。置くなら別の関数を用意して、それを使ったときだけ。今は不要。
+  → 2026-11-22 やり直し: 上の「v0.9.0 と今」は、ライブラリの例が sketch.yaml の 0.9.0 の profile でビルドされていて（`--fqbn` より
+  sketch.yaml が勝つ）、例の行は両方 0.9.0 だった。sketch.yaml を外して組み直した（23.1.6-1、5 系列 × 7 本、scratch の tccmp.sh）:
+  V003 は -84〜-124 B（割り算の分割）、X035 は +48 B（Serial の送信の割り込み）、H417 は +64 B 前後と .data -4 B（V5F の DTCM の
+  配置で、写す・消すループが 1 つずつ増えた）、V203 / V307 の AnalogRead -88 / -92 B、I2CScanner は V203 / V307 +32 B・X035 +80 B・
+  H417 +116 B。23.1.5-3 と 23.1.6-1 は、同じ 35 本で .bin がバイトまで同じ。
 - [x] **試験のコンソールを UART に（2026-11-21）**: 台にプローブの UART の線（tx / rx）があれば、試験のスケッチ
   （sketch_support の 34 本、bench_console.h の CONSOLE）は Serial に出し、モニターは fixture-uart で開く。DMSeq の
   SWIO の問い合わせが無くなる（V407 の DAC の揺れ ±80 → ±2）。DMSeq のまま: uart*・periph・self*（全部の
