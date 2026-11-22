@@ -6,14 +6,20 @@
  *   ?                    S3D READY <mounted 0/1> <link 0/1>
  *   netsend <n>          S3D NETSENT <frames sent>   (broadcast, EtherType 0x88B5, the index in the payload)
  *   netstat              S3D NETRX <frames> <frames of 0x88B5>
- *   netmac               S3D NETMAC <its MAC, 12 hex> */
+ *   netmac               S3D NETMAC <its MAC, 12 hex>
+ *   ipstart              S3D IPSTART <ok> <address>   (the IP stack: 192.168.7.1, a DHCP server, a TCP echo on 7;
+ *                        the raw frames above are not counted after it) */
 #include <Arduino.h>
 #include <EspUsbDevice.h>
+#include <Network.h>
 
 EspUsbDevice device;
 EspUsbDeviceNet net(device);
 
 static volatile uint32_t frames, ours;
+static NetworkServer echo(7);
+static NetworkClient echoClient;
+static bool ipUp;
 static char line[120];
 static size_t used;
 
@@ -46,6 +52,12 @@ static void run(char *cmd)
     const uint8_t *m = net.macAddress();
     Serial.printf("S3D NETMAC %02X%02X%02X%02X%02X%02X\n", m[0], m[1], m[2], m[3], m[4], m[5]);
   }
+  else if (!strcmp(cmd, "ipstart"))
+  {
+    if (!ipUp) ipUp = net.beginNetwork();
+    if (ipUp) echo.begin();
+    Serial.printf("S3D IPSTART %u %s\n", ipUp ? 1 : 0, net.localIP().toString().c_str());
+  }
   else Serial.printf("S3D UNKNOWN %s\n", cmd);
 }
 
@@ -55,6 +67,8 @@ void setup()
   EspUsbNetConfig nc;
   nc.name = "S3 peer net";
   if (net.configure(nc) != ESP_OK) Serial.println("S3D NET_CONFIG_FAILED");
+  net.ipConfig(IPAddress(192, 168, 7, 1), IPAddress(192, 168, 7, 1), IPAddress(255, 255, 255, 0));
+  net.dhcpServer(true);   /* for ipstart; nothing runs until beginNetwork() */
   net.onFrame([](const uint8_t *data, size_t length)
               {
                 frames++;
@@ -73,6 +87,16 @@ void setup()
 
 void loop()
 {
+  if (ipUp)
+  {
+    if (!echoClient || !echoClient.connected()) echoClient = echo.accept();
+    while (echoClient && echoClient.available())
+    {
+      uint8_t b[64];
+      const int n = echoClient.read(b, sizeof b);
+      if (n > 0) echoClient.write(b, n);
+    }
+  }
   while (Serial.available())
   {
     const char c = (char)Serial.read();

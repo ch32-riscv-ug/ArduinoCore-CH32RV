@@ -166,9 +166,9 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   and packets wait in the stack's buffers (a full one holds the device off),
   and up to 4 connections and disconnections queue.
 - No isochronous transfers (audio, video).
-- USB networking stops at raw frames: nothing yet plays EspUsbHost's
-  `networkAttachNetif()` (the IP stack on top). One device at a time, and an
-  NCM block carries one frame when it is sent.
+- USB networking: one device at a time, and an NCM block carries one frame
+  when it is sent. The IP stack on top (`networkAttachNetif()`) is for the
+  Network library's series only (those with an Ethernet MAC).
 - MSC's file system is `CH32RVUsbHostMscFS` (shaped as `EspUsbHostMscFS`, see MSC below). There is no ESP32 VFS, so no host `mscMount()`.
 - One vendor bulk interface and one CCID interface can be open at a time.
 - USB serial's receive ring is sized as EspUsbHost's, `setRxBufferSize(size)`
@@ -371,6 +371,17 @@ synchronous; a block that ends on a packet boundary gets one byte more (NCM)
 or a zero-length packet after it (ECM). The buffers (the receive block, the
 send block, the ring, one frame) come from the heap at `networkOpen()` (about
 9 KB by default). `networkStats()` has the counts.
+
+For the IP stack on top, call `networkAttachNetif()` as on EspUsbHost
+(`#include <NetworkUsbHost.h>`, the Network library): a DHCP client by
+default, and `NetworkClient` / `NetworkUDP` / DNS then go over the USB device.
+The interface is `networkInterface()` (a `NetworkInterface`: `hasIP()`,
+`localIP()`, `printTo()`), the address `networkLocalIP()`. Meanwhile the
+frames are the interface's: no `onNetworkFrame()` / `networkReadFrame()`. The
+example is the Network library's
+[UsbHostNetwork](../Network/examples/UsbHostNetwork/README.md). Checked with
+V407 and an ESP32-P4 (EspUsbDevice's NCM): raw frames both ways, DHCP and a
+TCP round trip (2026-11-22, usb-peer-host-net).
 
 ## Sizes and errors
 

@@ -132,8 +132,8 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
   接続と切断は 4 件まで溜まります。
 - アイソクロナス（オーディオ・ビデオ）はありません。
-- USB ネットワークは、生のフレームまでです（EspUsbHost の `networkAttachNetif()` に当たる IP のつなぎ込みはまだありません）。
-  開けるのは 1 台で、NCM のブロックは 1 つに 1 フレームで送ります。
+- USB ネットワークは、開けるのは 1 台で、NCM のブロックは 1 つに 1 フレームで送ります。IP のつなぎ込み
+  （`networkAttachNetif()`）は Network ライブラリの対象の系列（Ethernet の MAC のある石）だけです。
 - MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
 - ベンダーのバルクと CCID は、同時に開けるのはそれぞれ1つです。
 - USB シリアルの受信の大きさは EspUsbHost と同じ `setRxBufferSize(size)`（ヒープから、`begin()` の前か `end()` の後、66〜65535 バイト）と `rxBufferSize()` で変えます。ヒープを使わないときは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
@@ -300,6 +300,13 @@ if (usb.networkOpen()) {                  // 最初のネットワークの機�
 無い間は受信を止め、機器を待たせます。送信は 1 フレームずつ同期で、ブロックの終わりがパケットの境目に重なるときは、
 NCM では 1 バイト足し、ECM では長さ 0 のパケットを続けます。バッファ（受けのブロック、送りのブロック、リング、取り出し用）は
 `networkOpen()` のときにヒープから取ります（既定で約 9 KB）。数は `networkStats()` で見られます。
+
+その上で IP を動かすには、EspUsbHost と同じく `networkAttachNetif()` を呼びます（`#include <NetworkUsbHost.h>`、
+Network ライブラリ）。既定は DHCP のクライアントで、`NetworkClient` / `NetworkUDP` / DNS が USB の機器を通ります。
+インターフェースは `networkInterface()`（`NetworkInterface`: `hasIP()`、`localIP()`、`printTo()`）、アドレスは
+`networkLocalIP()` です。この間フレームはインターフェースのもので、`onNetworkFrame()` / `networkReadFrame()` は使いません。
+例は Network ライブラリの [UsbHostNetwork](../Network/examples/UsbHostNetwork/README.ja.md) です。V407 と ESP32-P4
+（EspUsbDevice の NCM）の組で、生のフレームの往復、DHCP、TCP の往復を確かめています（2026-11-22、usb-peer-host-net）。
 
 ## 容量の設定と失敗の確認
 

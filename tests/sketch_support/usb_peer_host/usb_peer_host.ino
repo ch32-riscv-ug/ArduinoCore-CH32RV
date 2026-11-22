@@ -64,6 +64,9 @@
  *   netsend <n>          H NETSENT <frames sent>   (broadcast, EtherType 0x88B5, the index in the payload)
  *   netstat              H NETRX <frames> <frames of 0x88B5> <link 0/1> <dropped> <malformed>
  *   netclose             H NETCLOSE
+ *   netip                H NETIP <ok> <address>   (networkAttachNetif(): DHCP from the device, up to 15 s;
+ *                        H NETIP 2 - where the Network library does not build)
+ *   tcpecho <ip> <port> <hex>   H TCPECHO <ok> <hex back within 3 s>   (NetworkClient over the device)
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -76,6 +79,16 @@
 #include <CH32RVUsbHost.h>
 #if defined(USB_HOST_FS)
 #include <CH32RVUsbHostMscFS.h>
+#endif
+/* The IP stack only where the Network library builds (its lwipopts.h: the series with an Ethernet MAC). */
+#if defined(USB_HOST_NET) && (defined(CH32RV_SERIES_CH32V208) || defined(CH32RV_PART_CH32V203RBT6) || \
+                              defined(CH32RV_SERIES_CH32V307) || defined(CH32RV_SERIES_CH32V317) || \
+                              defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467) || \
+                              defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || \
+                              defined(CH32RV_SERIES_CH32H417))
+#define USB_HOST_NET_IP 1
+#include <Network.h>
+#include <NetworkUsbHost.h>
 #endif
 #include <string.h>
 
@@ -446,6 +459,60 @@ static void cmd_netsend(char *arg)
     CONSOLE.print("H NETSENT ");
     CONSOLE.println(sent);
 }
+
+#if defined(USB_HOST_NET_IP)
+static void cmd_netip()
+{
+    bool ok = usb.networkAttachNetif();
+    const uint32_t t0 = millis();
+    while (ok && !usb.networkInterface()->hasIP() && millis() - t0 < 15000) {
+        delay(10);
+    }
+    ok = ok && usb.networkInterface()->hasIP();
+    CONSOLE.print("H NETIP ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.println(usb.networkLocalIP());
+}
+
+static void cmd_tcpecho(char *arg)
+{
+    char *port = strchr(arg, ' ');
+    char *data = port ? strchr(port + 1, ' ') : nullptr;
+    size_t n = 0;
+    bool ok = false;
+    size_t got = 0;
+    if (port && data) {
+        *port++ = 0;
+        *data++ = 0;
+        n = parse_hex(data, block, sizeof block / 2);
+        IPAddress ip;
+        NetworkClient c;
+        if (ip.fromString(arg) && c.connect(ip, (uint16_t)strtoul(port, nullptr, 10))) {
+            c.write(block, n);
+            const uint32_t t0 = millis();
+            while (got < n && millis() - t0 < 3000) {
+                const int b = c.read();
+                if (b >= 0) {
+                    block[sizeof block / 2 + got++] = (uint8_t)b;
+                } else {
+                    delay(1);
+                }
+            }
+            ok = got == n;
+            c.stop();
+        }
+    }
+    CONSOLE.print("H TCPECHO ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    hex(block + sizeof block / 2, got);
+    CONSOLE.println();
+}
+#else
+static void cmd_netip() { CONSOLE.println("H NETIP 2 -"); }
+static void cmd_tcpecho(char *) { CONSOLE.println("H TCPECHO 0 "); }
+#endif
 #endif
 
 static void reply(char *cmd)
@@ -780,6 +847,10 @@ static void reply(char *cmd)
         CONSOLE.print((unsigned long)s.rxDropped);
         CONSOLE.print(' ');
         CONSOLE.println((unsigned long)s.rxOversized);
+    } else if (strcmp(cmd, "netip") == 0) {
+        cmd_netip();
+    } else if (strcmp(cmd, "tcpecho") == 0) {
+        cmd_tcpecho(arg);
     } else if (strcmp(cmd, "netclose") == 0) {
         usb.networkClose();
         CONSOLE.println("H NETCLOSE");

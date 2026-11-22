@@ -399,6 +399,12 @@ struct CH32RVUsbHostNetworkFrame {
     const uint8_t *data = nullptr;
     size_t length = 0;
 };
+/* networkAttachNetif()'s settings (EspUsbHostNetworkConfig): a DHCP client by
+ * default; dhcpClient false and ip / gateway / subnet for a fixed address. */
+struct CH32RVUsbHostNetworkConfig {
+    bool dhcpClient = true;
+    IPAddress ip, gateway, subnet, dns1, dns2;
+};
 struct CH32RVUsbHostNetworkStats {
     bool ready = false, linkUp = false;
     uint32_t rxNtb = 0;          /* blocks (ECM: transfers) received */
@@ -448,6 +454,8 @@ struct CH32RVUsbHostCcidSlotEvent {
 };
 
 /* ------------------------------------------------------------- the host */
+class NetworkUsbHost;   /* the Network library's interface on a USB network device */
+
 class CH32RVUsbHost {
 public:
     typedef CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &device)> DeviceCallback;
@@ -649,6 +657,18 @@ public:
      * notification endpoint). */
     bool networkLinkUp(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     bool networkStats(CH32RVUsbHostNetworkStats &stats, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    /* The IP stack on it (EspUsbHost's networkAttachNetif(); the Network
+     * library, #include <NetworkUsbHost.h>): a NetworkInterface whose frames go over
+     * the device - NetworkClient, NetworkUDP, DNS and the rest then run over
+     * USB. Opens the device when it is not open. This end takes the device's
+     * MAC with the last bit flipped, and becomes the default route when no
+     * other interface is up. Its frames are the interface's: no
+     * onNetworkFrame() / networkReadFrame() while it is attached. */
+    bool networkAttachNetif(const CH32RVUsbHostNetworkConfig &config = CH32RVUsbHostNetworkConfig(),
+                            uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool networkDetachNetif(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    IPAddress networkLocalIP(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    NetworkUsbHost *networkInterface() const { return _networkIf; }
 
     /* ---- CCID smart-card readers ---- */
     void onCcidCardInserted(CcidSlotChangeCallback cb) { _ccidInserted = cb; }
@@ -683,6 +703,7 @@ public:
     DeviceCallback _connected = nullptr, _disconnected = nullptr;
     VendorDataCallback _vendorData = nullptr;
     NetworkFrameCallback _networkFrame = nullptr;
+    NetworkUsbHost *_networkIf = nullptr;
     CcidSlotChangeCallback _ccidInserted = nullptr, _ccidRemoved = nullptr;
     CH32RVUsbHostError _error = CH32RVUsbHostError::None;
     uint8_t _ccidError = 0;
