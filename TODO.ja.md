@@ -757,6 +757,12 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   `__builtin_ctz` を clang が掛け算に開いていた。`internal/ch32rv_bits.h`（掛け算の無いコアでは比較とシフト）に替えた。
   CH32RVSyncKit のプールも同じ。残りは数字の表示と時刻の計算（`-Oz` が呼び出しを選ぶ。UART の 1 文字より短い）。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
+  → 2026-11-22: 23.1.5-3 の zip（267 MB、展開 706 MB）の目次を範囲取得で読んだ: bin/ が 254 MB。clang の同じ実行ファイルが
+  clang・clang++・clang-cl・clang-cpp の 4 つ（各 80 MB、詰めて 31.6 MB）、lld が lld・ld.lld・lld-link・ld64.lld・wasm-ld の
+  5 つ（各 49 MB、19.6 MB）。ch32rv-toolchain の b420834 で、Windows の版から clang-cl・clang-cpp・lld・lld-link・ld64.lld・
+  wasm-ld を外した（コアも README も使わない。clang は ld.lld を名前で探す）。詰めて約 142 MB、展開で約 356 MB 減る見込み。
+  ハードリンクは zip に入らず、Arduino の展開も Windows ではリンクを作れないので採らない。Windows で作り直して smoke が
+  通るか（release.yml）と、コアのビルドの確認は、次のツールチェーンのリリースのとき。
 - [x] 同梱の ch32rv を 0.30.4 に上げた（V103 の接続の修正 e958bbe と 15d9a89、LinkE の SDI が残る件の b1148af が入った版）。
   リリースの版の実機の試験で確かめる。
 
