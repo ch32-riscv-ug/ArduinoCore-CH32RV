@@ -10,8 +10,6 @@ Staged beside every case's test (run_hardware.py).
 import secrets
 import time
 
-import pexpect
-
 EVERY_S = 2.0      # a reply takes milliseconds; the time between asks only has to outlast one
 WITHIN_S = 45.0    # the monitor's slow open (up to ~20 s seen) and a boot hold on top
 
@@ -19,6 +17,8 @@ WITHIN_S = 45.0    # the monitor's slow open (up to ~20 s seen) and a boot hold 
 def ready(dut, rest=rb"", *, nonce=None, command="ready", timeout=WITHIN_S, every=EVERY_S):
     """`<command> <nonce>` until `READY <nonce><rest>` and the line end come back (rest: the reply's fields, as a
     regular expression with their groups) -> the match. nonce: a fresh one when None."""
+    import pexpect   # here, not at the top: the unit tests import the peer tests without the hardware extra
+
     nonce = nonce or secrets.token_hex(4)
     pattern = rb"READY " + nonce.encode() + rest + rb"\r?\n"
     deadline = time.monotonic() + timeout
