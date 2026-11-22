@@ -82,7 +82,7 @@
 | 32 bit の TIM4 | V205、X315、L103 | 2 | 実装済み（timers.csv の counter_width_bits からコアの表の counter_bits。analogWrite()・tone()・ADC のトリガ・CH32RVTimerInput / CH32RVTimerOutput が 32 bit で書く。selfcheck の pwm で L103 の TIM4・H417 の TIM9 / TIM10 を確認、8676c905） | 自己 | UNUSED:85 |
 | LPTIM（休止中の計時・起床、PWM・ワンパルス） | L103、H417 | 2 | 自動 | プローブ（起床・波形） | PS:49, PM:200 |
 | SLTIM（V006 の小さいタイマー）と ADC トリガ | V006（V00x） | 2 | 自動 | プローブ | EVT CH32V006 TIM/SLTIM_DMA, ADC/SLTIM_Trigger |
-| SoftPWM | 全系列 | 2 | 自動 | プローブ | docs/software-peripherals.ja.md:20, FC:73 |
+| SoftPWM | 全系列 | 実装済み（2026-11-19、SoftPWM ライブラリ、AVR の SoftPWM と同じ API。signals::test_soft_pwm が V203・X035 で通った） | 自動 | プローブ | docs/software-peripherals.ja.md:20, FC:73 |
 
 ## アナログ
 
@@ -200,7 +200,7 @@
 | 外付け SPI Ethernet | 全系列 | 2 | 単発 | W5500 などの板 | FC:94 |
 | MAC の無い系列の IP（USB NCM の上） | X035 ほか | 2 | 自動 | PC（NCM） | docs/network-stack.ja.md:15,18 |
 | V208 の TLS | V208 | 2 | 自動 | スイッチ＋PC | PS:99, libraries/Network/README.ja.md:8 |
-| HTTP クライアント・サーバー、MQTT | Network の系列 | 2 | 自動 | PC（eth の case） | FC:96, TODO:247,464 |
+| HTTP クライアント・サーバー、MQTT | Network の系列 | 実装済み（2026-11-18、外部のライブラリで: PubSubClient・ArduinoMqttClient・ArduinoHttpClient・aWOT を eth-libs で、HTTP / HTTPS のクライアントを eth で試験） | 自動 | PC（eth の case） | FC:96, TODO:247,464 |
 | mDNS の問い合わせ（`queryHost()`） | Network の系列 | `queryHost()` は実装済み（2026-11-23、lwIP の `LWIP_DNS_SUPPORT_MDNS_QUERIES`。`hostByName("x.local")` も。eth で試験側の応答役の名前を H417・V407 が引けた）。`queryService()` も（2026-11-23、lwIP の mdns_search_service、試験側の `_ch32test._tcp` を H417・V407 が見つけた） | 自動 | PC | libraries/Network/README.ja.md:67 |
 | PTP（IEEE 1588）・MDIX の設定 | V317、V4x7、H417 | 2 | 単発 | PTP の相手 | UNUSED:51 |
 | IoCHub | H417、V407、V307 | 3（範囲の判断） | — | — | docs/wch-evt-binary-libraries.ja.md:27 |
@@ -219,7 +219,7 @@
 | キーと値の保存（Preferences 相当）・EEPROM.h | 全系列 | 決定済み: 作らない（SYS-01、推奨は外部の SD・I2C の EEPROM） | — | 自己 | FC:29, TODO:228 |
 | 内蔵 Flash 上のファイルシステム（littlefs）、FAT を NOR に、SPIFFS | 全系列（大きい系列） | 決定済み: 作らない（STO-04、2026-11-04） | — | 自己（電源断の試験は uhubctl） | FC:92, docs/filesystem.ja.md:255-258 |
 | eMMC・USB ホストの MSC のブロックデバイス（FS の下） | H417、ホスト | USB ホストは実装済み（2026-11-18、`CH32RVUsbHostMscBlockDevice`）。eMMC は 2 | 単発→自動 | eMMC の板、Pico の MSC | libraries/FS/README.ja.md:38, docs/filesystem.ja.md:286 |
-| フラッシュの書き換え（UPD-01 自己更新、Update API） | 全系列 | 2 | 自動 | 自己 | FC:97 |
+| フラッシュの書き換え（UPD-01 自己更新、Update API） | 全系列 | 実装済み（v0.9.0 まで。Update ライブラリ、arduino-esp32 の `Update` と同じ名前、staging と再起動での入れ替え。DFU・UF2 も同じ仕組み） | 自動 | 自己 | FC:97 |
 | ITCM / DTCM の配置の仕組み | H41x | 実装済み（2026-11-22。V5F の .data・.bss・スタックを DTCM、ヒープと `CH32RV_DMA_MEM` を共有 SRAM に。コードは前から ITCM が先、`CH32RV_RAMFUNC` が ITCM の先頭） | 自動 | 自己 | TODO:172,176 |
 
 ## 特殊な周辺
