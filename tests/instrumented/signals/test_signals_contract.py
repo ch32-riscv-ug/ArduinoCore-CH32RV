@@ -487,6 +487,33 @@ def test_pwm_route(dut, oep_host, ws_run, record_property):
     ask(dut, f"pwmoff {line['pin']}", rb"PWMOFF")
 
 
+def test_pwm_sequence(dut, oep_host, ws_run, record_property):
+    """CH32RVPwmSequence (2026-11-23): WS2812 bytes as one duty per 800 kHz period, moved by the timer's update DMA
+    from an array - judged as a WS2812 line by WireSkein (the bytes, T0H / T1H / bit period, the reset after), on a
+    labelled line that is a timer channel's pad."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPwmSequence")
+    line = next((l for l in lines if any(w[2] == ROLE_CH for w in pads(dut, l["pin"])) and
+                 ask(dut, f"pwmseqcan {l['pin']}", rb"PWMSEQCAN (\d)").group(1) == b"1"), None)
+    if line is None:
+        pytest.skip("no labelled line is a pad of a timer with an update DMA request: " +
+                    ", ".join(p["pad"] for p in lines))
+    pad, pin = line["pad"], line["pin"]
+    one, chain = "ff0055", "102030a5c30f"
+    conditions = [("one LED", f"pwmseq {pin} {one}", rb"PWMSEQ (\d) (\d+)", [rgb_led(pad, data=[one])], 0.02),
+                  ("two LEDs", f"pwmseq {pin} {chain}", rb"PWMSEQ (\d) (\d+)", [rgb_led(pad, data=[chain])], 0.02)]
+    try:
+        replies = sweep(dut, ws_run, oep_host, with_neighbours(oep_host, case, line), f"pwm sequence {pad}",
+                        conditions, rate=60_000_000)
+        assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PWMSEQ")), \
+            f"{pad}: CH32RVPwmSequence did not start (no update DMA request, or its channel taken)"
+        record_property("top", int(replies[-1].group(2)))
+    finally:
+        ask(dut, f"input {pin}", rb"INPUT")
+
+
 def test_pwm_complementary(dut, oep_host, ws_run, record_property):
     case = settings(__file__)
     lines = labelled_lines(oep_host, case)

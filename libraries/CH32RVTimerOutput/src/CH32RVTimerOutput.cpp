@@ -473,3 +473,175 @@ void CH32RVOutputCompare::onInterrupt(void *self)
         o->_callback();
     }
 }
+
+/* ---- CH32RVPwmSequence ---- */
+
+namespace {
+/* The update DMA request of each timer the variant names (CH32RV_TIMn_DMA_UP). */
+struct UpLine {
+    uint8_t timer;
+    ch32rv_dma_line_t line;
+};
+const UpLine up_lines[] = {
+#ifdef CH32RV_TIM1_DMA_UP
+    {1, CH32RV_TIM1_DMA_UP},
+#endif
+#ifdef CH32RV_TIM2_DMA_UP
+    {2, CH32RV_TIM2_DMA_UP},
+#endif
+#ifdef CH32RV_TIM3_DMA_UP
+    {3, CH32RV_TIM3_DMA_UP},
+#endif
+#ifdef CH32RV_TIM4_DMA_UP
+    {4, CH32RV_TIM4_DMA_UP},
+#endif
+#ifdef CH32RV_TIM5_DMA_UP
+    {5, CH32RV_TIM5_DMA_UP},
+#endif
+#ifdef CH32RV_TIM8_DMA_UP
+    {8, CH32RV_TIM8_DMA_UP},
+#endif
+#ifdef CH32RV_TIM9_DMA_UP
+    {9, CH32RV_TIM9_DMA_UP},
+#endif
+#ifdef CH32RV_TIM10_DMA_UP
+    {10, CH32RV_TIM10_DMA_UP},
+#endif
+#ifdef CH32RV_TIM11_DMA_UP
+    {11, CH32RV_TIM11_DMA_UP},
+#endif
+#ifdef CH32RV_TIM12_DMA_UP
+    {12, CH32RV_TIM12_DMA_UP},
+#endif
+    {0, {}},
+};
+constexpr uint16_t DMAINTENR_UDE = 1u << 8;   /* the update event asks the DMA */
+}  // namespace
+
+bool CH32RVPwmSequence::begin(int pin, uint32_t frequency)
+{
+    end();
+    CH32RVTimerPad p;
+    for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH), i, &p); i++) {
+        if (begin(p, frequency)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CH32RVPwmSequence::begin(const CH32RVTimerPad &pad, uint32_t frequency)
+{
+    const UpLine *up = nullptr;
+    for (const UpLine &u : up_lines) {
+        if (u.timer && u.timer == pad.timer) {
+            up = &u;
+        }
+    }
+    const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
+    uint32_t prescale, steps;
+    if (!up || !cap || !frequency ||
+        !split(ch32rv_timer_clock_hz(pad.timer) / frequency, cap->counter_bits == 32u, prescale, steps)) {
+        return false;
+    }
+    const CH32RVTimerRequest request = {
+        pad.timer, CH32RV_TIMER_WHOLE,
+        {(uint16_t)(prescale - 1u), steps - 1u, CH32RV_TIM_CTLR1_ARPE}
+    };
+    _lease = ch32rv_timer_try_acquire(&request, &_owner);
+    if (!ch32rv_timer_lease_valid(&_lease) || !ch32rv_timer_apply_base(&_lease)) {
+        ch32rv_timer_release(&_lease);
+        return false;
+    }
+    _wide = cap->counter_bits == 32u;
+    _base = cap->register_base;
+    _channel = pad.channel;
+    _pin = pad.pin;
+    _timer = pad.timer;
+    _steps = steps;
+    _hz = ch32rv_timer_clock_hz(pad.timer) / prescale / steps;
+    _line = up->line;
+    setCompare(_base, _channel, 0, _wide);
+    channelMode(_base, _channel, (uint8_t)(OCM_PWM1 << 4 | OCPE));
+    channelEnable(_base, _channel, 0x1);
+    if (cap->kind == CH32RV_TIMER_KIND_ADVANCED) {
+        CH32RV_TIM_BDTR(_base) |= CH32RV_TIM_BDTR_MOE;
+    }
+    ch32rv_timer_pad_connect(&pad, true);
+    ch32rv_timer_start(&_lease);
+    return true;
+}
+
+void CH32RVPwmSequence::quiesce(void *self, uint8_t timer, uint8_t channel)
+{
+    (void)timer;
+    (void)channel;
+    CH32RVPwmSequence &s = *static_cast<CH32RVPwmSequence *>(self);
+    if (s._dma) {
+        CH32RV_TIM_DMAINTENR(s._base) &= (uint16_t)~DMAINTENR_UDE;
+        ch32rv_dma_close(&s._line);
+        ch32rv_dma_release(s._line.dma, s._line.channel);
+        s._dma = false;
+    }
+}
+
+void CH32RVPwmSequence::stop()
+{
+    if (_dma) {
+        quiesce(this, _timer, _channel);
+    }
+    if (isAttached()) {
+        setCompare(_base, _channel, 0, _wide);
+    }
+}
+
+void CH32RVPwmSequence::end()
+{
+    stop();
+    if (isAttached()) {
+        CH32RV_TIM_CCER(_base) = 0;
+        CH32RV_TIM_CHCTLR1(_base) = 0;
+        CH32RV_TIM_CHCTLR2(_base) = 0;
+        padLow(_pin);
+    }
+    ch32rv_timer_release(&_lease);
+}
+
+bool CH32RVPwmSequence::write(uint32_t duty)
+{
+    if (!isAttached() || duty > _steps) {
+        return false;
+    }
+    stop();
+    setCompare(_base, _channel, duty, _wide);
+    return true;
+}
+
+bool CH32RVPwmSequence::busy() const
+{
+    return _dma && (CH32RV_DMA_CFGR(&_line) & CH32RV_DMA_CFGR_EN) && CH32RV_DMA_CNTR(&_line) != 0;
+}
+
+bool CH32RVPwmSequence::play(const uint16_t *duties, size_t count, bool loop)
+{
+    if (!isAttached() || !duties || !count || count > 0xFFFFu) {
+        return false;
+    }
+    if (_dma) {
+        quiesce(this, _timer, _channel);
+    }
+    if (!ch32rv_dma_claim(_line.dma, _line.channel)) {
+        return false;                  /* another holds the channel (a USART's DMA, on H41x another sequence) */
+    }
+    _dma = true;
+    ch32rv_dma_open(&_line);
+    CH32RV_DMA_PADDR(&_line) = (uint32_t)(uintptr_t)(_base + 0x34u + 4u * (_channel - 1u));
+    CH32RV_DMA_MADDR(&_line) = (uint32_t)(uintptr_t)duties;
+    CH32RV_DMA_CNTR(&_line) = (uint32_t)count;
+    /* Halfwords from memory into the compare (a word on a 32-bit counter: the DMA widens with zeros). */
+    CH32RV_DMA_CFGR(&_line) = CH32RV_DMA_CFGR_DIR | CH32RV_DMA_CFGR_MINC | (1u << 10) |
+                              (_wide ? CH32RV_DMA_CFGR_PSIZE_32 : (1u << 8)) | CH32RV_DMA_CFGR_PL(2) |
+                              (loop ? CH32RV_DMA_CFGR_CIRC : 0u) | CH32RV_DMA_CFGR_EN;
+    CH32RV_TIM_DMAINTENR(_base) |= DMAINTENR_UDE;
+    return true;
+}

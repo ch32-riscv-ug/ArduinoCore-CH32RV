@@ -10,6 +10,8 @@
 - **`CH32RVPwmTimer`:** 1 つのタイマーの複数のチャネル（と CHxN）を同じ周期の PWM にします。端揃えか中央揃え。
 - **`CH32RVPhaseShift`:** 1 つのタイマーのチャネルに、同じ周波数でそれぞれの位相の矩形波（デューティ 50 %）を出します。
 - **`CH32RVSixStep`:** 高機能タイマーの CH1〜CH3 と CH1N〜CH3N で、三相ブリッジの 6 ステップ（台形波）駆動をします。
+- **`CH32RVPwmSequence`:** 配列の値を 1 周期に 1 つずつ、タイマーの更新の DMA で PWM の比較値に流します（WS2812 の列、
+  デューティの段・ランプなど）。CPU は始めるだけです。
 
 ```cpp
 #include <CH32RVTimerOutput.h>
@@ -100,6 +102,23 @@ void loop() {
 | `setDeadTime(ns)`、`currentStep()`、`end()`、`isAttached()` | |
 
 ステップ: 0 = U の PWM・V の下側オン、1 = U・W、2 = V・W、3 = V・U、4 = W・U、5 = W・V。残りの相は両方 Low。
+
+## CH32RVPwmSequence
+
+| 呼び出し | 意味 |
+|---|---|
+| `begin(pin, frequency)` | タイマーのチャネルの端子と、1 周期の周波数。始めはデューティ 0 |
+| `top()`、`frequency()` | 値の上限（`top() + 1` 刻みで 1 周期）と、実際の周波数 |
+| `play(duties, count, loop = false)` | `uint16_t` の配列（0〜`top()`）を 1 周期に 1 つずつ。すぐ戻る。`loop` は `stop()` まで繰り返す |
+| `busy()`、`stop()`、`write(duty)`、`end()`、`isAttached()` | 流している間か、止めてデューティ 0、今のデューティ |
+
+値は比較値の先読み（preload）を通るので、DMA が動かした次の周期から効きます（出力は始めのデューティから始まり、
+最後の値が `play()` か `stop()` まで残る）。配列は `busy()` の間、変えずに残しておきます。タイマーの更新の DMA の要求
+（variant の `CH32RV_TIMn_DMA_UP`）が無いタイマーの端子と、その DMA のチャネルがほかに使われているときは、`begin()` /
+`play()` が false です。CH32H41x はどのタイマーの要求も DMAMUX の同じチャネルに置くので、同時に流せるのは 1 つです。
+WS2812 の例: 800 kHz で 1 ビット 1 周期、0 は `top()` の 32 %、1 は 64 %、最後に 0 を 60 周期（リセット）。signals の
+test_pwm_sequence で、WireSkein の WS2812 の判定（バイト、T0H / T1H / ビットの周期、リセット）が V203・V205・X035・H417 で
+通りました（2026-11-23）。割り込みを止めないので、ARGB の無い系列の `rgbLedWrite()` の代わりにもなります。
 
 ## 状態
 

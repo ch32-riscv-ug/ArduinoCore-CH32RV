@@ -1671,6 +1671,37 @@ def load_dac_dma(tables: pathlib.Path) -> dict:
     return out
 
 
+# DMAMUX (CH32H41x): every timer's update request (TIMn_UP) on this one channel - every channel is already some
+# USART's, so it shares (USART3's receive): the claim in ch32rv_dma.c settles a clash at run time, and one PWM
+# sequence (CH32RVPwmSequence) runs at a time there.
+DMAMUX_TIM_UP_CHANNEL = (1, 6)
+# family -> {timer: dma_line tuple} (load_timer_up_dma).
+TIM_UP_DMA: dict = {}
+
+
+def load_timer_up_dma(tables: pathlib.Path) -> dict:
+    """family -> {timer number: dma_line tuple}: the timers' update requests (index/dma.csv), on which
+    CH32RVPwmSequence moves one compare value per period. A die variant's rows that differ keep the first; V205's
+    "selectable" requests the DMA1 row (EXTEN_CTLR1's reset value)."""
+    blocks = load_dma_blocks(tables)
+    out: dict = {}
+    for r in read_table(tables, "dma.csv", ("family", "dma", "channel", "request_id", "peripheral", "request",
+                                             "remap")):
+        m = re.fullmatch(r"TIM(\d+)_UP", r["request"])
+        if not m or r["remap"] not in ("", "default", "selectable"):
+            continue
+        timer = int(m.group(1))
+        if r["dma"]:
+            dma, ch, request = int(r["dma"].removeprefix("DMA")), int(r["channel"]), 0
+        else:
+            (dma, ch), request = DMAMUX_TIM_UP_CHANNEL, int(r["request_id"])
+        if r["remap"] == "selectable" and dma != 1:
+            continue
+        out.setdefault(r["family"], {}).setdefault(
+            timer, dma_line(blocks, r["family"], dma, ch, request, f"TIM{timer}_UP"))
+    return out
+
+
 # ADC1 + ADC2 together (dual mode, CH32RVAdcStream): family -> {mode: DUALMOD value} from index/adc_dual_modes.csv,
 # with the field's shift. Which parts have the second ADC is parts.csv's adc_units (CH32V103 has the table's rows -
 # the shared reference manual's - but no ADC2 block and no count).
@@ -5374,6 +5405,13 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     # a timer, so the pad is all the core needs to know.
     chosen_dac = choose_routes(series, parts, dacs, remap, "dac", ("OUT",),
                                DAC_ROUTE_ORDER, forbidden=forbidden)
+    tim_up = TIM_UP_DMA.get(SERIES_CONFIG[series]["family"], {})
+    if tim_up:
+        out.append("/* ---- The timers' update DMA requests (CH32RVPwmSequence; device-data dma.csv) ---- */")
+        for timer, (dma, ch, cbase, flags, shift, request) in sorted(tim_up.items()):
+            out.append(f"#define CH32RV_TIM{timer}_DMA_UP CH32RV_DMA_LINE({dma}, {ch}, {cbase:#010x}u, "
+                       f"{flags:#010x}u, {shift}u, {request}u)")
+        out.append("")
     if chosen_dac:
         out.append("/* ---- DAC: analogWrite() drives the converter on these pads,")
         out.append(" *      not a timer. ---- */")
@@ -6044,6 +6082,7 @@ def main() -> int:
     SPI_DMA.update(load_spi_dma(args.tables))
     DMA_BLOCKS.update(load_dma_blocks(args.tables))
     DAC_DMA.update(load_dac_dma(args.tables))
+    TIM_UP_DMA.update(load_timer_up_dma(args.tables))
     DAC_TRIGGERS.update(load_dac_triggers(args.tables))
     ADC_DUAL.update(load_adc_dual(args.tables))
     REG_BLOCKS.update(load_dma_blocks(args.tables))

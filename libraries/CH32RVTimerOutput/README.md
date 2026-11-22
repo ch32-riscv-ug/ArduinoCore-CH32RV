@@ -10,6 +10,8 @@ Timer outputs beyond `analogWrite()`, in six classes:
 - **`CH32RVPwmTimer`** runs several channels of one timer (and their CHxN) as PWM on one period, edge- or center-aligned.
 - **`CH32RVPhaseShift`** puts square waves (50 % duty) of one frequency on a timer's channels, each at its own phase.
 - **`CH32RVSixStep`** drives a three-phase bridge in six steps (trapezoidal) on an advanced timer's CH1 .. CH3 and CH1N .. CH3N.
+- **`CH32RVPwmSequence`** moves an array into a PWM's compare, one value per period, by the timer's update DMA (a
+  WS2812 chain, duty steps and ramps); the CPU only starts it.
 
 ```cpp
 #include <CH32RVTimerOutput.h>
@@ -100,6 +102,23 @@ Which timer can follow which (the ITR table) comes from device-data's `timer_itr
 | `setDeadTime(ns)`, `currentStep()`, `end()`, `isAttached()` | |
 
 Steps: 0 = U PWM and V's low side on, 1 = U and W, 2 = V and W, 3 = V and U, 4 = W and U, 5 = W and V. The third phase has both sides low.
+
+## CH32RVPwmSequence
+
+| Call | Meaning |
+|---|---|
+| `begin(pin, frequency)` | A timer channel's pad and one period's frequency; duty 0 to start |
+| `top()`, `frequency()` | The largest value (`top() + 1` steps make a period) and the real frequency |
+| `play(duties, count, loop = false)` | A `uint16_t` array (0 .. `top()`), one per period; returns at once; `loop` repeats until `stop()` |
+| `busy()`, `stop()`, `write(duty)`, `end()`, `isAttached()` | Still playing; stop with duty 0; the duty now |
+
+Values go through the compare's preload, so each takes effect the period after the DMA moved it (the output starts
+on the duty it had, and the last value stays until `play()` or `stop()`). Keep the array unchanged while `busy()`.
+A pad of a timer without an update DMA request (the variant's `CH32RV_TIMn_DMA_UP`), or with its DMA channel taken,
+makes `begin()` / `play()` false. CH32H41x puts every timer's request on one DMAMUX channel: one sequence at a time.
+WS2812: 800 kHz, one bit a period, 0 as 32 % of `top()`, 1 as 64 %, then 60 periods of 0 (the reset). signals'
+test_pwm_sequence passes WireSkein's WS2812 check (the bytes, T0H / T1H / bit period, the reset) on V203, V205, X035
+and H417 (2026-11-23). It keeps interrupts on: an alternative to `rgbLedWrite()` where there is no ARGB block.
 
 ## Status
 

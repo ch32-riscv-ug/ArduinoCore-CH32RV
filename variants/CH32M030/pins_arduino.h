@@ -494,6 +494,11 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PC1 ? 2 : \
     0)
 
+/* ---- The timers' update DMA requests (CH32RVPwmSequence; device-data dma.csv) ---- */
+#define CH32RV_TIM1_DMA_UP CH32RV_DMA_LINE(1, 6, 0x4002006cu, 0x40020000u, 20u, 0u)
+#define CH32RV_TIM2_DMA_UP CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)
+#define CH32RV_TIM3_DMA_UP CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)
+
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */

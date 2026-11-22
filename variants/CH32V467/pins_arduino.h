@@ -1015,6 +1015,16 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PC9 ? 4 : \
     0)
 
+/* ---- The timers' update DMA requests (CH32RVPwmSequence; device-data dma.csv) ---- */
+#define CH32RV_TIM1_DMA_UP CH32RV_DMA_LINE(1, 5, 0x40020058u, 0x40020000u, 16u, 0u)
+#define CH32RV_TIM2_DMA_UP CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
+#define CH32RV_TIM3_DMA_UP CH32RV_DMA_LINE(1, 3, 0x40020030u, 0x40020000u, 8u, 0u)
+#define CH32RV_TIM4_DMA_UP CH32RV_DMA_LINE(1, 7, 0x40020080u, 0x40020000u, 24u, 0u)
+#define CH32RV_TIM5_DMA_UP CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 0u)
+#define CH32RV_TIM6_DMA_UP CH32RV_DMA_LINE(2, 3, 0x40020430u, 0x40020400u, 8u, 0u)
+#define CH32RV_TIM7_DMA_UP CH32RV_DMA_LINE(2, 4, 0x40020444u, 0x40020400u, 12u, 0u)
+#define CH32RV_TIM8_DMA_UP CH32RV_DMA_LINE(2, 1, 0x40020408u, 0x40020400u, 0u, 0u)
+
 /* ---- DAC: analogWrite() drives the converter on these pads,
  *      not a timer. ---- */
 /* DAC1: on every part */

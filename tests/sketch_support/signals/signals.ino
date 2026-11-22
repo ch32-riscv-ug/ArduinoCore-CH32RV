@@ -46,6 +46,9 @@
  *                          timer, not tone()'s / Servo's TIM4 / TIM5), 0 0 0 0 0
  *                          past the last
  *   route <timer>          ROUTE <value>: the timer's AFIO remap now
+ *   pwmseqcan <pin>        PWMSEQCAN <1 / 0>: CH32RVPwmSequence starts there (a timer with an update DMA request)
+ *   pwmseq <pin> <hex>     PWMSEQ <ok> <top>: the bytes as WS2812 bits by CH32RVPwmSequence (800 kHz periods, T0H
+ *                          32 % / T1H 64 % of one, then 60 periods low), waited for; the pad left a low output
  *   now                    NOW <micros()>: the DUT's timebase, for a test to
  *                          measure against the host's clock
  *   tpulsein <pin> <state> <timeout us>  TPULSEIN <us>: timerPulseIn()
@@ -149,6 +152,8 @@ static CH32RVOutputCompare compare;
 static CH32RVPwmTimer pwmTimer, pwmTimer2;
 static CH32RVPhaseShift phaseShift;
 static CH32RVSixStep sixStep;
+static CH32RVPwmSequence pwmSeq;
+static uint16_t seqDuties[8 * 16 + 60];
 #endif
 #ifdef SIGNALS_EDGE_CAPTURE
 static CH32RVInputCapture edgeCapture;
@@ -279,6 +284,34 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "shotoff")) {
         shot.end();
         CONSOLE.println("SHOTOFF");
+    } else if (!strcmp(argv[0], "pwmseqcan") && argc == 2) {
+        const bool ok = pwmSeq.begin(pin, 800000);
+        pwmSeq.end();
+        pinMode(pin, INPUT);
+        say("PWMSEQCAN", 1, ok);
+    } else if (!strcmp(argv[0], "pwmseq") && argc == 3) {
+        bool ok = pwmSeq.begin(pin, 800000);
+        size_t n = 0;
+        if (ok) {
+            const uint16_t t0 = (uint16_t)(pwmSeq.top() * 32u / 100u), t1 = (uint16_t)(pwmSeq.top() * 64u / 100u);
+            for (const char *h = argv[2]; h[0] && h[1] && n + 8 <= 8 * 16; h += 2) {
+                char b[3] = {h[0], h[1], 0};
+                const uint8_t v = (uint8_t)strtoul(b, nullptr, 16);
+                for (int bit = 7; bit >= 0; bit--) {
+                    seqDuties[n++] = (v >> bit) & 1 ? t1 : t0;
+                }
+            }
+            for (int i = 0; i < 60; i++) {
+                seqDuties[n++] = 0;
+            }
+            ok = pwmSeq.play(seqDuties, n);
+            const uint32_t t = millis();
+            while (ok && pwmSeq.busy() && millis() - t < 100) {
+            }
+            delayMicroseconds(100);
+        }
+        say("PWMSEQ", 2, ok, (long)pwmSeq.top());
+        pwmSeq.end();
     } else if (!strcmp(argv[0], "oc") && argc == 5) {
         /* oc <pin> <period us> <at us> <mode> */
         const bool ok = (compare.isAttached() || compare.begin(pin, (uint32_t)a2)) &&

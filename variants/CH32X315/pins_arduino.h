@@ -1301,6 +1301,12 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PC11 ? 7 : \
     0)
 
+/* ---- The timers' update DMA requests (CH32RVPwmSequence; device-data dma.csv) ---- */
+#define CH32RV_TIM1_DMA_UP CH32RV_DMA_LINE(1, 5, 0x40020058u, 0x40020000u, 16u, 0u)
+#define CH32RV_TIM2_DMA_UP CH32RV_DMA_LINE(1, 2, 0x4002001cu, 0x40020000u, 4u, 0u)
+#define CH32RV_TIM3_DMA_UP CH32RV_DMA_LINE(1, 11, 0x400200d0u, 0x400200e4u, 8u, 0u)
+#define CH32RV_TIM4_DMA_UP CH32RV_DMA_LINE(1, 7, 0x40020080u, 0x40020000u, 24u, 0u)
+
 /* ---- ARGB: the WS2812 block (rgbLedWrite(), ch32rv_rgb_led_write()) on 3 pads,
  *      fed by DMA1 channel 11; on any other pad the CPU sends ---- */
 #define CH32RV_HAS_ARGB 1

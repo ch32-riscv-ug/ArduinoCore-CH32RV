@@ -28,6 +28,7 @@
 #include <CH32RVCallback.h>
 
 #include "CH32RVTimer.h"
+#include "internal/ch32rv_dma.h"
 
 /* A channel's output and its complementary output (CHx and CHxN) of an
  * advanced timer, as a half bridge's high and low side: CHxN is CHx
@@ -296,4 +297,49 @@ private:
     uint8_t _bits = 8;
     uint8_t _dtg = 0;
     uint8_t _step = 0xFF;
+};
+
+/* A PWM whose duty changes every period from an array, moved by DMA on the
+ * timer's update - a waveform the CPU does not keep up with: a WS2812 chain at
+ * 800 kHz (each bit one period, its high time the code), a stepped or smooth
+ * duty ramp, servo frames. The CPU only starts it.
+ *
+ *     CH32RVPwmSequence seq;
+ *     seq.begin(PA0, 800000);                 // a timer channel's pad, 800 kHz periods
+ *     uint16_t t0 = seq.top() * 32 / 100, t1 = seq.top() * 64 / 100;
+ *     ... fill duties[] with t0 / t1 per bit, then a few 0s ...
+ *     seq.play(duties, n);                    // returns at once; busy() until done
+ *
+ * Duties are compare values in timer steps, 0 .. top() (top() + 1 steps make a
+ * period). Each value takes effect at the period after the DMA moved it (the
+ * compare is preloaded), so the output starts with the duty it had (0 after
+ * begin()) and the last value stays after the sequence, until play() or stop().
+ * The array must stay unchanged and alive while busy(); with loop it plays on
+ * and on until stop(). Needs the timer's update DMA request
+ * (CH32RV_TIMn_DMA_UP in the variant) and its channel free: play() is false
+ * otherwise. On CH32H41x every timer's request shares one DMAMUX channel, so
+ * one sequence runs at a time. */
+class CH32RVPwmSequence {
+public:
+    bool begin(int pin, uint32_t frequency);
+    bool begin(const CH32RVTimerPad &pad, uint32_t frequency);
+    void end();
+    bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
+    uint32_t top() const { return _steps ? _steps - 1u : 0u; }
+    uint32_t frequency() const { return _hz; }
+    bool play(const uint16_t *duties, size_t count, bool loop = false);
+    bool busy() const;
+    /* The DMA stopped and the duty 0. */
+    void stop();
+    /* The duty now (between sequences), 0 .. top(). */
+    bool write(uint32_t duty);
+
+private:
+    static void quiesce(void *self, uint8_t timer, uint8_t channel);
+    const CH32RVTimerOwner _owner = {this, quiesce, this};   /* the manager keeps a pointer */
+    CH32RVTimerLease _lease = {};
+    uint32_t _base = 0, _steps = 0, _hz = 0;
+    uint8_t _channel = 0, _pin = 0, _timer = 0;
+    bool _wide = false, _dma = false;
+    ch32rv_dma_line_t _line = {};
 };
