@@ -44,5 +44,10 @@ uv run --no-project python tools/index/fetch_tools.py --print-env
 
 取得物は JSON に記録された size と SHA-256 で照合します。version、URL、checksum を別の文書へ重複記載しません。
 
+新しい版を採る前に試すときは、CI（.github/workflows/ci.yml）を手動で実行し、`toolchain` に ch32rv-toolchain の版
+（例: `23.1.6-1`）を渡します。例のビルドと install-test（Linux・macOS・Windows）が、その版で
+`bump_tool.py --no-fetch` した fragment を使います。リポジトリの fragment は変わりません。採ると決めたら
+`bump_tool.py ch32rv-toolchain <版>` で fragment を書き換えてコミットします。
+
 compiler の判断理由は [ADR-0002](../../docs/adr/0002-toolchain-distribution.ja.md)、`ch32rv` の責務は
 [ADR-0008](../../docs/adr/0008-upload-strategy.ja.md) を参照してください。
