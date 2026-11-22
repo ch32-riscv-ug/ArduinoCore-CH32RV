@@ -10,10 +10,14 @@
  * edges), in the same number of instructions; 146 B against libgcc's 176 B
  * and compiler-rt's 684 B.
  * Uses a0-a3 and t1-t2 only (t1 keeps the return address of the signed and
- * remainder entries, t2 the sign), so it suits ilp32e and needs no stack. */
+ * remainder entries, t2 the sign), so it suits ilp32e and needs no stack.
+ * Each entry has a section of its own, so a sketch keeps only the ones it
+ * calls (Serial.begin() alone needs __udivsi3: 44 B, not the 160 of all four;
+ * 2026-11-22). Between sections the jumps are `j` (+-1 MiB): a conditional
+ * branch reaches +-4 KiB, and the linker may put the sections apart. */
 #if !defined(__riscv_div)
 
-    .text
+    .section .text.__udivsi3, "ax", @progbits
     .globl __udivsi3
     .type __udivsi3, @function
 /* a0 = n / d, a1 = n % d */
@@ -38,6 +42,7 @@ __udivsi3:
 3:  ret
     .size __udivsi3, . - __udivsi3
 
+    .section .text.__umodsi3, "ax", @progbits
     .globl __umodsi3
     .type __umodsi3, @function
 __umodsi3:
@@ -47,14 +52,16 @@ __umodsi3:
     jr   t1
     .size __umodsi3, . - __umodsi3
 
+    .section .text.__divsi3, "ax", @progbits
     .globl __divsi3
     .type __divsi3, @function
 /* the magnitudes divided unsigned, the quotient negated when the signs
  * differ; n / 0 is all ones whatever n's sign, as libgcc's gives */
 __divsi3:
     or   a2, a0, a1
-    bgez a2, __udivsi3   /* both non-negative: the unsigned division as it is */
-    beqz a1, 9f
+    bltz a2, 10f
+    j    __udivsi3       /* both non-negative: the unsigned division as it is */
+10: beqz a1, 9f
     mv   t1, ra
     xor  t2, a0, a1
     srai t2, t2, 31      /* all ones when the signs differ */
@@ -70,13 +77,15 @@ __divsi3:
     ret
     .size __divsi3, . - __divsi3
 
+    .section .text.__modsi3, "ax", @progbits
     .globl __modsi3
     .type __modsi3, @function
 /* the remainder takes the dividend's sign; n % 0 is n */
 __modsi3:
     or   a2, a0, a1
-    bgez a2, __umodsi3
-    mv   t1, ra
+    bltz a2, 11f
+    j    __umodsi3       /* both non-negative: the unsigned remainder */
+11: mv   t1, ra
     srai t2, a0, 31
     bgez a0, 7f
     neg  a0, a0
