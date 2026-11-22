@@ -699,6 +699,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   ロックの読みの値（RM は 0、EVT は LOCK | CID）を test_cores_hsem の raw で記録する。→ 2026-11-20 に h417qeu6-pico で、
   V5F の版は 4 件（hsem・heap・ipc・v3f_serial）、V3F の版は hsem・ipc が通った（V3F の版の heap と v3f_serial は対象外）。raw は
   どちらも 00000000（RM の読み）。IPC の往復は 4.75 µs。残り: V3F を外から止める仕組み、CPU Core = V3F のときに V5F を 2 つ目のコアにする形（今は眠ったままで IPC は false）。
+  → 2026-11-22 V3F を外から止める仕組みを調べた: RM（CH32H417RM V1.8 の RCC・PFIC・CPU の章）にも EVT（EXAM の全例）にも、
+  片方のコアだけをリセットする・止める手段は無い（チップ全体のリセットだけ）。止めるなら協調型だけ: V5F が IPC の割り込みを
+  V3F に送り、V3F の IPC の処理がスタックを捨てて待ちに戻る（V3F が割り込みを切っていると効かない。V3F が持っている HSEM と
+  コアのロックは手放させる必要がある）。arduino-pico の idleOtherCore()（相手を RAM の中で待たせる一時停止）の形もある。
+  どの形にするか（止める・一時停止・作らない）はユーザーと決める。
 - [ ] BOOT 域のブートローダー（DFU）から起動したときに V5F が動くことを実機で確かめる（入口は 0x08000400 で渡している）。
 - [ ] 低消費電力（lightSleep / deepSleep）、`CH32RV.restart()`、WDT、フラッシュへの書き込み（CH32RV_FLASH_STORE、DFU）を
   V5F で確かめる。2026-11-13: restart()・WDT と CH32RV_FLASH_STORE（flash）は V5F で PASS。2026-11-14: lightSleep()・deepSleep() は
