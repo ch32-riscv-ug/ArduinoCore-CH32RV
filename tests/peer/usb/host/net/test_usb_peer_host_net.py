@@ -64,8 +64,10 @@ def test_usb_peer_host_net(dut, peers):
     assert s["dropped"] == 0 and s["malformed"] == 0, s
 
     # The IP stack on top (networkAttachNetif()): an address from the device's DHCP server, then TCP both ways.
-    # Not where the Network library does not build (the series without an Ethernet MAC): the DUT says 2.
+    # Not where the Network library does not build (the series without an Ethernet MAC): that side says 2.
     m = device(peer, "ipstart", rb"IPSTART (\d) (\S+)", timeout=10)
+    if m.group(1) == b"2":
+        return                     # a CH32RV peer where the Network library does not build
     assert m.group(1) == b"1", "the peer's IP stack did not start"
     server = m.group(2).decode()
     m = host(dut, "netip", rb"NETIP (\d) (\S+)", timeout=20)

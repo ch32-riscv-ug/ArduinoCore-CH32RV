@@ -22,7 +22,7 @@ USB ホスト、EspUsbDevice は TinyUSB を S3 の OTG で動かすもの）な
 | usb-peer-input | デバイス | usb_input（NKRO キーボード・マウス・ゲームパッド・コンシューマ・システム・カスタム HID、CDC 2 ポート） | device/peer_pico、device/peer_s3 | HID の各レポートのバイト列と解放、2 ポートの識別、ポートごとの行の設定・DTR/RTS のイベント、DTR を落とした間は送らないこと |
 | usb-peer-host-input | ホスト | usb_peer_host | host_input/peer_pico のみ（HID 2 つ・CDC 2 ポート） | ゲームパッド、システムコントロール、レポート記述子、HID の生の入力、GET/SET_REPORT と Feature、SET_PROTOCOL、ロック状態とレイアウト、CDC の 2 ポートと行の設定・制御線、相手の抜き差し |
 | usb-peer-host-storage | ホスト | usb_peer_host | host_storage/peer_pico のみ（MSC 2 LUN・MIDI・ベンダー・CCID） | MSC の LUN と準備できない媒体（02/3A/00）、MIDI の CC・PC・ピッチベンド・SysEx の往復、ベンダーの要求 OUT、CCID の状態・Escape・電源オフ・カードの抜き差しの通知 |
-| usb-peer-host-net | ホスト | usb_peer_host（`USB_HOST_NET`） | host_net/peer_s3（S3 / P4。Pico は NCM のデバイスが無いので飛ばす） | `networkOpen()`（NTB の大きさ、`SET_INTERFACE`、機器の文字列の MAC）、NETWORK_CONNECTION、生のフレームの往復（1 と 20 の連続） |
+| usb-peer-host-net | ホスト | usb_peer_host（`USB_HOST_NET`） | host_net/peer_s3（S3 / P4）、host_net/peer_ch32rv（Pico は NCM のデバイスが無いので飛ばす） | `networkOpen()`（NTB の大きさ、`SET_INTERFACE`、機器の文字列の MAC）、NETWORK_CONNECTION、生のフレームの往復（1 と 20 の連続） |
 | usb-peer-host-power | ホスト | usb_peer_host | host_hid/peer_pico、host_hid/peer_s3（P4）、host_hid/peer_ch32rv | ルートポートの suspend（相手が眠り、その前にリモートウェイクアップが有効にされたか）、resume のあとの CDC、相手のリモートウェイクアップでポートが戻り `onRemoteWakeup()` が来ること |
 
 対向の分担（2026-11-10）。Pico は、アイソクロナス以外の全部を両方の役で受け持ちます。S3 は、別のスタックでの確かめと、
