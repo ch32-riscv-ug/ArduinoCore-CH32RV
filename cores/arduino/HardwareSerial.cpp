@@ -940,22 +940,12 @@ size_t CH32RVHardwareSerial::write(uint8_t c)
     if (CH32RV_SERIAL_DMA_ON(*this, TX)) {
         ch32rv_serial_dma_tx->write(*this, c);
     } else {
-#if defined(CH32RV_VARIANT_CH32X035) || defined(CH32RV_VARIANT_CH32X033)
-        /* X035's (and the same die's X033) USART TXE interrupt path is not yet reliable on every USART:
-         * a burst larger than the 63-byte ring capacity can otherwise wait here
-         * forever. Polling TXE is bounded by one character time and keeps Serial
-         * correct while the interrupt-route issue is investigated. */
-        while ((CH32RV_USART_STATR(base) & CH32RV_USART_STATR_TXE) == 0u) {
-        }
-        CH32RV_USART_DATAR(base) = c;
-#else
         /* Block until the ring has room. The TX interrupt is what drains it, so
          * this cannot deadlock as long as interrupts are enabled. */
         while (_tx.isFull()) {
         }
         _tx.push(c);
         CH32RV_USART_CTLR1(base) |= CH32RV_USART_CTLR1_TXEIE;
-#endif
     }
     if (ch32rv_serial_mode_ops) {
         ch32rv_serial_mode_ops->written(*this);  /* RS485: watch for the end */
