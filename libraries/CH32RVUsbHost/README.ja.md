@@ -121,6 +121,8 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
 - **ベンダー（バルク）**: `vendorOpen` で開き、`vendorWrite` / `vendorRead` / `onVendorData`。
 - **CCID**: 電源、ATR、APDU（応答の SW は `statusWord` に分けて返す。EspUsbHost と同じ）、エスケープ、スロットの状態、
   カードの抜き差し。
+- **USB ネットワーク**: CDC-NCM と CDC-ECM の機器（USB の LAN アダプター、ESP32 や CH32RV の NCM のデバイス）を、生の
+  Ethernet のフレームで（`networkOpen` / `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`）。
 
 ## EspUsbHost との違い
 
@@ -129,7 +131,9 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   コールバックはスケッチが呼ぶ `deliverEvents()` から呼ばれ（`delay()` や割り込みの中ではありません）、待つ API を
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
   接続と切断は 4 件まで溜まります。
-- アイソクロナス（オーディオ・ビデオ）と USB ネットワークはありません。帯域とバッファがこのチップには足りません。
+- アイソクロナス（オーディオ・ビデオ）はありません。
+- USB ネットワークは、生のフレームまでです（EspUsbHost の `networkAttachNetif()` に当たる IP のつなぎ込みはまだありません）。
+  開けるのは 1 台で、NCM のブロックは 1 つに 1 フレームで送ります。
 - MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
 - ベンダーのバルクと CCID は、同時に開けるのはそれぞれ1つです。
 - USB シリアルの受信の大きさは EspUsbHost と同じ `setRxBufferSize(size)`（ヒープから、`begin()` の前か `end()` の後、66〜65535 バイト）と `rxBufferSize()` で変えます。ヒープを使わないときは `CH32RVUsbHostCdcSerial::setBuffer()` でスケッチの配列に差し替えます（下の「容量の設定と失敗の確認」）。
@@ -273,6 +277,29 @@ void loop() {
 CCID は `ccidOpen()`、`ccidPowerOn()`、`ccidApdu()`、`ccidEscape()`、カード状態通知を用意します。
 `ccidApdu()` の response は SW1/SW2 を除いた payload、status word は別の出力です。ただし受信 buffer の capacity は
 SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の命令成功を分けて扱います。
+
+### USB ネットワーク（CDC-NCM / CDC-ECM）
+
+```cpp
+usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) { /* f.data, f.length: Ethernet のフレーム */ });
+if (usb.networkOpen()) {                  // 最初のネットワークの機器
+    uint8_t frame[60] = { /* 宛先 MAC、送り元 MAC、EtherType、中身 */ };
+    usb.networkWriteFrame(frame, sizeof frame);
+}
+```
+
+`networkOpen()` は構成の中から通信のインターフェース（class 0x02、subclass 0x0D が NCM、0x06 が ECM）と、
+そのデータのインターフェースの alternate 1 を探します。NCM では `GET_NTB_PARAMETERS` でブロックの大きさを読み、
+受けるブロックが `CH32RV_USB_HOST_NETWORK_NTB_IN_MAX`（既定 3200）より大きい機器には `SET_NTB_INPUT_SIZE` で小さくして
+もらいます。パケットフィルター（自分宛て・ブロードキャスト・全マルチキャスト）を設定し、`SET_INTERFACE` で alternate 1 に
+するとデータが流れ始めます。機器の MAC アドレスは `getNetworkInterface()` の `macAddress`（機器の文字列から）、リンクは
+`networkLinkUp()`（機器の NETWORK_CONNECTION の通知）です。
+
+受けたフレームは、リング（`CH32RV_USB_HOST_NETWORK_RX_RING_SIZE`、既定 4096 バイト）で待ち、`onNetworkFrame()`
+（`deliverEvents()` から）か、コールバックが無ければ `networkReadFrame()` で取り出します。リングに 1 ブロックぶんの空きが
+無い間は受信を止め、機器を待たせます。送信は 1 フレームずつ同期で、ブロックの終わりがパケットの境目に重なるときは、
+NCM では 1 バイト足し、ECM では長さ 0 のパケットを続けます。バッファ（受けのブロック、送りのブロック、リング、取り出し用）は
+`networkOpen()` のときにヒープから取ります（既定で約 9 KB）。数は `networkStats()` で見られます。
 
 ## 容量の設定と失敗の確認
 

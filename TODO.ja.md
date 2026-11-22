@@ -378,7 +378,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   - 記録の usb に CH32RV の相手（`{to: ch32rv, port: <相手のアドレス>}`）。run_hardware が両方のスケッチを作り、相手を
     その台のプローブで書く（Pico の相手と同じ形）。2026-11-15: 記録（`controller` も）・place・run_hardware・相手の
     スケッチ 5 つ（usb_peer/*/peer_ch32rv）を入れた。ビルド（H417 の SS / FS、X035）と単体試験だけで、実機は配線待ち。
-    相手のライブラリに無いもの（ホストの isochronous と NCM）の case は飛ばす（tests/peer/usb/README.ja.md）。
+    相手のライブラリに無いもの（ホストの isochronous）の case は飛ばす（tests/peer/usb/README.ja.md）。ホストの NCM は
+    2026-11-22 に入れた（usb-peer-net の CH32RV の相手も）。CH32RV が NCM のデバイスの相手（usb-peer-host-net）はスケッチがまだ。
     同じ OEP プローブの 2 つの口に DUT と相手を置いたときのモニター 2 つは未確認。
     2026-11-15: 相手の試作で見つかった穴を実装した。Pico・P4・PC が相手の回帰は V205・V407・H417 で 20 件通った（CH32RV どうしは配線待ち）。ホストの長い構成記述子（窓で読み直す）と
     切らない文字列、デバイスの MSC の複数 LUN と `setSense()`、HID の `enableOwnInterface()`。usb-peer-host-storage は
@@ -1091,7 +1092,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
 - DFU_DETACH の応答がホスト側で STALL になる原因を調べる。見込み（2026-10-21）: ブートローダーへ移る前の 20 ms の
   待ちが、印に `millis() | 1` を使っていたため 0 ms になることがあり、ステータス段の応答の前に抜けていた
   （85f96bb で直した）。H417 では、その後の DETACH → DFU を 10 回ほど続けて通した。PC ホストの X035 で確かめれば閉じられる。
-- ホストで未対応: アイソクロナス（オーディオ・ビデオ）、USB ネットワーク（NCM / ECM）、MSC のファイルシステム、
+- ホストで未対応: アイソクロナス（オーディオ・ビデオ）、USB ネットワークの IP のつなぎ込み（生のフレームは 2026-11-22 に入れた）、
   ハブ越しの低速デバイス（PRE PID の実機確認）、split の CLEAR_TT_BUFFER、第 1 世代 USBHS の split。V103（旧 USBFS）と
   第 1 世代 USBHS（V30x）のホスト、HS のハブの先の FS・LS（split）は 2026-11-17 に実装（ビルドのみ）。第 2 世代 USBHS の
   ホストは V407 で HS を確認済み（2026-11-11）。

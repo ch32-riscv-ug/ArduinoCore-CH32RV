@@ -15,7 +15,9 @@
  *   hidv <hex>           C HIDV_SENT <ok>     (vendor output report; the first byte is its ID)
  *   leds <bits>          C LEDS <ok>
  *   midi <ch> <n> <v>    C MIDI_SENT <ok>
- *   net / netsend / netstat   C NETOPEN 0 / C NETSENT 0 / C NETRX 0 0   (no USB networking in CH32RVUsbHost)
+ *   net                  C NETOPEN <ok>      (networkOpen(): the DUT's CDC-NCM function)
+ *   netsend              C NETSENT <ok>      (broadcast, EtherType 0x88B5)
+ *   netstat              C NETRX <frames> <frames of 0x88B5>   (since the last reset)
  *   vend <hex>           C VEND <hex echoed back within 2 s>
  *   vreq                 C VREQ <ok> <answer as text>
  *   msc                  C MSC <ok> <vendor> <product> <blocks> <block size>
@@ -126,6 +128,7 @@ static Device dev;
 static volatile uint8_t connectedAddress;   /* set by onDeviceConnected, announced from loop() */
 static bool hidHasId[16];                   /* per interface: its report descriptor declares report IDs */
 static volatile uint32_t hidVendorInputs;
+static volatile uint32_t netFrames, netOurs;
 
 /* The device's interfaces, every alternate setting (the library's walk of its configuration). */
 static CH32RVUsbHostInterfaceInfo itfs[32];
@@ -679,10 +682,14 @@ static void run(char *cmd)
         sscanf(arg, "%u %u %u", &ch, &n, &v);
         say("C MIDI_SENT %u\n", usb.midiSendNoteOn((uint8_t)ch, (uint8_t)n, (uint8_t)v) ? 1 : 0);
     } else if (!strcmp(cmd, "net")) {
-        SerialDMSeq.println("C NOTE CH32RVUsbHost has no USB networking (CDC-NCM)");
-        SerialDMSeq.println("C NETOPEN 0");
-    } else if (!strcmp(cmd, "netsend")) SerialDMSeq.println("C NETSENT 0");
-    else if (!strcmp(cmd, "netstat")) SerialDMSeq.println("C NETRX 0 0");
+        say("C NETOPEN %u\n", usb.networkOpen() ? 1 : 0);
+    } else if (!strcmp(cmd, "netsend")) {
+        uint8_t f[60] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x00, 0x00, 0x00, 0x43, 0x48, 0x88, 0xB5};
+        memcpy(f + 14, "CH32RV peer frame", 17);
+        say("C NETSENT %u\n", usb.networkWriteFrame(f, sizeof f) ? 1 : 0);
+    } else if (!strcmp(cmd, "netstat")) {
+        say("C NETRX %lu %lu\n", (unsigned long)netFrames, (unsigned long)netOurs);
+    }
     else if (!strcmp(cmd, "vend")) cmdVend(arg);
     else if (!strcmp(cmd, "vreq")) cmdVreq();
     else if (!strcmp(cmd, "hididle")) cmdHidIdle(arg);
@@ -699,7 +706,10 @@ static void run(char *cmd)
     else if (!strcmp(cmd, "cdcn")) cmdCdcN(arg);
     else if (!strcmp(cmd, "cdcline")) cmdCdcLine(arg);
     else if (!strcmp(cmd, "cdcctl")) cmdCdcCtl(arg);
-    else if (!strcmp(cmd, "reset")) SerialDMSeq.println("C RESET");
+    else if (!strcmp(cmd, "reset")) {
+        netFrames = netOurs = 0;
+        SerialDMSeq.println("C RESET");
+    }
     else say("C UNKNOWN %s\n", cmd);
 }
 
@@ -733,6 +743,12 @@ void setup()
         if (e.interfaceNumber < sizeof hidHasId && !hidHasId[e.interfaceNumber]) SerialDMSeq.print("00");
         printHex(e.data, e.length);
         SerialDMSeq.println();
+    });
+    usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) {
+        netFrames++;
+        if (f.length >= 14 && f.data[12] == 0x88 && f.data[13] == 0xB5) {
+            netOurs++;
+        }
     });
     usb.onMidiMessage([](const CH32RVUsbHostMidiMessage &m) {
         say("C MIDI %u %02x %u %u\n", m.codeIndex, m.status, m.data1, m.data2);

@@ -150,6 +150,9 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   / `onVendorData`.
 - **CCID**: power, ATR, APDU (the response's SW comes apart in `statusWord`,
   as in EspUsbHost), escape, slot state, card insertion and removal.
+- **USB network**: CDC-NCM and CDC-ECM devices (USB Ethernet adapters, an
+  ESP32's or a CH32RV's NCM device) as raw Ethernet frames (`networkOpen` /
+  `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`).
 
 ## Differences from EspUsbHost
 
@@ -162,8 +165,10 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   interrupt), and may call the waiting APIs. Until then reports, received data
   and packets wait in the stack's buffers (a full one holds the device off),
   and up to 4 connections and disconnections queue.
-- No isochronous transfers (audio, video) and no USB networking: the chip has
-  neither the bandwidth nor the buffers.
+- No isochronous transfers (audio, video).
+- USB networking stops at raw frames: nothing yet plays EspUsbHost's
+  `networkAttachNetif()` (the IP stack on top). One device at a time, and an
+  NCM block carries one frame when it is sent.
 - MSC's file system is `CH32RVUsbHostMscFS` (shaped as `EspUsbHostMscFS`, see MSC below). There is no ESP32 VFS, so no host `mscMount()`.
 - One vendor bulk interface and one CCID interface can be open at a time.
 - USB serial's receive ring is sized as EspUsbHost's, `setRxBufferSize(size)`
@@ -337,6 +342,35 @@ state notifications. `ccidApdu()`'s response is the payload without SW1/SW2,
 and the status word is a separate output, but the receive buffer's capacity
 must hold those two status bytes too. A successful transfer and a successful
 command (`SW=9000`) are different things.
+
+### USB network (CDC-NCM / CDC-ECM)
+
+```cpp
+usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) { /* f.data, f.length: an Ethernet frame */ });
+if (usb.networkOpen()) {                  // the first network device
+    uint8_t frame[60] = { /* destination MAC, source MAC, EtherType, payload */ };
+    usb.networkWriteFrame(frame, sizeof frame);
+}
+```
+
+`networkOpen()` finds the communication interface (class 0x02, subclass 0x0D
+NCM or 0x06 ECM) and its data interface's alternate setting 1 in the
+configuration. For NCM it reads the block sizes (`GET_NTB_PARAMETERS`) and asks
+a device whose receive blocks exceed `CH32RV_USB_HOST_NETWORK_NTB_IN_MAX`
+(3200 by default) for smaller ones (`SET_NTB_INPUT_SIZE`). It sets the packet
+filter (directed, broadcast, all multicast) and `SET_INTERFACE` to alternate
+1, which starts the data. The device's MAC is `getNetworkInterface()`'s
+`macAddress` (from its string), the link `networkLinkUp()` (its
+NETWORK_CONNECTION notification).
+
+Received frames wait in a ring (`CH32RV_USB_HOST_NETWORK_RX_RING_SIZE`, 4096
+bytes by default) for `onNetworkFrame()` (from `deliverEvents()`) or, with no
+callback, `networkReadFrame()`. While the ring lacks room for a block,
+receiving stops and the device waits. Sending is one frame at a time,
+synchronous; a block that ends on a packet boundary gets one byte more (NCM)
+or a zero-length packet after it (ECM). The buffers (the receive block, the
+send block, the ring, one frame) come from the heap at `networkOpen()` (about
+9 KB by default). `networkStats()` has the counts.
 
 ## Sizes and errors
 

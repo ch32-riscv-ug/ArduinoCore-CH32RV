@@ -41,7 +41,7 @@ PRODUCT_BOARD_CASES = {UIAPDUINO_BOARD: ("runtime", "hid")}
 USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
-                   "usb-peer-host-fs", "usb-peer-host-power")
+                   "usb-peer-host-fs", "usb-peer-host-power", "usb-peer-host-net")
 # The USB peer a port of the record's usb names (to): an ESP32-S3 (full speed) or ESP32-P4 (its OTG HS port, high speed) on its
 # own port to this host, an RP2040 (a Raspberry Pi Pico) on the same OEP probe as the DUT, or another CH32RV board
 # (its own address, the controller of it the cable reaches). The P4 runs the S3's sketches (EspUsbHost / EspUsbDevice)
@@ -53,6 +53,10 @@ S3_LACKS = {case: "skip: the ESP32-S3 peer has no sketch for this case (the RP20
             for case in ("usb-peer-host-input", "usb-peer-host-storage", "usb-peer-host-fs")}
 P4_LACKS = {case: "skip: the ESP32-P4 peer has no sketch for this case (the RP2040 peer covers it)"
             for case in ("usb-peer-host-input", "usb-peer-host-storage", "usb-peer-host-fs")}
+# Host cases the RP2040 cannot be the device for: Adafruit TinyUSB has no CDC-NCM class (TinyUSB's own NCM device
+# is not wired into its Arduino library).
+PICO_DEVICE_LACKS = {"usb-peer-host-net": "skip: the RP2040 peer has no CDC-NCM device (Adafruit TinyUSB has no NCM "
+                                          "class)"}
 # Device cases the RP2040 cannot be the host for: its host controller driver has no isochronous transfers.
 PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochronous transfers (the speaker, "
                                      "microphone and camera streams)"}
@@ -62,7 +66,7 @@ PICO_HOST_LACKS = {"usb-peer-media": "skip: the RP2040's USB host has no isochro
 CH32RV_PEER_LACKS = {
     "usb-peer-media": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no isochronous transfers (the speaker, "
                       "microphone and camera streams)",
-    "usb-peer-net": "skip: a CH32RV peer's USB host (CH32RVUsbHost) has no USB networking (CDC-NCM)",
+    "usb-peer-host-net": "skip: no CH32RV peer sketch for the CDC-NCM device yet (CH32RVUsbDeviceNet)",
 }
 # The speed a controller of the record's usb runs at (USB 2.0: 1 full, 2 high; 3 SuperSpeed), as CH32RVUsbHost numbers it.
 USB_PORT_SPEEDS = {"full_speed": 1, "usbd": 1, "high_speed": 2, "high_speed_2": 2, "super_speed": 3}
@@ -434,7 +438,7 @@ def choose_cases(place, items=None, caps=None):
                      f"skip: {part} has no USB controller" if not device else
                      lacks if peer else not_peer)
     for case in PEER_HOST_CASES:
-        lacks = ({"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS}.get(peer_usb.get("to"), {}).get(case) or
+        lacks = ({"esp32-s3": S3_LACKS, "esp32-p4": P4_LACKS, "rp2040": PICO_DEVICE_LACKS}.get(peer_usb.get("to"), {}).get(case) or
                  (CH32RV_PEER_LACKS.get(case) if ch32rv else None))
         out[case] = ("run" if peer and host and not lacks else
                      f"skip: {part} has no USB host CH32RVUsbHost drives" if not host else

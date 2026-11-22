@@ -618,6 +618,13 @@ any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
 
 [[item]]
+id = "usb-peer-host-net"       # CDC-NCM / ECM host: networkOpen(), the link notification, raw frames both ways
+test = "usb-peer-host-net"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
+
+[[item]]
 id = "hid"
 test = "hid"
 scope = "once"

@@ -360,6 +360,55 @@ struct CH32RVUsbHostVendorData {
     size_t length = 0;
 };
 
+/* ------------------------------------------------------------- network (CDC-NCM / CDC-ECM) */
+/* The receive block (NCM's NTB) this host takes at most: the device is asked
+ * for no bigger (SET_NTB_INPUT_SIZE) when it offers more. EspUsbHost's 3200,
+ * TinyUSB's CFG_TUD_NCM_IN_NTB_MAX_SIZE. */
+#ifndef CH32RV_USB_HOST_NETWORK_NTB_IN_MAX
+#define CH32RV_USB_HOST_NETWORK_NTB_IN_MAX 3200
+#endif
+/* Received frames waiting for onNetworkFrame() / networkReadFrame(), each
+ * after a 2-byte length. */
+#ifndef CH32RV_USB_HOST_NETWORK_RX_RING_SIZE
+#define CH32RV_USB_HOST_NETWORK_RX_RING_SIZE 4096
+#endif
+/* The largest Ethernet frame sent or taken (no FCS). */
+#define CH32RV_USB_HOST_NETWORK_MAX_FRAME 1514
+enum CH32RVUsbHostNetworkProtocol : uint8_t {
+    CH32RV_USB_HOST_NETWORK_PROTOCOL_NONE = 0,
+    CH32RV_USB_HOST_NETWORK_PROTOCOL_CDC_ECM,
+    CH32RV_USB_HOST_NETWORK_PROTOCOL_CDC_NCM,
+};
+struct CH32RVUsbHostNetworkInterfaceInfo {
+    uint8_t address = 0;
+    CH32RVUsbHostNetworkProtocol protocol = CH32RV_USB_HOST_NETWORK_PROTOCOL_NONE;
+    uint8_t controlInterfaceNumber = 0xFF, dataInterfaceNumber = 0xFF, dataInterfaceAlternate = 0;
+    uint8_t macAddressStringIndex = 0;
+    uint8_t macAddress[6] = {};        /* the device's, from that string */
+    uint16_t maxSegmentSize = 0;
+    uint8_t networkCapabilities = 0;   /* NCM: bmNetworkCapabilities */
+    uint16_t ncmVersion = 0;
+    uint8_t notificationEndpoint = 0, inEndpoint = 0, outEndpoint = 0;
+    uint16_t notificationMaxPacketSize = 0, inMaxPacketSize = 0, outMaxPacketSize = 0;
+};
+/* A bare Ethernet frame (destination, source, EtherType, payload): the NCM
+ * blocks and ECM transfers are made and taken apart by the library. */
+struct CH32RVUsbHostNetworkFrame {
+    uint8_t address = 0;
+    CH32RVUsbHostNetworkProtocol protocol = CH32RV_USB_HOST_NETWORK_PROTOCOL_NONE;
+    const uint8_t *data = nullptr;
+    size_t length = 0;
+};
+struct CH32RVUsbHostNetworkStats {
+    bool ready = false, linkUp = false;
+    uint32_t rxNtb = 0;          /* blocks (ECM: transfers) received */
+    uint32_t rxFrames = 0;       /* frames taken out of them */
+    uint32_t rxDropped = 0;      /* frames the full ring had no room for */
+    uint32_t rxOversized = 0;    /* blocks longer than ntbInSize, or malformed */
+    uint32_t txFrames = 0, txFails = 0;
+    uint16_t ntbInSize = 0, ntbOutSize = 0;
+};
+
 /* ------------------------------------------------------------- CCID */
 enum CH32RVUsbHostCcidIccStatus : uint8_t {
     CH32RV_USB_HOST_CCID_ICC_ACTIVE = 0,
@@ -414,6 +463,7 @@ public:
     typedef CH32RVCallback<void(const CH32RVUsbHostMidiMessage &message)> MidiMessageCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostVendorData &data)> VendorDataCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostCcidSlotEvent &event)> CcidSlotChangeCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostNetworkFrame &frame)> NetworkFrameCallback;
     typedef CH32RVCallback<void()> RemoteWakeupCallback;
 
     CH32RVUsbHost();
@@ -578,6 +628,28 @@ public:
     uint16_t vendorOutPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     uint16_t vendorInPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
 
+    /* ---- USB network: CDC-NCM and CDC-ECM (EspUsbHost's calls) ---- */
+    /* Open the network function of a device (the first with one): its
+     * control and data interfaces, the block sizes (NCM), the packet filter,
+     * the data interface's alternate setting 1. One open at a time; the
+     * buffers (about CH32RV_USB_HOST_NETWORK_NTB_IN_MAX + 2 KB +
+     * CH32RV_USB_HOST_NETWORK_RX_RING_SIZE) come from the heap. */
+    bool networkOpen(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    void networkClose(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool networkReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    bool getNetworkInterface(CH32RVUsbHostNetworkInterfaceInfo &info) const;
+    /* Received frames go to onNetworkFrame() (from deliverEvents()) or, with
+     * no callback, wait for networkReadFrame() (a frame longer than `length`
+     * is cut). networkWriteFrame() sends one frame (14 .. 1514 bytes) and
+     * waits for the transfer. */
+    void onNetworkFrame(NetworkFrameCallback cb) { _networkFrame = cb; }
+    bool networkWriteFrame(const uint8_t *frame, size_t length, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    size_t networkReadFrame(uint8_t *buffer, size_t length, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    /* The device's NETWORK_CONNECTION notification (up when it has no
+     * notification endpoint). */
+    bool networkLinkUp(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    bool networkStats(CH32RVUsbHostNetworkStats &stats, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+
     /* ---- CCID smart-card readers ---- */
     void onCcidCardInserted(CcidSlotChangeCallback cb) { _ccidInserted = cb; }
     void onCcidCardRemoved(CcidSlotChangeCallback cb) { _ccidRemoved = cb; }
@@ -610,6 +682,7 @@ public:
     /* ---- internal: the function groups' state hangs off these ---- */
     DeviceCallback _connected = nullptr, _disconnected = nullptr;
     VendorDataCallback _vendorData = nullptr;
+    NetworkFrameCallback _networkFrame = nullptr;
     CcidSlotChangeCallback _ccidInserted = nullptr, _ccidRemoved = nullptr;
     CH32RVUsbHostError _error = CH32RVUsbHostError::None;
     uint8_t _ccidError = 0;

@@ -58,6 +58,12 @@
  *   fsend                H FSEND                       (end(): files closed, the cache synchronized)
  *   where <addr>         H WHERE <addr> <hub address> <hub speed> (0 0: on the root port; the hub the device
  *                        hangs from - a high-speed one reaches a full-speed device by split transactions)
+ * Built with USB_HOST_NET (case usb-peer-host-net) only, leaving out the other classes' commands as the FS build
+ * does (ready, dev and where stay), these - a CDC-NCM / ECM device's raw frames:
+ *   netopen              H NETOPEN <ok> <protocol: 1 ECM, 2 NCM> <the device's MAC, 12 hex> <NTB in> <NTB out>
+ *   netsend <n>          H NETSENT <frames sent>   (broadcast, EtherType 0x88B5, the index in the payload)
+ *   netstat              H NETRX <frames> <frames of 0x88B5> <link 0/1> <dropped> <malformed>
+ *   netclose             H NETCLOSE
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -401,6 +407,47 @@ static void cmd_fsls()
 }
 #endif
 
+#if defined(USB_HOST_NET)
+static volatile uint32_t netFrames, netOurs;
+
+static void cmd_netopen()
+{
+    const bool ok = usb.networkOpen();
+    CH32RVUsbHostNetworkInterfaceInfo info;
+    CH32RVUsbHostNetworkStats s;
+    usb.getNetworkInterface(info);
+    usb.networkStats(s);
+    netFrames = netOurs = 0;
+    CONSOLE.print("H NETOPEN ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned)info.protocol);
+    CONSOLE.print(' ');
+    hex(info.macAddress, 6);
+    CONSOLE.print(' ');
+    CONSOLE.print(s.ntbInSize);
+    CONSOLE.print(' ');
+    CONSOLE.println(s.ntbOutSize);
+}
+
+/* n broadcast frames, EtherType 0x88B5, 60 bytes, the index in the payload. */
+static void cmd_netsend(char *arg)
+{
+    const unsigned long n = strtoul(arg, nullptr, 10) ? strtoul(arg, nullptr, 10) : 1;
+    CH32RVUsbHostNetworkInterfaceInfo info;
+    usb.getNetworkInterface(info);
+    unsigned long sent = 0;
+    for (unsigned long i = 0; i < n; i++) {
+        uint8_t f[60] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x02, 0x48, 0x4F, 0x53, 0x54, 0x01, 0x88, 0xB5};
+        f[14] = (uint8_t)i;
+        f[15] = (uint8_t)(i >> 8);
+        sent += usb.networkWriteFrame(f, sizeof f) ? 1 : 0;
+    }
+    CONSOLE.print("H NETSENT ");
+    CONSOLE.println(sent);
+}
+#endif
+
 static void reply(char *cmd)
 {
     char *arg = strchr(cmd, ' ');
@@ -419,7 +466,7 @@ static void reply(char *cmd)
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {
         cmd_where(arg);
-#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "suspend") == 0 || strcmp(cmd, "resume") == 0) {
         const bool s = cmd[0] == 's';
         const bool ok = s ? usb.suspend() : usb.resume();
@@ -478,7 +525,7 @@ static void reply(char *cmd)
         stick.end();
         CONSOLE.println("H FSEND");
 #endif
-#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "mscraw") == 0) {
         cmd_mscraw(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "vend") == 0) {
@@ -657,7 +704,7 @@ static void reply(char *cmd)
         CONSOLE.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
         CONSOLE.println();
-#if !defined(USB_HOST_FS)   /* the FS build carries the storage commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
     } else if (strcmp(cmd, "midicc") == 0 || strcmp(cmd, "midipc") == 0 || strcmp(cmd, "midipb") == 0) {
         char *end;
         const uint8_t ch = (uint8_t)strtoul(arg, &end, 10);
@@ -714,6 +761,28 @@ static void reply(char *cmd)
         CONSOLE.print(' ');
         hex(rx, ok ? got : 0);
         CONSOLE.println();
+#endif
+#if defined(USB_HOST_NET)
+    } else if (strcmp(cmd, "netopen") == 0) {
+        cmd_netopen();
+    } else if (strcmp(cmd, "netsend") == 0) {
+        cmd_netsend(arg);
+    } else if (strcmp(cmd, "netstat") == 0) {
+        CH32RVUsbHostNetworkStats s;
+        usb.networkStats(s);
+        CONSOLE.print("H NETRX ");
+        CONSOLE.print((unsigned long)netFrames);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)netOurs);
+        CONSOLE.print(' ');
+        CONSOLE.print(usb.networkLinkUp() ? 1 : 0);
+        CONSOLE.print(' ');
+        CONSOLE.print((unsigned long)s.rxDropped);
+        CONSOLE.print(' ');
+        CONSOLE.println((unsigned long)s.rxOversized);
+    } else if (strcmp(cmd, "netclose") == 0) {
+        usb.networkClose();
+        CONSOLE.println("H NETCLOSE");
 #endif
     } else {
         CONSOLE.println("ERROR COMMAND");
@@ -824,6 +893,14 @@ void setup()
             serialRx[port][serialRxLength[port]++] = e.data[i];
         }
     });
+#if defined(USB_HOST_NET)
+    usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) {
+        netFrames++;
+        if (f.length >= 14 && f.data[12] == 0x88 && f.data[13] == 0xB5) {
+            netOurs++;
+        }
+    });
+#endif
     usb.onCcidCardInserted([](const CH32RVUsbHostCcidSlotEvent &) { CONSOLE.println("H CARD in"); });
     usb.onCcidCardRemoved([](const CH32RVUsbHostCcidSlotEvent &) { CONSOLE.println("H CARD out"); });
     cdc.begin(115200);
