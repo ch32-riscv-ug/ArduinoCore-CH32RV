@@ -67,6 +67,11 @@
  *   netip                H NETIP <ok> <address>   (networkAttachNetif(): DHCP from the device, up to 15 s;
  *                        H NETIP 2 - where the Network library does not build)
  *   tcpecho <ip> <port> <hex>   H TCPECHO <ok> <hex back within 3 s>   (NetworkClient over the device)
+ * Built with USB_HOST_AUDIO (case usb-peer-host-media) only, the same way - USB audio streams:
+ *   audstreams           H AUDSTREAM <in 1/out 0> <channels> <bits> <rate> <rates listed> <itf> <alt> <ep> <mps> <protocol>
+ *                        per stream / H AUDEND <n>
+ *   audin <ms>           H AUDIN <ok> <bytes> <breaks in the device's counter> (audioInputStart(1, 16, 48000), ms of it)
+ *   audout <ms>          H AUDOUT <ok> <bytes queued> <underruns> (audioOutputStart(1, 16, 48000), a counter for ms)
  *
  * Events: H CONNECTED <addr> <vid> <pid> <product> / H DISCONNECTED <addr>
  * <vid> <pid> / H KEY <p|r> <keycode> <ascii> / H MOUSE <x> <y> <wheel>
@@ -515,6 +520,61 @@ static void cmd_tcpecho(char *) { CONSOLE.println("H TCPECHO 0 "); }
 #endif
 #endif
 
+#if defined(USB_HOST_AUDIO)
+static uint32_t audBytes, audBreaks;
+static int16_t audExpect;
+static bool audSynced;
+
+static void cmd_audstreams()
+{
+    CH32RVUsbHostAudioStreamInfo list[6];
+    const size_t n = usb.getAudioStreams(CH32RV_USB_HOST_ANY_ADDRESS, list, 6);
+    for (size_t i = 0; i < n && i < 6; i++) {
+        const CH32RVUsbHostAudioStreamInfo &a = list[i];
+        CONSOLE.printf("H AUDSTREAM %u %u %u %lu %u %u %u %02x %u %02x\n", a.input ? 1 : 0, a.channels, a.bitsPerSample,
+                       (unsigned long)a.sampleRate, a.sampleRateCount, a.interfaceNumber, a.alternate,
+                       a.endpointAddress, a.maxPacketSize, a.protocol);
+    }
+    CONSOLE.print("H AUDEND ");
+    CONSOLE.println((unsigned long)n);
+}
+
+static void cmd_audin(char *arg)
+{
+    const uint32_t ms = strtoul(arg, nullptr, 10) ? strtoul(arg, nullptr, 10) : 1000;
+    audBytes = audBreaks = 0;
+    audSynced = false;
+    const bool ok = usb.audioInputStart(1, 16, 48000);
+    const uint32_t t0 = millis();
+    while (ok && millis() - t0 < ms) {
+        deliverEvents();
+        delay(1);
+    }
+    usb.audioInputStop();
+    CONSOLE.printf("H AUDIN %u %lu %lu\n", ok ? 1 : 0, (unsigned long)audBytes, (unsigned long)audBreaks);
+}
+
+static void cmd_audout(char *arg)
+{
+    const uint32_t ms = strtoul(arg, nullptr, 10) ? strtoul(arg, nullptr, 10) : 1000;
+    const bool ok = usb.audioOutputStart(1, 16, 48000);
+    uint32_t queued = 0;
+    int16_t next = 0, block[48];
+    const uint32_t t0 = millis();
+    while (ok && millis() - t0 < ms) {
+        while (usb.audioOutputAvailableForWrite() >= sizeof block) {
+            for (int16_t &v : block) v = next++;
+            usb.audioSend((const uint8_t *)block, sizeof block);
+            queued += sizeof block;
+        }
+        delay(1);
+    }
+    const uint32_t under = usb.audioOutputUnderruns();
+    usb.audioOutputStop();
+    CONSOLE.printf("H AUDOUT %u %lu %lu\n", ok ? 1 : 0, (unsigned long)queued, (unsigned long)under);
+}
+#endif
+
 static void reply(char *cmd)
 {
     char *arg = strchr(cmd, ' ');
@@ -533,7 +593,7 @@ static void reply(char *cmd)
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {
         cmd_where(arg);
-#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET) && !defined(USB_HOST_AUDIO)   /* the FS / NET / AUDIO builds carry their own commands only */
     } else if (strcmp(cmd, "suspend") == 0 || strcmp(cmd, "resume") == 0) {
         const bool s = cmd[0] == 's';
         const bool ok = s ? usb.suspend() : usb.resume();
@@ -592,7 +652,7 @@ static void reply(char *cmd)
         stick.end();
         CONSOLE.println("H FSEND");
 #endif
-#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET) && !defined(USB_HOST_AUDIO)   /* the FS / NET / AUDIO builds carry their own commands only */
     } else if (strcmp(cmd, "mscraw") == 0) {
         cmd_mscraw(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "vend") == 0) {
@@ -771,7 +831,7 @@ static void reply(char *cmd)
         CONSOLE.print(' ');
         hex(&sense.additionalSenseQualifier, 1);
         CONSOLE.println();
-#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET)   /* the FS / NET builds carry their own commands only (the 64 KB parts' flash) */
+#if !defined(USB_HOST_FS) && !defined(USB_HOST_NET) && !defined(USB_HOST_AUDIO)   /* the FS / NET / AUDIO builds carry their own commands only */
     } else if (strcmp(cmd, "midicc") == 0 || strcmp(cmd, "midipc") == 0 || strcmp(cmd, "midipb") == 0) {
         char *end;
         const uint8_t ch = (uint8_t)strtoul(arg, &end, 10);
@@ -828,6 +888,14 @@ static void reply(char *cmd)
         CONSOLE.print(' ');
         hex(rx, ok ? got : 0);
         CONSOLE.println();
+#endif
+#if defined(USB_HOST_AUDIO)
+    } else if (strcmp(cmd, "audstreams") == 0) {
+        cmd_audstreams();
+    } else if (strcmp(cmd, "audin") == 0) {
+        cmd_audin(arg);
+    } else if (strcmp(cmd, "audout") == 0) {
+        cmd_audout(arg);
 #endif
 #if defined(USB_HOST_NET)
     } else if (strcmp(cmd, "netopen") == 0) {
@@ -964,6 +1032,19 @@ void setup()
             serialRx[port][serialRxLength[port]++] = e.data[i];
         }
     });
+#if defined(USB_HOST_AUDIO)
+    usb.onAudioData([](const CH32RVUsbHostAudioData &d) {
+        audBytes += d.length;
+        for (size_t i = 0; i + 1 < d.length; i += 2) {
+            const int16_t v = (int16_t)(d.data[i] | d.data[i + 1] << 8);
+            if (audSynced && v != audExpect) {
+                audBreaks++;
+            }
+            audExpect = (int16_t)(v + 1);
+            audSynced = true;
+        }
+    });
+#endif
 #if defined(USB_HOST_NET)
     usb.onNetworkFrame([](const CH32RVUsbHostNetworkFrame &f) {
         netFrames++;

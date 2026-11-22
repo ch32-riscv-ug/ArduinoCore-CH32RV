@@ -625,6 +625,13 @@ any_of = ["USBFS", "OTG_FS"]
 also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
 
 [[item]]
+id = "usb-peer-host-media"     # USB audio host: getAudioStreams(), capture and playback of a counter, a second each
+test = "usb-peer-host-media"
+scope = "series"
+any_of = ["USBFS", "OTG_FS"]
+also = ["CH32V407", "CH32V467", "CH32X305", "CH32X315", "CH32V103"]
+
+[[item]]
 id = "hid"
 test = "hid"
 scope = "once"

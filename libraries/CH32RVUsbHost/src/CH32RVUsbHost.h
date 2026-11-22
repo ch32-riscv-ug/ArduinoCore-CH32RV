@@ -415,6 +415,38 @@ struct CH32RVUsbHostNetworkStats {
     uint16_t ntbInSize = 0, ntbOutSize = 0;
 };
 
+/* ------------------------------------------------------------- audio (UAC1 / UAC2 streaming) */
+/* bInterfaceProtocol of an Audio Class interface (EspUsbHost's values). */
+#define CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC1 0x00
+#define CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC2 0x20
+#define CH32RV_USB_HOST_MAX_AUDIO_SAMPLE_RATES 8
+/* Received / queued PCM per direction (from the heap at the start). */
+#ifndef CH32RV_USB_HOST_AUDIO_RING_SIZE
+#define CH32RV_USB_HOST_AUDIO_RING_SIZE 2048
+#endif
+/* One alternate setting of an Audio Streaming interface: a PCM (Type I)
+ * format and its isochronous endpoint (EspUsbHostAudioStreamInfo). */
+struct CH32RVUsbHostAudioStreamInfo {
+    uint8_t address = 0, interfaceNumber = 0, alternate = 0, endpointAddress = 0;
+    bool input = false, output = false;
+    uint8_t channels = 0, bytesPerSample = 0, bitsPerSample = 0;
+    uint32_t sampleRate = 0;           /* the first (or the only) one */
+    uint8_t sampleRateCount = 0;       /* 0: a continuous range, sampleRateMin .. Max */
+    uint32_t sampleRates[CH32RV_USB_HOST_MAX_AUDIO_SAMPLE_RATES] = {};
+    uint32_t sampleRateMin = 0, sampleRateMax = 0, sampleRateResolution = 0;
+    uint16_t maxPacketSize = 0;
+    uint8_t interval = 0;              /* bInterval */
+    bool startable = true;
+    uint8_t protocol = CH32RV_USB_HOST_AUDIO_PROTOCOL_UAC1;
+    uint8_t terminalLink = 0, clockSourceId = 0;   /* UAC2: the clock the rates come from */
+};
+/* Received PCM, as it came in the isochronous packets. */
+struct CH32RVUsbHostAudioData {
+    uint8_t address = 0, interfaceNumber = 0;
+    const uint8_t *data = nullptr;
+    size_t length = 0;
+};
+
 /* ------------------------------------------------------------- CCID */
 enum CH32RVUsbHostCcidIccStatus : uint8_t {
     CH32RV_USB_HOST_CCID_ICC_ACTIVE = 0,
@@ -472,6 +504,7 @@ public:
     typedef CH32RVCallback<void(const CH32RVUsbHostVendorData &data)> VendorDataCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostCcidSlotEvent &event)> CcidSlotChangeCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostNetworkFrame &frame)> NetworkFrameCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostAudioData &data)> AudioDataCallback;
     typedef CH32RVCallback<void()> RemoteWakeupCallback;
 
     CH32RVUsbHost();
@@ -636,6 +669,37 @@ public:
     uint16_t vendorOutPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     uint16_t vendorInPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
 
+    /* ---- USB audio: UAC1 / UAC2 PCM streams (EspUsbHost's calls) ---- */
+    /* The device's Audio Streaming alternate settings with a PCM format and
+     * an isochronous endpoint (UAC2: the rates asked of its clock); how many,
+     * up to maxStreams filled. */
+    size_t getAudioStreams(uint8_t address, CH32RVUsbHostAudioStreamInfo *streams, size_t maxStreams);
+    /* Start a stream: its alternate setting, the sample rate (0: the stream's
+     * first; UAC1 on the endpoint, UAC2 on its clock), the isochronous
+     * endpoint kept busy every service interval. One input and one output at
+     * a time. Received PCM goes to onAudioData() (from deliverEvents());
+     * audioSend() queues PCM for the output, which sends silence and counts
+     * an underrun when the queue runs dry. The rings
+     * (CH32RV_USB_HOST_AUDIO_RING_SIZE) come from the heap. */
+    void onAudioData(AudioDataCallback cb) { _audioData = cb; }
+    bool audioInputStart(const CH32RVUsbHostAudioStreamInfo &stream, uint32_t sampleRate = 0,
+                         uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool audioInputStart(uint8_t channels, uint8_t bitsPerSample, uint32_t sampleRate,
+                         uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool audioInputStop(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool audioInputRunning(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    bool audioOutputStart(const CH32RVUsbHostAudioStreamInfo &stream, uint32_t sampleRate = 0,
+                          uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool audioOutputStart(uint8_t channels, uint8_t bitsPerSample, uint32_t sampleRate,
+                          uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    void audioOutputStop(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    bool audioOutputRunning(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    uint32_t audioOutputUnderruns(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    /* Queue PCM for the output (whole frames of it); false when the queue has
+     * no room for all of it (none is taken then). */
+    bool audioSend(const uint8_t *data, size_t length, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
+    size_t audioOutputAvailableForWrite(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+
     /* ---- USB network: CDC-NCM and CDC-ECM (EspUsbHost's calls) ---- */
     /* Open the network function of a device (the first with one): its
      * control and data interfaces, the block sizes (NCM), the packet filter,
@@ -704,6 +768,7 @@ public:
     VendorDataCallback _vendorData = nullptr;
     NetworkFrameCallback _networkFrame = nullptr;
     NetworkUsbHost *_networkIf = nullptr;
+    AudioDataCallback _audioData = nullptr;
     CcidSlotChangeCallback _ccidInserted = nullptr, _ccidRemoved = nullptr;
     CH32RVUsbHostError _error = CH32RVUsbHostError::None;
     uint8_t _ccidError = 0;

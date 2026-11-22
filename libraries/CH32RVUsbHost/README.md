@@ -150,6 +150,8 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   / `onVendorData`.
 - **CCID**: power, ATR, APDU (the response's SW comes apart in `statusWord`,
   as in EspUsbHost), escape, slot state, card insertion and removal.
+- **USB audio**: UAC1 / UAC2 PCM streams (`getAudioStreams` /
+  `audioInputStart` / `onAudioData` / `audioOutputStart` / `audioSend`).
 - **USB network**: CDC-NCM and CDC-ECM devices (USB Ethernet adapters, an
   ESP32's or a CH32RV's NCM device) as raw Ethernet frames (`networkOpen` /
   `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`).
@@ -165,7 +167,8 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
   interrupt), and may call the waiting APIs. Until then reports, received data
   and packets wait in the stack's buffers (a full one holds the device off),
   and up to 4 connections and disconnections queue.
-- No isochronous transfers (audio, video).
+- Audio stops at PCM streams in and out (no feedback endpoint, no Feature
+  Unit volume / mute yet). No video (UVC).
 - USB networking: one device at a time, and an NCM block carries one frame
   when it is sent. The IP stack on top (`networkAttachNetif()`) is for the
   Network library's series only (those with an Ethernet MAC).
@@ -342,6 +345,31 @@ state notifications. `ccidApdu()`'s response is the payload without SW1/SW2,
 and the status word is a separate output, but the receive buffer's capacity
 must hold those two status bytes too. A successful transfer and a successful
 command (`SW=9000`) are different things.
+
+### USB audio (UAC1 / UAC2)
+
+```cpp
+usb.onAudioData([](const CH32RVUsbHostAudioData &d) { /* d.data, d.length: received PCM */ });
+usb.audioInputStart(1, 16, 48000);       // a microphone: 1 channel, 16 bits, 48 kHz
+usb.audioOutputStart(2, 16, 48000);      // a speaker
+usb.audioSend(pcm, sizeof pcm);          // queue PCM to play (whole frames)
+```
+
+`getAudioStreams()` returns the Audio Streaming alternate settings with a PCM
+(Type I) format and an isochronous endpoint: UAC1's rates from the format
+descriptor, UAC2's from GET RANGE of the Clock Source its terminal names.
+`audioInputStart()` / `audioOutputStart()` select the alternate setting, set
+the rate (UAC1 on the endpoint, UAC2 on the clock, SET_CUR; not asked of a
+stream with one rate) and keep the isochronous endpoint busy, one packet per
+service interval. Received PCM waits in a ring
+(`CH32RV_USB_HOST_AUDIO_RING_SIZE`, 2048 bytes by default) for
+`onAudioData()` (from `deliverEvents()`). The output sends what `audioSend()`
+queued, as much as the rate gives each interval (a fraction carried over),
+and silence when it runs dry, counted by `audioOutputUnderruns()`. One input
+and one output at a time. No feedback endpoint: an asynchronous device is fed
+at the nominal rate. Checked with V407 and an ESP32-P4 (EspUsbDevice's UAC1
+headset, 48 kHz mono 16-bit): a second each of capture and playback with no
+sample lost (2026-11-22, usb-peer-host-media).
 
 ### USB network (CDC-NCM / CDC-ECM)
 

@@ -13,7 +13,7 @@ import bench_ready   # staged beside the test (run_hardware.py)
 # stacks' defaults, EspUsbDevice's and Adafruit TinyUSB's).
 IDENTITY = {
     "s3": dict(tag=b"S3D ", vid="303a", manufacturer="EspUsbDevice", hid="S3 peer hid", hid_serial="S3PEERHID",
-               classes="S3 peer classes", vreq="ESP32S3", net="S3 peer net"),
+               classes="S3 peer classes", vreq="ESP32S3", net="S3 peer net", media="S3 peer media"),
     "pico": dict(tag=b"PD ", vid="239a", manufacturer="ch32rv-tests", hid="Pico peer hid", hid_serial="PICOPEERHID",
                  classes="Pico peer classes", vreq="RP2040", input="Pico peer input", storage="Pico peer storage",
                  luns=("Pico LUN 0", "Pico LUN 1")),

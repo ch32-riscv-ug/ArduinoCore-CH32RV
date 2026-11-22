@@ -129,6 +129,8 @@ struct Ep {
     uint8_t *buf;
     uint32_t due;          /* tick before which it is not tried */
     uint32_t since;        /* tick the transfer was queued */
+    uint32_t served;       /* isochronous: tick its last transfer went out */
+    uint8_t served_valid;
     uint8_t setup_pkt[8];
 };
 
@@ -328,6 +330,10 @@ struct Hcd {
             Ep *ep = &eps[i];
             if (ep->state == EP_PENDING && (int32_t)(ticks - ep->due) >= 0) {
                 next_rr = (uint8_t)((i + 1) % EP_MAX);
+                if (ep->type == CH32RV_USBH_ISOCHRONOUS && !ep->split) {
+                    ep->served = ticks;
+                    ep->served_valid = 1;
+                }
                 start((int16_t)i);
                 return;
             }
@@ -749,6 +755,13 @@ struct Hcd {
             ep->setup = 0;
             ep->split = 0;
             ep->due = ticks;
+            /* An isochronous transfer is one service interval's packet: the
+             * next one goes an interval after the last, not as soon as it is
+             * queued (an OUT stream ran at 7 times its rate, 2026-11-22). */
+            if (ep->type == CH32RV_USBH_ISOCHRONOUS && ep->served_valid &&
+                (int32_t)(ep->served + ep->interval - ticks) > 0) {
+                ep->due = ep->served + ep->interval;
+            }
             ep->since = ticks;
             ep->state = EP_PENDING;
             schedule();

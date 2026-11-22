@@ -78,6 +78,7 @@ MODULES = {
     "usb-peer-host-fs": TESTS / "peer/usb/host/storage/test_usb_peer_host_fs.py",
     "usb-peer-host-power": TESTS / "peer/usb/host/power/test_usb_peer_host_power.py",
     "usb-peer-host-net": TESTS / "peer/usb/host/net/test_usb_peer_host_net.py",
+    "usb-peer-host-media": TESTS / "peer/usb/host/media/test_usb_peer_host_media.py",
 }
 # Sketches other than core_contracts, and helper modules staged beside a case's test.
 # The console cases: the monitor's source (port_config), and the flag that makes the sketch use that console.
@@ -133,7 +134,8 @@ CASE_LIBRARIES = {"eth-libs": ("PubSubClient (2.8)", "ArduinoMqttClient (0.1.8)"
 # sketch only that case builds (usb-peer-host-fs: the FS library, 15-33 KB, which the 64 KB parts' other host
 # cases cannot carry).
 CONSOLE_FLAGS = {"console-rtt": "CONSOLE_RTT", "console-dmdata": "CONSOLE_DMDATA", "console-sdi": "CONSOLE_SDI",
-                 "usb-peer-host-fs": "USB_HOST_FS", "usb-peer-host-net": "USB_HOST_NET"}
+                 "usb-peer-host-fs": "USB_HOST_FS", "usb-peer-host-net": "USB_HOST_NET",
+                 "usb-peer-host-media": "USB_HOST_AUDIO"}
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
@@ -181,6 +183,7 @@ SKETCHES = {
     "usb-peer-host-fs": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
     "usb-peer-host-net": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
+    "usb-peer-host-media": TESTS / "sketch_support/usb_peer_host/usb_peer_host.ino",
 }
 # The record's usb ports (harness.records.USB_PORTS) as the test sketches' controller (USB_TEST_CONTROLLER) and host port
 # (USB_PEER_HOST_PORT).
@@ -210,6 +213,7 @@ PEERS = {
     "usb-peer-host-classes": TESTS / "sketch_support/usb_peer/host_classes/peer_s3",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_s3",
     "usb-peer-host-net": TESTS / "sketch_support/usb_peer/host_net/peer_s3",
+    "usb-peer-host-media": TESTS / "sketch_support/usb_peer/host_media/peer_s3",
 }
 # The same cases with an RP2040 (Raspberry Pi Pico) as the peer: on the DUT's own OEP probe, written over SWD and
 # talked to over SEGGER RTT (oep-client's pytest plugin writes it through the upload hook), staged as peer_pico/.
@@ -287,6 +291,7 @@ HELPERS = {
     "usb-peer-host-fs": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-power": [TESTS / "peer/usb/host/host_peer.py"],
     "usb-peer-host-net": [TESTS / "peer/usb/host/host_peer.py"],
+    "usb-peer-host-media": [TESTS / "peer/usb/host/host_peer.py"],
 }
 # Beside every case's test: the first exchange with the sketch, `ready` asked until it answers.
 COMMON_HELPERS = [TESTS / "instrumented/bench_ready.py"]

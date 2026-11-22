@@ -74,3 +74,4 @@ See the [library API](../README.md) and [peer tests](../../../tests/peer/usb/REA
 | [HostHubDevices](HostHubDevices/README.md) | The tree of devices behind a hub, listed on each connection and disconnection. |
 | [USBSerial](USBSerial/README.md) | A bidirectional UART-console bridge to a CDC-ACM device or supported USB-UART adapter. |
 | [VendorBulk](VendorBulk/README.md) | A vendor bulk interface bridge: UART input to bulk OUT, and received bulk IN shown as hex. |
+| [AudioStreams](AudioStreams/README.md) | A USB audio device's PCM streams listed, a 440 Hz tone on its output, its input's peak level. |

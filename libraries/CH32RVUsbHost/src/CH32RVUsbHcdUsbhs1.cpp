@@ -140,6 +140,8 @@ typedef struct {
     uint8_t *buf;
     uint32_t due;          /* tick before which it is not tried */
     uint32_t since;        /* tick the transfer was queued */
+    uint32_t served;       /* isochronous: tick its last transfer went out */
+    uint8_t served_valid;
     uint8_t setup_pkt[8];
 } hcd_ep_t;
 
@@ -311,6 +313,10 @@ static void schedule(void)
         hcd_ep_t *ep = &eps[i];
         if (ep->state == EP_PENDING && (int32_t)(ticks - ep->due) >= 0) {
             next_rr = (uint8_t)((i + 1) % EP_MAX);
+            if (ep->type == CH32RV_USBH_ISOCHRONOUS) {
+                ep->served = ticks;
+                ep->served_valid = 1;
+            }
             start((int16_t)i);
             return;
         }
@@ -681,6 +687,12 @@ static bool hcd_xfer(uint8_t daddr, uint8_t address, uint8_t *buffer, uint16_t l
         ep->tries = 0;
         ep->setup = 0;
         ep->due = ticks;
+        /* One isochronous packet per interval: the next an interval after the
+         * last, not as soon as it is queued. */
+        if (ep->type == CH32RV_USBH_ISOCHRONOUS && ep->served_valid &&
+            (int32_t)(ep->served + ep->interval - ticks) > 0) {
+            ep->due = ep->served + ep->interval;
+        }
         ep->since = ticks;
         ep->state = EP_PENDING;
         schedule();

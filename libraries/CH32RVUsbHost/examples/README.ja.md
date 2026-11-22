@@ -80,3 +80,4 @@ Device 側のサンプルを対向機器にすると、通信の方向と期待�
 | [HostHubDevices](HostHubDevices/README.ja.md) | ハブの先の機器の木を、つなぐ・抜くたびに表示します。 |
 | [USBSerial](USBSerial/README.ja.md) | CDC-ACM または対応 USB-UART アダプタを接続し、ボードの UART モニタと双方向に中継します。 |
 | [VendorBulk](VendorBulk/README.ja.md) | vendor-specific bulk interface を開き、UART 入力を OUT へ送り、IN の受信を hex 表示します。 |
+| [AudioStreams](AudioStreams/README.ja.md) | USB オーディオの機器の PCM のストリームを表示し、出力に 440 Hz を流し、入力のピークを表示します。 |

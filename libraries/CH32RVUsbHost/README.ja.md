@@ -121,6 +121,8 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
 - **ベンダー（バルク）**: `vendorOpen` で開き、`vendorWrite` / `vendorRead` / `onVendorData`。
 - **CCID**: 電源、ATR、APDU（応答の SW は `statusWord` に分けて返す。EspUsbHost と同じ）、エスケープ、スロットの状態、
   カードの抜き差し。
+- **USB オーディオ**: UAC1 / UAC2 の PCM のストリーム（`getAudioStreams` / `audioInputStart` / `onAudioData` /
+  `audioOutputStart` / `audioSend`）。
 - **USB ネットワーク**: CDC-NCM と CDC-ECM の機器（USB の LAN アダプター、ESP32 や CH32RV の NCM のデバイス）を、生の
   Ethernet のフレームで（`networkOpen` / `networkWriteFrame` / `onNetworkFrame` / `networkReadFrame`）。
 
@@ -131,7 +133,7 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
   コールバックはスケッチが呼ぶ `deliverEvents()` から呼ばれ（`delay()` や割り込みの中ではありません）、待つ API を
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
   接続と切断は 4 件まで溜まります。
-- アイソクロナス（オーディオ・ビデオ）はありません。
+- オーディオは PCM のストリームの入出力までです（フィードバックの端点・Feature Unit の音量とミュートはまだ）。ビデオ（UVC）はありません。
 - USB ネットワークは、開けるのは 1 台で、NCM のブロックは 1 つに 1 フレームで送ります。IP のつなぎ込み
   （`networkAttachNetif()`）は Network ライブラリの対象の系列（Ethernet の MAC のある石）だけです。
 - MSC のファイルシステムは `CH32RVUsbHostMscFS`（`EspUsbHostMscFS` と同じ形、下の「MSC」）です。ESP32 の VFS は無いので、ホストの `mscMount()` はありません。
@@ -277,6 +279,25 @@ void loop() {
 CCID は `ccidOpen()`、`ccidPowerOn()`、`ccidApdu()`、`ccidEscape()`、カード状態通知を用意します。
 `ccidApdu()` の response は SW1/SW2 を除いた payload、status word は別の出力です。ただし受信 buffer の capacity は
 SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の命令成功を分けて扱います。
+
+### USB オーディオ（UAC1 / UAC2）
+
+```cpp
+usb.onAudioData([](const CH32RVUsbHostAudioData &d) { /* d.data, d.length: 受けた PCM */ });
+usb.audioInputStart(1, 16, 48000);       // マイク: 1 チャンネル、16 ビット、48 kHz
+usb.audioOutputStart(2, 16, 48000);      // スピーカー
+usb.audioSend(pcm, sizeof pcm);          // 出す PCM をためる（フレームの整数倍）
+```
+
+`getAudioStreams()` は、Audio Streaming のインターフェースの alternate のうち、PCM（Type I）の形式と等時の端点を持つ
+ものを返します。UAC1 は形式の記述子のレート、UAC2 は端子が指す Clock Source に GET RANGE で聞いたレートです。
+`audioInputStart()` / `audioOutputStart()` は、alternate を選び、レートを設定し（UAC1 は端点、UAC2 はクロックに SET_CUR。
+レートが 1 つのストリームには送らない）、等時の端点をサービス間隔ごとに 1 パケットずつ動かし続けます。受けた PCM は
+リング（`CH32RV_USB_HOST_AUDIO_RING_SIZE`、既定 2048 バイト）で待ち、`onAudioData()`（`deliverEvents()` から）に渡ります。
+出力は `audioSend()` でためた PCM を、レートから決まる量（端数は持ち越し）ずつ送り、足りないときは無音を送って
+`audioOutputUnderruns()` を数えます。同時に動かせるのは入力 1 つ・出力 1 つです。フィードバックの端点は使わず、
+非同期の機器にも名目のレートで送ります。V407 と ESP32-P4（EspUsbDevice の UAC1 のヘッドセット、48 kHz・モノラル・
+16 ビット）の組で、1 秒ずつの録音と再生を、サンプルの欠けなく確かめています（2026-11-22、usb-peer-host-media）。
 
 ### USB ネットワーク（CDC-NCM / CDC-ECM）
 
