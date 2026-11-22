@@ -559,6 +559,7 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             const uint32_t events = alarm_events;
             uint32_t ss, sm;
             ch32rv_rtc_raw(&ss, &sm);
+            const uint32_t counted0 = (uint32_t)millis();
             while (alarm_events == events && !(pin_lines && (ch32rv_exti_seen & pin_lines))) {
                 deep_wfi();
             }
@@ -566,7 +567,15 @@ int ch32rv_power_light_sleep(uint32_t timer_ms, uint32_t pin_lines, uint32_t wdt
             ch32rv_rtc_resync();
             uint32_t es, em;
             ch32rv_rtc_raw(&es, &em);
-            ch32rv_millis_advance(rtc_diff(ss, sm, es, em));
+            /* Less what SysTick counted meanwhile: a stop that did not happen
+             * left it running - on H41x the chip stops only with both cores
+             * in it, and a V3F busy in loop1() kept it awake (2026-11-22: a
+             * 1.5 s sleep moved millis() 2888 ms). */
+            const uint32_t passed = rtc_diff(ss, sm, es, em);
+            const uint32_t counted = (uint32_t)millis() - counted0;
+            if (passed > counted) {
+                ch32rv_millis_advance(passed - counted);
+            }
         }
 #ifdef CH32RV_IWDG_BASE
         if (wdt_slice_us) {
