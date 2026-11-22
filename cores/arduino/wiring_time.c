@@ -587,8 +587,23 @@ void delay(unsigned long ms)
     }
 }
 
+/* At least `us`. Below a millisecond the wait is counted in SysTick ticks:
+ * counted in micros()'s whole microseconds, a wait of 1 ended anywhere in the
+ * first one, and SoftSPI's 1 us half period came out 350 ns once on CH32H417
+ * (2026-11-22, a wireskein glitch). Longer waits go by micros(), whose
+ * microsecond of rounding is lost in them; the tick count of one would not
+ * fit 32 bits on every clock. */
+_Static_assert(CH32RV_TICKS_PER_US < (1u << 20), "ticks per microsecond wider than the spelled-out multiply");
 void delayMicroseconds(unsigned int us)
 {
+    if (us < 1000u) {
+        const uint32_t start = CH32RV_SYSTICK_CNT;
+        const uint32_t ticks = CH32RV_MULC((uint32_t)us, CH32RV_TICKS_PER_US);
+        while ((uint32_t)(CH32RV_SYSTICK_CNT - start) < ticks) {
+            ch32rv_spin_pause();
+        }
+        return;
+    }
     const uint32_t start = micros();
 
     while ((uint32_t)(micros() - start) < (uint32_t)us) {

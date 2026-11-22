@@ -633,6 +633,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   USBSS の IN（DTCM から 385 MB/s、共有 SRAM と同じ）がどれも正しく動く。届かない前提で入れかけたバウンスは、DTCM からの
   USBSS を 113 MB/s に落とすだけなので外した。`CH32RV_DMA_MEM` は、タイマーで刻む DMA1 の取り込みが TCM への書き込みで
   抜けた（docs/h417-capture.ja.md）ことから、ドライバの内部バッファと速く流す例のバッファに付けた。H417 の全 case を流し直し中。
+- [ ] **softspi の test_shift が、モードの判定だけで落ちる**（V103 は 11-21 の bc で 1 回、V006 は 11-22 に 3 回中 2 回）: バイトは
+  全部正しく、WireSkein の判定が mode 0 ではなく 3（cpol 1）。shiftIn() は SCK の High の間に digitalRead() が入り、High と
+  Low の長さが近いので、極性の決め方が揺れるとみる。shiftOut / shiftIn は delayMicroseconds() を使わない。試験の側で極性を
+  固定して渡すか、[wireskein] に cpol の決め方を聞く。
 - [ ] **USBSS の IN の流れで、まれに 1〜9 パケット（1 KB 単位）が化ける**（2026-11-22、上の測定の途中で見えた）: Vendor の
   writeDirect() で 32 KB を続けて送り、PC の libusb の非同期 8 本で読むと、5 秒（約 7 万ブロック）の回のうち、化けたブロックが
   0〜2 個出る回がある。共有 SRAM（ヒープ）のバッファでも DTCM のバッファでも出て、出ない日（10 回ずつ 0）もある。化けは
