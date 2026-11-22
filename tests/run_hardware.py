@@ -249,6 +249,7 @@ CH32RV_PEERS = {
     "usb-peer-host-fs": TESTS / "sketch_support/usb_peer/host_storage/peer_ch32rv",
     "usb-peer-host-power": TESTS / "sketch_support/usb_peer/host_hid/peer_ch32rv",
     "usb-peer-host-net": TESTS / "sketch_support/usb_peer/host_net/peer_ch32rv",
+    "usb-peer-host-media": TESTS / "sketch_support/usb_peer/host_media/peer_ch32rv",
 }
 # The host peer's FAT (its own, apart from the DUT's FatFS) is the Pico's: staged beside the CH32RV peer's sketch.
 PEER_FAT = TESTS / "sketch_support/usb_peer/device/peer_pico/peer_fat.h"

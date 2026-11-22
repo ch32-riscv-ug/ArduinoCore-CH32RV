@@ -20,7 +20,7 @@ IDENTITY = {
     # CH32RVUsbDevice's default VID (pid.codes' test VID).
     "ch32rv": dict(tag=b"CD ", vid="1209", manufacturer="ch32rv-tests", hid="CH32RV peer hid",
                    hid_serial="CH32RVPEERHID", classes="CH32RV peer classes", vreq="CH32RV", input="CH32RV peer input",
-                   storage="CH32RV peer storage", luns=("CH32RV LUN 0", "CH32RV LUN 1"), net="CH32RV peer net"),
+                   storage="CH32RV peer storage", luns=("CH32RV LUN 0", "CH32RV LUN 1"), net="CH32RV peer net", media="CH32RV peer media"),
 }
 
 
