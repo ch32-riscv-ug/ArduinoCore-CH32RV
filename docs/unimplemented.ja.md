@@ -178,7 +178,7 @@
 | ホストの MSC のファイルシステム（マウント） | 全ホスト | 実装済み（2026-11-18、`CH32RVUsbHostMscFS`（EspUsbHostMscFS の形）と `mscSynchronizeCache()`。usb-peer-host-fs） | 自動 | USB メモリか、MSC デバイスの対向（ESP32-S3・Pico・CH32RV） | libraries/CH32RVUsbHost/README.ja.md、libraries/FS/README.ja.md:38、docs/filesystem.ja.md:286、FC:93 |
 | ホストの USB シリアルの `setRxBufferSize()` | 全ホスト | 実装済み（2026-11-19。EspUsbHost と同じ名前、ヒープから。usb-peer-host の cdcrx で V205 確認） | 自動 | Pico | libraries/CH32RVUsbHost/README.ja.md |
 | H41x の USBHS ホスト（SWD と兼用、口の 2.0 側） | H41x | 実装済み（2026-11-17、ビルドのみ。DMA の届く範囲の確かめが 17 ビットのままで H41x では `begin()` が必ず Busy だったのを直した: H41x・X3x5 は 24 ビット） | 単発 | ESP32-P4、SWD を外す部品。`begin()` の後はデバッガがつながらない（起動待ちのイメージで試す） | docs/usb.ja.md:341, TODO:457 |
-| ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 2 | 自動 | ESP32-S3 / P4 | TODO:468 |
+| ホストの Audio / Video / Network クラス（EspUsbHost との差） | 全ホスト | 実装済み（2026-11-22〜23。オーディオ（UAC1 / UAC2、フィードバック、Feature Unit）、ビデオ（UVC）、ネットワーク（NCM / ECM、`networkAttachNetif()`）。usb-peer-host-media / usb-peer-host-net が V407 と P4 で通った。残りはカメラの制御と静止画） | 自動 | ESP32-S3 / P4 | TODO:468 |
 
 ## USB PD
 
@@ -220,7 +220,7 @@
 | 内蔵 Flash 上のファイルシステム（littlefs）、FAT を NOR に、SPIFFS | 全系列（大きい系列） | 決定済み: 作らない（STO-04、2026-11-04） | — | 自己（電源断の試験は uhubctl） | FC:92, docs/filesystem.ja.md:255-258 |
 | eMMC・USB ホストの MSC のブロックデバイス（FS の下） | H417、ホスト | USB ホストは実装済み（2026-11-18、`CH32RVUsbHostMscBlockDevice`）。eMMC は 2 | 単発→自動 | eMMC の板、Pico の MSC | libraries/FS/README.ja.md:38, docs/filesystem.ja.md:286 |
 | フラッシュの書き換え（UPD-01 自己更新、Update API） | 全系列 | 2 | 自動 | 自己 | FC:97 |
-| ITCM / DTCM の配置の仕組み | H41x | 2 | 自動 | 自己 | TODO:172,176 |
+| ITCM / DTCM の配置の仕組み | H41x | 実装済み（2026-11-22。V5F の .data・.bss・スタックを DTCM、ヒープと `CH32RV_DMA_MEM` を共有 SRAM に。コードは前から ITCM が先、`CH32RV_RAMFUNC` が ITCM の先頭） | 自動 | 自己 | TODO:172,176 |
 
 ## 特殊な周辺
 
@@ -276,6 +276,6 @@
 | 独自 bootloader（UF2 / UART） | 全系列 | 2 | 自動 | PC | docs/upload-routes.ja.md:21 |
 | user flash に置く自前の DFU bootloader（BOOT0 だけの系列向け） | V20x、V30x、V103、L103、V205、M030、V4x7 | 2 | 自動 | PC | docs/upload-routes.ja.md:174 |
 | 書き込み経路の未確認（参考。実装はある） | V002/V004/V005/V007/M007/V208/V303/V305/V317/M103/X033/X305/V467/H415/H416 | 2 | 単発 | 各石 | docs/upload-routes.ja.md:58-76 |
-| Windows の ch32rv-toolchain の大きさ | Windows | 2 | 単発 | Windows | TODO:211 |
+| Windows の ch32rv-toolchain の大きさ | Windows | 実装済み（2026-11-22、23.1.6-1。呼ばない 6 つの複製を外し、zip 267 → 125 MB、展開 706 → 351 MB。CI の Windows の install-test で確かめた） | 単発 | Windows | TODO:211 |
 
 計 184 行（BLE の除外を含む）。
