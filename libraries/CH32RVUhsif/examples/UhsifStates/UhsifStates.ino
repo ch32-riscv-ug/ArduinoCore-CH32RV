@@ -12,7 +12,9 @@ CH32RVUhsif uhsif;
 // ja: スレッド0が順に書く、4096バイト(2048サンプル)のバッファ4つ。
 static const uint16_t BUFFER_BYTES = 4096;
 static const uint8_t BUFFERS = 4;
-static uint16_t ring[BUFFERS * BUFFER_BYTES / 2] __attribute__((aligned(32)));
+// en: CH32RV_DMA_MEM keeps a DMA buffer in the shared SRAM; on the V5F, globals are in its DTCM, slower for DMA writes.
+// ja: CH32RV_DMA_MEMはDMAのバッファを共有SRAMに置く。V5Fではグローバル変数がDTCMにあり、DMAの書き込みが遅い。
+static uint16_t ring[BUFFERS * BUFFER_BYTES / 2] CH32RV_DMA_MEM __attribute__((aligned(32)));
 static volatile uint32_t filledBuffers;
 
 void setup()

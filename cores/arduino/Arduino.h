@@ -138,6 +138,9 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
  * from RAM. */
 #define CH32RV_RAMFUNC __attribute__((section(".highcode"), noinline))
 
+/* CH32RV_DMA_MEM: a DMA buffer kept out of CH32H41x's V5F DTCM. */
+#include "ch32rv_dma_mem.h"
+
 /* arduino-esp32's clock getters. The clock is the board menu's (CPU Clock) and
  * fixed for the build, so these are F_CPU; there is no setter. */
 static inline uint32_t getCpuFrequencyMhz(void) { return (uint32_t)(F_CPU / 1000000UL); }

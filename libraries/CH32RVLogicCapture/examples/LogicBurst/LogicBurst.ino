@@ -7,7 +7,9 @@
 #include <CH32RVLogicCapture.h>
 
 CH32RVLogicCapture logic;
-static uint16_t buf[32768];
+// en: CH32RV_DMA_MEM keeps a DMA buffer in the shared SRAM; on the V5F, globals are in its DTCM, slower for DMA writes.
+// ja: CH32RV_DMA_MEMはDMAのバッファを共有SRAMに置く。V5Fではグローバル変数がDTCMにあり、DMAの書き込みが遅い。
+static uint16_t buf[32768] CH32RV_DMA_MEM;
 
 void setup()
 {

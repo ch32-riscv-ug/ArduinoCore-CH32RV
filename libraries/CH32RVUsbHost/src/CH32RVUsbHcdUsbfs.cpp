@@ -302,8 +302,8 @@ static bool port_has_host(void)
 #define RESUME_RECOVERY_US 10000u   /* SOF only, nothing to the device */
 #define RESUME_SIGNAL_US 20000u     /* the host's resume K, TDRSMDN */
 
-static uint8_t rx_buf[PACKET_MAX] __attribute__((aligned(4)));
-static uint8_t tx_buf[PACKET_MAX] __attribute__((aligned(4)));
+static uint8_t rx_buf[PACKET_MAX] CH32RV_DMA_MEM;
+static uint8_t tx_buf[PACKET_MAX] CH32RV_DMA_MEM;
 
 /* ------------------------------------------------------------- state */
 enum { EP_FREE = 0, EP_IDLE, EP_PENDING };

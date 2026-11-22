@@ -103,9 +103,9 @@ struct {
     volatile uint32_t last_request_ms;
 } src;
 
-__attribute__((aligned(4))) uint8_t rx_buf[FRAME_MAX];
-__attribute__((aligned(4))) uint8_t tx_buf[FRAME_MAX];
-__attribute__((aligned(4))) uint8_t crc_buf[4];
+uint8_t rx_buf[FRAME_MAX] CH32RV_DMA_MEM;
+uint8_t tx_buf[FRAME_MAX] CH32RV_DMA_MEM;
+uint8_t crc_buf[4] CH32RV_DMA_MEM;
 
 struct IrqLock {
     IrqLock() { ch32rv_irq_disable(CH32RV_USBPD_IRQ); }

@@ -43,7 +43,9 @@ void *sbrk(ptrdiff_t incr)
     if (incr > 0 && ch32rv_heap_stack_margin) {
         char *sp;
         __asm__ volatile("mv %0, sp" : "=r"(sp));
-        if (next > sp - ch32rv_heap_stack_margin) {
+        /* Only where the stack grows down toward the heap: on H41x's V5F it
+         * is in the DTCM, below the heap's shared SRAM. */
+        if (sp > _end && next > sp - ch32rv_heap_stack_margin) {
             errno = ENOMEM;
             return (void *)-1;
         }

@@ -12,7 +12,9 @@ CH32RVUsbDevice device;
 CH32RVUsbDeviceVendor stream(device);
 
 static const uint32_t SAMPLES = 32768;
-static uint16_t buf[SAMPLES] __attribute__((aligned(16)));
+// en: CH32RV_DMA_MEM keeps a DMA buffer in the shared SRAM; on the V5F, globals are in its DTCM, slower for DMA writes.
+// ja: CH32RV_DMA_MEMはDMAのバッファを共有SRAMに置く。V5Fではグローバル変数がDTCMにあり、DMAの書き込みが遅い。
+static uint16_t buf[SAMPLES] CH32RV_DMA_MEM __attribute__((aligned(16)));
 static uint32_t sent, busy;
 
 void setup()

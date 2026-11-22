@@ -14,7 +14,9 @@ static const uint16_t SAMPLES = 4096;
 // ja: 64バイト多く取る: DMAは64バイトのburstで書くので、積むのをやめるとburstの端数がブロックに
 // ja: 残る。64バイト余分に積むと、4096サンプルはすべて書き出される。
 static const uint16_t PAD = 64;
-static uint8_t capture[SAMPLES + PAD] __attribute__((aligned(32)));
+// en: CH32RV_DMA_MEM keeps a DMA buffer in the shared SRAM; on the V5F, globals are in its DTCM, slower for DMA writes.
+// ja: CH32RV_DMA_MEMはDMAのバッファを共有SRAMに置く。V5Fではグローバル変数がDTCMにあり、DMAの書き込みが遅い。
+static uint8_t capture[SAMPLES + PAD] CH32RV_DMA_MEM __attribute__((aligned(32)));
 static const uint8_t TRIGGER_BIT = 2;   // DATA2 = PD12
 
 // en: The machine: 0/1 wait while DATA2 is high, 2/3 wait while it is low, then

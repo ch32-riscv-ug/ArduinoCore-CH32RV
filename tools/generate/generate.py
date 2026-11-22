@@ -199,10 +199,10 @@ LOADCODE_RAM = {
 }
 
 # Memory only the V5F layout uses (cores/arduino/v5f/sections_loadcode.ld):
-# the V5F's 128 KiB ITCM (RM 1.2.1). Named in every H41x linker script; the
-# V3F layout leaves it alone.
+# the V5F's 128 KiB ITCM and 256 KiB DTCM (RM 1.2.1, table 4-2). Named in every
+# H41x linker script; the V3F layout leaves them alone.
 LOADCODE_TCM = {
-    "CH32H417": (("ITCM", 0x200A0000, 128 * 1024),),
+    "CH32H417": (("ITCM", 0x200A0000, 128 * 1024), ("DTCM", 0x200C0000, 256 * 1024)),
 }
 
 # One board per silicon series, so the board name matches the chip marking.

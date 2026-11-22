@@ -2,7 +2,7 @@
 #include "internal/ch32rv_stack.h"
 #include "internal/ch32rv_registers.h"
 
-extern uint32_t _heap_end[];    /* the reservation's bottom (linker script) */
+extern uint32_t _susrstack[];   /* the reservation's bottom (linker script) */
 extern uint32_t _eusrstack[];   /* its top */
 
 static uint32_t panic_record[2] __attribute__((section(".noinit")));
@@ -18,7 +18,7 @@ uint8_t ch32rv_stack_guarded;
 
 uint32_t ch32rv_stack_size(void)
 {
-    return (uint32_t)((char *)_eusrstack - (char *)_heap_end);
+    return (uint32_t)((char *)_eusrstack - (char *)_susrstack);
 }
 
 uint32_t ch32rv_stack_min_free(void)
@@ -28,11 +28,11 @@ uint32_t ch32rv_stack_min_free(void)
         return 0;
     }
     /* The PMP guard is no-access: counted as never reached (it is the bottom, and an access there resets). */
-    const uint32_t *p = _heap_end + (ch32rv_stack_guarded ? GUARD_WORDS : 0u);
+    const uint32_t *p = _susrstack + (ch32rv_stack_guarded ? GUARD_WORDS : 0u);
     while (p < _eusrstack && *p == CH32RV_STACK_FILL) {
         p++;
     }
-    return (uint32_t)((char *)p - (char *)_heap_end);
+    return (uint32_t)((char *)p - (char *)_susrstack);
 #else
     return 0;
 #endif
@@ -47,7 +47,7 @@ void ch32rv_stack_check(void)
         return;                     /* the PMP guard resets on the access itself */
     }
     for (uint32_t i = 0; i < GUARD_WORDS; i++) {
-        if (_heap_end[i] != CH32RV_STACK_FILL) {
+        if (_susrstack[i] != CH32RV_STACK_FILL) {
             ch32rv_stack_overflow();
         }
     }
@@ -61,7 +61,7 @@ void ch32rv_stack_fill(void)
     panic_record[0] = panic_record[1] = 0;
     uint32_t *sp;
     __asm__ volatile("mv %0, sp" : "=r"(sp));
-    for (uint32_t *p = _heap_end + (ch32rv_stack_guarded ? GUARD_WORDS : 0u); p < sp - 16; p++) {
+    for (uint32_t *p = _susrstack + (ch32rv_stack_guarded ? GUARD_WORDS : 0u); p < sp - 16; p++) {
         *p = CH32RV_STACK_FILL;
     }
     ch32rv_stack_filled = 1;
@@ -73,7 +73,7 @@ void ch32rv_stack_fill(void)
  * region that allows everything else: with any region set, a user-mode access no region matches is refused, and
  * the sketch runs in user mode on these families. The first store into the guard faults at once (mcause 7, a
  * load 5) instead of being seen by the next SysTick; HardFault_Handler below turns it into the same panic reset.
- * TOR: _heap_end is aligned to 4 only. */
+ * TOR: _susrstack is aligned to 4 only. */
 void ch32rv_stack_guard(void)
 {
     uint32_t back;
@@ -81,7 +81,7 @@ void ch32rv_stack_guard(void)
     if (back == 0u) {
         return;                     /* no PMP (V2, V4B, V3B): the SysTick check alone */
     }
-    const uint32_t lo = (uint32_t)(uintptr_t)_heap_end;
+    const uint32_t lo = (uint32_t)(uintptr_t)_susrstack;
     const uint32_t hi = lo + GUARD_WORDS * 4u;
     __asm__ volatile ("csrw pmpaddr0, %0" :: "r"(lo >> 2));
     __asm__ volatile ("csrw pmpaddr1, %0" :: "r"(hi >> 2));
@@ -103,7 +103,7 @@ __attribute__((naked)) void HardFault_Handler(void)
         "addi t0, t0, -2\n\t"             /* store access fault */
         "bnez t0, 3f\n"
         "1:\n\t"
-        "la t1, _heap_end\n\t"
+        "la t1, _susrstack\n\t"
         "addi t1, t1, 64\n\t"             /* the guard's top (GUARD_WORDS * 4) */
         "bleu sp, t1, 2f\n\t"
         "csrr t0, mtval\n\t"

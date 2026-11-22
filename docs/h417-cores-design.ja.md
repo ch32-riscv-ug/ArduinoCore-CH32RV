@@ -128,12 +128,21 @@ B を足して遅くなったものは無く、コードは 552 バイト小さ�
   例の MutualTlsClient（TLS とネットワーク）で ITCM 115 KB・共有 SRAM 36 KB、UsbNcmNetwork は 67 KB で全部 ITCM。ITCM を
   超えたとき速さの要るコードを ITCM に残すには、その関数に `CH32RV_RAMFUNC` を付けます（どの系列でも「RAM で動かす」印で、
   V5F では ITCM で優先される）。
+- データの置き場所（2026-11-22 に変えた）: V5F のビルドは、EVT の V5F のリンカー（EXAM/SRC/Ld/V5F/Link_v5f.ld）と同じく、
+  .data・.bss・スタックを DTCM に置きます（先頭 1 KB は HPE が積む場所なので空ける）。共有 SRAM には、ベクタ表・読むだけの
+  データ・コンストラクタの表のイメージ、`CH32RV_DMA_MEM` を付けたバッファ、ヒープ（残り全部）を置きます。前の形（.bss が共有
+  SRAM のイメージの直後）では、pad の試験で V5F が 16〜590 回の返事のうちに止まり、外から止めることもできなくなりました。
+  DTCM に移すと 10,000 回止まりません。仕組みは分かっていません（TODO.ja.md の V5F の項）。
+  DMA は DTCM にも届きます（2026-11-22 に測った: DMA1 のメモリ間転送 16 KB を約 5200 回、ECDC と GPHA を各約 5 万回、どれも化けず、
+  HSADC は 20 Msps で全部のバッファが埋まり、USBSS の IN は DTCM からも 385 MB/s）。ただ、タイマーで刻む DMA1 の取り込みは
+  12.5 MS/s で TCM への書き込みが追いつかなかったので（docs/h417-capture.ja.md）、速く流すバッファには `CH32RV_DMA_MEM` を
+  付けて共有 SRAM に置きます。USB・ETH・USB PD のドライバのバッファにも付けてあります。
 
 ### 3. V5F から V3F を起動する
 
 V3F の起動の小片（crt0）を次の形にしました。
 
-1. 受け渡し用の語 `ch32rv_v3f_mailbox`（{関数, 引数, スタックの上端}、共有 SRAM の .bss）を 0 にする。
+1. 受け渡し用の語 `ch32rv_v3f_mailbox`（{関数, 引数, スタックの上端}、.bss。CPU Core = V5F では DTCM、V3F はそこを 2 HCLK で読む）を 0 にする。
 2. V5F を起こす。
 3. PFIC_SCTLR の WFITOWFE を立てて wfi で待つ。
 4. 目覚めたら語を見て、関数があれば V3F 用の CSR、gp、mtvec、mstatus（FPU 有り、割り込み無し）を整えて呼ぶ。関数が戻れば、また待つ。

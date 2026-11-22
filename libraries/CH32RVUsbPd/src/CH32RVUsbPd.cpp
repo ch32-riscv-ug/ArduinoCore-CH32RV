@@ -108,9 +108,9 @@ struct {
 
 /* DMA targets. The engine reads and writes RAM directly, so these cannot
  * live on anyone's stack. */
-__attribute__((aligned(4))) uint8_t rx_buf[FRAME_MAX];
-__attribute__((aligned(4))) uint8_t tx_buf[FRAME_MAX];
-__attribute__((aligned(4))) uint8_t crc_buf[4];   /* a GoodCRC is header-only */
+uint8_t rx_buf[FRAME_MAX] CH32RV_DMA_MEM;
+uint8_t tx_buf[FRAME_MAX] CH32RV_DMA_MEM;
+uint8_t crc_buf[4] CH32RV_DMA_MEM;   /* a GoodCRC is header-only */
 
 /* Masks only the USBPD vector: what the handler and the sketch share is the
  * pd struct above, and SysTick has no business stopping for it. */

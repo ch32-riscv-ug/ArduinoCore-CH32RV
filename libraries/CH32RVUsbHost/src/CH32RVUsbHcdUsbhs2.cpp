@@ -835,8 +835,8 @@ struct Hcd {
     }
 };
 
-template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hcd<B, U, I>::rx_buf[PACKET_MAX] __attribute__((aligned(4)));
-template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hcd<B, U, I>::tx_buf[PACKET_MAX] __attribute__((aligned(4)));
+template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hcd<B, U, I>::rx_buf[PACKET_MAX] CH32RV_DMA_MEM;
+template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hcd<B, U, I>::tx_buf[PACKET_MAX] CH32RV_DMA_MEM;
 template <uint32_t B, uint8_t U, uint32_t I> Ep Hcd<B, U, I>::eps[EP_MAX];
 template <uint32_t B, uint8_t U, uint32_t I> volatile int16_t Hcd<B, U, I>::active = -1;
 template <uint32_t B, uint8_t U, uint32_t I> volatile uint32_t Hcd<B, U, I>::active_since;

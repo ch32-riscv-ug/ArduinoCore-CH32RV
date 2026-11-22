@@ -50,8 +50,10 @@ if (const uint16_t *full = hsadc.readBuffer()) {   // from loop()
   samples at 20 Msps). After that the DMA comes back to it.
 - A buffer filled again before the sketch took it counts in `overruns()`, and
   its data is lost.
-- Keep the buffers in RAM the DMA reaches: ordinary globals or statics, not
-  the V5F's TCMs.
+- The buffers can be any RAM. With CPU Core = V5F, globals are in the V5F's
+  DTCM; 20 Msps filled every buffer there as in the shared SRAM (2026-11-22).
+  `CH32RV_DMA_MEM` puts them in the shared SRAM, off the V5F's data port
+  (`HsAdcStream` does).
 - `HsAdcStream` streams 20 Msps x 2 bytes = 40 MB/s over SuperSpeed with the
   vendor class's `writeDirect()`. Read it with several libusb async transfers
   queued. One synchronous read at a time drops buffers between reads.

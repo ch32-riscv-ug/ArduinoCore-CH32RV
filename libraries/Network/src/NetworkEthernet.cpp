@@ -146,10 +146,10 @@ struct Desc {
     volatile uint32_t status, control, buf, next;
 };
 
-__attribute__((aligned(32))) static Desc rxDesc[RX_N];
-__attribute__((aligned(32))) static Desc txDesc[TX_N];
-__attribute__((aligned(32))) static uint8_t rxBuf[RX_N][BUF];
-__attribute__((aligned(32))) static uint8_t txBuf[TX_N][BUF];
+static Desc rxDesc[RX_N] CH32RV_DMA_MEM __attribute__((aligned(32)));
+static Desc txDesc[TX_N] CH32RV_DMA_MEM __attribute__((aligned(32)));
+static uint8_t rxBuf[RX_N][BUF] CH32RV_DMA_MEM __attribute__((aligned(32)));
+static uint8_t txBuf[TX_N][BUF] CH32RV_DMA_MEM __attribute__((aligned(32)));
 
 NetworkEthernet ETH;
 

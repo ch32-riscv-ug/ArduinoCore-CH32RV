@@ -11,7 +11,9 @@ CH32RVLogicCapture logic;
 // en: Two halves of 16384 samples; each half lasts 82 us at 200 MS/s.
 // ja: 16384サンプルの半分が2つ。200 MS/sでは半分が82 usで埋まる。
 static const uint32_t SAMPLES = 32768;
-static uint16_t buf[SAMPLES] __attribute__((aligned(32)));
+// en: CH32RV_DMA_MEM keeps a DMA buffer in the shared SRAM; on the V5F, globals are in its DTCM, slower for DMA writes.
+// ja: CH32RV_DMA_MEMはDMAのバッファを共有SRAMに置く。V5Fではグローバル変数がDTCMにあり、DMAの書き込みが遅い。
+static uint16_t buf[SAMPLES] CH32RV_DMA_MEM __attribute__((aligned(32)));
 
 // en: PC6 is UHSIF DATA9 and a TIM3 PWM pin, so the sketch can measure its own signal.
 // ja: PC6はUHSIFのDATA9で、TIM3のPWMも出せるので、自分の信号を測れる。

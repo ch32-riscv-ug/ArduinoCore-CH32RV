@@ -266,6 +266,21 @@ handle_reset:
     addi a1, a1, 4
     bltu a1, a2, 1b
 2:
+/* The initialised data, linked into the V5F's DTCM (.dtcm_data). */
+    lui a0, %hi(_dtcm_data_lma + CH32RV_LOADCODE_FLASH)
+    addi a0, a0, %lo(_dtcm_data_lma + CH32RV_LOADCODE_FLASH)
+    lui a1, %hi(_dtcm_data_vma)
+    addi a1, a1, %lo(_dtcm_data_vma)
+    lui a2, %hi(_dtcm_data_end)
+    addi a2, a2, %lo(_dtcm_data_end)
+    bgeu a1, a2, 2f
+1:
+    lw t0, (a0)
+    sw t0, (a1)
+    addi a0, a0, 4
+    addi a1, a1, 4
+    bltu a1, a2, 1b
+2:
 #endif
 /* Continue in RAM, where PC-relative addressing holds again. */
     lui t0, %hi(ch32rv_loadcode_ram)
@@ -324,6 +339,17 @@ ch32rv_loadcode_ram:
     addi a0, a0, 4
     bltu a0, a1, 1b
 2:
+#ifdef CH32RV_RUN_V5F
+/* And the CH32RV_DMA_MEM buffers, in the shared SRAM (v5f/sections_loadcode.ld). */
+    la a0, _dma_sbss
+    la a1, _dma_ebss
+    bgeu a0, a1, 2f
+1:
+    sw zero, (a0)
+    addi a0, a0, 4
+    bltu a0, a1, 1b
+2:
+#endif
 
 #ifdef CH32RV_CSR805_CLR
     li t0, CH32RV_CSR805_CLR

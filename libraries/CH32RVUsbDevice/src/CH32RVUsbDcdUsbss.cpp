@@ -32,8 +32,10 @@
  * failing that way). A board that wants USB 2.0 gets the USBHS driver of its
  * own; this one is SuperSpeed only.
  *
- * Everything this core links lives in the shared SRAM (sections_loadcode.ld),
- * which is the only memory the USB DMA reaches.
+ * The driver's own buffers are CH32RV_DMA_MEM: with CPU Core = V5F, in the
+ * shared SRAM rather than the DTCM the V5F's data is in. The USB DMA reaches
+ * the DTCM too (a caller's buffer there streamed at the same 385 MB/s,
+ * 2026-11-22).
  *
  * CH32X315 has the same controller (USBSSD_TypeDef with the same offsets) at
  * 0x40038000, device only, with its own bring-up in its EVT: USBSS PLL and
@@ -196,7 +198,7 @@
  * two packets (bench, 2026-10-21); 4 and 16 move data. */
 #define RX_WINDOW  CH32RV_USB_SS_BULK_BURST
 
-static uint8_t ep0_buf[EP0_SIZE] __attribute__((aligned(16)));
+static uint8_t ep0_buf[EP0_SIZE] CH32RV_DMA_MEM __attribute__((aligned(16)));
 
 namespace {
 struct Xfer {

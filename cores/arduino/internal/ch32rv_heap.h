@@ -9,7 +9,9 @@
  * while it runs: sbrk then also refuses to bring the heap's top within this
  * many bytes of the current stack pointer, and the allocation fails with
  * ENOMEM instead of being written over later. 0, the default, keeps only the
- * linker's reserve. */
+ * linker's reserve. On CH32H41x's V5F the stack is in the DTCM, apart from the
+ * heap in the shared SRAM: _heap_end is the shared SRAM's end, and the margin
+ * does not apply. */
 #pragma once
 
 #include <stddef.h>

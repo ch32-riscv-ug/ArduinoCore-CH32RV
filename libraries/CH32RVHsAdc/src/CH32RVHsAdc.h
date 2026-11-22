@@ -24,8 +24,9 @@
  * Continuous capture: the two buffers alternate. A buffer is the sketch's
  * from readBuffer() until the next readBuffer() call; if the DMA comes back
  * to a buffer the sketch has not taken yet, it is counted in overruns() and
- * its data is lost. The buffers must be in RAM the DMA reaches (any global or
- * static array; not the V5F's TCMs). */
+ * its data is lost. Any RAM holds them: with CPU Core = V5F globals are in its
+ * DTCM, where 20 Msps filled every buffer as in the shared SRAM (2026-11-22);
+ * CH32RV_DMA_MEM puts them in the shared SRAM, off the V5F's data port. */
 #pragma once
 
 #include <Arduino.h>

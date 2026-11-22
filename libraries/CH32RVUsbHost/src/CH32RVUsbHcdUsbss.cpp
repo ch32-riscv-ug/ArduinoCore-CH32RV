@@ -270,8 +270,8 @@ struct Ep {
     uint8_t setup_pkt[8];
 };
 
-uint8_t tx_buf[PACKET_MAX] __attribute__((aligned(16)));
-uint8_t rx_buf[PACKET_MAX] __attribute__((aligned(16)));
+uint8_t tx_buf[PACKET_MAX] CH32RV_DMA_MEM __attribute__((aligned(16)));
+uint8_t rx_buf[PACKET_MAX] CH32RV_DMA_MEM __attribute__((aligned(16)));
 Ep eps[EP_MAX];
 struct Route {
     uint8_t daddr;
@@ -1383,8 +1383,8 @@ bool hcd_port_suspend(bool on)
 
 /* The stack's windows and SuperSpeed state, in place of its own (weak) 256-byte
  * windows without it: linked with this driver only (CH32RVUsbHostInternal.h). */
-static uint8_t ss_scratch[1024] __attribute__((aligned(4)));
-static uint8_t ss_enumeration[1024] __attribute__((aligned(4)));
+static uint8_t ss_scratch[1024] CH32RV_DMA_MEM;
+static uint8_t ss_enumeration[1024] CH32RV_DMA_MEM;
 static CH32RVUsbHostSsState ss_state;
 extern const CH32RVUsbHostWindows ch32rv_usb_host_windows = {ss_scratch, ss_enumeration, 1024, &ss_state};
 

@@ -74,8 +74,8 @@
 #define TOG       0x04u
 
 /* EP0's 64 bytes, then two 64-byte halves (OUT, IN) for each of EP1-7. */
-static uint8_t ep0_buf[64] __attribute__((aligned(4)));
-static uint8_t ep_buf[7][128] __attribute__((aligned(4)));
+static uint8_t ep0_buf[64] CH32RV_DMA_MEM;
+static uint8_t ep_buf[7][128] CH32RV_DMA_MEM;
 
 static inline uint8_t *out_buf(uint8_t ep) { return ep ? ep_buf[ep - 1] : ep0_buf; }
 static inline uint8_t *in_buf(uint8_t ep) { return ep ? ep_buf[ep - 1] + 64 : ep0_buf; }

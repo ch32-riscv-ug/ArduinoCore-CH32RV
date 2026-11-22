@@ -525,7 +525,7 @@ struct Hs {
     }
 };
 
-template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hs<B, U, I>::ep0_buf[64] __attribute__((aligned(4)));
+template <uint32_t B, uint8_t U, uint32_t I> uint8_t Hs<B, U, I>::ep0_buf[64] CH32RV_DMA_MEM;
 template <uint32_t B, uint8_t U, uint32_t I> Xfer Hs<B, U, I>::xin[8];
 template <uint32_t B, uint8_t U, uint32_t I> Xfer Hs<B, U, I>::xout[8];
 template <uint32_t B, uint8_t U, uint32_t I> bool Hs<B, U, I>::ep0_tog;
