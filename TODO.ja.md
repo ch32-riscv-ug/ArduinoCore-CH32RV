@@ -1119,6 +1119,11 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   WireSkein）と test_spi_slave（プローブの spi-controller がマスター）は H417・V003・V006・V103・V203・V205・X035・X315 で
   通る（V006 の contract の 1 回の落ちは ready の取りこぼしで、流し直しで通った）。V003 の LSBFIRST と H417 の実機は済み。
   残り: ハードウェアのマスターでの上限のクロック、V407（プローブに PA5 / PA6 / PA7 の線が無く skip）。
+  → 2026-11-22 上限を測った（spislave-20261122、scratch の spiladder: プローブの spi-controller で 200〜750 kHz、モード 0 / 3、
+  8 バイト × 3 回）: 8 系列とも全部の段で正しく、overruns 0。750 kHz はプローブの max_clock_hz（P4 の spi-controller は GPIO の
+  ビットバンギング、[oep]。範囲の外は clamp せず unsupported）。スレーブの本当の上限を測るには、もっと速いマスターが要る
+  （[oep] は dedicated GPIO で数 MHz の見込み、予定外。要るなら理由を添えて頼む）か、DUT どうしのハードウェアの SPI。
+  同じ日に 8 台の spi の case も全部通った。
 - [x] ADC の連続取得（CH32RVAdcStream）を一番遅い段より遅い一定のレートで（タイマーのトリガ。系列ごとの EXTSEL の対応が device-data に無い）。
   → 済み: `beginTimer()`（2026-11-17）。トリガの表は device-data の adc_triggers.csv から生成。periph::test_adc_timer_trigger が
   V003・V006・V103・V203・V205・L103・X035・H417 で通る（2026-11-19 の集計）。

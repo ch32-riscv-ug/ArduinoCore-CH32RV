@@ -41,7 +41,7 @@ CS is an ordinary pin with an interrupt, not the SPI's hardware NSS pad, and eac
 - after CS rises, before the next CS falls;
 - per byte: the interrupt has to run before the next byte is complete. A byte lost this way is counted in `overruns()`.
 
-Measured 2026-10-28 with [SPISlaveSelfTest](examples/SPISlaveSelfTest/README.md) (the chip clocks its own pins from GPIO): modes 0 to 3 and LSB first pass on CH32V003 (24 MHz), V103, V307, X035 and L103 with a clock of about 100 to 200 kHz, and on CH32V003 with 2 µs (plus a `digitalWrite()`) between CS and the clock. The upper clock with a hardware master is not measured yet.
+Measured 2026-10-28 with [SPISlaveSelfTest](examples/SPISlaveSelfTest/README.md) (the chip clocks its own pins from GPIO): modes 0 to 3 and LSB first pass on CH32V003 (24 MHz), V103, V307, X035 and L103 with a clock of about 100 to 200 kHz, and on CH32V003 with 2 µs (plus a `digitalWrite()`) between CS and the clock. On 2026-11-22 a hardware master (the OEP probe's spi-controller) clocked 200 to 750 kHz in steps: on CH32V003, V006, V103, V203, V205, X035, X315 and H417, modes 0 and 3, 8 bytes three times at every step, the bytes received and sent back were right and `overruns()` stayed 0. 750 kHz is the probe's limit; the slave's own is higher and not measured yet.
 
 ## API
 
