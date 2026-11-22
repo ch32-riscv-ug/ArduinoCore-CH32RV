@@ -1,5 +1,7 @@
-/* Another CH32RV board as the USB audio device for tests/peer/usb/host/media: a UAC1 headset
- * (CH32RVUsbAudioFunction), 48000 Hz, mono, 16-bit, both ways. The DUT (CH32RVUsbHost) is the host; this board runs
+/* Another CH32RV board as the USB audio and video device for tests/peer/usb/host/media: a UAC1 headset
+ * (CH32RVUsbAudioFunction), 48000 Hz, mono, 16-bit, both ways, and a UVC camera (CH32RVUsbDeviceVideo, YUY2
+ * 160x120 at 15 fps, generated payload by payload - no frame buffer) whose frame N starts with bytes N, ~N, 0x5A,
+ * 0xA5, as peer_s3's. The DUT (CH32RVUsbHost) is the host; this board runs
  * CH32RVUsbDevice on the controller the bench record names (build_opt.h: PEER_USB_CONTROLLER, written by
  * run_hardware.py).
  *
@@ -9,7 +11,8 @@
  *   ?                    CD READY <configured 0/1>
  *   audstat              CD AUDRX <playback bytes> <breaks in the host's counter> <capture underruns>
  *   audreset             CD AUDRESET
- *   audctl               CD AUDCTL <muted 0/1> <volume, 1/256 dB> <mute / volume changes the host made> */
+ *   audctl               CD AUDCTL <muted 0/1> <volume, 1/256 dB> <mute / volume changes the host made>
+ *   vidstat              CD VIDSTAT <frames sent> <frames not completed> <streaming 0/1> */
 #include <Arduino.h>
 #include <SerialDMSeq.h>
 #include <CH32RVUsbDevice.h>
@@ -25,6 +28,28 @@ CH32RVUsbDevice device;
 CH32RVUsbAudioFunction audio(device);
 CH32RVUsbAudioPlaybackStream &playback = audio.addPlaybackStream();
 CH32RVUsbAudioCaptureStream &capture = audio.addCaptureStream();
+CH32RVUsbDeviceVideo camera(device, "CH32RV peer camera");
+static constexpr uint16_t VW = 160, VH = 120;
+static uint32_t vFrame, vDue;
+static volatile uint32_t vSent, vFailed;
+
+/* Frame vFrame, byte `at`: the index header, then grey bars of Y in YUY2. */
+static void fillPayload(uint8_t *dst, size_t length, uint32_t offset)
+{
+    for (size_t i = 0; i < length; i++) {
+        const uint32_t at = offset + (uint32_t)i;
+        uint8_t b;
+        if (at < 4) {
+            const uint8_t head[4] = {(uint8_t)vFrame, (uint8_t)~vFrame, 0x5A, 0xA5};
+            b = head[at];
+        } else if (at & 1) {
+            b = 128;
+        } else {
+            b = (uint8_t)(16 + 27 * ((at / 2 % VW) / (VW / 8)));
+        }
+        dst[i] = b;
+    }
+}
 
 static int16_t captureNext;
 static uint32_t rxBytes, rxBreaks, controlChanges;
@@ -55,7 +80,9 @@ static void run(char *cmd)
         rxBytes = rxBreaks = 0;
         rxSynced = false;
         say("CD AUDRESET\n");
-    } else if (!strcmp(cmd, "audctl")) say("CD AUDCTL %u %d %lu\n", muted ? 1 : 0, volume, (unsigned long)controlChanges);
+    } else if (!strcmp(cmd, "vidstat"))
+        say("CD VIDSTAT %lu %lu %u\n", (unsigned long)vSent, (unsigned long)vFailed, camera.streaming() ? 1 : 0);
+    else if (!strcmp(cmd, "audctl")) say("CD AUDCTL %u %d %lu\n", muted ? 1 : 0, volume, (unsigned long)controlChanges);
     else say("CD UNKNOWN %s\n", cmd);
 }
 
@@ -64,6 +91,14 @@ void setup()
     SerialDMSeq.begin(115200);
     playback.addFormat({48000, 1, 2, 16});
     capture.addFormat({48000, 1, 2, 16});
+    camera.setFormat(CH32RVUsbDeviceVideoFormat::Yuy2);
+    camera.setFrameSize(VW, VH);
+    camera.setFrameRate(15);
+    camera.onFillPayload(fillPayload);
+    camera.onFrameResult([](const CH32RVUsbTransferResult &r) {
+        if (r.status == CH32RVUsbTransferStatus::Success) vSent++;
+        else vFailed++;
+    });
     CH32RVUsbDeviceConfig config;
     config.manufacturer = "ch32rv-tests";
     config.product = "CH32RV peer media";
@@ -77,6 +112,10 @@ void setup()
 void loop()
 {
     deliverEvents();
+    if (camera.streaming() && !camera.frameInFlight() && (int32_t)(millis() - vDue) >= 0) {
+        vDue = millis() + 1000u / 15u;
+        if (camera.sendGeneratedFrame((size_t)VW * VH * 2)) vFrame++;
+    }
     int16_t block[24];
     while (capture.availableForWrite() >= sizeof block) {
         for (int16_t &s : block) s = captureNext++;
