@@ -592,6 +592,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2000 回・1000 B 300 回が止まらず、X035 の全 38 case（uart・uart-dma・periph・selfbus・selfcheck・software-serial の全部の
   USART を含む）が通った。回避の後（2026-09-29）に割り込みの処理を一本の inline にした変更などが効いたとみる（原因は
   特定していない）。X035 の Serial.write() はほかの系列と同じくリングにためて返る。
+  → 2026-11-22 サイズの確認（v0.9.0 と今、同じ道具、V003・X035・V203・V307・H417 × 7 本）: 変わったのは X035 の Serial を
+  使うスケッチの +48 B（送信を割り込みに戻した分）だけ。11-12 の版とは SystemInit の +8〜14 B（f88f34e3、正しさの修正）。
+  ch32rv_div.S を関数ごとのセクションにして、V00x で割り算を使うスケッチが 116〜124 B 減った（V003 の Serial の hello
+  2148 → 2024 B、735145bd）。候補: X035 の digitalWrite() は 54 サイクル（V205 は 11）。毎回の RCC のクロックの読み書きと
+  PWM の確認、フラッシュの待ち 2 の命令の取り込み。速さが要る用途が出たら、clock enable を pinMode() 側に寄せるかを測る。
   → 2026-11-22 の切り分け（実験は scratch の worktree、コアは変えていない）:
   - serviceTx が TXEIE を落とした直後に CTLR1 を読み返す（H41x の遅れて届く書き込みの対策と同じ形）: has は 10000 回 ×3
     通る（同じ worktree で外すと 627 回・56 回で止まる）が、pad（短い print が 11 回の返事）は 468 回で止まる。write() の
