@@ -13,6 +13,7 @@ TESTS = REPO / "tests"
 sys.path.insert(0, str(TESTS))
 sys.path.insert(0, str(TESTS / "peer/usb/device"))
 sys.path.insert(0, str(TESTS / "peer/usb/host"))
+sys.path.insert(0, str(TESTS / "instrumented"))   # bench_ready, which run_hardware stages beside the peer tests
 import run_hardware  # noqa: E402
 from harness import place, records  # noqa: E402
 
