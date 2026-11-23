@@ -831,7 +831,7 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   実行時の割り込み `ch32rv_irq_attach()`（ベクタ表は写さず Default_Handler から振り分け。X035・V003・V203・H417 で
   selfapi::test_irq_attach）、CH32RVDma（selfapi::test_dma）、PMP は Stack Check メニューの中のスタックの守り。
 - [ ] PIOC のエミュレータと pytest の pioc-sim:// は後で検討（ユーザー、2026-11-19。引き継ぎ資料の 5 章）。
-- [ ] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。
+- [x] イベントの payload の持ち方（コピー・借用・所有の移転・共有 pool）と、複数の購読者への配達で誰が解放するか。→ 2026-11-24: 通知は配達キューに写されて loop() 側で渡るので、複数の受け手には同じ項目を順に借用で見せる（呼び出しの間だけ有効）。解放は全員の後。USB ホストの `add*Listener()` をこの形で入れた（未使用なら費用 0）。デバイス側は EspUsbDevice と同じ 1 枠。
 - [ ] 代表ユースケース「X035 の USB PD シンクと PPS の操作画面」。PD の充電器・画面・ボタンが要る。
 
 ## 永続化

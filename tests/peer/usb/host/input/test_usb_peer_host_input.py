@@ -10,6 +10,8 @@ import pathlib
 import sys
 import time
 
+import pytest
+
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from host_peer import Peer, check_path, device, dut_ready, host, settings, wait_device
 
@@ -118,3 +120,44 @@ def test_usb_peer_host_input(dut, peers):
     wait_device(dut, peer.id["input"])
     assert host(dut, "sser 1 10", rb"SSER (\d)").group(1) == b"1"
     assert serial_rx(dut, 1, 1) == "11"
+
+
+def test_usb_peer_host_listeners(dut, peers):
+    """add*Listener() / removeListener() (EspUsbHost 2.6's): listeners for the keyboard, the gamepad, system
+    control, connections and disconnections beside the sketch's on*(): each event reaches the on*() callback and
+    then the listener; onKeyboard() set again afterwards keeps both (the listeners' table holds it); after
+    removeListener() only the on*() callback is left."""
+    peer = Peer(peers)
+    dut_ready(dut, settings(__file__)["build_id"])
+    wait_device(dut, peer.id["input"])
+    device(peer, "?", rb"READY 1")
+    assert host(dut, "listen 1", rb"LISTEN (\d) (\d)").group(1, 2) == (b"5", b"1")
+
+    device(peer, "key 4", rb"KEY 1")
+    dut.expect(rb"H KEY p 4 ", timeout=5)
+    dut.expect(rb"H LKEY p 4", timeout=2)
+    device(peer, "gamepad 5 -3 9", rb"GAMEPAD 1")
+    dut.expect(rb"H GAMEPAD 05fd000000000009000000", timeout=5)
+    dut.expect(rb"H LGAMEPAD 05fd000000000009000000", timeout=2)
+    device(peer, "system 2", rb"SYSTEM 1")
+    dut.expect(rb"H SYSTEM 130 p", timeout=5)
+    dut.expect(rb"H LSYSTEM 130 p", timeout=2)
+
+    # onKeyboard() again: the new callback and the listener
+    host(dut, "onkey2", rb"ONKEY2")
+    device(peer, "key 5", rb"KEY 1")
+    dut.expect(rb"H KEY2 p 5", timeout=5)
+    dut.expect(rb"H LKEY p 5", timeout=2)
+
+    device(peer, "replug 300", rb"REPLUG", timeout=5)
+    dut.expect(rb"H DISCONNECTED \d+ %s" % peer.id["vid"].encode(), timeout=5)
+    dut.expect(rb"H LDISC \d+", timeout=2)
+    dut.expect(rb"H CONNECTED \d+ %s" % peer.id["vid"].encode(), timeout=15)
+    dut.expect(rb"H LCONN \d+", timeout=2)
+    wait_device(dut, peer.id["input"])
+
+    assert host(dut, "listen 0", rb"LISTEN (\d) (\d)").group(1, 2) == (b"0", b"1")
+    device(peer, "key 6", rb"KEY 1")
+    dut.expect(rb"H KEY2 p 6", timeout=5)
+    with pytest.raises(Exception):
+        dut.expect(rb"H LKEY", timeout=1.5)

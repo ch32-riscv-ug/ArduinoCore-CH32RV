@@ -237,7 +237,24 @@ uint8_t cin_of(uint8_t status)
 
 }  // namespace
 
-void CH32RVUsbHost::onMidiMessage(MidiMessageCallback cb) { message_cb = cb; message_cb_set = static_cast<bool>(cb); }
+/* The listeners' file's way in (CH32RVUsbHostHid.cpp's CH32RV_HOST_SLOT) */
+void (*ch32rv_usb_host_midi_primary)(const CH32RVUsbHost::MidiMessageCallback &c);
+CH32RVUsbHost::MidiMessageCallback ch32rv_usb_host_midi_take(const CH32RVUsbHost::MidiMessageCallback &fanout)
+{
+    const CH32RVUsbHost::MidiMessageCallback had = message_cb;
+    message_cb = fanout;
+    message_cb_set = true;
+    return had;
+}
+void CH32RVUsbHost::onMidiMessage(MidiMessageCallback cb)
+{
+    if (ch32rv_usb_host_midi_primary) {
+        ch32rv_usb_host_midi_primary(cb);
+        return;
+    }
+    message_cb = cb;
+    message_cb_set = static_cast<bool>(cb);
+}
 
 bool CH32RVUsbHost::midiReady(uint8_t address) const
 {

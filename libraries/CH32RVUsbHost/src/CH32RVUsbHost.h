@@ -557,6 +557,14 @@ struct CH32RVUsbHostCcidSlotEvent {
 /* ------------------------------------------------------------- the host */
 class NetworkUsbHost;   /* the Network library's interface on a USB network device */
 
+/* add*Listener()'s ids (EspUsbHost's EspUsbHostListenerId): 0 is none. */
+typedef uint32_t CH32RVUsbHostListenerId;
+static constexpr CH32RVUsbHostListenerId CH32RV_USB_HOST_INVALID_LISTENER_ID = 0;
+/* The listeners' file takes onDeviceConnected() / onDeviceDisconnected() over
+ * once a listener of theirs is added (CH32RVUsbHostListeners.cpp). */
+extern void (*ch32rv_usb_host_connected_primary)(const CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &)> &cb);
+extern void (*ch32rv_usb_host_disconnected_primary)(const CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &)> &cb);
+
 class CH32RVUsbHost {
 public:
     typedef CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &device)> DeviceCallback;
@@ -607,8 +615,43 @@ public:
     void onRemoteWakeup(RemoteWakeupCallback cb);
 
     /* ---- devices ---- */
-    void onDeviceConnected(DeviceCallback cb) { _connected = cb; }
-    void onDeviceDisconnected(DeviceCallback cb) { _disconnected = cb; }
+    void onDeviceConnected(DeviceCallback cb)
+    {
+        if (ch32rv_usb_host_connected_primary) {
+            ch32rv_usb_host_connected_primary(cb);
+        } else {
+            _connected = cb;
+        }
+    }
+    void onDeviceDisconnected(DeviceCallback cb)
+    {
+        if (ch32rv_usb_host_disconnected_primary) {
+            ch32rv_usb_host_disconnected_primary(cb);
+        } else {
+            _disconnected = cb;
+        }
+    }
+
+    /* More receivers of one event beside its on*() (EspUsbHost 2.6's
+     * add*Listener()): each listener gets every event, after the on*()
+     * callback, in the order added; at most CH32RV_USB_HOST_MAX_LISTENERS_PER_EVENT
+     * (4) of an event (0 when full or the callback is empty). The id takes it
+     * out again (removeListener()). For a library that wants the events
+     * without taking the sketch's on*() slot. A sketch that never adds one
+     * links none of it; the first of an event adds its table (about 260 bytes
+     * of flash and 80 of RAM) and puts its fan-out in the event's one slot -
+     * on*() keeps working through it. Listeners run where on*() does (from
+     * delay() / after loop()); the event they get is valid only during the
+     * call. */
+    CH32RVUsbHostListenerId addKeyboardListener(KeyboardCallback callback);
+    CH32RVUsbHostListenerId addMouseListener(MouseCallback callback);
+    CH32RVUsbHostListenerId addConsumerControlListener(ConsumerControlCallback callback);
+    CH32RVUsbHostListenerId addSystemControlListener(SystemControlCallback callback);
+    CH32RVUsbHostListenerId addGamepadListener(GamepadCallback callback);
+    CH32RVUsbHostListenerId addMidiMessageListener(MidiMessageCallback callback);
+    CH32RVUsbHostListenerId addDeviceConnectedListener(DeviceCallback callback);
+    CH32RVUsbHostListenerId addDeviceDisconnectedListener(DeviceCallback callback);
+    bool removeListener(CH32RVUsbHostListenerId listenerId);
     /* Connections and disconnections that did not fit before a
      * deliverEvents(), since begin(). */
     uint32_t droppedDeviceEvents() const;

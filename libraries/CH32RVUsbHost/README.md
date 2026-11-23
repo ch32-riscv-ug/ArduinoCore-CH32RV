@@ -162,8 +162,11 @@ The parts, D+/D−, VBUS, the UART wiring and building are in the
 ## Differences from EspUsbHost
 
 - Callbacks are `CH32RVCallback`: a function or a lambda capturing up to two
-  pointers (`[this]` and the like), no heap (not `std::function`); one per
-  event, no lists of listeners - for a chip with 20 KB of RAM.
+  pointers (`[this]` and the like), no heap (not `std::function`). `on*()` is
+  one per event; EspUsbHost 2.6's `add*Listener()` / `removeListener()` are
+  here for the keyboard, mouse, consumer and system control, gamepad, MIDI and
+  connections (not `addKeyboardStateListener()`: there is no keyboard-state
+  event), at most 4 of an event, costing nothing until one is added.
 - There are no task settings. The stack runs after `loop()` and inside
   `delay()`, and the waiting APIs run it while they wait. Callbacks are called
   from `deliverEvents()`, which the sketch calls (never inside `delay()` or an
@@ -200,9 +203,35 @@ is what defines the API.
 | `onDeviceConnected()` / `onDeviceDisconnected()` | A device connected / disconnected |
 | `deviceCount()` / `getDevices()` / `getDevice()` | The connected devices and their addresses |
 
-Each callback is one slot holding a function pointer; registering again
-replaces it. Use lambdas without captures or plain functions, and keep the
-state you need in static variables. Copy an event's `data` / `rawData` and
+Each `on*()` is one slot; registering again replaces it. A lambda may capture
+up to two pointers (`[this]`); keep other state in static variables.
+
+### More receivers of an event: `add*Listener()`
+
+For a library that wants an event without taking the sketch's `on*()` slot
+(an input bridge, a MIDI router), EspUsbHost 2.6's listeners:
+
+```cpp
+CH32RVUsbHostListenerId id = usb.addKeyboardListener([this](const CH32RVUsbHostKeyboardEvent &e) { take(e); });
+// ...
+usb.removeListener(id);
+```
+
+| Function | Event |
+|---|---|
+| `addKeyboardListener()` / `addMouseListener()` / `addConsumerControlListener()` / `addSystemControlListener()` / `addGamepadListener()` | The HID events of `onKeyboard()` and the rest |
+| `addMidiMessageListener()` | `onMidiMessage()`'s |
+| `addDeviceConnectedListener()` / `addDeviceDisconnectedListener()` | `onDeviceConnected()` / `onDeviceDisconnected()`'s |
+| `removeListener(id)` | Takes one out (false for an id not in use) |
+
+- Each listener gets every event after the `on*()` callback, in the order
+  added; the event is valid only during the call (copy what you keep). At
+  most `CH32RV_USB_HOST_MAX_LISTENERS_PER_EVENT` (4) of an event: 0 when full
+  or the callback is empty. `on*()` keeps working, also set again afterwards.
+- Cost: nothing in a sketch that never adds one (the delivery code is not
+  touched). The first listener of an event adds its table: about 380 bytes of
+  flash and 100 of RAM on X035 (another event's table, with `removeListener()`,
+  about 400 and 90 more). Copy an event's `data` / `rawData` and
 string pointers into your own buffer to use them later.
 
 `CH32RV_USB_HOST_ANY_ADDRESS` and `CH32RV_USB_HOST_ANY_PORT` pick the first

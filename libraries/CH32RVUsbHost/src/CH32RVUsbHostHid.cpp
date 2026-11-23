@@ -641,11 +641,38 @@ void hid_detach(uint8_t daddr)
 }  // namespace
 
 /* ------------------------------------------------------------- the API */
-void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { keyboard_cb = cb; keyboard_cb_set = static_cast<bool>(cb); }
-void CH32RVUsbHost::onMouse(MouseCallback cb) { mouse_cb = cb; mouse_cb_set = static_cast<bool>(cb); }
-void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback cb) { consumer_cb = cb; consumer_cb_set = static_cast<bool>(cb); }
-void CH32RVUsbHost::onSystemControl(SystemControlCallback cb) { system_cb = cb; system_cb_set = static_cast<bool>(cb); }
-void CH32RVUsbHost::onGamepad(GamepadCallback cb) { gamepad_cb = cb; gamepad_cb_set = static_cast<bool>(cb); }
+/* An event's one slot, and what the listeners' file (CH32RVUsbHostListeners.cpp)
+ * needs of it: _take() puts its fan-out there (returning the on*() callback
+ * that was there), after which on*() hands its callback to _primary. Neither
+ * is reached until a listener is added, so the slot's flag still folds. */
+#define CH32RV_HOST_SLOT(name, Type, cb, set)                                                          \
+    void (*ch32rv_usb_host_##name##_primary)(const CH32RVUsbHost::Type &c);                            \
+    CH32RVUsbHost::Type ch32rv_usb_host_##name##_take(const CH32RVUsbHost::Type &fanout)               \
+    {                                                                                                  \
+        const CH32RVUsbHost::Type had = cb;                                                            \
+        cb = fanout;                                                                                   \
+        set = true;                                                                                    \
+        return had;                                                                                    \
+    }                                                                                                  \
+    static void ch32rv_usb_host_##name##_set(const CH32RVUsbHost::Type &c)                             \
+    {                                                                                                  \
+        if (ch32rv_usb_host_##name##_primary) {                                                        \
+            ch32rv_usb_host_##name##_primary(c);                                                       \
+            return;                                                                                    \
+        }                                                                                              \
+        cb = c;                                                                                        \
+        set = static_cast<bool>(c);                                                                    \
+    }
+CH32RV_HOST_SLOT(keyboard, KeyboardCallback, keyboard_cb, keyboard_cb_set)
+CH32RV_HOST_SLOT(mouse, MouseCallback, mouse_cb, mouse_cb_set)
+CH32RV_HOST_SLOT(consumer, ConsumerControlCallback, consumer_cb, consumer_cb_set)
+CH32RV_HOST_SLOT(system, SystemControlCallback, system_cb, system_cb_set)
+CH32RV_HOST_SLOT(gamepad, GamepadCallback, gamepad_cb, gamepad_cb_set)
+void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { ch32rv_usb_host_keyboard_set(cb); }
+void CH32RVUsbHost::onMouse(MouseCallback cb) { ch32rv_usb_host_mouse_set(cb); }
+void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback cb) { ch32rv_usb_host_consumer_set(cb); }
+void CH32RVUsbHost::onSystemControl(SystemControlCallback cb) { ch32rv_usb_host_system_set(cb); }
+void CH32RVUsbHost::onGamepad(GamepadCallback cb) { ch32rv_usb_host_gamepad_set(cb); }
 void CH32RVUsbHost::onHIDVendorInput(HIDVendorInputCallback cb) { vendor_cb = cb; vendor_cb_set = static_cast<bool>(cb); }
 void CH32RVUsbHost::onHIDInput(HIDInputCallback cb) { input_cb = cb; input_cb_set = static_cast<bool>(cb); }
 void CH32RVUsbHost::onHIDReportDescriptor(HIDReportDescriptorCallback cb) { descriptor_cb = cb; descriptor_cb_set = static_cast<bool>(cb); }

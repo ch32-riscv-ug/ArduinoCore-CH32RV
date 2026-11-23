@@ -130,7 +130,7 @@ FS のポートだけのスケッチは、ほかの FS の系列と同じ大き�
 
 ## EspUsbHost との違い
 
-- コールバックは `CH32RVCallback` です。関数か、ポインター 2 つまでを取り込むラムダ（`[this]` など）を受け、ヒープを使いません（`std::function` ではありません）。1 つの出来事に 1 つで、リスナーの複数登録はありません。RAM が 20 KB のため。
+- コールバックは `CH32RVCallback` です。関数か、ポインター 2 つまでを取り込むラムダ（`[this]` など）を受け、ヒープを使いません（`std::function` ではありません）。`on*()` は 1 つの出来事に 1 つです。EspUsbHost 2.6 の `add*Listener()` / `removeListener()` を、キーボード・マウス・コンシューマーキー・システムコントロール・ゲームパッド・MIDI・接続と切断に用意しています（`addKeyboardStateListener()` はキーボードの状態の出来事が無いため無し）。1 つの出来事に 4 つまで、足さなければ費用 0 です。
 - タスクの設定はありません。スタックは `loop()` の後と `delay()` の中で動き、待つ API はその間スタックを回します。
   コールバックはスケッチが呼ぶ `deliverEvents()` から呼ばれ（`delay()` や割り込みの中ではありません）、待つ API を
   呼んでもかまいません。それまでレポート・受信データ・パケットはスタックの buffer で待ち（満杯なら機器側で待たせます）、
@@ -157,13 +157,33 @@ API の語彙は共有しますが、現行 EspUsbHost のすべての機能と�
 | `onDeviceConnected()` / `onDeviceDisconnected()` | 機器の接続/切断を通知 |
 | `deviceCount()` / `getDevices()` / `getDevice()` | 接続機器と address を取得 |
 
-callback はそれぞれ1枠の関数ポインタです。再登録すると置き換わります。キャプチャしないラムダや通常関数を使い、
-必要な状態は静的変数等へ保持します。イベント中の `data` / `rawData` や文字列へのポインタを後で使う場合は、
+`on*()` はそれぞれ 1 枠です。再登録すると置き換わります。ラムダはポインター 2 つ（`[this]` など）まで取り込めます。
+それ以外の状態は静的変数等へ保持します。イベント中の `data` / `rawData` や文字列へのポインタを後で使う場合は、
 自前の buffer へコピーしてください。
 
 `CH32RV_USB_HOST_ANY_ADDRESS` と `CH32RV_USB_HOST_ANY_PORT` は最初の該当機器/ポートを選ぶ指定です。
 USB address は抜き挿しで変わり得ます。複数機器を扱うときは接続 callback の address で選び、切断時に状態を破棄します。
 CDC の port は同一デバイス内の0始まりの番号です。
+
+### 1 つの出来事を複数で受ける: `add*Listener()`
+
+スケッチの `on*()` の枠を取らずに出来事を受けたいライブラリ（入力のブリッジ、MIDI のルーターなど）向けに、EspUsbHost 2.6 のリスナーがあります。
+
+```cpp
+CH32RVUsbHostListenerId id = usb.addKeyboardListener([this](const CH32RVUsbHostKeyboardEvent &e) { take(e); });
+// ...
+usb.removeListener(id);
+```
+
+| 関数 | 出来事 |
+|---|---|
+| `addKeyboardListener()` / `addMouseListener()` / `addConsumerControlListener()` / `addSystemControlListener()` / `addGamepadListener()` | `onKeyboard()` などの HID の出来事 |
+| `addMidiMessageListener()` | `onMidiMessage()` の出来事 |
+| `addDeviceConnectedListener()` / `addDeviceDisconnectedListener()` | `onDeviceConnected()` / `onDeviceDisconnected()` の出来事 |
+| `removeListener(id)` | 1 つ外す（使っていない id なら false） |
+
+- 各リスナーは、`on*()` のコールバックの後に、足した順で全部の出来事を受けます。出来事はその呼び出しの間だけ有効です（残すものは写す）。1 つの出来事に `CH32RV_USB_HOST_MAX_LISTENERS_PER_EVENT`（4）まで。満杯か空のコールバックなら 0 を返します。`on*()` はそのまま使え、後から登録し直しても効きます。
+- 費用: 足さないスケッチでは 0 です（配る処理には手を入れていない）。ある出来事に最初の 1 つを足すとその表が入り、X035 で flash 約 380 バイト・RAM 約 100 バイト。別の出来事の表と `removeListener()` を足すと、さらに約 400 バイト・90 バイト。
 
 ### サスペンドとレジューム
 

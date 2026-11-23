@@ -11,6 +11,11 @@
 #include "internal/ch32rv_deliver.h"
 #include "internal/ch32rv_service.h"
 
+/* onDeviceConnected() / onDeviceDisconnected() hand their callback here once
+ * a listener of theirs is added (CH32RVUsbHostListeners.cpp). */
+void (*ch32rv_usb_host_connected_primary)(const CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &)> &cb);
+void (*ch32rv_usb_host_disconnected_primary)(const CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &)> &cb);
+
 #include <string.h>
 
 #if CH32RV_USB_HOST_STACK

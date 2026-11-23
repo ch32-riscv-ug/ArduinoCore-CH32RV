@@ -4,6 +4,10 @@
  * "H ":
  *
  *   ready <nonce>        READY <nonce> <build id> <begin ok 0/1> <last error>
+ *   listen <1 / 0>       add*Listener() for the keyboard, the gamepad, system control, connections and
+ *                        disconnections beside their on*() (events as H LKEY / H LGAMEPAD / H LSYSTEM /
+ *                        H LCONN / H LDISC), or removeListener() for each: H LISTEN <listeners now> <ok>
+ *   onkey2               onKeyboard() again, printing H KEY2 (after listen: through the listeners' table)
  *   dev                  H DEV ... / H ITF ... per interface / H DEVEND <n>
  *   cdc <hex>            H CDC <hex echoed back within 2 s>
  *   cdcbig <n>           H CDCBIG <n> <ok> <bytes back>
@@ -662,6 +666,45 @@ static void cmd_audvol(char *arg)
 }
 #endif
 
+static CH32RVUsbHostListenerId listenIds[5];
+
+static void cmd_listen(bool on)
+{
+    bool ok = true;
+    if (on) {
+        listenIds[0] = usb.addKeyboardListener([](const CH32RVUsbHostKeyboardEvent &e) {
+            CONSOLE.printf("H LKEY %c %u\n", e.pressed ? 'p' : 'r', e.keycode);
+        });
+        listenIds[1] = usb.addGamepadListener([](const CH32RVUsbHostGamepadEvent &e) {
+            CONSOLE.print("H LGAMEPAD ");
+            hex(e.reportData, e.reportLength);
+            CONSOLE.println();
+        });
+        listenIds[2] = usb.addSystemControlListener([](const CH32RVUsbHostSystemControlEvent &e) {
+            CONSOLE.printf("H LSYSTEM %u %c\n", e.usage, e.pressed ? 'p' : 'r');
+        });
+        listenIds[3] = usb.addDeviceConnectedListener([](const CH32RVUsbHostDeviceInfo &d) {
+            CONSOLE.printf("H LCONN %u\n", d.address);
+        });
+        listenIds[4] = usb.addDeviceDisconnectedListener([](const CH32RVUsbHostDeviceInfo &d) {
+            CONSOLE.printf("H LDISC %u\n", d.address);
+        });
+        for (CH32RVUsbHostListenerId id : listenIds) {
+            ok = ok && id != CH32RV_USB_HOST_INVALID_LISTENER_ID;
+        }
+    } else {
+        for (CH32RVUsbHostListenerId &id : listenIds) {
+            ok = usb.removeListener(id) && ok;
+            id = CH32RV_USB_HOST_INVALID_LISTENER_ID;
+        }
+    }
+    unsigned n = 0;
+    for (CH32RVUsbHostListenerId id : listenIds) {
+        n += id != CH32RV_USB_HOST_INVALID_LISTENER_ID;
+    }
+    CONSOLE.printf("H LISTEN %u %d\n", n, ok ? 1 : 0);
+}
+
 static void reply(char *cmd)
 {
     char *arg = strchr(cmd, ' ');
@@ -676,6 +719,13 @@ static void reply(char *cmd)
         CONSOLE.print(began ? 1 : 0);
         CONSOLE.print(' ');
         CONSOLE.println(usb.lastErrorName());
+    } else if (strcmp(cmd, "listen") == 0) {
+        cmd_listen(atoi(arg) != 0);
+    } else if (strcmp(cmd, "onkey2") == 0) {
+        usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) {
+            CONSOLE.printf("H KEY2 %c %u\n", e.pressed ? 'p' : 'r', e.keycode);
+        });
+        CONSOLE.println("H ONKEY2");
     } else if (strcmp(cmd, "dev") == 0) {
         cmd_dev();
     } else if (strcmp(cmd, "where") == 0) {

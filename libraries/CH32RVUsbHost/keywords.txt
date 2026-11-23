@@ -81,3 +81,13 @@ mscSynchronizeCache	KEYWORD2
 setSkipSyncCache	KEYWORD2
 skipSyncCache	KEYWORD2
 basePath	KEYWORD2
+CH32RVUsbHostListenerId	KEYWORD1
+addKeyboardListener	KEYWORD2
+addMouseListener	KEYWORD2
+addConsumerControlListener	KEYWORD2
+addSystemControlListener	KEYWORD2
+addGamepadListener	KEYWORD2
+addMidiMessageListener	KEYWORD2
+addDeviceConnectedListener	KEYWORD2
+addDeviceDisconnectedListener	KEYWORD2
+removeListener	KEYWORD2
