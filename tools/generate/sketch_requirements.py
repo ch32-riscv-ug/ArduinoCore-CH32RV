@@ -30,7 +30,8 @@ def all_boards() -> tuple:
 # it has any of them. USB_DEVICE is a controller CH32RVUsbDevice drives (V103
 # and X035's USBFS, V20x's USB (USBD), V30x / H41x's USBHS, V407's USBHS1 / 2);
 # the V00x / M007 series have none, so a USB device example is not built there.
-DERIVED = {"USB_DEVICE": frozenset({"USB", "USBFS", "USBHS", "USBHS1", "USBHS2"})}
+DERIVED = {"USB_DEVICE": frozenset({"USB", "USBFS", "USBHS", "USBHS1", "USBHS2"}),
+           "LOW_POWER_TIMER": frozenset({"LPTIM", "LPTIM1"})}
 
 
 @functools.lru_cache(maxsize=1)

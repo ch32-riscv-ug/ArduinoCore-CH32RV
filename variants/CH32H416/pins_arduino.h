@@ -779,8 +779,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 #define CH32RV_SPI2_DMA_TX CH32RV_DMA_LINE(2, 3, 0x40020430u, 0x40020400u, 8u, 65u)
 #define CH32RV_SPI2_DMA_RX_IRQ DMA2_Channel2
 #define CH32RV_SPI2_DMA_TX_IRQ DMA2_Channel3
-/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS,
- * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */
+/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS, 2 SD, 3 MCK), pad, then
+ * its function number and 0 (pads of any route go together). */
 #define CH32RV_I2S2_PAD_COUNT 9
 #define CH32RV_I2S2_PADS { \
     { 0, PA12, 0x00000005u, 0x00000000u }, \
@@ -833,8 +833,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 #define CH32RV_SPI3_DMA_TX CH32RV_DMA_LINE(2, 1, 0x40020408u, 0x40020400u, 0u, 67u)
 #define CH32RV_SPI3_DMA_RX_IRQ DMA1_Channel8
 #define CH32RV_SPI3_DMA_TX_IRQ DMA2_Channel1
-/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS,
- * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */
+/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS, 2 SD, 3 MCK), pad, then
+ * its function number and 0 (pads of any route go together). */
 #define CH32RV_I2S3_PAD_COUNT 10
 #define CH32RV_I2S3_PADS { \
     { 0, PA14, 0x00000001u, 0x00000000u }, \
@@ -1275,6 +1275,13 @@ static const uint8_t SS = PIN_SPI_SS;
     X(2, 6, CH32RV_IRQN_DMA2_Channel6, 0x4002046cu, 0x40020400u, 20u) \
     X(2, 7, CH32RV_IRQN_DMA2_Channel7, 0x40020480u, 0x40020400u, 24u) \
     X(2, 8, CH32RV_IRQN_DMA2_Channel8, 0x40020494u, 0x40020400u, 28u)
+
+/* LPTIM's pads, for CH32RVLowPowerTimer: role (0 CH1, 1 CH2, 2 ETR, 3 OUT), pad, then
+ * its function number and 0 (pads of any route go together). */
+#define CH32RV_LPTIM2_PAD_COUNT 1
+#define CH32RV_LPTIM2_PADS { \
+    { 2, PD10, 0x00000004u, 0x00000000u }, \
+}
 
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -

@@ -717,6 +717,15 @@ static const uint8_t SS = PIN_SPI_SS;
     X(1, 7, CH32RV_IRQN_DMA1_Channel7, 0x40020080u, 0x40020000u, 24u) \
     X(1, 8, CH32RV_IRQN_DMA1_Channel8, 0x40020094u, 0x40020000u, 28u)
 
+/* LPTIM's pads, for CH32RVLowPowerTimer: role (0 CH1, 1 CH2, 2 ETR, 3 OUT), pad, then
+ * the PCFR1 / PCFR2 values of its route (the pads of one route go together). */
+#define CH32RV_LPTIM1_PAD_COUNT 3
+#define CH32RV_LPTIM1_PADS { \
+    { 0, PB5, 0x00000000u, 0x02000000u }, \
+    { 1, PB7, 0x00000000u, 0x02000000u }, \
+    { 2, PB6, 0x00000000u, 0x02000000u }, \
+}
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

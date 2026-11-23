@@ -136,6 +136,7 @@ hardware の厳密な周波数期待値をそのまま適用しません。
 | エッジごとの捕捉（CH32RVInputCapture） | あり（2026-11-17、ビルドのみ） | 現行: signals::test_edge_capture（プローブの 1 kHz・25 % を CHANGE・RISING・FALLING で、CH3/CH4 か別の経路の端子を先に） | callback の形、キューあふれ、エッジの近い信号 |
 | 相補 PWM・ワンパルス・出力比較（CH32RVTimerOutput） | あり（2026-11-17、ビルドのみ。V003 の signals には入らない） | 現行: signals::test_complementary（20 kHz、デッドタイム 500・1000 ns を WireSkein の dead_time で 20 MS/s、BKIN の線があればブレーキと resume）、signals::test_one_pulse（50 µs・1 ms の 1 発）、signals::test_output_compare（TOGGLE の 500 Hz、FORCE） | ワンパルスのハードのトリガー、出力比較の callback、非対称デッドタイム |
 | 利用者向けタイマー（timerBegin / timerAlarm）・Ticker | あり（2026-11-17、ビルドのみ。V003 の signals には入らない） | 現行: signals::test_hw_timer（250 µs ごとの alarm、1500 µs の 1 回）、signals::test_ticker（attach_us 500・100、once_us 2000） | timerWrite・timerStop、64 ビットの桁あふれ、複数の Ticker |
+| 低消費電力タイマー（CH32RVLowPowerTimer、L103・H41x） | あり（2026-11-23、H417 で確認、L103 はビルドのみ） | 現行: periph::test_lptim（バスのクロックの周期、LSI の速さ、CH1 の縁の標本化・非同期の数え 1 kHz・10 kHz、LSI の周期で lightSleep() から起床） | 出力（PWM・ワンパルス）とエンコーダー（線が無い）、LSE、L103 の実機 |
 | ADC の DMA（CH32RVAdcStream） | あり | 現行: periph::test_adc_stream（1〜2 本、プローブの方形波の周波数とデューティ） | 3 本以上の並び、長時間 |
 | HSADC（CH32RVHsAdc、H41x） | あり | 現行: periph::test_hsadc（20 Msps と 1.25 Msps）。常駐の H417 は HSADC の端子に線が無い（TODO） | 実機の結果 |
 | ロジックの取り込み（CH32RVLogicCapture） | あり | 現行: logic | — |

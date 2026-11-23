@@ -3280,6 +3280,14 @@ I2S_SIGNAL_RE = [
     (re.compile(r"^I2S(\d+)_(CK|WS|SD|MCK)$"), lambda m: (int(m.group(1)), m.group(2))),
 ]
 I2S_ROUTE_ORDER = ("default", "main") + tuple(f"af-{n}" for n in range(16)) + ALL_REMAPS
+# Set by main(): part -> {(LPTIM index, route): {"CH1"|"CH2"|"ETR"|"OUT": pad}} (H41x names the output OC,
+# L103 its remapped one LPT_OUT).
+LPTIM_PINS: dict = {}
+LPTIM_SIGNAL_RE = [
+    (re.compile(r"^LPTIM(\d*)_(CH1|CH2|ETR|OUT|OC)$"),
+     lambda m: (int(m.group(1) or 1), "OUT" if m.group(2) == "OC" else m.group(2))),
+    (re.compile(r"^LPT_OUT$"), lambda m: (1, "OUT")),
+]
 
 # DAC. One pad per channel, no remap to speak of - the output is wired to a
 # fixed pin - so this is only about naming the pad analogWrite() should treat
@@ -3295,7 +3303,7 @@ SPI_ROUTE_ORDER += tuple(a for a in ALL_AFS if a not in SPI_ROUTE_ORDER)
 # AFIO remap. device-data gives the controlling field per series and selector;
 # the bit list can be non-contiguous (CH32V003 USART1_REMAP is bits 2 and 21),
 # so a value is spread over the listed positions, least significant bit first.
-REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi|can)(\d*)-(?:rm|remap)$")
+REMAP_SELECTOR_RE = re.compile(r"^afio-(u(?:s)?art|i2c|spi|can|lptim)(\d*)-(?:rm|remap)$")
 CH32RV_AFIO_PCFR1_OFFSET = 0x04
 
 
@@ -3340,7 +3348,7 @@ def load_remap_fields(tables: pathlib.Path) -> dict:
                     "the register-qualified route schema")
             bits.append((register, int(bit)))
         if bits:
-            kind = m.group(1) if m.group(1) in ("i2c", "spi", "can") else "usart"
+            kind = m.group(1) if m.group(1) in ("i2c", "spi", "can", "lptim") else "usart"
             out[(r["series"], kind, int(m.group(2) or 1))] = bits
     return out
 
@@ -3751,23 +3759,23 @@ def af_route_table(series: str, parts: list, pins: dict, kind: str,
     return rows
 
 
-def emit_i2s(out: list, series: str, parts: list, remap: dict, index: int) -> None:
-    """I2Sn's pads, when SPIn has an I2S mode on this series, for the I2S
-    library: { role (0 CK, 1 WS, 2 SD, 3 MCK), pad, value, value2 }.
+def emit_pad_table(out: list, series: str, parts: list, remap: dict, pins: dict, kind: str, remap_kind: str,
+                   index: int, prefix: str, roles: tuple, need: set, title: str) -> None:
+    """CH32RV_<prefix>_PADS: { role (its place in roles), pad, value, value2 } for every pad of the
+    instance, for a library that picks the pads it is given.
 
-    On the per-pin families value is the pad's own function number and any
-    CK, WS and SD go together (PA14 af-1 with PA4 af-6 on CH32H417: the
-    route table's one-number rows could not say that). On the AFIO families
-    value / value2 are what the route the pad is on writes into PCFR1 /
-    PCFR2 (SPIn's field), and CK, WS, SD and MCK have to share them - a pad
-    on two routes is listed once for each."""
-    if not any(i == index for pn in parts for (i, _r) in I2S_PINS.get(pn, {})):
+    On the per-pin families value is the pad's own function number and pads of any routes go
+    together (PA14 af-1 with PA4 af-6 for I2S3 on CH32H417: one-number route rows could not say
+    that). On the AFIO families value / value2 are what the route the pad is on writes into PCFR1 /
+    PCFR2 (the instance's field, remap_kind's), and the pads used together have to share them - a
+    pad on two routes is listed once for each. Nothing when the roles in `need` are not all there."""
+    if not any(i == index for pn in parts for (i, _r) in pins.get(pn, {})):
         return
     rows = set()
     per_pin = series in PER_PIN_AF_SERIES
-    bits = remap.get((series, "spi", index))
+    bits = remap.get((series, remap_kind, index))
     for pn in parts:
-        for (i, route), entry in I2S_PINS.get(pn, {}).items():
+        for (i, route), entry in pins.get(pn, {}).items():
             if i != index:
                 continue
             if per_pin:
@@ -3785,26 +3793,31 @@ def emit_i2s(out: list, series: str, parts: list, remap: dict, index: int) -> No
                     continue
                 mv = remap_mask_value(bits, rv)
                 v1, v2 = mv.get("PCFR1", (0, 0))[1], mv.get("PCFR2", (0, 0))[1]
-            for n, role in enumerate(("CK", "WS", "SD", "MCK")):
+            for n, role in enumerate(roles):
                 if role not in entry:
                     continue
-                for pad in ROUTE_ALTS.get(("i2s", pn, index, route, role)) or [entry[role]]:
+                for pad in ROUTE_ALTS.get((kind, pn, index, route, role)) or [entry[role]]:
                     rows.add((n, pad, v1, v2))
-    have = {n for n, *_ in rows}
-    if not {0, 1, 2} <= have:
+    if not need <= {n for n, *_ in rows}:
         return
-    out.append(f"/* I2S{index} (SPI{index} in I2S mode), for the I2S library: role (0 CK, 1 WS,")
+    numbered = ", ".join(f"{n} {r}" for n, r in enumerate(roles))
+    out.append(f"/* {title}: role ({numbered}), pad, then")
     if per_pin:
-        out.append(" * 2 SD, 3 MCK), pad, its function number (any CK, WS, SD go together), 0. */")
+        out.append(" * its function number and 0 (pads of any route go together). */")
     else:
-        out.append(" * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one")
-        out.append(" * route go together). */")
-    out.append(f"#define CH32RV_I2S{index}_PAD_COUNT {len(rows)}")
-    out.append(f"#define CH32RV_I2S{index}_PADS {{ \\")
+        out.append(" * the PCFR1 / PCFR2 values of its route (the pads of one route go together). */")
+    out.append(f"#define CH32RV_{prefix}_PAD_COUNT {len(rows)}")
+    out.append(f"#define CH32RV_{prefix}_PADS {{ \\")
     for n, pad, v1, v2 in sorted(rows, key=lambda r: (r[0], r[2], r[3], r[1])):
         out.append(f"    {{ {n}, {pad_name(*pad)}, 0x{v1:08x}u, 0x{v2:08x}u }}, \\")
     out.append("}")
 
+
+def emit_i2s(out: list, series: str, parts: list, remap: dict, index: int) -> None:
+    """I2Sn's pads (SPIn in I2S mode, its AFIO field the SPI's), for the I2S library."""
+    emit_pad_table(out, series, parts, remap, I2S_PINS, "i2s", "spi", index, f"I2S{index}",
+                   ("CK", "WS", "SD", "MCK"), {0, 1, 2},
+                   f"I2S{index} (SPI{index} in I2S mode), for the I2S library")
 
 def emit_routes(out: list, prefix: str, roles: tuple, rows: list) -> None:
     """The CH32RV_<prefix>_ROUTES initializer for ch32rv_route_t[]."""
@@ -5780,6 +5793,16 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append(lines[-1])
         out.append("")
 
+    # --- LPTIM pads (CH32RVLowPowerTimer) ---
+    lptims = sorted({i for pn in parts for (i, _r) in LPTIM_PINS.get(pn, {})})
+    for index in lptims:
+        name = f"LPTIM{index}" if len(lptims) > 1 else "LPTIM"
+        emit_pad_table(out, series, parts, remap, LPTIM_PINS, "lptim", "lptim", index, f"LPTIM{index}",
+                       ("CH1", "CH2", "ETR", "OUT"), set(),
+                       f"{name}'s pads, for CH32RVLowPowerTimer")
+    if lptims:
+        out.append("")
+
     # --- no LED_BUILTIN ---
     # A Generic board is a silicon series, not a PCB, so it does not know where
     # an LED is - or whether there is one. The old placeholder here was the
@@ -6118,6 +6141,7 @@ def main() -> int:
     dacs = load_dac_pins(args.tables, route_alts)
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     I2S_PINS.update(load_pin_routes(args.tables, I2S_SIGNAL_RE, I2S_ROUTE_ORDER, "i2s", route_alts))
+    LPTIM_PINS.update(load_pin_routes(args.tables, LPTIM_SIGNAL_RE, I2S_ROUTE_ORDER, "lptim", route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     TIM_DT2.update(load_tim_dt2(args.tables))
@@ -6187,7 +6211,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS, LPTIM_PINS], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

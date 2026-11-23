@@ -684,10 +684,10 @@ any_of = ["SWPMI"]
 missing = ["CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]
-id = "lptim"                # LPTIM: timing and waking in a sleep, PWM
+id = "lptim"                # CH32RVLowPowerTimer: periods on the bus clock and LSI, a pin's edges, waking lightSleep()
+test = "periph::test_lptim"
 scope = "series"
 any_of = ["LPTIM", "LPTIM1"]
-missing = ["CH32H415", "CH32H416", "CH32H417", "CH32L103", "CH32M103"]
 
 [[item]]
 id = "fsmc"                 # FSMC / FMC: SRAM, NOR, NAND, LCD

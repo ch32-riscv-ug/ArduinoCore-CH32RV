@@ -61,7 +61,21 @@
  *                             <bufs> buffers of HSTREAM_SAMPLES read), a square wave read
  *                             as astream does (10 bits): HSTREAM <rate got> <overruns>
  *                             <samples> <high> <low> <rises> <first rise> <last rise>
- *                             (HSTREAM 0 when begin() refused) */
+ *                             (HSTREAM 0 when begin() refused)
+ *
+ * The low-power timer (CH32RVLowPowerTimer: L103 / M103, H41x; LPT NONE elsewhere):
+ *
+ *   lptfind <pin>...          the first of the pins that is a timer's CH1 pad:
+ *                             LPTFIND <timer> <pin> (LPTFIND NONE)
+ *   lptcount <timer> <pin> <async> <ms>
+ *                             beginCounter(pin, RISING, async) for <ms>: LPTCOUNT <ok> <count> <us
+ *                                                         from begin's return to the read>
+ *   lpttimer <timer> <clock> <divider> <period> <ms>
+ *                             begin(clock 0 bus, 3 LSI), setPeriod(), onPeriod() counted for
+ *                             <ms>: LPTTIMER <ok> <clockHz()> <periods> <us from start to the count>
+ *   lptwake <timer> <ms>      a period of <ms> on LSI, its wake line enabled (and the timer
+ *                             wake-up at 3 x <ms> as a backstop), lightSleep():
+ *                             LPTWAKE <ok> <wakeupCause()> <ms slept by millis()> <periods> */
 #include <Arduino.h>
 #include <CH32RV.h>
 #include "bench_console.h"
@@ -86,6 +100,7 @@
 #if defined(NUM_ANALOG_INPUTS) && !defined(CH32RV_VARIANT_CH32V003)
 #define PERIPH_INJ 1
 #endif
+#include <CH32RVLowPowerTimer.h>
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 #define PERIPH_HSADC 1
 #include <CH32RVHsAdc.h>
@@ -353,11 +368,38 @@ static void hstream(uint32_t rate, uint32_t bufs, pin_size_t pin)
 }
 #endif
 
+#if CH32RV_HAS_LPTIM
+static volatile uint32_t lptPeriods;
+static void lptTick()
+{
+    lptPeriods++;
+}
+
+/* The first CH1 pad among the pins, of LPTIM1 or 2 (beginCounter() tried
+ * on each: it takes the pad or refuses it, nothing else). */
+static void lptFind(int argc, char **argv)
+{
+    for (uint8_t t = 1; t <= 2; t++) {
+        for (int i = 1; i < argc; i++) {
+            CH32RVLowPowerTimer lpt(t);
+            const int pin = atoi(argv[i]);
+            if (lpt.beginCounter(pin, RISING, true)) {
+                lpt.end();
+                pinMode(pin, INPUT);
+                CONSOLE.printf("LPTFIND %u %d\r\n", t, pin);
+                return;
+            }
+        }
+    }
+    CONSOLE.printf("LPTFIND NONE\r\n");
+}
+#endif
+
 static void reply(char *command)
 {
-    char *argv[6];
+    char *argv[34];
     int argc = 0;
-    for (char *t = strtok(command, " "); t && argc < 6; t = strtok(nullptr, " ")) {
+    for (char *t = strtok(command, " "); t && argc < 34; t = strtok(nullptr, " ")) {
         argv[argc++] = t;
     }
     if (!argc) {
@@ -365,6 +407,61 @@ static void reply(char *command)
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
         CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+    } else if (!strncmp(argv[0], "lpt", 3)) {
+#if CH32RV_HAS_LPTIM
+        if (!strcmp(argv[0], "lptfind")) {
+            lptFind(argc, argv);
+        } else if (!strcmp(argv[0], "lptcount") && argc == 5) {
+            CH32RVLowPowerTimer lpt((uint8_t)atoi(argv[1]));
+            const bool ok = lpt.beginCounter(atoi(argv[2]), RISING, atoi(argv[3]) != 0);
+            const uint32_t t0 = micros();
+            delay((uint32_t)atol(argv[4]));
+            const uint16_t n = lpt.count();
+            const uint32_t us = micros() - t0;
+            CONSOLE.printf("LPTCOUNT %d %u %lu\r\n", ok ? 1 : 0, (unsigned)n, (unsigned long)us);
+            lpt.end();
+            pinMode(atoi(argv[2]), INPUT);
+        } else if (!strcmp(argv[0], "lpttimer") && argc == 6) {
+            CH32RVLowPowerTimer lpt((uint8_t)atoi(argv[1]));
+            bool ok = lpt.begin((CH32RVLowPowerTimer::Clock)atoi(argv[2]), (uint8_t)atoi(argv[3])) &&
+                      lpt.setPeriod((uint32_t)atol(argv[4]));
+            lptPeriods = 0;
+            lpt.onPeriod(lptTick);
+            ok = ok && lpt.start();
+            const uint32_t t0 = micros();
+            delay((uint32_t)atol(argv[5]));
+            const uint32_t n = lptPeriods;
+            const uint32_t us = micros() - t0;
+            CONSOLE.printf("LPTTIMER %d %lu %lu %lu\r\n", ok ? 1 : 0, (unsigned long)lpt.clockHz(), (unsigned long)n,
+                           (unsigned long)us);
+            lpt.end();
+        } else if (!strcmp(argv[0], "lptwake") && argc == 3) {
+            CH32RVLowPowerTimer lpt((uint8_t)atoi(argv[1]));
+            const uint32_t ms = (uint32_t)atol(argv[2]);
+            bool ok = lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32);
+            ok = ok && lpt.setPeriod((uint32_t)((uint64_t)lpt.clockHz() * ms / 1000u));
+            lptPeriods = 0;
+            lpt.onPeriod(lptTick);
+            /* the RTC's timer as a backstop three times later: it also keeps millis() over the sleep */
+            ok = ok && CH32RV.enableExtiLineWakeup(lpt.wakeLine()) && CH32RV.enableTimerWakeup(3000ull * ms) &&
+                 lpt.start();
+            CONSOLE.flush();
+            const uint32_t t0 = millis();
+            if (ok) {
+                CH32RV.lightSleep();
+            }
+            const uint32_t slept = millis() - t0;
+            const uint32_t n = lptPeriods;
+            lpt.end();
+            CH32RV.disableWakeup();
+            CONSOLE.printf("LPTWAKE %d %d %lu %lu\r\n", ok ? 1 : 0, (int)CH32RV.wakeupCause(), (unsigned long)slept,
+                           (unsigned long)n);
+        } else {
+            CONSOLE.printf("LPT ?\r\n");
+        }
+#else
+        CONSOLE.printf("LPT NONE\r\n");
+#endif
     } else if (!strcmp(argv[0], "uart2") && argc == 4) {
 #if defined(ROUTED)
         ROUTED.begin((unsigned long)atol(argv[3]), SERIAL_8N1, atoi(argv[1]), atoi(argv[2]));

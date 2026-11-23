@@ -663,9 +663,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 #define CH32RV_SPI2_DMA_TX CH32RV_DMA_LINE(1, 5, 0x40020058u, 0x40020000u, 16u, 0u)
 #define CH32RV_SPI2_DMA_RX_IRQ DMA1_Channel4
 #define CH32RV_SPI2_DMA_TX_IRQ DMA1_Channel5
-/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS,
- * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one
- * route go together). */
+/* I2S2 (SPI2 in I2S mode), for the I2S library: role (0 CK, 1 WS, 2 SD, 3 MCK), pad, then
+ * the PCFR1 / PCFR2 values of its route (the pads of one route go together). */
 #define CH32RV_I2S2_PAD_COUNT 4
 #define CH32RV_I2S2_PADS { \
     { 0, PB13, 0x00000000u, 0x00000000u }, \
@@ -697,9 +696,8 @@ static const uint8_t SDA = PIN_WIRE_SDA;
 #define CH32RV_SPI3_DMA_TX CH32RV_DMA_LINE(2, 2, 0x4002041cu, 0x40020400u, 4u, 0u)
 #define CH32RV_SPI3_DMA_RX_IRQ DMA2_Channel1
 #define CH32RV_SPI3_DMA_TX_IRQ DMA2_Channel2
-/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS,
- * 2 SD, 3 MCK), pad, the PCFR1 / PCFR2 values of its route (the pads of one
- * route go together). */
+/* I2S3 (SPI3 in I2S mode), for the I2S library: role (0 CK, 1 WS, 2 SD, 3 MCK), pad, then
+ * the PCFR1 / PCFR2 values of its route (the pads of one route go together). */
 #define CH32RV_I2S3_PAD_COUNT 7
 #define CH32RV_I2S3_PADS { \
     { 0, PB3, 0x00000000u, 0x00000000u }, \

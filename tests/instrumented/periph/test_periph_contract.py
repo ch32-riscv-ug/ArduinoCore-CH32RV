@@ -835,6 +835,89 @@ def test_hsadc(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_lptim(dut, oep_host, ws_run, record_property):
+    """periph.lptim (CH32RVLowPowerTimer, 2026-11-23): the low-power timer of L103 / H41x on a labelled line that is a
+    timer's CH1 pad (the DUT finds it: lptfind), the probe's PWM on it. Judged here from what the DUT counts:
+    - a timer on the bus clock (PCLK1, exact): the periods onPeriod() counted in the 0.5 s the DUT timed within 2 of
+      clockHz() / period;
+    - on LSI / 32: the rate its periods give within half of the nominal (LSI's spread), and recorded;
+    - beginCounter() sampled: the probe's 1 kHz and 10 kHz edges in the 0.2 s the DUT timed (micros(), from
+      beginCounter()'s return to count()) within 2 + 0.2 %; asynchronous (the pin as the timer's clock) the same less the 5 edges RM 17.3.9 says are lost
+      (within 3);
+    - a period of 200 ms on LSI ending lightSleep() through the timer's wake line (wakeupCause() the EXTI line, before
+      the RTC's backstop at 600 ms), the time slept (millis() kept over the sleep by the RTC) within 10 % + 5 ms of
+      200 ms at the LSI rate measured above.
+    One capture of the line beside it, judged by WireSkein (becomes: the probe's frequency)."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import becomes
+    case = settings(__file__)
+    ready(dut, case)
+    if ask(dut, "lptfind 0", rb"(LPT NONE|LPTFIND NONE|LPTFIND \d+ \d+)").group(1) == b"LPT NONE":
+        pytest.skip("n/a: the part has no LPTIM")
+    lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
+    m = ask(dut, "lptfind " + " ".join(str(p) for p in lines), rb"LPTFIND (NONE|\d+ \d+)")
+    if m.group(1) == b"NONE":
+        pytest.skip("no labelled line is an LPTIM's CH1 pad: " + ", ".join(l["pad"] for l in lines.values()))
+    timer, pin = (int(v) for v in m.group(1).split())
+    line = lines[pin]
+    record_property("line", f"{line['pad']} LPTIM{timer} CH1")
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(line["channel"]))
+    pwm.start(0, 1000, 0)
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"lptim{timer} {line['pad']}"):
+            with ws_run.section(2, "timer on the bus clock"):
+                m = until(dut, ws_run, wait, f"lpttimer {timer} 0 1 50000 500", rb"LPTTIMER (\d) (\d+) (\d+) (\d+)", 5)
+                ok, hz, n, us = (int(v) for v in m.groups())
+                want = hz / 50000 * us / 1e6
+                results["bus"] = dict(hz=hz, periods=n, want=round(want, 1))
+                if not ok or abs(n - want) > 2:
+                    wrong.append(f"bus clock {hz} Hz: {n} periods in {us} us, want {want:.1f}")
+            with ws_run.section(2, "timer on LSI / 32"):
+                m = until(dut, ws_run, wait, f"lpttimer {timer} 3 32 10 500", rb"LPTTIMER (\d) (\d+) (\d+) (\d+)", 5)
+                ok, hz, n, us = (int(v) for v in m.groups())
+                rate = n * 10 / (us / 1e6)               # ticks a second the periods give
+                results["lsi"] = dict(nominal=hz, periods=n, measured=round(rate, 1))
+                if not ok or not 0.5 * hz <= rate <= 1.5 * hz:
+                    wrong.append(f"LSI / 32: {n} periods of 10 ticks in 0.5 s ({rate:.0f} Hz), nominal {hz} Hz")
+            for hz in (1000, 10000):
+                for asynchronous in (0, 1):
+                    name = f"counter {'asynchronous' if asynchronous else 'sampled'}, {hz} Hz"
+                    with ws_run.section(2, name, expect=[becomes(line["pad"], freq_hz=hz, duty=0.5, freq_rel=0.01)]):
+                        made = pwm.start(0, hz, Pwm.FULL // 2)
+                        wait(0.02)
+                        m = until(dut, ws_run, wait, f"lptcount {timer} {pin} {asynchronous} 200",
+                                  rb"LPTCOUNT (\d) (\d+) (\d+)", 5)
+                        ok, n, us = (int(v) for v in m.groups())
+                        want = made.hz * us / 1e6
+                        lost = 5 if asynchronous else 0      # RM 17.3.9: up to the first five edges (2-3 seen)
+                        results[name] = dict(count=n, want=round(want, 1), probe_hz=made.hz)
+                        slack = 2 + want * 0.002
+                        if not ok or not want - lost - slack <= n <= want + slack:
+                            wrong.append(f"{name}: counted {n}, want {want:.1f}" + (f" less up to {lost}" if lost else ""))
+            pwm.start(0, 1000, 0)
+            with ws_run.section(2, "wake from lightSleep()"):
+                m = until(dut, ws_run, wait, f"lptwake {timer} 200", rb"LPTWAKE (\d) (\d+) (\d+) (\d+)", 5)
+                ok, cause, slept, n = (int(v) for v in m.groups())
+                lsi = results.get("lsi", {})
+                want = 200 * lsi.get("nominal", 1) / lsi.get("measured", 1) if lsi.get("measured") else 200
+                results["wake"] = dict(cause=cause, slept_ms=slept, periods=n, want_ms=round(want, 1))
+                if not ok or cause != 4 or abs(slept - want) > want * 0.1 + 5:
+                    wrong.append(f"wake: cause {cause} (4 the EXTI line), slept {slept} ms, want {want:.0f}")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [line], rate=1_000_000, steps=steps)
+    finally:
+        pwm.stop(0)
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
 @pytest.mark.parametrize("feature", ["can", "rs485", "qspi"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""
