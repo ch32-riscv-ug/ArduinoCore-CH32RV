@@ -1169,9 +1169,11 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the pad's alternate-function number.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 66
+#define CH32RV_TIMER_PAD_COUNT 73
 #define CH32RV_TIMER_PADS { \
     { PA0, 2, 0x01, 1 }, \
+    { PA0, 1, 0x30, 0 }, \
+    { PA0, 2, 0x30, 1 }, \
     { PA1, 2, 0x02, 1 }, \
     { PA2, 2, 0x03, 1 }, \
     { PA3, 2, 0x04, 1 }, \
@@ -1183,12 +1185,14 @@ static const uint8_t SS = PIN_SPI_SS;
     { PA9, 1, 0x02, 0 }, \
     { PA10, 1, 0x03, 0 }, \
     { PA11, 1, 0x04, 0 }, \
+    { PA12, 1, 0x30, 0 }, \
     { PA13, 2, 0x03, 1 }, \
     { PA13, 1, 0x11, 0 }, \
     { PA14, 2, 0x04, 1 }, \
     { PA14, 1, 0x12, 0 }, \
     { PA15, 2, 0x01, 1 }, \
     { PA15, 1, 0x13, 0 }, \
+    { PA15, 2, 0x30, 1 }, \
     { PB0, 3, 0x03, 1 }, \
     { PB0, 1, 0x12, 0 }, \
     { PB1, 3, 0x04, 1 }, \
@@ -1225,10 +1229,13 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC11, 1, 0x02, 0 }, \
     { PC12, 1, 0x03, 0 }, \
     { PC13, 1, 0x04, 0 }, \
+    { PD2, 3, 0x30, 1 }, \
     { PD12, 4, 0x01, 1 }, \
     { PD13, 4, 0x02, 1 }, \
     { PD14, 4, 0x03, 1 }, \
     { PD15, 4, 0x04, 1 }, \
+    { PE0, 4, 0x30, 1 }, \
+    { PE7, 1, 0x30, 0 }, \
     { PE8, 1, 0x11, 0 }, \
     { PE9, 1, 0x01, 0 }, \
     { PE10, 1, 0x12, 0 }, \

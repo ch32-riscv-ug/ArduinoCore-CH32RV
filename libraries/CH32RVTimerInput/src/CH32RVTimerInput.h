@@ -157,9 +157,11 @@ private:
 /* Pulses counted by a timer: the edges of a signal on channel 1 or 2 clock
  * the counter itself (the timer's external clock mode 1), so no interrupt
  * runs per edge and pulses come as fast as the timer's clock can sample
- * them (about half of it). count() is 64 bits: the overflow is carried by the
- * update interrupt, as CH32RVEncoder's. Count over a known time for a
- * frequency. RISING or FALLING; CHANGE (both edges) on channel 1 only. */
+ * them (about half of it). On a pad that is no free timer's channel 1 or 2
+ * but a timer's ETR, the ETR clocks it (external clock mode 2: RISING or
+ * FALLING). count() is 64 bits: the overflow is carried by the update
+ * interrupt, as CH32RVEncoder's. Count over a known time for a frequency.
+ * RISING or FALLING; CHANGE (both edges) on channel 1 only. */
 class CH32RVPulseCounter {
 public:
     bool begin(int pin, int edge = RISING, uint8_t mode = INPUT);

@@ -95,7 +95,7 @@ The timer runs in encoder mode. The names are ESP32Encoder's.
 
 ```cpp
 CH32RVPulseCounter pulses;
-pulses.begin(PA0);                 // a channel 1 or 2 pad; RISING (default), FALLING, CHANGE (channel 1 only)
+pulses.begin(PA0);                 // a channel 1 or 2 pad, or an ETR pad; RISING (default), FALLING, CHANGE (channel 1 only)
 pulses.clear();
 delay(1000);
 uint64_t hz = pulses.count();      // counted in a second
@@ -103,9 +103,11 @@ uint64_t hz = pulses.count();      // counted in a second
 
 The signal's edges clock the timer's counter itself (external clock mode 1: TI1FP1, TI2FP2 or TI1F_ED), so no
 interrupt runs per edge and pulses up to about half the timer's clock are counted. `count()` is 64 bits; the
-counter's overflow is carried by the update interrupt, as the encoder's. `setFilter()` drops short pulses. The ETR
-pad is not usable yet (the core's pad table has no ETR). Seen counting the probe's 20 kHz within 1 % over 200 ms on
-V203, V205 and H417 (2026-11-18, signals::test_pulse_counter).
+counter's overflow is carried by the update interrupt, as the encoder's. `setFilter()` drops short pulses. On a pad
+that is no free timer's channel 1 or 2 but a timer's ETR (the variant's `CH32RV_TIMER_PADS`, role ETR), the ETR clocks
+the counter instead (external clock mode 2; RISING or FALLING) and the timer's channels stay free. Seen counting the
+probe's 20 kHz within 1 % over 200 ms on V203, V205 and H417 (2026-11-18, signals::test_pulse_counter), and on an ETR
+pad on H417 (PD5, TIM11) and X035 (PA2, TIM2) (2026-11-23, signals::test_pulse_counter_etr).
 
 ## CH32RVInputCapture
 

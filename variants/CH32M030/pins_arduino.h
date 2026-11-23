@@ -529,17 +529,23 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the value of the timer's AFIO remap field.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 91
+#define CH32RV_TIMER_PAD_COUNT 105
 #define CH32RV_TIMER_PADS { \
     { PA0, 1, 0x03, 3 }, \
     { PA0, 1, 0x03, 4 }, \
     { PA1, 1, 0x04, 4 }, \
     { PA2, 3, 0x01, 3 }, \
+    { PA2, 3, 0x30, 3 }, \
     { PA3, 2, 0x01, 1 }, \
+    { PA3, 2, 0x30, 1 }, \
     { PA4, 2, 0x04, 0 }, \
     { PA4, 2, 0x12, 0 }, \
     { PA4, 3, 0x11, 3 }, \
+    { PA4, 1, 0x30, 2 }, \
+    { PA4, 1, 0x30, 3 }, \
+    { PA4, 1, 0x30, 4 }, \
     { PA5, 2, 0x01, 0 }, \
+    { PA5, 2, 0x30, 0 }, \
     { PA6, 2, 0x02, 0 }, \
     { PA7, 2, 0x03, 0 }, \
     { PA7, 2, 0x11, 0 }, \
@@ -560,6 +566,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB2, 3, 0x02, 1 }, \
     { PB2, 2, 0x12, 1 }, \
     { PB2, 2, 0x12, 3 }, \
+    { PB2, 3, 0x30, 2 }, \
     { PB3, 3, 0x12, 0 }, \
     { PB3, 3, 0x02, 2 }, \
     { PB3, 3, 0x12, 1 }, \
@@ -567,6 +574,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB5, 2, 0x01, 3 }, \
     { PB5, 3, 0x02, 3 }, \
     { PB5, 3, 0x12, 2 }, \
+    { PB5, 2, 0x30, 3 }, \
     { PB6, 2, 0x02, 3 }, \
     { PB6, 3, 0x12, 3 }, \
     { PB8, 1, 0x11, 0 }, \
@@ -596,6 +604,8 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB13, 1, 0x03, 4 }, \
     { PB13, 2, 0x01, 2 }, \
     { PB13, 3, 0x01, 4 }, \
+    { PB13, 2, 0x30, 2 }, \
+    { PB13, 3, 0x30, 4 }, \
     { PB14, 2, 0x04, 2 }, \
     { PB14, 1, 0x13, 2 }, \
     { PB14, 2, 0x12, 2 }, \
@@ -606,13 +616,17 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB15, 3, 0x02, 4 }, \
     { PC0, 1, 0x04, 0 }, \
     { PC0, 3, 0x01, 0 }, \
+    { PC0, 3, 0x30, 0 }, \
     { PC0, 3, 0x01, 1 }, \
     { PC0, 1, 0x13, 3 }, \
     { PC0, 1, 0x13, 4 }, \
+    { PC0, 3, 0x30, 1 }, \
     { PC1, 3, 0x02, 0 }, \
+    { PC1, 1, 0x30, 0 }, \
     { PC1, 1, 0x12, 3 }, \
     { PC1, 1, 0x12, 4 }, \
     { PC1, 3, 0x11, 1 }, \
+    { PC1, 1, 0x30, 1 }, \
     { PC2, 1, 0x04, 2 }, \
     { PC2, 1, 0x11, 3 }, \
     { PC2, 1, 0x11, 4 }, \

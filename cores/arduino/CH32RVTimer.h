@@ -142,11 +142,12 @@ void ch32rv_timer_detach_channel_interrupt(const CH32RVTimerLease *lease);
 #define CH32RV_TIMER_PAD_CH    0u   /* a capture / compare channel */
 #define CH32RV_TIMER_PAD_CHN   1u   /* a complementary output (advanced timers) */
 #define CH32RV_TIMER_PAD_BKIN  2u   /* the break input (advanced timers), channel 0 */
+#define CH32RV_TIMER_PAD_ETR   3u   /* the external trigger input, channel 0 */
 
 typedef struct {
     uint8_t pin;        /* the pad (port-encoded pin number) */
     uint8_t timer;
-    uint8_t channel;    /* 1..4; 0 for the break input */
+    uint8_t channel;    /* 1..4; 0 for the break input and the ETR */
     uint8_t role;       /* CH32RV_TIMER_PAD_* */
     uint8_t route;      /* the timer's remap value, or the pad's function */
 } CH32RVTimerPad;

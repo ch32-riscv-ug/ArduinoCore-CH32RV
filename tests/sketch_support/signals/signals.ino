@@ -40,9 +40,10 @@
  * not list):
  *   has                    HAS <bits>: 1 timer outputs, 2 edge capture, 4
  *                          Ticker and the timer API
- *   pad <pin> <n>          PAD <timer> <channel> <role> <route> <pwm>: the pad's
- *                          n-th way to a timer (CH32RVTimer.h; role 0 CHx, 1
- *                          CHxN, 2 BKIN; pwm 1 where analogWrite() may take the
+ *   pad <pin> <n> [<roles>] PAD <timer> <channel> <role> <route> <pwm>: the pad's
+ *                          n-th way to a timer among roles (a mask, 7 by default:
+ *                          not the ETR) (CH32RVTimer.h; role 0 CHx, 1 CHxN, 2 BKIN,
+ *                          3 ETR; pwm 1 where analogWrite() may take the
  *                          timer, not tone()'s / Servo's TIM4 / TIM5), 0 0 0 0 0
  *                          past the last
  *   route <timer>          ROUTE <value>: the timer's AFIO remap now
@@ -189,10 +190,10 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         has |= HAS_TICKER;
 #endif
         say("HAS", 1, has);
-    } else if (!strcmp(argv[0], "pad") && argc == 3) {
+    } else if (!strcmp(argv[0], "pad") && (argc == 3 || argc == 4)) {
         /* The pad's n-th way to a timer: timer, channel, role, route. */
         CH32RVTimerPad p = {};
-        const bool found = digitalPinIsValid(pin) && ch32rv_timer_pad_find(pin, 7, (uint8_t)a2, &p);
+        const bool found = digitalPinIsValid(pin) && ch32rv_timer_pad_find(pin, argc == 4 ? (uint8_t)a3 : 7, (uint8_t)a2, &p);
         CONSOLE.print("PAD ");
         CONSOLE.print(found ? p.timer : 0);
         CONSOLE.print(' ');

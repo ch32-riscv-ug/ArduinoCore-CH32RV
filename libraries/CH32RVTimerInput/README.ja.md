@@ -89,7 +89,7 @@ void loop() {
 
 ```cpp
 CH32RVPulseCounter pulses;
-pulses.begin(PA0);                 // チャネル 1 か 2 の端子。RISING（既定）、FALLING、CHANGE（チャネル 1 だけ）
+pulses.begin(PA0);                 // チャネル 1 か 2、または ETR の端子。RISING（既定）、FALLING、CHANGE（チャネル 1 だけ）
 pulses.clear();
 delay(1000);
 uint64_t hz = pulses.count();      // 1 秒に数えた数
@@ -97,9 +97,11 @@ uint64_t hz = pulses.count();      // 1 秒に数えた数
 
 信号の縁でタイマーのカウンタそのものを進めます（外部クロックモード 1、TI1FP1 / TI2FP2 / TI1F_ED）。縁ごとに割り込みは
 動かないので、タイマーのクロックの半分ほどまでのパルスを数えられます。`count()` は 64 ビットで、カウンタのあふれは
-エンコーダと同じく更新割り込みで足します。`setFilter()` で短いパルスを捨てられます。ETR の端子はまだ使えません
-（コアの端子の表に ETR が無い）。V203・V205・H417 で、プローブの 20 kHz を 200 ms に 1 % 以内で数えることを確かめました
-（2026-11-18、signals::test_pulse_counter）。
+エンコーダと同じく更新割り込みで足します。`setFilter()` で短いパルスを捨てられます。空いているタイマーのチャネル 1・2 の
+端子でなく、あるタイマーの ETR の端子（variant の `CH32RV_TIMER_PADS` の役割 ETR）なら、ETR でカウンタを進めます（外部
+クロックモード 2。RISING か FALLING）。そのタイマーのチャネルは空いたままです。V203・V205・H417 で、プローブの 20 kHz を
+200 ms に 1 % 以内で数えることを確かめました（2026-11-18、signals::test_pulse_counter）。ETR の端子でも H417（PD5、TIM11）と
+X035（PA2、TIM2）で確かめました（2026-11-23、signals::test_pulse_counter_etr）。
 
 ## CH32RVInputCapture
 

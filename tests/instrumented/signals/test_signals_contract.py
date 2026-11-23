@@ -436,7 +436,7 @@ def test_rgb_led_hardware(dut, oep_host, ws_run):
 # ---- the timer features (2026-11-17) ----
 
 HAS_TIMER_OUTPUT, HAS_EDGE_CAPTURE, HAS_TICKER = 1, 2, 4
-ROLE_CH, ROLE_CHN, ROLE_BKIN = 0, 1, 2
+ROLE_CH, ROLE_CHN, ROLE_BKIN, ROLE_ETR = 0, 1, 2, 3
 
 
 def has(dut, bit, what):
@@ -445,14 +445,15 @@ def has(dut, bit, what):
         pytest.skip(f"{what} is not in this build of the signals sketch (V003's 16 KB)")
 
 
-def pads(dut, pin, pwm=False):
+def pads(dut, pin, pwm=False, roles=None):
     """The pad's ways to a timer as the DUT's table lists them (the order analogWrite() tries them):
     [(timer, channel, role, route)]. pwm: only the timers analogWrite() may take (not tone()'s / Servo's TIM4 /
-    TIM5, CH32RV_PWM_TIMER_MASK)."""
+    TIM5, CH32RV_PWM_TIMER_MASK). roles: a mask of ROLE_* bits (the DUT's default: CHx, CHxN, BKIN)."""
     out = []
     for n in range(24):
         timer, channel, role, route, may = (int(g) for g in ask(
-            dut, f"pad {pin} {n}", rb"PAD (\d+) (\d+) (\d+) (\d+) (\d)").groups())
+            dut, f"pad {pin} {n}" + (f" {roles}" if roles is not None else ""),
+            rb"PAD (\d+) (\d+) (\d+) (\d+) (\d)").groups())
         if not timer:
             break
         if may or not pwm:
@@ -1122,6 +1123,41 @@ def test_pulse_counter(dut, oep_host, record_property):
             want = made.hz * per * us / 1e6
             record_property(f"{name}_count", n)
             assert abs(n - want) <= want * 0.02 + 1, f"{name}: {n} counts in {us} us, want {want:.0f}"
+    finally:
+        release_pwm(oep_host, pwm)
+
+
+def test_pulse_counter_etr(dut, oep_host, record_property):
+    """CH32RVPulseCounter on a timer's ETR (external clock mode 2): a labelled line that is a timer's ETR pad and no
+    timer's channel 1 or 2 pad, the probe's PWM (20 kHz) on it. Over 200 ms of the DUT's micros(), RISING and FALLING
+    count the probe's frequency within 2 % and a count."""
+    from oep_client.fixture import Pwm
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_EDGE_CAPTURE, "CH32RVPulseCounter")
+    line = etr = None
+    for candidate in lines:
+        etr = pads(dut, candidate["pin"], roles=1 << ROLE_ETR)
+        if etr and not any(w[2] == ROLE_CH and w[1] in (1, 2) for w in pads(dut, candidate["pin"])):
+            line = candidate
+            break
+    if line is None:
+        pytest.skip("no labelled line is a timer's ETR pad and no timer's channel 1 or 2 pad")
+    record_property("line", f"{line['pad']} " + " ".join(f"TIM{t} ETR route {r}" for t, _, _, r in etr))
+    pin = line["pin"]
+    pwm = probe_pwm(oep_host, line)
+    try:
+        made = pwm.start(0, 20000, round(0.5 * Pwm.FULL))
+        record_property("made_hz", round(made.hz, 3))
+        for edge, name in ((1, "rising"), (2, "falling")):
+            m = ask(dut, f"pcount {pin} {edge} 200", rb"PCOUNT (\d) (\d+) (\d+)", timeout=5)
+            assert m.group(1) == b"1", f"{name}: begin() refused {line['pad']}"
+            n, us = int(m.group(2)), int(m.group(3))
+            want = made.hz * us / 1e6
+            record_property(f"{name}_count", n)
+            assert abs(n - want) <= want * 0.02 + 1, f"{name}: {n} counts in {us} us, want {want:.0f}"
+        assert ask(dut, f"pcount {pin} 3 10", rb"PCOUNT (\d) \d+ \d+").group(1) == b"0", "CHANGE begun on an ETR pad"
     finally:
         release_pwm(oep_host, pwm)
 

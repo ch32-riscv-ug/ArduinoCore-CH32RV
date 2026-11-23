@@ -364,6 +364,12 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pulse-counter-etr"    # CH32RVPulseCounter on a timer's ETR pad (external clock mode 2)
+test = "signals::test_pulse_counter_etr"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "timer-pulse-in"       # timerPulseIn() (CH32RVTimerInput): pulseIn() by a timer's capture, opt-in
 test = "signals::test_timer_pulse_in"
 scope = "series"

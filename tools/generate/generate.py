@@ -4239,8 +4239,8 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
 # ch32rv_timer_pad_find): a channel (CH<k>, CH<k>_ETR counts as CH<k>), its
 # complementary output (CH<k>N) and the break input (BKIN; BK on the per-pin
 # families). ETR alone and BKIN2 are not listed: nothing in the core drives them.
-TIMER_PAD_ROLE_RE = re.compile(r"^(?:CH(\d)(N)?(?:_ETR)?|(BKIN|BK))$")
-TIMER_PAD_CH, TIMER_PAD_CHN, TIMER_PAD_BKIN = 0, 1, 2
+TIMER_PAD_ROLE_RE = re.compile(r"^(?:CH(\d)(N)?(_ETR)?|(BKIN|BK)|(ETR))$")
+TIMER_PAD_CH, TIMER_PAD_CHN, TIMER_PAD_BKIN, TIMER_PAD_ETR = 0, 1, 2, 3
 
 
 # Where device-data's timer routes are wrong, measured and checked against the
@@ -4254,7 +4254,8 @@ TIMER_ROUTE_FIXES: dict = {}
 
 def load_timer_pads(tables: pathlib.Path) -> dict:
     """part -> {((port, bit), timer, channel, role, route)}, every route as
-    pinout.csv names it (default, remap-N, af-N). channel is 0 for BKIN."""
+    pinout.csv names it (default, remap-N, af-N). channel is 0 for BKIN and
+    ETR; a pad named CHx_ETR is both its channel and the ETR."""
     _, functions = load_pin_functions(tables)
     out: dict = {}
     for r in functions:
@@ -4265,8 +4266,10 @@ def load_timer_pads(tables: pathlib.Path) -> dict:
         timer = int(pm_.group(1))
         if timer not in PWM_TIMERS:
             continue
-        if rm_.group(3):
+        if rm_.group(4):
             channel, role = 0, TIMER_PAD_BKIN
+        elif rm_.group(5):
+            channel, role = 0, TIMER_PAD_ETR
         else:
             channel = int(rm_.group(1))
             role = TIMER_PAD_CHN if rm_.group(2) else TIMER_PAD_CH
@@ -4285,6 +4288,8 @@ def load_timer_pads(tables: pathlib.Path) -> dict:
             continue
         out.setdefault(r["part_number"], set()).add(
             (key, timer, channel, role, r["route"]))
+        if rm_.group(3):
+            out[r["part_number"]].add((key, timer, 0, TIMER_PAD_ETR, r["route"]))
         if fixes is not None and role == TIMER_PAD_CH:
             for route in fixes.get((key, channel), ()):
                 out[r["part_number"]].add((key, timer, channel, role, route))
@@ -4410,7 +4415,7 @@ def timer_pad_block(series: str, parts: list, union: list, timer_pads: dict,
                 continue
             if role == TIMER_PAD_BKIN and cap["kind"] != "advanced":
                 continue
-            if role != TIMER_PAD_BKIN and channel > cap["channels"]:
+            if role in (TIMER_PAD_CH, TIMER_PAD_CHN) and channel > cap["channels"]:
                 continue
             if not per_pin and value and (series, timer) not in timer_remaps:
                 continue          # a remap the core has no field for

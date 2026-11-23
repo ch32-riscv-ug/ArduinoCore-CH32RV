@@ -1386,11 +1386,13 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the pad's alternate-function number.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 104
+#define CH32RV_TIMER_PAD_COUNT 117
 #define CH32RV_TIMER_PADS { \
     { PA0, 2, 0x01, 1 }, \
     { PA0, 5, 0x01, 2 }, \
     { PA0, 9, 0x01, 6 }, \
+    { PA0, 2, 0x30, 1 }, \
+    { PA0, 8, 0x30, 3 }, \
     { PA1, 2, 0x02, 1 }, \
     { PA1, 5, 0x02, 2 }, \
     { PA1, 9, 0x02, 6 }, \
@@ -1402,8 +1404,12 @@ static const uint8_t SS = PIN_SPI_SS;
     { PA3, 9, 0x04, 4 }, \
     { PA3, 10, 0x03, 8 }, \
     { PA4, 10, 0x04, 9 }, \
+    { PA4, 5, 0x30, 2 }, \
+    { PA4, 9, 0x30, 4 }, \
     { PA5, 2, 0x01, 1 }, \
     { PA5, 8, 0x11, 3 }, \
+    { PA5, 2, 0x30, 1 }, \
+    { PA5, 10, 0x30, 9 }, \
     { PA6, 3, 0x01, 2 }, \
     { PA6, 10, 0x01, 9 }, \
     { PA6, 1, 0x20, 1 }, \
@@ -1415,17 +1421,22 @@ static const uint8_t SS = PIN_SPI_SS;
     { PA9, 1, 0x02, 1 }, \
     { PA10, 1, 0x03, 1 }, \
     { PA11, 1, 0x04, 1 }, \
+    { PA12, 1, 0x30, 1 }, \
     { PA15, 2, 0x01, 1 }, \
+    { PA15, 2, 0x30, 1 }, \
     { PB0, 3, 0x03, 2 }, \
     { PB0, 5, 0x04, 4 }, \
     { PB0, 1, 0x12, 1 }, \
     { PB0, 8, 0x12, 3 }, \
+    { PB0, 12, 0x30, 13 }, \
     { PB1, 3, 0x04, 2 }, \
     { PB1, 12, 0x01, 5 }, \
     { PB1, 1, 0x13, 1 }, \
     { PB1, 8, 0x13, 3 }, \
     { PB3, 2, 0x02, 1 }, \
+    { PB3, 12, 0x30, 14 }, \
     { PB4, 3, 0x01, 2 }, \
+    { PB4, 4, 0x30, 10 }, \
     { PB6, 4, 0x01, 2 }, \
     { PB6, 10, 0x01, 0 }, \
     { PB7, 4, 0x02, 2 }, \
@@ -1442,6 +1453,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB12, 1, 0x20, 1 }, \
     { PB12, 8, 0x20, 2 }, \
     { PB13, 1, 0x11, 1 }, \
+    { PB13, 9, 0x30, 4 }, \
     { PB14, 9, 0x01, 2 }, \
     { PB14, 1, 0x12, 1 }, \
     { PB14, 8, 0x12, 3 }, \
@@ -1461,6 +1473,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC7, 8, 0x02, 3 }, \
     { PC8, 3, 0x03, 2 }, \
     { PC8, 8, 0x03, 3 }, \
+    { PC8, 9, 0x30, 6 }, \
     { PC9, 3, 0x04, 2 }, \
     { PC9, 8, 0x04, 3 }, \
     { PC9, 9, 0x01, 6 }, \

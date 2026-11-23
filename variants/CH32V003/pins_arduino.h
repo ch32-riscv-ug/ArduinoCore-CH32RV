@@ -401,7 +401,7 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the value of the timer's AFIO remap field.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 48
+#define CH32RV_TIMER_PAD_COUNT 56
 #define CH32RV_TIMER_PADS { \
     { PA1, 1, 0x02, 0 }, \
     { PA1, 1, 0x02, 2 }, \
@@ -415,9 +415,12 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC1, 2, 0x04, 1 }, \
     { PC1, 1, 0x20, 1 }, \
     { PC1, 1, 0x20, 3 }, \
+    { PC1, 2, 0x30, 2 }, \
+    { PC1, 2, 0x30, 3 }, \
     { PC2, 1, 0x20, 0 }, \
     { PC2, 2, 0x02, 1 }, \
     { PC2, 1, 0x20, 2 }, \
+    { PC2, 1, 0x30, 3 }, \
     { PC3, 1, 0x03, 0 }, \
     { PC3, 1, 0x03, 2 }, \
     { PC3, 1, 0x11, 1 }, \
@@ -426,8 +429,11 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC4, 1, 0x01, 3 }, \
     { PC4, 1, 0x04, 2 }, \
     { PC4, 1, 0x12, 1 }, \
+    { PC5, 1, 0x30, 0 }, \
     { PC5, 1, 0x03, 3 }, \
     { PC5, 2, 0x01, 1 }, \
+    { PC5, 1, 0x30, 1 }, \
+    { PC5, 2, 0x30, 1 }, \
     { PC6, 1, 0x01, 1 }, \
     { PC6, 1, 0x13, 3 }, \
     { PC7, 1, 0x02, 1 }, \
@@ -446,7 +452,9 @@ static const uint8_t SS = PIN_SPI_SS;
     { PD3, 1, 0x04, 1 }, \
     { PD3, 2, 0x02, 2 }, \
     { PD4, 2, 0x01, 0 }, \
+    { PD4, 2, 0x30, 0 }, \
     { PD4, 1, 0x04, 3 }, \
+    { PD4, 1, 0x30, 2 }, \
     { PD5, 2, 0x04, 3 }, \
     { PD6, 2, 0x03, 3 }, \
     { PD7, 2, 0x04, 0 }, \

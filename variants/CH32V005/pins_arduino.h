@@ -514,13 +514,14 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the value of the timer's AFIO remap field.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 106
+#define CH32RV_TIMER_PAD_COUNT 121
 #define CH32RV_TIMER_PADS { \
     { PA0, 1, 0x01, 9 }, \
     { PA0, 2, 0x01, 5 }, \
     { PA0, 1, 0x11, 4 }, \
     { PA0, 1, 0x11, 5 }, \
     { PA0, 1, 0x11, 6 }, \
+    { PA0, 2, 0x30, 5 }, \
     { PA1, 1, 0x02, 0 }, \
     { PA1, 1, 0x02, 1 }, \
     { PA1, 1, 0x02, 9 }, \
@@ -551,6 +552,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB1, 1, 0x03, 6 }, \
     { PB1, 2, 0x01, 6 }, \
     { PB1, 1, 0x13, 8 }, \
+    { PB1, 2, 0x30, 6 }, \
     { PB3, 1, 0x20, 4 }, \
     { PB3, 1, 0x20, 5 }, \
     { PC0, 2, 0x03, 0 }, \
@@ -559,6 +561,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC0, 2, 0x03, 1 }, \
     { PC0, 1, 0x11, 7 }, \
     { PC0, 1, 0x11, 9 }, \
+    { PC0, 2, 0x30, 4 }, \
     { PC1, 2, 0x01, 1 }, \
     { PC1, 2, 0x01, 3 }, \
     { PC1, 2, 0x02, 4 }, \
@@ -567,11 +570,14 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC1, 1, 0x12, 9 }, \
     { PC1, 1, 0x20, 2 }, \
     { PC1, 1, 0x20, 3 }, \
+    { PC1, 2, 0x30, 1 }, \
+    { PC1, 2, 0x30, 3 }, \
     { PC2, 1, 0x20, 0 }, \
     { PC2, 2, 0x02, 2 }, \
     { PC2, 1, 0x13, 7 }, \
     { PC2, 1, 0x13, 9 }, \
     { PC2, 1, 0x20, 1 }, \
+    { PC2, 1, 0x30, 3 }, \
     { PC3, 1, 0x03, 0 }, \
     { PC3, 1, 0x03, 1 }, \
     { PC3, 1, 0x03, 5 }, \
@@ -584,10 +590,13 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC4, 1, 0x01, 8 }, \
     { PC4, 1, 0x04, 1 }, \
     { PC4, 1, 0x12, 2 }, \
+    { PC5, 1, 0x30, 0 }, \
     { PC5, 1, 0x02, 7 }, \
     { PC5, 1, 0x02, 8 }, \
     { PC5, 1, 0x03, 3 }, \
     { PC5, 2, 0x01, 2 }, \
+    { PC5, 1, 0x30, 2 }, \
+    { PC5, 2, 0x30, 2 }, \
     { PC6, 1, 0x01, 2 }, \
     { PC6, 1, 0x03, 7 }, \
     { PC6, 1, 0x03, 8 }, \
@@ -615,9 +624,15 @@ static const uint8_t SS = PIN_SPI_SS;
     { PD3, 1, 0x04, 2 }, \
     { PD3, 2, 0x01, 7 }, \
     { PD3, 2, 0x02, 1 }, \
+    { PD3, 2, 0x30, 7 }, \
     { PD4, 2, 0x01, 0 }, \
+    { PD4, 2, 0x30, 0 }, \
     { PD4, 1, 0x04, 3 }, \
     { PD4, 2, 0x02, 7 }, \
+    { PD4, 1, 0x30, 1 }, \
+    { PD4, 1, 0x30, 4 }, \
+    { PD4, 1, 0x30, 5 }, \
+    { PD4, 1, 0x30, 6 }, \
     { PD5, 2, 0x04, 3 }, \
     { PD6, 2, 0x03, 3 }, \
     { PD7, 2, 0x04, 0 }, \

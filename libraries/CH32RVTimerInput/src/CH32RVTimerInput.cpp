@@ -19,6 +19,8 @@ constexpr uint16_t CC1E = 0x0001, CC1P = 0x0002, CC2E = 0x0010, CC2P = 0x0020;
 /* SMCFGR: TS (the trigger) and SMS (the slave mode). */
 constexpr uint16_t TS_TI1F_ED = 4u << 4, TS_TI1FP1 = 5u << 4, TS_TI2FP2 = 6u << 4;
 constexpr uint16_t SMS_EXTERNAL1 = 7;
+constexpr uint16_t SMCFGR_ECE = 1u << 14, SMCFGR_ETP = 1u << 15;   /* external clock mode 2; ETR inverted */
+constexpr uint16_t ETF_SHIFT = 8;
 constexpr uint16_t SMS_ENCODER_TI2 = 1, SMS_ENCODER_TI1 = 2, SMS_ENCODER_BOTH = 3, SMS_RESET = 4;
 
 /* The n-th way `pin` reaches channel 1 or 2 of a timer, on any route. */
@@ -403,6 +405,13 @@ bool CH32RVPulseCounter::begin(int pin, int edge, uint8_t mode)
             return true;
         }
     }
+    /* Not a channel 1 / 2 pad of a free timer: a timer's ETR (one edge only) */
+    for (uint8_t i = 0;
+         edge != CHANGE && ch32rv_timer_pad_find((uint32_t)pin, CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_ETR), i, &pad); i++) {
+        if (ch32rv_timer_capability_for(pad.timer) && begin(pad, edge, mode)) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -426,9 +435,16 @@ bool CH32RVPulseCounter::begin(const CH32RVTimerPad &pad, int edge, uint8_t mode
      * counter's clock. */
     const bool one = pad.channel == 1;
     CH32RV_TIM_CCER(_base) = 0;
-    CH32RV_TIM_CHCTLR1(_base) = (uint16_t)(one ? (CC1S_TI1 | (_filter << 4)) : (CC2S_TI2 | (_filter << 12)));
-    CH32RV_TIM_CCER(_base) = (uint16_t)(edge == FALLING ? (one ? CC1P : CC2P) : 0u);
-    CH32RV_TIM_SMCFGR(_base) = (uint16_t)((edge == CHANGE ? TS_TI1F_ED : one ? TS_TI1FP1 : TS_TI2FP2) | SMS_EXTERNAL1);
+    if (pad.role == CH32RV_TIMER_PAD_ETR) {
+        /* External clock mode 2: ETR (inverted for the falling edge), its
+         * filter, no prescaler, clocks the counter; the channels stay free. */
+        CH32RV_TIM_CHCTLR1(_base) = 0;
+        CH32RV_TIM_SMCFGR(_base) = (uint16_t)(SMCFGR_ECE | (edge == FALLING ? SMCFGR_ETP : 0u) | (_filter << ETF_SHIFT));
+    } else {
+        CH32RV_TIM_CHCTLR1(_base) = (uint16_t)(one ? (CC1S_TI1 | (_filter << 4)) : (CC2S_TI2 | (_filter << 12)));
+        CH32RV_TIM_CCER(_base) = (uint16_t)(edge == FALLING ? (one ? CC1P : CC2P) : 0u);
+        CH32RV_TIM_SMCFGR(_base) = (uint16_t)((edge == CHANGE ? TS_TI1F_ED : one ? TS_TI1FP1 : TS_TI2FP2) | SMS_EXTERNAL1);
+    }
     if (_wide) {
         CH32RV_TIM_CNT32(_base) = 0;
     } else {
@@ -496,7 +512,13 @@ void CH32RVPulseCounter::clear()
 void CH32RVPulseCounter::setFilter(uint16_t cycles)
 {
     filterFor(cycles, _filter, _ckd);
-    if (ch32rv_timer_lease_valid(&_lease)) {
+    if (!ch32rv_timer_lease_valid(&_lease)) {
+        return;
+    }
+    if (CH32RV_TIM_SMCFGR(_base) & SMCFGR_ECE) {   /* the ETR's filter (ETF) */
+        CH32RV_TIM_SMCFGR(_base) = (uint16_t)((CH32RV_TIM_SMCFGR(_base) & ~(0xFu << ETF_SHIFT)) | (_filter << ETF_SHIFT));
+        CH32RV_TIM_CTLR1(_base) = (uint16_t)((CH32RV_TIM_CTLR1(_base) & ~CKD_MASK) | (_ckd << CKD_SHIFT));
+    } else {
         applyFilter(_base, _filter, _ckd);
     }
 }
