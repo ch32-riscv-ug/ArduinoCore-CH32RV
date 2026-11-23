@@ -109,10 +109,6 @@ def uart_console(case, target):
     lines, pads = target.get("lines") or {}, target.get("pads") or {}
     if case in DMSEQ_CONSOLE_CASES or "tx" not in lines or "rx" not in lines:
         return None
-    # CH32H41x on the V5F (the CPU Core menu's default) hangs under the USART's interrupts - running, no longer
-    # haltable - after a few hundred to a few thousand replies; the V3F and DMSeq do not (TODO, 2026-11-21).
-    if target.get("family", "").startswith("CH32H41") and "core=v3f" not in target.get("fqbn", ""):
-        return None
     ram = places.part_ram(target.get("chip", ""))      # None: a RAM split menu sets it (V30x / V407 / V317: large)
     if ram is not None and ram < UART_CONSOLE_MIN_RAM:
         return None

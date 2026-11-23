@@ -60,7 +60,7 @@
 | V5F が共有 SRAM の同じ語を休みなく回し続けると、V3F がそのバンクから締め出され、チップ全体が止まる | コアの V3F の待ちは WFI（イベント待ち）で待つ（`crt0_ch32.S`） | 2 つのコアの間の待ちで、共有 SRAM のフラグを休みなく回さない。IPC か HSEM を使う |
 | picolibc の malloc には、コアをまたぐ鍵が無い。2 つのコアが同時に確保すると、ヒープが壊れた（2026-11-19） | V5F のビルドでは、malloc / free などを HSEM の鍵で包む（`ch32rv_heap_lock.c`） | 2 つのコアで動的確保を使うときは、コアの malloc を使う（自分のアロケーターを持ち込まない） |
 | I2C の入力クロックは HCLK そのもので分周できない。FREQ の欄の上限（60 MHz）を超える | FREQ を 60 で頭打ちにする | I2C の速さは、規格の上限より遅めに出ることがある（[peripheral-support.ja.md](peripheral-support.ja.md)） |
-| **調査中**：V5F で USART の割り込みが続くと、V5F が固まる。「走っている」状態のまま、デバッガでも止められない。短いコマンドとその返事を続けると、数百〜数千回で起きる。V3F では 15000 回、DMSeq のコンソールでは 10000 回、起きなかった（2026-11-21） | まだ対策は無い | V5F で Serial を多く使うなら、CPU Core を V3F にするか、コンソールを DMSeq / RTT にする（[debug-output.ja.md](debug-output.ja.md)） |
+| **直した**：V5F で USART の割り込みが続くと、V5F が固まった。「走っている」状態のまま、デバッガでも止められない。短いコマンドとその返事を続けると、数十〜数千回で起きた（2026-11-21〜23）。V5F が共有 SRAM のベクタ表・rodata を読み、.bss に書く形で起きた | EVT の V5F と同じ配置にした: ベクタ表・コード・rodata を ITCM、.data・.bss・スタックを DTCM（2026-11-23）。同じイメージで 10000 回 ×2 止まらない。ITCM（128 KB）からあふれる大きいイメージは、あふれた分が共有 SRAM に入る | 大きいイメージで Serial を多く使って固まるなら、CPU Core を V3F にするか、コンソールを DMSeq / RTT にする（[debug-output.ja.md](debug-output.ja.md)） |
 | 評価ボードの PB8 / PB9 は SWD と兼用。VIO18 は起動時 1.2 V | ボードの定義で扱う | [h417-bench.ja.md](h417-bench.ja.md) |
 
 ## CH32X035 / X033

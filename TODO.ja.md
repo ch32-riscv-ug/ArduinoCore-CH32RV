@@ -581,7 +581,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2026-11-20）で止めた相の端子に雑音のパルスと High のままが出て見つかった。V205 と V006 で six_step が通る。
 - [x] periph の test_serial_routes: 経路の端子が 16 本を超えると 1 回の取り込みに入らない（プローブが unsupported で断る）。
   端子が 16 本に収まるまとまりごとに取り込む。V205 に PC3〜PC8 を足して 19 本になって見つかった。V205 で通る。
-- [ ] **CH32H41x の V5F が USART の割り込みで固まる（2026-11-21、コアの不具合）**: コンソールを UART にした signals
+- [x] **CH32H41x の V5F が USART の割り込みで固まる（2026-11-21、コアの不具合）**: コンソールを UART にした signals
   に、短いコマンドを続けて送ると、数百〜数千回で返事の途中で止まる。V5F は「走っている」（dmstatus allrunning）のに
   デバッガで止められない（hart did not halt）。USART1 のレジスタは V3F 側から読めて、STATR 0xC0・CTLR1 0x20AC（TXEIE
   有り）、送信のリングに 3 バイト残ったまま。切り分け（scratch の hammer.py、signals のイメージ、h417qeu6-pico）:
@@ -635,7 +635,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   DMA1 のメモリ間転送（4 通り × 約 5200 回 × 16 KB）、ECDC・GPHA（各約 5 万回）、HSADC 20 Msps（毎秒 4881 個のバッファ全部）、
   USBSS の IN（DTCM から 385 MB/s、共有 SRAM と同じ）がどれも正しく動く。届かない前提で入れかけたバウンスは、DTCM からの
   USBSS を 113 MB/s に落とすだけなので外した。`CH32RV_DMA_MEM` は、タイマーで刻む DMA1 の取り込みが TCM への書き込みで
-  抜けた（docs/h417-capture.ja.md）ことから、ドライバの内部バッファと速く流す例のバッファに付けた。H417 の全 case を流し直し中。
+  抜けた（docs/h417-capture.ja.md）ことから、ドライバの内部バッファと速く流す例のバッファに付けた。H417 の全 case を流し直した（2026-11-22、v5f-dtcm-20261122 と再実行）: console-rtt は RTT の制御ブロックを `CH32RV_DMA_MEM` にして直し（098bc8fc）、残る softspi・wire・analog・usb-ss-iso は既知の項目（softspi のまれな SCK の幅、6-2 の wire、analog の DMSeq の雑音、USBSS の IN の化け）と同じ形。
+  → 2026-11-23 直り切っていなかった: run_hardware の H41x の UART のコンソールを戻して全 case を流すと、signals が返事の途中で
+  止まった（今日の signals のイメージで hammer.py の pad が 162 回、同じ手順で再ビルドしても 22 回）。.bss は DTCM でも、
+  ベクタ表・rodata・コンストラクタの表が共有 SRAM の .image にあった。EVT の V5F（Link_v5f.ld）と同じく、それらも ITCM に
+  置いた（v5f/sections_loadcode.ld。ITCM に入らない分だけ共有 SRAM へ。ベクタ表と表は先頭で、あふれない）: 同じイメージで
+  3000 回 ×3・10000 回 ×2、ヒープに書き続けながら 3000 回 ×3 止まらない。run_hardware は H41x の V5F も UART のコンソール
+  に戻し（DMSeq の雑音が消え analog が通る）、H417 の全 case が 41 PASS、FAIL は既知の wire（6-2）と usb-ss-iso だけ
+  （h417-itcm-full）。ITCM（128 KB）を超える大きいイメージでは、あふれたコードと rodata がまた共有 SRAM に入る。
 - [ ] **softspi の test_shift が、モードの判定だけで落ちる**（V103 は 11-21 の bc で 1 回、V006 は 11-22 に 3 回中 2 回）: バイトは
   全部正しく、WireSkein の判定が mode 0 ではなく 3（cpol 1）。shiftIn() は SCK の High の間に digitalRead() が入り、High と
   Low の長さが近いので、極性の決め方が揺れるとみる。shiftOut / shiftIn は delayMicroseconds() を使わない。試験の側で極性を

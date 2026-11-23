@@ -1,27 +1,33 @@
 /* The CH32H41x V5F layout (CPU Core menu: V5F; CH32RV_RUN_V5F), found ahead of
  * the core's own sections_loadcode.ld through build.ld_layout_flags.
  *
- * Code goes into the V5F's ITCM first (zero-wait, its own bus), and what does
- * not fit there into the shared SRAM image (ld --enable-non-contiguous-regions
- * takes each input section to the first place it fits). Measured on CH32H417
- * (2026-11-11): 64 KB of code ran 2.5 times slower from the shared SRAM than
- * from ITCM once it no longer fitted the 32 KB instruction cache; code that
- * fits the cache runs as fast from either.
+ * As the EVT's V5F layout (EXAM/SRC/Ld/V5F/Link_v5f.ld): the vectors, code
+ * and read-only data in the V5F's ITCM, data, .bss and the stack in its DTCM,
+ * nothing the V5F runs on in the shared SRAM. Whatever does not fit the ITCM
+ * (128 KB) goes into the shared SRAM image after it (ld
+ * --enable-non-contiguous-regions takes each input section to the first
+ * place it fits) - the vectors and constructor tables come first so that
+ * they never do.
  *
- * Data, .bss and the stack go into the V5F's DTCM, as the EVT's V5F layout
- * (EXAM/SRC/Ld/V5F/Link_v5f.ld) puts them. With .bss in the shared SRAM right
- * after the image the V5F stopped within 16-590 replies of a pad test (H417,
- * 2026-11-22, TODO.ja.md); in DTCM it ran 10,000 without a stop. The DTCM
- * starts with the HPE's save area (HW_POPDM_ADDR, 0x200C0000 at reset), left
- * free here.
+ * Why: with the V5F reading its vectors / rodata or writing .bss in the
+ * shared SRAM, a stream of USART interrupts and replies left it running but
+ * no longer haltable, every access stuck, within tens to hundreds of
+ * replies (H417, 2026-11-21..23, TODO.ja.md): .bss in the DTCM (2026-11-22)
+ * made one image run 10,000, the next one (signals, 2026-11-23) stuck at 22
+ * and 162; with the image in the ITCM as well, 10,000 and 3 x 3,000 with
+ * the sketch writing the heap all the while ran without a stop. 64 KB of
+ * code ran 2.5 times slower from the shared SRAM than from ITCM once it no
+ * longer fitted the 32 KB instruction cache (2026-11-11).
  *
- * The heap takes the rest of the shared SRAM, after the image and the
- * CH32RV_DMA_MEM buffers (.bss.ch32rv_dma*, ch32rv_dma_mem.h): every DMA
- * reaches the DTCM too, but writes into it are slower and take its port from
- * the V5F, so buffers that stream stay out of it.
+ * The DTCM starts with the HPE's save area (HW_POPDM_ADDR, 0x200C0000 at
+ * reset), left free here. The heap takes the shared SRAM after the image
+ * and the CH32RV_DMA_MEM buffers (.bss.ch32rv_dma*, ch32rv_dma_mem.h): every
+ * DMA reaches the TCMs too, but writes into them are slower and take their
+ * port from the V5F, so buffers that stream stay out of them.
  *
- * crt0 copies the ITCM part and the DTCM data before it leaves flash. The
- * variant's MEMORY names ITCM and DTCM.
+ * crt0 copies the ITCM part, the image (empty unless the ITCM overflowed)
+ * and the DTCM data before it leaves flash. The variant's MEMORY names ITCM
+ * and DTCM.
  */
 /* __stack_size: platform.txt's --defsym, from the Stack Size menu (boards.txt). */
 PROVIDE( _stack_size = __stack_size );
@@ -45,25 +51,10 @@ SECTIONS
     .itcm :
     {
         PROVIDE(_itcm_vma = .);
-        *(.text*)
-        *(.highcode)
-        *(.highcode.*)
-        . = ALIGN(4);
-        PROVIDE(_itcm_end = .);
-    } >ITCM AT>FLASH
-    PROVIDE(_itcm_lma = LOADADDR(.itcm));
-
-    .image :
-    {
-        PROVIDE(_image_vma = .);
+        /* first what must not spill: the vectors, init, the constructor tables */
         KEEP(*(.vector))
         . = ALIGN(4);
         KEEP(*(SORT_NONE(.init)))
-        *(.text*)                      /* what ITCM could not take */
-        *(.rodata*)
-        *(.gnu.linkonce.t.*)
-        *(.highcode)
-        *(.highcode.*)
         . = ALIGN(4);
         PROVIDE_HIDDEN(__preinit_array_start = .);
         KEEP(*(.preinit_array))
@@ -75,7 +66,26 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_start = .);
         KEEP(*(.fini_array* .dtors*))
         PROVIDE_HIDDEN(__fini_array_end = .);
+        *(.text*)
+        *(.highcode)
+        *(.highcode.*)
+        *(.gnu.linkonce.t.*)
+        *(.rodata*)
+        *(.gnu.linkonce.r.*)
+        *(.srodata*)
         . = ALIGN(4);
+        PROVIDE(_itcm_end = .);
+    } >ITCM AT>FLASH
+    PROVIDE(_itcm_lma = LOADADDR(.itcm));
+
+    .image :
+    {
+        PROVIDE(_image_vma = .);
+        *(.text*)                      /* what ITCM could not take */
+        *(.rodata*)
+        *(.highcode)
+        *(.highcode.*)
+        *(.gnu.linkonce.t.*)
         *(.gnu.linkonce.r.*)
         *(.srodata*)
         . = ALIGN(4);
