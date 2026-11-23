@@ -163,6 +163,14 @@
 #include <time.h>
 
 /* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
+/* setPinSpeed() */
+typedef enum {
+    CH32RV_PIN_SPEED_LOW = 0,
+    CH32RV_PIN_SPEED_MEDIUM,
+    CH32RV_PIN_SPEED_HIGH,
+    CH32RV_PIN_SPEED_VERY_HIGH,
+} CH32RVPinSpeed;
+
 typedef enum {
     CH32RV_RESET_UNKNOWN = 0,
     CH32RV_RESET_POWERON,        /* power came up                        */
@@ -340,6 +348,13 @@ public:
     void disableWakeup();
     CH32RVSleepResult lightSleep();
     void idle(uint32_t ms = 0);
+    /* An output pad's slew rate (no arduino-esp32 counterpart): LOW (2 MHz),
+     * MEDIUM (10 MHz, what pinMode(OUTPUT) sets), HIGH (50 MHz; 30 MHz on
+     * V003 / V00x); X305 / X315 have four steps of their own (VERY_HIGH the
+     * fourth, pads 0-15). After pinMode() or a peripheral's begin(), which
+     * set the pad's mode again. False for an input, or on X033 / X035 and
+     * M030, whose outputs have one speed. */
+    bool setPinSpeed(int pin, CH32RVPinSpeed speed);
     /* Returns only when it cannot sleep: otherwise the chip restarts. */
     CH32RVSleepResult deepSleep();
     /* What ended the last sleep - also across deepSleep()'s restart. */

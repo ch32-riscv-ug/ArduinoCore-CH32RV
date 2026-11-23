@@ -54,7 +54,7 @@
 |---|---|---|---|---|---|
 | GPIO 以外の EXTI の線（PVD・USB 起床など。RTC のアラームは `CH32RV.setAlarm()` が使う） | 全系列 | 実装済み（2026-11-17、ビルドのみ。`CH32RV.attachExtiLine()` / `detachExtiLine()` / `triggerExtiLine()` / `enableExtiLineWakeup()`、線の名前は `CH32RV_EXTI_<NAME>`（internal/ch32rv_exti_line.h。device-data に EXTI の線の表が無いので RM と EVT から手で）。RTC アラームの線は setAlarm() と共有。PVD は `setLowVoltageDetect()` / `isLowVoltage()`、段は生成（operating_conditions の V_PVD）。H41x は PVD の割込みが無く、V004 / V007 / M007 は段のデータが無い。AWU の線は休止のもので出さない） | 単発→自動 | 自己（selfexti: 全線の SWIEVR、RTC アラームの線、その線での起床、PVD の上下）、PVD の本当の低下は可変電源（単発） | PS:37, FC:36 |
 | EXTI のイベントモード（割込みでなく起床イベント） | 全系列 | 2 | 自動 | プローブ | PS:37 |
-| GPIO の速さ・駆動力の設定 | 全系列 | 2 | 自動 | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
+| GPIO の速さ・駆動力の設定 | 全系列 | 2 | 実装済み（2026-11-23、`CH32RV.setPinSpeed(pin, LOW / MEDIUM / HIGH / VERY_HIGH)`: MODE の 2・10・50（30）MHz、X305 / X315 は SPEED レジスタ。X033 / X035・M030 は設定が無く false。selfsys::test_pin_speed（読み戻し）が V003・V203・X315・H417 で通る。立ち上がり時間の測定はしていない） | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
 | PWM の remap 先・CHxN の端子 | TIM のある全系列 | 実装済み（2026-11-17、`analogWrite()` が variant の `CH32RV_TIMER_PADS` のどの端子でも） 実機で通った系列（2026-11-19 の集計）: L103・V003・V006・V103・X035。 | 自動 | プローブ。signals::test_pwm_route、test_pwm_complementary | cores/arduino/wiring_pwm.c, PS:48, FC:70 |
 | TIM8〜10 の PWM の実機 | V30x、V4x7、H41x | 2 | 自動 | プローブ | PS:48 |
 | 既定以外の route の実機（X305/X315 の Wire など） | X305/X315 ほか | 2 | 自動 | プローブ＋プルアップ | TODO:498 |

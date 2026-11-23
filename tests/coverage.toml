@@ -808,6 +808,12 @@ test = "system::test_reset_reasons"
 scope = "series"
 
 [[item]]
+id = "pin-speed"            # CH32RV.setPinSpeed(): each step read back from the pad's bits
+test = "selfsys::test_pin_speed"
+scope = "series"
+kind = "self"
+
+[[item]]
 id = "idle"                 # CH32RV.idle(): the CPU in WFI, a timer's interrupts counted through it
 test = "selfsys::test_idle"
 scope = "series"

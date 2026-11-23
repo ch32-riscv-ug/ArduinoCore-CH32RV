@@ -8,6 +8,9 @@
  *   restart                   RESTARTING, then CH32RV.restart() (the next STARTUP line says why it booted)
  *   wdt <ms>                  wdtEnable(ms), fed every 50 ms for 300 ms: WDT FED; then not fed: WDT LET GO,
  *                             and the watchdog resets the chip (or WDT REFUSED)
+ *   speed                     PA1 an output, then setPinSpeed() low / medium / high / very high, each read
+ *                             back: SPEED <the four results, 1 / 0> <the pad's MODE or SPEED bits after each,
+ *                             hex digits> <setPinSpeed() on an input: 1 / 0>
  *   idle <ms>                 CH32RV.idle(ms) with a hardware timer interrupting every 1 ms (timerBegin /
  *                             timerAlarm): IDLE <alarms counted> <millis() moved> <0 / 1 the timer began>
  *   sleep <ms>                lightSleep() with a timer wake after ms:
@@ -320,6 +323,23 @@ static void reply(char *command)
         CONSOLE.printf("WDT LET GO\r\n");
         for (;;) {
         }
+    } else if (!strcmp(argv[0], "speed")) {
+        const pin_size_t pin = PA1;
+        const uint8_t port = (uint8_t)CH32RV_PIN_PORT(pin), bit = (uint8_t)CH32RV_PIN_BIT(pin);
+        pinMode(pin, OUTPUT);
+        char oks[5] = {0}, bits[5] = {0};
+        for (uint8_t sp = 0; sp < 4; sp++) {
+            oks[sp] = CH32RV.setPinSpeed(pin, (CH32RVPinSpeed)sp) ? '1' : '0';
+#if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
+            const uint32_t v = (CH32RV_REG32(CH32RV_GPIO_BASE(port) + 0x1Cu) >> (bit * 2u)) & 3u;
+#else
+            const uint32_t v = (CH32RV_GPIO_CFGLR(port) >> (bit * 4u)) & 3u;
+#endif
+            bits[sp] = (char)('0' + v);
+        }
+        pinMode(pin, INPUT);
+        const bool onInput = CH32RV.setPinSpeed(pin, CH32RV_PIN_SPEED_HIGH);
+        CONSOLE.printf("SPEED %s %s %d\r\n", oks, bits, onInput ? 1 : 0);
     } else if (!strcmp(argv[0], "idle") && argc == 2) {
         static volatile uint32_t alarms;
         alarms = 0;

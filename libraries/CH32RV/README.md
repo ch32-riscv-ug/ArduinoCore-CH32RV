@@ -174,6 +174,18 @@ CH32RV.idle();      // until the next interrupt
 - On V103 SysTick does not end a WFI, so it waits awake.
 - selfsys::test_idle (a 1 kHz timer interrupt counted through a 200 ms idle) passes on V203, V103 and H417 (2026-11-23).
 
+### Output speed (`setPinSpeed()`)
+
+```cpp
+pinMode(PA1, OUTPUT);
+CH32RV.setPinSpeed(PA1, CH32RV_PIN_SPEED_LOW);   // slower edges (less noise)
+```
+
+- `LOW` (2 MHz), `MEDIUM` (10 MHz, what `pinMode(OUTPUT)` sets), `HIGH` (50 MHz; 30 MHz on V003 / V00x). X305 / X315 have four steps in a SPEED register of their own (up to `VERY_HIGH`, pads 0-15).
+- `pinMode()` and a peripheral's `begin()` set the pad's mode again: call it after them. False for an input.
+- X033 / X035 and M030 cannot choose an output's speed: always false there.
+- selfsys::test_pin_speed (each step read back on PA1) passes on V003, V203, X315 and H417 (2026-11-23).
+
 ### EXTI lines that are not pins, and the PVD
 
 The PVD, the RTC alarm, the USB / ETH / LPTIM / comparator wake-ups: the EXTI lines

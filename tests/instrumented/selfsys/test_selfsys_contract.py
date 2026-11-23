@@ -366,6 +366,20 @@ def test_rtc_alarm(dut, ready, record_property):
 
 
 # Last: a sleep that never ends takes the console with it (the RTC families did, until the alarm-0 fix, 2026-11-12).
+def test_pin_speed(dut, ready, record_property):
+    """CH32RV.setPinSpeed() (2026-11-23) on PA1 made an output: each speed read back from the pad's bits - MODE 10 /
+    01 / 11 / 11 (2 / 10 / 50 MHz) on the MODE families, SPEED 0-3 on X305 / X315 - and refused on an input. X033 /
+    X035 and M030 have no setting: every call false (n/a)."""
+    oks, bits, on_input = ask(dut, "speed", rb"SPEED ([01]{4}) ([0-3]{4}) ([01])").groups()
+    record_property("speed", f"{oks.decode()} {bits.decode()} {on_input.decode()}")
+    if oks == b"0000":
+        pytest.skip("n/a: this family's outputs have one speed")
+    assert oks == b"1111", f"setPinSpeed() results {oks.decode()}"
+    assert bits in (b"2133", b"0123"), f"the pad's bits after low / medium / high / very high: {bits.decode()}"
+    if bits == b"2133":
+        assert on_input == b"0", "setPinSpeed() on an input should be refused"
+
+
 def test_idle(dut, ready, record_property):
     """CH32RV.idle(ms) (2026-11-23): the CPU waits in WFI while a hardware timer interrupts every 1 ms - its alarms
     keep coming (the peripheral and its interrupt run through the idle) and millis() moves as asked: both within 3
