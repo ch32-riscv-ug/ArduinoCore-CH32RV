@@ -5,9 +5,9 @@
  *
  * EspUsbDevice's IP layer (ipConfig(), dhcpServer(), beginNetwork() ...) is
  * declared here and provided by the Network library: a sketch that calls it
- * includes <Network.h> too (CH32V208, V307/V317, V407/V467, H415-H417 - the
- * series the Network library is for). Without beginNetwork() this stays a
- * raw-frame link. */
+ * includes <Network.h> too (every series with a USB device; those without an
+ * Ethernet MAC get lwIP's small profile, NETWORK_LWIP_TINY). Without
+ * beginNetwork() this stays a raw-frame link. */
 #pragma once
 
 class NetworkUsbNcm;

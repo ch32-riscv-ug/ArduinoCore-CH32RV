@@ -198,7 +198,7 @@
 | 外付け PHY（100M/1G、RMII/RGMII）・ギガビット MAC | V307/V317、H417 | 2 | 単発 | 外付け PHY の板、スイッチ | docs/network-stack.ja.md:12, UNUSED:51-52 |
 | V407 の 2 ポート（内蔵 MAC と CH390D） | V407/V467 | 2 | 単発 | CH390D の板 | docs/wch-evt-binary-libraries.ja.md:26, EVT CH32V407 ETH/DualNetPorts |
 | 外付け SPI Ethernet | 全系列 | 2 | 単発 | W5500 などの板 | FC:94 |
-| MAC の無い系列の IP（USB NCM の上） | X035 ほか | 2 | 自動 | PC（NCM） | docs/network-stack.ja.md:15,18 |
+| MAC の無い系列の IP（USB NCM の上） | X035 ほか | 2 | 実装済み（2026-11-23、lwipopts.h の NETWORK_LWIP_TINY。64 KB / 20 KB の石に入る。usb-peer-net の test_usb_peer_net_ip（ARP・ping・UDP）が V205・X315・H417 で通り、X035 は一度だけ。TCP は MAC の無い系列で未試験） | PC（NCM） | docs/network-stack.ja.md:15,18 |
 | V208 の TLS | V208 | 2 | 自動 | スイッチ＋PC | PS:99, libraries/Network/README.ja.md:8 |
 | HTTP クライアント・サーバー、MQTT | Network の系列 | 実装済み（2026-11-18、外部のライブラリで: PubSubClient・ArduinoMqttClient・ArduinoHttpClient・aWOT を eth-libs で、HTTP / HTTPS のクライアントを eth で試験） | 自動 | PC（eth の case） | FC:96, TODO:247,464 |
 | mDNS の問い合わせ（`queryHost()`） | Network の系列 | `queryHost()` は実装済み（2026-11-23、lwIP の `LWIP_DNS_SUPPORT_MDNS_QUERIES`。`hostByName("x.local")` も。eth で試験側の応答役の名前を H417・V407 が引けた）。`queryService()` も（2026-11-23、lwIP の mdns_search_service、試験側の `_ch32test._tcp` を H417・V407 が見つけた） | 自動 | PC | libraries/Network/README.ja.md:67 |

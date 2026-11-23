@@ -575,6 +575,12 @@ test = "usb-peer-net"
 scope = "once"
 
 [[item]]
+id = "usb-net-ip"              # IP on the CDC-NCM function (NetworkUsbNcm; lwIP's small profile without a MAC)
+test = "usb-peer-net::test_usb_peer_net_ip"
+scope = "series"
+needs = ["USB_DEVICE"]
+
+[[item]]
 id = "usb-peer-fs"
 test = "usb-peer-fs"
 scope = "once"

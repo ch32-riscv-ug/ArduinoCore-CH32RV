@@ -12,10 +12,10 @@ Network ライブラリ(lwIP の上の IPv4)と NetworkClientSecure(TLS)の範�
 | CH32V307 / V317 | 対象 | MAC 内蔵(10M の PHY 内蔵、100M / 1G は PHY 外付け) |
 | CH32V407 / V467 | 対象 | MAC + PHY 内蔵 |
 | CH32H415〜H417 | 対象 | GMAC + 10/100 の PHY 内蔵 |
-| CH32X035 ほか、MAC の無い系列 | **未実装** | 今は USB の NCM の生フレーム(`CH32RVUsbDeviceNet`)まで |
+| CH32X035 ほか、MAC の無い系列 | 対象(USB の NCM だけ。2026-11-23) | `NetworkUsbNcm` に小さい設定(`NETWORK_LWIP_TINY`)。64 KB / 20 KB の石に入る |
 
 - 対象は、Ethernet の MAC を持つ系列です。同じ系列では、USB の NCM(PC からの設定画面など)も同じスタックに載せます。
-- MAC の無い系列（X035 ほか）の IP は未実装です（[未実装の一覧](unimplemented.ja.md)の「MAC の無い系列の IP（USB NCM の上）」）。X035 でも入る見積もりです(デバイスの NCM と IP スタックで Flash 約 45 KB / 62 KB)。アプリに残る量は小さくなります。
+- MAC の無い系列（X035 ほか）は、USB の NCM の上で IP が使えます（2026-11-23）。lwIP は小さい設定（`NETWORK_LWIP_TINY`: TCP の MSS 536、受信の pbuf 592 バイト × 4、送信のヒープ 1.6 KB、TCP 3 本・待ち受け 2、UDP 4）で、例の UsbNcmNetwork（DHCP サーバーと HTTP）が X035 で Flash 約 58 KB / 62 KB、RAM 約 14.6 KB / 20 KB。アプリに残る量は小さくなります。usb-peer-net の test_usb_peer_net_ip（Pico のピアから ARP・ping・UDP の折り返し）が V205・X315・H417 で通り、X035 でも一度通しました（試験のスケッチの送受信のブロック 8 KB と並べると、20 KB の石には入らないので常の試験からは外す）。
 
 ## 目標の段
 
@@ -56,7 +56,7 @@ Network ライブラリ(lwIP の上の IPv4)と NetworkClientSecure(TLS)の範�
 4. DHCP サーバー(自前。TinyUSB の dhserver は使わない)。
 5. PC の tap での試験(`tests/unit/network`)。
 6. 系列ごとの `lwipopts.h`(V208 でネットワークの分が Flash 約 44 KB、静的な RAM 約 22 KB)。
-7. USB の NCM(デバイス): `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出しがあり、中身は Network ライブラリの `NetworkUsbNcm`。試したのは PC と X035 の生フレームまで(対象の系列の USB デバイスでは実機で確かめていない)。
+7. USB の NCM(デバイス): `CH32RVUsbDeviceNet` に EspUsbDevice と同じ呼び出しがあり、中身は Network ライブラリの `NetworkUsbNcm`。usb-peer-net の test_usb_peer_net_ip で、ARP・ping・UDP を V205・X315・H417（2026-11-23）。
 8. Ethernet の MAC のドライバ。H417(下の「Ethernet(H417)」)、V307、V407、V208 は実機で通る。V467、V317、V203RB はビルドまで(下の「ほかの系列」)。
 9. 段 3: mDNS と SNTP(lwIP の apps。PC で試験)。
    - HTTP サーバー、MQTT / HTTP のクライアントは、**自前では作らず、Arduino で広く使われている既存のライブラリを使ってもらいます**。

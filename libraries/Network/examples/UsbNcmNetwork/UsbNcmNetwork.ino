@@ -5,7 +5,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: ETHERNET, USB_DEVICE */
+/* requires: USB_DEVICE, flash=60K, ram=20K */
 
 #include <CH32RVUsbDevice.h>
 #include <Network.h>

@@ -4,9 +4,9 @@ lwIP の上の IPv4 のネットワークです。API は ESP32 の Arduino コ�
 
 ## 対象と今の状態
 
-- 対象は、Ethernet の MAC を持つ系列です: CH32V208、V203RB、V307 / V317、V407 / V467、H415〜H417。ほかの系列でビルドすると、エラーで止まります。
+- Ethernet（`ETH`）は、MAC を持つ系列です: CH32V208、V203RB、V307 / V317、V407 / V467、H415〜H417。
 - Ethernet(`ETH`)は、CH32V307(内蔵の 10 Mbit/s の PHY)、CH32V407(200 MHz で 45 Mbit/s、TLS 1.3)、CH32H417、CH32V208(内蔵の 10 Mbit/s の PHY、CPU Clock `60MHz`。TLS は無し)の実機で動きます。ベンチの `eth` の試験で、DHCP、ICMP、UDP と TCP のエコー、TCP の両方向、HTTP、HTTPS を確かめています。V203RB / V317 / V467 / H415 / H416 はビルドのみです。
-- USB の NCM(`NetworkUsbNcm`、`CH32RVUsbDeviceNet` の `beginNetwork()` など)は、これらの系列でビルドできます。実機では動かしていません。
+- USB の NCM(`NetworkUsbNcm`、`CH32RVUsbDeviceNet` の `beginNetwork()` など)は、USB デバイスのある全系列で使えます。MAC の無い系列（X035、L103、V205、X315 など）は小さい設定（`NETWORK_LWIP_TINY`: TCP の MSS 536、pbuf 4 個、送信のヒープ 1.6 KB、TCP 3 本）で、64 KB / 20 KB の石に入ります（例の UsbNcmNetwork で Flash 約 58 KB、RAM 約 14.6 KB）。usb-peer-net の test_usb_peer_net_ip（ARP・ping・UDP の折り返し）が V205・X315・H417 で通り、X035 も一度通した（2026-11-23）。TCP は MAC の系列でだけ試験している。
 - 例: [EthernetStatus](examples/EthernetStatus/README.ja.md)、[TcpEchoServer](examples/TcpEchoServer/README.ja.md)、[UdpEcho](examples/UdpEcho/README.ja.md)、[HttpGet](examples/HttpGet/README.ja.md)、[MdnsWebServer](examples/MdnsWebServer/README.ja.md)、[NetworkTime](examples/NetworkTime/README.ja.md)。どれも V307 で動かしています。USB の NCM の [UsbNcmNetwork](examples/UsbNcmNetwork/README.ja.md) はビルドだけ確かめました。
 - 動作は、PC でビルドし、Linux の TCP/IP を相手に試しています(`tests/unit/network`)。固定アドレス、DHCP のクライアントとサーバー、SNTP、mDNS、ICMP、UDP、TCP(両方向、並列、こちらからの接続)、DNS を、パケットの落ちと入れ替わりのある回線でも確かめています。
 

@@ -5,9 +5,13 @@
 
 #include "lwip/netif.h"
 
-static const uint16_t QUEUE_BYTES = 4096;
 /* One block from the host: 2 KB of frames, each queued with 2 bytes of length. */
 static const uint16_t BLOCK_ROOM = 2048 + 128;
+#if defined(NETWORK_LWIP_TINY)
+static const uint16_t QUEUE_BYTES = BLOCK_ROOM + 128;   /* one block at a time in 20 KB of RAM */
+#else
+static const uint16_t QUEUE_BYTES = 4096;
+#endif
 /* How long transmitFrame() waits for the one USB transmit buffer: a full
  * frame takes about 1.3 ms at full speed. */
 static const uint32_t SEND_WAIT_MS = 5;

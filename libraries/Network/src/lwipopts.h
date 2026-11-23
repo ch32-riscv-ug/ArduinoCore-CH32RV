@@ -27,7 +27,10 @@
     defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417) || defined(NETWORK_HOST_TEST)
 #define NETWORK_LWIP_LARGE 1
 #else
-#error "The Network library is for the series with an Ethernet MAC: CH32V208, V203RB, V307/V317, V407/V467, H415-H417 (docs/network-stack.ja.md)"
+/* The series without an Ethernet MAC: IP over a USB function's CDC-NCM
+ * (NetworkUsbNcm) in 20 KB of RAM - one 590-byte pbuf a TCP segment of 536,
+ * frames up to 1514 chained from them. */
+#define NETWORK_LWIP_TINY 1
 #endif
 
 /* No OS: raw API only, called from the task (ch32rv_net_task) and never from an interrupt. */
@@ -55,25 +58,43 @@
 #define LWIP_NETIF_LINK_CALLBACK 1
 #define LWIP_NETIF_LOOPBACK 1       /* to the interface's own address; ch32rv_net_task() polls the queue */
 #define LWIP_HAVE_LOOPIF 1          /* 127.0.0.1 */
+#if defined(NETWORK_LWIP_TINY)
+#define LWIP_LOOPBACK_MAX_PBUFS 2
+#else
 #define LWIP_LOOPBACK_MAX_PBUFS 8
+#endif
 #define LWIP_STATS 0
 #ifndef NETWORK_HOST_TEST
 #define LWIP_NOASSERT 1             /* lwIP's asserts guard its own invariants; on the chip they would only hang */
 #endif
 #define LWIP_CHECKSUM_CTRL_PER_NETIF 1   /* the Ethernet MAC checks and inserts its own; USB NCM keeps lwIP's */
+#if defined(NETWORK_LWIP_TINY)
+#define IP_REASSEMBLY 0             /* no datagram longer than the USB link's 1500 bytes expected */
+#define IP_FRAG 0
+#else
 #define IP_REASSEMBLY 1
 #define IP_FRAG 1
+#endif
 #define IP_FORWARD 0
 #define LWIP_TCP_KEEPALIVE 1
 #define SO_REUSE 1                  /* a server restarted on the same port while old connections linger */
 #define TCP_LISTEN_BACKLOG 1
+#if defined(NETWORK_LWIP_TINY)
+#define DNS_TABLE_SIZE 2
+#define DNS_MAX_NAME_LENGTH 64
+#else
 #define DNS_TABLE_SIZE 4
 #define DNS_MAX_NAME_LENGTH 128
+#endif
 #define DNS_MAX_SERVERS 2
 /* A name ending in .local is asked by multicast DNS (224.0.0.251:5353, a legacy unicast query the responders answer
  * to its port) instead of the DNS servers: hostByName("printer.local") and MDNS.queryHost(), as on ESP32. */
 #define LWIP_DNS_SUPPORT_MDNS_QUERIES 1
+#if defined(NETWORK_LWIP_TINY)
+#define ARP_TABLE_SIZE 4
+#else
 #define ARP_TABLE_SIZE 8
+#endif
 #define ARP_QUEUEING 1
 #define ETHARP_SUPPORT_STATIC_ENTRIES 1   /* etharp_add_static_entry(): a peer pinned to one MAC (a host that answers ARP on two NICs) */
 
@@ -94,10 +115,25 @@
 #define MEM_ALIGNMENT 4
 #endif
 
+#if defined(NETWORK_LWIP_TINY)
+#define TCP_MSS 536
+#define PBUF_POOL_BUFSIZE 592       /* a whole segment of TCP_MSS with its headers; longer frames chain */
+#else
 #define TCP_MSS 1460
 #define PBUF_POOL_BUFSIZE 1536      /* one whole frame per pbuf */
+#endif
 
-#if defined(NETWORK_LWIP_SMALL)
+#if defined(NETWORK_LWIP_TINY)
+#define MEM_SIZE (1600)             /* a TCP_SND_BUF and the headers */
+#define PBUF_POOL_SIZE 4
+#define TCP_WND (2 * TCP_MSS)
+#define TCP_SND_BUF (2 * TCP_MSS)
+#define MEMP_NUM_TCP_PCB 3
+#define MEMP_NUM_TCP_PCB_LISTEN 2
+#define MEMP_NUM_UDP_PCB 4
+#define MEMP_NUM_TCP_SEG 8
+#define MEMP_NUM_PBUF 6
+#elif defined(NETWORK_LWIP_SMALL)
 #define MEM_SIZE (10 * 1024)        /* transmit data, copied in by tcp_write() and udp */
 #define PBUF_POOL_SIZE 6            /* receive frames */
 #define TCP_WND (2 * TCP_MSS)
