@@ -18,6 +18,10 @@
  *   net                  C NETOPEN <ok>      (networkOpen(): the DUT's CDC-NCM function)
  *   netsend              C NETSENT <ok>      (broadcast, EtherType 0x88B5)
  *   netstat              C NETRX <frames> <frames of 0x88B5>   (since the last reset)
+ *   ipping <a.b.c.d>     from 192.168.7.2 (MAC 02:00:00:00:43:48): an ARP request, then an ICMP echo to the
+ *                        MAC that answered: C IPPING <ARP answered> <echo answered> <the MAC, 12 hex digits>
+ *   ipudp <a.b.c.d> <port> <hex>
+ *                        a UDP datagram from port 40000 (after ipping): C IPUDP <answered> <payload, hex>
  *   vend <hex>           C VEND <hex echoed back within 2 s>
  *   vreq                 C VREQ <ok> <answer as text>
  *   msc                  C MSC <ok> <vendor> <product> <blocks> <block size>
@@ -125,6 +129,159 @@ static void pause(uint32_t ms)
         deliverEvents();
         delay(1);
     } while (millis() - t0 < ms);
+}
+
+/* ------------------------------------------------------------ IPv4 over the NCM link (ipping, ipudp),
+ * the Pico peer's commands on networkWriteFrame() / onNetworkFrame() */
+static const uint8_t ipMac[6] = {0x02, 0x00, 0x00, 0x00, 0x43, 0x48};
+static const uint8_t ipOwn[4] = {192, 168, 7, 2};
+static uint8_t ipPeer[4], ipPeerMac[6];
+static volatile bool ipArpGot, ipEchoGot, ipUdpGot;
+static uint8_t ipUdpData[64];
+static volatile uint8_t ipUdpLength;
+
+static uint16_t ipSum(const uint8_t *p, size_t n)
+{
+    uint32_t sum = 0;
+    for (size_t i = 0; i + 1 < n; i += 2) sum += (uint32_t)(p[i] << 8 | p[i + 1]);
+    if (n & 1) sum += (uint32_t)(p[n - 1] << 8);
+    while (sum >> 16) sum = (sum & 0xFFFF) + (sum >> 16);
+    return (uint16_t)~sum;
+}
+
+static void ipSeen(const uint8_t *f, size_t n)
+{
+    if (n >= 42 && f[12] == 0x08 && f[13] == 0x06 && f[21] == 2 && !memcmp(f + 28, ipPeer, 4)) {
+        memcpy(ipPeerMac, f + 22, 6);
+        ipArpGot = true;
+    }
+    if (n >= 34 && f[12] == 0x08 && f[13] == 0x00 && !memcmp(f + 26, ipPeer, 4)) {
+        const uint8_t *ip = f + 14;
+        const unsigned hl = (ip[0] & 15u) * 4u;
+        const uint8_t *l4 = ip + hl;
+        if (ip[9] == 1 && n >= 14 + hl + 8 && l4[0] == 0 && l4[4] == 0x43 && l4[5] == 0x48) ipEchoGot = true;
+        if (ip[9] == 17 && n >= 14 + hl + 8 && l4[2] == (40000 >> 8) && l4[3] == (40000 & 255)) {
+            unsigned len = (unsigned)(l4[4] << 8 | l4[5]);
+            len = len >= 8 ? len - 8 : 0;
+            if (len > sizeof ipUdpData) len = sizeof ipUdpData;
+            memcpy(ipUdpData, l4 + 8, len);
+            ipUdpLength = (uint8_t)len;
+            ipUdpGot = true;
+        }
+    }
+}
+
+static bool ipWait(volatile bool &flag, uint32_t ms)
+{
+    const uint32_t t0 = millis();
+    while (!flag && millis() - t0 < ms) {
+        deliverEvents();
+        delay(1);
+    }
+    return flag;
+}
+
+static bool ipParse(const char *&arg, uint8_t out[4])
+{
+    unsigned a, b, c, d;
+    int used = 0;
+    if (sscanf(arg, "%u.%u.%u.%u%n", &a, &b, &c, &d, &used) != 4) return false;
+    out[0] = (uint8_t)a; out[1] = (uint8_t)b; out[2] = (uint8_t)c; out[3] = (uint8_t)d;
+    arg += used;
+    return true;
+}
+
+static void ipHeader(uint8_t *f, uint8_t proto, uint16_t payload)
+{
+    memcpy(f, ipPeerMac, 6);
+    memcpy(f + 6, ipMac, 6);
+    f[12] = 0x08; f[13] = 0x00;
+    uint8_t *ip = f + 14;
+    const uint16_t total = (uint16_t)(20 + payload);
+    memset(ip, 0, 20);
+    ip[0] = 0x45; ip[2] = (uint8_t)(total >> 8); ip[3] = (uint8_t)total; ip[8] = 64; ip[9] = proto;
+    memcpy(ip + 12, ipOwn, 4);
+    memcpy(ip + 16, ipPeer, 4);
+    const uint16_t sum = ipSum(ip, 20);
+    ip[10] = (uint8_t)(sum >> 8); ip[11] = (uint8_t)sum;
+}
+
+static void ipSend(const uint8_t *f, size_t n)
+{
+    uint8_t padded[128] = {0};
+    memcpy(padded, f, n);
+    usb.networkWriteFrame(padded, n < 60 ? 60 : n);
+}
+
+static void cmdIpPing(const char *arg)
+{
+    uint8_t f[14 + 28 + 32];
+    if (!ipParse(arg, ipPeer)) { say("C IPPING 0 0 000000000000\n"); return; }
+    ipArpGot = ipEchoGot = false;
+    memset(f, 0xFF, 6);
+    memcpy(f + 6, ipMac, 6);
+    f[12] = 0x08; f[13] = 0x06;
+    const uint8_t arp[8] = {0, 1, 8, 0, 6, 4, 0, 1};
+    memcpy(f + 14, arp, 8);
+    memcpy(f + 22, ipMac, 6);
+    memcpy(f + 28, ipOwn, 4);
+    memset(f + 32, 0, 6);
+    memcpy(f + 38, ipPeer, 4);
+    for (int i = 0; i < 3 && !ipArpGot; i++) {
+        ipSend(f, 42);
+        ipWait(ipArpGot, 500);
+    }
+    if (ipArpGot) {
+        uint8_t *icmp = f + 34;
+        memset(icmp, 0, 24);
+        icmp[0] = 8; icmp[4] = 0x43; icmp[5] = 0x48; icmp[7] = 1;
+        memcpy(icmp + 8, "CH32 peer ping..", 16);
+        const uint16_t sum = ipSum(icmp, 24);
+        icmp[2] = (uint8_t)(sum >> 8); icmp[3] = (uint8_t)sum;
+        ipHeader(f, 1, 24);
+        for (int i = 0; i < 3 && !ipEchoGot; i++) {
+            ipSend(f, 14 + 20 + 24);
+            ipWait(ipEchoGot, 500);
+        }
+    }
+    say("C IPPING %u %u %02x%02x%02x%02x%02x%02x\n", ipArpGot ? 1 : 0, ipEchoGot ? 1 : 0, ipPeerMac[0], ipPeerMac[1],
+        ipPeerMac[2], ipPeerMac[3], ipPeerMac[4], ipPeerMac[5]);
+}
+
+static void cmdIpUdp(const char *arg)
+{
+    uint8_t f[14 + 20 + 8 + 64];
+    unsigned port = 0;
+    int used = 0;
+    uint8_t data[64];
+    unsigned n = 0;
+    if (!ipParse(arg, ipPeer) || sscanf(arg, "%u%n", &port, &used) != 1) { say("C IPUDP 0 -\n"); return; }
+    arg += used;
+    while (*arg == ' ') arg++;
+    for (; arg[0] && arg[1] && n < sizeof data; arg += 2) {
+        unsigned v;
+        if (sscanf(arg, "%2x", &v) != 1) break;
+        data[n++] = (uint8_t)v;
+    }
+    uint8_t *udp = f + 34;
+    udp[0] = (uint8_t)(40000 >> 8); udp[1] = (uint8_t)(40000 & 255);
+    udp[2] = (uint8_t)(port >> 8); udp[3] = (uint8_t)port;
+    udp[4] = 0; udp[5] = (uint8_t)(8 + n);
+    udp[6] = udp[7] = 0;
+    memcpy(udp + 8, data, n);
+    ipHeader(f, 17, (uint16_t)(8 + n));
+    ipUdpGot = false;
+    for (int i = 0; i < 3 && !ipUdpGot; i++) {
+        ipSend(f, 14 + 20 + 8 + n);
+        ipWait(ipUdpGot, 500);
+    }
+    say("C IPUDP %u ", ipUdpGot ? 1 : 0);
+    if (ipUdpGot && ipUdpLength) {
+        for (unsigned i = 0; i < ipUdpLength; i++) say("%02x", ipUdpData[i]);
+    } else {
+        say("-");
+    }
+    say("\n");
 }
 
 /* ------------------------------------------------------------ the device */
@@ -766,6 +923,10 @@ static void run(char *cmd)
         say("C NETSENT %u\n", usb.networkWriteFrame(f, sizeof f) ? 1 : 0);
     } else if (!strcmp(cmd, "netstat")) {
         say("C NETRX %lu %lu\n", (unsigned long)netFrames, (unsigned long)netOurs);
+    } else if (!strcmp(cmd, "ipping")) {
+        cmdIpPing(arg);
+    } else if (!strcmp(cmd, "ipudp")) {
+        cmdIpUdp(arg);
     }
     else if (!strcmp(cmd, "vend")) cmdVend(arg);
     else if (!strcmp(cmd, "vreq")) cmdVreq();
@@ -855,6 +1016,7 @@ void setup()
         if (f.length >= 14 && f.data[12] == 0x88 && f.data[13] == 0xB5) {
             netOurs++;
         }
+        ipSeen(f.data, f.length);
     });
     usb.onMidiMessage([](const CH32RVUsbHostMidiMessage &m) {
         say("C MIDI %u %02x %u %u\n", m.codeIndex, m.status, m.data1, m.data2);
