@@ -1,0 +1,7 @@
+CH32RVQspi	KEYWORD1
+CH32RVQspiCommand	KEYWORD1
+command	KEYWORD2
+memoryMap	KEYWORD2
+mapped	KEYWORD2
+setClock	KEYWORD2
+setMode	KEYWORD2

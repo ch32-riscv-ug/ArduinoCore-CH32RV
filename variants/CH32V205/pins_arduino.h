@@ -1288,6 +1288,37 @@ static const uint8_t SS = PIN_SPI_SS;
     X(2, 7, CH32RV_IRQN_DMA2_Channel7, 0x40020480u, 0x40020400u, 24u) \
     X(2, 8, CH32RV_IRQN_DMA2_Channel8, 0x40020494u, 0x40020400u, 28u)
 
+/* QSPI1's pads, for CH32RVQspi: role (0 SCK, 1 SCSN, 2 SIO0, 3 SIO1, 4 SIO2, 5 SIO3, 6 SCSXN, 7 SIOX0, 8 SIOX1, 9 SIOX2, 10 SIOX3), pad, then
+ * its function number and 0 (pads of any route go together). */
+#define CH32RV_QSPI1_PAD_COUNT 24
+#define CH32RV_QSPI1_PADS { \
+    { 0, PA12, 0x00000005u, 0x00000000u }, \
+    { 0, PB2, 0x00000005u, 0x00000000u }, \
+    { 1, PB0, 0x00000005u, 0x00000000u }, \
+    { 1, PB6, 0x00000005u, 0x00000000u }, \
+    { 2, PA2, 0x00000005u, 0x00000000u }, \
+    { 2, PC9, 0x00000005u, 0x00000000u }, \
+    { 2, PD11, 0x00000005u, 0x00000000u }, \
+    { 3, PA3, 0x00000005u, 0x00000000u }, \
+    { 3, PC10, 0x00000005u, 0x00000000u }, \
+    { 3, PD12, 0x00000005u, 0x00000000u }, \
+    { 4, PA0, 0x00000005u, 0x00000000u }, \
+    { 4, PE6, 0x00000005u, 0x00000000u }, \
+    { 5, PA1, 0x00000005u, 0x00000000u }, \
+    { 5, PD13, 0x00000005u, 0x00000000u }, \
+    { 6, PB1, 0x00000005u, 0x00000000u }, \
+    { 6, PC11, 0x00000005u, 0x00000000u }, \
+    { 7, PB8, 0x00000005u, 0x00000000u }, \
+    { 7, PE7, 0x00000005u, 0x00000000u }, \
+    { 8, PB9, 0x00000005u, 0x00000000u }, \
+    { 8, PE8, 0x00000005u, 0x00000000u }, \
+    { 9, PB10, 0x00000005u, 0x00000000u }, \
+    { 9, PE9, 0x00000005u, 0x00000000u }, \
+    { 10, PB11, 0x00000005u, 0x00000000u }, \
+    { 10, PE10, 0x00000005u, 0x00000000u }, \
+}
+#define CH32RV_QSPI_PADS_ANY 1   /* some QSPI has pads here (examples' requires) */
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

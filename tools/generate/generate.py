@@ -3280,6 +3280,13 @@ I2S_SIGNAL_RE = [
     (re.compile(r"^I2S(\d+)_(CK|WS|SD|MCK)$"), lambda m: (int(m.group(1)), m.group(2))),
 ]
 I2S_ROUTE_ORDER = ("default", "main") + tuple(f"af-{n}" for n in range(16)) + ALL_REMAPS
+# Set by main(): part -> {(QSPI index, route): {"SCK"|"SCSN"|"SIO0".."SIO3"|"SCSXN"|"SIOX0".."SIOX3": pad}}
+# (V205, H41x; the unnumbered QSPI_* names are QSPI1). SCSN / SIOn are the first flash's lines, SCSXN / SIOXn the second's.
+QSPI_PINS: dict = {}
+QSPI_SIGNAL_RE = [
+    (re.compile(r"^QSPI(\d*)_(SCK|SCSN|SCSXN|SIO[0-3]|SIOX[0-3])$"), lambda m: (int(m.group(1) or 1), m.group(2))),
+]
+QSPI_ROLES = ("SCK", "SCSN", "SIO0", "SIO1", "SIO2", "SIO3", "SCSXN", "SIOX0", "SIOX1", "SIOX2", "SIOX3")
 # Set by main(): part -> {(LPTIM index, route): {"CH1"|"CH2"|"ETR"|"OUT": pad}} (H41x names the output OC,
 # L103 its remapped one LPT_OUT).
 LPTIM_PINS: dict = {}
@@ -3760,7 +3767,7 @@ def af_route_table(series: str, parts: list, pins: dict, kind: str,
 
 
 def emit_pad_table(out: list, series: str, parts: list, remap: dict, pins: dict, kind: str, remap_kind: str,
-                   index: int, prefix: str, roles: tuple, need: set, title: str) -> None:
+                   index: int, prefix: str, roles: tuple, need: set, title: str) -> bool:
     """CH32RV_<prefix>_PADS: { role (its place in roles), pad, value, value2 } for every pad of the
     instance, for a library that picks the pads it is given.
 
@@ -3770,7 +3777,7 @@ def emit_pad_table(out: list, series: str, parts: list, remap: dict, pins: dict,
     PCFR2 (the instance's field, remap_kind's), and the pads used together have to share them - a
     pad on two routes is listed once for each. Nothing when the roles in `need` are not all there."""
     if not any(i == index for pn in parts for (i, _r) in pins.get(pn, {})):
-        return
+        return False
     rows = set()
     per_pin = series in PER_PIN_AF_SERIES
     bits = remap.get((series, remap_kind, index))
@@ -3799,7 +3806,7 @@ def emit_pad_table(out: list, series: str, parts: list, remap: dict, pins: dict,
                 for pad in ROUTE_ALTS.get((kind, pn, index, route, role)) or [entry[role]]:
                     rows.add((n, pad, v1, v2))
     if not need <= {n for n, *_ in rows}:
-        return
+        return False
     numbered = ", ".join(f"{n} {r}" for n, r in enumerate(roles))
     out.append(f"/* {title}: role ({numbered}), pad, then")
     if per_pin:
@@ -3811,7 +3818,7 @@ def emit_pad_table(out: list, series: str, parts: list, remap: dict, pins: dict,
     for n, pad, v1, v2 in sorted(rows, key=lambda r: (r[0], r[2], r[3], r[1])):
         out.append(f"    {{ {n}, {pad_name(*pad)}, 0x{v1:08x}u, 0x{v2:08x}u }}, \\")
     out.append("}")
-
+    return True
 
 def emit_i2s(out: list, series: str, parts: list, remap: dict, index: int) -> None:
     """I2Sn's pads (SPIn in I2S mode, its AFIO field the SPI's), for the I2S library."""
@@ -5803,6 +5810,15 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     if lptims:
         out.append("")
 
+    # --- QSPI pads (CH32RVQspi) ---
+    qspis = sorted({i for pn in parts for (i, _r) in QSPI_PINS.get(pn, {})})
+    emitted = [index for index in qspis
+               if emit_pad_table(out, series, parts, remap, QSPI_PINS, "qspi", "qspi", index, f"QSPI{index}",
+                                 QSPI_ROLES, {0}, f"QSPI{index}'s pads, for CH32RVQspi")]
+    if emitted:
+        out.append("#define CH32RV_QSPI_PADS_ANY 1   /* some QSPI has pads here (examples' requires) */")
+        out.append("")
+
     # --- no LED_BUILTIN ---
     # A Generic board is a silicon series, not a PCB, so it does not know where
     # an LED is - or whether there is one. The old placeholder here was the
@@ -6142,6 +6158,7 @@ def main() -> int:
     CAN_PINS.update(load_can_pins(args.tables, route_alts))
     I2S_PINS.update(load_pin_routes(args.tables, I2S_SIGNAL_RE, I2S_ROUTE_ORDER, "i2s", route_alts))
     LPTIM_PINS.update(load_pin_routes(args.tables, LPTIM_SIGNAL_RE, I2S_ROUTE_ORDER, "lptim", route_alts))
+    QSPI_PINS.update(load_pin_routes(args.tables, QSPI_SIGNAL_RE, I2S_ROUTE_ORDER, "qspi", route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     TIM_DT2.update(load_tim_dt2(args.tables))
@@ -6211,7 +6228,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS, LPTIM_PINS], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS, LPTIM_PINS, QSPI_PINS], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

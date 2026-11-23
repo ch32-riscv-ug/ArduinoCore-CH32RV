@@ -143,7 +143,7 @@
 | SAI（TDM、SPDIF 出力） | H417 | 2 | 自動 | プローブ（取り込み） | PS:104, PM:247 |
 | I3C（controller・target、IBI、Hot-Join） | V4x7、H41x | 2 | 自動 | I3C の相手（2 台目の H417 か V407）、プローブで取り込み | PS:110, PM:255 |
 | SWPMI（SWP master） | H417 | 2 | 自動 | SWP のカードか 2 台目 | PS:105, PM:248 |
-| QSPI（Flash、メモリマップ、dual-flash） | V205、H41x（V203CCT6 も） | 2 | 単発→自動 | QSPI Flash の板（EVT 板）。プローブで取り込み | PS:108, PM:253 |
+| QSPI（Flash、メモリマップ、dual-flash） | V205、H41x（V203CCT6 も） | 2 | 実装済み（2026-11-23、ライブラリ CH32RVQspi: 命令・アドレス・代替バイト・ダミー・データの段ごとに 1・2・4 線、2 つ目のフラッシュ（SCSXN・SIOX）、mode 0 / 3、H41x の QSPI1 のメモリマップ（0x90000000）。periph::test_qspi（消去・書き込み・2 線の書き込み・高速読み出し・2 線の読み出し、WireSkein の qspi）が V205 で通る。4 線・実際のフラッシュ・メモリマップ・dual-flash は未確認） | 単発→自動 | QSPI Flash の板（EVT 板）。プローブで取り込み |
 | ARGB（WS2812 のハードウェア） | V4x7、X3x5 | 実装済み（2026-11-17。同じ `rgbLedWrite()` / `ch32rv_rgb_led_write()` が ARGB の端子（V4x7 は PA15、X3x5 は PA15・PD3・PD4。variant の `CH32RV_ARGB_PIN_TO_AF`）ではブロックと DMA で送り、割り込みを止めない。ほかの端子はソフトのまま。終わりまで待つ（同期）。`ch32rv_rgb_led_is_hardware()` で分かる） 実機で通った系列（2026-11-19 の集計）: V407・X315。 | 自動 | プローブ（60 MS/s、WireSkein の rgb_led）。signals::test_rgb_led_hardware（ARGB の端子に `<口>.argb@<端子>` か `<口>@<端子>` の線）。割り込みが止まらないことは selfsys::test_rgb_led_irq（配線なし） | PS:114, PM:259 |
 
 ## USB デバイス

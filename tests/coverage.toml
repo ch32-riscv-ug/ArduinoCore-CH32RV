@@ -667,11 +667,10 @@ test = "periph::test_planned[rs485]"
 scope = "once"
 
 [[item]]
-id = "qspi"
-test = "periph::test_planned[qspi]"
+id = "qspi"                 # CH32RVQspi: commands phase by phase on one and two lines (WireSkein qspi)
+test = "periph::test_qspi"
 scope = "series"
 any_of = ["QSPI1"]
-missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V205"]
 
 
 # Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them

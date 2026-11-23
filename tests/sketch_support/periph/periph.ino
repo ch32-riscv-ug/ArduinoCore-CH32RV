@@ -63,6 +63,18 @@
  *                             <samples> <high> <low> <rises> <first rise> <last rise>
  *                             (HSTREAM 0 when begin() refused)
  *
+ * The quad-SPI controller (CH32RVQspi: V205, H41x; QSPIFIND NONE / QSPI 2 elsewhere):
+ *
+ *   qspifind <pin>...         SCK, CS, IO0, IO1 of one QSPI flash among the pins (the variant's
+ *                             CH32RV_QSPIn_PADS): QSPIFIND <n> <sck> <cs> <io0> <io1> (QSPIFIND NONE)
+ *   qspi <n> <sck> <cs> <io0> <io1> <hz> <kind> <hex>
+ *                             CH32RVQspi n on those pins, mode 0: kind c = instruction 20 and the address
+ *                             (24 bits, the hex) on one line; w = 02, the address 000100 and the bytes on
+ *                             one line; d = A2, the address 000100 and the bytes on two lines; r = 0B, the
+ *                             address 000100, 8 dummy clocks, as many bytes read as the hex has on one
+ *                             line; e = BB, the address 000100 on two lines, 4 dummy clocks, read on two:
+ *                             QSPI <1 / 0> <bytes read, hex or -> <clock>
+ *
  * The low-power timer (CH32RVLowPowerTimer: L103 / M103, H41x; LPT NONE elsewhere):
  *
  *   lptfind <pin>...          the first of the pins that is a timer's CH1 pad:
@@ -101,6 +113,12 @@
 #define PERIPH_INJ 1
 #endif
 #include <CH32RVLowPowerTimer.h>
+#include <CH32RVQspi.h>
+/* a row of the variant's CH32RV_QSPIn_PADS (before the prototypes the IDE adds) */
+struct QspiPad {
+    uint8_t role, pad;
+    uint32_t value, value2;
+};
 #if defined(CH32RV_SERIES_CH32H417) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H415)
 #define PERIPH_HSADC 1
 #include <CH32RVHsAdc.h>
@@ -118,7 +136,11 @@
 #error BENCH_BUILD_ID must identify this compilation
 #endif
 
+#if defined(CH32RV_VARIANT_CH32V003)
 static char line[64];
+#else
+static char line[192];   /* lptfind / qspifind name every labelled line */
+#endif
 static uint8_t used;
 static bool echoing;
 static uint32_t echoed;
@@ -368,6 +390,113 @@ static void hstream(uint32_t rate, uint32_t bufs, pin_size_t pin)
 }
 #endif
 
+#if CH32RV_HAS_QSPI
+static size_t unhexq(const char *text, uint8_t *out, size_t room)
+{
+    size_t n = 0;
+    while (text[0] && text[1] && n < room) {
+        char pair[3] = {text[0], text[1], 0};
+        out[n++] = (uint8_t)strtoul(pair, nullptr, 16);
+        text += 2;
+    }
+    return n;
+}
+
+static void qspiFind(int argc, char **argv)
+{
+    bool found = false;
+    /* the table's rows: role (0 SCK, 1 SCSN, 2 SIO0, 3 SIO1, 6 SCSXN, 7 SIOX0, 8 SIOX1), pad */
+    for (uint8_t q = 1; q <= 2 && !found; q++) {
+        const QspiPad *t = nullptr;
+        size_t tn = 0;
+#ifdef CH32RV_QSPI1_PADS
+        static const QspiPad t1[] = CH32RV_QSPI1_PADS;
+        if (q == 1) { t = t1; tn = CH32RV_QSPI1_PAD_COUNT; }
+#endif
+#ifdef CH32RV_QSPI2_PADS
+        static const QspiPad t2[] = CH32RV_QSPI2_PADS;
+        if (q == 2) { t = t2; tn = CH32RV_QSPI2_PAD_COUNT; }
+#endif
+        for (uint8_t bank = 0; bank < 2 && t && !found; bank++) {
+            const uint8_t roles[4] = {0, (uint8_t)(bank ? 6 : 1), (uint8_t)(bank ? 7 : 2), (uint8_t)(bank ? 8 : 3)};
+            long got[4];
+            uint8_t have = 0;
+            for (uint8_t r = 0; r < 4; r++) {
+                for (size_t i = 0; i < tn; i++) {
+                    bool listed = false;
+                    for (int k = 1; k < argc; k++) {
+                        listed = listed || atol(argv[k]) == t[i].pad;
+                    }
+                    if (t[i].role == roles[r] && listed) {
+                        got[r] = t[i].pad;
+                        have++;
+                        break;
+                    }
+                }
+            }
+            if (have == 4) {
+                CONSOLE.printf("QSPIFIND %u %ld %ld %ld %ld\r\n", q, got[0], got[1], got[2], got[3]);
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        CONSOLE.printf("QSPIFIND NONE\r\n");
+    }
+}
+
+static void qspiRun(char **argv)
+{
+    long v[6];
+    for (uint8_t k = 0; k < 6; k++) {
+        v[k] = atol(argv[1 + k]);
+    }
+    const char kind = argv[7][0];
+    uint8_t data[16];
+    const size_t n = unhexq(argv[8], data, sizeof data);
+    CH32RVQspi q((uint8_t)v[0]);
+    bool ok = q.begin((int)v[1], (int)v[2], (int)v[3], (int)v[4]);
+    q.setClock((uint32_t)v[5]);
+    CH32RVQspiCommand cmd;
+    cmd.address = 0x000100;
+    cmd.addressLines = 1;
+    bool reading = false;
+    if (kind == 'c') {
+        cmd.instruction = 0x20;
+        cmd.address = (uint32_t)data[0] << 16 | (uint32_t)data[1] << 8 | data[2];
+        ok = ok && q.command(cmd);
+    } else if (kind == 'w') {
+        cmd.instruction = 0x02;
+        ok = ok && q.write(cmd, data, n);
+    } else if (kind == 'd') {
+        cmd.instruction = 0xA2;
+        cmd.addressLines = 2;
+        cmd.dataLines = 2;
+        ok = ok && q.write(cmd, data, n);
+    } else if (kind == 'r' || kind == 'e') {
+        cmd.instruction = kind == 'r' ? 0x0B : 0xBB;
+        cmd.addressLines = kind == 'r' ? 1 : 2;
+        cmd.dummyCycles = kind == 'r' ? 8 : 4;
+        cmd.dataLines = kind == 'r' ? 1 : 2;
+        ok = ok && q.read(cmd, data, n);
+        reading = true;
+    } else {
+        ok = false;
+    }
+    const uint32_t hz = q.clock();
+    q.end();
+    CONSOLE.printf("QSPI %d ", ok ? 1 : 0);
+    if (reading && ok) {
+        for (size_t i = 0; i < n; i++) {
+            CONSOLE.printf("%02x", data[i]);
+        }
+    } else {
+        CONSOLE.printf("-");
+    }
+    CONSOLE.printf(" %lu\r\n", (unsigned long)hz);
+}
+#endif
+
 #if CH32RV_HAS_LPTIM
 static volatile uint32_t lptPeriods;
 static void lptTick()
@@ -407,6 +536,18 @@ static void reply(char *command)
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
         CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+    } else if (!strcmp(argv[0], "qspifind")) {
+#if CH32RV_HAS_QSPI
+        qspiFind(argc, argv);
+#else
+        CONSOLE.printf("QSPIFIND NONE\r\n");
+#endif
+    } else if (!strcmp(argv[0], "qspi") && argc == 9) {
+#if CH32RV_HAS_QSPI
+        qspiRun(argv);
+#else
+        CONSOLE.printf("QSPI 2 - 0\r\n");
+#endif
     } else if (!strncmp(argv[0], "lpt", 3)) {
 #if CH32RV_HAS_LPTIM
         if (!strcmp(argv[0], "lptfind")) {

@@ -918,7 +918,85 @@ def test_lptim(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
-@pytest.mark.parametrize("feature", ["can", "rs485", "qspi"])
+QSPI_HZ = 1_000_000
+
+
+def test_qspi(dut, oep_host, ws_run, record_property):
+    """periph.qspi (CH32RVQspi, 2026-11-23): the quad-SPI controller on four labelled lines that are one flash's SCK, CS,
+    IO0 and IO1 (the DUT finds them: qspifind), mode 0 at 1 MHz, no device - IO0 / IO1 (and CS, between commands) held up by the probe's pull-ups.
+    One capture of the four lines; a WireSkein section per command judging it phase by phase (qspi): an erase (20
+    and a random 24-bit address, one line), a page write (02, 000100, eight random bytes, one line), a dual write (A2
+    on one line, 000100 and the bytes on two), a fast read (0B, 000100, 8 dummy clocks, four bytes on IO1: the pull-up's
+    ff) and a dual read (BB, the address on two lines, 4 dummy clocks, four bytes on two). The reads' bytes are ff here
+    as well; the clocks of each window are exactly its phases'."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import qspi
+    case = settings(__file__)
+    ready(dut, case)
+    # Every labelled line of the port but the debug pads: the probe's UART lines too (V205's QSPI CS PB6 is its RX
+    # line), since this case's console is DMSeq and nothing plans the probe's UART meanwhile.
+    debug = set(case["target"].get("debug_pads") or [])
+    lines = {line["pin"]: line for line in port_lines(oep_host, case["target"]) if line["pad"] not in debug}
+    m = ask(dut, "qspifind " + " ".join(str(p) for p in lines), rb"QSPIFIND (NONE|\d+ \d+ \d+ \d+ \d+)")
+    if m.group(1) == b"NONE":
+        if ask(dut, "qspi 1 0 0 0 0 1000000 c 000000", rb"QSPI (\d) \S+ \d+").group(1) == b"2":
+            pytest.skip("n/a: the part has no QSPI")
+        pytest.skip("no four labelled lines are one QSPI flash's SCK, CS, IO0, IO1: " +
+                    ", ".join(l["pad"] for l in lines.values()))
+    n, *pins = (int(v) for v in m.group(1).split())
+    sck, cs, io0, io1 = (lines[p]["pad"] for p in pins)
+    record_property("pins", json.dumps({"qspi": n, "sck": sck, "cs": cs, "io0": io0, "io1": io1}))
+    host = oep_host.host
+    gpio = Gpio(host)
+    # IO0 / IO1 held up (the reads' ff), CS too: after end() its pad floats, and PB6 then made a CS window
+    # of no clocks now and then (V205, 2026-11-23)
+    chans = [lines[pins[1]]["channel"], lines[pins[2]]["channel"], lines[pins[3]]["channel"]]
+    core.plan_apply(host, [(gpio.fn, 1, c) for c in chans])
+    for c in chans:
+        gpio.configure(c, Gpio.INPUT_PULLUP)
+    wrong = []
+    addr = secrets.token_bytes(3)
+    data = secrets.token_bytes(8)
+    conditions = [
+        ("erase", "c", addr.hex(), [{"width": 1, "hex": "20"}, {"width": 1, "hex": addr.hex()}], None),
+        ("page write", "w", data.hex(), [{"width": 1, "hex": "02"}, {"width": 1, "hex": "000100"},
+                                         {"width": 1, "hex": data.hex()}], None),
+        ("dual write", "d", data.hex(), [{"width": 1, "hex": "a2"}, {"width": 2, "hex": "000100"},
+                                         {"width": 2, "hex": data.hex()}], None),
+        ("fast read", "r", "00" * 4, [{"width": 1, "hex": "0b"}, {"width": 1, "hex": "000100"}, {"dummy": 8},
+                                       {"width": 1, "lines": [1], "hex": "ff" * 4}], "ff" * 4),
+        ("dual read", "e", "00" * 4, [{"width": 1, "hex": "bb"}, {"width": 2, "hex": "000100"}, {"dummy": 4},
+                                       {"width": 2, "hex": "ff" * 4}], "ff" * 4),
+    ]
+
+    def steps(wait):
+        with ws_run.section(1, f"qspi{n} {sck} {cs} {io0} {io1}"):
+            for name, kind, hexdata, phases, want_read in conditions:
+                expect = [qspi(sck, cs, [io0, io1], transfers=[phases], mode=0, freq_hz=QSPI_HZ, freq_rel=0.25)]
+                with ws_run.section(2, name, expect=expect):
+                    command = f"qspi {n} {' '.join(str(p) for p in pins)} {QSPI_HZ} {kind} {hexdata}"
+                    r = until(dut, ws_run, wait, command, rb"QSPI (\d) (\S+) (\d+)", 5)
+                    if r.group(1) != b"1":
+                        wrong.append(f"{name}: the command failed")
+                    elif want_read and r.group(2).decode() != want_read:
+                        wrong.append(f"{name}: read {r.group(2).decode()}, the lines held {want_read}")
+                    wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in pins], rate=20_000_000, steps=steps)
+    finally:
+        for c in chans:
+            try:
+                gpio.configure(c, Gpio.INPUT)
+            except Exception:
+                pass
+        core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
+
+@pytest.mark.parametrize("feature", ["can", "rs485"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""
     case = settings(__file__)
