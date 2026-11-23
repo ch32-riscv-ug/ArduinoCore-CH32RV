@@ -77,13 +77,15 @@ typedef enum {
 
 /* setMode()'s modes, by ESP32's names and numbers (ESP-IDF's uart_mode_t).
  * UART_MODE_UART, UART_MODE_RS485_HALF_DUPLEX and UART_MODE_IRDA are what
- * this core does; the RS485 test modes are refused. */
+ * this core does; the RS485 test modes are refused. UART_MODE_LIN is the
+ * USART's own (no ESP32 counterpart; its number past ESP-IDF's). */
 typedef enum {
     UART_MODE_UART = 0,
     UART_MODE_RS485_HALF_DUPLEX = 1,
     UART_MODE_IRDA = 2,
     UART_MODE_RS485_COLLISION_DETECT = 3,
-    UART_MODE_RS485_APP_CTRL = 4
+    UART_MODE_RS485_APP_CTRL = 4,
+    UART_MODE_LIN = 0x10
 } SerialMode;
 
 /* takeErrors()'s two kinds besides STATR's ORE (bit 3), NE (bit 2), FE (bit 1)
@@ -242,8 +244,16 @@ public:
      * let go, an input). UART_MODE_IRDA: the USART's IrDA SIR (normal mode,
      * not low-power): each 0 bit goes out as a high pulse of 3/16 of a bit, a
      * 1 as nothing, and the line idles low; the receiver takes the same.
-     * The RS485 test modes are refused. */
+     * UART_MODE_LIN: the USART's LIN mode - sendBreak() sends a 13-bit break
+     * (LIN's), one stop bit; a break coming in is onReceiveError()'s
+     * UART_BREAK_ERROR as in any mode. The RS485 test modes are refused. */
     bool setMode(SerialMode mode);
+    /* A break: after what was written has gone out, the line held low for a
+     * frame and its stop bit (10 or 11 bits; 13 in UART_MODE_LIN), then
+     * high - the start of a LIN frame, a DMX packet's (too short there: 88 us
+     * wants more), a wake-up. Waits for it; false when not begun. Its own file:
+     * a sketch that never calls it links none of it. */
+    bool sendBreak();
 
     /* Multiprocessor communication: the USART's mute mode, with WCH's EVT
      * USART_MultiProcessorCommunication. setAddress(a), a 0 .. 15: each

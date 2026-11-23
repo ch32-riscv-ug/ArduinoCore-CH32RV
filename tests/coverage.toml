@@ -54,6 +54,11 @@ test = "uart::test_uart_irda"
 scope = "series"
 
 [[item]]
+id = "uart-lin"             # setMode(UART_MODE_LIN) / sendBreak(): LIN frames as a master sends them (WireSkein lin)
+test = "uart::test_uart_lin"
+scope = "series"
+
+[[item]]
 id = "uart-multiprocessor"  # setAddress() / writeAddress() / mute(): address-mark and idle-line wake (9-bit words)
 test = "uart::test_uart_multiprocessor"
 scope = "series"

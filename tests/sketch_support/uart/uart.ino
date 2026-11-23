@@ -6,6 +6,7 @@
  *   uwrite, uflow, urts                                          flow control
  *   u485, ude                                                    RS485's DE
  *   uirda                                                        IrDA (setMode)
+ *   ulin                                                         LIN (setMode, sendBreak)
  *   uaddr, umsg, umute                                           multiprocessor (mute mode)
  *   uhd, uavail                                                  single wire
  *   uevt, uevq                                                   onReceive()
@@ -212,6 +213,37 @@ void reply(const char *command) {
     // uirda <1 on | 0 off>: Serial in IrDA (setMode(UART_MODE_IRDA)), or plain UART again.
     const bool ok = Serial.setMode(command[6] == '1' ? UART_MODE_IRDA : UART_MODE_UART);
     CONSOLE.print("UIRDA ");
+    CONSOLE.println(ok ? 1 : 0);
+  } else if (strncmp(command, "ulin ", 5) == 0) {
+    // ulin <id 0..63> <data hex>: setMode(UART_MODE_LIN), a frame as a master sends it - sendBreak(), the sync 0x55,
+    // the protected id, the data, the enhanced checksum - ULIN <ok>; ulin -1: plain UART again.
+    char *p;
+    const long id = strtol(command + 5, &p, 10);
+    bool ok;
+    if (id < 0) {
+      ok = Serial.setMode(UART_MODE_UART);
+    } else {
+      const uint8_t i = (uint8_t)(id & 0x3F);
+      const uint8_t p0 = (i ^ i >> 1 ^ i >> 2 ^ i >> 4) & 1, p1 = ~(i >> 1 ^ i >> 3 ^ i >> 4 ^ i >> 5) & 1;
+      const uint8_t pid = (uint8_t)(i | p0 << 6 | p1 << 7);
+      uint16_t sum = pid;
+      ok = Serial.setMode(UART_MODE_LIN) && Serial.sendBreak();
+      Serial.write((uint8_t)0x55);
+      Serial.write(pid);
+      while (*p == ' ') {
+        p++;
+      }
+      for (; p[0] && p[1]; p += 2) {
+        char hex[3] = {p[0], p[1], 0};
+        const uint8_t b = (uint8_t)strtoul(hex, nullptr, 16);
+        Serial.write(b);
+        sum += b;
+        sum = sum > 0xFF ? sum - 0xFF : sum;
+      }
+      Serial.write((uint8_t)~sum);
+      Serial.flush();
+    }
+    CONSOLE.print("ULIN ");
     CONSOLE.println(ok ? 1 : 0);
   } else if (strncmp(command, "uaddr ", 6) == 0) {
     // uaddr <0..15 | -1>: Serial.setAddress() - UADDR <ok>.

@@ -368,6 +368,11 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_USART_CTLR2_STOP_0P5 (1u << 12)
 #define CH32RV_USART_CTLR2_STOP_2   (2u << 12)
 #define CH32RV_USART_CTLR2_STOP_1P5 (3u << 12)
+#define CH32RV_USART_CTLR2_STOP_MASK (3u << 12)
+/* LIN: the break detected at 11 bits (else 10), the LIN mode (a 13-bit break) */
+#define CH32RV_USART_CTLR2_LBDL    (1u << 5)
+#define CH32RV_USART_CTLR2_LINEN   (1u << 14)
+#define CH32RV_USART_CTLR1_SBK     (1u << 0)   /* send a break: cleared by the USART as it goes out */
 
 /* Single-wire half duplex (TX and RX joined inside, the TX pad only), and the
  * hardware flow control: RTS low while the data register can take a byte, a

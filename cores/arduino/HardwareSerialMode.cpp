@@ -498,6 +498,13 @@ void CH32RVSerialMode::start(CH32RVHardwareSerial &port)
     CH32RV_USART_CTLR1(base) = (uint16_t)(ctlr1 & ~(CH32RV_USART_CTLR1_UE | CH32RV_USART_CTLR1_TE |
                                                     CH32RV_USART_CTLR1_RE));
     CH32RV_USART_CTLR3(base) = ctlr3;
+    /* LIN: LINEN (a 13-bit break sent, breaks detected at 11 bits: LBDL),
+     * one stop bit (the mode wants it); the bits written with the USART off */
+    uint16_t ctlr2 = (uint16_t)(CH32RV_USART_CTLR2(base) & ~(CH32RV_USART_CTLR2_LINEN | CH32RV_USART_CTLR2_LBDL));
+    if (m.mode == UART_MODE_LIN) {
+        ctlr2 = (uint16_t)((ctlr2 & ~CH32RV_USART_CTLR2_STOP_MASK) | CH32RV_USART_CTLR2_LINEN | CH32RV_USART_CTLR2_LBDL);
+    }
+    CH32RV_USART_CTLR2(base) = ctlr2;
     uint16_t keep = (uint16_t)(ctlr1 & ~(CH32RV_USART_CTLR1_IDLEIE | CH32RV_USART_CTLR1_TCIE));
     if (address_ops) {
         keep = address_ops->format(port, base, keep);
@@ -865,7 +872,7 @@ bool CH32RVHardwareSerial::setMode(SerialMode mode)
         if (!m.rts) {
             return false;              /* setPins(-1, -1, -1, de) first */
         }
-    } else if (mode != UART_MODE_UART && mode != UART_MODE_IRDA) {
+    } else if (mode != UART_MODE_UART && mode != UART_MODE_IRDA && mode != UART_MODE_LIN) {
         return false;                  /* the RS485 test modes: not here */
     }
     install();

@@ -580,6 +580,39 @@ def test_uart_irda(dut, ws_run, request, record_property):
         _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
 
 
+def test_uart_lin(dut, ws_run, request, record_property):
+    """setMode(UART_MODE_LIN) and sendBreak(): at 19200 baud the DUT sends three LIN frames as a master - the 13-bit
+    break, the sync 0x55, the protected identifier, 2 / 4 / 8 data bytes, the enhanced checksum. WireSkein's `lin` on
+    TX finds exactly those frames (ids and data), every break at least 12.5 bits (the USART's 13-bit break measured
+    12.875; a slave takes 11 as a break) and its delimiter, the parity and the checksums right; then plain UART again."""
+    from wireskein.runlog import lin
+    target, oep_host = _oep_only(request)
+    dut_tx, dut_rx = _serial_lines(oep_host, target)
+    frames = [{"id": 0x10, "data": "0102"}, {"id": 0x21, "data": "a55a3cc3"}, {"id": 0x3A, "data": "0011223344556677"}]
+
+    def steps(wait):
+        with ws_run.section(1, f"lin {dut_tx['pad']}"):
+            m = _ask(dut, wait, "ucfg 19200 0", rb"UCFG (\d) (\d+)")
+            assert m.group(1) == b"1"
+            baud = int(m.group(2))
+            wait(0.01)
+            # The USART's LIN break: 12.875 bits measured (13 nominal, V203 2026-11-23); a slave takes 11 as one
+            with ws_run.section(2, "three frames at 19200",
+                                expect=[lin(dut_tx["pad"], baud, frames=frames, break_min_bits=12.5)]):
+                for f in frames:
+                    command = f"ulin {f['id']} {f['data']}"
+                    ws_run.command(command)
+                    assert _ask(dut, wait, command, rb"ULIN (\d)").group(1) == b"1", "setMode / sendBreak refused"
+                wait(0.01)
+            _ask(dut, wait, "ulin -1", rb"ULIN \d")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [dut_tx], rate=UART_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "ulin -1", rb"ULIN \d")
+        _ask_now(dut, "ucfg 115200 0", rb"UCFG \d \d+")
+
+
 def _even_weight(n):
     """umsg's bytes: (i * 37 + 11) & 0x7F, bit 7 making the count of ones even."""
     out = []
