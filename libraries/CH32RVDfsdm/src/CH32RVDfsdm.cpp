@@ -28,6 +28,14 @@
 #define ICR(x) FLT(x, 3)
 #define FCR3(x) FLT(x, 5)
 #define RDATAR(x) FLT(x, 7)
+#define AWHTR(x) FLT(x, 8)
+#define AWLTR(x) FLT(x, 9)
+#define AWSR(x) FLT(x, 10)
+#define AWCFR(x) FLT(x, 11)
+#define EXMAX(x) FLT(x, 12)
+#define EXMIN(x) FLT(x, 13)
+#define AWSCDR(y) CH(y, 2)
+#define CFGR1_SCDEN (1u << 5)
 
 #define CFGR1_SITP_FALLING (1u << 0)
 #define CFGR1_SPICKSEL_CKOUT (1u << 2)
@@ -180,8 +188,12 @@ bool CH32RVDfsdm::begin(int clockPin, int dataPin, uint32_t clockHz, uint16_t ov
      * running, it stops for this and starts again after. */
     const bool restart = users != 0;
     CFGR1(0) &= ~CFGR1_DFSDMEN;
-    CFGR1(channel) &= ~(CFGR1_CHEN | CFGR1_CHINSEL | 0xFu);
+    CFGR1(channel) &= ~(CFGR1_CHEN | CFGR1_CHINSEL | CFGR1_SCDEN | 0xFu);
     CFGR2(channel) = (uint32_t)shift << 3;
+    AWSCDR(channel) = (AWSCDR(channel) & ~0xFFu) | _scd;   /* SCDT */
+    if (_scd) {
+        CFGR1(channel) |= CFGR1_SCDEN;
+    }
     CFGR1(channel) |= (_falling ? CFGR1_SITP_FALLING : 0u) | (internal ? CFGR1_SPICKSEL_CKOUT : 0u) |
                       (channel != pins_of ? CFGR1_CHINSEL : 0u);
     if (internal) {
@@ -191,7 +203,14 @@ bool CH32RVDfsdm::begin(int clockPin, int dataPin, uint32_t clockHz, uint16_t ov
      * conversions of the channel, fast mode (no settling between them). */
     CR1(_filter) = 0;
     FCR3(_filter) = (uint32_t)order << 29 | (uint32_t)(oversample - 1u) << 16 | (uint32_t)(integrator - 1u);
-    CR2(_filter) = CR2_REOCIE;
+    /* the watchdog and the extremes on this channel's samples (AWDCH, EXCH) */
+    CR2(_filter) = CR2_REOCIE | (1u << channel) << 16 | (1u << channel) << 8;
+    AWHTR(_filter) = (uint32_t)_wd_high << 8;
+    AWLTR(_filter) = (uint32_t)_wd_low << 8;
+    AWCFR(_filter) = 0x303u;
+    (void)EXMAX(_filter);
+    (void)EXMIN(_filter);
+    ICR(0) = 1u << (24 + channel);
     CR1(_filter) = (uint32_t)channel << CR1_RCH_SHIFT | CR1_RCONT | CR1_FAST;
     CR1(_filter) |= CR1_DFEN;
     CFGR1(channel) |= CFGR1_CHEN;
@@ -258,6 +277,62 @@ void CH32RVDfsdm::end()
     _ring = nullptr;
 }
 
+bool CH32RVDfsdm::setWatchdog(int32_t low, int32_t high)
+{
+    if (low > high || low < -0x800000 || high > 0x7FFFFF) {
+        return false;
+    }
+    _wd_low = low;
+    _wd_high = high;
+    if (_begun) {
+        AWHTR(_filter) = (uint32_t)high << 8;
+        AWLTR(_filter) = (uint32_t)low << 8;
+        AWCFR(_filter) = 0x303u;
+    }
+    return true;
+}
+
+uint8_t CH32RVDfsdm::watchdog()
+{
+    if (!_begun) {
+        return 0;
+    }
+    const uint32_t mask = 1u << _channel | 1u << (8 + _channel);
+    const uint32_t f = AWSR(_filter) & mask;   /* AWLTF [1:0], AWHTF [9:8] by channel */
+    AWCFR(_filter) = f;
+    return (uint8_t)((f >> _channel & 1u) | (f >> (8 + _channel) & 1u) << 1);
+}
+
+int32_t CH32RVDfsdm::maximum()
+{
+    return _begun ? (int32_t)EXMAX(_filter) >> 8 : 0;
+}
+
+int32_t CH32RVDfsdm::minimum()
+{
+    return _begun ? (int32_t)EXMIN(_filter) >> 8 : 0;
+}
+
+bool CH32RVDfsdm::setShortCircuit(uint8_t bits)
+{
+    if (_begun) {
+        return false;
+    }
+    _scd = bits;
+    return true;
+}
+
+bool CH32RVDfsdm::shortCircuit()
+{
+    if (!_begun || !_scd) {
+        return false;
+    }
+    const uint32_t bit = 1u << (24 + _channel);   /* FLT0's ISR SCDF, by channel */
+    const bool on = (ISR(0) & bit) != 0;
+    ICR(0) = bit;
+    return on;
+}
+
 int CH32RVDfsdm::available() const
 {
     if (!_begun) {
@@ -291,6 +366,12 @@ size_t CH32RVDfsdm::read(int32_t *samples, size_t n)
 #else
 
 bool CH32RVDfsdm::setBuffer(size_t) { return false; }
+bool CH32RVDfsdm::setWatchdog(int32_t, int32_t) { return false; }
+uint8_t CH32RVDfsdm::watchdog() { return 0; }
+int32_t CH32RVDfsdm::maximum() { return 0; }
+int32_t CH32RVDfsdm::minimum() { return 0; }
+bool CH32RVDfsdm::setShortCircuit(uint8_t) { return false; }
+bool CH32RVDfsdm::shortCircuit() { return false; }
 bool CH32RVDfsdm::begin(int, int, uint32_t, uint16_t, uint8_t, uint16_t) { return false; }
 void CH32RVDfsdm::end() {}
 int CH32RVDfsdm::available() const { return 0; }

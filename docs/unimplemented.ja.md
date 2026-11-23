@@ -105,7 +105,7 @@
 | TouchKey の残り | L103、V205、H41x、V103 | 2 | 単発→自動 | 自己（何もつながない端子の値）。指の向きは手作業 | PS:76, EVT TKEY/TKEY（V205 |
 | TouchKey のしきい値・イベント | TouchKey の系列 | 2 | 単発→自動 | 手作業（指）か、プローブで容量を切り替える治具 | FC:79 |
 | HSADC の残り | H41x | 2 | 自動 | プローブ（常駐ベンチに線が無い、TODO:148） | PS:77 |
-| DFSDM（ΣΔ フィルタ、PDM マイク） | H417 | 2 | 実装済み（2026-11-23、ライブラリ CH32RVDfsdm: CKOUT か CKIN のクロック、DATIN0/1、sinc 1〜5・FastSinc、オーバーサンプリング、積分器、割り込みでリングへ、2 つのフィルター（1 本の線を両エッジでも）。periph::test_dfsdm（プローブの PWM で High・Low・デューティー 1/4・3/4、CKIN の外部クロック、WireSkein で CKOUT）が H417 で通る。I2S ライブラリの `I2S_MODE_PDM_RX`（ESP_I2S の `setPinsPdmRx()`）もこれで動く（periph::test_i2s_pdm_rx、H417）。アナログウォッチドッグ・最大最小・短絡とクロック断の検出・注入変換・並列入力・DMA は未実装。マイクは未接続） | 単発→自動 | PDM マイクか ΣΔ 変調器、またはプローブが PDM を出す | PS:78, PM:218 |
+| DFSDM（ΣΔ フィルタ、PDM マイク） | H417 | 2 | 実装済み（2026-11-23、ライブラリ CH32RVDfsdm: CKOUT か CKIN のクロック、DATIN0/1、sinc 1〜5・FastSinc、オーバーサンプリング、積分器、割り込みでリングへ、2 つのフィルター（1 本の線を両エッジでも）。periph::test_dfsdm（プローブの PWM で High・Low・デューティー 1/4・3/4、CKIN の外部クロック、WireSkein で CKOUT）が H417 で通る。I2S ライブラリの `I2S_MODE_PDM_RX`（ESP_I2S の `setPinsPdmRx()`）もこれで動く（periph::test_i2s_pdm_rx、H417）。アナログウォッチドッグ・最大最小・短絡の検出も同日に追加（periph::test_dfsdm_detectors、H417）。クロック断の検出・注入変換・並列入力・DMA は未実装。マイクは未接続） | 単発→自動 | PDM マイクか ΣΔ 変調器、またはプローブが PDM を出す | PS:78, PM:218 |
 | M030 の QII・ISP・ISINK・ISOURCE（電流検出・DC-DC 調整） | M030 | 2 | 単発 | モーター基板（M030 は端子を出力にしない約束） | UNUSED:79,98 |
 
 ## シリアルバス（UART・I2C・SPI・CAN・I2S など）

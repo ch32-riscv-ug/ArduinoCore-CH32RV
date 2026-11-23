@@ -710,6 +710,12 @@ scope = "series"
 any_of = ["DFSDM"]
 
 [[item]]
+id = "dfsdm-detectors"      # CH32RVDfsdm's watchdog, extremes and short-circuit detection on the probe's stream
+test = "periph::test_dfsdm_detectors"
+scope = "series"
+any_of = ["DFSDM"]
+
+[[item]]
 id = "i2s-pdm-rx"           # I2S's I2S_MODE_PDM_RX on the DFSDM (ESP_I2S's setPinsPdmRx)
 test = "periph::test_i2s_pdm_rx"
 scope = "series"

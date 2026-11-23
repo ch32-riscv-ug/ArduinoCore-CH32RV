@@ -28,7 +28,11 @@
  * Samples come by the filter's interrupt into a ring of 64 (setBuffer() for
  * another size before begin()); overruns() counts the ones that found it
  * full. The data is taken on SCK's rising edge (setFallingEdge() before
- * begin() for the falling one). */
+ * begin() for the falling one).
+ *
+ * Detectors (a current sensor's): the analog watchdog (setWatchdog(),
+ * watchdog()), the extremes (maximum(), minimum()), short-circuit detection
+ * (setShortCircuit(), shortCircuit()) - flags read by polling. */
 #pragma once
 
 #include <Arduino.h>
@@ -57,6 +61,21 @@ public:
     /* Up to n samples now in the ring; how many. */
     size_t read(int32_t *samples, size_t n);
 
+    /* The analog watchdog on this filter's samples: one above high or below
+     * low sets watchdog()'s bit 1 / bit 0, cleared as watchdog() reads them.
+     * Any time; until set, nothing trips it. */
+    bool setWatchdog(int32_t low, int32_t high);
+    uint8_t watchdog();
+    /* The largest / smallest sample since the last call of each (a read starts
+     * it afresh). */
+    int32_t maximum();
+    int32_t minimum();
+    /* Short-circuit detection: bits (1 .. 255) equal bits in a row on the
+     * channel's input set shortCircuit() (cleared as it reads it) - an input
+     * stuck high or low, a modulator gone to its rail. 0: off. Before begin(). */
+    bool setShortCircuit(uint8_t bits);
+    bool shortCircuit();
+
     uint32_t clock() const { return _clock_hz; }
     uint32_t sampleRate() const { return _rate; }
     int32_t fullScale() const { return _full; }
@@ -77,6 +96,8 @@ private:
     uint32_t _rate = 0;
     int32_t _full = 0;
     volatile uint32_t _overruns = 0;
+    int32_t _wd_low = -0x800000, _wd_high = 0x7FFFFF;
+    uint8_t _scd = 0;
     int32_t *_ring = nullptr;
     size_t _size = 64;
     volatile size_t _head = 0, _tail = 0;

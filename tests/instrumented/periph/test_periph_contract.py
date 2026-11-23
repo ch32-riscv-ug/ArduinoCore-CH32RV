@@ -1185,6 +1185,68 @@ def test_dfsdm(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_dfsdm_detectors(dut, oep_host, record_property):
+    """periph.dfsdm-detectors (CH32RVDfsdm's watchdog, extremes and short-circuit detection, 2026-11-23): filter 0 on
+    the lines test_dfsdm uses (CKOUT 2 MHz, sinc3 / 64: full scale 64^3), short-circuit detection at 200 equal bits,
+    the probe's PWM making the stream; each condition read twice (the first read clears what came before):
+    held high - the watchdog at +-2 full scale quiet, at +-1/2 its high bit, the extremes both +full, a short circuit;
+    held low - the watchdog's low bit, both extremes -full, a short circuit; a 10 kHz square of duty 1/2 (runs of 100
+    bits) - no short circuit, the maximum above the minimum."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    case = settings(__file__)
+    ready(dut, case)
+    debug = set(case["target"].get("debug_pads") or [])
+    lines = {line["pin"]: line for line in port_lines(oep_host, case["target"]) if line["pad"] not in debug}
+    m = ask(dut, "dfsdmfind " + " ".join(str(p) for p in lines), rb"DFSDMFIND (NONE|-?\d+ -?\d+ -?\d+)")
+    if m.group(1) == b"NONE":
+        if ask(dut, "dfsdm 0 0 0 1 64 3 1", rb"DFSDM (\d) \d+ \d+ -?\d+").group(1) == b"2":
+            pytest.skip("n/a: no DFSDM here")
+        pytest.skip("no labelled lines are a DFSDM CKOUT and DATIN pad")
+    ckout, datin, _ckin = (int(v) for v in m.group(1).split())
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(lines[datin]["channel"]))
+    full = 64 ** 3
+    results, wrong = {}, []
+
+    def stat(name):
+        ask(dut, "dfsdmstat", rb"DFSDMSTAT \d+ -?\d+ -?\d+ \d")   # what came before, cleared
+        time.sleep(0.02)
+        wd, hi, lo, scd = (int(v) for v in ask(dut, "dfsdmstat", rb"DFSDMSTAT (\d+) (-?\d+) (-?\d+) (\d)").groups())
+        results[name] = dict(watchdog=wd, maximum=hi, minimum=lo, short=scd)
+        return wd, hi, lo, scd
+
+    try:
+        pwm.start(0, 10_000, Pwm.FULL)
+        assert ask(dut, "dfsdmscd 200", rb"DFSDMSCD (\d)").group(1) == b"1"
+        assert ask(dut, f"dfsdm 0 {ckout} {datin} 2000000 64 3 1", rb"DFSDM (\d) \d+ \d+ -?\d+").group(1) == b"1"
+        ask(dut, f"dfsdmwd {-2 * full + 1} {2 * full - 1}", rb"DFSDMWD (\d)")
+        for name, duty, low_high, want in (("held high, watchdog wide", Pwm.FULL, None, (0, full, full, 1)),
+                                           ("held high, watchdog +-1/2", Pwm.FULL, full // 2, (2, full, full, 1)),
+                                           ("held low, watchdog +-1/2", 0, full // 2, (1, -full, -full, 1))):
+            pwm.start(0, 10_000, duty)
+            if low_high:
+                ask(dut, f"dfsdmwd {-low_high} {low_high}", rb"DFSDMWD (\d)")
+            time.sleep(0.01)
+            got = stat(name)
+            if got != want:
+                wrong.append(f"{name}: (watchdog, max, min, short) {got}, want {want}")
+        ask(dut, f"dfsdmwd {-2 * full + 1} {2 * full - 1}", rb"DFSDMWD (\d)")
+        pwm.start(0, 10_000, Pwm.FULL // 2)
+        time.sleep(0.01)
+        wd, hi, lo, scd = stat("10 kHz duty 1/2")
+        if scd or not hi > lo:
+            wrong.append(f"10 kHz duty 1/2: short {scd}, max {hi} min {lo}")
+    finally:
+        ask(dut, "dfsdmoff", rb"DFSDMOFF")
+        ask(dut, "dfsdmscd 0", rb"DFSDMSCD \d")
+        pwm.stop(0)
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
 def test_i2s_pdm_rx(dut, oep_host, ws_run, record_property):
     """periph.i2s-pdm-rx (I2S's I2S_MODE_PDM_RX on CH32RVDfsdm, 2026-11-23): ESP_I2S's setPinsPdmRx() on a labelled
     DFSDM CKOUT pad and DATIN pad (dfsdmfind), 16 kHz 16-bit, the probe's PWM making the stream. Mono and stereo (the

@@ -97,6 +97,10 @@
  *                             <fullScale()>
  *   dfsdmread <filter> <n>    the next n samples after the ring is emptied: DFSDMREAD <n> <mean> <min>
  *                             <max> <us for the n> <overruns() while reading>
+ *   dfsdmscd <bits>           filter 0's setShortCircuit() (before dfsdm): DFSDMSCD <1 / 0>
+ *   dfsdmwd <low> <high>      filter 0's setWatchdog(): DFSDMWD <1 / 0>
+ *   dfsdmstat                 filter 0's detectors, each read clearing it: DFSDMSTAT <watchdog()> <maximum()>
+ *                             <minimum()> <shortCircuit()>
  *   dfsdmregs                 channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 (for a failure's report):
  *                             DFSDMREGS <eight hex words>
  *   dfsdmoff                  end() of both: DFSDMOFF
@@ -782,6 +786,14 @@ static void reply(char *command)
 #if CH32RV_HAS_DFSDM
     } else if (!strcmp(argv[0], "dfsdmread") && argc == 3) {
         dfsdmRead(dfsdms[atoi(argv[1]) & 1], atol(argv[2]) > 0 ? atol(argv[2]) : 1);
+    } else if (!strcmp(argv[0], "dfsdmscd") && argc == 2) {
+        CONSOLE.printf("DFSDMSCD %d\r\n", dfsdms[0].setShortCircuit((uint8_t)atoi(argv[1])) ? 1 : 0);
+    } else if (!strcmp(argv[0], "dfsdmwd") && argc == 3) {
+        CONSOLE.printf("DFSDMWD %d\r\n", dfsdms[0].setWatchdog(atol(argv[1]), atol(argv[2])) ? 1 : 0);
+    } else if (!strcmp(argv[0], "dfsdmstat")) {
+        const uint8_t wd = dfsdms[0].watchdog();
+        const long hi = (long)dfsdms[0].maximum(), lo = (long)dfsdms[0].minimum();
+        CONSOLE.printf("DFSDMSTAT %u %ld %ld %d\r\n", wd, hi, lo, dfsdms[0].shortCircuit() ? 1 : 0);
     } else if (!strcmp(argv[0], "dfsdmregs")) {
         /* the registers, for a failure's report: channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 */
         const uint32_t b = 0x40017000u;
