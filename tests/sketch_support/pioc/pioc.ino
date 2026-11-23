@@ -32,6 +32,11 @@
  *   pow <pin> <hex> <n>  onewire.S (a copy of the PiocOneWire example's) begun on the pad (left running), then as the
  *                        example: a reset, the bytes written, n bytes read:
  *                        POW <begun> <reset's cmd.out> <write's> <read's> <the bytes read, hex>
+ *   pdmx <pin> <slots> <seed> [<packets>]
+ *                        dmx_tx.S (a copy of the PiocDmx example's) begun on that pad once and left running: packets
+ *                        (1 by default) of the start code 0 and the slots (byte i = i * 37 + seed + the packet's
+ *                        number), the break before each, 24 bytes at a time as the example sends them:
+ *                        PDMX <begun> <cmd.out or -1> <clockHz()> <cycles a bit>
  *   ppadsall             PPADSALL <role:pin:value>... (every PIOC pad: role 0 IO0, 1 IO1; value the AF or remap)
  *   pspi <sck> <mosi> <cs> <n> <seed> <hz>
  *                        spi_tx.S (a copy of the PiocSpiTx example's) begun on the two pads once and left running: n
@@ -57,10 +62,12 @@ PIOC_IMAGE(uart_rx);
 PIOC_IMAGE(spi_tx);
 PIOC_IMAGE(nec_rx);
 PIOC_IMAGE(onewire);
+PIOC_IMAGE(dmx_tx);
 int uartPin = -1;            // the pad uart_tx runs on, -1: another image (or none) is begun
 int necPin = -1;             // the same for ir_nec
 int spiSck = -1;             // the same for spi_tx (its SCK pad)
 int owPin = -1;              // the same for onewire
+int dmxPin = -1;             // the same for dmx_tx
 CH32RVPioc pioc;
 volatile int irqStatus = -1;
 volatile uint8_t irqCalls;
@@ -105,6 +112,7 @@ void reply(char *command) {
     necPin = -1;
     spiSck = -1;
     owPin = -1;
+    dmxPin = -1;
     CONSOLE.println(pioc.begin(PIOC_IMAGE_OF(bench_pulses), (int)strtol(command + 7, nullptr, 10)) ? 1 : 0);
   } else if (strncmp(command, "pws ", 4) == 0) {
     char *p;
@@ -120,6 +128,7 @@ void reply(char *command) {
     necPin = -1;
     spiSck = -1;
     owPin = -1;
+    dmxPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(ws2812), pin);
     const bool loaded = begun && pioc.loadSram(0x400, bytes, count);
     auto turns = [](uint32_t ns, uint32_t fixed) -> uint8_t {
@@ -142,6 +151,7 @@ void reply(char *command) {
     delayMicroseconds(300);
     CONSOLE.printf("PWS %d %d %d %u %u %u %lu\r\n", begun ? 1 : 0, loaded ? 1 : 0, status, h0, h1, lo,
                        (unsigned long)took);
+    dmxPin = -1;
     pioc.begin(PIOC_IMAGE_OF(bench_pulses), pin);
   } else if (strncmp(command, "puart ", 6) == 0) {
     char *p;
@@ -157,6 +167,7 @@ void reply(char *command) {
     bool begun = uartPin == pin;
     if (!begun) {
       necPin = -1;
+      dmxPin = -1;
       begun = pioc.begin(PIOC_IMAGE_OF(uart_tx), pin);
       uartPin = begun ? pin : -1;
       delay(1);
@@ -177,6 +188,47 @@ void reply(char *command) {
     }
     CONSOLE.printf("PUART %d %d %d %lu %lu\r\n", begun ? 1 : 0, 1, status,
                        (unsigned long)CH32RVPioc::clockHz(), (unsigned long)(3 * lo + 770 * hi + 11));
+  } else if (strncmp(command, "pdmx ", 5) == 0) {
+    char *p;
+    const int pin = (int)strtol(command + 5, &p, 10);
+    const unsigned long slots = strtoul(p, &p, 10);
+    const unsigned long seed = strtoul(p, &p, 10);
+    unsigned long packets = strtoul(p, nullptr, 10);
+    packets = packets ? packets : 1;
+    const uint32_t cycles = (CH32RVPioc::clockHz() + 125000) / 250000;
+    const uint32_t hi = cycles > 11 + 3 ? (cycles - 11 - 3) / 770 : 0;
+    uint32_t lo = (cycles - 11 - 770 * hi + 1) / 3;
+    lo = lo < 1 ? 1 : lo > 256 ? 256 : lo;
+    bool begun = dmxPin == pin;
+    if (!begun) {
+      uartPin = -1;
+      necPin = -1;
+      spiSck = -1;
+      owPin = -1;
+      begun = pioc.begin(PIOC_IMAGE_OF(dmx_tx), pin);
+      dmxPin = begun ? pin : -1;
+      delay(1);
+    }
+    int status = begun ? 0 : -1;
+    for (unsigned long k = 0; status == 0 && k < packets; k++) {
+      for (unsigned long i = 0; status == 0 && i < 1 + slots; i += 24) {
+        uint8_t chunk[24];
+        const uint8_t n = (uint8_t)(1 + slots - i > 24 ? 24 : 1 + slots - i);
+        for (uint8_t j = 0; j < n; j++) {
+          chunk[j] = i + j == 0 ? 0 : (uint8_t)((i + j - 1) * 37u + seed + k);
+        }
+        const uint8_t timing[2] = {(uint8_t)lo, (uint8_t)hi};
+        const uint8_t flags = i == 0 ? 1 : 0;
+        pioc.writeData(8, chunk, n);
+        pioc.writeData(1, timing, sizeof timing);
+        pioc.writeData(5, &flags, 1);
+        pioc.write(0, n);
+        pioc.command(1);
+        status = pioc.waitDone(2000);
+      }
+    }
+    CONSOLE.printf("PDMX %d %d %lu %lu\r\n", begun ? 1 : 0, status, (unsigned long)CH32RVPioc::clockHz(),
+                   (unsigned long)(3 * lo + 770 * hi + 11));
   } else if (strncmp(command, "pnec ", 5) == 0) {
     char *p;
     const int pin = (int)strtol(command + 5, &p, 10);
@@ -192,6 +244,7 @@ void reply(char *command) {
     /* begun once and left running, as uart_tx: a begin is a reset */
     if (necPin != pin) {
       uartPin = -1;
+      dmxPin = -1;
       necPin = pioc.begin(PIOC_IMAGE_OF(ir_nec), pin) ? pin : -1;
       delay(1);
     }
@@ -221,11 +274,13 @@ void reply(char *command) {
     necPin = -1;
     spiSck = -1;
     owPin = -1;
+    dmxPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
     CONSOLE.printf("PIN %d %lu", begun ? 1 : 0, (unsigned long)CH32RVPioc::clockHz());
     for (unsigned long k = 0; begun && k < count; k++) {
       pioc.command(1);
       if (pioc.waitDone(200) != 0) {
+        dmxPin = -1;
         pioc.begin(PIOC_IMAGE_OF(pulse_in), pin);
         CONSOLE.printf(" -1:-1");
         continue;
@@ -252,6 +307,7 @@ void reply(char *command) {
     necPin = -1;
     spiSck = -1;
     owPin = -1;
+    dmxPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(uart_rx), pin);
     const int32_t bit = (int32_t)((CH32RVPioc::clockHz() + baud / 2) / baud);
     uint8_t params[5] = {(uint8_t)(n > 24 ? 24 : n)};
@@ -331,6 +387,7 @@ void reply(char *command) {
       uartPin = -1;
       necPin = -1;
       spiSck = -1;
+      dmxPin = -1;
       begun = pioc.begin(PIOC_IMAGE_OF(onewire), pin) && pioc.setOpenDrain(0);
       owPin = begun ? pin : -1;
     }
@@ -361,6 +418,7 @@ void reply(char *command) {
     necPin = -1;
     spiSck = -1;
     owPin = -1;
+    dmxPin = -1;
     const bool begun = pioc.begin(PIOC_IMAGE_OF(nec_rx), pin);
     const uint32_t clk = CH32RVPioc::clockHz();
     uint32_t m = (uint32_t)((uint64_t)clk * 75 / 1000000 / 773);
@@ -396,6 +454,7 @@ void reply(char *command) {
     if (!begun) {
       uartPin = -1;
       necPin = -1;
+      dmxPin = -1;
       begun = pioc.begin(PIOC_IMAGE_OF(spi_tx), sck, mosi);
       spiSck = begun ? sck : -1;
       pinMode(cs, OUTPUT);

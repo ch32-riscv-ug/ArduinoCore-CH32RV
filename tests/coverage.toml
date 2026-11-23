@@ -128,6 +128,13 @@ needs = ["PIOC"]
 also = ["CH32X035", "CH32X033"]
 
 [[item]]
+id = "pioc-dmx"             # the PiocDmx example's program: DMX512 packets (break, MAB, 250 kbit/s 8N2) on IO0
+test = "pioc::test_pioc_dmx"
+scope = "series"
+needs = ["PIOC"]
+also = ["CH32X035", "CH32X033"]
+
+[[item]]
 id = "clock-output"         # CH32RV.setClockOutput(): MCO's period on its pad (a source of 25 MHz or less), then still
 test = "system::test_clock_output"
 scope = "series"

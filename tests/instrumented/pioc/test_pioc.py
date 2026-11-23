@@ -202,6 +202,63 @@ def test_pioc_uart_tx(dut, ws_run, request, record_property):
         assert (begun, loaded, status) == (1, 1, 0), f"{baud}: begun {begun}, loaded {loaded}, cmd.out {status}"
 
 
+DMX_SLOTS = 30           # a packet's slots after the start code (two chunks of 24 with it)
+DMX_PACKETS = 3
+
+
+def test_pioc_dmx(dut, ws_run, request, record_property):
+    """The PiocDmx example's program (dmx_tx.S, a copy beside pioc.ino): IO0 on the first PIOC pad the probe labels as a
+    plain line, begun once and left running; three packets of the start code 0 and 30 slots (slot i = i * 37 + seed +
+    the packet's number), each with its break and mark after break, 24 bytes at a time as the example sends them.
+    WireSkein's dmx512 reads exactly those three packets (250 kbit/s, 8N2, a break before each), the line high at the
+    section's start and end; the program answers 0. (The break's 92 us is the program's 23 bits; not measured.)"""
+    from wireskein.runlog import ends, protocol, starts
+    target = json.loads(pathlib.Path(__file__).with_name("case.json").read_text())["target"]
+    if not target.get("upload_port", "").startswith("oep://"):
+        pytest.skip("needs the probe's lines and logic capture (an OEP port)")
+    oep_host = request.getfixturevalue("oep_host")
+    m = _ask_now(dut, "ppads", rb"PPADS((?: \d+)*)")
+    pads = [_pad(int(n)) for n in m.group(1).split()]
+    if not pads:
+        pytest.skip("the part has no PIOC (PPADS empty)")
+    debug = set(target.get("debug_pads") or [])
+    lines = {line["pad"].upper(): line for line in port_lines(oep_host, target)
+             if line["role"] is None and line["pad"] not in debug}
+    io0 = next((lines[p] for p in pads if p in lines), None)
+    if io0 is None:
+        pytest.skip("the probe labels none of the PIOC's IO0 pads (" + ", ".join(pads) + ") as a plain line")
+    record_property("io0", io0["pad"])
+    seed = 5
+    m = _ask_now(dut, f"pdmx {io0['pin']} 1 0", rb"PDMX (\d) (-?\d+) (\d+) (\d+)")   # begun before the capture
+    baud = int(m.group(3)) / int(m.group(4))
+    record_property("baud", round(baud, 1))
+    packets = [{"start_code": 0, "data": "".join(f"{(i * 37 + seed + k) & 0xFF:02x}" for i in range(DMX_SLOTS))}
+               for k in range(DMX_PACKETS)]
+    got = {}
+
+    def steps(wait):
+        high = {io0["pad"]: 1}
+        with ws_run.section(1, f"pioc dmx_tx IO0 {io0['pad']}"):
+            with ws_run.section(2, f"{DMX_PACKETS} packets of {DMX_SLOTS} slots",
+                                expect=[protocol("dmx512", None, {"data": io0["pad"]}, messages=packets, baud=baud),
+                                        starts(high), ends(high)]):
+                wait(0.01)
+                command = f"pdmx {io0['pin']} {DMX_SLOTS} {seed} {DMX_PACKETS}"
+                ws_run.command(command)
+                m = _ask(dut, wait, command, rb"PDMX (\d) (-?\d+) (\d+) (\d+)", timeout=5.0)
+                ws_run.reply(m.group(0).decode())
+                got["reply"] = [int(x) for x in m.groups()]
+                wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [io0], rate=UART_RATE, steps=steps)
+    finally:
+        _ask_now(dut, "pend", rb"PEND")
+    record_property("reply", json.dumps(got))
+    begun, status = got["reply"][:2]
+    assert (begun, status) == (1, 0), f"begun {begun}, cmd.out {status}"
+
+
 NEC_RX_UNIT_HZ = 1_000_000 / 562.5      # the probe's spi-controller clocks one NEC unit (562.5 us) a bit on MOSI
 NEC_RX_FRAMES = ((0x00, 0x45), (0x1234, 0x5A), None)    # (address, command); None: a repeat code
 

@@ -162,5 +162,6 @@ PF13・PF14。PB8 / PB9 は SWD と兼用）。
 - [PiocIrNec](examples/PiocIrNec/README.ja.md): NEC 方式の赤外線リモコンのフレームを 38 kHz の搬送波で送る。H417・X035・V205 で WireSkein の `ir` が通っています（2026-11-19）。
 - [PiocIrNecRx](examples/PiocIrNecRx/README.ja.md): NEC 方式の赤外線リモコンのフレームを受ける（受光モジュールの出力を IO0 に、1 フレームを PIOC が 32 ビットに読み解く）。H417・X035・V205 で、プローブが出した通常・拡張のアドレスと繰り返しの符号を受けています（2026-11-20）。
 - [PiocOneWire](examples/PiocOneWire/README.ja.md): 1-Wire のマスター（DS18B20 の温度）。リセット・書き込み・読み出しのスロットを PIOC がマイクロ秒の時間で作る。端子は `setOpenDrain()` で開放ドレイン。H417・X035・V205 で、相手の無い線で WireSkein の `onewire` が通っています（2026-11-20）。
+- [PiocDmx](examples/PiocDmx/README.ja.md): DMX512 のコントローラー（32 チャネルを 1 秒に 40 回、RS-485 のドライバー経由）。ブレーク、その後のマーク、スロットを 250 kbit/s・8N2 で PIOC が出す。H417・X035・V205 で、WireSkein の `dmx512` が送ったとおりのパケットを読みます（2026-11-23）。
 - [PiocPulseIn](examples/PiocPulseIn/README.ja.md): 割込みに揺らされない `pulseIn()`。IO0 の 1 周期の High と Low を 8 サイクル刻みで数える。H417・X035・V205 でプローブの PWM を 0.5 % 以内で測れています（2026-11-19）。
 - [PiocUartRx](examples/PiocUartRx/README.ja.md): シリアルの受信をもう 1 つ（IO0、8N1、最大 24 バイトずつ）。H417・X035・V205 でプローブの UART から 9600〜1M bps で受けています（2026-11-19）。
