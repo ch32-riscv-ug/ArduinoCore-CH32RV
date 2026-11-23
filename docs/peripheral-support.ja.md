@@ -105,7 +105,7 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | SDIO | 実装済 | SD_MMC |  |  |  |  |  | ● | ● |  |  |  |  | ● | SD_MMC library。SD(SDSC/SDHC/SDXC)は1/4 bit、high speed(CMD6、50 MHz)、MMC/eMMCは1/4/8 bit(EXT_CSDのBUS_WIDTH、HS_TIMING)。ブロックはDMA(取れないときはCPU)。端子はvariantの表(V4x7のremap、H41xのAF)。4 bit・20 MHzはH417で実機確認、DMA・high speed・MMC・remap・AFは2026-11-17に実装(ビルドのみ)。H416はdevice-dataにD0の端子が無く使えない |
 | FSMC/FMC | 未実装 | - |  |  |  |  | ○ | ○ | ○ |  |  |  |  | ○ | H417のFMCはSDRAMも扱う |
 | SDMMC | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | H417。host(HS200/HS400)とSDIO slave |
-| SAI (音声) | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | TDM、SPDIF出力 |
+| SAI (音声) | 一部実装 | I2S(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | 端子がSAIのものならI2Sライブラリが使う。標準とTDM、送受信。H417で試験(2026-11-23)。SPDIF・AC'97・ブロックの同期は未対応 |
 | SWPMI | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | NFC/UICCのSWP master |
 | UHSIF (高速パラレル) | 一部実装 | CH32RVUhsif(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | 8/16/32 bitの入力・内部クロックだけ(スレーブのモード、出力、外部クロックは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)が使う |
 | SerDes | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | 1.5 Gbpsの差動リンク |

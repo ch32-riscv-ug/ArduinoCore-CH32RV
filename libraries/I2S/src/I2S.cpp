@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ch32rv_priority.h"
 #include "internal/ch32rv_dma.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_interrupt.h"
@@ -193,6 +194,9 @@ void I2SClass::setBufferSize(size_t bytes)
 
 size_t I2SClass::hwPerFrame() const
 {
+    if (_sai >= 0) {
+        return (size_t)_hw_slots * (_bits == 16 ? 1u : 2u);
+    }
     return _bits == 16 ? 2u : 4u;
 }
 
@@ -222,28 +226,35 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
         _error = I2S_ERROR_NONE;
         return true;
     }
-    if (mode != I2S_MODE_STD || rate == 0 ||
+    if ((mode != I2S_MODE_STD && mode != I2S_MODE_TDM) || rate == 0 ||
         (bits != I2S_DATA_BIT_WIDTH_16BIT && bits != I2S_DATA_BIT_WIDTH_24BIT &&
          bits != I2S_DATA_BIT_WIDTH_32BIT) ||
-        (ch != I2S_SLOT_MODE_MONO && ch != I2S_SLOT_MODE_STEREO) || _format > I2S_FORMAT_PCM_LONG) {
+        (ch != I2S_SLOT_MODE_MONO && ch != I2S_SLOT_MODE_STEREO) || _format > I2S_FORMAT_PCM_LONG ||
+        (mode == I2S_MODE_TDM && slot_mask == 0)) {
         return false;
     }
     _error = I2S_ERROR_STATE;
-    if ((_dout >= 0) == (_din >= 0) || _bclk < 0 || _ws < 0) {
-        return false;   /* one direction, and the clocks */
+    if ((_dout >= 0) == (_din >= 0) || _bclk < 0) {
+        return false;   /* one direction, and the bit clock */
     }
     const bool tx = _dout >= 0;
     const int pins[4] = {_bclk, _ws, tx ? _dout : _din, _mclk};
     int pi = -1;
     int rows[4];
-    for (uint8_t i = 0; i < PORT_COUNT && pi < 0; i++) {
+    for (uint8_t i = 0; i < PORT_COUNT && pi < 0 && mode == I2S_MODE_STD && _ws >= 0; i++) {
         if (!owners[i] && find_pads(ports[i], pins, rows)) {
             pi = i;
         }
     }
-    _error = I2S_ERROR_PINS;
     if (pi < 0) {
-        return false;
+        /* not an SPI's: an SAI block's (CH32H417), or nothing */
+        _bits = (uint8_t)bits;
+        _slots = (uint8_t)ch;
+        _mask = (uint8_t)(slot_mask < 0 ? (tx ? I2S_STD_SLOT_BOTH : I2S_STD_SLOT_LEFT) : (slot_mask & 3));
+        /* TDM: the slots used (ESP_I2S's int8_t: slots 0 .. 6; -1 slot 0, or 0 and 1 in stereo) */
+        _tdm_mask = (uint16_t)(mode != I2S_MODE_TDM ? 0 : slot_mask > 0 ? slot_mask
+                               : ch == I2S_SLOT_MODE_STEREO ? 0x3 : 0x1);
+        return beginSai(tx, rate, mode == I2S_MODE_TDM);
     }
     const Port &p = ports[pi];
 
@@ -279,6 +290,10 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
     _tx = tx;
     _port = (int8_t)pi;
     owners[pi] = this;
+    _sai = -1;
+    _tdm_mask = 0;
+    _dma = &line;
+    _irqn = tx ? p.tx_irqn : p.rx_irqn;
     _rate = (uint32_t)(CH32RV_CLOCK_SYSCLK_HZ / ((uint64_t)per * d));
     _playing = 0;
     _w_half = 1;
@@ -353,6 +368,10 @@ bool I2SClass::end()
     if (_port < 0) {
         return false;
     }
+    if (_sai >= 0) {
+        endSai();
+        return true;
+    }
     const Port &p = ports[_port];
     const ch32rv_dma_line_t &line = _tx ? p.tx : p.rx;
     ch32rv_irq_disable(_tx ? p.tx_irqn : p.rx_irqn);
@@ -389,8 +408,40 @@ bool I2SClass::end()
  * each slot left-aligned in 32 bits first, then its high halfword (and for
  * 32-bit slots its low one; 24-bit right-justified wants the top 8 bits in
  * the first halfword's low byte instead). */
+/* The SAI's: a halfword a 16-bit slot, else a word (low halfword first: the
+ * DMA moves words), right-aligned as DATAR takes them; mono STD on the
+ * slots of the mask, TDM one sample a slot used. */
+static int32_t sample_in(const uint8_t *p, uint8_t bits)
+{
+    if (bits == 16) {
+        return (int16_t)(p[0] | p[1] << 8);
+    }
+    if (bits == 24) {
+        return (int32_t)((uint32_t)(p[0] | p[1] << 8 | (uint32_t)p[2] << 16) << 8) >> 8;
+    }
+    return (int32_t)(p[0] | p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24);
+}
+
 void I2SClass::packFrame(const uint8_t *in, uint16_t *out) const
 {
+    if (_sai >= 0) {
+        const uint8_t bytes = (uint8_t)(_bits / 8u);
+        for (uint8_t k = 0; k < _hw_slots; k++) {
+            int32_t v = 0;
+            if (_tdm_mask || _slots == 2) {
+                v = sample_in(in + k * bytes, _bits);
+            } else if (_mask & (1u << k)) {
+                v = sample_in(in, _bits);
+            }
+            if (_bits == 16) {
+                *out++ = (uint16_t)v;
+            } else {
+                *out++ = (uint16_t)v;
+                *out++ = (uint16_t)((uint32_t)v >> 16);
+            }
+        }
+        return;
+    }
     uint32_t v[2];
     for (uint8_t s = 0; s < _slots; s++) {
         const uint8_t *b = in + s * (_bits / 8u);
@@ -433,6 +484,20 @@ void I2SClass::packFrame(const uint8_t *in, uint16_t *out) const
 
 void I2SClass::unpackFrame(const uint16_t *in, uint8_t *out) const
 {
+    if (_sai >= 0) {
+        const uint8_t bytes = (uint8_t)(_bits / 8u);
+        const uint8_t per = _bits == 16 ? 1u : 2u;
+        const uint8_t first = (!_tdm_mask && _slots == 1 && !(_mask & I2S_STD_SLOT_LEFT)) ? 1u : 0u;
+        const uint8_t count = (_tdm_mask || _slots == 2) ? _hw_slots : 1u;
+        for (uint8_t k = 0; k < count; k++) {
+            const uint16_t *w = in + (first + k) * per;
+            uint32_t v = _bits == 16 ? (uint32_t)(int32_t)(int16_t)w[0] : (uint32_t)w[0] | (uint32_t)w[1] << 16;
+            for (uint8_t b = 0; b < bytes; b++) {
+                out[k * bytes + b] = (uint8_t)(v >> (8u * b));
+            }
+        }
+        return;
+    }
     uint32_t l, r;
     if (_bits == 16) {
         l = (uint32_t)in[0] << 16;
@@ -705,37 +770,40 @@ size_t I2SClass::readBytes(char *buffer, size_t length)
 
 void I2SClass::dmaInterrupt()
 {
-    if (_port < 0) {
+    if (_port < 0 || !_dma) {
         return;
     }
-    const Port &p = ports[_port];
-    const ch32rv_dma_line_t &line = _tx ? p.tx : p.rx;
+    const ch32rv_dma_line_t &line = *static_cast<const ch32rv_dma_line_t *>(_dma);
     const uint32_t f = (CH32RV_DMA_INTFR(&line) >> line.shift) & 0xFu;
     CH32RV_DMA_INTFCR(&line) = f << line.shift;
     /* half 0 done at HT, half 1 at TC; both at once when this came late */
     for (uint8_t h = 0; h < 2; h++) {
-        if (!(f & (h ? CH32RV_DMA_TCIF : CH32RV_DMA_HTIF))) {
-            continue;
+        if (f & (h ? CH32RV_DMA_TCIF : CH32RV_DMA_HTIF)) {
+            halfDone(h);
         }
-        if (!_tx) {
-            _rx_halves = _rx_halves + 1u;
-            continue;
+    }
+}
+
+/* Half h of the ring moved: an input's to read, an output's to fill again. */
+void I2SClass::halfDone(uint8_t h)
+{
+    if (!_tx) {
+        _rx_halves = _rx_halves + 1u;
+        return;
+    }
+    const uint8_t next = (uint8_t)(1u - h);
+    const uint32_t had = _fill[h];
+    _playing = next;
+    memset(_ring + (uint32_t)h * _half, 0, _half * sizeof(uint16_t));
+    _fill[h] = 0;
+    if (_w_half == next) {
+        /* the half write() was on plays now: write() moves to the one just
+         * freed; short of full while sound was flowing, it is an underrun */
+        if (had && _w_ofs < _half) {
+            _underruns = _underruns + 1u;
         }
-        const uint8_t next = (uint8_t)(1u - h);
-        const uint32_t had = _fill[h];
-        _playing = next;
-        memset(_ring + (uint32_t)h * _half, 0, _half * sizeof(uint16_t));
-        _fill[h] = 0;
-        if (_w_half == next) {
-            /* the half write() was on plays now: write() moves to the one
-             * just freed; short of full while sound was flowing, it is an
-             * underrun */
-            if (had && _w_ofs < _half) {
-                _underruns = _underruns + 1u;
-            }
-            _w_half = h;
-            _w_ofs = 0;
-        }
+        _w_half = h;
+        _w_ofs = 0;
     }
 }
 
@@ -772,6 +840,256 @@ extern "C" CH32RV_INTERRUPT void I2S_CAT(CH32RV_SPI3_DMA_RX_IRQ, _IRQHandler)(vo
 {
     port_irq(I2S3_INDEX);
 }
+#endif
+
+/* ------------------------------------------------------------------ SAI */
+
+#ifdef CH32RV_SAI_PADS
+/* CH32H417's SAI (EVT ch32h417.h, the STM32 SAI's registers): block A at
+ * 0x40015804, B at 0x40015824 - CFGR1, CFGR2, FRCR, SLOTR, INTENR, SR, -,
+ * DATAR. Its clock SAI_CK = SYSCLK / 6 and MCLK = SAI_CK / MCKDIV = 256 fs
+ * (EVT SAI_Play's formula: RM 36.3.1's "/ (MCKDIV x 2)" made every rate
+ * twice what was asked, H417 2026-11-23). The FIFO's request interrupt
+ * (FREQ, at half the FIFO) moves the ring's halfwords / words to and from
+ * DATAR, as many as the FIFO level (SR.FLTH) allows, and runs halfDone() at
+ * each half - the same ring the SPI's DMA uses; the SD bit stream decoded
+ * (WireSkein spi, measured) carried every item of the ring once, in order
+ * (H417, 2026-11-23). No DMA channel taken: one interrupt for both blocks. */
+namespace {
+#define SAI_REG(b, off) CH32RV_REG32(0x40015804u + 0x20u * (b) + (off))
+#define SAI_CFGR1(b)  SAI_REG(b, 0x00u)
+#define SAI_CFGR2(b)  SAI_REG(b, 0x04u)
+#define SAI_FRCR(b)   SAI_REG(b, 0x08u)
+#define SAI_SLOTR(b)  SAI_REG(b, 0x0Cu)
+#define SAI_INTENR(b) SAI_REG(b, 0x10u)
+#define SAI_SR(b)     SAI_REG(b, 0x14u)
+#define SAI_DATAR(b)  SAI_REG(b, 0x1Cu)
+constexpr uint32_t SAI_EN = 1u << 16, SAI_CKSTR = 1u << 9, SAI_FREQ = 1u << 3, SAI_OVRUDR = 1u << 0;
+constexpr uint32_t SAI_CK_HZ = CH32RV_CLOCK_SYSCLK_HZ / 6u;
+const Pad sai_pads[] = CH32RV_SAI_PADS;
+I2SClass *sai_owners[2];
+
+const Pad *sai_pad(int pin, uint8_t role)
+{
+    for (const Pad &q : sai_pads) {
+        if (q.role == role && q.pad == (uint8_t)pin) {
+            return &q;
+        }
+    }
+    return nullptr;
+}
+
+void sai_irq(void *)
+{
+    for (I2SClass *o : sai_owners) {
+        if (o) {
+            o->saiInterrupt();
+        }
+    }
+}
+}   // namespace
+
+bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm)
+{
+    _error = I2S_ERROR_PINS;
+    const int data = tx ? _dout : _din;
+    int8_t b = -1;
+    for (uint8_t k = 0; k < 2 && b < 0; k++) {
+        if (!sai_owners[k] && sai_pad(_bclk, (uint8_t)(4 * k)) && sai_pad(data, (uint8_t)(4 * k + 2)) &&
+            (_ws < 0 || sai_pad(_ws, (uint8_t)(4 * k + 1))) && (_mclk < 0 || sai_pad(_mclk, (uint8_t)(4 * k + 3)))) {
+            b = (int8_t)k;
+        }
+    }
+    if (b < 0) {
+        return false;
+    }
+    /* The frame: two slots (STD) or up to the mask's highest rounded up to
+     * 2, 4 or 8 (TDM), of 16 bits for 16-bit samples and 32 for 24 / 32;
+     * 256 bits at most (MCLK, 256 fs, over SCK has to be whole). */
+    _error = I2S_ERROR_ARG;
+    const uint8_t slot_bits = _bits == 16 ? 16u : 32u;
+    uint8_t nslots = 2;
+    uint16_t enable = 0x3u;
+    if (tdm) {
+        const uint8_t top = (uint8_t)(32 - __builtin_clz((uint32_t)_tdm_mask));
+        while (nslots < top) {
+            nslots = (uint8_t)(nslots * 2u);
+        }
+        enable = _tdm_mask;
+        _slots = (uint8_t)__builtin_popcount(_tdm_mask);
+    }
+    const uint32_t frame = (uint32_t)nslots * slot_bits;
+    if (frame > 256u) {
+        return false;
+    }
+    _hw_slots = tdm ? _slots : 2u;
+    const uint32_t div = (uint32_t)((SAI_CK_HZ + 128ull * rate) / (256ull * rate));   /* nearest */
+    if (div < 1u || div > 63u) {
+        return false;
+    }
+    const uint32_t hpf = hwPerFrame();
+    _half = (uint32_t)(_half_bytes / 2u / hpf * hpf);
+    if (_half < hpf) {
+        _half = hpf;
+    }
+    _ring = (uint16_t *)calloc(2u * _half, sizeof(uint16_t));
+    _error = I2S_ERROR_MEMORY;
+    if (!_ring) {
+        return false;
+    }
+    _error = I2S_ERROR_STATE;
+    if (!sai_owners[b ^ 1] && !ch32rv_irq_attach(CH32RV_IRQN_SAI, sai_irq, nullptr)) {
+        free(_ring);
+        _ring = nullptr;
+        return false;
+    }
+    _sai = b;
+    _dma = nullptr;
+    _tx = tx;
+    _port = (int8_t)(PORT_COUNT + b);
+    _sai_pos = 0;
+    _rate = (uint32_t)(SAI_CK_HZ / (256ull * div));
+    _playing = 0;
+    _w_half = 1;
+    _w_ofs = 0;
+    _fill[0] = _fill[1] = 0;
+    _underruns = _overruns = 0;
+    _staged = 0;
+    _rx_halves = 0;
+    _rx_read = 0;
+    _rx_off = 0;
+    _peeked = _peek_pos = 0;
+
+    CH32RV_REG32(0x4002101Cu) |= 1u << 16;   /* RCC HB2PCENR SAIEN (both blocks) */
+    const int pins[4] = {_bclk, _ws, data, _mclk};
+    for (uint8_t r = 0; r < 4; r++) {
+        if (pins[r] >= 0) {
+            ch32rv_pin_set_af((uint8_t)pins[r], sai_pad(pins[r], (uint8_t)(4 * b + r))->value);
+            pad_mode(pins[r], (r == 2 && !tx) ? CH32RV_GPIO_CFG_IN_FLOAT : CH32RV_GPIO_CFG_AF_PP_50M);
+        }
+    }
+    /* The frame sync per format: Philips FS low for the first (left) half,
+     * one bit early; MSB / LSB justified high for the left half, on the
+     * first bit (LSB: the word at the slot's end); PCM a pulse (1 or 13 bits)
+     * starting the frame, one bit early for the short one. TDM's Philips FS
+     * low for the first half of the frame. */
+    uint32_t fsall = frame / 2u - 1u, fsdef = tdm ? 0u : 1u, fspol = 0, fsoff = 1, fboff = 0;
+    switch (_format) {
+    case I2S_FORMAT_MSB:
+        fspol = 1;
+        fsoff = 0;
+        break;
+    case I2S_FORMAT_LSB:
+        fspol = 1;
+        fsoff = 0;
+        fboff = slot_bits - _bits;
+        break;
+    case I2S_FORMAT_PCM_SHORT:
+        fsall = 0;
+        fsdef = 0;
+        fspol = 1;
+        break;
+    case I2S_FORMAT_PCM_LONG:
+        fsall = 12;
+        fsdef = 0;
+        fspol = 1;
+        fsoff = 0;
+        break;
+    default:
+        break;
+    }
+    if (_inv_ws) {
+        fspol ^= 1u;
+    }
+    static const uint8_t ds_code[] = {4, 6, 7};   /* 16, 24, 32 bits */
+    SAI_CFGR1(b) = 0;
+    SAI_CFGR2(b) = 1u << 3;   /* FIFO flushed */
+    SAI_CFGR2(b) = 2u;        /* FREQ at half the FIFO */
+    SAI_FRCR(b) = (frame - 1u) | fsall << 8 | fsdef << 16 | fspol << 17 | fsoff << 18;
+    SAI_SLOTR(b) = fboff | (slot_bits == 16 ? 1u : 2u) << 6 | (uint32_t)(nslots - 1u) << 8 | (uint32_t)enable << 16;
+    SAI_CFGR1(b) = (tx ? 0u : 1u) | (uint32_t)ds_code[_bits == 16 ? 0 : _bits == 24 ? 1 : 2] << 5 |
+                   (_inv_bclk ? 0u : SAI_CKSTR) | div << 20;
+    sai_owners[b] = this;
+    if (tx) {
+        saiInterrupt();   /* the FIFO full of the (silent) ring before the clock starts */
+    }
+    SAI_INTENR(b) = SAI_FREQ;
+    SAI_CFGR1(b) |= SAI_EN;
+    _error = I2S_ERROR_NONE;
+    return true;
+}
+
+/* FREQ: an output's FIFO below half, or an input's above. Items move until
+ * the FIFO is full / empty (SR.FLTH: 0 empty .. 5 full), each half of the
+ * ring finished running halfDone(). */
+void I2SClass::saiInterrupt()
+{
+    const uint8_t b = (uint8_t)_sai;
+    if (SAI_SR(b) & SAI_OVRUDR) {
+        SAI_REG(b, 0x18u) = SAI_OVRUDR;   /* CLRFR */
+        if (!_tx) {
+            _overruns = _overruns + 1u;
+        }
+    }
+    const bool wide = _bits != 16;
+    const uint32_t end = 2u * _half;
+    uint32_t level = (SAI_SR(b) >> 16) & 7u;
+    for (uint8_t guard = 0; guard < 16u && (_tx ? level < 5u : level != 0u); guard++) {
+        uint16_t *at = _ring + _sai_pos;
+        if (_tx) {
+            SAI_DATAR(b) = wide ? ((uint32_t)at[0] | (uint32_t)at[1] << 16) : (uint32_t)(int32_t)(int16_t)at[0];
+        } else {
+            const uint32_t v = SAI_DATAR(b);
+            at[0] = (uint16_t)v;
+            if (wide) {
+                at[1] = (uint16_t)(v >> 16);
+            }
+        }
+        level = (SAI_SR(b) >> 16) & 7u;
+        _sai_pos += wide ? 2u : 1u;
+        if (_sai_pos == _half) {
+            halfDone(0);
+        } else if (_sai_pos >= end) {
+            _sai_pos = 0;
+            halfDone(1);
+        }
+    }
+}
+
+void I2SClass::endSai()
+{
+    const uint8_t b = (uint8_t)_sai;
+    SAI_INTENR(b) = 0;
+    SAI_CFGR1(b) &= ~SAI_EN;
+    for (uint32_t t = 0; t < 100000u && (SAI_CFGR1(b) & SAI_EN); t++) {
+    }
+    SAI_CFGR1(b) = 0;
+    sai_owners[b] = nullptr;
+    if (!sai_owners[b ^ 1]) {
+        ch32rv_irq_detach(CH32RV_IRQN_SAI);
+        CH32RV_REG32(0x40021010u) |= 1u << 16;   /* RCC HB2PRSTR SAIRST */
+        CH32RV_REG32(0x40021010u) &= ~(1u << 16);
+        CH32RV_REG32(0x4002101Cu) &= ~(1u << 16);
+    }
+    pad_mode(_bclk, CH32RV_GPIO_CFG_IN_FLOAT);
+    pad_mode(_ws, CH32RV_GPIO_CFG_IN_FLOAT);
+    pad_mode(_tx ? _dout : _din, CH32RV_GPIO_CFG_IN_FLOAT);
+    pad_mode(_mclk, CH32RV_GPIO_CFG_IN_FLOAT);
+    _sai = -1;
+    _port = -1;
+    free(_ring);
+    _ring = nullptr;
+    _rate = 0;
+}
+#else
+bool I2SClass::beginSai(bool, uint32_t, bool)
+{
+    _error = I2S_ERROR_PINS;
+    return false;
+}
+
+void I2SClass::endSai() {}
+void I2SClass::saiInterrupt() {}
 #endif
 
 #endif   // CH32RV_HAS_I2S

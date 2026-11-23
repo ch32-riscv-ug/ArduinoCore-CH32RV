@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-SPI の I2S モード（I2S2・I2S3）で音声を出し入れするライブラリです。CH32V30x、CH32V4x7、CH32H41x にあります。API は arduino-esp32 の ESP_I2S と同じ形です（ヘッダーは `I2S.h`、クラスは `I2SClass`）。
+SPI の I2S モード（I2S2・I2S3）で音声を出し入れするライブラリです。CH32V30x、CH32V4x7、CH32H41x にあります。CH32H417 の SAI（標準と TDM）、CH32H41x の DFSDM の PDM マイクにも対応します。API は arduino-esp32 の ESP_I2S と同じ形です（ヘッダーは `I2S.h`、クラスは `I2SClass`）。
 
 ```cpp
 #include <I2S.h>
@@ -27,7 +27,7 @@ void loop() {
 | `setPinsPdmRx(clk, din0)` | PDM マイク（`I2S_MODE_PDM_RX`）。CH32H41x の DFSDM を使う。clk は CKOUT、din0 は DATIN の端子（variant の `CH32RV_DFSDM_PADS`） |
 | `setInverted(bclk, ws)` | BCLK の極性を反転、WS は左右を入れ替え |
 | `setBufferSize(bytes)` | DMA バッファーの半分の大きさ（既定 1024 バイト）。begin() の前に |
-| `begin(I2S_MODE_STD か I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits は 16・24・32、slots は `I2S_SLOT_MODE_MONO` / `_STEREO` |
+| `begin(I2S_MODE_STD、I2S_MODE_TDM（SAI）か I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits は 16・24・32、slots は `I2S_SLOT_MODE_MONO` / `_STEREO` |
 | `write(buf, n)` / `availableForWrite()` | 出力 |
 | `readBytes(buf, n)` / `read()` / `available()` | 入力。readBytes() は `setTimeout()`（既定 1 秒）まで待つ |
 | `flush()` | 書いた音が出終わるまで待つ |
@@ -43,6 +43,20 @@ void loop() {
 - 出力は DMA が 2 つの半分を交互に流すバッファーです。間に合わなかった半分は無音になるので、書くのをやめれば音も止まります。入力は DMA が埋める輪のバッファーで、読まずに置いたものは上書きされます（`overruns()`）。
 - DMA の半分・全部の割り込みはこのライブラリが持ちます（SPI2・SPI3 の DMA チャネルの割り込み）。
 - 同じ SPI を SPI ライブラリと同時に使うことはできません。
+
+### SAI（CH32H417）
+
+```cpp
+i2s.setPins(PF8, PF9, PA13);                // SCK_B、FS_B、SD_B: SAI のブロック B（FS は -1 で外に出さない）
+i2s.begin(I2S_MODE_TDM, 16000, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO, 0x0F);   // スロット 0〜3
+int16_t frame[4] = {a, b, c, d};
+i2s.write((const uint8_t *)frame, sizeof(frame));
+```
+
+- 端子が SAI のブロックのもの（variant の `CH32RV_SAI_PADS`: ブロック A か B の SCK・FS・SD・MCLK）なら SAI を使います。SPI の I2S の端子でもある場合、標準モードは SPI を選びます。出力も入力も、標準モード（上の形式）と `I2S_MODE_TDM` に対応します。
+- TDM: `slot_mask` は使うスロットです（ESP_I2S と同じ `int8_t` で、スロット 0〜6。-1 はスロット 0、ステレオなら 0 と 1）。枠は 2・4・8 スロット（使う最大より後ろは止める）で、16 bit のサンプルなら 16 bit、24・32 bit なら 32 bit ずつ。メモリーには使うスロット 1 つにつき 1 サンプル。Philips は枠の前半で FS が Low（1 ビット早く）、PCM は 1 か 13 ビットのパルスです。
+- クロック: SAI_CK = SYSCLK / 6、MCLK = SAI_CK / MCKDIV（1〜63）= 256 fs なので、速さは粗めです。400 MHz では 32 kHz → 32552 Hz、16 kHz → 16276、44.1 kHz → 43403、48 kHz → 52083（`sampleRate()` で分かる）。FS は要らなければ出さなくて（-1）かまいません。
+- DMA のチャネルは使いません。SAI の FIFO の割り込みでサンプルを運びます（両ブロックで 1 つの割り込み）。CH32H417 で I2S を使うスケッチには SAI のコード（約 3 KB）が入ります。
 
 ### PDM マイク（CH32H41x）
 
@@ -63,4 +77,4 @@ i2s.readBytes((char *)frame, sizeof(frame));   // 左、右
 
 ## 試験
 
-spi::test_i2s: 出力を 3 本のラベル付きの線で取り込み、WireSkein の i2s で判定（16・32 bit の Philips、24 bit の左詰め・右詰め、16 bit モノラル。8 フレームの乱数が続けて出ること、32 kHz の 1 % 以内、スロットの BCLK 数）。spi::test_i2s_input: プローブの PWM を SD に入れ、DUT が読んだスロットの 1・0 の割合と立ち上がりの数を PWM と比べる。H417 で通る（2026-11-23）。V30x・V4x7 はビルドのみ（ベンチの線が I2S の組み合わせにならない）。periph::test_i2s_pdm_rx: `I2S_MODE_PDM_RX` の 16 kHz。プローブの PWM でデータの列を作り、デューティー 1/4・3/4 でモノラルとステレオの両スロットの平均が 32767 の -1/2・+1/2、オーバーランなし、CKOUT は WireSkein で判定（H417、2026-11-23）。
+spi::test_i2s: 出力を 3 本のラベル付きの線で取り込み、WireSkein の i2s で判定（16・32 bit の Philips、24 bit の左詰め・右詰め、16 bit モノラル。8 フレームの乱数が続けて出ること、32 kHz の 1 % 以内、スロットの BCLK 数）。spi::test_i2s_input: プローブの PWM を SD に入れ、DUT が読んだスロットの 1・0 の割合と立ち上がりの数を PWM と比べる。H417 で通る（2026-11-23）。V30x・V4x7 はビルドのみ（ベンチの線が I2S の組み合わせにならない）。spi::test_sai: SAI のブロック B の SCK と SD（FS はベンチの線に無い）で、SCK が sampleRate() x 枠のビット数の方形波（16 bit 標準、TDM 4 x 16 と 8 x 32）を WireSkein で判定し、入力はプローブの PWM を test_i2s_input と同じく読む（H417、2026-11-23）。SD のビット列を一度解読し、サンプルが順に全部出ていることも確かめた。periph::test_i2s_pdm_rx: `I2S_MODE_PDM_RX` の 16 kHz。プローブの PWM でデータの列を作り、デューティー 1/4・3/4 でモノラルとステレオの両スロットの平均が 32767 の -1/2・+1/2、オーバーランなし、CKOUT は WireSkein で判定（H417、2026-11-23）。

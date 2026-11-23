@@ -10,7 +10,13 @@
  *
  * The controller (master) side only, standard (two-slot) mode only: the
  * SPI's I2S has no TDM or PDM. PDM microphones (I2S_MODE_PDM_RX) go through
- * CH32H41x's DFSDM instead (setPinsPdmRx(), below). One direction per instance - the SPI's I2S is
+ * CH32H41x's DFSDM instead (setPinsPdmRx(), below), and CH32H417's SAI takes
+ * the pins when they are an SAI block's (the variant's CH32RV_SAI_PADS: SCK,
+ * FS, SD and MCLK of block A or B) - standard mode and I2S_MODE_TDM
+ * (slot_mask the slots used: ESP_I2S's int8_t, slots 0 .. 6, in a frame of
+ * 2, 4 or 8), FS optional there (-1: not brought out). The SAI's clock is a fixed division of SYSCLK, so its rates are
+ * coarse (sampleRate() says which); STD on pins that are both picks the SPI.
+ * One direction per instance - the SPI's I2S is
  * half duplex, so DOUT or DIN, not both (two instances on I2S2 and I2S3 do
  * both at once). The pins pick the instance: CK, WS, SD (and MCK) have to be
  * pads of I2S2 or I2S3 (the variant's CH32RV_I2Sn_PADS) - any of them on
@@ -38,7 +44,7 @@
 
 #include <Arduino.h>
 
-#if defined(CH32RV_I2S2_PADS) || defined(CH32RV_I2S3_PADS)
+#if defined(CH32RV_I2S2_PADS) || defined(CH32RV_I2S3_PADS) || defined(CH32RV_SAI_PADS)
 #define CH32RV_HAS_I2S 1
 #else
 #define CH32RV_HAS_I2S 0
@@ -138,6 +144,8 @@ public:
 
     /* The DMA's half / full interrupt: the I2S library's own. */
     void dmaInterrupt();
+    /* The SAI's FIFO interrupt (the SAI library's own; CH32H417). */
+    void saiInterrupt();
 
     /* PDM_RX's (I2SPdm.cpp), set by setPinsPdmRx() */
     struct PdmOps {
@@ -187,6 +195,18 @@ private:
     volatile uint32_t _overruns = 0;
     uint8_t _peek[8];
     uint8_t _peeked = 0, _peek_pos = 0;
+
+    /* the DMA line running (a ch32rv_dma_line_t) and its interrupt; the SAI
+     * block (0 A, 1 B) or -1 for an SPI; slots in a hardware frame */
+    const void *_dma = nullptr;
+    uint32_t _irqn = 0;
+    int8_t _sai = -1;
+    uint8_t _hw_slots = 2;
+    uint16_t _tdm_mask = 0;
+    bool beginSai(bool tx, uint32_t rate, bool tdm);
+    void endSai();
+    void halfDone(uint8_t h);
+    uint32_t _sai_pos = 0;   /* the next halfword of the ring the SAI moves */
 
     const PdmOps *_pdm_ops = nullptr;
     void *_pdm = nullptr;   /* I2SPdm.cpp's: the DFSDM filters */

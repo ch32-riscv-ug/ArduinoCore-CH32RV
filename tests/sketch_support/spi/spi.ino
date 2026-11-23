@@ -63,6 +63,13 @@
  *                                      <mixed> <rises> <overruns>
  *   i2stat                             I2STAT <underruns>
  *   i2send                             end(): I2SEND
+ *   saifind <pin>...                   two of these pins that are one SAI block's SCK and SD (the
+ *                                      variant's CH32RV_SAI_PADS): SAIFIND <sck> <sd> (SAIFIND NONE)
+ *   saitdm <sck> <sd> <bits> <rate> <slot mask>
+ *                                      begin(I2S_MODE_TDM) as an output, FS not brought out, a counting
+ *                                      sample in each slot played from loop(): SAITDM <1 / 0>
+ *                                      <sampleRate()> <lastError()>
+ *                                      (i2s / i2srx with ws -1 run the SAI in standard mode)
  *
  * The bus itself as a peripheral (SPI_HAS_PERIPHERAL_MODE): SPI after `hw`, SoftSPI after
  * `pins`, CS left to the master (the DUT's CS pin an input):
@@ -378,6 +385,73 @@ static void i2sFind(char *p)
     CONSOLE.print(got[1]);
     CONSOLE.print(' ');
     CONSOLE.println(got[2]);
+}
+
+static void saiFind(char *p)
+{
+#ifdef CH32RV_SAI_PADS
+    static const I2SPad t[] = CH32RV_SAI_PADS;
+    long pins[32];
+    size_t count = 0;
+    while (count < 32) {
+        char *end;
+        const long v = strtol(p, &end, 10);
+        if (end == p) {
+            break;
+        }
+        pins[count++] = v;
+        p = end;
+    }
+    for (const I2SPad &sck : t) {
+        for (const I2SPad &sd : t) {
+            if (sck.role % 4u != 0 || sd.role != sck.role + 2u) {
+                continue;
+            }
+            bool a = false, b = false;
+            for (size_t k = 0; k < count; k++) {
+                a = a || pins[k] == sck.pad;
+                b = b || pins[k] == sd.pad;
+            }
+            if (a && b) {
+                CONSOLE.print("SAIFIND ");
+                CONSOLE.print((int)sck.pad);
+                CONSOLE.print(' ');
+                CONSOLE.println((int)sd.pad);
+                return;
+            }
+        }
+    }
+#else
+    (void)p;
+#endif
+    CONSOLE.println("SAIFIND NONE");
+}
+
+static void saiTdm(char *p)
+{
+    i2s.end();
+    i2sOn = false;
+    const long sck = strtol(p, &p, 10);
+    const long sd = strtol(p, &p, 10);
+    const long bits = strtol(p, &p, 10);
+    const unsigned long rate = strtoul(p, &p, 10);
+    const unsigned long mask = strtoul(p, &p, 10);
+    const size_t bytes = (size_t)bits / 8u * (size_t)__builtin_popcount((unsigned)mask);
+    i2sLen = bytes <= sizeof i2sFrames ? bytes : 0;
+    for (size_t k = 0; k < i2sLen; k++) {
+        i2sFrames[k] = (uint8_t)(0x11u * (k + 1u));
+    }
+    i2s.setPins((int)sck, -1, (int)sd);
+    i2s.setFormat(I2S_FORMAT_PHILIPS);
+    const bool ok = i2sLen && i2s.begin(I2S_MODE_TDM, (uint32_t)rate, (i2s_data_bit_width_t)bits,
+                                        I2S_SLOT_MODE_STEREO, (int8_t)mask);
+    i2sOn = ok;
+    CONSOLE.print("SAITDM ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)i2s.sampleRate());
+    CONSOLE.print(' ');
+    CONSOLE.println(i2s.lastError());
 }
 
 static void i2sCommand(char *p)
@@ -737,6 +811,18 @@ void loop()
             i2sReceive(p + 6);
 #else
             CONSOLE.println("I2SRX 0 0 0 0 0 0 0 0");
+#endif
+        } else if (strncmp(line, "saifind ", 8) == 0) {
+#if CH32RV_HAS_I2S
+            saiFind(p + 8);
+#else
+            CONSOLE.println("SAIFIND NONE");
+#endif
+        } else if (strncmp(line, "saitdm ", 7) == 0) {
+#if CH32RV_HAS_I2S
+            saiTdm(p + 7);
+#else
+            CONSOLE.println("SAITDM 0 0 0");
 #endif
         } else if (strcmp(line, "i2stat") == 0) {
             CONSOLE.print("I2STAT ");

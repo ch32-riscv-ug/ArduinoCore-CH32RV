@@ -1408,6 +1408,24 @@ static const uint8_t SS = PIN_SPI_SS;
     { 4, PC2, 0x00000006u, 0x00000000u }, \
 }
 
+/* SAI's pads, for the I2S library (blocks A and B): role (0 SCK_A, 1 FS_A, 2 SD_A, 3 MCLK_A, 4 SCK_B, 5 FS_B, 6 SD_B, 7 MCLK_B), pad, then
+ * its function number and 0 (pads of any route go together). */
+#define CH32RV_SAI_PAD_COUNT 12
+#define CH32RV_SAI_PADS { \
+    { 0, PC2, 0x00000007u, 0x00000000u }, \
+    { 1, PC3, 0x00000007u, 0x00000000u }, \
+    { 2, PC1, 0x00000007u, 0x00000000u }, \
+    { 3, PC0, 0x00000007u, 0x00000000u }, \
+    { 4, PF8, 0x00000006u, 0x00000000u }, \
+    { 4, PA14, 0x0000000du, 0x00000000u }, \
+    { 5, PF9, 0x00000006u, 0x00000000u }, \
+    { 5, PA15, 0x0000000du, 0x00000000u }, \
+    { 6, PF6, 0x00000006u, 0x00000000u }, \
+    { 6, PA13, 0x0000000du, 0x00000000u }, \
+    { 7, PF7, 0x00000006u, 0x00000000u }, \
+    { 7, PC9, 0x0000000fu, 0x00000000u }, \
+}
+
 #define CH32RV_QSPI_PADS_ANY 1   /* some QSPI has pads here (examples' requires) */
 
 /* No LED_BUILTIN: a Generic board is a silicon series, not a

@@ -703,6 +703,11 @@ test = "periph::test_i2s_pdm_rx"
 scope = "series"
 any_of = ["DFSDM"]
 
+[[item]]
+id = "sai"                  # the I2S library on CH32H417's SAI: SCK per mode (WireSkein), input from the probe's PWM
+test = "spi::test_sai"
+scope = "series"
+any_of = ["SAI"]
 
 # Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them
 # missing. Their clocks name the series; OPA / CMP / PMP / the DMA API have none of their own, so they list them.
@@ -747,12 +752,6 @@ missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V303", "CH32V305", "CH32V307
 id = "serdes"               # SerDes
 scope = "series"
 any_of = ["SERDES"]
-missing = ["CH32H415", "CH32H416", "CH32H417"]
-
-[[item]]
-id = "sai"                  # SAI (TDM, SPDIF)
-scope = "series"
-any_of = ["SAI"]
 missing = ["CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]

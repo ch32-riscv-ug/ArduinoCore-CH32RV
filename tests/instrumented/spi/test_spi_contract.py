@@ -839,3 +839,99 @@ def test_i2s_input(dut, oep_host, ws_run, record_property):
         core.plan_release(host, [pwm.fn])
     record_property("results", json.dumps(results))
     assert not wrong, " | ".join(wrong)
+
+
+SAI_RATE = 60_000_000      # test_sai's two lines: SCK up to 4 MHz (TDM 8 x 32 at 16 kHz)
+
+
+def test_sai(dut, oep_host, ws_run, record_property):
+    """spi.sai (the I2S library on CH32H417's SAI, 2026-11-23): labelled lines that are one SAI block's SCK and SD (the
+    DUT finds them: saifind); FS is not brought out (no labelled line is one), so WireSkein judges the bit clock: SCK a
+    square at sampleRate() x the frame's bits - 16-bit standard (32 bits a frame), TDM of slots 0 .. 3 at 16 bits (64)
+    and of slots 0 .. 6 at 32 bits (8 slots, 256). Then the input: SD driven by the probe's PWM, the frames read,
+    ones / (ones + zeros) of the slots the PWM's duty within 0.03, the left slot's rises the wave's periods (+-2), no
+    overrun - as test_i2s_input. 60 MS/s (SCK up to 4 MHz)."""
+    from wireskein.runlog import square
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: I2S is the spi case's")
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=secrets.token_hex(4))
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
+    m = ask(dut, "saifind " + " ".join(str(p) for p in lines), rb"SAIFIND (NONE|\d+ \d+)")
+    if m.group(1) == b"NONE":
+        pytest.skip("no labelled lines are one SAI block's SCK and SD (or no SAI here): " +
+                    ", ".join(l["pad"] for l in lines.values()))
+    sck, sd = (int(v) for v in m.group(1).split())
+    SCK, SD = lines[sck]["pad"], lines[sd]["pad"]
+    record_property("pins", json.dumps({"sck": SCK, "sd": SD}))
+    results, wrong = {}, []
+    outputs = [("16-bit standard", f"i2s {sck} -1 {sd} 16 {I2S_RATE} 0 0 1100ff22", rb"I2S (\d) (\d+) (-?\d+)", 32),
+               ("TDM 4 x 16", f"saitdm {sck} {sd} 16 16000 15", rb"SAITDM (\d) (\d+) (-?\d+)", 64),
+               ("TDM 8 x 32", f"saitdm {sck} {sd} 32 8000 127", rb"SAITDM (\d) (\d+) (-?\d+)", 256)]
+
+    def out_steps(wait):
+        with ws_run.section(1, f"sai out {SCK} {SD}"):
+            for name, command, reply, bits in outputs:
+                ws_run.command(command)
+                dut.write(command)
+                m = wait_reply(dut, wait, reply, timeout=5.0)
+                ws_run.reply(m.group(0).decode())
+                ok, rate, err = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                results[name] = dict(rate=rate, error=err)
+                if not ok:
+                    wrong.append(f"{name}: begin() failed ({err})")
+                    continue
+                wait(0.01)
+                with ws_run.section(2, name, expect=[square(SCK, freq_hz=rate * bits, freq_rel=0.01)]):
+                    wait(0.02)
+                dut.write("i2send")
+                wait_reply(dut, wait, rb"I2SEND")
+
+    ws_capture.stream(ws_run, oep_host, [lines[sck], lines[sd]], rate=SAI_RATE, steps=out_steps)
+
+    from oep_client.fixture import Pwm
+    pwm = Pwm(oep_host.host)
+    core.plan_apply(oep_host.host, pwm.assignments(lines[sd]["channel"]))
+    pwm.start(0, 500, 0)
+    frames = I2S_RATE // 10
+
+    def in_steps(wait):
+        with ws_run.section(1, f"sai in {SCK} {SD}"):
+            for bits, hz, duty in ((16, 500, 0.5), (32, 300, 0.25)):
+                name = f"input {bits}-bit, SD {hz} Hz duty {duty}"
+                made = pwm.start(0, hz, round(duty * Pwm.FULL))
+                wait(0.01)
+                command = f"i2srx {sck} -1 {sd} {bits} {I2S_RATE} {frames}"
+                ws_run.command(command)
+                dut.write(command)
+                m = wait_reply(dut, wait, rb"I2SRX ([\d ]+)", timeout=5.0)
+                ws_run.reply(m.group(0).decode())
+                ok, rate, got, ones, zeros, mixed, rises, overruns = (int(v) for v in m.group(1).split())
+                with ws_run.section(2, name, expect=[square(SCK, freq_hz=rate * 2 * bits, freq_rel=0.01)]):
+                    wait(0.02)
+                periods = got / rate * made.hz if rate else 0
+                results[name] = dict(rate=rate, frames=got, ones=ones, zeros=zeros, mixed=mixed, rises=rises,
+                                     overruns=overruns, probe_hz=made.hz, probe_duty=made.duty / Pwm.FULL)
+                if not ok:
+                    wrong.append(f"{name}: begin() failed")
+                    continue
+                if got != frames:
+                    wrong.append(f"{name}: {got} of {frames} frames read")
+                if abs(rises - periods) > 2:
+                    wrong.append(f"{name}: {rises} rises in the left slot, the wave has {periods:.1f} periods")
+                if ones + zeros == 0 or abs(ones / (ones + zeros) - made.duty / Pwm.FULL) > 0.03:
+                    wrong.append(f"{name}: {ones} slots of ones, {zeros} of zeros against a duty of "
+                                 f"{made.duty / Pwm.FULL:.3f}")
+                if overruns:
+                    wrong.append(f"{name}: {overruns} overruns")
+                dut.write("i2send")
+                wait_reply(dut, wait, rb"I2SEND")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[sck], lines[sd]], rate=SAI_RATE, steps=in_steps)
+    finally:
+        pwm.start(0, 0, 0)
+        core.plan_release(oep_host.host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
