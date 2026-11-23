@@ -74,9 +74,9 @@ Both outputs are active high. On a break and after `end()` both are low.
 
 | Call | What it does |
 |---|---|
-| `begin(pin, frequency, resolution = 8, align = EDGE)` | starts on `pin`'s (CHx or CHxN) timer and route. `CENTER`: the counter runs up and down, every channel's pulse centred on the same instant |
+| `begin(pin, frequency, resolution = 8, align = EDGE, timer = 0)` | starts on `pin`'s (CHx or CHxN) timer and route: the first of the pad's timers that is free, or `timer` (1, 2 ...) where the pad reaches several. `CENTER`: the counter runs up and down, every channel's pulse centred on the same instant |
 | `attach(pin)` | another pad of the same timer and route (at duty 0) |
-| `write(pin, duty)` | `duty / 2^resolution` high. A CHxN pad is its channel inverted, so this sets the channel |
+| `write(pin, duty)` | `duty / 2^resolution` high - on a CHxN pad too (its output alone follows the channel, not inverted; TIM1 / TIM8 on H417, 2026-11-23) |
 | `startWith(master)` | this timer starts when `master` does (master's TRGO on its counter's enable, this one in trigger mode); both counters restart from 0 and their periods start together. False where the chip joins the two timers by no internal trigger |
 | `startOn(pin, edge = RISING)` | the counter stops and waits for an edge on `pin` (this timer's channel 1 or 2 pad, not one of its outputs), then runs from 0 |
 | `timer()`, `end()`, `isAttached()` | |

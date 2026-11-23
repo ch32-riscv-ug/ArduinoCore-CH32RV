@@ -624,6 +624,9 @@ static inline void ch32rv_irq_clear_pending(uint32_t irqn)
 #define CH32RV_TIM8_BASE (CH32RV_APB2_BASE + 0x3400u)
 #define CH32RV_TIM9_BASE (CH32RV_APB2_BASE + 0x4C00u)
 #define CH32RV_TIM10_BASE (CH32RV_APB2_BASE + 0x5000u)
+/* CH32H41x's TIM11 / TIM12 (32-bit general purpose; EVT ch32h417.h). */
+#define CH32RV_TIM11_BASE 0x40015400u
+#define CH32RV_TIM12_BASE 0x40013C00u
 
 #define CH32RV_TIM_CTLR1(b)   CH32RV_REG16((b) + 0x00u)
 #define CH32RV_TIM_SMCFGR(b)  CH32RV_REG16((b) + 0x08u)   /* slave mode (reserved on TIM6/7) */

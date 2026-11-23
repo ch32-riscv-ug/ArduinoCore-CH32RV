@@ -317,6 +317,12 @@ scope = "series"
 needs = ["TIM1"]
 
 [[item]]
+id = "pwm-timers"           # CH32RVPwmTimer on every timer a labelled line reaches (begin()'s timer), one line each
+test = "signals::test_pwm_timers"
+scope = "series"
+needs = ["TIM1"]
+
+[[item]]
 id = "phase-shift"          # CH32RVPhaseShift: squares 90 and 270 degrees apart (WireSkein phase)
 test = "signals::test_phase_shift"
 scope = "series"

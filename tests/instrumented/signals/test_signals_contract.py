@@ -338,10 +338,26 @@ def test_capture_after_pwm(dut, oep_host, record_property):
     case = settings(__file__)
     lines = labelled_lines(oep_host, case)
     ready(dut, case)
-    line = timer_pad(dut, lines, channels=(1, 2))
+    # A line whose channel 1 / 2 ways are all on the timer analogWrite() takes there: with another timer to take
+    # (H417's PD4: TIM3 for analogWrite(), TIM11 CH2 too since 2026-11-23; PA5's analogWrite() on TIM8 CH1N when
+    # TIM2 CH1 has another pad's PWM) the capture rightly begins there instead of being refused.
+    line = None
+    for candidate in lines:
+        ways = {w[0] for w in pads(dut, candidate["pin"]) if w[2] == ROLE_CH and w[1] in (1, 2)}
+        if not ways:
+            continue
+        ask(dut, f"pwm {candidate['pin']} 128 1000", rb"PWM (\d)")
+        timer = int(ask(dut, f"pwmof {candidate['pin']}", rb"PWMOF (\d+)").group(1))
+        ask(dut, f"pwmoff {candidate['pin']}", rb"PWMOFF")
+        ask(dut, f"input {candidate['pin']}", rb"INPUT")
+        if timer and ways == {timer}:
+            line = candidate
+            break
     if line is None:
-        pytest.skip("no labelled line is channel 1 or 2 of a timer: " + ", ".join(p["pad"] for p in lines))
+        pytest.skip("no labelled line's capture ways (channel 1 / 2) are only the timer analogWrite() takes there: " +
+                    ", ".join(p["pad"] for p in lines))
     pin = line["pin"]
+    record_property("line", line["pad"])
     seen = {}
     for name, stop in (("analogWrite 0", f"pwm {pin} 0 1000"), ("pinMode", f"input {pin}"),
                        ("digitalWrite", f"level {pin} 0")):
@@ -720,6 +736,45 @@ def test_pwm_timer(dut, oep_host, ws_run, record_property):
         assert all(m.group(1) == b"1" for m in replies if m.group(0).startswith(b"PWMT ")), "begin() refused"
     finally:
         ask(dut, "pwmtoff", rb"PWMTOFF")
+
+
+def test_pwm_timers(dut, oep_host, ws_run, record_property):
+    """CH32RVPwmTimer on every timer a labelled line reaches (begin()'s timer: TIM8 .. TIM12 too, which analogWrite()
+    leaves to a pad's other ways), one line each: 20 kHz at 1/4 (a CHxN pad too), judged by WireSkein, then stopped
+    (low)."""
+    case = settings(__file__)
+    lines = labelled_lines(oep_host, case)
+    ready(dut, case)
+    has(dut, HAS_TIMER_OUTPUT, "CH32RVPwmTimer")
+    chosen = {}   # timer -> (line, role)
+    for line in lines:
+        for timer, _channel, role, _route in pads(dut, line["pin"]):
+            if role in (ROLE_CH, ROLE_CHN) and timer not in chosen:
+                chosen[timer] = (line, role)
+    if not chosen:
+        pytest.skip("no labelled line is a timer channel's pad: " + ", ".join(p["pad"] for p in lines))
+    record_property("timers", json.dumps({f"TIM{t}": f"{l['pad']}{'N' if r == ROLE_CHN else ''}"
+                                          for t, (l, r) in sorted(chosen.items())}))
+    refused = []
+    for timer, (line, role) in sorted(chosen.items()):
+        pad, pin = line["pad"], line["pin"]
+        duty = 0.25   # a CHxN pad alone too: CCxNE without CCxE follows OCxREF (TIM1 / TIM8 on H417, 2026-11-23)
+        conditions = [
+            ("rest", None, None, [], 0.005),
+            (f"TIM{timer} 20 kHz", f"pwmtt {pin} {timer} 20000 256", rb"PWMTT (\d) (\d+)",
+             [becomes(pad, freq_hz=20000, duty=duty, **WAVE)], 0.01),
+            ("stopped", "pwmtoff", rb"PWMTOFF", [becomes(pad, level=0)], 0.005),
+        ]
+        try:
+            replies = sweep(dut, ws_run, oep_host, [line], f"pwm timer TIM{timer} {pad}", conditions,
+                            rate=10_000_000, quiet=[], glitch_filter_ns=25)
+            got = [m for m in replies if m.group(0).startswith(b"PWMTT ")]
+            if not got or got[0].group(1) != b"1" or int(got[0].group(2)) != timer:
+                refused.append(f"TIM{timer} on {pad}")
+        finally:
+            ask(dut, "pwmtoff", rb"PWMTOFF")
+            ask(dut, f"input {pin}", rb"INPUT")
+    assert not refused, "begin() refused: " + ", ".join(refused)
 
 
 def test_phase_shift(dut, oep_host, ws_run, record_property):

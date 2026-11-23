@@ -39,7 +39,7 @@ constexpr uint8_t ROLES = CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH) | CH32RV_TIMER_
 
 /* ---- CH32RVPwmTimer ---- */
 
-bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Align align)
+bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Align align, uint8_t timer)
 {
     end();
     if (frequency == 0u || resolution < 1u || resolution > 16u) {
@@ -47,7 +47,7 @@ bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Alig
     }
     CH32RVTimerPad p;
     for (uint8_t i = 0; ch32rv_timer_pad_find((uint32_t)pin, ROLES, i, &p); i++) {
-        if (begin(p, frequency, resolution, align)) {
+        if ((timer == 0u || p.timer == timer) && begin(p, frequency, resolution, align)) {
             return true;
         }
     }

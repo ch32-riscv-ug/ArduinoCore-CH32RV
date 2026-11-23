@@ -4181,10 +4181,11 @@ PWM_PERIPHERAL_RE = re.compile(r"^TIM(\d+)$")
 PWM_ROLE_RE = re.compile(r"^CH(\d)(?:_ETR)?$")
 # Timers with output channels at a known base (ch32rv_registers.h): TIM1 the
 # advanced one, TIM2..TIM5 general purpose, TIM8..TIM10 (V30x, V4x7, H41x)
-# advanced or general by series. TIM6/7 are basic (no channels).
+# advanced or general by series, TIM11 / TIM12 (H41x) general. TIM6/7 are
+# basic (no channels).
 # analogWrite() still needs the timer in the variant's CH32RV_TIMER_TABLE; a
 # pad on a timer the series lacks there falls back to a digital level.
-PWM_TIMERS = (1, 2, 3, 4, 5, 8, 9, 10)
+PWM_TIMERS = (1, 2, 3, 4, 5, 8, 9, 10, 11, 12)
 
 
 def load_pwm_pins(tables: pathlib.Path) -> dict:
@@ -4226,6 +4227,8 @@ def load_pwm_pins(tables: pathlib.Path) -> dict:
             continue          # TIM4/TIM5 never displace TIM1..3
         if have and have[0] <= 5 < timer:
             continue          # TIM8..10 (added later) never displace TIM1..5, by any route
+        if have and have[0] <= 10 < timer:
+            continue          # nor TIM11 / TIM12 (H41x, added after them) TIM1..10
         if not shared:
             seen.add(key)
         out.setdefault(r["part_number"], {})[key] = (timer, channel, af)
@@ -5640,9 +5643,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         if not m:
             continue
         number = int(m.group(1))
-        # Only the timers ch32rv_registers.h names (TIM1..TIM10; TIM8..10 are
-        # the extra advanced timers of V30x / V4x7 on APB2).
-        if number > 10:
+        # Only the timers ch32rv_registers.h names (TIM1..TIM12; TIM8..10 are
+        # the extra advanced timers of V30x / V4x7 on APB2, TIM11 / TIM12
+        # CH32H41x's).
+        if number > 12:
             continue
         # A whole-timer vector is preferred over the update-only one when a
         # family somehow has both.
@@ -5669,7 +5673,7 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
                   "": 0}
     for family in sorted(families):
         for number, cap in timers_by_family.get(family, {}).items():
-            if number > 10 or number not in candidates:
+            if number > 12 or number not in candidates:
                 continue
             previous = timer_caps.get(number)
             if previous and previous != cap:

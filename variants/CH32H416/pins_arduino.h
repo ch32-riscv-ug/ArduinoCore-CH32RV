@@ -981,8 +981,8 @@ static const uint8_t SS = PIN_SPI_SS;
     { 9, { PB5, PB6, CH32RV_ROUTE_NO_PIN }, 0x00000009u, 0x00000000u }, \
 }
 
-/* ---- PWM: 35 pads on TIM1/TIM2/TIM3/TIM4/TIM5/TIM9/TIM10, per-pin alternate function ---- */
-#define CH32RV_PWM_PIN_COUNT 35
+/* ---- PWM: 38 pads on TIM1/TIM2/TIM3/TIM4/TIM5/TIM9/TIM10/TIM12, per-pin alternate function ---- */
+#define CH32RV_PWM_PIN_COUNT 38
 #define CH32RV_PWM_PIN_TO_TIMER(p) ( \
     (p) == PE9 ? 1 : \
     (p) == PA11 ? 1 : \
@@ -1019,6 +1019,9 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PF6 ? 10 : \
     (p) == PA4 ? 10 : \
     (p) == PF7 ? 10 : \
+    (p) == PF12 ? 12 : \
+    (p) == PE15 ? 12 : \
+    (p) == PF13 ? 12 : \
     0)
 #define CH32RV_PWM_PIN_TO_CHANNEL(p) ( \
     (p) == PE9 ? 1 : \
@@ -1056,6 +1059,9 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PF6 ? 3 : \
     (p) == PA4 ? 4 : \
     (p) == PF7 ? 4 : \
+    (p) == PF12 ? 3 : \
+    (p) == PE15 ? 4 : \
+    (p) == PF13 ? 4 : \
     0)
 #define CH32RV_PWM_PIN_TO_AF(p) ( \
     (p) == PE9 ? 1 : \
@@ -1093,6 +1099,9 @@ static const uint8_t SS = PIN_SPI_SS;
     (p) == PF6 ? 9 : \
     (p) == PA4 ? 9 : \
     (p) == PF7 ? 9 : \
+    (p) == PF12 ? 13 : \
+    (p) == PE15 ? 2 : \
+    (p) == PF13 ? 13 : \
     0)
 
 /* ---- The timers' update DMA requests (CH32RVPwmSequence; device-data dma.csv) ---- */
@@ -1124,8 +1133,8 @@ static const uint8_t SS = PIN_SPI_SS;
 /* ---- Timer resource descriptors.  CH32RV_TIMER_TABLE(X) fields:
  * number, kind, counter bits, channels, complementary, base,
  * clock-enable address/mask, update IRQ, update handler. ---- */
-#define CH32RV_TIMER_COUNT 10
-#define CH32RV_TIMER_BUS2_MASK 0x702u
+#define CH32RV_TIMER_COUNT 12
+#define CH32RV_TIMER_BUS2_MASK 0x1f02u
 #define CH32RV_TIMER_TABLE(X) \
     X(1, 1, 16, 4, 1, CH32RV_TIM1_BASE, 0x4002101cu, 0x00000800u, CH32RV_IRQN_TIM1_UP, TIM1_UP_IRQHandler) \
     X(2, 2, 16, 4, 0, CH32RV_TIM2_BASE, 0x40021020u, 0x00000001u, CH32RV_IRQN_TIM2, TIM2_IRQHandler) \
@@ -1136,9 +1145,11 @@ static const uint8_t SS = PIN_SPI_SS;
     X(7, 2, 16, 0, 0, CH32RV_TIM7_BASE, 0x40021020u, 0x00000020u, CH32RV_IRQN_TIM7, TIM7_IRQHandler) \
     X(8, 1, 16, 4, 1, CH32RV_TIM8_BASE, 0x4002101cu, 0x00002000u, CH32RV_IRQN_TIM8_UP, TIM8_UP_IRQHandler) \
     X(9, 2, 32, 4, 0, CH32RV_TIM9_BASE, 0x4002101cu, 0x00080000u, CH32RV_IRQN_TIM9, TIM9_IRQHandler) \
-    X(10, 2, 32, 4, 0, CH32RV_TIM10_BASE, 0x4002101cu, 0x00100000u, CH32RV_IRQN_TIM10, TIM10_IRQHandler)
+    X(10, 2, 32, 4, 0, CH32RV_TIM10_BASE, 0x4002101cu, 0x00100000u, CH32RV_IRQN_TIM10, TIM10_IRQHandler) \
+    X(11, 2, 32, 4, 0, CH32RV_TIM11_BASE, 0x4002101cu, 0x00200000u, CH32RV_IRQN_TIM11, TIM11_IRQHandler) \
+    X(12, 2, 32, 4, 0, CH32RV_TIM12_BASE, 0x4002101cu, 0x00400000u, CH32RV_IRQN_TIM12, TIM12_IRQHandler)
 /* ---- internal triggers (device-data timer_itr.csv): slave, ITRx, master ---- */
-#define CH32RV_TIMER_ITR { {1, 0, 5}, {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 1, 8}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 2, 5}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {4, 3, 8}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4}, {5, 3, 8}, {8, 0, 1}, {8, 1, 2}, {8, 2, 4}, {8, 3, 5}, {9, 0, 1}, {9, 1, 2}, {9, 2, 10}, {10, 0, 1}, {10, 1, 8}, {10, 2, 2}, {10, 3, 9} }
+#define CH32RV_TIMER_ITR { {1, 0, 5}, {1, 1, 2}, {1, 2, 3}, {1, 3, 4}, {2, 0, 1}, {2, 1, 8}, {2, 2, 3}, {2, 3, 4}, {3, 0, 1}, {3, 1, 2}, {3, 2, 5}, {3, 3, 4}, {4, 0, 1}, {4, 1, 2}, {4, 2, 3}, {4, 3, 8}, {5, 0, 2}, {5, 1, 3}, {5, 2, 4}, {5, 3, 8}, {8, 0, 1}, {8, 1, 2}, {8, 2, 4}, {8, 3, 5}, {9, 0, 1}, {9, 1, 2}, {9, 2, 10}, {9, 3, 11}, {10, 0, 1}, {10, 1, 8}, {10, 2, 2}, {10, 3, 9}, {11, 0, 1}, {11, 1, 2}, {11, 2, 9}, {11, 3, 12}, {12, 0, 1}, {12, 1, 2}, {12, 2, 9}, {12, 3, 11} }
 
 /* ---- ADC regular group's timer sources (device-data adc_triggers.csv): X(timer, event (0 TRGO, n CCn), EXTSEL value), tried in this order ---- */
 #define CH32RV_ADC_TIMER_SOURCES(X) X(3, 0, 4) X(4, 4, 5) X(2, 2, 3) X(1, 1, 0) X(1, 2, 1) X(1, 3, 2)
@@ -1156,7 +1167,7 @@ static const uint8_t SS = PIN_SPI_SS;
  * 0), route: the pad's alternate-function number.
  * A pad's entries are in the order analogWrite() tries them: its
  * default PWM first. ---- */
-#define CH32RV_TIMER_PAD_COUNT 70
+#define CH32RV_TIMER_PAD_COUNT 79
 #define CH32RV_TIMER_PADS { \
     { PA0, 2, 0x01, 1 }, \
     { PA0, 5, 0x01, 2 }, \
@@ -1189,6 +1200,7 @@ static const uint8_t SS = PIN_SPI_SS;
     { PB0, 1, 0x12, 1 }, \
     { PB0, 8, 0x12, 3 }, \
     { PB1, 3, 0x04, 2 }, \
+    { PB1, 12, 0x01, 5 }, \
     { PB1, 1, 0x13, 1 }, \
     { PB1, 8, 0x13, 3 }, \
     { PB3, 2, 0x02, 1 }, \
@@ -1222,14 +1234,22 @@ static const uint8_t SS = PIN_SPI_SS;
     { PC11, 9, 0x04, 2 }, \
     { PC12, 9, 0x03, 2 }, \
     { PD3, 3, 0x01, 9 }, \
+    { PD3, 11, 0x01, 2 }, \
     { PE9, 1, 0x01, 1 }, \
+    { PE15, 12, 0x04, 2 }, \
     { PE15, 1, 0x20, 1 }, \
     { PF6, 10, 0x03, 9 }, \
+    { PF6, 11, 0x01, 13 }, \
     { PF7, 10, 0x04, 9 }, \
+    { PF7, 11, 0x02, 13 }, \
     { PF8, 10, 0x01, 9 }, \
+    { PF8, 11, 0x03, 13 }, \
     { PF9, 10, 0x02, 9 }, \
+    { PF9, 11, 0x04, 13 }, \
+    { PF12, 12, 0x03, 13 }, \
+    { PF13, 12, 0x04, 13 }, \
 }
-#define CH32RV_PWM_TIMER_MASK 0x73eu
+#define CH32RV_PWM_TIMER_MASK 0x1f3eu
 /* Capture / compare vectors apart from the update one:
  * CH32RV_TIMER_CC_TABLE(X) X(number, IRQ, handler). */
 #define CH32RV_TIMER_CC_TABLE(X) \

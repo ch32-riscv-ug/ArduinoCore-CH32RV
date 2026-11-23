@@ -188,15 +188,18 @@ public:
     enum Align : uint8_t { EDGE = 0, CENTER = 1 };
 
     /* pin: a channel pad (CHx or CHxN) of a timer; it picks the timer and the
-     * route. frequency in Hz; resolution: the bits write() takes (1 .. 16). */
-    bool begin(int pin, uint32_t frequency, uint8_t resolution = 8, Align align = EDGE);
+     * route - the first of the pad's timers free, or `timer` (1, 2, ...) where
+     * the pad reaches several and the sketch wants that one. frequency in Hz;
+     * resolution: the bits write() takes (1 .. 16). */
+    bool begin(int pin, uint32_t frequency, uint8_t resolution = 8, Align align = EDGE, uint8_t timer = 0);
     /* Another channel pad of the same timer and route (at duty 0). */
     bool attach(int pin);
     void end();
     bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
 
-    /* duty / 2^resolution of each period high on pin (a CHxN pad: the channel's
-     * inverse, so its write() sets the channel). */
+    /* duty / 2^resolution of each period high on pin - on a CHxN pad too
+     * (its CCxNE alone, not CCxE: the output follows the channel's reference,
+     * TIM1 / TIM8 on H417, 2026-11-23). */
     bool write(int pin, uint32_t duty);
     uint8_t timer() const { return _timer; }
 

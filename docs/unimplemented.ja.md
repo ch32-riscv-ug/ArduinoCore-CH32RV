@@ -56,7 +56,7 @@
 | EXTI のイベントモード（割込みでなく起床イベント） | 全系列 | 2 | 自動 | プローブ | PS:37 |
 | GPIO の速さ・駆動力の設定 | 全系列 | 2 | 実装済み（2026-11-23、`CH32RV.setPinSpeed(pin, LOW / MEDIUM / HIGH / VERY_HIGH)`: MODE の 2・10・50（30）MHz、X305 / X315 は SPEED レジスタ。X033 / X035・M030 は設定が無く false。selfsys::test_pin_speed（読み戻し）が V003・V203・X315・H417 で通る。立ち上がり時間の測定はしていない） | プローブ（立ち上がり時間。速い取り込み） | EVT GPIO/GPIO_Toggle |
 | PWM の remap 先・CHxN の端子 | TIM のある全系列 | 実装済み（2026-11-17、`analogWrite()` が variant の `CH32RV_TIMER_PADS` のどの端子でも） 実機で通った系列（2026-11-19 の集計）: L103・V003・V006・V103・X035。 | 自動 | プローブ。signals::test_pwm_route、test_pwm_complementary | cores/arduino/wiring_pwm.c, PS:48, FC:70 |
-| TIM8〜10 の PWM の実機 | V30x、V4x7、H41x | 2 | 自動 | プローブ | PS:48 |
+| TIM8〜10 の PWM の実機 | V30x、V4x7、H41x | 2 | H41x・V4x7 は確認済み（2026-11-23、signals::test_pwm_timers: CH32RVPwmTimer の begin() に timer を足し、ラベル付きの線から届く全タイマーを 1 本ずつ 20 kHz・1/4 で WireSkein 判定。H417 は TIM1〜5・8〜12（TIM11・12 はこの日コアの表に追加）、V407 は TIM1〜5・8）。V30x の TIM9・10 は未確認（V30x のベンチなし） | 自動 | プローブ | PS:48 |
 | 既定以外の route の実機（X305/X315 の Wire など） | X305/X315 ほか | 2 | 自動 | プローブ＋プルアップ | TODO:498 |
 | SD_MMC の V4x7 の remap、H41x の AF の端子 | V4x7、H41x | 実装済み（2026-11-17、ビルドのみ。variant の `CH32RV_SDIO_PADS` から `setPins()` が選ぶ。H41x は端子ごとの AF、V4x7 は PCFR2 の SDIO_RM） | 単発 | SD カードの口のある板 | libraries/SD_MMC/README.ja.md:52 |
 

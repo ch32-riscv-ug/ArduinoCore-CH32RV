@@ -46,6 +46,7 @@
  *                          timer, not tone()'s / Servo's TIM4 / TIM5), 0 0 0 0 0
  *                          past the last
  *   route <timer>          ROUTE <value>: the timer's AFIO remap now
+ *   pwmof <pin>            PWMOF <timer>: the timer analogWrite() holds for the pin, 0 none
  *   pwmseqcan <pin>        PWMSEQCAN <1 / 0>: CH32RVPwmSequence starts there (a timer with an update DMA request)
  *   pwmseq <pin> <hex>     PWMSEQ <ok> <top>: the bytes as WS2812 bits by CH32RVPwmSequence (800 kHz periods, T0H
  *                          32 % / T1H 64 % of one, then 60 periods low), waited for; the pad left a low output
@@ -60,6 +61,8 @@
  *   brkstate <brk pin>     BRKSTATE <latched> <the pad's level>
  *   resume                 RESUME <ok>
  *   compoff                COMPOFF
+ *   pwmtt <pin> <timer> <hz> <duty>  PWMTT <ok> <timer()>: CH32RVPwmTimer on the pin
+ *                          by that timer (begin()'s timer), 10 bits; pwmtoff stops it
  *   pwmt <a> <b> <hz> <align> <duty a> <duty b>  PWMT <ok>: CH32RVPwmTimer on
  *                          two pads of one timer, 10 bits, align 0 edge 1 center
  *   pwmtoff                PWMTOFF (also pwmsync's and pwmtrig's)
@@ -102,6 +105,7 @@
 #include <CH32RVTimerOutput.h>
 #include "bench_console.h"
 #include "internal/ch32rv_irq.h"
+#include "internal/ch32rv_pwm.h"
 #include <Ticker.h>
 #include <SoftPWM.h>
 #include <Servo.h>
@@ -200,6 +204,9 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         CONSOLE.print(' ');
         CONSOLE.print(found && ((CH32RV_PWM_TIMER_MASK >> p.timer) & 1u) ? 1 : 0);
         CONSOLE.print("\r\n");
+    } else if (!strcmp(argv[0], "pwmof") && argc == 2) {
+        const CH32RVTimerLease *lease = ch32rv_pwm_slot_of((pin_size_t)pin);
+        say("PWMOF", 1, lease ? (long)lease->timer : 0L);
     } else if (!strcmp(argv[0], "route") && argc == 2) {
         say("ROUTE", 1, ch32rv_timer_route((uint8_t)pin));
     } else if (!strcmp(argv[0], "now")) {
@@ -236,6 +243,10 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "compoff")) {
         bridge.end();
         CONSOLE.println("COMPOFF");
+    } else if (!strcmp(argv[0], "pwmtt") && argc == 5) {
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, CH32RVPwmTimer::EDGE, (uint8_t)a2) &&
+                        pwmTimer.write(pin, (uint32_t)atol(argv[4]));
+        say("PWMTT", 2, ok, pwmTimer.timer());
     } else if (!strcmp(argv[0], "pwmt") && argc == 7) {
         /* pwmt <a> <b> <hz> <align 0 edge / 1 center> <duty a of 1024> <duty b of 1024> */
         const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, a4 ? CH32RVPwmTimer::CENTER : CH32RVPwmTimer::EDGE) &&

@@ -74,9 +74,9 @@ void loop() {
 
 | 呼び出し | 意味 |
 |---|---|
-| `begin(pin, frequency, resolution = 8, align = EDGE)` | `pin`（CHx か CHxN）のタイマーと経路で始める。`CENTER` はカウンタが上下して、どのチャネルのパルスも同じ時刻を中心にする |
+| `begin(pin, frequency, resolution = 8, align = EDGE, timer = 0)` | `pin`（CHx か CHxN）のタイマーと経路で始める。端子が複数のタイマーに届くときは空いている最初のもの、`timer`（1、2 …）を渡せばそのタイマー。`CENTER` はカウンタが上下して、どのチャネルのパルスも同じ時刻を中心にする |
 | `attach(pin)` | 同じタイマー・経路の別の端子（デューティ 0 から） |
-| `write(pin, duty)` | `duty / 2^resolution` を High。CHxN の端子はそのチャネルの反転なので、チャネルの値を書くことになる |
+| `write(pin, duty)` | `duty / 2^resolution` を High。CHxN の端子でも同じ（CHxN だけを出すと反転せずチャネルに従う。H417 の TIM1・TIM8 で確認、2026-11-23） |
 | `startWith(master)` | このタイマーを `master` の開始で始める（master の TRGO をカウンタの有効に、こちらはトリガモード）。両方のカウンタを 0 から始め直し、周期の頭がそろう。チップが内部トリガでつないでいない組では false |
 | `startOn(pin, edge = RISING)` | カウンタを止め、`pin`（このタイマーの CH1 か CH2 の端子、出力に使っていないもの）のエッジを待って 0 から動かす |
 | `timer()`、`end()`、`isAttached()` | |
