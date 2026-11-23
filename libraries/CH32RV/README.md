@@ -157,6 +157,10 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - it wakes every half of that to feed it, and nothing else runs;
   - on waking it puts back the `wdtEnable()` setting.
 - **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x and X305/X315 (which have no standby) when only the timer or the alarm wakes it and the watchdog is off; `wakeupCause()` then says `CH32RV_WAKEUP_ALARM` when the alarm came first (the backup domain carries that), and the alarm's callback does not run (RAM was lost). Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
+- **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
+
+The design and the measurements are in sections 4.3 and 5.1 of
+[the design of the A features](../../docs/peripheral-a-design.ja.md) (Japanese).
 
 ### The CPU alone (`idle()`)
 
@@ -169,10 +173,6 @@ CH32RV.idle();      // until the next interrupt
 - SysTick wakes the CPU every millisecond too, so the time is as exact as `delay()`'s.
 - On V103 SysTick does not end a WFI, so it waits awake.
 - selfsys::test_idle (a 1 kHz timer interrupt counted through a 200 ms idle) passes on V203, V103 and H417 (2026-11-23).
-- **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
-
-The design and the measurements are in sections 4.3 and 5.1 of
-[the design of the A features](../../docs/peripheral-a-design.ja.md) (Japanese).
 
 ### EXTI lines that are not pins, and the PVD
 
