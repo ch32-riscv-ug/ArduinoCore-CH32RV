@@ -206,6 +206,22 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
 {
     end();
     _error = I2S_ERROR_ARG;
+    if (mode == I2S_MODE_PDM_RX && _pdm_ops && rate &&
+        (bits == I2S_DATA_BIT_WIDTH_16BIT || bits == I2S_DATA_BIT_WIDTH_24BIT ||
+         bits == I2S_DATA_BIT_WIDTH_32BIT) && (ch == I2S_SLOT_MODE_MONO || ch == I2S_SLOT_MODE_STEREO)) {
+        _bits = (uint8_t)bits;
+        _slots = (uint8_t)ch;
+        _mask = (uint8_t)(slot_mask < 0 ? I2S_STD_SLOT_LEFT : slot_mask);
+        _tx = false;
+        _peeked = _peek_pos = 0;
+        _overruns = 0;
+        if (!_pdm_ops->begin(*this, rate)) {
+            return false;
+        }
+        _pdm_on = true;
+        _error = I2S_ERROR_NONE;
+        return true;
+    }
     if (mode != I2S_MODE_STD || rate == 0 ||
         (bits != I2S_DATA_BIT_WIDTH_16BIT && bits != I2S_DATA_BIT_WIDTH_24BIT &&
          bits != I2S_DATA_BIT_WIDTH_32BIT) ||
@@ -328,6 +344,12 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
 
 bool I2SClass::end()
 {
+    if (_pdm_on) {
+        _pdm_ops->end(*this);
+        _pdm_on = false;
+        _rate = 0;
+        return true;
+    }
     if (_port < 0) {
         return false;
     }
@@ -567,6 +589,9 @@ size_t I2SClass::rxReady()
 /* One frame from the ring into _peek, false when there is none. */
 bool I2SClass::fill()
 {
+    if (_pdm_on) {
+        return _pdm_ops->fill(*this);
+    }
     if (rxReady() == 0) {
         return false;
     }
@@ -584,15 +609,18 @@ bool I2SClass::fill()
 
 int I2SClass::available()
 {
-    if (_port < 0 || _tx) {
+    if (!rxBegun()) {
         return 0;
+    }
+    if (_pdm_on) {
+        return (int)((_peeked - _peek_pos) + _pdm_ops->frames(*this) * frameBytes());
     }
     return (int)((_peeked - _peek_pos) + rxReady() / hwPerFrame() * frameBytes());
 }
 
 int I2SClass::read()
 {
-    if (_port < 0 || _tx) {
+    if (!rxBegun()) {
         return -1;
     }
     if (_peek_pos >= _peeked && !fill()) {
@@ -603,7 +631,7 @@ int I2SClass::read()
 
 int I2SClass::peek()
 {
-    if (_port < 0 || _tx) {
+    if (!rxBegun()) {
         return -1;
     }
     if (_peek_pos >= _peeked && !fill()) {
@@ -616,11 +644,26 @@ int I2SClass::peek()
  * length bytes, as Stream's does; whole frames go straight across. */
 size_t I2SClass::readBytes(char *buffer, size_t length)
 {
-    if (_port < 0 || _tx) {
+    if (!rxBegun()) {
         _error = I2S_ERROR_STATE;
         return 0;
     }
     uint8_t *out = (uint8_t *)buffer;
+    if (_pdm_on) {
+        size_t done = 0;
+        const unsigned long start = millis();
+        while (done < length) {
+            if (_peek_pos >= _peeked && !fill()) {
+                if (millis() - start >= _timeout) {
+                    break;
+                }
+                yield();
+                continue;
+            }
+            out[done++] = _peek[_peek_pos++];
+        }
+        return done;
+    }
     const size_t fb = frameBytes();
     const uint32_t hpf = (uint32_t)hwPerFrame();
     size_t done = 0;

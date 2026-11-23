@@ -9,7 +9,8 @@
  *     i2s.write((const uint8_t *)frame, sizeof(frame));
  *
  * The controller (master) side only, standard (two-slot) mode only: the
- * SPI's I2S has no TDM or PDM. One direction per instance - the SPI's I2S is
+ * SPI's I2S has no TDM or PDM. PDM microphones (I2S_MODE_PDM_RX) go through
+ * CH32H41x's DFSDM instead (setPinsPdmRx(), below). One direction per instance - the SPI's I2S is
  * half duplex, so DOUT or DIN, not both (two instances on I2S2 and I2S3 do
  * both at once). The pins pick the instance: CK, WS, SD (and MCK) have to be
  * pads of I2S2 or I2S3 (the variant's CH32RV_I2Sn_PADS) - any of them on
@@ -95,6 +96,15 @@ public:
 
     /* -1 for a pin that is not used. DOUT makes an output, DIN an input. */
     void setPins(int bclk, int ws, int dout, int din = -1, int mclk = -1);
+    /* PDM microphones, I2S_MODE_PDM_RX (CH32H41x: its DFSDM, the library
+     * CH32RVDfsdm, not the SPI): clk a DFSDM CKOUT pad, din0 a DATIN pad.
+     * Stereo is two microphones on din0, the left one sending on the rising
+     * edge and the right on the falling (each microphone's L/R or SELECT);
+     * mono takes the left, or with I2S_STD_SLOT_RIGHT the right. The clock
+     * is 64 x rate (HCLK divided: sampleRate() says what it came to), a
+     * sinc3 filter / 64, full scale the width's. din1 .. din3 (more lines):
+     * -1 only. Its own file - a sketch that never calls it links none of it. */
+    void setPinsPdmRx(int clk, int din0, int din1 = -1, int din2 = -1, int din3 = -1);
     /* BCLK's idle level high (data change on its falling edge as usual,
      * sampled on the rising one, read the other way round); WS inverted
      * swaps the slots. MCK cannot be inverted (false only). */
@@ -129,7 +139,17 @@ public:
     /* The DMA's half / full interrupt: the I2S library's own. */
     void dmaInterrupt();
 
+    /* PDM_RX's (I2SPdm.cpp), set by setPinsPdmRx() */
+    struct PdmOps {
+        bool (*begin)(I2SClass &, uint32_t rate);
+        void (*end)(I2SClass &);
+        bool (*fill)(I2SClass &);
+        size_t (*frames)(I2SClass &);
+    };
+
 private:
+    friend struct I2SPdm;
+    bool rxBegun() const { return (_port >= 0 && !_tx) || _pdm_on; }
     size_t frameBytes() const;
     size_t hwPerFrame() const;
     void packFrame(const uint8_t *in, uint16_t *out) const;
@@ -167,4 +187,9 @@ private:
     volatile uint32_t _overruns = 0;
     uint8_t _peek[8];
     uint8_t _peeked = 0, _peek_pos = 0;
+
+    const PdmOps *_pdm_ops = nullptr;
+    void *_pdm = nullptr;   /* I2SPdm.cpp's: the DFSDM filters */
+    int _pdm_clk = -1, _pdm_din = -1;
+    bool _pdm_on = false;
 };

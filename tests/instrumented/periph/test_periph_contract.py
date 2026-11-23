@@ -1185,6 +1185,71 @@ def test_dfsdm(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_i2s_pdm_rx(dut, oep_host, ws_run, record_property):
+    """periph.i2s-pdm-rx (I2S's I2S_MODE_PDM_RX on CH32RVDfsdm, 2026-11-23): ESP_I2S's setPinsPdmRx() on a labelled
+    DFSDM CKOUT pad and DATIN pad (dfsdmfind), 16 kHz 16-bit, the probe's PWM making the stream. Mono and stereo (the
+    right slot the falling edge of the same line): a 10 kHz square of duty 1/4 reads a mean of -1/2 of 32767 in each
+    slot, of duty 3/4 +1/2 (within 3 %); sampleRate() within 1 % of 16 kHz; WireSkein sees CKOUT a square at 64 x
+    sampleRate()."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import square
+    case = settings(__file__)
+    ready(dut, case)
+    debug = set(case["target"].get("debug_pads") or [])
+    lines = {line["pin"]: line for line in port_lines(oep_host, case["target"]) if line["pad"] not in debug}
+    m = ask(dut, "dfsdmfind " + " ".join(str(p) for p in lines), rb"DFSDMFIND (NONE|-?\d+ -?\d+ -?\d+)")
+    if m.group(1) == b"NONE":
+        if ask(dut, "dfsdm 0 0 0 1 64 3 1", rb"DFSDM (\d) \d+ \d+ -?\d+").group(1) == b"2":
+            pytest.skip("n/a: no DFSDM here")
+        pytest.skip("no labelled lines are a DFSDM CKOUT and DATIN pad: " + ", ".join(l["pad"] for l in lines.values()))
+    ckout, datin, _ckin = (int(v) for v in m.group(1).split())
+    pads = {"ckout": lines[ckout]["pad"], "datin": lines[datin]["pad"]}
+    record_property("pins", json.dumps(pads))
+    host = oep_host.host
+    pwm = Pwm(host)
+    core.plan_apply(host, pwm.assignments(lines[datin]["channel"]))
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"i2s pdm rx {' '.join(pads.values())}"):
+            for stereo in (0, 1):
+                for duty, want in ((Pwm.FULL // 4, -0.5), (Pwm.FULL * 3 // 4, 0.5)):
+                    name = f"{'stereo' if stereo else 'mono'} duty {duty / Pwm.FULL:.2f}"
+                    made = pwm.start(0, 10_000, duty)
+                    m = until(dut, ws_run, wait, f"pdm {ckout} {datin} 16000 {stereo}", rb"PDM (\d) (\d+)", 5)
+                    ok, rate = int(m.group(1)), int(m.group(2))
+                    if not ok:
+                        wrong.append(f"{name}: begin() failed")
+                        continue
+                    with ws_run.section(2, name, expect=[square(pads["ckout"], freq_hz=64 * rate, freq_rel=0.01)]):
+                        m = until(dut, ws_run, wait, "pdmread 2048", rb"PDMREAD (\d+) (-?\d+) (-?\d+) (\d+)", 10)
+                    until(dut, ws_run, wait, "pdmoff", rb"PDMOFF", 5)
+                    n, left, right, overruns = (int(v) for v in m.groups())
+                    results[name] = dict(rate=rate, n=n, left=left, right=right, overruns=overruns,
+                                         probe=[made.hz, made.duty])
+                    if n != 2048:
+                        wrong.append(f"{name}: {n} of 2048 frames")
+                    if abs(rate / 16000 - 1) > 0.01:
+                        wrong.append(f"{name}: sampleRate() {rate}")
+                    for slot, v in (("left", left),) + ((("right", right),) if stereo else ()):
+                        if abs(v / 32767 - want) > 0.03:
+                            wrong.append(f"{name}: {slot} mean {v} = {v / 32767:+.3f}, want {want:+.2f}")
+                    if overruns:
+                        wrong.append(f"{name}: {overruns} overruns")
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[ckout], lines[datin]], rate=20_000_000, steps=steps)
+    finally:
+        try:
+            pwm.stop(0)
+        except Exception:
+            pass
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
 @pytest.mark.parametrize("feature", ["can", "rs485"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""

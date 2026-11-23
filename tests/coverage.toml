@@ -685,6 +685,12 @@ test = "periph::test_dfsdm"
 scope = "series"
 any_of = ["DFSDM"]
 
+[[item]]
+id = "i2s-pdm-rx"           # I2S's I2S_MODE_PDM_RX on the DFSDM (ESP_I2S's setPinsPdmRx)
+test = "periph::test_i2s_pdm_rx"
+scope = "series"
+any_of = ["DFSDM"]
+
 
 # Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them
 # missing. Their clocks name the series; OPA / CMP / PMP / the DMA API have none of their own, so they list them.

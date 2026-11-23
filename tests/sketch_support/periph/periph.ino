@@ -87,7 +87,8 @@
  *                             LTDC <1 / 0> <pixelClock()>
  *   ltdcoff                   end(): LTDCOFF
  *
- * The sigma-delta filter (CH32RVDfsdm: H41x; DFSDMFIND NONE / DFSDM 2 elsewhere):
+ * The sigma-delta filter (CH32RVDfsdm: H41x; DFSDMFIND NONE / DFSDM 2 elsewhere, where the commands
+ * after dfsdm are not built - V003's flash):
  *
  *   dfsdmfind <pin>...        a CKOUT pad, a DATIN pad and that channel's CKIN pad (or -1) among the
  *                             pins: DFSDMFIND <ckout> <datin> <ckin>
@@ -99,6 +100,12 @@
  *   dfsdmregs                 channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 (for a failure's report):
  *                             DFSDMREGS <eight hex words>
  *   dfsdmoff                  end() of both: DFSDMOFF
+ *   pdm <clk> <din> <rate> <stereo>
+ *                             I2S (ESP_I2S's shape) begun in I2S_MODE_PDM_RX on the DFSDM, 16-bit, mono
+ *                             (left) or stereo, left running: PDM <1 / 0> <sampleRate()>
+ *   pdmread <frames>          the buffer emptied, then the frames after the next 64, each slot's mean:
+ *                             PDMREAD <frames> <left mean> <right mean> <overruns() while reading>
+ *   pdmoff                    end(): PDMOFF
  *
  * The low-power timer (CH32RVLowPowerTimer: L103 / M103, H41x; LPT NONE elsewhere):
  *
@@ -143,6 +150,7 @@
 static CH32RVLtdc ltdc;
 #include <CH32RVDfsdm.h>
 static CH32RVDfsdm dfsdms[2] = {CH32RVDfsdm(0), CH32RVDfsdm(1)};
+#include <I2S.h>
 /* a row of the variant's CH32RV_QSPIn_PADS (before the prototypes the IDE adds) */
 struct QspiPad {
     uint8_t role, pad;
@@ -636,6 +644,36 @@ static void dfsdmRead(CH32RVDfsdm &dfsdm, long n)
 }
 #endif
 
+#if CH32RV_HAS_DFSDM && CH32RV_HAS_I2S
+static I2SClass pdm;
+static bool pdm_stereo;
+
+static void pdmRead(long want)
+{
+    int64_t sum[2] = {0, 0};
+    long n = 0;
+    int16_t f[2];
+    const size_t fb = pdm_stereo ? 4u : 2u;
+    pdm.setTimeout(500);
+    while (pdm.available() >= (int)fb) {   /* what waited in the buffer (it overran while nobody read) */
+        pdm.readBytes((char *)f, fb);
+    }
+    const uint32_t lost = pdm.overruns();
+    for (long k = 0; k < 64 + want; k++) {   /* the first 64 left out too */
+        if (pdm.readBytes((char *)f, fb) != fb) {
+            break;
+        }
+        if (k >= 64) {
+            sum[0] += f[0];
+            sum[1] += pdm_stereo ? f[1] : 0;
+            n++;
+        }
+    }
+    CONSOLE.printf("PDMREAD %ld %ld %ld %lu\r\n", n, n ? (long)(sum[0] / n) : 0L, n ? (long)(sum[1] / n) : 0L,
+                   (unsigned long)(pdm.overruns() - lost));
+}
+#endif
+
 static void ltdcRun(char **argv)
 {
     int r[8], g[8], b[8];
@@ -741,13 +779,9 @@ static void reply(char *command)
 #else
         CONSOLE.printf("DFSDM 2 0 0 0\r\n");
 #endif
+#if CH32RV_HAS_DFSDM
     } else if (!strcmp(argv[0], "dfsdmread") && argc == 3) {
-#if CH32RV_HAS_DFSDM
         dfsdmRead(dfsdms[atoi(argv[1]) & 1], atol(argv[2]) > 0 ? atol(argv[2]) : 1);
-#else
-        CONSOLE.printf("DFSDMREAD 0 0 0 0 0 0\r\n");
-#endif
-#if CH32RV_HAS_DFSDM
     } else if (!strcmp(argv[0], "dfsdmregs")) {
         /* the registers, for a failure's report: channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 */
         const uint32_t b = 0x40017000u;
@@ -756,13 +790,24 @@ static void reply(char *command)
                        (unsigned long)CH32RV_REG32(b + 0x28), (unsigned long)CH32RV_REG32(b + 0x2C),
                        (unsigned long)CH32RV_REG32(b + 0x38), (unsigned long)CH32RV_REG32(b + 0x3C),
                        (unsigned long)CH32RV_REG32(b + 0x50), (unsigned long)CH32RV_REG32(b + 0x54));
+#if CH32RV_HAS_I2S
+    } else if (!strcmp(argv[0], "pdm") && argc == 5) {
+        pdm_stereo = atoi(argv[4]) != 0;
+        pdm.setPinsPdmRx(atoi(argv[1]), atoi(argv[2]));
+        const bool ok = pdm.begin(I2S_MODE_PDM_RX, strtoul(argv[3], nullptr, 10), I2S_DATA_BIT_WIDTH_16BIT,
+                                  pdm_stereo ? I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO);
+        CONSOLE.printf("PDM %d %lu\r\n", ok ? 1 : 0, (unsigned long)pdm.sampleRate());
+    } else if (!strcmp(argv[0], "pdmread") && argc == 2) {
+        pdmRead(atol(argv[1]));
+    } else if (!strcmp(argv[0], "pdmoff")) {
+        pdm.end();
+        CONSOLE.printf("PDMOFF\r\n");
 #endif
     } else if (!strcmp(argv[0], "dfsdmoff")) {
-#if CH32RV_HAS_DFSDM
         dfsdms[0].end();
         dfsdms[1].end();
-#endif
         CONSOLE.printf("DFSDMOFF\r\n");
+#endif
     } else if (!strcmp(argv[0], "ltdcoff")) {
 #if CH32RV_HAS_LTDC
         ltdc.end();
