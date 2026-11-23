@@ -13,7 +13,24 @@
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 
+#if defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467)
+/* CH32V4x7 (EVT LTDC_Display): the same registers at 0x40024800, one layer
+ * (at 0x34); the pixel clock is the Ethernet PLL (HSE x 20, 500 MHz) / n,
+ * RCC_CFGR2 [5:0] n and bit 6 the PLL's choice, ETH_PLLON CTLR bit 22. */
+#define LTDC_V4X7 1
+#define BASE 0x40024800u
+#define LAYERS 1
+#define RCC_CTLR_V4X7 CH32RV_REG32(0x40021000u)
+#define RCC_CFGR2_V4X7 CH32RV_REG32(0x4002102Cu)
+#ifdef CH32RV_CLOCK_HSE_HZ
+#define LTDC_HSE_HZ CH32RV_CLOCK_HSE_HZ
+#else
+#define LTDC_HSE_HZ 25000000u   /* the boards' (the Ethernet PLL wants 25 MHz) */
+#endif
+#else
 #define BASE 0x40014800u
+#define LAYERS 2
+#endif
 #define R(off) CH32RV_REG32(BASE + (off))
 #define SSCR  R(0x00)
 #define BPCR  R(0x04)
@@ -131,25 +148,63 @@ bool CH32RVLtdc::setColorPins(const int r[8], const int g[8], const int b[8])
     return true;
 }
 
+#if LTDC_V4X7
+static bool wait_bit(volatile uint32_t &reg, uint32_t bit)
+{
+    const uint32_t t0 = millis();
+    while (!(reg & bit)) {
+        if (millis() - t0 > 50u) {
+            return false;
+        }
+    }
+    return true;
+}
+#endif
+
 bool CH32RVLtdc::begin(const CH32RVLtdcTiming &t)
 {
     end();
     if (_signal[0] < 0 || !t.width || !t.height || !t.hsync || !t.vsync || !t.pixelHz) {
         return false;
     }
+#if LTDC_V4X7
+    /* HSE, then the Ethernet PLL (shared with the Ethernet MAC: left on) */
+    const uint32_t src = LTDC_HSE_HZ * 20u;
+    uint32_t div = (src + t.pixelHz - 1u) / t.pixelHz;
+    div = div < 1u ? 1u : div > 63u ? 63u : div;
+    if (!(RCC_CTLR_V4X7 & (1u << 17))) {
+        RCC_CTLR_V4X7 |= 1u << 16;
+        if (!wait_bit(RCC_CTLR_V4X7, 1u << 17)) {
+            return false;
+        }
+    }
+    if (!(RCC_CTLR_V4X7 & (1u << 23))) {
+        RCC_CTLR_V4X7 |= 1u << 22;
+        if (!wait_bit(RCC_CTLR_V4X7, 1u << 23)) {
+            return false;
+        }
+    }
+    _pixel_hz = src / div;
+#else
     uint32_t div = (CH32RV_CLOCK_SYSCLK_HZ + t.pixelHz - 1u) / t.pixelHz;
     div = div < 1u ? 1u : div > 64u ? 64u : div;
     _pixel_hz = CH32RV_CLOCK_SYSCLK_HZ / div;
+#endif
     for (uint8_t k = 0; k < 4; k++) {
         pad(_signal[k], (uint8_t)(24 + k));
     }
     for (uint8_t k = 0; k < 24; k++) {
         pad(_color[k], k);
     }
+#if LTDC_V4X7
+    RCC_CFGR2_V4X7 = (RCC_CFGR2_V4X7 & ~0x7Fu) | 1u << 6 | div;   /* the Ethernet PLL / div */
+    CH32RV_REG32(CH32RV_CLKEN_LTDC_ADDR) |= CH32RV_CLKEN_LTDC_MASK;
+#else
     RCC_CFGR2 = (RCC_CFGR2 & ~(0x3u << 14 | 0x3Fu << 8)) | ((div - 1u) << 8);   /* the system PLL / div */
     RCC_HB2PCENR |= LTDC_RCC_BIT;
     RCC_HB2PRSTR |= LTDC_RCC_BIT;
     RCC_HB2PRSTR &= ~LTDC_RCC_BIT;
+#endif
 
     /* The first write right after the reset was lost (SSCR stayed 0: one-pixel HSYNC and one-line
      * VSYNC, H417 2026-11-23): a read first, and SSCR checked. */
@@ -167,7 +222,9 @@ bool CH32RVLtdc::begin(const CH32RVLtdcTiming &t)
     GCR = (t.hsyncHigh ? GCR_HSPOL : 0u) | (t.vsyncHigh ? GCR_VSPOL : 0u) | (t.deHigh ? GCR_DEPOL : 0u) |
           (t.clockInverted ? GCR_PCPOL : 0u);
     BCCR = 0;
-    L(2, 0x00) = 0;
+    if (LAYERS > 1) {
+        L(2, 0x00) = 0;
+    }
     free(clear_line);
     clear_line = static_cast<uint8_t *>(calloc(t.width, 2));
     _w = t.width;
@@ -187,7 +244,11 @@ void CH32RVLtdc::end()
         return;
     }
     GCR &= ~GCR_LTDCEN;
+#if LTDC_V4X7
+    CH32RV_REG32(CH32RV_CLKEN_LTDC_ADDR) &= ~CH32RV_CLKEN_LTDC_MASK;
+#else
     RCC_HB2PCENR &= ~LTDC_RCC_BIT;
+#endif
     free(clear_line);
     clear_line = nullptr;
     for (uint8_t k = 0; k < 4; k++) {
@@ -207,7 +268,7 @@ void CH32RVLtdc::end()
 bool CH32RVLtdc::layer(uint8_t n, const void *fb, CH32RVLtdcFormat format, uint16_t x, uint16_t y, uint16_t w,
                        uint16_t h, uint8_t alpha)
 {
-    if (!_begun || (n != 1 && n != 2) || (unsigned)format > CH32RV_LTDC_AL88) {
+    if (!_begun || n < 1 || n > LAYERS || (unsigned)format > CH32RV_LTDC_AL88) {
         return false;
     }
     if (!fb || !w || !h) {

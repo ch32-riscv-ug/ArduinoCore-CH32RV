@@ -33,7 +33,7 @@ void setup() {
 | `begin(timing)` / `end()` | `CH32RVLtdcTiming` でパネルを始める／止めて端子を入力に戻す |
 | `layer(n, fb, format, x, y, w, h, alpha = 255)` | レイヤー 1 か 2。バッファを (x, y) に w x h 画素で。null で隠す。次のフレームから |
 | `setBackground(0xRRGGBB)` | レイヤーの下の色 |
-| `pixelClock()` | 実際のピクセルクロック（SYSCLK / 1 .. 64） |
+| `pixelClock()` | 実際のピクセルクロック（H41x は SYSCLK / 1 .. 64、V4x7 は 500 MHz / 1 .. 63） |
 | `line()` | 今送っている行（垂直帰線の間は負） |
 
 `CH32RVLtdcTiming`: `width` / `height`、`hsync` / `hbp` / `hfp`、`vsync` / `vbp` / `vfp`、`pixelHz` と極性 `hsyncHigh`・`vsyncHigh`（false でアクティブ Low）、`deHigh`（true）、`clockInverted`（false で立ち上がりでデータ）。形式は ARGB8888、RGB888、RGB565、ARGB1555、ARGB4444、L8、AL44、AL88（`CH32RV_LTDC_*`）です。
@@ -41,7 +41,7 @@ void setup() {
 - 端子は variant の `CH32RV_LTDC_PADS` のその役割の行でなければなりません。1 つの端子が 2 つの役割を持つことがあり（PB14 は CLK と G0）、役割は渡した場所で決まります。
 - 表示中のフレームバッファは解放しないでください（LTDC が自分の DMA で読みます）。480 x 272 の RGB565 は 255 KiB です。
 - スケッチのレイヤーが 1 枚も無いときも背景が出ます。透明なレイヤー 1 を全面に置いて代わりにしています（LTDC はレイヤーの窓の外で色を送らないため）。ヒープに `width` 画素の RGB565 を 1 行分使います。
-- CH32H415 / H416 は LTDC の端子が少なめです。CH32V4x7 の LTDC（ピクセルクロックが Ethernet か USBHS の PLL から）はまだ対象外です。
+- CH32H415 / H416 は LTDC の端子が少なめです。CH32V4x7 の LTDC はレイヤーが 1 枚（`layer(2, ...)` は false）で、ピクセルクロックは Ethernet の PLL（HSE x 20 で 500 MHz）/ 1〜63 です。PLL は `begin()` が起こし、止めません（Ethernet の MAC も使うため）。ビルドだけです（HSYNC・VSYNC がベンチの線に無い）。
 
 ## 例
 

@@ -17,8 +17,8 @@
  *     static uint16_t fb[480 * 272];                // RGB565
  *     lcd.layer(1, fb, CH32RV_LTDC_RGB565, 0, 0, 480, 272);
  *
- * The pixel clock is SYSCLK (the system PLL) / 1 .. 64; pixelClock() says
- * which it gave. Polarities: HSYNC and VSYNC active low, DE active high,
+ * The pixel clock is SYSCLK (the system PLL) / 1 .. 64 on CH32H41x;
+ * pixelClock() says which it gave. Polarities: HSYNC and VSYNC active low, DE active high,
  * data on the rising edge by default (CH32RVLtdcTiming's flags).
  *
  * A pad is the variant's CH32RV_LTDC_PADS row for its role (one pad can
@@ -28,14 +28,17 @@
  * own DMA. With no layer of the sketch's on, the background still shows
  * (the LTDC sends no colour outside a layer's window: a transparent layer 1
  * over the whole area stands in, one RGB565 line of `width` pixels on the
- * heap, repeated). CH32V4x7's LTDC (its pixel clock from the Ethernet or
- * USBHS PLL) is not covered yet. */
+ * heap, repeated). CH32V4x7's LTDC has one layer (layer(2) is false) and
+ * its pixel clock from the Ethernet PLL (HSE x 20: 500 MHz) / 1 .. 63,
+ * started here (and left on: the MAC uses it too); built only - no bench
+ * lines are its HSYNC and VSYNC. */
 #pragma once
 
 #include <Arduino.h>
 
 #if defined(CH32RV_LTDC_PADS) && \
-    (defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417))
+    (defined(CH32RV_SERIES_CH32H415) || defined(CH32RV_SERIES_CH32H416) || defined(CH32RV_SERIES_CH32H417) || \
+     defined(CH32RV_SERIES_CH32V407) || defined(CH32RV_SERIES_CH32V467))
 #define CH32RV_HAS_LTDC 1
 #else
 #define CH32RV_HAS_LTDC 0

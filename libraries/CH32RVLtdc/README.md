@@ -33,7 +33,7 @@ void setup() {
 | `begin(timing)` / `end()` | Starts the panel with `CH32RVLtdcTiming`; stops it, pads back to inputs |
 | `layer(n, fb, format, x, y, w, h, alpha = 255)` | Layer 1 or 2: the buffer at (x, y), w x h pixels; null hides it. Applied at the next frame |
 | `setBackground(0xRRGGBB)` | The colour under the layers |
-| `pixelClock()` | The pixel clock it gave (SYSCLK / 1 .. 64) |
+| `pixelClock()` | The pixel clock it gave (H41x: SYSCLK / 1 .. 64; V4x7: 500 MHz / 1 .. 63) |
 | `line()` | The line being sent now (negative in the vertical blanking) |
 
 `CH32RVLtdcTiming`: `width` / `height`, `hsync` / `hbp` / `hfp`, `vsync` / `vbp` / `vfp`, `pixelHz`, and the polarities `hsyncHigh`, `vsyncHigh` (false: active low), `deHigh` (true), `clockInverted` (false: data on the rising edge). Formats: ARGB8888, RGB888, RGB565, ARGB1555, ARGB4444, L8, AL44, AL88 (`CH32RV_LTDC_*`).
@@ -41,7 +41,7 @@ void setup() {
 - A pad must be the variant's `CH32RV_LTDC_PADS` row for its role. One pad can carry two roles (PB14 is CLK and G0): the role comes from where it is passed.
 - Frame buffers must stay valid while shown: the LTDC reads them by its own DMA. A 480 x 272 RGB565 frame is 255 KiB.
 - With no layer of the sketch's on, the background still shows: a transparent layer 1 over the whole area stands in (the LTDC sends no colour outside a layer's window), one RGB565 line of `width` pixels on the heap.
-- CH32H415 / H416 bond fewer LTDC pads. CH32V4x7's LTDC (pixel clock from the Ethernet or USBHS PLL) is not covered yet.
+- CH32H415 / H416 bond fewer LTDC pads. CH32V4x7's LTDC has one layer (`layer(2, ...)` is false) and its pixel clock from the Ethernet PLL (HSE x 20, 500 MHz) / 1 .. 63, which `begin()` starts and leaves on (the Ethernet MAC uses it too); built only (no bench lines are its HSYNC and VSYNC).
 
 ## Examples
 
