@@ -233,7 +233,7 @@
 | PIOC（RISC8B の 8 bit コア） | X035、V205、H41x | 試作中（2026-11-19、ユーザー: 試作して基本は入れる方向。保留を解除）。`cores/arduino/ch32rv_pioc.inc`（全命令のマクロ、WCH の名前、分岐の範囲・語の幅・4 KiB の検査）と `CH32RVPioc`（ローダー。X035 / X033 は PCFR1 の remap と RAM の上端 4 KiB、V205 は下端 4 KiB を、使うスケッチでだけリンカが空ける）。完了は待ち合わせ（`waitDone()`）か割込み（`onDone()`）。pioc::test_pioc_pulses が H417（PA0）・X035（PC7）・V205（PB10）で通る。EVT の 15 本（X035・V205・H417 の各 5 本）を移した .S の出力がベンダーの .BIN とバイト単位で一致（リポジトリの外で突き合わせ。EVT のバイナリも Rust の pioc の出力も内蔵しない、ユーザーの方針）。残り: エミュレータと pytest の sim は後で検討（ユーザー、2026-11-19） | 自動 | プローブ（1-Wire・IR・UART の波形） | PS:79, PM:215 |
 | ARGB の `rgbLedWrite()`（ソフト、どの端子でも） | 全系列 | 実装済み（2026-11-17。LED 1 個は 7 系列でベンチ確認。チェーンは `ch32rv_rgb_led_write()` で 1 つのフレーム。72 MHz 以上は SysTick、それ未満は RAM の命令の数で時間を作る） | 自動 | プローブ（60 MS/s、WireSkein の rgb_led）。signals::test_rgb_led | libraries/CH32RV/README.ja.md |
 | DVP（カメラ入力） | V30x（100 ピン）、V4x7、H417 | 2 | 単発→自動 | カメラ、またはプローブが PCLK・データを出す | PS:111, PM:256 |
-| LTDC（RGB の LCD 出力） | V4x7、H417 | 2 | 単発→自動 | プローブ（取り込み）か LCD | PS:112, PM:257 |
+| LTDC（RGB の LCD 出力） | V4x7、H417 | 2 | H41x は実装済み（2026-11-23、ライブラリ CH32RVLtdc: 信号と色の端子、タイミングと極性、2 枚のレイヤー（8 形式、位置・大きさ・α）、背景色。periph::test_ltdc（HSYNC・VSYNC の周期とデューティー、DE と色の線、もう一方の色が Low、WireSkein）が H417 で通る。パネルは未接続）。V4x7 は未実装（ピクセルクロックが Ethernet か USBHS の PLL から） | 単発→自動 | プローブ（取り込み）か LCD | PS:112, PM:257 |
 | GPHA（2D DMA） | H417 | 2 | 実装済み（2026-11-19、`CH32RVGpha` の fill / copy / blend。・setPalette（CLUT）。・setLayerColor。H417 で selfapi::test_gpha 8 件。残り: 割込み・ウォーターマーク、待たない呼び出し） | 自己（メモリ間） | libraries/CH32RVGpha |
 | SerDes（1.5 Gbps） | H417 | 2 | 自動 | 2 台目の H417 と差動の線 | PS:107, PM:252 |
 | UHSIF の残り（スレーブのモード、出力、外部クロック、24 bit、制御線の出力） | H41x | 2 | 単発→自動 | 外のマスター（FPGA）か 2 台目、プローブ | PS:106, libraries/CH32RVUhsif/README.ja.md:19 |

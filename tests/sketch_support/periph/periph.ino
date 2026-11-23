@@ -75,6 +75,18 @@
  *                             line; e = BB, the address 000100 on two lines, 4 dummy clocks, read on two:
  *                             QSPI <1 / 0> <bytes read, hex or -> <clock>
  *
+ * The LCD controller (CH32RVLtdc: H41x; LTDCFIND NONE / LTDC 2 elsewhere):
+ *
+ *   ltdcfind <pin>...         CLK, HSYNC, VSYNC, DE, an R and a G line among the pins (the variant's
+ *                             CH32RV_LTDC_PADS, six pads): LTDCFIND <clk> <hs> <vs> <de> <r> <rbit> <g> <gbit>
+ *   ltdc <clk> <hs> <vs> <de> <r> <rbit> <g> <gbit> <rgb hex> [<mode>]
+ *                             a 64 x 32 panel (HSYNC 4, back 8, front 8 pixels; VSYNC 2, back 4, front 4
+ *                             lines) at the slowest pixel clock: mode 0 the background <rgb> alone, 1 a
+ *                             layer of <rgb> over the whole area (the background black), 2 a black layer
+ *                             of alpha 0 over the background <rgb>:
+ *                             LTDC <1 / 0> <pixelClock()>
+ *   ltdcoff                   end(): LTDCOFF
+ *
  * The low-power timer (CH32RVLowPowerTimer: L103 / M103, H41x; LPT NONE elsewhere):
  *
  *   lptfind <pin>...          the first of the pins that is a timer's CH1 pad:
@@ -114,6 +126,8 @@
 #endif
 #include <CH32RVLowPowerTimer.h>
 #include <CH32RVQspi.h>
+#include <CH32RVLtdc.h>
+static CH32RVLtdc ltdc;
 /* a row of the variant's CH32RV_QSPIn_PADS (before the prototypes the IDE adds) */
 struct QspiPad {
     uint8_t role, pad;
@@ -497,6 +511,82 @@ static void qspiRun(char **argv)
 }
 #endif
 
+#if CH32RV_HAS_LTDC
+static void ltdcFind(int argc, char **argv)
+{
+    static const QspiPad t[] = CH32RV_LTDC_PADS;
+    long got[6] = {-1, -1, -1, -1, -1, -1};
+    int rbit = -1, gbit = -1;
+    for (uint8_t want = 0; want < 6; want++) {
+        /* the colours' highest bit labelled first (the low bits may sit below the output's width) */
+        for (int bit = 7; bit >= 0 && got[want] < 0; bit--) {
+        for (const QspiPad &p : t) {
+            bool listed = false, used = false;
+            for (int k = 1; k < argc; k++) {
+                listed = listed || atol(argv[k]) == p.pad;
+            }
+            for (uint8_t k = 0; k < want; k++) {
+                used = used || got[k] == p.pad;
+            }
+            if (!listed || used) {
+                continue;
+            }
+            const bool fit = want < 4 ? p.role == 24 + want : want == 4 ? p.role == bit : p.role == 8 + bit;
+            if (fit) {
+                got[want] = p.pad;
+                if (want == 4) rbit = p.role;
+                if (want == 5) gbit = p.role - 8;
+                break;
+            }
+        }
+        if (want < 4) {
+            break;   /* the signals have no bits */
+        }
+        }
+        if (got[want] < 0) {
+            CONSOLE.printf("LTDCFIND NONE\r\n");
+            return;
+        }
+    }
+    CONSOLE.printf("LTDCFIND %ld %ld %ld %ld %ld %d %ld %d\r\n", got[0], got[1], got[2], got[3], got[4], rbit, got[5], gbit);
+}
+
+static void ltdcRun(char **argv)
+{
+    int r[8], g[8], b[8];
+    for (uint8_t k = 0; k < 8; k++) {
+        r[k] = g[k] = b[k] = -1;
+    }
+    r[atoi(argv[6]) & 7] = atoi(argv[5]);
+    g[atoi(argv[8]) & 7] = atoi(argv[7]);
+    CH32RVLtdcTiming tm;
+    tm.width = 64;
+    tm.height = 32;
+    tm.hsync = 4; tm.hbp = 8; tm.hfp = 8;
+    tm.vsync = 2; tm.vbp = 4; tm.vfp = 4;
+    tm.pixelHz = 1;   /* the slowest the divider makes */
+    bool ok = ltdc.setSignalPins(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4])) &&
+              ltdc.setColorPins(r, g, b) && ltdc.begin(tm);
+    const uint32_t rgb = (uint32_t)strtoul(argv[9], nullptr, 16);
+    const int mode = argv[10] ? atoi(argv[10]) : 0;
+    if (ok) {
+        ltdc.setBackground(mode == 1 ? 0u : rgb);
+    }
+    if (ok && mode) {
+        /* mode 1: a 64 x 32 RGB565 layer of the colour; mode 2: a black one, alpha 0, over the background */
+        static uint16_t fb[64 * 32];
+        const uint16_t c = mode == 2 ? 0u : (uint16_t)(((rgb >> 19) & 0x1Fu) << 11 | ((rgb >> 10) & 0x3Fu) << 5 |
+                                                       ((rgb >> 3) & 0x1Fu));
+        for (uint16_t &px : fb) {
+            px = c;
+        }
+        ok = ltdc.layer(1, fb, CH32RV_LTDC_RGB565, 0, 0, 64, 32, mode == 2 ? 0 : 255);
+    }
+    CONSOLE.printf("LTDC %d %lu %08lx\r\n", ok ? 1 : 0, (unsigned long)ltdc.pixelClock(),
+                   (unsigned long)CH32RV_REG32(0x40014810u));   /* GCR, for its data widths */
+}
+#endif
+
 #if CH32RV_HAS_LPTIM
 static volatile uint32_t lptPeriods;
 static void lptTick()
@@ -536,6 +626,23 @@ static void reply(char *command)
     }
     if (!strcmp(argv[0], "ready") && argc == 2) {
         CONSOLE.printf("READY %s %s\r\n", argv[1], BENCH_BUILD_ID);
+    } else if (!strcmp(argv[0], "ltdcfind")) {
+#if CH32RV_HAS_LTDC
+        ltdcFind(argc, argv);
+#else
+        CONSOLE.printf("LTDCFIND NONE\r\n");
+#endif
+    } else if (!strcmp(argv[0], "ltdc") && (argc == 10 || argc == 11)) {
+#if CH32RV_HAS_LTDC
+        ltdcRun(argv);
+#else
+        CONSOLE.printf("LTDC 2 0 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "ltdcoff")) {
+#if CH32RV_HAS_LTDC
+        ltdc.end();
+#endif
+        CONSOLE.printf("LTDCOFF\r\n");
     } else if (!strcmp(argv[0], "qspifind")) {
 #if CH32RV_HAS_QSPI
         qspiFind(argc, argv);

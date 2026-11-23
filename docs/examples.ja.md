@@ -33,6 +33,7 @@
 | I2S の音声の出し入れ | [I2S](../libraries/I2S/README.ja.md) | SineWave |
 | 低消費電力タイマー（休止中の計時・起床、パルスの数え） | [CH32RVLowPowerTimer](../libraries/CH32RVLowPowerTimer/README.ja.md) | LowPowerTick |
 | QSPI のフラッシュ | [CH32RVQspi](../libraries/CH32RVQspi/README.ja.md) | QspiFlashInfo |
+| LCD の RGB パネル | [CH32RVLtdc](../libraries/CH32RVLtdc/README.ja.md) | LtdcColorBars(H417) |
 | 周期・単発の呼び出し | [Ticker](../libraries/Ticker/README.ja.md) | Blinker |
 | GPIO の取り込み | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md) | LogicPulseDecode(全系列)/ LogicBurst → LogicStream(H41x) / LogicUhsif(H41x、UHSIF で 200 MS/s) |
 | UHSIF の状態機械 | [CH32RVUhsif](../libraries/CH32RVUhsif/README.ja.md) | UhsifStates、UhsifTrigger(H41x) |

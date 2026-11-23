@@ -672,6 +672,13 @@ test = "periph::test_qspi"
 scope = "series"
 any_of = ["QSPI1"]
 
+[[item]]
+id = "ltdc"                 # CH32RVLtdc: sync, DE and colour lines (WireSkein); V4x7's needs the Ethernet / USBHS PLL
+test = "periph::test_ltdc"
+scope = "series"
+any_of = ["LTDC"]
+missing = ["CH32V407", "CH32V467"]
+
 
 # Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them
 # missing. Their clocks name the series; OPA / CMP / PMP / the DMA API have none of their own, so they list them.
@@ -711,12 +718,6 @@ id = "dvp"                  # DVP camera input
 scope = "series"
 any_of = ["DVP"]
 missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V303", "CH32V305", "CH32V307", "CH32V317", "CH32V407", "CH32V467"]
-
-[[item]]
-id = "ltdc"                 # LTDC RGB LCD output
-scope = "series"
-any_of = ["LTDC"]
-missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V407", "CH32V467"]
 
 [[item]]
 id = "serdes"               # SerDes

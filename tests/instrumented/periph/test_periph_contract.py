@@ -996,6 +996,79 @@ def test_qspi(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_ltdc(dut, oep_host, ws_run, record_property):
+    """periph.ltdc (CH32RVLtdc, 2026-11-23): the LCD controller on labelled lines that are its CLK, HSYNC, VSYNC, DE
+    and one R and one G line (the DUT finds them: ltdcfind), a 64 x 32 panel (HSYNC 4 / back 8 / front 8 pixels,
+    VSYNC 2 / back 4 / front 4 lines) at the slowest pixel clock the divider makes, no layer: the background alone.
+    WireSkein judges the timing - HSYNC a square at the line rate (pixel clock / 84) low for 4 of the 84 pixels,
+    VSYNC one at the frame rate (line rate / 42) low for 2 of the 42 lines - and the colour: with the background red
+    the R line moves with DE (skew: every edge within a pixel of DE's) and G stays low; with green the other way
+    round. CLK itself is not captured (several MHz on a sixth line outran the probe at 60 MS/s): the pixel clock
+    shows in HSYNC's rate."""
+    from oep_client import core
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import level, skew, square
+    case = settings(__file__)
+    ready(dut, case)
+    debug = set(case["target"].get("debug_pads") or [])
+    lines = {line["pin"]: line for line in port_lines(oep_host, case["target"]) if line["pad"] not in debug}
+    m = ask(dut, "ltdcfind " + " ".join(str(p) for p in lines), rb"LTDCFIND (NONE|[\d -]+)")
+    if m.group(1) == b"NONE":
+        if ask(dut, "ltdc 0 0 0 0 0 0 0 0 000000", rb"LTDC (\d) \d+ \S+").group(1) == b"2":
+            pytest.skip("n/a: no LTDC here (or not covered: V4x7)")
+        pytest.skip("no labelled lines are the LTDC's CLK, HSYNC, VSYNC, DE, an R and a G line: " +
+                    ", ".join(l["pad"] for l in lines.values()))
+    clk, hs, vs, de, r, rbit, g, gbit = (int(v) for v in m.group(1).split())
+    pads = {k: lines[p]["pad"] for k, p in (("clk", clk), ("hs", hs), ("vs", vs), ("de", de), ("r", r), ("g", g))}
+    record_property("pins", json.dumps({**pads, "rbit": rbit, "gbit": gbit}))
+    host = oep_host.host
+    gpio = Gpio(host)
+    chans = [lines[p]["channel"] for p in (hs, vs, de, r, g)]
+    core.plan_apply(host, [(gpio.fn, 1, c) for c in chans])
+    for c in chans:
+        gpio.configure(c, Gpio.INPUT_PULLDOWN)   # still until the LTDC drives them
+    results, wrong = {}, []
+
+    def steps(wait):
+        with ws_run.section(1, f"ltdc {' '.join(pads.values())}"):
+            for name, rgb, moving, still, layer in (("background red", "ff0000", "r", "g", 0),
+                                                    ("red layer", "ff0000", "r", "g", 1),
+                                                    ("green layer", "00ff00", "g", "r", 1),
+                                                    ("red under a clear layer", "ff0000", "r", "g", 2),
+                                                    ("green under a clear layer", "00ff00", "g", "r", 2)):
+                m = until(dut, ws_run, wait, f"ltdc {clk} {hs} {vs} {de} {r} {rbit} {g} {gbit} {rgb} {layer}",
+                          rb"LTDC (\d) (\d+) ([0-9a-f]+)", 5)
+                ok, pclk = int(m.group(1)), int(m.group(2))
+                results["gcr"] = m.group(3).decode()
+                results[name] = pclk
+                if not ok:
+                    wrong.append(f"{name}: begin() failed")
+                    continue
+                line_hz, frame_hz = pclk / 84, pclk / 84 / 42
+                wait(0.01)
+                expect = [square(pads["hs"], freq_hz=line_hz, duty=80 / 84),
+                          square(pads["vs"], freq_hz=frame_hz, duty=40 / 42),
+                          skew(pads["de"], pads[moving], delay_abs_s=1.5 / pclk),
+                          level(pads[still], 0)]
+                with ws_run.section(2, name, expect=expect):
+                    wait(0.03)
+                until(dut, ws_run, wait, "ltdcoff", rb"LTDCOFF", 5)
+                wait(0.005)
+
+    try:
+        # CLK (several MHz) left out: five lines at 20 MS/s; the pixel clock shows in HSYNC's rate (pixels / 84)
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (hs, vs, de, r, g)], rate=20_000_000, steps=steps)
+    finally:
+        for c in chans:
+            try:
+                gpio.configure(c, Gpio.INPUT)
+            except Exception:
+                pass
+        core.plan_release(host, [gpio.fn])
+    record_property("pixel_hz", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
 @pytest.mark.parametrize("feature", ["can", "rs485"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""

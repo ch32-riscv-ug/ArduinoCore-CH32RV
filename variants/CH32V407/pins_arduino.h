@@ -1339,6 +1339,40 @@ static const uint8_t SS = PIN_SPI_SS;
     X(2, 10, CH32RV_IRQN_DMA2_Channel10, 0x400204b0u, 0x400204d0u, 8u) \
     X(2, 11, CH32RV_IRQN_DMA2_Channel11, 0x400204c0u, 0x400204d0u, 12u)
 
+/* LTDC's pads, for CH32RVLtdc: role (0 R0, 1 R1, 2 R2, 3 R3, 4 R4, 5 R5, 6 R6, 7 R7, 8 G0, 9 G1, 10 G2, 11 G3, 12 G4, 13 G5, 14 G6, 15 G7, 16 B0, 17 B1, 18 B2, 19 B3, 20 B4, 21 B5, 22 B6, 23 B7, 24 CLK, 25 HSYNC, 26 VSYNC, 27 DE), pad, then
+ * the PCFR1 / PCFR2 values of its route (the pads of one route go together). */
+#define CH32RV_LTDC_PAD_COUNT 28
+#define CH32RV_LTDC_PADS { \
+    { 0, PC0, 0x00000000u, 0x00000000u }, \
+    { 1, PC1, 0x00000000u, 0x00000000u }, \
+    { 2, PC2, 0x00000000u, 0x00000000u }, \
+    { 3, PC3, 0x00000000u, 0x00000000u }, \
+    { 4, PA1, 0x00000000u, 0x00000000u }, \
+    { 5, PA2, 0x00000000u, 0x00000000u }, \
+    { 6, PA3, 0x00000000u, 0x00000000u }, \
+    { 7, PA7, 0x00000000u, 0x00000000u }, \
+    { 8, PC4, 0x00000000u, 0x00000000u }, \
+    { 9, PC5, 0x00000000u, 0x00000000u }, \
+    { 10, PB0, 0x00000000u, 0x00000000u }, \
+    { 11, PB1, 0x00000000u, 0x00000000u }, \
+    { 12, PB2, 0x00000000u, 0x00000000u }, \
+    { 13, PD8, 0x00000000u, 0x00000000u }, \
+    { 14, PB12, 0x00000000u, 0x00000000u }, \
+    { 15, PB13, 0x00000000u, 0x00000000u }, \
+    { 16, PB14, 0x00000000u, 0x00000000u }, \
+    { 17, PB15, 0x00000000u, 0x00000000u }, \
+    { 18, PB11, 0x00000000u, 0x00000000u }, \
+    { 19, PB10, 0x00000000u, 0x00000000u }, \
+    { 20, PA8, 0x00000000u, 0x00000000u }, \
+    { 21, PA13, 0x00000000u, 0x00000000u }, \
+    { 22, PA14, 0x00000000u, 0x00000000u }, \
+    { 23, PA15, 0x00000000u, 0x00000000u }, \
+    { 24, PE1, 0x00000000u, 0x00000000u }, \
+    { 25, PB4, 0x00000000u, 0x00000000u }, \
+    { 26, PB5, 0x00000000u, 0x00000000u }, \
+    { 27, PE0, 0x00000000u, 0x00000000u }, \
+}
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

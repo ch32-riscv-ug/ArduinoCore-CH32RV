@@ -3286,6 +3286,12 @@ QSPI_PINS: dict = {}
 QSPI_SIGNAL_RE = [
     (re.compile(r"^QSPI(\d*)_(SCK|SCSN|SCSXN|SIO[0-3]|SIOX[0-3])$"), lambda m: (int(m.group(1) or 1), m.group(2))),
 ]
+# Set by main(): part -> {(1, route): {"R0".."B7"|"CLK"|"HSYNC"|"VSYNC"|"DE": pad}} (CH32RVLtdc).
+LTDC_PINS: dict = {}
+LTDC_SIGNAL_RE = [
+    (re.compile(r"^LTDC_(R[0-7]|G[0-7]|B[0-7]|CLK|HSYNC|VSYNC|DE)$"), lambda m: (1, m.group(1))),
+]
+LTDC_ROLES = tuple(f"{c}{n}" for c in "RGB" for n in range(8)) + ("CLK", "HSYNC", "VSYNC", "DE")
 QSPI_ROLES = ("SCK", "SCSN", "SIO0", "SIO1", "SIO2", "SIO3", "SCSXN", "SIOX0", "SIOX1", "SIOX2", "SIOX3")
 # Set by main(): part -> {(LPTIM index, route): {"CH1"|"CH2"|"ETR"|"OUT": pad}} (H41x names the output OC,
 # L103 its remapped one LPT_OUT).
@@ -5815,6 +5821,10 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
     emitted = [index for index in qspis
                if emit_pad_table(out, series, parts, remap, QSPI_PINS, "qspi", "qspi", index, f"QSPI{index}",
                                  QSPI_ROLES, {0}, f"QSPI{index}'s pads, for CH32RVQspi")]
+    if any(LTDC_PINS.get(pn) for pn in parts) and emit_pad_table(
+            out, series, parts, remap, LTDC_PINS, "ltdc", "ltdc", 1, "LTDC", LTDC_ROLES, {24, 25, 26},
+            "LTDC's pads, for CH32RVLtdc"):
+        out.append("")
     if emitted:
         out.append("#define CH32RV_QSPI_PADS_ANY 1   /* some QSPI has pads here (examples' requires) */")
         out.append("")
@@ -6159,6 +6169,7 @@ def main() -> int:
     I2S_PINS.update(load_pin_routes(args.tables, I2S_SIGNAL_RE, I2S_ROUTE_ORDER, "i2s", route_alts))
     LPTIM_PINS.update(load_pin_routes(args.tables, LPTIM_SIGNAL_RE, I2S_ROUTE_ORDER, "lptim", route_alts))
     QSPI_PINS.update(load_pin_routes(args.tables, QSPI_SIGNAL_RE, I2S_ROUTE_ORDER, "qspi", route_alts))
+    LTDC_PINS.update(load_pin_routes(args.tables, LTDC_SIGNAL_RE, I2S_ROUTE_ORDER, "ltdc", route_alts))
     OPA_PINS.update(load_opa_pins(args.tables))
     USBPD_CC.update(load_usbpd_cc(args.tables))
     TIM_DT2.update(load_tim_dt2(args.tables))
@@ -6228,7 +6239,7 @@ def main() -> int:
 
     forbidden = load_forbidden_pads(args.tables)
     BUS2_ENABLE.update(load_bus2_enables(args.tables))
-    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS, LPTIM_PINS, QSPI_PINS], forbidden)
+    resolve_pin_candidates(by_board, [uarts, UART_FLOW, i2cs, spis, dacs, CAN_PINS, I2S_PINS, LPTIM_PINS, QSPI_PINS, LTDC_PINS], forbidden)
     USB_PADS.clear()
     USB_PADS.update(load_usb_pads(args.tables))
 

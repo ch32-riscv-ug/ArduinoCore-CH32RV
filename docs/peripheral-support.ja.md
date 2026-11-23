@@ -109,11 +109,11 @@ family内のseriesで違うところ(V303にUSBHSが無い、X305にSPI1が無�
 | SWPMI | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | NFC/UICCのSWP master |
 | UHSIF (高速パラレル) | 一部実装 | CH32RVUhsif(library) |  |  |  |  |  |  |  |  |  |  |  | ◐ | 8/16/32 bitの入力・内部クロックだけ(スレーブのモード、出力、外部クロックは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)が使う |
 | SerDes | 未実装 | - |  |  |  |  |  |  |  |  |  |  |  | ○ | 1.5 Gbpsの差動リンク |
-| QSPI | 未実装 | - |  |  |  |  | ○ |  |  |  |  |  |  | ○ |  |
+| QSPI | 実装済 | CH32RVQspi(library) |  |  |  |  | ● |  |  |  |  |  |  | ● | 段ごとに1・2・4線、2つ目のフラッシュ、mode 0/3。メモリマップはH41xのQSPI1だけ。V205で試験(2026-11-23) |
 | PSRAM | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  |  |  |
 | I3C | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  | ○ |  |
 | DVP (カメラ) | 未実装 | - |  |  |  |  |  | ○ | ○ |  |  |  |  | ○ | パラレル入力(8〜12 bit、外部PCLK)の候補。docs/unused-peripherals.ja.md |
-| LTDC (LCD) | 未実装 | - |  |  |  |  |  |  | ○ |  |  |  |  | ○ |  |
+| LTDC (LCD) | 一部実装 | CH32RVLtdc(library) |  |  |  |  |  |  | ○ |  |  |  |  | ● | 2レイヤー・背景色・8形式。H417で試験(2026-11-23)。V4x7はピクセルクロック(Ethernet・USBHSのPLL)が未対応 |
 | GPHA (2D DMA) | 一部実装 | CH32RVGpha |  |  |  |  |  |  |  |  |  |  |  | ● | fill・copy（形式の変換）・blend・CLUT |
 | ARGB (LEDドライバ) | 実装済 | `rgbLedWrite` / `ch32rv_rgb_led_write` |  |  |  |  |  |  | ● |  |  |  | ● |  | ARGBの端子(V4x7はPA15、X3x5はPA15・PD3・PD4)では同じ関数がブロックとDMAで送り、割り込みを止めない(2026-11-17、ビルドのみ)。ほかの端子と系列はソフト(arduino-esp32の名前、どの端子でも、全系列、2026-11-17) |
 | RNG | 実装済 | `ch32rv_random` |  |  |  |  |  | ● | ● |  |  |  |  | ● | `ch32rv_random()`・`ch32rv_fill_random()`(arduino-esp32の`esp_random()`・`esp_fill_random()`)。TLS(mbedTLS)とTCPの乱数にも使う(`ch32rv_rng_read`)。回路の無い系列ではUIDと時刻を混ぜたソフトの値(暗号には使えない)。`random()`はArduinoのとおり再現できる疑似乱数のまま(`randomSeed(ch32rv_random())`)。selfapiの試験はビルドのみ(2026-11-17) |
