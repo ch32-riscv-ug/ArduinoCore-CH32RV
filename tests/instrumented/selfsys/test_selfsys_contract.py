@@ -366,6 +366,20 @@ def test_rtc_alarm(dut, ready, record_property):
 
 
 # Last: a sleep that never ends takes the console with it (the RTC families did, until the alarm-0 fix, 2026-11-12).
+def test_idle(dut, ready, record_property):
+    """CH32RV.idle(ms) (2026-11-23): the CPU waits in WFI while a hardware timer interrupts every 1 ms - its alarms
+    keep coming (the peripheral and its interrupt run through the idle) and millis() moves as asked: both within 3
+    of 200. Then idle(0) with the timer on returns (after the next interrupt)."""
+    n, took, began = (int(x) for x in ask(dut, "idle 200", rb"IDLE (\d+) (\d+) (\d)").groups())
+    record_property("idle", json.dumps(dict(alarms=n, millis=took, timer=began)))
+    assert 200 <= took <= 203, f"idle(200) took {took} ms"
+    if not began:
+        pytest.skip("no hardware timer for timerBegin() in this build")
+    assert abs(n - took) <= 3, f"{n} timer alarms in {took} ms of idle()"
+    n0, took0, _ = (int(x) for x in ask(dut, "idle 0", rb"IDLE (\d+) (\d+) (\d)").groups())
+    assert took0 <= 2, f"idle() took {took0} ms"
+
+
 def test_light_sleep(dut, ready, record_property):
     t0 = time.monotonic()
     r, cause, took = (int(x) for x in ask(dut, "sleep 200", rb"SLEEP (-?\d+) (-?\d+) (\d+)").groups())

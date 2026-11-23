@@ -8,6 +8,8 @@
  *   restart                   RESTARTING, then CH32RV.restart() (the next STARTUP line says why it booted)
  *   wdt <ms>                  wdtEnable(ms), fed every 50 ms for 300 ms: WDT FED; then not fed: WDT LET GO,
  *                             and the watchdog resets the chip (or WDT REFUSED)
+ *   idle <ms>                 CH32RV.idle(ms) with a hardware timer interrupting every 1 ms (timerBegin /
+ *                             timerAlarm): IDLE <alarms counted> <millis() moved> <0 / 1 the timer began>
  *   sleep <ms>                lightSleep() with a timer wake after ms:
  *                             SLEEP <CH32RVSleepResult> <wakeupCause()> <millis() across it>
  *   adcpins                   ADCPINS <pin> ...: every bonded pad with an ADC channel
@@ -318,6 +320,28 @@ static void reply(char *command)
         CONSOLE.printf("WDT LET GO\r\n");
         for (;;) {
         }
+    } else if (!strcmp(argv[0], "idle") && argc == 2) {
+        static volatile uint32_t alarms;
+        alarms = 0;
+#if !defined(CH32RV_VARIANT_CH32V003)   /* V003's 16 KB: the timer API passed it by 440 B */
+        hw_timer_t *t = timerBegin(1000000);
+        if (t) {
+            timerAttachInterrupt(t, []() { alarms++; });
+            timerAlarm(t, 1000, true, 0);
+        }
+#else
+        void *t = nullptr;
+#endif
+        const uint32_t t0 = millis();
+        CH32RV.idle((uint32_t)atol(argv[1]));
+        const uint32_t took = millis() - t0;
+        const uint32_t n = alarms;
+#if !defined(CH32RV_VARIANT_CH32V003)
+        if (t) {
+            timerEnd(t);
+        }
+#endif
+        CONSOLE.printf("IDLE %lu %lu %d\r\n", (unsigned long)n, (unsigned long)took, t ? 1 : 0);
     } else if (!strcmp(argv[0], "sleep") && argc == 2) {
         CH32RV.enableTimerWakeup((uint64_t)(uint32_t)atol(argv[1]) * 1000u);
         const uint32_t t0 = millis();

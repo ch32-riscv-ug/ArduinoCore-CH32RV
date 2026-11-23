@@ -808,6 +808,12 @@ test = "system::test_reset_reasons"
 scope = "series"
 
 [[item]]
+id = "idle"                 # CH32RV.idle(): the CPU in WFI, a timer's interrupts counted through it
+test = "selfsys::test_idle"
+scope = "series"
+kind = "self"
+
+[[item]]
 id = "sleep"                # lightSleep / deepSleep and the wake-ups (CH32RV); n/a where the DUT answers unsupported
 test = "system::test_sleep"
 scope = "series"

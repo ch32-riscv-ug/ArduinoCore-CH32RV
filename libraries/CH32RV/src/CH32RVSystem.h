@@ -39,6 +39,13 @@
  *    wakes through a reset).
  *  - Nothing sleeps by itself: only these calls do (docs/peripheral-a-design
  *    .ja.md 4.3). Serial sends what it holds before the clock stops.
+ *  - idle(ms): the CPU alone waits (WFI, the core's sleep mode) for ms
+ *    milliseconds, the peripherals, their DMA and interrupts running on -
+ *    Serial receives, timers and PWM run, USB stays connected - as
+ *    STM32LowPower's / Arduino-LowPower's LowPower.idle(ms). Each interrupt
+ *    (SysTick's every millisecond among them) wakes the CPU, runs and
+ *    idles again; idle() with no ms returns after the next one. On V103
+ *    SysTick does not end a WFI, so idle() waits there awake.
  *  - On the AWU families the first sleep of a boot measures the AWU's clock
  *    first: about 40 ms more than asked (four 8 ms periods and a phase).
  *  - millis() keeps counting through a timer wake: the sleep is measured and
@@ -332,6 +339,7 @@ public:
     bool enableExtiLineWakeup(uint8_t line, PinStatus mode = RISING);
     void disableWakeup();
     CH32RVSleepResult lightSleep();
+    void idle(uint32_t ms = 0);
     /* Returns only when it cannot sleep: otherwise the chip restarts. */
     CH32RVSleepResult deepSleep();
     /* What ended the last sleep - also across deepSleep()'s restart. */

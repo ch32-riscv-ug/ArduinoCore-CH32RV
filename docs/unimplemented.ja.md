@@ -29,7 +29,7 @@
 | LSE（32 kHz 水晶） | RTC のある系列 | 実装済み（2026-11-18、RTC Clock メニュー。立たなければ LSI。`CH32RV.rtcClock()`。V103 の EVT・V203・H417 の台で立つことを確かめた。水晶の無い板で LSI に戻る道は実機では未確認。X305/X315 には LSE が無い（RTC は LSI か HSE ÷512） | 単発→自動 | LSE の載った板。自己 | PS:53 |
 | PVD（電圧低下の検出・割込み・起床） | V003〜H417 の 11 family | 実装済み（2026-11-17。`CH32RV.setLowVoltageDetect(mV, cb)` / `clearLowVoltageDetect()` / `isLowVoltage()` / `lowVoltageLevel()`、起床は `enableExtiLineWakeup(CH32RV_EXTI_PVD)`。H41x は PVD の割込み（EXTI の線）が無く、V004 / V007 / M007 は device-data に段が無いので未対応のまま） 実機で通った系列（2026-11-19 の集計）: L103・V003・V006・V103・V203・V205・V407・X035。 | 単発→自動 | 自己（selfexti::test_pvd: 閾値を VDD の上と下に。3.3 V の板で上にできるのは V003・V103・X035）。本当の低下は可変電源（VDD を下げる。単発） | PS:60, PM:290 |
 | 休止（lightSleep / deepSleep）の残りの系列 | M030、X315（X305）、V407/V467 | 実装済み（2026-11-15。V4x7・X3x5 は RTC のアラーム、M030 は AWU。V103 は 2026-11-18 に実機で通った: 1 秒未満の端数の WFI が SysTick で終わらないので起きたまま待つ。selfsys・selfexti・system） 実機で通った系列（2026-11-19 の集計）: H417・L103・V003・V006・V103・V203・V205・V208・V307・V407・X035・X315。 | 自動 | プローブ（端子で起こす・時間を測る）。system::test_sleep、selfsys::test_light_sleep | libraries/CH32RV/README.ja.md |
-| 周辺を動かしたままの休止 | 全系列 | 2 | 自動 | プローブ | FC:31 |
+| 周辺を動かしたままの休止 | 全系列 | 2 | 実装済み（2026-11-23、`CH32RV.idle(ms)`: CPU だけ WFI、周辺と割り込みは動いたまま（STM32LowPower の LowPower.idle の意味）。selfsys::test_idle が V203・V103・H417 で通る。V003 は試験のタイマーが Flash に入らず idle の時間だけ） | プローブ | FC:31 |
 | Standby の RAM 保持・低電圧の形 | V20x、V205、V30x、V407、L103 | 2 | 単発→自動 | プローブ（起床）＋電流計 | PS:41, EVT PWR/Standby_RAM_Mode・Standby_RAM_LV_Mode・Standby_RAM_Application |
 | 停止モード 3（LPDS=1、FLASH_LP） | L103/M103、V205 | 2 | 単発→自動 | 電流計、プローブ | TODO:191 |
 | VDD12 の外部給電・低消費の Stop | H417、X315 | 2 | 単発 | 外部 1.2 V 電源の板（手作業） | EVT PWR/VDD12_ExternPower・VDD12_ExternPowerInStopLP |
