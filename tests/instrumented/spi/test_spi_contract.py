@@ -643,6 +643,60 @@ def test_spi_crc(dut, oep_host, ws_run, record_property):
     record_property("results", json.dumps(wrong) if wrong else "ok")
     assert not wrong, " | ".join(wrong)
 
+
+def test_spi_three_wire(dut, oep_host, ws_run, record_property):
+    """spi.three-wire (SPI.setThreeWire() / receive(), 2026-11-23): the hardware SPI's one-line mode on its default
+    pins, no target: six random bytes sent on MOSI's line, then four received from it - the line held by the probe's
+    pull-up (0xFF) or pull-down (0x00) while the DUT lets it go. WireSkein judges the bus (spi: the six bytes then four of
+    the held level on that line, exactly 80 clocks - the receive stops on the byte asked); compared here: receive()'s
+    bytes are the held level. At 250 kHz and 1 MHz."""
+    from oep_client.fixture import Gpio
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: three wires are the hardware SPI's")
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    if ask(dut, "tw 250000 00 0", rb"TW (\d) \S+").group(1) == b"2":
+        pytest.skip("not in this build of the spi sketch (a SoftSPI, or V003's 16 KB)")
+    host = oep_host.host
+    gpio = Gpio(host)
+    core.plan_apply(host, [(gpio.fn, 1, lines[mosi]["channel"])])
+    wrong = []
+
+    def steps(wait):
+        idle = {cs: 1}
+        with ws_run.section(1, f"spi three wires {sck} {mosi} {cs}"):
+            for hz in (250_000, 1_000_000):
+                for level in (1, 0):
+                    name = f"{hz // 1000} kHz, the line pulled {'up' if level else 'down'}"
+                    out = secrets.token_bytes(6)
+                    held = (b"\xff" if level else b"\x00") * 4
+                    gpio.configure(lines[mosi]["channel"], Gpio.INPUT_PULLUP if level else Gpio.INPUT_PULLDOWN)
+                    wait(0.005)
+                    want = [spi(sck, mosi=mosi, cs=cs, mode=0, bit_order="msb", mosi_bytes=(out + held).hex(), bits=80,
+                                notices={"sck_outside_cs": 1}),
+                            starts(idle), ends(idle)]
+                    with ws_run.section(2, name, expect=want):
+                        command = f"tw {hz} {out.hex()} 4"
+                        ws_run.command(command)
+                        dut.write(command)
+                        m = wait_reply(dut, wait, rb"TW (\d) (\S+)")
+                        ws_run.reply(m.group(0).decode())
+                        if m.group(1) != b"1" or m.group(2).decode() != held.hex():
+                            wrong.append(f"{name}: receive() {m.group(1).decode()} {m.group(2).decode()}, the line held {held.hex()}")
+                        wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi)], rate=RATE, steps=steps)
+    finally:
+        try:
+            gpio.configure(lines[mosi]["channel"], Gpio.INPUT)
+        except Exception:
+            pass
+        core.plan_release(host, [gpio.fn])
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
 I2S_RATE = 32_000           # 16-bit slots: SYSCLK / 32 / 32 kHz is within the divider on every family (H41x's
                             # 400 MHz reaches down to 24.5 kHz); BCLK 1.024 / 2.048 MHz
 I2S_CONDITIONS = [          # name, bits, format (0 Philips, 1 MSB, 2 LSB), mono, WireSkein's format, slot

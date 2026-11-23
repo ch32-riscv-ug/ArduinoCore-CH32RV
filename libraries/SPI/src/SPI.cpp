@@ -1,4 +1,5 @@
 #include "SPI.h"
+#include <string.h>
 #include "ch32rv_spi_claim.h"
 
 #include "Arduino.h"
@@ -478,6 +479,9 @@ void CH32RVSPIClass::apply(uint32_t clock_hz, BitOrder order, uint8_t mode)
     if (order == LSBFIRST) {
         ctlr1 |= CH32RV_SPI_CTLR1_LSBFIRST;
     }
+    if (_three) {
+        ctlr1 |= CH32RV_SPI_CTLR1_BIDIMODE | CH32RV_SPI_CTLR1_BIDIOE;   /* one line, sending */
+    }
 
     /* beginTransaction() runs this before every transfer, usually with the
      * settings the bus already has: then nothing is touched. */
@@ -556,6 +560,11 @@ uint8_t CH32RVSPIClass::transfer(uint8_t data)
     } else if (_periph) {
         return ch32rv_spi_peripheral->hw_transfer(*this, data);
     }
+    if (_three) {
+        /* sending on the one line: no byte comes back */
+        transfer_block(&data, nullptr, 1);
+        return 0;
+    }
     /* Full duplex: one byte out is one byte in, and the wait for RXNE is what
      * makes the call synchronous. No timeout, because unlike I2C there is no
      * other party that can stall the clock - the master generates it. */
@@ -583,6 +592,10 @@ void CH32RVSPIClass::transfer_block(const uint8_t *tx, uint8_t *rx, size_t count
      * Both ways, a byte is read before the next goes, so an interrupt between
      * them never makes the receive side overrun. */
     const uint32_t base = _base;
+    uint8_t *const zero = _three ? rx : nullptr;   /* three wires: nothing comes back while sending */
+    if (_three) {
+        rx = nullptr;
+    }
     for (size_t i = 0; i < count; i++) {
         while ((CH32RV_SPI_STATR(base) & CH32RV_SPI_STATR_TXE) == 0u) {
         }
@@ -600,6 +613,9 @@ void CH32RVSPIClass::transfer_block(const uint8_t *tx, uint8_t *rx, size_t count
         }
         (void)CH32RV_SPI_DATAR(base);
         (void)CH32RV_SPI_STATR(base);
+    }
+    if (zero) {
+        memset(zero, 0, count);   /* after sending: the buffer may be tx's too */
     }
 }
 
@@ -675,7 +691,7 @@ void async_release(const SpiDma &d, AsyncRun &run)
 
 bool CH32RVSPIClass::transferAsync(const void *send, void *recv, size_t bytes)
 {
-    if (!_started || _periph || SPI_COUNT == 0) {
+    if (!_started || _periph || SPI_COUNT == 0 || (_three && recv)) {
         return false;
     }
     const uint8_t index = index_of(_slot);

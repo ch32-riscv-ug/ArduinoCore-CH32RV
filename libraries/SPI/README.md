@@ -207,6 +207,23 @@ uint8_t sent = SPI.crcSent(), got = SPI.crcReceived();
 - Not on a SoftSPI.
 - spi::test_spi_crc (polynomials 0x07 and 0x31, matching and not) passes on V003, V006, V203, X035 and H417 (2026-11-23).
 
+## Three wires (setThreeWire / receive)
+
+One data line both ways, half duplex (ESP-IDF's SPI_DEVICE_3WIRE; no Arduino counterpart). The line is MOSI's pad:
+
+```cpp
+SPI.setThreeWire(true);
+digitalWrite(cs, LOW);
+SPI.transfer(cmd, 2);        // sending only (returns 0)
+SPI.receive(reply, 4);       // the line turned round, exactly four bytes clocked in
+digitalWrite(cs, HIGH);
+SPI.setThreeWire(false);
+```
+
+- `receive()` lets go of the line for four SCK periods (the turnaround) before the first clock, and stops the clock on the byte asked (counted with interrupts off).
+- `transferAsync()` while on three wires only sends (false with a receive buffer). Not on a SoftSPI.
+- spi::test_spi_three_wire (six bytes sent, four received from the line the probe's pull-up / pull-down holds; WireSkein counts exactly 80 clocks) passes on V006, V203, X035 and H417 (2026-11-23). V003: not in its spi sketch (flash).
+
 ## Hardware chip select (setHwCs)
 
 As arduino-esp32's `SPI.setHwCs(true)`, the SPI drives its route's NSS pad itself:

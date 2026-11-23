@@ -33,3 +33,6 @@ setCRC	KEYWORD2
 transferCRC	KEYWORD2
 crcSent	KEYWORD2
 crcReceived	KEYWORD2
+setThreeWire	KEYWORD2
+threeWire	KEYWORD2
+receive	KEYWORD2

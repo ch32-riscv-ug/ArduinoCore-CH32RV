@@ -194,6 +194,23 @@ uint8_t sent = SPI.crcSent(), got = SPI.crcReceived();
 - SoftSPIにはありません。
 - spi::test_spi_crc(多項式0x07・0x31、合う・合わない)がV003・V006・V203・X035・H417で通ります(2026-11-23)。
 
+## 3線(setThreeWire / receive)
+
+データ線1本で送受信する半二重の形です(ESP-IDFのSPI_DEVICE_3WIRE。Arduinoに相当するものはありません)。線はMOSIの端子です:
+
+```cpp
+SPI.setThreeWire(true);
+digitalWrite(cs, LOW);
+SPI.transfer(cmd, 2);        // 送るだけ(戻り値は0)
+SPI.receive(reply, 4);       // 線の向きを変えて、ちょうど4バイトのクロックで受ける
+digitalWrite(cs, HIGH);
+SPI.setThreeWire(false);
+```
+
+- `receive()`は線を放してからSCKの4周期待ち(ターンアラウンド)、頼んだバイト数でクロックを止めます(割り込みを止めて数える)。
+- 3線の間の`transferAsync()`は送るだけです(受け取りのバッファを渡すとfalse)。SoftSPIにはありません。
+- spi::test_spi_three_wire(6バイト送って、プローブのプルアップ/ダウンで保った線から4バイト。WireSkeinで80クロックちょうど)がV006・V203・X035・H417で通ります(2026-11-23)。V003はspiのスケッチのFlashに入らず未試験。
+
 ## ハードウェアのチップセレクト(setHwCs)
 
 arduino-esp32の`SPI.setHwCs(true)`と同じく、SPIがその経路のNSSの端子を自分で動かします:

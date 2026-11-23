@@ -139,6 +139,14 @@ public:
      * are the CRC it sent and the byte that came back. Other transfers are
      * not touched. False on a SoftSPI, a peripheral or with no polynomial. */
     bool setCRC(uint8_t polynomial);
+    /* Three wires (no Arduino counterpart; ESP-IDF's SPI_DEVICE_3WIRE): one
+     * data line both ways, MOSI's pad, MISO's left alone. While on, the
+     * transfers send on it and return 0 (nothing comes back while sending);
+     * receive(buf, n) turns the line round and clocks in exactly n bytes.
+     * False on a SoftSPI or a peripheral. */
+    bool setThreeWire(bool on);
+    bool threeWire() const { return _three; }
+    bool receive(void *buf, size_t count);
     bool transferCRC(void *buf, size_t count);
     uint8_t crcSent() const { return _crc_tx; }
     uint8_t crcReceived() const { return _crc_rx; }
@@ -183,6 +191,7 @@ private:
      * the next controller use. */
     uint8_t _periph = 0;
     uint8_t _crc_poly = 0, _crc_tx = 0, _crc_rx = 0;
+    bool _three = false;
 };
 
 }  // namespace arduino

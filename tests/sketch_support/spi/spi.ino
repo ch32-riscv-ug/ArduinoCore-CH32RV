@@ -24,6 +24,9 @@
  *                                      bytes (hex, up to 16) at 1 MHz, mode 0 MSB first; CS high:
  *                                      CRC <1 matched / 0 / 2 no CRC here> <crcSent()> <crcReceived()>
  *                                      <bytes read, hex>
+ *   tw <hz> <bytes> <n>                after `hw`: setThreeWire(true), mode 0 MSB first; CS low; transfer() of
+ *                                      the bytes (hex) on the one line, then receive() of n bytes; CS high;
+ *                                      setThreeWire(false): TW <1 / 0; 2 no hardware SPI> <bytes received, hex>
  *   blk <how> <hz> <bytes>             the buffer transfers, mode 0 MSB first, CS low around one
  *                                      call with the bytes (hex, up to 80): how w writeBytes, t
  *                                      transferBytes, b transfer(buf, n), a transferAsync out only,
@@ -585,6 +588,42 @@ void loop()
             CONSOLE.println(PIN_SPI_MOSI);
 #else
             CONSOLE.println("SPIPINS NONE");
+#endif
+        } else if (strncmp(line, "tw ", 3) == 0) {
+            /* not on V003: its 16 KB took the CRC, not this as well (400 B over) */
+#if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N) && !defined(CH32RV_VARIANT_CH32V003)
+            p += 3;
+            const uint32_t hz = strtoul(p, &p, 10);
+            while (*p == ' ') {
+                p++;
+            }
+            char *count = strchr(p, ' ');
+            if (count) {
+                *count++ = '\0';
+            }
+            uint8_t out[16], in[16];
+            const size_t n = unhex(p, out, sizeof out);
+            size_t k = count ? strtoul(count, nullptr, 10) : 0;
+            k = k > sizeof in ? sizeof in : k;
+            bool ok = SPI.setThreeWire(true);
+            SPI.beginTransaction(SPISettings(hz, MSBFIRST, SPI_MODE0));
+            digitalWrite(cs, LOW);
+            delayMicroseconds(50);
+            SPI.transfer(out, n);
+            ok = ok && SPI.receive(in, k);
+            delayMicroseconds(10);
+            digitalWrite(cs, HIGH);
+            SPI.endTransaction();
+            SPI.setThreeWire(false);
+            CONSOLE.print("TW ");
+            CONSOLE.print(ok ? 1 : 0);
+            CONSOLE.print(' ');
+            for (size_t i = 0; i < k; i++) {
+                hex(in[i], 2);
+            }
+            CONSOLE.println(k ? "" : "-");
+#else
+            CONSOLE.println("TW 2 -");
 #endif
         } else if (strncmp(line, "crc ", 4) == 0) {
 #if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
