@@ -1069,6 +1069,122 @@ def test_ltdc(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+def test_dfsdm(dut, oep_host, ws_run, record_property):
+    """periph.dfsdm (CH32RVDfsdm, 2026-11-23): the sigma-delta filter on labelled lines that are a CKOUT pad and a
+    DATIN pad (the DUT finds them: dfsdmfind), the probe's PWM making the 1-bit stream on DATIN. CKOUT at 2 MHz,
+    sinc3, oversampling 64 (31.25 kHz, full scale 64^3): the stream held high reads +full scale, held low -full
+    scale, a 10 kHz square of duty 1/4 and 3/4 a mean of -1/2 and +1/2 of it (within 3 %); the samples come at
+    sampleRate() (within 2 %, the DUT's micros()). WireSkein sees CKOUT a square at clock() and the stream as the
+    probe made it. Filter 1 alone reads the duty-1/4 stream (its own interrupt); then both filters on the one line
+    (the second through the other channel, on the falling edge) each read it. Where that channel's CKIN pad is labelled too, the probe clocks the stream itself
+    (1 MHz on CKIN): held high, +full scale at 1 MHz / 64."""
+    from oep_client import core
+    from oep_client.fixture import Pwm
+    from wireskein.runlog import level, square
+    case = settings(__file__)
+    ready(dut, case)
+    debug = set(case["target"].get("debug_pads") or [])
+    lines = {line["pin"]: line for line in port_lines(oep_host, case["target"]) if line["pad"] not in debug}
+    m = ask(dut, "dfsdmfind " + " ".join(str(p) for p in lines), rb"DFSDMFIND (NONE|-?\d+ -?\d+ -?\d+)")
+    if m.group(1) == b"NONE":
+        if ask(dut, "dfsdm 0 0 0 1 64 3 1", rb"DFSDM (\d) \d+ \d+ -?\d+").group(1) == b"2":
+            pytest.skip("n/a: no DFSDM here")
+        pytest.skip("no labelled lines are a DFSDM CKOUT and DATIN pad: " + ", ".join(l["pad"] for l in lines.values()))
+    ckout, datin, ckin = (int(v) for v in m.group(1).split())
+    pads = {"ckout": lines[ckout]["pad"], "datin": lines[datin]["pad"]}
+    if ckin >= 0:
+        pads["ckin"] = lines[ckin]["pad"]
+    record_property("pins", json.dumps(pads))
+    host = oep_host.host
+    pwm = Pwm(host)
+    outputs = [lines[datin]["channel"]] + ([lines[ckin]["channel"]] if ckin >= 0 else [])
+    core.plan_apply(host, pwm.assignments(*outputs))
+    results, wrong = {}, []
+    stream_hz = 10_000
+
+    def run(wait, name, clock_pin, hz, duty, mean_want, expect, n=4096):
+        made = pwm.start(0, stream_hz, duty)
+        m = until(dut, ws_run, wait, f"dfsdm 0 {clock_pin} {datin} {hz} 64 3 1", rb"DFSDM (\d) (\d+) (\d+) (-?\d+)", 5)
+        ok, clock, rate, full = (int(v) for v in m.groups())
+        if not ok:
+            wrong.append(f"{name}: begin() failed")
+            return
+        with ws_run.section(2, name, expect=expect(clock, made)):
+            m = until(dut, ws_run, wait, f"dfsdmread 0 {n}", rb"DFSDMREAD (\d+) (-?\d+) (-?\d+) (-?\d+) (\d+) (\d+)", 10)
+        got, mean, lo, hi, us, overruns = (int(v) for v in m.groups())
+        until(dut, ws_run, wait, "dfsdmoff", rb"DFSDMOFF", 5)
+        results[name] = dict(clock=clock, rate=rate, full=full, n=got, mean=mean, min=lo, max=hi, us=us,
+                             overruns=overruns, probe=[made.hz, made.duty])
+        if got != n:
+            wrong.append(f"{name}: {got} of {n} samples")
+            return
+        if full != 64 ** 3:
+            wrong.append(f"{name}: fullScale() {full}, not 64^3")
+        if abs(mean / full - mean_want) > 0.03:
+            wrong.append(f"{name}: mean {mean} = {mean / full:+.3f} of full scale, want {mean_want:+.2f}")
+        if abs(us * 1e-6 * rate / n - 1) > 0.02:
+            wrong.append(f"{name}: {n} samples in {us} us, sampleRate() {rate}")
+        if overruns:
+            wrong.append(f"{name}: {overruns} overruns")
+
+    def steps(wait):
+        with ws_run.section(1, f"dfsdm {' '.join(pads.values())}"):
+            for name, duty, want in (("held high", Pwm.FULL, 1.0), ("held low", 0, -1.0),
+                                     ("duty 1/4", Pwm.FULL // 4, -0.5), ("duty 3/4", Pwm.FULL * 3 // 4, 0.5)):
+                still = duty in (0, Pwm.FULL)
+                run(wait, name, ckout, 2_000_000, duty, want,
+                    lambda clock, made, still=still, duty=duty: [
+                        square(pads["ckout"], freq_hz=clock),
+                        level(pads["datin"], 1 if duty else 0) if still
+                        else square(pads["datin"], freq_hz=made.hz, duty=made.duty / Pwm.FULL)])
+            # Both filters on the one line, the second on the falling edge (through the other channel)
+            pwm.start(0, stream_hz, Pwm.FULL // 4)
+            # filter 1 alone first (its own interrupt, the pad's own channel)
+            m = until(dut, ws_run, wait, f"dfsdm 1 {ckout} {datin} 2000000 64 3 1", rb"DFSDM (\d) (\d+) (\d+) (-?\d+)", 5)
+            m = until(dut, ws_run, wait, "dfsdmread 1 256", rb"DFSDMREAD (\d+) (-?\d+) (-?\d+) (-?\d+) (\d+) (\d+)", 10)
+            results["filter 1 alone"] = dict(n=int(m.group(1)), mean=int(m.group(2)),
+                                             regs=ask(dut, "dfsdmregs", rb"DFSDMREGS ([0-9a-f ]+)").group(1).decode())
+            if int(m.group(1)) != 256:
+                wrong.append(f"filter 1 alone: {m.group(1).decode()} samples")
+            until(dut, ws_run, wait, "dfsdmoff", rb"DFSDMOFF", 5)
+            got = []
+            for f, edge in ((0, 0), (1, 1)):
+                m = until(dut, ws_run, wait, f"dfsdm {f} {ckout} {datin} 2000000 64 3 1 {edge}",
+                          rb"DFSDM (\d) (\d+) (\d+) (-?\d+)", 5)
+                got.append(int(m.group(1)))
+            if got != [1, 1]:
+                wrong.append(f"two filters on one line: begin() {got}")
+            else:
+                with ws_run.section(2, "two filters on one line", expect=[square(pads["ckout"], freq_hz=2_000_000)]):
+                    for f in (0, 1):
+                        m = until(dut, ws_run, wait, f"dfsdmread {f} 2048",
+                                  rb"DFSDMREAD (\d+) (-?\d+) (-?\d+) (-?\d+) (\d+) (\d+)", 10)
+                        n, mean = int(m.group(1)), int(m.group(2))
+                        results[f"filter {f} of two"] = dict(n=n, mean=mean)
+                        if n != 2048 or abs(mean / 64 ** 3 + 0.5) > 0.03:
+                            wrong.append(f"filter {f} of two on one line: {n} samples, mean {mean}, want -1/2 of 64^3")
+                    results["two regs"] = ask(dut, "dfsdmregs", rb"DFSDMREGS ([0-9a-f ]+)").group(1).decode()
+            until(dut, ws_run, wait, "dfsdmoff", rb"DFSDMOFF", 5)
+            if ckin >= 0:
+                clk = pwm.set([(0, stream_hz, Pwm.FULL), (1, 1_000_000, Pwm.FULL // 2)])[1]
+                wait(0.01)
+                run(wait, "clocked on CKIN", ckin, round(clk.hz), Pwm.FULL, 1.0,
+                    lambda clock, made: [square(pads["ckin"], freq_hz=clk.hz), level(pads["datin"], 1)], n=2048)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (ckout, datin) + ((ckin,) if ckin >= 0 else ())],
+                          rate=20_000_000, steps=steps)
+    finally:
+        for role in range(len(outputs)):
+            try:
+                pwm.stop(role)
+            except Exception:
+                pass
+        core.plan_release(host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
 @pytest.mark.parametrize("feature", ["can", "rs485"])
 def test_planned(dut, oep_host, feature):
     """Planned features: the names are fixed, the code is not written (FEATURE_CANDIDATES.ja.md)."""

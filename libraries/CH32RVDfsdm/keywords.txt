@@ -1,0 +1,6 @@
+CH32RVDfsdm	KEYWORD1
+setBuffer	KEYWORD2
+setFallingEdge	KEYWORD2
+sampleRate	KEYWORD2
+fullScale	KEYWORD2
+overruns	KEYWORD2

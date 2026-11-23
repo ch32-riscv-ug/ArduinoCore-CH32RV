@@ -1615,6 +1615,22 @@ static const uint8_t SS = PIN_SPI_SS;
     { 27, PC12, 0x0000000fu, 0x00000000u }, \
 }
 
+/* DFSDM's pads, for CH32RVDfsdm: role (0 CKIN0, 1 CKIN1, 2 DATIN0, 3 DATIN1, 4 CKOUT), pad, then
+ * its function number and 0 (pads of any route go together). */
+#define CH32RV_DFSDM_PAD_COUNT 10
+#define CH32RV_DFSDM_PADS { \
+    { 0, PC0, 0x00000003u, 0x00000000u }, \
+    { 1, PC2, 0x00000003u, 0x00000000u }, \
+    { 1, PB13, 0x00000006u, 0x00000000u }, \
+    { 2, PC1, 0x00000003u, 0x00000000u }, \
+    { 3, PC3, 0x00000003u, 0x00000000u }, \
+    { 3, PB1, 0x00000006u, 0x00000000u }, \
+    { 3, PB12, 0x00000006u, 0x00000000u }, \
+    { 4, PD3, 0x00000003u, 0x00000000u }, \
+    { 4, PB0, 0x00000006u, 0x00000000u }, \
+    { 4, PC2, 0x00000006u, 0x00000000u }, \
+}
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

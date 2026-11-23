@@ -87,6 +87,19 @@
  *                             LTDC <1 / 0> <pixelClock()>
  *   ltdcoff                   end(): LTDCOFF
  *
+ * The sigma-delta filter (CH32RVDfsdm: H41x; DFSDMFIND NONE / DFSDM 2 elsewhere):
+ *
+ *   dfsdmfind <pin>...        a CKOUT pad, a DATIN pad and that channel's CKIN pad (or -1) among the
+ *                             pins: DFSDMFIND <ckout> <datin> <ckin>
+ *   dfsdm <filter> <clk> <data> <hz> <fosr> <order> <iosr> [<falling>]
+ *                             begin() of filter 0 / 1, left running: DFSDM <1 / 0> <clock()> <sampleRate()>
+ *                             <fullScale()>
+ *   dfsdmread <filter> <n>    the next n samples after the ring is emptied: DFSDMREAD <n> <mean> <min>
+ *                             <max> <us for the n> <overruns() while reading>
+ *   dfsdmregs                 channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 (for a failure's report):
+ *                             DFSDMREGS <eight hex words>
+ *   dfsdmoff                  end() of both: DFSDMOFF
+ *
  * The low-power timer (CH32RVLowPowerTimer: L103 / M103, H41x; LPT NONE elsewhere):
  *
  *   lptfind <pin>...          the first of the pins that is a timer's CH1 pad:
@@ -128,6 +141,8 @@
 #include <CH32RVQspi.h>
 #include <CH32RVLtdc.h>
 static CH32RVLtdc ltdc;
+#include <CH32RVDfsdm.h>
+static CH32RVDfsdm dfsdms[2] = {CH32RVDfsdm(0), CH32RVDfsdm(1)};
 /* a row of the variant's CH32RV_QSPIn_PADS (before the prototypes the IDE adds) */
 struct QspiPad {
     uint8_t role, pad;
@@ -551,6 +566,76 @@ static void ltdcFind(int argc, char **argv)
     CONSOLE.printf("LTDCFIND %ld %ld %ld %ld %ld %d %ld %d\r\n", got[0], got[1], got[2], got[3], got[4], rbit, got[5], gbit);
 }
 
+#if CH32RV_HAS_DFSDM
+static void dfsdmFind(int argc, char **argv)
+{
+    static const QspiPad t[] = CH32RV_DFSDM_PADS;
+    long got[3] = {-1, -1, -1};   /* CKOUT, DATIN, CKIN of DATIN's channel */
+    for (uint8_t want = 0; want < 3; want++) {
+        for (const QspiPad &p : t) {
+            bool listed = false;
+            for (int k = 1; k < argc; k++) {
+                listed = listed || atol(argv[k]) == p.pad;
+            }
+            if (!listed || p.pad == got[0] || p.pad == got[1]) {
+                continue;
+            }
+            int channel = -1;
+            for (const QspiPad &q : t) {
+                if (q.pad == got[1] && (q.role == 2 || q.role == 3)) {
+                    channel = q.role - 2;
+                }
+            }
+            if ((want == 0 && p.role == 4) || (want == 1 && (p.role == 2 || p.role == 3)) ||
+                (want == 2 && p.role == channel)) {
+                got[want] = p.pad;
+                break;
+            }
+        }
+        if (want < 2 && got[want] < 0) {
+            CONSOLE.printf("DFSDMFIND NONE\r\n");
+            return;
+        }
+    }
+    CONSOLE.printf("DFSDMFIND %ld %ld %ld\r\n", got[0], got[1], got[2]);
+}
+
+static void dfsdmRead(CH32RVDfsdm &dfsdm, long n)
+{
+    int32_t junk[16];
+    while (dfsdm.read(junk, 16) > 0) {
+    }
+    const uint32_t lost = dfsdm.overruns();
+    int64_t sum = 0;
+    int32_t lo = INT32_MAX, hi = INT32_MIN;
+    uint32_t t0 = 0;
+    const uint32_t start = millis();
+    long k = 0;
+    for (; k <= n; k++) {
+        while (!dfsdm.available() && millis() - start < 3000u) {
+        }
+        if (!dfsdm.available()) {
+            break;   /* no samples (no clock): the count says how many came */
+        }
+        const int32_t v = dfsdm.read();
+        if (k == 0) {
+            t0 = micros();   /* from the first sample's arrival: n periods to the last */
+            continue;
+        }
+        sum += v;
+        lo = v < lo ? v : lo;
+        hi = v > hi ? v : hi;
+    }
+    const uint32_t us = micros() - t0;
+    n = k > 0 ? k - 1 : 0;
+    if (n == 0) {
+        lo = hi = 0;
+    }
+    CONSOLE.printf("DFSDMREAD %ld %ld %ld %ld %lu %lu\r\n", n, n ? (long)(sum / n) : 0L, (long)lo, (long)hi,
+                   (unsigned long)us, (unsigned long)(dfsdm.overruns() - lost));
+}
+#endif
+
 static void ltdcRun(char **argv)
 {
     int r[8], g[8], b[8];
@@ -638,6 +723,46 @@ static void reply(char *command)
 #else
         CONSOLE.printf("LTDC 2 0 0\r\n");
 #endif
+    } else if (!strcmp(argv[0], "dfsdmfind")) {
+#if CH32RV_HAS_DFSDM
+        dfsdmFind(argc, argv);
+#else
+        CONSOLE.printf("DFSDMFIND NONE\r\n");
+#endif
+    } else if (!strcmp(argv[0], "dfsdm") && (argc == 8 || argc == 9)) {
+#if CH32RV_HAS_DFSDM
+        CH32RVDfsdm &dfsdm = dfsdms[atoi(argv[1]) & 1];
+        dfsdm.end();
+        dfsdm.setFallingEdge(argc == 9 && atoi(argv[8]));
+        const bool ok = dfsdm.begin(atoi(argv[2]), atoi(argv[3]), strtoul(argv[4], nullptr, 10), (uint16_t)atoi(argv[5]),
+                                    (uint8_t)atoi(argv[6]), (uint16_t)atoi(argv[7]));
+        CONSOLE.printf("DFSDM %d %lu %lu %ld\r\n", ok ? 1 : 0, (unsigned long)dfsdm.clock(),
+                       (unsigned long)dfsdm.sampleRate(), (long)dfsdm.fullScale());
+#else
+        CONSOLE.printf("DFSDM 2 0 0 0\r\n");
+#endif
+    } else if (!strcmp(argv[0], "dfsdmread") && argc == 3) {
+#if CH32RV_HAS_DFSDM
+        dfsdmRead(dfsdms[atoi(argv[1]) & 1], atol(argv[2]) > 0 ? atol(argv[2]) : 1);
+#else
+        CONSOLE.printf("DFSDMREAD 0 0 0 0 0 0\r\n");
+#endif
+#if CH32RV_HAS_DFSDM
+    } else if (!strcmp(argv[0], "dfsdmregs")) {
+        /* the registers, for a failure's report: channel 0 / 1 CFGR1, filter 0 / 1 CR1, ISR, FCR3 */
+        const uint32_t b = 0x40017000u;
+        CONSOLE.printf("DFSDMREGS %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx\r\n",
+                       (unsigned long)CH32RV_REG32(b), (unsigned long)CH32RV_REG32(b + 4),
+                       (unsigned long)CH32RV_REG32(b + 0x28), (unsigned long)CH32RV_REG32(b + 0x2C),
+                       (unsigned long)CH32RV_REG32(b + 0x38), (unsigned long)CH32RV_REG32(b + 0x3C),
+                       (unsigned long)CH32RV_REG32(b + 0x50), (unsigned long)CH32RV_REG32(b + 0x54));
+#endif
+    } else if (!strcmp(argv[0], "dfsdmoff")) {
+#if CH32RV_HAS_DFSDM
+        dfsdms[0].end();
+        dfsdms[1].end();
+#endif
+        CONSOLE.printf("DFSDMOFF\r\n");
     } else if (!strcmp(argv[0], "ltdcoff")) {
 #if CH32RV_HAS_LTDC
         ltdc.end();

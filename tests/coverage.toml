@@ -679,6 +679,12 @@ scope = "series"
 any_of = ["LTDC"]
 missing = ["CH32V407", "CH32V467"]
 
+[[item]]
+id = "dfsdm"                # CH32RVDfsdm: the sinc filter on a stream the probe makes (CKOUT / CKIN, both filters)
+test = "periph::test_dfsdm"
+scope = "series"
+any_of = ["DFSDM"]
+
 
 # Peripherals the core does not implement yet (docs/unimplemented.ja.md): no test, every series that has them
 # missing. Their clocks name the series; OPA / CMP / PMP / the DMA API have none of their own, so they list them.
@@ -723,12 +729,6 @@ missing = ["CH32H415", "CH32H416", "CH32H417", "CH32V303", "CH32V305", "CH32V307
 id = "serdes"               # SerDes
 scope = "series"
 any_of = ["SERDES"]
-missing = ["CH32H415", "CH32H416", "CH32H417"]
-
-[[item]]
-id = "dfsdm"                # DFSDM (sigma-delta filter, PDM microphone)
-scope = "series"
-any_of = ["DFSDM"]
 missing = ["CH32H415", "CH32H416", "CH32H417"]
 
 [[item]]

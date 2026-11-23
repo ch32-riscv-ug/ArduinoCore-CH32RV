@@ -33,6 +33,7 @@ Start with a small example, confirm wiring and I/O, then combine functions. Ever
 | Low-power timer (timing and waking in a sleep, counting pulses) | [CH32RVLowPowerTimer](../libraries/CH32RVLowPowerTimer/README.md) | LowPowerTick |
 | QSPI flash | [CH32RVQspi](../libraries/CH32RVQspi/README.md) | QspiFlashInfo |
 | RGB LCD panel | [CH32RVLtdc](../libraries/CH32RVLtdc/README.md) | LtdcColorBars (H417) |
+| PDM microphone, sigma-delta modulator | [CH32RVDfsdm](../libraries/CH32RVDfsdm/README.md) | PdmLevel (H41x) |
 | Periodic and one-shot calls | [Ticker](../libraries/Ticker/README.md) | Blinker |
 | GPIO capture | [CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.md) | LogicPulseDecode (every family) / LogicBurst → LogicStream (H41x) / LogicUhsif (H41x, the UHSIF at 200 MS/s) |
 | UHSIF state machine | [CH32RVUhsif](../libraries/CH32RVUhsif/README.md) | UhsifStates, UhsifTrigger (H41x) |
