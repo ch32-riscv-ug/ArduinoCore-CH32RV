@@ -49,9 +49,9 @@ const uint8_t bytes_per_pixel[] = {4, 3, 2, 2, 2, 1, 1, 2};
 /* With no layer on, the LTDC sent no colour at all - not even the background
  * - and with one on, the background showed only within its window (H417,
  * 2026-11-23: the data lines low; a transparent layer over the whole area
- * and the background showed). So while the sketch has no layer on, layer 2
- * is a transparent one over the whole area: one line of zero bytes (L8,
- * constant alpha 0), its pitch 0 so that every line reads it again. */
+ * and the background showed). So while the sketch has no layer on, layer 1
+ * is a transparent one over the whole area: one RGB565 line of zeros
+ * (constant alpha 0), its pitch 0 so that every line reads it again. */
 uint8_t *clear_line;
 
 void clear_layer(bool on, uint16_t w = 0, uint16_t h = 0)
