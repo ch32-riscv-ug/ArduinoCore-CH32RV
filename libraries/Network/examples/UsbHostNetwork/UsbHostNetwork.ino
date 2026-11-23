@@ -6,7 +6,7 @@
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 
-/* requires: ETHERNET, USBFS */
+/* requires: USBFS, flash=60K, ram=20K */
 
 #include <CH32RVUsbHost.h>
 #include <Network.h>

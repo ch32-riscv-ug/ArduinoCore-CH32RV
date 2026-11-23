@@ -8,7 +8,7 @@
 
 ## 必要なものと配線
 
-- Network ライブラリの対象の系列（Ethernet の MAC のある石: V307、V407、H417 など）で、USB ホストの口のあるボード。
+- USB ホストの口のあるボード（MAC の無い系列でも動く。X035・L103 など 64 KB / 20 KB の石は Flash 約 57 KB）。
 - 相手の機器: CDC-NCM か CDC-ECM のもの。たとえば EspUsbDevice の例 `UsbNetwork` を書いた ESP32-S3 / P4
   （192.168.7.1 で DHCP サーバーと Web サーバーが動く）、`UsbNcmNetwork` を書いた CH32RV のボード、NCM / ECM の USB の LAN アダプター。
 - 115200 bps の `Serial`。

@@ -8,7 +8,7 @@ gateway's page by HTTP every 10 s, printing the status line.
 
 ## What you need and the wiring
 
-- A board of the Network library's series (an Ethernet MAC: V307, V407, H417 ...) with a USB host port.
+- A board with a USB host port (the series without a MAC too: X035, L103 and other 64 KB / 20 KB parts take about 57 KB of flash).
 - A CDC-NCM or CDC-ECM device: an ESP32-S3 / P4 running EspUsbDevice's `UsbNetwork` example (a DHCP server and a
   web server at 192.168.7.1), a CH32RV board running `UsbNcmNetwork`, or an NCM / ECM USB Ethernet adapter.
 - `Serial` at 115200 bps.
