@@ -208,6 +208,9 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_SPI_CTLR2(b) CH32RV_REG16((b) + 0x04u)
 #define CH32RV_SPI_STATR(b) CH32RV_REG16((b) + 0x08u)
 #define CH32RV_SPI_DATAR(b) CH32RV_REG16((b) + 0x0Cu)
+#define CH32RV_SPI_CRCR(b)  CH32RV_REG16((b) + 0x10u)  /* the CRC polynomial */
+#define CH32RV_SPI_RCRCR(b) CH32RV_REG16((b) + 0x14u)
+#define CH32RV_SPI_TCRCR(b) CH32RV_REG16((b) + 0x18u)
 
 #define CH32RV_SPI_CTLR1_CPHA      (1u << 0)
 #define CH32RV_SPI_CTLR1_CPOL      (1u << 1)
@@ -220,6 +223,8 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 #define CH32RV_SPI_CTLR1_SSM       (1u << 9)  /* NSS from SSI, not from a pin  */
 #define CH32RV_SPI_CTLR1_RXONLY    (1u << 10)
 #define CH32RV_SPI_CTLR1_DFF       (1u << 11) /* 16-bit frames                 */
+#define CH32RV_SPI_CTLR1_CRCNEXT   (1u << 12) /* the next frame is the CRC     */
+#define CH32RV_SPI_CTLR1_CRCEN     (1u << 13)
 #define CH32RV_SPI_CTLR1_BIDIOE    (1u << 14)
 #define CH32RV_SPI_CTLR1_BIDIMODE  (1u << 15)
 
@@ -229,6 +234,7 @@ static inline void ch32rv_clock_disable_at(uint32_t addr, uint32_t mask)
 
 #define CH32RV_SPI_STATR_RXNE      (1u << 0)
 #define CH32RV_SPI_STATR_TXE       (1u << 1)
+#define CH32RV_SPI_STATR_CRCERR    (1u << 4)  /* rc_w0 */
 #define CH32RV_SPI_STATR_MODF      (1u << 5)
 #define CH32RV_SPI_STATR_OVR       (1u << 6)
 #define CH32RV_SPI_STATR_BSY       (1u << 7)

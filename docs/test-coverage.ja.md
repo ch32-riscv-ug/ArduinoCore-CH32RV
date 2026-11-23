@@ -97,7 +97,7 @@ V205RCT6/X315MCU6 の LinkE・RVSWD のみで、初期化・constructor・DMSEQ 
 | Wire slave 受信・応答 | あり | 現行: wire::test_wire_slave（プローブの i2c-controller が独立 master、100 kHz。onReceive / onRequest の順と中身、repeated START の register read、0xFF の埋め、32 バイトの頭、別の番地） | callback 文脈、復旧 |
 | SoftWire master | あり | 現行: softwire::test_wire_output_only・test_wire_repeated_start（wire と同じ問いを任意の 2 本で）、softwire::test_wire_data_nack・test_wire_timeout・test_wire_clock_stretch・test_wire_bus_recovery（2026-11-20 に X035・V205・H417 で通る） | |
 | SoftWire slave | あり（2026-11-17、START の割込みから STOP まで線を追う。V003・V006・V103・V203・V205・X035・H417 で確認） | 現行: softwire::test_wire_slave（wire.slave と同じ問いを、SoftWire の 2 本で。100 kHz） | 割込みの遅れの上限（速いクロック）、ほかの割込みと重なったとき |
-| SPI master | あり | 現行: spi::test_spi_output_only・test_spi_contract（mode/order、CS、プローブを相手に往復）、selfbus::test_spi_out / test_spi_in（自己検査） | data/buffer 境界、clock ごとの実観測 |
+| SPI master | あり | 現行: spi::test_spi_output_only・test_spi_contract（mode/order、CS、プローブを相手に往復）、spi::test_spi_crc（setCRC / transferCRC の CRC-8、2026-11-23）、selfbus::test_spi_out / test_spi_in（自己検査） | data/buffer 境界、clock ごとの実観測 |
 | SoftSPI master | あり | 現行: softspi（spi と同じ問いを任意の端子で） | 8/16/32-bit/block、MISO 無し、clock floor |
 | SPI slave（CH32RVSPISlave）、SoftSPI slave（SoftSPISlave） | どちらもあり（SoftSPISlave は 2026-11-15、V203・V006・V205・V103 で確認） | 現行: spi::test_spi_slave（プローブが master）。現行: softspi::test_spi_slave（同じ問いを SoftSPI の 4 本で、50 kHz） | SPI slave の DMA 境界、復旧。SoftSPISlave の上限のクロック |
 | SPI ライブラリの peripheral モード（`SPI_HAS_PERIPHERAL_MODE`、`SPI_PERIPHERAL`） | あり（2026-11-15、SPI と SoftSPI。V203・V006・V205・V103 で確認） | 現行: spi::test_spi_peripheral、softspi::test_spi_peripheral（プローブが master、4 モード・2 つのビット順で 4 バイト） | バイトの間を詰めた master、長い転送 |

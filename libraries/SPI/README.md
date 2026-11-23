@@ -190,6 +190,23 @@ SPI.endTransaction();
 An LVGL flush can send with `transferAsync()` and wait with
 `finishedAsync()` in `lv_display_set_flush_wait_cb()`.
 
+## CRC (setCRC / transferCRC)
+
+The SPI's own CRC unit (no Arduino counterpart): a CRC-8 over 8-bit frames, MSB first, unreflected, from 0:
+
+```cpp
+SPI.setCRC(0x07);                       // the polynomial (0 disarms)
+digitalWrite(cs, LOW);
+bool ok = SPI.transferCRC(buf, n);      // n bytes, then their CRC; true when the CRC that came back matched
+digitalWrite(cs, HIGH);
+uint8_t sent = SPI.crcSent(), got = SPI.crcReceived();
+```
+
+- `transferCRC()` moves the bytes both ways as `transfer(buf, n)` does, then the CRC of the bytes sent; the SPI
+  compares the byte that comes back with it to the CRC of the bytes received. Other transfers are not touched.
+- Not on a SoftSPI.
+- spi::test_spi_crc (polynomials 0x07 and 0x31, matching and not) passes on V003, V006, V203, X035 and H417 (2026-11-23).
+
 ## Hardware chip select (setHwCs)
 
 As arduino-esp32's `SPI.setHwCs(true)`, the SPI drives its route's NSS pad itself:

@@ -29,3 +29,7 @@ finishedAsync	KEYWORD2
 abortAsync	KEYWORD2
 setHwCs	KEYWORD2
 hwCs	KEYWORD2
+setCRC	KEYWORD2
+transferCRC	KEYWORD2
+crcSent	KEYWORD2
+crcReceived	KEYWORD2

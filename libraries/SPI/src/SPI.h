@@ -129,6 +129,19 @@ public:
      * ss is another pad; hwCs() says whether it took. */
     void setHwCs(bool use);
     bool hwCs() const { return _hwcs; }
+    /* The SPI's own CRC (no Arduino counterpart; the STM32F1-shaped unit:
+     * a CRC-8 over the bytes as they go out and come in, MSB first,
+     * unreflected, from 0, by `polynomial` - 0x07 is CRC-8/SMBUS's).
+     * setCRC() arms it (0 disarms); transferCRC(buf, n) then moves n bytes
+     * both ways as transfer(buf, n) does and one more, the CRC of the bytes
+     * sent, while the SPI compares the byte that comes back with the CRC of
+     * the bytes received: true when they match. crcSent() / crcReceived()
+     * are the CRC it sent and the byte that came back. Other transfers are
+     * not touched. False on a SoftSPI, a peripheral or with no polynomial. */
+    bool setCRC(uint8_t polynomial);
+    bool transferCRC(void *buf, size_t count);
+    uint8_t crcSent() const { return _crc_tx; }
+    uint8_t crcReceived() const { return _crc_rx; }
     bool finishedAsync(void);
     void abortAsync(void);
 protected:
@@ -169,6 +182,7 @@ private:
      * first, 2 LSB first; 3 after it, the SPI off and the pads inputs until
      * the next controller use. */
     uint8_t _periph = 0;
+    uint8_t _crc_poly = 0, _crc_tx = 0, _crc_rx = 0;
 };
 
 }  // namespace arduino

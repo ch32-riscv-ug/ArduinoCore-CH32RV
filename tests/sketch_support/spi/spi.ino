@@ -20,6 +20,10 @@
  *
  *   hwcs <0|1>                         SPI.setHwCs(): HWCS <1 taken / 0> <the NSS pad, 0 when none>;
  *                                      while on, xfer and blk leave CS to the SPI (the NSS pad)
+ *   crc <poly> <bytes>                 after `hw`: setCRC(poly, hex), then CS low; transferCRC() of the
+ *                                      bytes (hex, up to 16) at 1 MHz, mode 0 MSB first; CS high:
+ *                                      CRC <1 matched / 0 / 2 no CRC here> <crcSent()> <crcReceived()>
+ *                                      <bytes read, hex>
  *   blk <how> <hz> <bytes>             the buffer transfers, mode 0 MSB first, CS low around one
  *                                      call with the bytes (hex, up to 80): how w writeBytes, t
  *                                      transferBytes, b transfer(buf, n), a transferAsync out only,
@@ -581,6 +585,37 @@ void loop()
             CONSOLE.println(PIN_SPI_MOSI);
 #else
             CONSOLE.println("SPIPINS NONE");
+#endif
+        } else if (strncmp(line, "crc ", 4) == 0) {
+#if defined(SPI_INTERFACES_COUNT) && !CH32RV_SPI_SOFT_N(CH32RV_SPI_ROW0_N)
+            p += 4;
+            const uint8_t poly = (uint8_t)strtoul(p, &p, 16);
+            while (*p == ' ') {
+                p++;
+            }
+            uint8_t data[16];
+            const size_t n = unhex(p, data, sizeof data);
+            SPI.setCRC(poly);
+            SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+            digitalWrite(cs, LOW);
+            delayMicroseconds(50);
+            const bool ok = SPI.transferCRC(data, n);
+            delayMicroseconds(10);
+            digitalWrite(cs, HIGH);
+            SPI.endTransaction();
+            CONSOLE.print("CRC ");
+            CONSOLE.print(ok ? 1 : 0);
+            CONSOLE.print(' ');
+            hex(SPI.crcSent(), 2);
+            CONSOLE.print(' ');
+            hex(SPI.crcReceived(), 2);
+            CONSOLE.print(' ');
+            for (size_t i = 0; i < n; i++) {
+                hex(data[i], 2);
+            }
+            CONSOLE.println();
+#else
+            CONSOLE.println("CRC 2 00 00 -");
 #endif
         } else if (strncmp(line, "hw ", 3) == 0) {
 #if defined(SPI_INTERFACES_COUNT)

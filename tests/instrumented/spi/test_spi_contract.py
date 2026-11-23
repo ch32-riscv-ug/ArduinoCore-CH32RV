@@ -575,6 +575,74 @@ def test_spi_peripheral(dut, oep_host, ws_run, record_property):
     assert not wrong, " | ".join(wrong)
 
 
+
+def crc8(data, poly):
+    """The SPI's CRC: CRC-8 MSB first, unreflected, from 0."""
+    crc = 0
+    for b in data:
+        crc ^= b
+        for _ in range(8):
+            crc = ((crc << 1) ^ poly) & 0xFF if crc & 0x80 else (crc << 1) & 0xFF
+    return crc
+
+
+def test_spi_crc(dut, oep_host, ws_run, record_property):
+    """spi.crc (SPI.setCRC() / transferCRC(), 2026-11-23): the hardware SPI's CRC unit on its default pins, the probe's
+    spi-target armed. Eight random bytes and the CRC frame after them, mode 0 at 1 MHz, polynomials 0x07 and 0x31:
+    WireSkein judges the bus (spi: MOSI the bytes then their CRC-8 - computed here as the unit does, MSB first from 0 -
+    MISO the armed bytes, 72 clocks); compared here: crcSent() is that CRC, crcReceived() the armed ninth byte, and
+    transferCRC() true when that byte is the CRC of the eight before it, false when it is not."""
+    from wireskein.runlog import ends, spi, starts
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: the CRC is the hardware SPI's")
+    lines, sck, miso, mosi, cs, soft = open_bus(dut, oep_host, case, record_property)
+    if ask(dut, "crc 07 00", rb"CRC (\d) \S+ \S+ \S+").group(1) == b"2":
+        pytest.skip("n/a: the default SPI here has no CRC unit (a SoftSPI)")
+    ch = {role: lines[p]["channel"] for role, p in (("sck", sck), ("miso", miso), ("mosi", mosi), ("cs", cs))}
+    host = oep_host.host
+    target = SpiTarget(host)
+    core.plan_apply(host, target.assignments(ch["sck"], ch["mosi"], ch["miso"], ch["cs"]))
+    wrong = []
+
+    def steps(wait):
+        idle = {cs: 1}
+        with ws_run.section(1, f"spi crc {sck} {miso} {mosi} {cs}"):
+            for poly in (0x07, 0x31):
+                for good in (True, False):
+                    name = f"poly {poly:02x}, the reply's CRC {'right' if good else 'wrong'}"
+                    data = secrets.token_bytes(8)
+                    reply = secrets.token_bytes(8)
+                    rcrc = crc8(reply, poly) ^ (0 if good else 0x5A)
+                    armed = reply + bytes([rcrc])
+                    want = [spi(sck, mosi=mosi, miso=miso, cs=cs, mode=0, bit_order="msb",
+                                mosi_bytes=(data + bytes([crc8(data, poly)])).hex(), miso_bytes=armed.hex(), bits=72,
+                                notices={"sck_outside_cs": 1}),
+                            starts(idle), ends(idle)]
+                    with ws_run.section(2, name, expect=want):
+                        configure_target(target, 0, 0, soft)
+                        target.arm(9, armed)
+                        command = f"crc {poly:02x} {data.hex()}"
+                        ws_run.command(command)
+                        dut.write(command)
+                        m = wait_reply(dut, wait, rb"CRC (\d) ([0-9a-f]{2}) ([0-9a-f]{2}) ([0-9a-f]+)")
+                        ws_run.reply(m.group(0).decode())
+                        ok, sent, got, read = int(m.group(1)), int(m.group(2), 16), int(m.group(3), 16), m.group(4).decode()
+                        if sent != crc8(data, poly):
+                            wrong.append(f"{name}: crcSent() {sent:02x}, the CRC of {data.hex()} is {crc8(data, poly):02x}")
+                        if got != rcrc or read != reply.hex():
+                            wrong.append(f"{name}: read {read} then {got:02x}, armed {reply.hex()} {rcrc:02x}")
+                        if bool(ok) != good:
+                            wrong.append(f"{name}: transferCRC() said {'match' if ok else 'mismatch'}")
+                        wait(0.01)
+
+    try:
+        ws_capture.stream(ws_run, oep_host, [lines[p] for p in (cs, sck, mosi, miso)], rate=RATE, steps=steps)
+    finally:
+        core.plan_release(host, [target.fn])
+    record_property("results", json.dumps(wrong) if wrong else "ok")
+    assert not wrong, " | ".join(wrong)
+
 I2S_RATE = 32_000           # 16-bit slots: SYSCLK / 32 / 32 kHz is within the divider on every family (H41x's
                             # 400 MHz reaches down to 24.5 kHz); BCLK 1.024 / 2.048 MHz
 I2S_CONDITIONS = [          # name, bits, format (0 Philips, 1 MSB, 2 LSB), mono, WireSkein's format, slot

@@ -177,6 +177,23 @@ V203(144 MHz)で4096バイトを送った時間(2026-11-18):
 
 LVGLのflushは、`transferAsync()`で送り、`lv_display_set_flush_wait_cb()`で`finishedAsync()`を待つ形にできます。
 
+## CRC(setCRC / transferCRC)
+
+SPIの中のCRCの回路を使います(Arduinoに相当するものはありません)。8 bitの枠のCRC-8で、MSBから、反転なし、初期値0です:
+
+```cpp
+SPI.setCRC(0x07);                       // 多項式(0で外す)
+digitalWrite(cs, LOW);
+bool ok = SPI.transferCRC(buf, n);      // nバイトの後にCRCを1バイト。返ってきたCRCが合えばtrue
+digitalWrite(cs, HIGH);
+uint8_t sent = SPI.crcSent(), got = SPI.crcReceived();
+```
+
+- `transferCRC()`は`transfer(buf, n)`と同じく送受信し、続けて送ったバイトのCRCを送ります。そのとき返ってきたバイトを、
+  受け取ったバイトのCRCとSPIが比べます。ほかの転送には影響しません。
+- SoftSPIにはありません。
+- spi::test_spi_crc(多項式0x07・0x31、合う・合わない)がV003・V006・V203・X035・H417で通ります(2026-11-23)。
+
 ## ハードウェアのチップセレクト(setHwCs)
 
 arduino-esp32の`SPI.setHwCs(true)`と同じく、SPIがその経路のNSSの端子を自分で動かします:

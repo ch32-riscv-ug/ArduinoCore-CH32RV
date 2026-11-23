@@ -1217,6 +1217,12 @@ scope = "series"
 needs = ["SPI1"]
 
 [[item]]
+id = "spi-crc"              # SPI.setCRC() / transferCRC(): the CRC frame after the bytes, the reply's CRC checked
+test = "spi::test_spi_crc"
+scope = "series"
+needs = ["SPI1"]
+
+[[item]]
 id = "spi-hw-cs"            # SPI.setHwCs(): the SPI drives its NSS pad across a transaction
 test = "spi::test_spi_hw_cs"
 scope = "series"
