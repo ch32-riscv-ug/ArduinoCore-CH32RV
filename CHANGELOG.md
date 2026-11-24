@@ -6,6 +6,24 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) New libraries: I2S in arduino-esp32's ESP_I2S shape (SPI2 / SPI3 in I2S mode; CH32H417's SAI with TDM; `I2S_MODE_PDM_RX` on CH32H41x's DFSDM), CH32RVLtdc (the LCD-TFT controller of CH32H41x and CH32V4x7), CH32RVDfsdm (CH32H41x: sinc filters, analog watchdog, extremes, short-circuit detector), CH32RVQspi (the quad-SPI controller of CH32V205 / CH32H41x, memory-mapped reads on H41x's QSPI1) and CH32RVLowPowerTimer (the LPTIM of CH32L103 / M103 and CH32H41x).
+- (JA) 新しいライブラリ: arduino-esp32 の ESP_I2S の形の I2S（SPI2 / SPI3 の I2S モード、CH32H417 の SAI と TDM、CH32H41x の DFSDM での `I2S_MODE_PDM_RX`）、CH32RVLtdc（CH32H41x と CH32V4x7 の LCD-TFT コントローラ）、CH32RVDfsdm（CH32H41x: sinc フィルタ、アナログウォッチドッグ、最大・最小、短絡の検出）、CH32RVQspi（CH32V205 / CH32H41x の quad-SPI。H41x の QSPI1 はメモリとして読める）、CH32RVLowPowerTimer（CH32L103 / M103 と CH32H41x の LPTIM）。
+- (EN) CH32RVUsbHost: USB networking (CDC-NCM / CDC-ECM, `networkAttachNetif()` for the IP stack), audio (UAC1 / UAC2 streams, Feature Unit mute and volume), video (UVC: YUY2 / NV12 / MJPEG), and EspUsbHost 2.6's `add*Listener()` / `removeListener()` (up to 4 receivers an event; nothing linked when unused).
+- (JA) CH32RVUsbHost: USB のネットワーク（CDC-NCM / CDC-ECM、IP スタックにつなぐ `networkAttachNetif()`）、オーディオ（UAC1 / UAC2 のストリーム、Feature Unit のミュートと音量）、ビデオ（UVC: YUY2 / NV12 / MJPEG）、EspUsbHost 2.6 の `add*Listener()` / `removeListener()`（1 つのイベントに 4 つまで。使わなければ何もリンクされない）。
+- (EN) Network: IP over USB CDC-NCM on the series without an Ethernet MAC (a small lwIP profile; example UsbNcmNetwork on X033 / X035 / L103 / M103 and more), the UsbHostNetwork example on every USB-FS host, `MDNS.queryHost()` / `MDNS.queryService()` and `hostByName("x.local")`.
+- (JA) Network: Ethernet の MAC が無い系列での USB CDC-NCM 越しの IP（小さい lwIP の設定。例 UsbNcmNetwork は X033 / X035 / L103 / M103 ほか）、USB-FS のホストのある全系列の例 UsbHostNetwork、`MDNS.queryHost()` / `MDNS.queryService()` と `hostByName("x.local")`。
+- (EN) Serial: `setMode(UART_MODE_LIN)` and `sendBreak()`. SPI: `setCRC()` / `transferCRC()` and three-wire mode (`setThreeWire()`).
+- (JA) Serial: `setMode(UART_MODE_LIN)` と `sendBreak()`。SPI: `setCRC()` / `transferCRC()` と 3 線式（`setThreeWire()`）。
+- (EN) Timers: CH32H41x's TIM11 / TIM12, the ETR pads and CH32RVPulseCounter's external clock, CH32RVPwmSequence (an array of duties played by the timer's update DMA, e.g. WS2812).
+- (JA) タイマー: CH32H41x の TIM11 / TIM12、ETR の端子と CH32RVPulseCounter の外部クロック、CH32RVPwmSequence（duty の配列をタイマーの更新 DMA で流す。WS2812 など）。
+- (EN) System: `CH32RV.idle(ms)` (the CPU waits while the peripherals run), `CH32RV.setPinSpeed()` (an output's slew rate); PIOC example PiocDmx (DMX512).
+- (JA) システム: `CH32RV.idle(ms)`（周辺を動かしたまま CPU だけ待つ）、`CH32RV.setPinSpeed()`（出力のスルーレート）。PIOC の例 PiocDmx（DMX512）。
+- (EN) CH32H41x's V5F runs from the ITCM / DTCM as EVT's layout (code, vectors and read-only data in the ITCM; .data, .bss and the stack in the DTCM); the shared SRAM holds the heap and `CH32RV_DMA_MEM` buffers. This fixes V5F hangs under heavy interrupt load.
+- (JA) CH32H41x の V5F は EVT の配置どおり ITCM / DTCM で動く（コード・ベクタ・読み出し専用のデータは ITCM、.data・.bss・スタックは DTCM）。共有 SRAM はヒープと `CH32RV_DMA_MEM` のバッファ。割り込みの多いときに V5F が止まる不具合が直る。
+- (EN) Fixes: `delayMicroseconds()` waits at least the time asked; `lightSleep()` on H41x keeps `millis()` right when the V3F prevents the stop; Serial's DMA receive keeps up at 1 Mbaud on V003; multiprocessor mode on V103; X035 / X033 Serial transmits by interrupt again (`write()` returns once the byte is queued); CH32RVPwmTimer starts without a stray pulse; the UF2 firmware drive fits H41x's staging area; `TX` / `RX` / `SDA` / `SCL` / `SCK` / `MISO` / `MOSI` are defined only on parts with that default route (M030G8R7 and V002D4U6 builds).
+- (JA) 修正: `delayMicroseconds()` は頼んだ時間以上待つ。H41x の `lightSleep()` で V3F が停止を妨げても `millis()` が正しい。V003 の Serial の DMA 受信が 1 Mbaud に追いつく。V103 のマルチプロセッサモード。X035 / X033 の Serial の送信が割り込みに戻った（`write()` はリングに入れた時点で戻る）。CH32RVPwmTimer の開始で余計なパルスが出ない。UF2 のファームウェアのドライブが H41x の staging に入る。`TX` / `RX` / `SDA` / `SCL` / `SCK` / `MISO` / `MOSI` は既定の route がある品だけで定義（M030G8R7・V002D4U6 のビルド）。
+- (EN) ch32rv-toolchain 23.1.6-1 (LLVM 23.1.6; the Windows download about half the size). Integer division routines link only those a sketch calls (about 120 bytes smaller).
+- (JA) ch32rv-toolchain 23.1.6-1（LLVM 23.1.6。Windows のダウンロードはおよそ半分）。整数の割り算のルーチンは呼んだものだけリンクする（約 120 バイト小さい）。
 
 ## 0.9.0
 - (EN) PIOC (X035 / X033, V205, H41x): programs in the sketch's `.S` assembled by the core's clang (`<ch32rv_pioc.inc>`), loaded and driven by the new CH32RVPioc library (`begin()`, `command()`, `waitDone()`, `onDone()`, `loadSram()`, `setOpenDrain()`, `clockHz()`); examples PiocPulses, PiocWs2812, PiocUartTx, PiocUartRx, PiocSpiTx, PiocIrNec, PiocIrNecRx, PiocPulseIn and PiocOneWire.
