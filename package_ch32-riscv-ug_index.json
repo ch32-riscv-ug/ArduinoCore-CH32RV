@@ -1331,6 +1331,117 @@
               "version": "0.32.0"
             }
           ]
+        },
+        {
+          "name": "CH32 RISC-V (ArduinoCore-CH32RV)",
+          "architecture": "ch32rv",
+          "version": "0.10.0",
+          "category": "Contributed",
+          "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/releases/download/v0.10.0/ArduinoCore-CH32RV-0.10.0.tar.bz2",
+          "archiveFileName": "ArduinoCore-CH32RV-0.10.0.tar.bz2",
+          "checksum": "SHA-256:5bfd04d7ffc6ebbf35f9e45a8be6cb60e4b51a590960459431b245c8d15ab169",
+          "size": "3172886",
+          "help": {
+            "online": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/issues"
+          },
+          "boards": [
+            {
+              "name": "Generic CH32V002"
+            },
+            {
+              "name": "Generic CH32V003"
+            },
+            {
+              "name": "Generic CH32V004"
+            },
+            {
+              "name": "Generic CH32V005"
+            },
+            {
+              "name": "Generic CH32V006"
+            },
+            {
+              "name": "Generic CH32V007"
+            },
+            {
+              "name": "Generic CH32V103"
+            },
+            {
+              "name": "Generic CH32V203"
+            },
+            {
+              "name": "Generic CH32V205"
+            },
+            {
+              "name": "Generic CH32V208"
+            },
+            {
+              "name": "Generic CH32V303"
+            },
+            {
+              "name": "Generic CH32V305"
+            },
+            {
+              "name": "Generic CH32V307"
+            },
+            {
+              "name": "Generic CH32V317"
+            },
+            {
+              "name": "Generic CH32V407"
+            },
+            {
+              "name": "Generic CH32V467"
+            },
+            {
+              "name": "Generic CH32X033"
+            },
+            {
+              "name": "Generic CH32X035"
+            },
+            {
+              "name": "Generic CH32X305"
+            },
+            {
+              "name": "Generic CH32X315"
+            },
+            {
+              "name": "Generic CH32L103"
+            },
+            {
+              "name": "Generic CH32M007"
+            },
+            {
+              "name": "Generic CH32M030"
+            },
+            {
+              "name": "Generic CH32M103"
+            },
+            {
+              "name": "Generic CH32H415"
+            },
+            {
+              "name": "Generic CH32H416"
+            },
+            {
+              "name": "Generic CH32H417"
+            },
+            {
+              "name": "UIAPduino Pro Micro CH32V003 V1.4"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv-toolchain",
+              "version": "23.1.6-1"
+            },
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv",
+              "version": "0.32.0"
+            }
+          ]
         }
       ],
       "tools": [
@@ -1932,6 +2043,63 @@
               "archiveFileName": "ch32rv-toolchain-23.1.5-3-x86_64-pc-windows-msvc.zip",
               "checksum": "SHA-256:580af220d8bd9ea40845b36518c037c01fe68d1497955b7e0cffa9534d48d20c",
               "size": "266565071",
+              "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation"
+            }
+          ]
+        },
+        {
+          "name": "ch32rv-toolchain",
+          "version": "23.1.6-1",
+          "systems": [
+            {
+              "host": "x86_64-pc-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:9778033acd9ad19db4d32136277db1ebc014f58c6c5a1b853115af60112aff9c",
+              "size": "66814680"
+            },
+            {
+              "host": "aarch64-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-aarch64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-aarch64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:f275a4e93dbd70f4fe23b3f5428876c847eb265529ee3220c22167c413bb8044",
+              "size": "65191161"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:2101a4e7115f0b8e7e8ff49baf6606d494a0dbcc56e60bf888dd9aa229d41bcc",
+              "size": "53360268"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-aarch64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-aarch64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:ebe5b534c7f3e3f1be5f8de6454ca1c234604a8944c1dd8cc52088c1a0f4ba5f",
+              "size": "50829579"
+            },
+            {
+              "host": "x86_64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+              "size": "124930346"
+            },
+            {
+              "host": "i686-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+              "size": "124930346",
+              "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
+            },
+            {
+              "host": "arm64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv-toolchain/releases/download/v23.1.6-1/ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-toolchain-23.1.6-1-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:3c3db9b648a6497f49583542ff93903d625189d69f56dbf708993688bdcfb7df",
+              "size": "124930346",
               "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation"
             }
           ]
