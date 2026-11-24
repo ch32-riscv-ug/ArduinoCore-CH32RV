@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Fix: SPI three-wire `receive()` timed its stop with a counted loop, whose speed moves with where the code lands; it could clock two bits too many (seen on X035 once functions were folded). It now waits on SysTick.
+- (JA) 修正: SPI の 3 線式の `receive()` が、止めるまでの時間を回数のループで測っていて、コードの置かれる位置で速さが変わり、クロックを 2 つ余分に出すことがあった（X035 で、関数をまとめるようにしてから見えた）。SysTick で待つようにした。
 - (EN) Fix: `CH32RV.setPinSpeed()` on V00x (V002 / V004 / V005 / V006 / V007) turned the pad into an input (LOW wrote MODE 10, which reads back 00 there); it now returns false, as on X033 / X035 and M030 - these outputs have one speed.
 - (JA) 修正: V00x（V002 / V004 / V005 / V006 / V007）で `CH32RV.setPinSpeed()` が端子を入力にしていた（LOW で MODE に 10 を書くと 00 に戻る）。X033 / X035・M030 と同じく false を返す（出力の速さは 1 種類）。
 - (EN) Smaller sketches: the link keeps functions with the same code once (lld --icf=safe; never two whose addresses a program compares) - the empty virtual defaults of USB classes, USART1..4's identical interrupt handlers. ButtonKeyboard (X035) -160 B, I2CScanner (V003) -36 B.
