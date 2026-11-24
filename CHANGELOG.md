@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.11.0
 - (EN) Smaller sketches with LTO (every Optimize choice but "without LTO"): virtual functions nothing calls are dropped (-fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden), and serialEvent()'s table has one entry per Serial the board has. A Serial.print sketch on V003 1960 -> 1780 B, X035 2516 -> 2356 B; I2CScanner on V003 6096 -> 5216 B.
 - (JA) LTO を使うとき（Optimize の「without LTO」以外）スケッチが小さくなった: どこからも呼ばれない仮想関数を落とす（-fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden）。serialEvent() の表はボードの Serial の数だけ。V003 の Serial.print のスケッチは 1960 → 1780 B、X035 は 2516 → 2356 B、V003 の I2CScanner は 6096 → 5216 B。
 - (EN) Compiler warnings: the IDE's Compiler warnings preference is honoured (None `-w`, Default as the compiler's, More `-Wall`, All `-Wall -Wextra`), and the core and its libraries build every example with no warning at All; CI fails on a new one. The "(ignoring target-abi)" note at the link of hard-float sketches (V30x, X315, H41x) is gone.
