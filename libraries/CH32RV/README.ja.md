@@ -147,10 +147,10 @@ pinMode(PA1, OUTPUT);
 CH32RV.setPinSpeed(PA1, CH32RVPinSpeed::Low);   // 立ち上がりを緩く（雑音を減らす）
 ```
 
-- `LOW`（2 MHz）・`MEDIUM`（10 MHz。`pinMode(OUTPUT)` の値）・`HIGH`（50 MHz。V003 / V00x は 30 MHz）。X305 / X315 は専用の SPEED レジスタの 4 段（`VERY_HIGH` まで、端子 0〜15）。
+- `LOW`（2 MHz）・`MEDIUM`（10 MHz。`pinMode(OUTPUT)` の値）・`HIGH`（50 MHz。V003 は 30 MHz）。X305 / X315 は専用の SPEED レジスタの 4 段（`VERY_HIGH` まで、端子 0〜15）。
 - `pinMode()` や周辺の `begin()` が端子のモードを書き直すので、その後に呼びます。入力には false です。
-- X033 / X035・M030 は出力の速さを選べないので、いつも false です。
-- selfsys::test_pin_speed（PA1 で各段を読み戻す）が V003・V203・X315・H417 で通ります（2026-11-23）。
+- X033 / X035・M030・V00x（V002 / V004 / V005 / V006 / V007）は出力の速さを選べないので、いつも false です。
+- selfsys::test_pin_speed（PA1 で各段を読み戻す）が V003・V203・X315・H417 で通ります（2026-11-23）。V006 は対象外（n/a）です（2026-11-25）。
 
 ### ピンでない EXTI の線と PVD
 

@@ -351,10 +351,10 @@ public:
     void idle(uint32_t ms = 0);
     /* An output pad's slew rate (no arduino-esp32 counterpart): LOW (2 MHz),
      * MEDIUM (10 MHz, what pinMode(OUTPUT) sets), HIGH (50 MHz; 30 MHz on
-     * V003 / V00x); X305 / X315 have four steps of their own (VERY_HIGH the
-     * fourth, pads 0-15). After pinMode() or a peripheral's begin(), which
-     * set the pad's mode again. False for an input, or on X033 / X035 and
-     * M030, whose outputs have one speed. */
+     * V003); X305 / X315 have four steps of their own (VERY_HIGH the fourth,
+     * pads 0-15). After pinMode() or a peripheral's begin(), which set the
+     * pad's mode again. False for an input, or on X033 / X035, M030 and V00x
+     * (V002 / V004 / V005 / V006 / V007), whose outputs have one speed. */
     bool setPinSpeed(int pin, CH32RVPinSpeed speed);
     /* Returns only when it cannot sleep: otherwise the chip restarts. */
     CH32RVSleepResult deepSleep();

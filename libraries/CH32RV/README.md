@@ -181,10 +181,10 @@ pinMode(PA1, OUTPUT);
 CH32RV.setPinSpeed(PA1, CH32RVPinSpeed::Low);   // slower edges (less noise)
 ```
 
-- `LOW` (2 MHz), `MEDIUM` (10 MHz, what `pinMode(OUTPUT)` sets), `HIGH` (50 MHz; 30 MHz on V003 / V00x). X305 / X315 have four steps in a SPEED register of their own (up to `VERY_HIGH`, pads 0-15).
+- `LOW` (2 MHz), `MEDIUM` (10 MHz, what `pinMode(OUTPUT)` sets), `HIGH` (50 MHz; 30 MHz on V003). X305 / X315 have four steps in a SPEED register of their own (up to `VERY_HIGH`, pads 0-15).
 - `pinMode()` and a peripheral's `begin()` set the pad's mode again: call it after them. False for an input.
-- X033 / X035 and M030 cannot choose an output's speed: always false there.
-- selfsys::test_pin_speed (each step read back on PA1) passes on V003, V203, X315 and H417 (2026-11-23).
+- X033 / X035, M030 and V00x (V002 / V004 / V005 / V006 / V007) cannot choose an output's speed: always false there.
+- selfsys::test_pin_speed (each step read back on PA1) passes on V003, V203, X315 and H417 (2026-11-23); V006 is n/a (2026-11-25).
 
 ### EXTI lines that are not pins, and the PVD
 

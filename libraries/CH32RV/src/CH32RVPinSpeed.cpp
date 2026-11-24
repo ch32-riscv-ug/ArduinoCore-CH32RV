@@ -1,9 +1,12 @@
 /* CH32RV.setPinSpeed() (CH32RVSystem.h): an output's slew rate. On most
  * families it is the pad's MODE bits (MODEy, the reference manuals: 01 a
  * maximum of 10 MHz - pinMode(OUTPUT)'s -, 10 2 MHz, 11 50 MHz; 30 MHz on
- * V003 / V00x); X305 / X315 have a SPEED register of their own (GPIOx_SPEED
- * at 0x1C, two bits a pad: low, medium, high, very high); X033 / X035 and
- * M030 have no setting (their outputs have one speed). */
+ * V003); X305 / X315 have a SPEED register of their own (GPIOx_SPEED at
+ * 0x1C, two bits a pad: low, medium, high, very high); X033 / X035, M030
+ * and V00x (V002 / V004 / V005 / V006 / V007) have no setting (their
+ * outputs have one speed). On V006 MODE's upper bit does not hold: 10
+ * reads back 00, an input, and 11 reads 01 (measured 2026-11-25; the other
+ * V00x parts share its GPIO and were not tried). */
 #include "CH32RVSystem.h"
 
 #include "Arduino.h"
@@ -32,7 +35,9 @@ bool CH32RVSystem::setPinSpeed(int pin, CH32RVPinSpeed speed)
     }
     reg = (reg & ~(3u << shift)) | ((uint32_t)speed << shift);
     return true;
-#elif defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32M030)
+#elif defined(CH32RV_SERIES_CH32X033) || defined(CH32RV_SERIES_CH32X035) || defined(CH32RV_SERIES_CH32M030) || \
+    defined(CH32RV_SERIES_CH32V002) || defined(CH32RV_SERIES_CH32V004) || defined(CH32RV_SERIES_CH32V005) || \
+    defined(CH32RV_SERIES_CH32V006) || defined(CH32RV_SERIES_CH32V007)
     (void)speed;
     return false;
 #else

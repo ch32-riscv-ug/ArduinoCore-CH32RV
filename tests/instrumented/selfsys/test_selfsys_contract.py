@@ -369,7 +369,7 @@ def test_rtc_alarm(dut, ready, record_property):
 def test_pin_speed(dut, ready, record_property):
     """CH32RV.setPinSpeed() (2026-11-23) on PA1 made an output: each speed read back from the pad's bits - MODE 10 /
     01 / 11 / 11 (2 / 10 / 50 MHz) on the MODE families, SPEED 0-3 on X305 / X315 - and refused on an input. X033 /
-    X035 and M030 have no setting: every call false (n/a)."""
+    X035, M030 and V00x (V002 / V004 / V005 / V006 / V007) have no setting: every call false (n/a)."""
     oks, bits, on_input = ask(dut, "speed", rb"SPEED ([01]{4}) ([0-3]{4}) ([01])").groups()
     record_property("speed", f"{oks.decode()} {bits.decode()} {on_input.decode()}")
     if oks == b"0000":
