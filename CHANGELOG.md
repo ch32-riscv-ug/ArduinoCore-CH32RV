@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) CH32RVUsbHost: EspUsbHost's `getHostDeviceAddresses()`, `getVideoStreamCount()`, `getNetworkInterfaces()`, `vendorOutEndpoint()` / `vendorInEndpoint()` and `serialOutPacketSize()`.
+- (JA) CH32RVUsbHost: EspUsbHost の `getHostDeviceAddresses()`、`getVideoStreamCount()`、`getNetworkInterfaces()`、`vendorOutEndpoint()` / `vendorInEndpoint()`、`serialOutPacketSize()`。
 - (EN) CH32RVUsbHost: EspUsbHost's `ccidSlotCount()`, `ccidMessage()` (any PC_to_RDR message, the raw response back) and `ccidAbort()`.
 - (JA) CH32RVUsbHost: EspUsbHost の `ccidSlotCount()`、`ccidMessage()`（任意の PC_to_RDR のメッセージと、そのままの応答）、`ccidAbort()`。
 - (EN) CH32RVUsbHost: EspUsbHost's `mscCapacity64()` / `mscReadBlocks64()` / `mscWriteBlocks64()` (media of 2^32 blocks and more) and `mscLastSense()`; `CH32RVUsbHostMscBlockDeviceInfo::blockCount` is 64-bit.

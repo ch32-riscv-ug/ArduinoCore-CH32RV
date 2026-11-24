@@ -2205,6 +2205,17 @@ size_t CH32RVUsbHost::getDevices(CH32RVUsbHostDeviceInfo *devices, size_t maxDev
     return n;
 }
 
+size_t CH32RVUsbHost::getHostDeviceAddresses(uint8_t *addresses, size_t maxAddresses) const
+{
+    size_t n = 0;
+    for (uint8_t a = 1; a <= CH32RV_USB_HOST_DEVICES && n < maxAddresses; a++) {
+        if (devs[a].known) {
+            addresses[n++] = a;
+        }
+    }
+    return n;
+}
+
 bool CH32RVUsbHost::getDevice(uint8_t address, CH32RVUsbHostDeviceInfo &device) const
 {
     if (!address || address > CH32RV_USB_HOST_DEVICES || !devs[address].known) {
@@ -2372,6 +2383,7 @@ uint32_t CH32RVUsbHost::droppedDeviceEvents() const { return 0; }
 uint8_t CH32RVUsbHost::resolve(uint8_t) const { return 0; }
 size_t CH32RVUsbHost::deviceCount() const { return 0; }
 size_t CH32RVUsbHost::getDevices(CH32RVUsbHostDeviceInfo *, size_t) const { return 0; }
+size_t CH32RVUsbHost::getHostDeviceAddresses(uint8_t *, size_t) const { return 0; }
 bool CH32RVUsbHost::getDevice(uint8_t, CH32RVUsbHostDeviceInfo &) const { return false; }
 size_t CH32RVUsbHost::getInterfaces(uint8_t, CH32RVUsbHostInterfaceInfo *, size_t) { return 0; }
 size_t CH32RVUsbHost::getEndpoints(uint8_t, CH32RVUsbHostEndpointInfo *, size_t) { return 0; }

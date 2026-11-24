@@ -670,6 +670,8 @@ public:
     uint32_t droppedDeviceEvents() const;
     size_t deviceCount() const;
     size_t getDevices(CH32RVUsbHostDeviceInfo *devices, size_t maxDevices) const;
+    /* The addresses of the enumerated devices, as getDevices() lists them (EspUsbHost). */
+    size_t getHostDeviceAddresses(uint8_t *addresses, size_t maxAddresses) const;
     bool getDevice(uint8_t address, CH32RVUsbHostDeviceInfo &device) const;
     /* Read from the device's configuration descriptor (a control transfer). */
     size_t getInterfaces(uint8_t address, CH32RVUsbHostInterfaceInfo *interfaces, size_t maxInterfaces);
@@ -734,6 +736,10 @@ public:
                          uint8_t port = CH32RV_USB_HOST_ANY_PORT);
     bool setSerialControlLines(bool dtr, bool rts, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                                uint8_t port = CH32RV_USB_HOST_ANY_PORT);
+    /* The data OUT endpoint's packet size (0 when no such serial port is ready): for a writer that ends a transfer
+     * on a packet boundary (EspUsbHost). */
+    uint16_t serialOutPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
+                                 uint8_t port = CH32RV_USB_HOST_ANY_PORT) const;
 
     /* ---- MIDI ---- */
     void onMidiMessage(MidiMessageCallback cb);
@@ -804,6 +810,9 @@ public:
     size_t vendorRead(uint8_t *buffer, size_t length, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     uint16_t vendorOutPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     uint16_t vendorInPacketSize(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    /* The endpoint addresses vendorOpen() took (0 when none is open). */
+    uint8_t vendorOutEndpoint(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
+    uint8_t vendorInEndpoint(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
 
     /* ---- USB audio: UAC1 / UAC2 PCM streams (EspUsbHost's calls) ---- */
     /* The device's Audio Streaming alternate settings with a PCM format and
@@ -860,6 +869,8 @@ public:
     /* ---- USB video: UVC cameras (EspUsbHost's calls) ---- */
     /* Every format / frame pair (uncompressed YUY2 / NV12, MJPEG ...). */
     size_t getVideoStreams(uint8_t address, CH32RVUsbHostVideoStreamInfo *streams, size_t maxStreams);
+    /* How many getVideoStreams() would give, nothing copied. */
+    size_t getVideoStreamCount(uint8_t address) { return getVideoStreams(address, nullptr, 0); }
     /* Probe, Commit, then the alternate setting whose bandwidth covers what
      * the camera committed to (isochronous; a bulk camera has none), and the
      * stream kept running. fps 0: the frame's default. Two frame buffers of
@@ -886,6 +897,15 @@ public:
     void networkClose(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     bool networkReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     bool getNetworkInterface(CH32RVUsbHostNetworkInterfaceInfo &info) const;
+    /* EspUsbHost's list form: the one network interface open here (0 or 1). */
+    size_t getNetworkInterfaces(uint8_t address, CH32RVUsbHostNetworkInterfaceInfo *interfaces, size_t maxInterfaces)
+    {
+        if (!interfaces || !maxInterfaces || !getNetworkInterface(interfaces[0]) ||
+            (address != CH32RV_USB_HOST_ANY_ADDRESS && interfaces[0].address != address)) {
+            return 0;
+        }
+        return 1;
+    }
     /* Received frames go to onNetworkFrame() (from deliverEvents()) or, with
      * no callback, wait for networkReadFrame() (a frame longer than `length`
      * is cut). networkWriteFrame() sends one frame (14 .. 1514 bytes) and

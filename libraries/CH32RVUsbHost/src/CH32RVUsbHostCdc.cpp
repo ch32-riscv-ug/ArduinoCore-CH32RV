@@ -870,6 +870,12 @@ bool CH32RVUsbHost::setSerialConfig(const CH32RVUsbHostSerialConfig &config, uin
     return ok();
 }
 
+uint16_t CH32RVUsbHost::serialOutPacketSize(uint8_t address, uint8_t port) const
+{
+    const int idx = index_of(address, port);
+    return idx < 0 ? 0u : ports[idx].mpsOut;
+}
+
 bool CH32RVUsbHost::setSerialControlLines(bool dtr, bool rts, uint8_t address, uint8_t port)
 {
     const int idx = index_of(address, port);
@@ -1073,6 +1079,7 @@ bool CH32RVUsbHost::setSerialConfig(const CH32RVUsbHostSerialConfig &, uint8_t, 
     return fail(CH32RVUsbHostError::Unsupported);
 }
 bool CH32RVUsbHost::setSerialControlLines(bool, bool, uint8_t, uint8_t) { return fail(CH32RVUsbHostError::Unsupported); }
+uint16_t CH32RVUsbHost::serialOutPacketSize(uint8_t, uint8_t) const { return 0; }
 
 CH32RVUsbHostCdcSerial::CH32RVUsbHostCdcSerial(CH32RVUsbHost &host) : _host(host) {}
 bool CH32RVUsbHostCdcSerial::setBuffer(uint8_t *, uint16_t) { return false; }

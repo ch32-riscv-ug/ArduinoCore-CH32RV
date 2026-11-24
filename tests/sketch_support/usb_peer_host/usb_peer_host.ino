@@ -22,6 +22,9 @@
  *   msc64 <lba>          H MSC64 <ok> <blocks> <block size> <rw ok>  (mscCapacity64(), then mscraw's pattern
  *                        through mscReadBlocks64() / mscWriteBlocks64())
  *   msclast              H MSCLAST <ok> <sense key> <asc> <ascq>  (mscLastSense(): no request to the drive)
+ *   epinfo               H EPINFO <addresses, comma-separated> <vendor OUT ep> <vendor IN ep> <serial OUT packet>
+ *                        (getHostDeviceAddresses(), vendorOutEndpoint() / vendorInEndpoint() after vendorOpen(),
+ *                        serialOutPacketSize(); hex endpoints)
  *   vend <hex>           H VEND <hex echoed back within 2 s>
  *   vreq                 H VREQ <ok> <answer as text>
  *   ccid                 H CCID <ok> <ATR hex>
@@ -390,6 +393,21 @@ static void cmd_msc64(uint32_t lba)
     for (size_t i = 0; ok && i < 512; i++) ok = block[i] == (uint8_t)(i ^ (lba * 57));
     ok = usb.mscWriteBlocks64(lba, keep, 1) && ok;
     CONSOLE.printf("H MSC64 %d %lu %lu %d\r\n", cap ? 1 : 0, (unsigned long)blocks, (unsigned long)size, ok ? 1 : 0);
+}
+
+static void cmd_epinfo()
+{
+    uint8_t a[8];
+    const size_t n = usb.getHostDeviceAddresses(a, sizeof a);
+    CONSOLE.print("H EPINFO ");
+    for (size_t i = 0; i < n; i++) {
+        CONSOLE.print(i ? "," : "");
+        CONSOLE.print(a[i]);
+    }
+    if (!usb.vendorReady()) {
+        usb.vendorOpen();
+    }
+    CONSOLE.printf(" %02x %02x %u\r\n", usb.vendorOutEndpoint(), usb.vendorInEndpoint(), usb.serialOutPacketSize());
 }
 
 static void cmd_msclast()
@@ -825,6 +843,8 @@ static void reply(char *cmd)
         cmd_msc64(strtoul(arg, nullptr, 10));
     } else if (strcmp(cmd, "msclast") == 0) {
         cmd_msclast();
+    } else if (strcmp(cmd, "epinfo") == 0) {
+        cmd_epinfo();
     } else if (strcmp(cmd, "vend") == 0) {
         cmd_vend(arg);
     } else if (strcmp(cmd, "vreq") == 0) {

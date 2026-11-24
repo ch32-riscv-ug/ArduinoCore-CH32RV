@@ -149,6 +149,16 @@ uint16_t CH32RVUsbHost::vendorInPacketSize(uint8_t address) const
     return matches(address) ? pipe.mpsIn : 0;
 }
 
+uint8_t CH32RVUsbHost::vendorOutEndpoint(uint8_t address) const
+{
+    return matches(address) ? pipe.epOut : 0;
+}
+
+uint8_t CH32RVUsbHost::vendorInEndpoint(uint8_t address) const
+{
+    return matches(address) ? pipe.epIn : 0;
+}
+
 #else /* no host */
 
 bool CH32RVUsbHost::setVendorBuffer(uint8_t *, size_t) { return fail(CH32RVUsbHostError::Unsupported); }
@@ -161,5 +171,7 @@ size_t CH32RVUsbHost::vendorAvailable() const { return 0; }
 size_t CH32RVUsbHost::vendorRead(uint8_t *, size_t, uint8_t) { return 0; }
 uint16_t CH32RVUsbHost::vendorOutPacketSize(uint8_t) const { return 0; }
 uint16_t CH32RVUsbHost::vendorInPacketSize(uint8_t) const { return 0; }
+uint8_t CH32RVUsbHost::vendorOutEndpoint(uint8_t) const { return 0; }
+uint8_t CH32RVUsbHost::vendorInEndpoint(uint8_t) const { return 0; }
 
 #endif

@@ -71,6 +71,14 @@ def test_usb_peer_host_storage(dut, peers):
         data = bytes((i * 7 + size) & 0xFF for i in range(size)).hex()
         assert host(dut, "vend " + data, rb"VEND (\w*)").group(1).decode() == data, size
 
+    # getHostDeviceAddresses() lists the peer's address; the vendor endpoints vendorOpen() took (an OUT and an IN);
+    # no CDC port here, so serialOutPacketSize() is 0
+    m = host(dut, "epinfo", rb"EPINFO ([\d,]+) (\w\w) (\w\w) (\d+)")
+    assert str(dev["address"]).encode() in m.group(1).split(b","), m.group(0)
+    out_ep, in_ep = int(m.group(2), 16), int(m.group(3), 16)
+    assert out_ep and not out_ep & 0x80 and in_ep & 0x80, m.group(0)
+    assert m.group(4) == b"0"
+
     # The vendor request OUT, with its value, index and data.
     assert host(dut, "vreqout 0x11 0x1234 0x0002 c0ffee", rb"VREQOUT (\d)").group(1) == b"1"
     assert device(peer, "vlast", rb"VLAST (\d+) (\d+) (\w*)").group(1, 2, 3) == (b"4660", b"2", b"c0ffee")

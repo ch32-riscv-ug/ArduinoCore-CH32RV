@@ -100,3 +100,9 @@ ccidSlotCount	KEYWORD2
 ccidMessage	KEYWORD2
 ccidAbort	KEYWORD2
 CH32RVUsbHostCcidResponse	KEYWORD1
+getHostDeviceAddresses	KEYWORD2
+getVideoStreamCount	KEYWORD2
+getNetworkInterfaces	KEYWORD2
+vendorOutEndpoint	KEYWORD2
+vendorInEndpoint	KEYWORD2
+serialOutPacketSize	KEYWORD2
