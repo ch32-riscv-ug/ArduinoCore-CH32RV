@@ -979,6 +979,9 @@ public:
 
     bool setBaudRate(uint32_t baud);
     bool setConfig(const CH32RVUsbHostSerialConfig &config);
+    /* DTR and RTS in one SET_CONTROL_LINE_STATE (EspUsbHost 2.10); setDtr() / setRts() each send one with the
+     * other line's last value. */
+    bool setControlLines(bool dtr, bool rts);
     bool setDtr(bool on);
     bool setRts(bool on);
     void setAddress(uint8_t address) { _address = address; }

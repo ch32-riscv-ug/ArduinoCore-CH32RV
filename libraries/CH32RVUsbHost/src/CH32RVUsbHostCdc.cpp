@@ -1040,6 +1040,13 @@ bool CH32RVUsbHostCdcSerial::setConfig(const CH32RVUsbHostSerialConfig &config)
     return _host.setSerialConfig(config, _address, _port);
 }
 
+bool CH32RVUsbHostCdcSerial::setControlLines(bool dtr, bool rts)
+{
+    _dtr = dtr;
+    _rts = rts;
+    return _host.setSerialControlLines(_dtr, _rts, _address, _port);
+}
+
 bool CH32RVUsbHostCdcSerial::setDtr(bool on)
 {
     _dtr = on;
@@ -1080,6 +1087,7 @@ size_t CH32RVUsbHostCdcSerial::write(uint8_t) { return 0; }
 size_t CH32RVUsbHostCdcSerial::write(const uint8_t *, size_t) { return 0; }
 bool CH32RVUsbHostCdcSerial::setBaudRate(uint32_t) { return false; }
 bool CH32RVUsbHostCdcSerial::setConfig(const CH32RVUsbHostSerialConfig &) { return false; }
+bool CH32RVUsbHostCdcSerial::setControlLines(bool, bool) { return false; }
 bool CH32RVUsbHostCdcSerial::setDtr(bool) { return false; }
 bool CH32RVUsbHostCdcSerial::setRts(bool) { return false; }
 

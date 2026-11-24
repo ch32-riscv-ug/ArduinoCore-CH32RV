@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) CH32RVUsbHostCdcSerial::setControlLines(dtr, rts): DTR and RTS in one request (EspUsbHost 2.10).
+- (JA) CH32RVUsbHostCdcSerial::setControlLines(dtr, rts): DTR と RTS を 1 回の要求で（EspUsbHost 2.10）。
 
 ## 0.10.0
 - (EN) **Breaking** - the API's shape fixed before 1.0 (docs/public-api.ja.md): the enums are `enum class` with capitalised values - `CH32RVResetReason::PowerOn` (was `CH32RV_RESET_POWERON`), `CH32RVSleepResult::Ok`, `CH32RVWakeupCause::Timer`, `CH32RVRtcClock::Lse`, `CH32RVRtcOutput::Clock`, `CH32RVClockSource::Hse`, `CH32RVPinSpeed::High`, `CH32RVPwmTimerAlign::Center` (was `CH32RVPwmTimer::CENTER`), `CH32RVOutputCompareMode::Toggle`, `CH32RVLowPowerTimerClock::Lsi`, `CH32RVEcdcAlgorithm::Aes`, `CH32RVGphaFormat::Rgb565`, `CH32RVLtdcFormat::Rgb565` (was `CH32RV_LTDC_RGB565`), `CH32RVLogicPort::E` (was `PORT_E`) and `CH32RVLogicUhsif::Data` (was `UHSIF_DATA`); `CH32RV.isOnV3F()` (was `onV3F()`) and `CH32RV.onIpcReceive()` (was `ipcOnReceive()`); `CH32RVDma::onDone(cb)` and `CH32RVTaskKit::Work` take a function or a small lambda (CH32RVCallback) instead of a function and a `void *`. `ch32rv_update.h` moved to the core's internal headers (the Update library is the API).

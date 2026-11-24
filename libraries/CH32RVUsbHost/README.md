@@ -297,7 +297,7 @@ gamepad's own layout is checked through the raw report and the descriptor.
 
 `CH32RVUsbHostCdcSerial port(usb)` is an Arduino `Stream`: `begin(baud)`,
 `available()`, `read()`, `peek()`, `write()`, `flush()`, with `setBaudRate()` /
-`setConfig()` / `setDtr()` / `setRts()` for the settings. A `begin()` before a
+`setConfig()` / `setDtr()` / `setRts()` / `setControlLines(dtr, rts)` (both in one request) for the settings. A `begin()` before a
 device is there keeps the settings and applies them when one appears. Choose
 among several ports with `setAddress()` / `setPort()`.
 

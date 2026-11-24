@@ -91,3 +91,4 @@ addMidiMessageListener	KEYWORD2
 addDeviceConnectedListener	KEYWORD2
 addDeviceDisconnectedListener	KEYWORD2
 removeListener	KEYWORD2
+setControlLines	KEYWORD2

@@ -236,7 +236,7 @@ hub に個別電源制御の実装がない場合もあります。
 ### USB シリアル
 
 `CH32RVUsbHostCdcSerial port(usb)` は Arduino `Stream` です。`begin(baud)`、`available()`、`read()`、`peek()`、
-`write()`、`flush()` を使え、`setBaudRate()` / `setConfig()` / `setDtr()` / `setRts()` で設定します。
+`write()`、`flush()` を使え、`setBaudRate()` / `setConfig()` / `setDtr()` / `setRts()` / `setControlLines(dtr, rts)`（2 本を 1 回の要求で）で設定します。
 接続前の `begin()` は設定を保持し、機器が現れたときに適用します。複数ポートは `setAddress()` / `setPort()` で選びます。
 
 callback 形式なら `onSerialData()` / `sendSerial()`、状態は `serialReady()` / `serialPortCount()` /
