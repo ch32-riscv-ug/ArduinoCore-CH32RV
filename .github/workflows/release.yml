@@ -1,7 +1,8 @@
 # Publish a Board Manager release - the same shape as host-arduino-core's.
 #
-# Run it from the Actions UI with the version to release (X.Y.Z), or push a tag
-# v<version>. The workflow then
+# Run it from the Actions UI choosing which part to bump (patch / minor /
+# major, from the latest v<X.Y.Z> tag; or type an exact version instead), or
+# push a tag v<version>. The workflow then
 #   1. writes the version everywhere (tools/index/bump_version.py: platform.txt
 #      and every sketch.yaml's platform pin) and moves CHANGELOG.md's
 #      Unreleased items under the version (tools/index/prepare_release.py),
@@ -25,8 +26,13 @@ on:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
+      bump:
+        description: "Which part of the latest release's version to raise"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
       version:
-        description: "Version to release (X.Y.Z, without v). Empty uses the tag name."
+        description: "Or an exact version (X.Y.Z, without v); overrides bump when set"
         required: false
 
 permissions:
@@ -47,12 +53,29 @@ jobs:
 
       - name: Determine version
         id: ver
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_BUMP: ${{ github.event.inputs.bump }}
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            v="${{ github.event.inputs.version }}"
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            v="${GITHUB_REF_NAME#v}"
+          elif [ -n "$INPUT_VERSION" ]; then
+            v="$INPUT_VERSION"
           else
-            tag=${GITHUB_REF_NAME:-$(git describe --tags --abbrev=0)}
-            v="${tag#v}"
+            last=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+            last=${last#v}
+            [ -n "$last" ] || { echo "no v<X.Y.Z> tag to bump from"; exit 1; }
+            IFS=. read -r major minor patch <<< "$last"
+            case "$INPUT_BUMP" in
+              major) v="$((major + 1)).0.0" ;;
+              minor) v="$major.$((minor + 1)).0" ;;
+              *)     v="$major.$minor.$((patch + 1))" ;;
+            esac
+            echo "bump $INPUT_BUMP: $last -> $v"
+          fi
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null && [ "${{ github.event_name }}" != "push" ]; then
+            echo "v$v is already released"; exit 1
           fi
           echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "version must be X.Y.Z, got '$v'"; exit 1; }
           echo "version=$v" >> "$GITHUB_OUTPUT"

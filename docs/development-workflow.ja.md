@@ -25,6 +25,8 @@ example profile の同期は tools/generate/sync_example_profiles.py が担当�
 
 利用者に見える変更は、コミットのときに CHANGELOG.md の `## Unreleased` へ `- (EN) ...` と `- (JA) ...` の組で書きます。
 リリースの workflow が tools/index/prepare_release.py でそれを `## X.Y.Z` に移し、その節を GitHub の Release の本文にします。
+リリースは Actions の Release を手動で動かし、`bump` のプルダウンで patch / minor / major を選びます（最新の `vX.Y.Z` のタグから上げる）。
+決まった版にしたいときは `version` に X.Y.Z を書きます（`bump` より優先）。`v<版>` のタグを push しても動きます。
 
 ## CI の境界
 
