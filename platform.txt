@@ -35,7 +35,12 @@ compiler.cpp.compat_flags=-Wno-reserved-user-defined-literal
 # globals within 2 KB of __global_pointer$ are reached in one instruction
 # from gp, as GNU ld did by default (crt0_ch32.S sets gp first; V003's
 # PrintFormatting 136 B smaller, and OEP's X035 probe fits again).
-compiler.ld_flags=-fuse-ld=lld -nostdlib -Wl,--relax-gp
+# --icf=safe: functions with the same code are kept once (the empty virtual
+# defaults, USART1..4's identical interrupt handlers), but never two whose
+# addresses a program could compare (lld's address-significance table, which
+# its LTO emits too). Measured 2026-11-24: I2CScanner (V003) -36 B,
+# ButtonKeyboard (X035) -160 B.
+compiler.ld_flags=-fuse-ld=lld -nostdlib -Wl,--relax-gp -Wl,--icf=safe
 compiler.libs=-lc++ -lc++abi -lc -lclang_rt.builtins
 
 # The IDE's Compiler warnings preference (arduino-cli --warnings): none,

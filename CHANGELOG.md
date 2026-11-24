@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Smaller sketches: the link keeps functions with the same code once (lld --icf=safe; never two whose addresses a program compares) - the empty virtual defaults of USB classes, USART1..4's identical interrupt handlers. ButtonKeyboard (X035) -160 B, I2CScanner (V003) -36 B.
+- (JA) スケッチが小さくなった: リンクで同じ中身の関数を 1 つにまとめる（lld の --icf=safe。アドレスを比べうる関数はまとめない）。USB のクラスの空の既定の仮想関数や、USART1〜4 の同じ割り込みハンドラなど。ButtonKeyboard（X035）-160 B、I2CScanner（V003）-36 B。
 
 ## 0.11.0
 - (EN) Smaller sketches with LTO (every Optimize choice but "without LTO"): virtual functions nothing calls are dropped (-fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden), and serialEvent()'s table has one entry per Serial the board has. A Serial.print sketch on V003 1960 -> 1780 B, X035 2516 -> 2356 B; I2CScanner on V003 6096 -> 5216 B.
