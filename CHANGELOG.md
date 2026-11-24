@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Serial uses less RAM: the modes' per-USART state (RS-485, flow control, ...) is no longer linked into a sketch that uses none of them (X035 -208 B, V307 -416 B for a plain Serial sketch).
+- (JA) Serial の RAM が減った: モード（RS-485・フロー制御など）の USART ごとの状態を、使わないスケッチにはリンクしない（普通の Serial のスケッチで X035 -208 B、V307 -416 B）。
 - (EN) **Breaking**: the pin-assignment menus' ids (the FQBN options) are `pin_usart01` .. `pin_usart10`, `pin_i2c1` / `pin_i2c2`, `pin_spi1` .. `pin_spi3` (were `usart1`, `i2c1`, `spi1` ...): Arduino IDE 2 lists a board's menus in id order, so they now stay together, USART10 after USART9.
 - (JA) **互換なし**: 端子の割り当てのメニューの ID（FQBN のオプション）は `pin_usart01`〜`pin_usart10`、`pin_i2c1` / `pin_i2c2`、`pin_spi1`〜`pin_spi3`（旧 `usart1`、`i2c1`、`spi1` …）。Arduino IDE 2 はボードのメニューを ID の順に並べるので、まとまって並び、USART10 は USART9 の後に来る。
 - (EN) ch32rv 0.33.0: the Serial Monitor on a `wchlink://` port reads the WCH-Link's UART bridge (Monitor Source UART, the default), so the port used for uploading shows `Serial` too; `--probe` takes a bare USB serial number.

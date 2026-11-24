@@ -267,25 +267,28 @@ enum : uint8_t {
 };
 
 struct Mode {
+    /* Every member initialised: modes[] is then constant-initialised, with no
+     * static constructor to keep it (and this file) in a sketch that uses no
+     * mode - 52 bytes of RAM a USART on X035 (2026-11-24). */
     /* What the sketch asked for. Pins 0 = none (no pad's number is 0). */
-    uint8_t cts, rts;          /* setPins()' CTS / RTS                       */
-    uint8_t flow;              /* SerialHwFlowCtrl                           */
-    uint8_t threshold;         /* RTS: hold from this many bytes; 0 = all    */
-    uint8_t mode;              /* SerialMode                                 */
-    uint8_t only_timeout;
-    uint8_t timeout_given, timeout;   /* setRxTimeout(); not given = 1      */
-    uint8_t fifo_full;         /* setRxFIFOFull(); 0 = half the buffer       */
+    uint8_t cts = 0, rts = 0;  /* setPins()' CTS / RTS                       */
+    uint8_t flow = 0;          /* SerialHwFlowCtrl                           */
+    uint8_t threshold = 0;     /* RTS: hold from this many bytes; 0 = all    */
+    uint8_t mode = 0;          /* SerialMode                                 */
+    uint8_t only_timeout = 0;
+    uint8_t timeout_given = 0, timeout = 0;   /* setRxTimeout(); not given = 1      */
+    uint8_t fifo_full = 0;     /* setRxFIFOFull(); 0 = half the buffer       */
     /* What start() put on the pads, for end() and the interrupt. */
-    uint8_t cts_on, rts_on, de;
-    volatile uint8_t held;     /* RTS: a byte left in the data register      */
-    volatile uint8_t pending;  /* P_*, for the delivery                      */
+    uint8_t cts_on = 0, rts_on = 0, de = 0;
+    volatile uint8_t held = 0;     /* RTS: a byte left in the data register      */
+    volatile uint8_t pending = 0;  /* P_*, for the delivery                      */
     /* Receive by DMA: its place at the IDLE (in the padding before idle_at). */
-    volatile uint16_t idle_pos;
-    volatile uint32_t idle_at; /* micros() at the IDLE                       */
-    CH32RVHardwareSerial *port;
+    volatile uint16_t idle_pos = 0;
+    volatile uint32_t idle_at = 0; /* micros() at the IDLE                       */
+    CH32RVHardwareSerial *port = nullptr;
     CH32RVCallback<void(void)> on_receive;
-    ch32rv_route_t one_wire;   /* setPins(p, p)'s route: RX joined to TX     */
-    uint8_t addressed, address;   /* setAddress(): on, and its 0 .. 15     */
+    ch32rv_route_t one_wire = {};   /* setPins(p, p)'s route: RX joined to TX     */
+    uint8_t addressed = 0, address = 0;   /* setAddress(): on, and its 0 .. 15     */
 };
 Mode modes[CH32RV_SERIAL_COUNT];
 
