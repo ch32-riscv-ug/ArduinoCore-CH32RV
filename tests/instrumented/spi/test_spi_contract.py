@@ -949,8 +949,6 @@ def test_spdif(dut, oep_host, ws_run, record_property):
     case = settings(__file__)
     if case.get("case") == "softspi":
         pytest.skip("n/a: I2S is the spi case's")
-    if not hasattr(runlog, "spdif"):
-        pytest.skip("wireskein has no runlog.spdif yet (in its main, 2026-11-24: waiting for the release)")
     m = bench_ready.ready(dut, rb" (\S+)", nonce=secrets.token_hex(4))
     assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
     lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
@@ -982,7 +980,7 @@ def test_spdif(dut, oep_host, ws_run, record_property):
                 wait(0.03)   # the ring's two halves start silent (about 5 ms each at 16-bit stereo)
                 status = 0x4 | code << 24
                 with ws_run.section(2, name, expect=[runlog.spdif(SD, audio={"A": left, "B": right}, status=status,
-                                                                  fs_hz=rate, fs_rel=0.01)]):
+                                                                  status_b=status, fs_hz=rate, fs_rel=0.01)]):
                     wait(0.012)
                 dut.write("i2send")
                 wait_reply(dut, wait, rb"I2SEND")
