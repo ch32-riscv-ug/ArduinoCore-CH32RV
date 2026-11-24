@@ -792,6 +792,10 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] clang は rv32ec（V003）で定数の掛け算に `__mulsi3` を呼ぶ件を洗い出した（2026-11-12）。割り込みの中では EXTI の処理だけで、
   `__builtin_ctz` を clang が掛け算に開いていた。`internal/ch32rv_bits.h`（掛け算の無いコアでは比較とシフト）に替えた。
   CH32RVSyncKit のプールも同じ。残りは数字の表示と時刻の計算（`-Oz` が呼び出しを選ぶ。UART の 1 文字より短い）。
+- [ ] CI の Examples（ch32h416）で clang が落ちた（2026-11-24、ユーザーの報告）: `libraries/CH32RVSyncKit/examples/NotifyCounter` で
+  `clang: error: unable to execute command: Segmentation fault (core dumped)`（cc1 が落ちた形で、ソースの誤りの行は無い）。手元では
+  ch32rv-toolchain 23.1.6-1 で 8dfae34d・作業ツリーとも 3 回ずつ通り、再現しない。ツールチェイン側の見込み。再現したら深掘りする
+  （ユーザー）: CI でクラッシュの再現用のファイル（前処理済みのソースと実行スクリプト）を成果物に残すと調べられる。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
   → 2026-11-22: 23.1.5-3 の zip（267 MB、展開 706 MB）の目次を範囲取得で読んだ: bin/ が 254 MB。clang の同じ実行ファイルが
   clang・clang++・clang-cl・clang-cpp の 4 つ（各 80 MB、詰めて 31.6 MB）、lld が lld・ld.lld・lld-link・ld64.lld・wasm-ld の
