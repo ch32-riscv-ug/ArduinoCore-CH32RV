@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) **Breaking**: the pin-assignment menus' ids (the FQBN options) are `pin_usart01` .. `pin_usart10`, `pin_i2c1` / `pin_i2c2`, `pin_spi1` .. `pin_spi3` (were `usart1`, `i2c1`, `spi1` ...): Arduino IDE 2 lists a board's menus in id order, so they now stay together, USART10 after USART9.
+- (JA) **互換なし**: 端子の割り当てのメニューの ID（FQBN のオプション）は `pin_usart01`〜`pin_usart10`、`pin_i2c1` / `pin_i2c2`、`pin_spi1`〜`pin_spi3`（旧 `usart1`、`i2c1`、`spi1` …）。Arduino IDE 2 はボードのメニューを ID の順に並べるので、まとまって並び、USART10 は USART9 の後に来る。
 - (EN) ch32rv 0.33.0: the Serial Monitor on a `wchlink://` port reads the WCH-Link's UART bridge (Monitor Source UART, the default), so the port used for uploading shows `Serial` too; `--probe` takes a bare USB serial number.
 - (JA) ch32rv 0.33.0: `wchlink://` のポートのシリアルモニターが WCH-Link の UART bridge を読む（Monitor Source の UART、既定）。書き込みに使うポートのままで `Serial` が見える。`--probe` に USB のシリアル番号をそのまま渡せる。
 - (EN) Tools menu labels in one style: every menu marks its default; CPU Clock as "144 MHz (USB)" with untested USB as "USB untested"; parseFloat, CPU Core, Reset Pin, Watchdog and Erase Flash say what each choice does (Erase Flash: "Program only: keep CH32RV_FLASH_STORE data" / "Whole flash"); pin menus "Auto: pins chosen at begin()" / "Fixed: TX:PA9, RX:PA10".

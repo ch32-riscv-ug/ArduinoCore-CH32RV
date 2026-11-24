@@ -253,10 +253,17 @@ SKU_BOARD_OVERRIDE = {"CH32V203CCT6": "CH32V205"}
 
 INTERRUPTS_CSV = pathlib.Path(__file__).parent / "interrupts" / "interrupts.csv"
 
+def pin_menu_id(kind: str, n: int) -> str:
+    """The id of a pin-assignment menu (USARTn, I2Cn, SPIn) - the FQBN option's name. Arduino IDE 2 lists a board's
+    menus in the order of their ids, not boards.txt's: the common prefix keeps the pin menus together, and the
+    USART numbers take two digits so USART10 comes after USART9 (the user, 2026-11-24)."""
+    return f"pin_{kind}{n:02d}" if kind == "usart" else f"pin_{kind}{n}"
+
+
 MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.rtcclock=RTC Clock\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
-               + "".join(f"menu.usart{n}=USART{n}\n" for n in range(1, 11))
-               + "".join(f"menu.i2c{n}=I2C{n}\n" for n in range(1, 3))
-               + "".join(f"menu.spi{n}=SPI{n}\n" for n in range(1, 4))
+               + "".join(f"menu.{pin_menu_id('usart', n)}=USART{n}\n" for n in range(1, 11))
+               + "".join(f"menu.{pin_menu_id('i2c', n)}=I2C{n}\n" for n in range(1, 3))
+               + "".join(f"menu.{pin_menu_id('spi', n)}=SPI{n}\n" for n in range(1, 4))
                + "menu.core=CPU Core\n"
                + "menu.vio18=VIO18 Supply\n"
                + "menu.ramsplit=Flash / RAM Split\n"
@@ -325,7 +332,7 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                     continue
             key = f"build.{kind}{n}_mode"
             uses.append("{" + key + "}")
-            pfx = f"{board}.menu.{kind}{n}"
+            pfx = f"{board}.menu.{pin_menu_id(kind, n)}"
             lines.append(f"{pfx}.auto=Auto: pins chosen at begin() (default)")
             lines.append(f"{pfx}.auto.{key}=")
             lines.append(f"{pfx}.disable=Disabled")
@@ -356,7 +363,7 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, names))
                 warn = " [debug/strap pin]" if any(p in straps for p in pads) else ""
                 # The option id names the pins, in role order, so an FQBN says
-                # what it selects: ...:i2c1=fix_pc2_pc1 is SCL PC2, SDA PC1.
+                # what it selects: ...:pin_i2c1=fix_pc2_pc1 is SCL PC2, SDA PC1.
                 ident = "fix_" + "_".join(x.lower() for x in names)
                 lines.append(f"{pfx}.{ident}=Fixed: {label}{warn}")
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
