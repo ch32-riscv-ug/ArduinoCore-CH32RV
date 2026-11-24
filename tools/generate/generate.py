@@ -264,6 +264,7 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.iwdg=Watchdog\n"
                + "menu.erase=Erase Flash\n"
                + "menu.debugspeed=Debug Speed\n"
+               + "menu.monsrc=Monitor Source\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
 
@@ -614,6 +615,34 @@ def stackcheck_menu(board: str) -> list[str]:
             f"{board}.menu.stackcheck.off.build.stackcheck_defines=",
             f"{board}.menu.stackcheck.on=Reset on overflow",
             f"{board}.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1"]
+
+
+# Monitor Source: what ch32rv's pluggable monitor reads (its `source` setting),
+# as the board's default port setting - the IDE 2 Serial Monitor shows only the
+# baud rate of a monitor's settings, so the menu is where an IDE user picks it
+# (arduino-cli takes it as monitor_port.<protocol>.source; --config still
+# wins). UART is the target's UART through the port: a serial port's CDC (a
+# WCH-LinkE's UART bridge, a USB-UART adapter), an OEP probe's fixture UART; a
+# wchlink:// port has no UART (its CDC is the COM / tty port), so it keeps
+# ch32rv's default there. The others attach through the debug module on every
+# kind of port (docs/debug-output.ja.md: attaching can reclock some families
+# and corrupt a register on V103 / V205).
+MONITOR_SOURCE_MENU = (
+    ("uart", "UART (Serial)", {"serial": "uart", "oep": "fixture-uart"}),
+    ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
+    ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
+    ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),
+    ("rtt", "RTT (SerialRTT)", {"serial": "rtt", "wchlink": "rtt", "oep": "rtt"}),
+)
+
+
+def monitor_source_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, sources in MONITOR_SOURCE_MENU:
+        lines.append(f"{board}.menu.monsrc.{key}={label}")
+        for protocol, source in sources.items():
+            lines.append(f"{board}.menu.monsrc.{key}.monitor_port.{protocol}.source={source}")
+    return lines
 
 
 def debug_speed_menu(board: str) -> list[str]:
@@ -6161,6 +6190,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines += erase_menu(board)
     lines.append("")
     lines += debug_speed_menu(board)
+    lines.append("")
+    lines += monitor_source_menu(board)
     lines.append("")
     lines += stack_menu(board, LOADCODE_RAM[cfg["family"]][1] if loadcode else min_sram, bool(loadcode))
     lines.append("")

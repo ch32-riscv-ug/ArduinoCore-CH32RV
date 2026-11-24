@@ -14,8 +14,20 @@ API の buffer size、`printf()`、同時使用制約は各 library の README �
 
 ## Arduino IDE / CLI
 
-WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として discovery されます。
-IDE の Serial Monitor で probe port を選び、`source` を `sdi`、`rtt`、`dmdata`、`dmseq` のいずれかにします。
+WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として discovery されます。WCH-LinkE の UART bridge は、それとは
+別の serial port（Windows の `COMx`、Linux の `/dev/ttyACM…`）として出ます。
+
+モニターが何を読むか（ch32rv の monitor の `source`）は、ツールメニューの **Monitor Source** で選びます。IDE 2 の Serial Monitor の窓には
+monitor の設定のうちボーレートしか出ないためです（arduino-cli の `--config source=…` はメニューより優先）。
+
+| Monitor Source | serial port（LinkE の COM など） | `wchlink://` | `oep://` |
+|---|---|---|---|
+| UART (Serial)（既定） | `uart`: UART bridge の素通し | ch32rv の既定（`dmdata`）のまま。UART は COM の口を選ぶ | `fixture-uart`: probe の UART の線 |
+| DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
+
+`uart` 以外は debug で attach するので、走っている firmware のクロックが組み直されることがあり、V103 / V205 では register が 1 つ壊れることが
+あります（[chip-caveats.ja.md](chip-caveats.ja.md)）。モニターの窓の先頭に `[ch32rv monitor] attaching may have changed the target clock`
+が出たら attach した印です。
 
 CLI では次の形です。
 
