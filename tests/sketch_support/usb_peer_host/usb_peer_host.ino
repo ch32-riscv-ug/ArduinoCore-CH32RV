@@ -19,6 +19,9 @@
  *   midi <ch> <n> <v>    H MIDI_SENT <ok>
  *   msc                  H MSC <ok> <vendor> <product> <blocks> <block size>
  *   mscraw <lba>         H MSCRAW <ok>         (pattern written, read back, restored)
+ *   msc64 <lba>          H MSC64 <ok> <blocks> <block size> <rw ok>  (mscCapacity64(), then mscraw's pattern
+ *                        through mscReadBlocks64() / mscWriteBlocks64())
+ *   msclast              H MSCLAST <ok> <sense key> <asc> <ascq>  (mscLastSense(): no request to the drive)
  *   vend <hex>           H VEND <hex echoed back within 2 s>
  *   vreq                 H VREQ <ok> <answer as text>
  *   ccid                 H CCID <ok> <ATR hex>
@@ -369,6 +372,29 @@ static void cmd_mscraw(uint32_t lba)
     ok = usb.mscWriteBlocks(lba, keep, 1) && ok;
     CONSOLE.print("H MSCRAW ");
     CONSOLE.println(ok ? 1 : 0);
+}
+
+static void cmd_msc64(uint32_t lba)
+{
+    uint64_t blocks = 0;
+    uint32_t size = 0;
+    const bool cap = usb.mscCapacity64(blocks, size);
+    bool ok = usb.mscReadBlocks64(lba, keep, 1);
+    for (size_t i = 0; i < 512; i++) block[i] = (uint8_t)(i ^ (lba * 57));
+    ok = ok && usb.mscWriteBlocks64(lba, block, 1);
+    memset(block, 0, sizeof block);
+    ok = ok && usb.mscReadBlocks64(lba, block, 1);
+    for (size_t i = 0; ok && i < 512; i++) ok = block[i] == (uint8_t)(i ^ (lba * 57));
+    ok = usb.mscWriteBlocks64(lba, keep, 1) && ok;
+    CONSOLE.printf("H MSC64 %d %lu %lu %d\r\n", cap ? 1 : 0, (unsigned long)blocks, (unsigned long)size, ok ? 1 : 0);
+}
+
+static void cmd_msclast()
+{
+    CH32RVUsbHostMscSense s;
+    const bool ok = usb.mscLastSense(s);
+    CONSOLE.printf("H MSCLAST %d %02x %02x %02x\r\n", ok ? 1 : 0, s.senseKey, s.additionalSenseCode,
+                   s.additionalSenseQualifier);
 }
 
 #if defined(USB_HOST_FS)
@@ -792,6 +818,10 @@ static void reply(char *cmd)
 #if !defined(USB_HOST_FS) && !defined(USB_HOST_NET) && !defined(USB_HOST_AUDIO)   /* the FS / NET / AUDIO builds carry their own commands only */
     } else if (strcmp(cmd, "mscraw") == 0) {
         cmd_mscraw(strtoul(arg, nullptr, 10));
+    } else if (strcmp(cmd, "msc64") == 0) {
+        cmd_msc64(strtoul(arg, nullptr, 10));
+    } else if (strcmp(cmd, "msclast") == 0) {
+        cmd_msclast();
     } else if (strcmp(cmd, "vend") == 0) {
         cmd_vend(arg);
     } else if (strcmp(cmd, "vreq") == 0) {

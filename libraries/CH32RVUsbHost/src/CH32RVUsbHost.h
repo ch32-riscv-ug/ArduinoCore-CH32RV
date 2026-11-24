@@ -345,7 +345,8 @@ struct CH32RVUsbHostMscSense {
 };
 struct CH32RVUsbHostMscBlockDeviceInfo {
     uint8_t address = 0, interfaceNumber = 0, lun = 0, maxLun = 0;
-    uint32_t blockCount = 0, blockSize = 0;
+    uint64_t blockCount = 0;        /* EspUsbHost's width: past 2^32 blocks (READ CAPACITY(16)) */
+    uint32_t blockSize = 0;
     uint64_t capacityBytes = 0;
 };
 
@@ -746,6 +747,8 @@ public:
                     uint32_t timeoutMs = 5000);
     bool mscRequestSense(CH32RVUsbHostMscSense &sense, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                          uint32_t timeoutMs = 5000);
+    /* The sense the last mscRequestSense() (or mscWaitReady()) got, without asking the drive. */
+    bool mscLastSense(CH32RVUsbHostMscSense &sense, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     bool mscMaxLun(uint8_t &maxLun, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     bool mscSelectLun(uint8_t lun, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     bool mscTestUnitReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
@@ -757,12 +760,20 @@ public:
     bool mscSynchronizeCache(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool mscCapacity(uint32_t &blockCount, uint32_t &blockSize, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
                      uint32_t timeoutMs = 5000);
+    /* EspUsbHost's 64-bit forms: READ CAPACITY(16) when (10) says the medium has 2^32 blocks or more, READ(16) /
+     * WRITE(16) when the range passes block 2^32 - 1 (else the (10) commands, which every drive has). */
+    bool mscCapacity64(uint64_t &blockCount, uint32_t &blockSize, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS,
+                       uint32_t timeoutMs = 5000);
     bool mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &info,
                                uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
     bool mscReadBlocks(uint32_t lba, uint8_t *data, uint32_t blockCount,
                        uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool mscWriteBlocks(uint32_t lba, const uint8_t *data, uint32_t blockCount,
                         uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
+    bool mscReadBlocks64(uint64_t lba, uint8_t *data, uint32_t blockCount,
+                         uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
+    bool mscWriteBlocks64(uint64_t lba, const uint8_t *data, uint32_t blockCount,
+                          uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
 
     /* ---- vendor bulk ---- */
     void onVendorData(VendorDataCallback cb) { _vendorData = cb; }

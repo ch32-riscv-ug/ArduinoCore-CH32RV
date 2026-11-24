@@ -14,7 +14,8 @@ struct Msc {
     uint8_t daddr, itf, epIn, epOut;
     uint8_t maxLun, lun;
     uint32_t tag;
-    uint32_t blockCount, blockSize;       /* READ CAPACITY at mount, 0 when no medium */
+    uint64_t blockCount;                  /* READ CAPACITY at mount, 0 when no medium */
+    uint32_t blockSize;
 };
 Msc mscs[1];
 CH32RVUsbHostMscSense last_sense;
@@ -291,6 +292,15 @@ bool CH32RVUsbHost::mscRequestSense(CH32RVUsbHostMscSense &sense, uint8_t addres
     return ok();
 }
 
+bool CH32RVUsbHost::mscLastSense(CH32RVUsbHostMscSense &sense, uint8_t address) const
+{
+    if (!mscReady(address)) {
+        return false;
+    }
+    sense = last_sense;
+    return true;
+}
+
 bool CH32RVUsbHost::mscTestUnitReady(uint8_t address, uint32_t timeoutMs)
 {
     Msc *m = device(address);
@@ -365,6 +375,29 @@ bool CH32RVUsbHost::mscCapacity(uint32_t &blockCount, uint32_t &blockSize, uint8
     return ok();
 }
 
+bool CH32RVUsbHost::mscCapacity64(uint64_t &blockCount, uint32_t &blockSize, uint8_t address, uint32_t timeoutMs)
+{
+    uint32_t count32 = 0, size = 0;
+    if (!mscCapacity(count32, size, address, timeoutMs)) {
+        return false;
+    }
+    Msc *m = device(address);
+    if (count32 != 0u) {           /* the last LBA was not 0xFFFFFFFF: (10) told it all */
+        blockCount = count32;
+        blockSize = size;
+        return ok();
+    }
+    /* SERVICE ACTION IN(16), READ CAPACITY(16): the last LBA in 8 bytes, the block size in 4 */
+    const uint8_t cdb[16] = {0x9E, 0x10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0};
+    const CH32RVUsbHostError e = run(*m, cdb, 16, small_buf, 32, true, timeoutMs);
+    if (e != CH32RVUsbHostError::None) {
+        return fail(e);
+    }
+    m->blockCount = blockCount = ((uint64_t)be32(small_buf) << 32 | be32(small_buf + 4)) + 1u;
+    m->blockSize = blockSize = be32(small_buf + 8);
+    return ok();
+}
+
 bool CH32RVUsbHost::mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &info, uint8_t address)
 {
     Msc *m = device(address);
@@ -396,6 +429,54 @@ static bool rw10(CH32RVUsbHost &host, Msc *m, bool write, uint32_t lba, uint8_t 
                              (uint8_t)blockCount, 0};
     const CH32RVUsbHostError e = run(*m, cdb, 10, data, blockCount * m->blockSize, !write, timeoutMs);
     return e == CH32RVUsbHostError::None ? host.ok() : host.fail(e);
+}
+
+/* The 64-bit forms: (10) while the range stays under block 2^32, READ(16) / WRITE(16) past it. */
+static bool rw64(CH32RVUsbHost &host, Msc *m, bool write, uint64_t lba, uint8_t *data, uint32_t blockCount,
+                 uint32_t timeoutMs)
+{
+    if (lba + blockCount <= 0x100000000ull) {
+        return rw10(host, m, write, (uint32_t)lba, data, blockCount, timeoutMs);
+    }
+    if (!m->blockSize) {
+        return host.fail(CH32RVUsbHostError::NotConnected);
+    }
+    uint8_t cdb[16] = {(uint8_t)(write ? 0x8A : 0x88)};
+    for (uint8_t i = 0; i < 8; i++) {
+        cdb[2 + i] = (uint8_t)(lba >> (56 - 8 * i));
+    }
+    cdb[10] = (uint8_t)(blockCount >> 24);
+    cdb[11] = (uint8_t)(blockCount >> 16);
+    cdb[12] = (uint8_t)(blockCount >> 8);
+    cdb[13] = (uint8_t)blockCount;
+    const CH32RVUsbHostError e = run(*m, cdb, 16, data, blockCount * m->blockSize, !write, timeoutMs);
+    return e == CH32RVUsbHostError::None ? host.ok() : host.fail(e);
+}
+
+bool CH32RVUsbHost::mscReadBlocks64(uint64_t lba, uint8_t *data, uint32_t blockCount, uint8_t address,
+                                    uint32_t timeoutMs)
+{
+    Msc *m = device(address);
+    if (!m) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    if (!data || !blockCount || blockCount > 0xFFFFu) {
+        return fail(CH32RVUsbHostError::InvalidArgument);
+    }
+    return rw64(*this, m, false, lba, data, blockCount, timeoutMs);
+}
+
+bool CH32RVUsbHost::mscWriteBlocks64(uint64_t lba, const uint8_t *data, uint32_t blockCount, uint8_t address,
+                                     uint32_t timeoutMs)
+{
+    Msc *m = device(address);
+    if (!m) {
+        return fail(CH32RVUsbHostError::NotConnected);
+    }
+    if (!data || !blockCount || blockCount > 0xFFFFu) {
+        return fail(CH32RVUsbHostError::InvalidArgument);
+    }
+    return rw64(*this, m, true, lba, const_cast<uint8_t *>(data), blockCount, timeoutMs);
 }
 
 bool CH32RVUsbHost::mscReadBlocks(uint32_t lba, uint8_t *data, uint32_t blockCount, uint8_t address,
@@ -436,6 +517,16 @@ bool CH32RVUsbHost::mscWaitReady(uint8_t, uint32_t) { return fail(CH32RVUsbHostE
 bool CH32RVUsbHost::mscEject(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscSynchronizeCache(uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::mscCapacity(uint32_t &, uint32_t &, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::mscCapacity64(uint64_t &, uint32_t &, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
+bool CH32RVUsbHost::mscLastSense(CH32RVUsbHostMscSense &, uint8_t) const { return false; }
+bool CH32RVUsbHost::mscReadBlocks64(uint64_t, uint8_t *, uint32_t, uint8_t, uint32_t)
+{
+    return fail(CH32RVUsbHostError::Unsupported);
+}
+bool CH32RVUsbHost::mscWriteBlocks64(uint64_t, const uint8_t *, uint32_t, uint8_t, uint32_t)
+{
+    return fail(CH32RVUsbHostError::Unsupported);
+}
 bool CH32RVUsbHost::mscGetBlockDeviceInfo(CH32RVUsbHostMscBlockDeviceInfo &, uint8_t)
 {
     return fail(CH32RVUsbHostError::Unsupported);

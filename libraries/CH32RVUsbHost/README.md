@@ -328,7 +328,12 @@ does not always have 512-byte sectors, so read the capacity.
 A reader with no medium in it is mounted without a capacity after a few
 TEST UNIT READY tries; `mscWaitReady()` waits longer. `mscEject()` sends
 START STOP UNIT with LoEj (a firmware-update drive takes it as the end of the
-image). `mscSynchronizeCache()` sends SYNCHRONIZE CACHE(10).
+image). `mscSynchronizeCache()` sends SYNCHRONIZE CACHE(10). EspUsbHost's
+64-bit forms `mscCapacity64()` / `mscReadBlocks64()` / `mscWriteBlocks64()`
+take media of 2^32 blocks and more (READ CAPACITY(16), READ / WRITE(16) only
+past block 2^32 - 1; below it the (10) commands every drive has), and
+`mscLastSense()` returns the sense the last request took without asking
+the drive again.
 
 For files, use `CH32RVUsbHostMscFS` (`#include <CH32RVUsbHostMscFS.h>`, the
 FS library's `FatFS`), shaped as EspUsbHost's `EspUsbHostMscFS`:

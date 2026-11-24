@@ -2,7 +2,8 @@
 (host_storage/peer_pico) as the device: mass storage with two logical units, MIDI, a vendor interface with
 requests both ways, and a smart card reader whose card comes and goes.
 
-What usb-peer-host-classes leaves out: the MSC logical units, TEST UNIT READY and REQUEST SENSE on a unit
+What usb-peer-host-classes leaves out: the MSC logical units (and EspUsbHost's 64-bit capacity and block calls,
+mscLastSense()), TEST UNIT READY and REQUEST SENSE on a unit
 that is not ready, a read whose data stage stalls (the halt cleared, the sense taken), vendor bulk across
 the packet boundary, MIDI beyond note-on (control and program change, pitch bend, SysEx both ways), the
 vendor request OUT, and the CCID slot: its status, the card's removal and insertion (NotifySlotChange),
@@ -30,6 +31,10 @@ def test_usb_peer_host_storage(dut, peers):
         assert m.group(1) == b"1" and m.group(3) == product
         assert (int(m.group(4)), int(m.group(5))) == (blocks, 512)
         assert host(dut, "mscraw 5", rb"MSCRAW (\d)", timeout=20).group(1) == b"1"
+        # EspUsbHost's 64-bit forms: the same capacity (READ CAPACITY(10) is enough here), the same block
+        # written, read back and restored through them (the (10) commands under block 2^32)
+        m = host(dut, "msc64 7", rb"MSC64 (\d) (\d+) (\d+) (\d)", timeout=20)
+        assert m.group(1, 2, 3, 4) == (b"1", str(blocks).encode(), b"512", b"1")
     # A unit not ready: TEST UNIT READY fails with 02/3A/00 (medium not present), then ready again.
     device(peer, "media 1 0", rb"MEDIA 1 0")
     assert host(dut, "msctur", rb"MSCTUR (\d) (\w\w \w\w \w\w)").group(1, 2) == (b"0", b"02 3a 00")
@@ -42,6 +47,8 @@ def test_usb_peer_host_storage(dut, peers):
     # sense, and the next reads and writes work. (TinyUSB's device reports 02/3A/00 for any failed read: it
     # overwrites the sense the callback sets.)
     assert host(dut, "mscrd 13", rb"MSCRD (\d) (\w\w \w\w \w\w)", timeout=20).group(1, 2) == (b"0", b"02 3a 00")
+    # mscLastSense(): the sense mscrd 13 took, without asking the drive again
+    assert host(dut, "msclast", rb"MSCLAST (\d) (\w\w \w\w \w\w)").group(1, 2) == (b"1", b"02 3a 00")
     assert host(dut, "mscrd 12", rb"MSCRD (\d) [^\r\n]*", timeout=20).group(1) == b"1"
     assert host(dut, "mscraw 6", rb"MSCRAW (\d)", timeout=20).group(1) == b"1"
 

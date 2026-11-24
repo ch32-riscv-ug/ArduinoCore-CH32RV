@@ -92,3 +92,7 @@ addDeviceConnectedListener	KEYWORD2
 addDeviceDisconnectedListener	KEYWORD2
 removeListener	KEYWORD2
 setControlLines	KEYWORD2
+mscCapacity64	KEYWORD2
+mscReadBlocks64	KEYWORD2
+mscWriteBlocks64	KEYWORD2
+mscLastSense	KEYWORD2

@@ -260,6 +260,7 @@ program/pressure/pitch bend/SysEx の helper を使えます。channel は0始�
 媒体の入っていないリーダーは、TEST UNIT READY を数回試したあと容量無しでマウントされます。`mscWaitReady()` で長く待てます。
 `mscEject()` は LoEj 付きの START STOP UNIT を送ります（ファームウェア更新のドライブは、これを書き込みの終わりと受け取ります）。
 `mscSynchronizeCache()` は SYNCHRONIZE CACHE(10) を送ります。
+EspUsbHost の 64 bit の形 `mscCapacity64()` / `mscReadBlocks64()` / `mscWriteBlocks64()` は、2^32 ブロック以上の媒体も扱えます（READ CAPACITY(16) と READ / WRITE(16) は、ブロック 2^32 - 1 を超えるときだけ使い、それより下はどのドライブにもある (10) のコマンド）。`mscLastSense()` は、最後に取った sense をドライブに聞き直さずに返します。
 
 ファイルとして読み書きするには、`CH32RVUsbHostMscFS`（`#include <CH32RVUsbHostMscFS.h>`、FS ライブラリの `FatFS`）を使います。
 EspUsbHost の `EspUsbHostMscFS` と同じ形です:
