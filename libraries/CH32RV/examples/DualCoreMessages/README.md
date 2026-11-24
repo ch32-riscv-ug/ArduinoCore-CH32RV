@@ -19,7 +19,7 @@ A CH32H417 board with **CPU Core = V5F** (the default).
 
 ## API and processing flow
 
-- `CH32RV.ipcOnReceive(cb)`: `cb(uint32_t)` runs in an interrupt for each message to this core - the V3F's when called in `setup1()`, the V5F's in `setup()`.
+- `CH32RV.onIpcReceive(cb)`: `cb(uint32_t)` runs in an interrupt for each message to this core - the V3F's when called in `setup1()`, the V5F's in `setup()`.
 - `CH32RV.ipcSend(msg, ms)`: one 32-bit message to the other core; waits up to `ms` for the last one to be taken and returns whether it went in.
 - `CH32RV.hsemTake(ch)` / `CH32RV.hsemRelease(ch)`: take and give back an HSEM channel; only the core that took it can release it. The two words of `totals` written between them are always seen together by the other core.
 - The V3F hands the number from its interrupt to `loop1()` and does the slow work outside the interrupt.

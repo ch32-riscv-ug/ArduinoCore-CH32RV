@@ -15,7 +15,7 @@
  *     lcd.setColorPins(r, g, b);
  *     lcd.begin(t);
  *     static uint16_t fb[480 * 272];                // RGB565
- *     lcd.layer(1, fb, CH32RV_LTDC_RGB565, 0, 0, 480, 272);
+ *     lcd.layer(1, fb, CH32RVLtdcFormat::Rgb565, 0, 0, 480, 272);
  *
  * The pixel clock is SYSCLK (the system PLL) / 1 .. 64 on CH32H41x;
  * pixelClock() says which it gave. Polarities: HSYNC and VSYNC active low, DE active high,
@@ -44,15 +44,15 @@
 #define CH32RV_HAS_LTDC 0
 #endif
 
-enum CH32RVLtdcFormat : uint8_t {
-    CH32RV_LTDC_ARGB8888 = 0,
-    CH32RV_LTDC_RGB888,
-    CH32RV_LTDC_RGB565,
-    CH32RV_LTDC_ARGB1555,
-    CH32RV_LTDC_ARGB4444,
-    CH32RV_LTDC_L8,
-    CH32RV_LTDC_AL44,
-    CH32RV_LTDC_AL88,
+enum class CH32RVLtdcFormat : uint8_t {
+    Argb8888 = 0,
+    Rgb888,
+    Rgb565,
+    Argb1555,
+    Argb4444,
+    L8,
+    Al44,
+    Al88,
 };
 
 struct CH32RVLtdcTiming {

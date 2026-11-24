@@ -50,7 +50,7 @@ USB のコントローラを持つ系列と、それぞれの IP の種類、ド
 
 `Auto` は系列の既定 controller を選びます。必ずしも最速の controller ではありません。
 端子・クロック・他機能との兼用を確認して選択します。選択規則の実装は
-[CH32RVUsbDevicePort.h](../libraries/CH32RVUsbDevice/src/CH32RVUsbDevicePort.h) にあります。
+[CH32RVUsbDevicePort.h](../libraries/CH32RVUsbDevice/src/internal/CH32RVUsbDevicePort.h) にあります。
 
 V003 / V002 / V004 / V005 / V006 / V007 / M007 には USB のコントローラがありません。
 
@@ -264,7 +264,7 @@ H41x の自己書き換えに対応した構成では、DFU_DETACH 後に DFU mo
 | `CH32RVUsbDeviceMscFirmwareDisk`（MSC） | ファイルマネージャで `.uf2`（または `.bin`）をドライブへコピー | バルク 1 組 | [FirmwareMSC](../libraries/CH32RVUsbDevice/examples/FirmwareMSC/) |
 | [Update](../libraries/Update/) ライブラリ（arduino-esp32 の `Update`） | 何でも（UART、CDC、ベンダーなど、スケッチが運ぶ） | — | [SerialUpdate](../libraries/Update/examples/SerialUpdate/) |
 
-どれも同じコアの部品（`ch32rv_update.h`、`ch32rv_flash.h` の staging と `ch32rv_flash_install()`）で書きます。
+どれも同じコアの部品（`internal/ch32rv_update.h`、`ch32rv_flash.h` の staging と `ch32rv_flash_install()`）で書きます。
 使わないスケッチには何もリンクされません（V003 の例、USB のキーボードの例とも、前とバイト単位で同じイメージ）。
 
 費用（X035、`USBDevice.begin()` だけのスケッチとの差。2026-11-17 測定）: `CH32RVUsbDeviceDfu` は Flash +3.6 KB、
@@ -291,7 +291,7 @@ staging は「スケッチの末尾を消去単位に切り上げた所」から
 （例: V203 の ANY は 32 KB なので、USB のスケッチではほとんど入りません。品番を選んで 64 KB にします）。
 コピーは先頭から順に進み、上書きする staging の部分はコピー済みなので、staging と同じ大きさまでのイメージが入ります。
 
-**確かめること**（`ch32rv_update.h`）:
+**確かめること**（`internal/ch32rv_update.h`）:
 
 1. 書いたページを読み返して一致すること（書けなければ `UPDATE_ERROR_WRITE`）。
 2. イメージの先頭がこのコアのリセットの入口（ベクタ表の 0 番の `j`、16 ビットの `c.j`、H41x の V5F のイメージの

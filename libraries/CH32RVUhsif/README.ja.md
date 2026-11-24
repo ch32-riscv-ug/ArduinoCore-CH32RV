@@ -4,7 +4,7 @@
 
 CH32H415 / H416 / H417 の UHSIF（高速の並列インターフェース）を使うライブラリです。UHSIF は、クロックごとに動く状態機械で 8 / 16 / 32 ビットのデータ線を扱い、socket の DMA で RAM に書きます。WCH はレジスタを公開しておらず、バイナリのライブラリ（`libUHSIF.a`）だけを配っています。このライブラリはそれを使わず、実機で測った結果から作りました（調べた記録は [docs/h417-uhsif.ja.md](../../docs/h417-uhsif.ja.md)）。
 
-ロジックアナライザとして取り込むだけなら、この上に作った [CH32RVLogicCapture](../CH32RVLogicCapture/README.ja.md) の `begin(UHSIF_DATA, rate)` が簡単です。
+ロジックアナライザとして取り込むだけなら、この上に作った [CH32RVLogicCapture](../CH32RVLogicCapture/README.ja.md) の `begin(CH32RVLogicUhsif::Data, rate)` が簡単です。
 
 ## できること（CH32H417 で確かめたこと、2026-11-11）
 

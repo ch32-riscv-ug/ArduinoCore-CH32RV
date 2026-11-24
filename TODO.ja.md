@@ -419,7 +419,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [x] **V103 の休止（lightSleep）**（2026-11-18）: 1 秒未満の端数を待つ普通の WFI が、V103（QingKe V3A）では SysTick で
   終わらなかった（WFI を 1 回だけ実行する試しで戻らず、IWDG でリセット）。V103 だけ端数は起きたまま待つ。selfsys・selfexti・
   system が v103r8t6-evt で通る（core-20261118T000528Z-337cb4a4、core-20261118T002526Z-687c498c）。system の deepSleep は、
-  スタンバイの起床を CH32RV_RESET_DEEPSLEEP（ESP_RST_DEEPSLEEP にならう）で返すようにして判定した: スタンバイが残すリセットの
+  スタンバイの起床を CH32RVResetReason::DeepSleep（ESP_RST_DEEPSLEEP にならう）で返すようにして判定した: スタンバイが残すリセットの
   印は V307 が電源投入、V203 が起床だけ、V103 が無しで、試験は電源投入の印で見分けていた（V103 で 2.07 s を 0.3 s 以内と
   判定していた）。途中で v103r8t6-evt が答えなくなったのは、code flash を消して HSI のままの V103 の答えの遅れ（[oep] が
   b532f9a で直した）。
@@ -723,7 +723,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   `UhsifRegValue`）なので、取り出して docs/h417-uhsif.ja.md の読み方で解読できる見込み。未確認は外部クロックの設定（w1 の
   21:14、RCC のクロック源）と出力の向き。実機で確かめるには外からクロックとデータを出すマスターが要り、6-2 のプローブの線は
   UHSIF の端子（VIO18 の PD / PE）にほとんど届いていない。今は文書で未対応と書いている。
-- [x] V3F を起動する API（2026-11-14: `CH32RV.startV3F()` / `isV3FRunning()` / `onV3F()`、`setup1()` / `loop1()`、例 DualCoreV3F。nano で 200 回の起動と結果、loop1 の数え上げ、V3F の millis / delay を確認。残りは V3F を外から止める仕組みと、V3F から V5F に頼む IPC）。元の項目: `ch32rv_v3f_mailbox` を包む API、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
+- [x] V3F を起動する API（2026-11-14: `CH32RV.startV3F()` / `isV3FRunning()` / `isOnV3F()`、`setup1()` / `loop1()`、例 DualCoreV3F。nano で 200 回の起動と結果、loop1 の数え上げ、V3F の millis / delay を確認。残りは V3F を外から止める仕組みと、V3F から V5F に頼む IPC）。元の項目: `ch32rv_v3f_mailbox` を包む API、その上の `setup1()` / `loop1()`、V3F 用の領域（V5F と別の
   SRAM のバンク、スタック）、V3F を止める仕組み、V3F から使ってよいコアの機能（Serial は不可から）。最悪は今の
   「起こして眠る」だけでもよい（利用者、2026-11-11）。
 - [ ] H41x の HSEM・IPC の公開 API と V3F の周辺（2026-11-17、ビルドのみ）: `CH32RV.hsem*()` / `ipc*()`（ch32rv_multicore.h）、
@@ -1050,7 +1050,7 @@ CH32RVUsbDevice / CH32RVUsbHost は自作のスタック（[ADR-0012](docs/adr/0
   - [ ] USBHS のドライバ。PB8 / PB9 が SWD と兼用なので、デバッガを外した状態での確認が要る。
   - [ ] UART ISP（PB6/PB7）: ソフトのリセットでは入らなかった（docs/h417-bench.ja.md）。電源の入れ直しは未確認。入れるかどうかは別に決める。
   - OEP の probe にする件は、コアの側は入れた（84b57b0）。oep-probe-arduino への依頼は 2026-10-21 に dev-oep のセッションへ送った（向こうの状況は未確認）。
-  - [ ] UHSIF（docs/h417-uhsif.ja.md）: CH32RVUhsif と CH32RVLogicCapture の `begin(UHSIF_DATA, rate)`。SRAM へは
+  - [ ] UHSIF（docs/h417-uhsif.ja.md）: CH32RVUhsif と CH32RVLogicCapture の `begin(CH32RVLogicUhsif::Data, rate)`。SRAM へは
     200 MS/s まで抜け無し。PC へ USB SS で流すと 133 MS/s まで抜け無し、200 MS/s は約 1 割落ちる（USB の処理が
     100 MHz の V3F、2026-11-11）。残り: H417 の V5F への移行のあとに測り直す、CH32RVLogicCapture に PC へ流すための
     深いリング、速い信号での確かさ、外部クロック・トリガー・出力・8 / 32 ビット幅、自動の試験。

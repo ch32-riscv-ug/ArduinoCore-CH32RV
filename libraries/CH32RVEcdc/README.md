@@ -9,7 +9,7 @@ vectors go through as printed.
 ```cpp
 #include <CH32RVEcdc.h>
 CH32RVEcdc ecdc;
-ecdc.begin(CH32RVEcdc::AES, key, 16);     // 16, 24 or 32 bytes (SM4: 16)
+ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, 16);     // 16, 24 or 32 bytes (SM4: 16)
 ecdc.encrypt(plain, cipher, 64);          // ECB, len a multiple of 16
 ecdc.decrypt(cipher, plain, 64);
 ecdc.ctr(iv, plain, cipher, 100);         // CTR, any length; the same call decrypts

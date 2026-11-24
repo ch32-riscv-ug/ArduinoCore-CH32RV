@@ -15,7 +15,7 @@ After upload it prints something like `LPTIM at 1250 Hz` (from LSI's nominal rat
 ## When it does not work
 
 - `LPTIM begin() failed`: the series has no LPTIM (CH32L103 / M103 and CH32H41x have one).
-- The interval is far from 250 ms: that is LSI's spread. For an exact one use `CLOCK_LSE` (LSE chosen in the RTC Clock menu, on a board with the crystal).
+- The interval is far from 250 ms: that is LSI's spread. For an exact one use `CH32RVLowPowerTimerClock::Lse` (LSE chosen in the RTC Clock menu, on a board with the crystal).
 
 ## Before you run it
 

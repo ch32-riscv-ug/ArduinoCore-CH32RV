@@ -3,7 +3,7 @@
  *     #include <CH32RV.h>
  *
  *     CH32RV.restart();                       // clean software reset
- *     if (CH32RV.resetReason() == CH32RV_RESET_WATCHDOG) { ... }
+ *     if (CH32RV.resetReason() == CH32RVResetReason::Watchdog) { ... }
  *     Serial.println(CH32RV.resetReasonName());
  *     CH32RV.wdtEnable(2000);                 // reset unless fed every 2 s
  *     CH32RV.wdtFeed();                       // in loop()
@@ -30,7 +30,7 @@
  *     CH32RV.enablePinWakeup(PA1, LOW);           // or when PA1 reads LOW
  *     CH32RV.lightSleep();                        // returns after waking
  *     CH32RV.deepSleep();                         // starts again from setup()
- *     if (CH32RV.wakeupCause() == CH32RV_WAKEUP_TIMER) { ... }
+ *     if (CH32RV.wakeupCause() == CH32RVWakeupCause::Timer) { ... }
  *
  *  - lightSleep() keeps RAM and the pins' states and returns. deepSleep()
  *    starts again from setup(): in standby on the RTC families when only the
@@ -57,7 +57,7 @@
  *    V103, V20x, V205, V30x, V4x7, L103 / M103, X305 / X315 and H41x on the
  *    RTC alarm (they sleep in stop, and millis() is timed by the RTC, a pin
  *    wake included). M030's AWU counts about 150 ms at a time: what is left
- *    under that is slept in a plain WFI. CH32RV_SLEEP_UNSUPPORTED remains for
+ *    under that is slept in a plain WFI. CH32RVSleepResult::Unsupported remains for
  *    a family added later without its sleep.
  *
  * The window watchdog (WWDG), beside the independent one:
@@ -73,8 +73,8 @@
  *  - Like the IWDG it cannot be stopped once started, and its early-warning
  *    interrupt cannot be turned off. The callback runs in that interrupt one
  *    count before the reset: feed there, or record why (the reset follows).
- *  - resetReason() tells its reset (CH32RV_RESET_WINDOW_WATCHDOG) from the
- *    IWDG's (CH32RV_RESET_WATCHDOG).
+ *  - resetReason() tells its reset (CH32RVResetReason::WindowWatchdog) from the
+ *    IWDG's (CH32RVResetReason::Watchdog).
  *  - Sleeps do not feed it. Its clock stops in stop / standby, so it waits
  *    there; the parts of a sleep spent in a plain WFI (under a second on the
  *    RTC families, under 150 ms on M030) count, and reset the chip if it was
@@ -92,7 +92,7 @@
  *    next. An alarm already due runs at once. settimeofday() keeps it at its
  *    wall time.
  *  - enableAlarmWakeup(): lightSleep() / deepSleep() end at the alarm, and
- *    wakeupCause() says CH32RV_WAKEUP_ALARM when it came before the timer.
+ *    wakeupCause() says CH32RVWakeupCause::Alarm when it came before the timer.
  *    deepSleep() woken by the alarm alone is a real standby (not on X305 /
  *    X315 and H41x, which have none); the callback does not run after a
  *    standby (RAM is lost) - wakeupCause() says why it started.
@@ -115,7 +115,7 @@
  *    sleep sets for itself; it keeps the rising edge they need, and
  *    detachExtiLine() leaves the line on for them.
  *  - enableExtiLineWakeup(): lightSleep() / deepSleep() end on the line's
- *    edge too (CH32RV_WAKEUP_EXTI_LINE); deepSleep() is then a light sleep and
+ *    edge too (CH32RVWakeupCause::ExtiLine); deepSleep() is then a light sleep and
  *    a restart, as with a pin. The AWU's line is the sleeps' own and not
  *    offered.
  *  - setLowVoltageDetect(mv, cb): the PVD at the lowest threshold at or above
@@ -162,63 +162,64 @@
 #include "ch32rv_multicore.h"
 #include <time.h>
 
-/* Values mirror the meaning (not the numbers) of esp_reset_reason_t. */
 /* setPinSpeed() */
-typedef enum {
-    CH32RV_PIN_SPEED_LOW = 0,
-    CH32RV_PIN_SPEED_MEDIUM,
-    CH32RV_PIN_SPEED_HIGH,
-    CH32RV_PIN_SPEED_VERY_HIGH,
-} CH32RVPinSpeed;
+enum class CH32RVPinSpeed : uint8_t {
+    Low = 0,
+    Medium,
+    High,
+    VeryHigh,
+};
 
-typedef enum {
-    CH32RV_RESET_UNKNOWN = 0,
-    CH32RV_RESET_POWERON,        /* power came up                        */
-    CH32RV_RESET_EXTERNAL,       /* the NRST pin                         */
-    CH32RV_RESET_SOFTWARE,       /* CH32RV.restart()                       */
-    CH32RV_RESET_WATCHDOG,       /* the independent watchdog bit         */
-    CH32RV_RESET_WINDOW_WATCHDOG,
-    CH32RV_RESET_LOW_POWER,
-    CH32RV_RESET_PANIC,          /* the core reset itself: the Stack Check menu saw an overflow */
-    CH32RV_RESET_DEEPSLEEP,      /* woke from deepSleep()'s standby (ESP_RST_DEEPSLEEP); where
-                                  * deepSleep() is a light sleep and a restart, SOFTWARE */
-} CH32RVResetReason;
+/* resetReason(): the meaning (not the numbers) of esp_reset_reason_t. */
+enum class CH32RVResetReason : uint8_t {
+    Unknown = 0,
+    PowerOn,                     /* power came up                        */
+    External,                    /* the NRST pin                         */
+    Software,                    /* CH32RV.restart()                     */
+    Watchdog,                    /* the independent watchdog bit         */
+    WindowWatchdog,
+    LowPower,
+    Panic,                       /* the core reset itself: the Stack Check menu saw an overflow */
+    DeepSleep,                   /* woke from deepSleep()'s standby (ESP_RST_DEEPSLEEP); where
+                                  * deepSleep() is a light sleep and a restart, Software */
+};
 
-typedef enum {
-    CH32RV_SLEEP_OK,                 /* slept and woke                      */
-    CH32RV_SLEEP_NO_WAKEUP_SOURCE,   /* nothing enabled that could wake it  */
-    CH32RV_SLEEP_UNSUPPORTED,        /* not on this family (yet)            */
-} CH32RVSleepResult;
+/* lightSleep() / deepSleep() */
+enum class CH32RVSleepResult : uint8_t {
+    Ok = 0,                      /* slept and woke                      */
+    NoWakeupSource,              /* nothing enabled that could wake it  */
+    Unsupported,                 /* not on this family                  */
+};
 
-/* ESP32's esp_sleep_wakeup_cause_t, for the sources this core has. */
-typedef enum {
-    CH32RV_WAKEUP_UNDEFINED,         /* not woken from sleep (a reset)      */
-    CH32RV_WAKEUP_TIMER,
-    CH32RV_WAKEUP_PIN,
-    CH32RV_WAKEUP_ALARM,             /* the RTC alarm (enableAlarmWakeup()) */
-    CH32RV_WAKEUP_EXTI_LINE,         /* an EXTI line (enableExtiLineWakeup()) */
-} CH32RVWakeupCause;
+/* wakeupCause(): ESP32's esp_sleep_wakeup_cause_t, for the sources this core has. */
+enum class CH32RVWakeupCause : uint8_t {
+    Undefined = 0,               /* not woken from sleep (a reset)      */
+    Timer,
+    Pin,
+    Alarm,                       /* the RTC alarm (enableAlarmWakeup()) */
+    ExtiLine,                    /* an EXTI line (enableExtiLineWakeup()) */
+};
 
-/* What the RTC counts. */
-typedef enum {
-    CH32RV_RTC_CLOCK_NONE,       /* no RTC on this series                  */
-    CH32RV_RTC_CLOCK_LSI,        /* the internal oscillator, measured      */
-    CH32RV_RTC_CLOCK_LSE,        /* the 32.768 kHz crystal (RTC Clock menu) */
-} CH32RVRtcClock;
+/* rtcClock(): what the RTC counts. */
+enum class CH32RVRtcClock : uint8_t {
+    None = 0,                    /* no RTC on this series                  */
+    Lsi,                         /* the internal oscillator, measured      */
+    Lse,                         /* the 32.768 kHz crystal (RTC Clock menu) */
+};
 
-/* What the RTC puts out on the TAMPER pad (PC13 on most series). */
-typedef enum {
-    CH32RV_RTC_OUTPUT_NONE,      /* the pad is a GPIO again                 */
-    CH32RV_RTC_OUTPUT_CLOCK,     /* the RTC clock / 64: 512 Hz from the LSE */
-    CH32RV_RTC_OUTPUT_ALARM,     /* a pulse at the alarm                    */
-    CH32RV_RTC_OUTPUT_SECOND,    /* a pulse each second                     */
-} CH32RVRtcOutput;
+/* setRtcOutput(): what the RTC puts out on the TAMPER pad (PC13 on most series). */
+enum class CH32RVRtcOutput : uint8_t {
+    None = 0,                    /* the pad is a GPIO again                 */
+    Clock,                       /* the RTC clock / 64: 512 Hz from the LSE */
+    Alarm,                       /* a pulse at the alarm                    */
+    Second,                      /* a pulse each second                     */
+};
 
-/* Where SYSCLK comes from. */
-typedef enum {
-    CH32RV_CLOCK_SOURCE_HSI,     /* the internal oscillator               */
-    CH32RV_CLOCK_SOURCE_HSE,     /* the crystal (Clock Source menu)        */
-} CH32RVClockSource;
+/* clockSource(): where SYSCLK comes from. */
+enum class CH32RVClockSource : uint8_t {
+    Hsi = 0,                     /* the internal oscillator               */
+    Hse,                         /* the crystal (Clock Source menu)        */
+};
 
 namespace arduino {
 
@@ -338,7 +339,7 @@ public:
      * next sleep return at once. attachInterrupt() on the same pin keeps
      * working. */
     bool enablePinWakeup(int pin, int level);
-    /* setAlarm()'s alarm ends a sleep too (CH32RV_WAKEUP_ALARM). False where
+    /* setAlarm()'s alarm ends a sleep too (CH32RVWakeupCause::Alarm). False where
      * there is no RTC. */
     bool enableAlarmWakeup();
     /* An EXTI line that is not a pin (attachExtiLine()'s; its callback kept)
@@ -443,8 +444,8 @@ public:
     }
     /* Whether the V3F has a function to run (not yet returned). */
     bool isV3FRunning() { return ch32rv_v3f_running() != 0; }
-    /* Which core is running this (true on the V3F). */
-    bool onV3F() { return ch32rv_on_v3f() != 0; }
+    /* Whether this code runs on the V3F (false on the V5F). */
+    bool isOnV3F() { return ch32rv_on_v3f() != 0; }
 #endif
 
 #if defined(CH32RV_HAS_HSEM)
@@ -465,7 +466,7 @@ public:
 
 #if defined(CH32RV_HAS_IPC)
     /* CH32H41x: one 32-bit message at a time to the other core. ipcSend() waits while the last one has not been
-     * taken (up to timeoutMs; 0 from an interrupt handler) and returns whether it went in; ipcOnReceive(cb)
+     * taken (up to timeoutMs; 0 from an interrupt handler) and returns whether it went in; onIpcReceive(cb)
      * runs cb(message) in this core's IPC interrupt for each message to it (nullptr: no more); ipcReceive()
      * takes one without a callback. With CPU Core = V3F the V5F stays asleep: all three return false. Details:
      * ch32rv_multicore.h. */
@@ -474,7 +475,7 @@ public:
         return ch32rv_ipc_send(message, timeoutMs) != 0;
     }
     bool ipcReceive(uint32_t &message) { return ch32rv_ipc_receive(&message) != 0; }
-    bool ipcOnReceive(void (*callback)(uint32_t message)) { return ch32rv_ipc_on_receive(callback) != 0; }
+    bool onIpcReceive(void (*callback)(uint32_t message)) { return ch32rv_ipc_on_receive(callback) != 0; }
 #endif
 
 private:

@@ -5,7 +5,7 @@ CH32H417 の UHSIF（Universal High-Speed Interface、最大 125 MHz・8〜32 �
 （[wch-evt-binary-libraries.ja.md](wch-evt-binary-libraries.ja.md)）。2026-11-11 の時点の結果で、**ライブラリを使わずに、
 16 本のデータ線を内部クロックで、1 サンプルも抜けずに連続して取り込めました**（SYSCLK ÷ 2 = 200 MS/s、÷ 1 = 400 MS/s
 を SRAM へ。最初のコミットの形ではバッファーごとに 8 サンプル抜けていて、直した。下の「DMA の続け方」）。これを [CH32RVUhsif](../libraries/CH32RVUhsif/README.ja.md) にまとめ、[CH32RVLogicCapture](../libraries/CH32RVLogicCapture/README.ja.md)
-の `begin(UHSIF_DATA, rate)` がそれを使います（どちらも、WCH のライブラリのコードも FX3 SDK の文も含みません）。
+の `begin(CH32RVLogicUhsif::Data, rate)` がそれを使います（どちらも、WCH のライブラリのコードも FX3 SDK の文も含みません）。
 
 調べ方:
 
@@ -146,7 +146,7 @@ socket が止まって再開を待つ間、もう片方が書いています。�
 | A1 | いつも左 | → B1（スレッド 1、+1） | — |
 | B1 | a なら右 | → A1（スレッド 1、+1） | → A0（スレッド 0、リセット、割り込み） |
 
-どの遷移もラッチして積みます。CH32RVLogicCapture の `begin(UHSIF_DATA, rate)` が、この形です。1 スレッドだけだと、
+どの遷移もラッチして積みます。CH32RVLogicCapture の `begin(CH32RVLogicUhsif::Data, rate)` が、この形です。1 スレッドだけだと、
 socket が止まっている間（割り込みで再開するまで）のサンプルが抜けます。
 
 ### 止めずに回し続ける形では、どのバッファーも最後の 16 バイトが抜ける

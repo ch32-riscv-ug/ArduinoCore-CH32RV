@@ -8,7 +8,7 @@ ECB と CTR でハードが変換します。バイトの順は規格のとお�
 ```cpp
 #include <CH32RVEcdc.h>
 CH32RVEcdc ecdc;
-ecdc.begin(CH32RVEcdc::AES, key, 16);     // 16・24・32 バイト（SM4 は 16）
+ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, 16);     // 16・24・32 バイト（SM4 は 16）
 ecdc.encrypt(plain, cipher, 64);          // ECB。長さは 16 の倍数
 ecdc.decrypt(cipher, plain, 64);
 ecdc.ctr(iv, plain, cipher, 100);         // CTR。長さは自由。同じ呼び出しで復号

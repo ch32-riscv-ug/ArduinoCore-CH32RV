@@ -6,3 +6,4 @@ bitsOf	KEYWORD2
 Surface	KEYWORD1
 setPalette	KEYWORD2
 setLayerColor	KEYWORD2
+CH32RVGphaFormat	KEYWORD1

@@ -250,7 +250,7 @@ STATUS = {
         "X033/X035はLSIが無くHSI/1024で動く(X035・L103・V103・V307で実機確認)。M030はIWDGが無い"),
     "WWDG": ("実装済", "`CH32RV.wwdgEnable/wwdgFeed`",
         "PCLK1/4096/1〜8で数える7ビットのカウンタ。タイムアウト(最大`wwdgMaxTimeoutUs()`、48 MHzで約43 ms)・窓(早すぎる餌でリセット)・早期警告の割込み(コールバック)"
-        "。`resetReason()`はCH32RV_RESET_WINDOW_WATCHDOGでIWDGと区別する。止められない。全12 familyでビルドのみ(2026-11-15、実機未確認)"),
+        "。`resetReason()`はCH32RVResetReason::WindowWatchdogでIWDGと区別する。止められない。全12 familyでビルドのみ(2026-11-15、実機未確認)"),
     "RTC": ("一部実装", "time() / settimeofday() / `CH32RV.setAlarm`",
         "V103・V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x: time()とsettimeofday()がRTC(LSIを測って1 Hz、カウンタはUNIX秒)"
         "を読み書きし、リセットとスタンバイをまたいで時刻が残る。暦はPOSIX(localtime_r/mktime)。アラームは`CH32RV.setAlarm(time_t か struct tm, callback)"
@@ -302,7 +302,7 @@ STATUS = {
     "SAI (音声)": ("未実装", "-", "TDM、SPDIF出力"),
     "SWPMI": ("未実装", "-", "NFC/UICCのSWP master"),
     "UHSIF (高速パラレル)": ("一部実装", "CH32RVUhsif(library)",
-        "8/16/32 bitの入力・内部クロックだけ(スレーブのモード、出力、外部クロックは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(UHSIF_DATA)"
+        "8/16/32 bitの入力・内部クロックだけ(スレーブのモード、出力、外部クロックは未対応)。レジスタは非公開で、実測から作った(docs/h417-uhsif.ja.md)。CH32RVLogicCaptureのbegin(CH32RVLogicUhsif::Data)"
         "が使う"),
     "SerDes": ("未実装", "-", "1.5 Gbpsの差動リンク"),
     "QSPI": ("未実装", "-", ""),

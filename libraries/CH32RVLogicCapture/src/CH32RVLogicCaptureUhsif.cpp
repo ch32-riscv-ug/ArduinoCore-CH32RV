@@ -31,7 +31,7 @@ static uint8_t uhsifDivider;
 static CH32RVUhsifClock uhsifSource;
 static uint8_t nextHalf;
 
-struct CH32RVLogicUhsif {
+struct CH32RVLogicUhsifBackend {
     static bool start(CH32RVLogicCapture &lc, uint16_t *buffer, uint32_t samples)
     {
         if (!buffer || ((uint32_t)(uintptr_t)buffer & 31u) || samples < 64u || samples > 65472u || (samples & 63u)) {
@@ -90,10 +90,10 @@ struct CH32RVLogicUhsif {
     static const CH32RVLogicCapture::Backend backend;
 };
 
-const CH32RVLogicCapture::Backend CH32RVLogicUhsif::backend = {CH32RVLogicUhsif::start, CH32RVLogicUhsif::stop,
-                                                               CH32RVLogicUhsif::end};
+const CH32RVLogicCapture::Backend CH32RVLogicUhsifBackend::backend = {CH32RVLogicUhsifBackend::start, CH32RVLogicUhsifBackend::stop,
+                                                               CH32RVLogicUhsifBackend::end};
 
-bool CH32RVLogicCapture::begin(CH32RVLogicUhsifData, uint32_t sampleRate)
+bool CH32RVLogicCapture::begin(CH32RVLogicUhsif, uint32_t sampleRate)
 {
     if (sampleRate == 0) {
         return false;
@@ -120,7 +120,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicUhsifData, uint32_t sampleRate)
         }
     }
     _rate = best;
-    setBackend(&CH32RVLogicUhsif::backend);
+    setBackend(&CH32RVLogicUhsifBackend::backend);
     _begun = true;
     return true;
 }

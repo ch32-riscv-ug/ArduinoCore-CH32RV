@@ -78,11 +78,10 @@ uint8_t CH32RVDma::channel() const
     return isAttached() ? channels[_index].line.channel : 0u;
 }
 
-void CH32RVDma::onDone(Callback cb, void *arg)
+void CH32RVDma::onDone(Callback cb)
 {
     const uint32_t irq = ch32rv_irq_save();
     _cb = cb;
-    _arg = arg;
     ch32rv_irq_restore(irq);
 }
 
@@ -145,7 +144,7 @@ void CH32RVDma::service()
     _running = false;
     __asm__ volatile ("fence rw, rw" ::: "memory");      /* the copy seen before the job is reported done */
     if (_cb) {
-        _cb(_arg);
+        _cb();
     }
 }
 

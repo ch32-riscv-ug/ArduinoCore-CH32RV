@@ -13,7 +13,7 @@
  *
  *     CH32RVOutputCompare oc;
  *     oc.begin(PA0, 1000);                     // a 1000 us period
- *     oc.set(CH32RVOutputCompare::TOGGLE, 250);   // toggles 250 us into each
+ *     oc.set(CH32RVOutputCompareMode::Toggle, 250);   // toggles 250 us into each
  *
  * Pins are a timer's pads on any route the chip offers (CH32RVTimer.h
  * ch32rv_timer_pad_find): a pad on several timers takes the first that is
@@ -130,20 +130,22 @@ private:
     bool _wide = false;
 };
 
+/* CH32RVOutputCompare::set()'s mode. */
+enum class CH32RVOutputCompareMode : uint8_t {
+    Timing = 0,          /* the pad does nothing; only the callback */
+    Active = 1,          /* high at the match */
+    Inactive = 2,        /* low at the match */
+    Toggle = 3,          /* the other level at each match */
+    ForceInactive = 4,   /* low now */
+    ForceActive = 5,     /* high now */
+};
+
 /* A channel in output-compare mode: the counter runs over a set period and,
  * at a set time into each, the pad goes active, inactive or toggles - and a
- * callback can run then. TOGGLE at any time makes a square wave of half the
+ * callback can run then. Toggle at any time makes a square wave of half the
  * period's frequency. */
 class CH32RVOutputCompare {
 public:
-    enum Mode : uint8_t {
-        TIMING = 0,          /* the pad does nothing; only the callback */
-        ACTIVE = 1,          /* high at the match */
-        INACTIVE = 2,        /* low at the match */
-        TOGGLE = 3,          /* the other level at each match */
-        FORCE_INACTIVE = 4,  /* low now */
-        FORCE_ACTIVE = 5,    /* high now */
-    };
     typedef CH32RVCallback<void()> Callback;
 
     /* pin: a channel of a timer; periodMicros: the counter's period. */
@@ -152,7 +154,7 @@ public:
     bool isAttached() const { return ch32rv_timer_lease_valid(&_lease); }
 
     /* What the pad does `atMicros` into each period (0 .. the period). */
-    bool set(Mode mode, uint32_t atMicros);
+    bool set(CH32RVOutputCompareMode mode, uint32_t atMicros);
     /* Called from the timer's interrupt at each match; nullptr for none. */
     void onMatch(Callback callback);
     /* The tick the times are rounded to, in Hz. */
@@ -173,25 +175,28 @@ private:
     bool _wide = false;
 };
 
+/* CH32RVPwmTimer::begin()'s counting: edge-aligned (up), or center-aligned
+ * (up and down: half the frequency per step, symmetric pulses). */
+enum class CH32RVPwmTimerAlign : uint8_t { Edge = 0, Center = 1 };
+
 /* Several PWM outputs of one timer on one period: the channels (CHx) and,
  * on an advanced timer, their complementary outputs (CHxN, CHx inverted),
  * edge-aligned or center-aligned (the counter runs up and down, so every
  * channel's pulse is centred on the same instant: motor drives, less ripple).
  *
  *     CH32RVPwmTimer pwm;
- *     pwm.begin(PA8, 20000, 10, CH32RVPwmTimer::CENTER);   // TIM1, 20 kHz, 10 bits
+ *     pwm.begin(PA8, 20000, 10, CH32RVPwmTimerAlign::Center);   // TIM1, 20 kHz, 10 bits
  *     pwm.attach(PA9);                                     // TIM1 CH2 too
  *     pwm.write(PA8, 256);
  *     pwm.write(PA9, 768); */
 class CH32RVPwmTimer {
 public:
-    enum Align : uint8_t { EDGE = 0, CENTER = 1 };
-
     /* pin: a channel pad (CHx or CHxN) of a timer; it picks the timer and the
      * route - the first of the pad's timers free, or `timer` (1, 2, ...) where
      * the pad reaches several and the sketch wants that one. frequency in Hz;
      * resolution: the bits write() takes (1 .. 16). */
-    bool begin(int pin, uint32_t frequency, uint8_t resolution = 8, Align align = EDGE, uint8_t timer = 0);
+    bool begin(int pin, uint32_t frequency, uint8_t resolution = 8,
+               CH32RVPwmTimerAlign align = CH32RVPwmTimerAlign::Edge, uint8_t timer = 0);
     /* Another channel pad of the same timer and route (at duty 0). */
     bool attach(int pin);
     void end();
@@ -215,7 +220,7 @@ public:
     bool startOn(int pin, int edge = RISING);
 
 private:
-    bool begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, Align align);
+    bool begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, CH32RVPwmTimerAlign align);
     bool connect(const CH32RVTimerPad &pad, bool pin = true);
     void restartCounter();
     const CH32RVTimerPad *find(int pin) const;

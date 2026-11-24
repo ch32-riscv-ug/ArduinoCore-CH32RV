@@ -23,7 +23,7 @@ void setup()
     analogWriteFrequency(PE3, 100000);
     analogWrite(PE3, 128);
     device.begin();
-    logic.begin(PORT_E, CH32RVLogicCapture::maxContinuousRate());
+    logic.begin(CH32RVLogicPort::E, CH32RVLogicCapture::maxContinuousRate());
     // en: DMA alternates between halves of one array; readBuffer() returns a completed half, not the whole array.
     // ja: DMAが一つの配列の前半と後半を交互に埋め、readBuffer()は完成した半分を返す。
     logic.startContinuous(buf, SAMPLES);

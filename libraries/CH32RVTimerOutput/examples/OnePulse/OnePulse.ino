@@ -44,7 +44,7 @@ void setup()
     //     into each 1000 us period - a 500 Hz square wave.
     // ja: 2つ目の端子で出力比較（1つ目のタイマーが使用中なら別のタイマー）: 1000 usの周期ごとに250 usで反転 - 500 Hzの矩形波。
     const int squarePin = channelPin(pulsePin);
-    if (squarePin >= 0 && square.begin(squarePin, 1000) && square.set(CH32RVOutputCompare::TOGGLE, 250)) {
+    if (squarePin >= 0 && square.begin(squarePin, 1000) && square.set(CH32RVOutputCompareMode::Toggle, 250)) {
         Serial.print("500 Hz square on ");
         printPin(squarePin);
         Serial.println();

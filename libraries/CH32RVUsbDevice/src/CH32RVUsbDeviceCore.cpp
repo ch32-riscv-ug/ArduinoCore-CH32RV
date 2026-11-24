@@ -15,7 +15,7 @@
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_deliver.h"
 #include "internal/ch32rv_service.h"
-#include "CH32RVUsbDevicePort.h"
+#include "internal/CH32RVUsbDevicePort.h"
 
 #define MAX_EP 16
 #define MAX_ITF 16

@@ -22,7 +22,7 @@ GPIO のポート 1 つ(16 本の入力)を、DMA でまとめて RAM に取り�
 
 CH32RVLogicCapture logic;
 static uint16_t buf[32768];
-logic.begin(PORT_E, 10000000);              // ポートと、1 秒あたりのサンプル数
+logic.begin(CH32RVLogicPort::E, 10000000);              // ポートと、1 秒あたりのサンプル数
 logic.startContinuous(buf, 32768);          // 16384 ずつの半分を交互に埋める
 if (const uint16_t *half = logic.readBuffer()) { ... }   // loop() から
 
@@ -58,7 +58,7 @@ H41x では、ポートの代わりに UHSIF のデータ線 16 本を指定す�
 
 ```cpp
 static uint16_t buf[32768] __attribute__((aligned(32)));
-logic.begin(UHSIF_DATA, 200000000);         // 200、160、133、120、100 … 6.25 MS/s
+logic.begin(CH32RVLogicUhsif::Data, 200000000);         // 200、160、133、120、100 … 6.25 MS/s
 logic.startContinuous(buf, 32768);          // 16384 ずつの半分を交互に埋める
 if (const uint16_t *half = logic.readBuffer()) { ... }
 ```

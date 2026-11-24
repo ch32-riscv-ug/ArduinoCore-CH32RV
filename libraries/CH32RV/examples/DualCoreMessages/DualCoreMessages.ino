@@ -47,11 +47,11 @@ void onReply(uint32_t answer)
     replied = true;
 }
 
-// en: The V3F. ipcOnReceive() set here makes the IPC interrupt the V3F's; Serial1 begun here is the V3F's too.
-// ja: V3F。ここで ipcOnReceive() を呼ぶと IPC の割り込みは V3F のものになる。ここで始めた Serial1 も V3F のもの。
+// en: The V3F. onIpcReceive() set here makes the IPC interrupt the V3F's; Serial1 begun here is the V3F's too.
+// ja: V3F。ここで onIpcReceive() を呼ぶと IPC の割り込みは V3F のものになる。ここで始めた Serial1 も V3F のもの。
 void setup1()
 {
-    CH32RV.ipcOnReceive(onRequest);
+    CH32RV.onIpcReceive(onRequest);
     Serial1.begin(115200);
 }
 
@@ -82,7 +82,7 @@ void loop1()
 void setup()
 {
     Serial.begin(115200);
-    CH32RV.ipcOnReceive(onReply);
+    CH32RV.onIpcReceive(onReply);
 }
 
 void loop()

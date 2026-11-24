@@ -85,9 +85,9 @@ static bool wait(uint32_t flag)
     return false;
 }
 
-bool CH32RVEcdc::begin(Algorithm algorithm, const uint8_t *key, size_t keyLen)
+bool CH32RVEcdc::begin(CH32RVEcdcAlgorithm algorithm, const uint8_t *key, size_t keyLen)
 {
-    if (!key || !(keyLen == 16 || (algorithm == AES && (keyLen == 24 || keyLen == 32)))) {
+    if (!key || !(keyLen == 16 || (algorithm == CH32RVEcdcAlgorithm::Aes && (keyLen == 24 || keyLen == 32)))) {
         return false;
     }
     memcpy(_key, key, keyLen);
@@ -115,7 +115,7 @@ void CH32RVEcdc::end()
 void CH32RVEcdc::expand(bool ctrMode, bool sram, bool little, const uint8_t *iv)
 {
     const uint8_t words = (uint8_t)(_keyLen / 4u);
-    _mode = clockBits() | CLOCK_EN | (_algorithm == AES ? ALGRM_AES : 0u) | (ctrMode ? CIPHER_CTR : 0u) |
+    _mode = clockBits() | CLOCK_EN | (_algorithm == CH32RVEcdcAlgorithm::Aes ? ALGRM_AES : 0u) | (ctrMode ? CIPHER_CTR : 0u) |
             KLEN(words / 2u - 2u) | (little ? 0u : DAT_BIG) | (sram ? WRSRAM_EN : 0u);
     ECDC_INT_FG = 0xFFFFFFFFu;
     ECDC_CTRL = _mode;
@@ -236,7 +236,7 @@ bool CH32RVEcdc::ctr(const uint8_t *iv, const uint8_t *in, uint8_t *out, size_t 
 
 #else
 
-bool CH32RVEcdc::begin(Algorithm, const uint8_t *, size_t) { return false; }
+bool CH32RVEcdc::begin(CH32RVEcdcAlgorithm, const uint8_t *, size_t) { return false; }
 void CH32RVEcdc::end() {}
 bool CH32RVEcdc::encrypt(const uint8_t *, uint8_t *, size_t) { return false; }
 bool CH32RVEcdc::decrypt(const uint8_t *, uint8_t *, size_t) { return false; }

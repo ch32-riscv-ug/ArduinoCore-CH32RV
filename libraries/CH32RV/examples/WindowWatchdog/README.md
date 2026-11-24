@@ -17,7 +17,7 @@ If the sketch says `Window watchdog refused`, the timeout was outside what this 
 
 The window watchdog counts the APB clock (PCLK1 / 4096 / 1-8) and allows only 63 counts, so its timeouts are milliseconds, not seconds; use `wdtEnable()` (the independent watchdog) for long ones. Both edges are exact to one count. Once started it cannot be stopped, and neither can its early warning. The callback runs in an interrupt one count before the reset: feed there to keep running, or record why, as this sketch does, in RAM the startup does not clear (`.noinit`) with a check word. Ordinary variables are reset.
 
-Feeding from a fixed timer interrupt defeats the purpose: feed where the work you want to watch has made progress. The UART output and any long wait between feeds must stay well inside the window - this sketch prints nothing while the watchdog runs. `resetReason()` tells this reset (`CH32RV_RESET_WINDOW_WATCHDOG`) from the independent watchdog's (`CH32RV_RESET_WATCHDOG`).
+Feeding from a fixed timer interrupt defeats the purpose: feed where the work you want to watch has made progress. The UART output and any long wait between feeds must stay well inside the window - this sketch prints nothing while the watchdog runs. `resetReason()` tells this reset (`CH32RVResetReason::WindowWatchdog`) from the independent watchdog's (`CH32RVResetReason::Watchdog`).
 
 ## Before running
 

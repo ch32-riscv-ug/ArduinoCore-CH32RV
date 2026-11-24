@@ -22,7 +22,7 @@ void setup() {
   lcd.setColorPins(r, g, b);
   lcd.begin(t);
   uint16_t *fb = (uint16_t *)malloc(480 * 272 * 2); // RGB565
-  lcd.layer(1, fb, CH32RV_LTDC_RGB565, 0, 0, 480, 272);
+  lcd.layer(1, fb, CH32RVLtdcFormat::Rgb565, 0, 0, 480, 272);
 }
 ```
 

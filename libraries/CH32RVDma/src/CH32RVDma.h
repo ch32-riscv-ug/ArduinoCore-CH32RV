@@ -4,7 +4,7 @@
  *     CH32RVDma dma;
  *     dma.begin();                        // a free channel of its own
  *     dma.copy(dst, src, n);              // waits
- *     dma.onDone(done);                   // done(arg) in the channel's interrupt after each background job
+ *     dma.onDone(done);                   // done() in the channel's interrupt after each background job
  *     dma.copyAsync(dst, src, n);         // returns at once; busy() / wait()
  *     dma.fill(dst, 0, n);                // n bytes of one value
  *
@@ -21,10 +21,12 @@
 #include <stdint.h>
 
 #include <Arduino.h>
+#include <CH32RVCallback.h>
 
 class CH32RVDma {
 public:
-    typedef void (*Callback)(void *arg);
+    /* A function, or a lambda capturing at most two pointers (CH32RVCallback.h). */
+    typedef CH32RVCallback<void()> Callback;
 
     bool begin();
     void end();
@@ -39,9 +41,9 @@ public:
     bool fill(void *dst, uint8_t value, size_t bytes);
     bool fillAsync(void *dst, uint8_t value, size_t bytes);
 
-    /* Called with arg in the channel's interrupt when a background job (copyAsync() / fillAsync()) ends;
-     * nullptr for none. */
-    void onDone(Callback cb, void *arg = nullptr);
+    /* Called in the channel's interrupt when a background job (copyAsync() / fillAsync()) ends; nullptr for
+     * none. */
+    void onDone(Callback cb);
     bool busy() const { return _left != 0u || _running; }
     /* Until the job ends (it is driven from here too when interrupts are masked). */
     void wait();
@@ -63,6 +65,5 @@ private:
     uint8_t _unit = 1;              /* bytes a unit */
     bool _fill = false;
     uint32_t _pattern = 0;          /* the fill's value, in every byte */
-    Callback _cb = nullptr;
-    void *_arg = nullptr;
+    Callback _cb;
 };

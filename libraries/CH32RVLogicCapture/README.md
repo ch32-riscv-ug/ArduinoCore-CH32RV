@@ -26,7 +26,7 @@ speed), and continuous capture on V003 / V103 / V205 / V307 / X035 / X315
 
 CH32RVLogicCapture logic;
 static uint16_t buf[32768];
-logic.begin(PORT_E, 10000000);              // port, samples per second
+logic.begin(CH32RVLogicPort::E, 10000000);              // port, samples per second
 logic.startContinuous(buf, 32768);          // halves of 16384, in turn
 if (const uint16_t *half = logic.readBuffer()) { ... }   // from loop()
 
@@ -68,7 +68,7 @@ continuously at up to 200 MS/s, with no CPU and no timer. It is built on
 
 ```cpp
 static uint16_t buf[32768] __attribute__((aligned(32)));
-logic.begin(UHSIF_DATA, 200000000);         // 200, 160, 133, 120, 100 ... 6.25 MS/s
+logic.begin(CH32RVLogicUhsif::Data, 200000000);         // 200, 160, 133, 120, 100 ... 6.25 MS/s
 logic.startContinuous(buf, 32768);          // halves of 16384, in turn
 if (const uint16_t *half = logic.readBuffer()) { ... }
 ```

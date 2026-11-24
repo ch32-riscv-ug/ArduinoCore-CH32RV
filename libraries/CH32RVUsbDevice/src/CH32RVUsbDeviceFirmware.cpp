@@ -4,7 +4,7 @@
  * device task, outside any USB callback: end() must not run inside one. */
 #include "internal/CH32RVUsbDeviceInternal.h"
 
-#include <ch32rv_update.h>
+#include <internal/ch32rv_update.h>
 
 static CH32RVUsbDevice *leaving;
 static uint32_t leave_at;

@@ -474,7 +474,7 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "source")) {
         /* CH32RV.clockSource() says HSE only when SystemInit() switched to
          * the crystal; the PLL flag is the setting it then ran. */
-        const int on_hse = CH32RV.clockSource() == CH32RV_CLOCK_SOURCE_HSE;
+        const int on_hse = CH32RV.clockSource() == CH32RVClockSource::Hse;
 #ifdef CH32RV_CLOCK_HSE_HZ
         const int asked = 1;
         const int use_pll = on_hse ? CH32RV_CLOCK_HSE_USE_PLL : CH32RV_CLOCK_USE_PLL;
@@ -542,7 +542,7 @@ static void reply(char *command)
         /* The RTC clock / 64 on the TAMPER pad (PC13), its rising edges read
          * back from the pad for one second: RTCOUT <ok> <edges> */
         int edges = -1;
-        const bool ok = CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_CLOCK);
+        const bool ok = CH32RV.setRtcOutput(CH32RVRtcOutput::Clock);
 #ifdef PC13
         if (ok) {
             pinMode(PC13, INPUT);
@@ -556,7 +556,7 @@ static void reply(char *command)
             }
         }
 #endif
-        CH32RV.setRtcOutput(CH32RV_RTC_OUTPUT_NONE);
+        CH32RV.setRtcOutput(CH32RVRtcOutput::None);
         CONSOLE.printf("RTCOUT %d %d\r\n", ok ? 1 : 0, edges);
 #endif
     } else if (!strcmp(argv[0], "ports")) {

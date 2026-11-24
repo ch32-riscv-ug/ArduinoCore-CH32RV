@@ -37,7 +37,7 @@ If `begin: ...` or `setup: ...` is printed, the name is `lastErrorName()`'s
 
 - With one thread, the socket stops after each buffer and loses the samples
   that come before the library's interrupt sends it on. To lose none, use
-  two threads in turn (CH32RVLogicCapture's `begin(UHSIF_DATA, rate)`).
+  two threads in turn (CH32RVLogicCapture's `begin(CH32RVLogicUhsif::Data, rate)`).
 - Buffers: a multiple of 64 bytes, 32-byte aligned.
 - Set the data counter's limit to a buffer's samples minus 2.
 - At faster clocks, keep the interrupts 20 us or more apart.

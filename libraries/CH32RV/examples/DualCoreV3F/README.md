@@ -15,7 +15,7 @@ Once a second the V5F prints how many primes the V3F has found and the last one;
 ## API and processing flow
 
 - `setup1()` / `loop1()`: when the sketch defines either, the core starts the V3F before `setup()` and runs them there, as arduino-pico does on its second core. The V3F's stack (4 KB, `CH32RV_V3F_STACK_SIZE`) is taken from the heap.
-- `CH32RV.startV3F(fn, arg, stack, size)`: without `setup1()` / `loop1()`, hand the V3F one function at a time; `CH32RV.isV3FRunning()` says when it has returned. `CH32RV.onV3F()` tells the two cores apart.
+- `CH32RV.startV3F(fn, arg, stack, size)`: without `setup1()` / `loop1()`, hand the V3F one function at a time; `CH32RV.isV3FRunning()` says when it has returned. `CH32RV.isOnV3F()` tells the two cores apart.
 - Share data through `volatile` variables with one writer each, or the A extension's atomics. The shared SRAM has no cache on either core.
 
 ## Adapting the example

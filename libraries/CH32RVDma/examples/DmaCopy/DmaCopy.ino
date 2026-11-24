@@ -6,7 +6,7 @@ CH32RVDma dma;
 alignas(4) static uint8_t source[256], target[256];   // small enough for the 2 KiB parts
 static volatile bool finished;
 
-static void done(void *)
+static void done()
 {
     finished = true;                // in the channel's interrupt
 }

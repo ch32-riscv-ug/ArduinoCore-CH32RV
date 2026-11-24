@@ -16,7 +16,7 @@ void setup()
     Serial.begin(115200);
     analogWriteFrequency(PE3, 100000);
     analogWrite(PE3, 128);
-    logic.begin(PORT_E, 10000000);
+    logic.begin(CH32RVLogicPort::E, 10000000);
 }
 
 void loop()

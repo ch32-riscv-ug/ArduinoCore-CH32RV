@@ -30,7 +30,7 @@ if (Update.end()) {
 - USB デバイスを使っているスケッチは、`USBDevice.end()` してから再起動します（コピーの間は応答しません）。
 
 詳しくは [USB ガイドのファームウェア更新](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ) と
-コアの `ch32rv_update.h` にあります。
+コアの `internal/ch32rv_update.h` にあります。
 
 ## arduino-esp32 との違い
 

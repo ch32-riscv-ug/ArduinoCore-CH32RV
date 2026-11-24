@@ -11,7 +11,7 @@
 CH32RVLowPowerTimer lpt;                    // LPTIM1（H41x の LPTIM2 は lpt2(2)）
 
 void setup() {
-  lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32);   // LSI / 32 で数える
+  lpt.begin(CH32RVLowPowerTimerClock::Lsi, 32);   // LSI / 32 で数える
   lpt.setPeriod(lpt.clockHz() / 4);         // 250 ms ごとに
   lpt.onPeriod(tick);                       // タイマーの割り込みで呼ぶ
   lpt.start();
@@ -21,7 +21,7 @@ void setup() {
 
 | 関数 | 意味 |
 |---|---|
-| `begin(clock, divider)` | 内部のクロックで数える。`CLOCK_BUS`（PCLK1。Stop では止まる）、`CLOCK_HSI`、`CLOCK_LSE`（動いているときだけ。RTC Clock メニューの LSE）、`CLOCK_LSI`（ここで起動。公称値で、数十 % ずれる）。divider は 1・2・4〜128 |
+| `begin(clock, divider)` | 内部のクロックで数える。`CH32RVLowPowerTimerClock::Bus`（PCLK1。Stop では止まる）、`CH32RVLowPowerTimerClock::Hsi`、`CH32RVLowPowerTimerClock::Lse`（動いているときだけ。RTC Clock メニューの LSE）、`CH32RVLowPowerTimerClock::Lsi`（ここで起動。公称値で、数十 % ずれる）。divider は 1・2・4〜128 |
 | `beginCounter(pin, edge, asynchronous, clock)` | CH1 の端子の縁を数える（すぐ始まる）。既定は内部のクロックで標本化（縁を落とさないが、そのクロックの速さまで）。asynchronous は端子そのものをタイマーのクロックにし、クロックが全部止まっても数えるが、start() の後の最初の縁を 5 つまで数えない（RM 17.3.9。H417 では 2〜3）。CHANGE（両縁）は標本化のときだけ |
 | `beginEncoder(pinA, pinB, clock)` | CH1 / CH2 の直交エンコーダー（両方の全部の縁、1 周期 4 カウント）。0〜周期 − 1 を上下する。clock は縁の 4 倍以上 |
 | `setPeriod(ticks)` | カウンターが ticks（1〜65536、既定 65536）ごとに 0 に戻る |

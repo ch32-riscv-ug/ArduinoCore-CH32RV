@@ -288,7 +288,7 @@ static void on_vtf(void *)
 /* ---- CH32RVDma ---- */
 static volatile uint32_t dma_callbacks;
 
-static void dma_done(void *arg)
+static void dma_done(volatile uint32_t *arg)
 {
     dma_callbacks = dma_callbacks + (arg == &dma_callbacks ? 1u : 100u);
 }
@@ -330,7 +330,7 @@ static void dma_check()
     const bool filled = dma.fill(dst + 7, 0x5A, 250) && dma_same(dst + 7, 250, dma_5a);
     memset(dst, 0xEE, sizeof dst);
     dma_callbacks = 0;
-    dma.onDone(dma_done, (void *)&dma_callbacks);
+    dma.onDone([] { dma_done(&dma_callbacks); });
     uint32_t turns = 0;
     const bool started = dma.copyAsync(dst + 4, src, 256);
     while (dma.busy()) {
@@ -679,13 +679,13 @@ static void ipc_on_v3f(uint32_t m)
 
 static void ipc_v3f(void *)
 {
-    CH32RV.ipcOnReceive(ipc_on_v3f);
+    CH32RV.onIpcReceive(ipc_on_v3f);
     cores_done = 1;
     v3f_await(5);
     cores_result[1] = CH32RV.ipcSend(0x11110000u, 100);   /* one way, to the V5F's handler */
     cores_done = 5;
     v3f_await(2);                                     /* the round trips run in the handler meanwhile */
-    CH32RV.ipcOnReceive(nullptr);
+    CH32RV.onIpcReceive(nullptr);
     cores_result[0] = CH32RV.ipcSend(0x5A5A1234u, 100);   /* to the V5F, which polls */
     cores_done = 2;
 }
@@ -713,7 +713,7 @@ static void ipc_check(uint32_t n)
         return;
     }
     cores_wait(&cores_done, 1, 1000);
-    CH32RV.ipcOnReceive(ipc_on_v5f);
+    CH32RV.onIpcReceive(ipc_on_v5f);
     cores_step = 5;
     const bool to_v5f = cores_wait(&ipc_v5f_last, 0x11110000u, 200);
     cores_wait(&cores_done, 5, 1000);
@@ -737,7 +737,7 @@ static void ipc_check(uint32_t n)
         ok++;
     }
     const uint32_t took = micros() - t0 - took_first;
-    CH32RV.ipcOnReceive(nullptr);
+    CH32RV.onIpcReceive(nullptr);
     cores_step = 2;
     cores_wait(&cores_done, 2, 1000);
     uint32_t polled = 0;
@@ -1004,7 +1004,7 @@ static void ipc_check(uint32_t)
 {
     uint32_t m;
     const int s = CH32RV.ipcSend(1, 10);
-    const int o = CH32RV.ipcOnReceive(nullptr);
+    const int o = CH32RV.onIpcReceive(nullptr);
     const int r = CH32RV.ipcReceive(m);
     CONSOLE.printf("IPC V3F %d %d %d\r\n", s, o, r);
 }
@@ -1035,22 +1035,22 @@ static void ecdcCheck()
 {
     CH32RVEcdc ecdc;
     uint8_t probe[16] = {};
-    if (!ecdc.begin(CH32RVEcdc::AES, probe, 16)) {
+    if (!ecdc.begin(CH32RVEcdcAlgorithm::Aes, probe, 16)) {
         CONSOLE.printf("ECDC NONE\r\n");
         return;
     }
     static const struct {
         const char *name;
-        CH32RVEcdc::Algorithm algorithm;
+        CH32RVEcdcAlgorithm algorithm;
         const char *key, *plain, *cipher;
     } ecb[] = {
-        {"aes128", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f", "00112233445566778899aabbccddeeff",
+        {"aes128", CH32RVEcdcAlgorithm::Aes, "000102030405060708090a0b0c0d0e0f", "00112233445566778899aabbccddeeff",
          "69c4e0d86a7b0430d8cdb78070b4c55a"},
-        {"aes192", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f1011121314151617",
+        {"aes192", CH32RVEcdcAlgorithm::Aes, "000102030405060708090a0b0c0d0e0f1011121314151617",
          "00112233445566778899aabbccddeeff", "dda97ca4864cdfe06eaf70a0ec0d7191"},
-        {"aes256", CH32RVEcdc::AES, "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        {"aes256", CH32RVEcdcAlgorithm::Aes, "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
          "00112233445566778899aabbccddeeff", "8ea2b7ca516745bfeafc49904b496089"},
-        {"sm4", CH32RVEcdc::SM4, "0123456789abcdeffedcba9876543210", "0123456789abcdeffedcba9876543210",
+        {"sm4", CH32RVEcdcAlgorithm::Sm4, "0123456789abcdeffedcba9876543210", "0123456789abcdeffedcba9876543210",
          "681edf34d206965e86b3e94f536e4246"},
     };
     alignas(32) static uint8_t key[32], plain[96], cipher[96], out[96];
@@ -1084,7 +1084,7 @@ static void ecdcCheck()
         hexIn(ecb[0].cipher, cipher + 16 * k);
     }
     memset(out, 0xEE, sizeof out);
-    check("ecb-48", ecdc.begin(CH32RVEcdc::AES, key, 16) && ecdc.encrypt(plain, out, 48) && !memcmp(out, cipher, 48) &&
+    check("ecb-48", ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, 16) && ecdc.encrypt(plain, out, 48) && !memcmp(out, cipher, 48) &&
                         out[48] == 0xEE);
     /* SP 800-38A F.5.1 */
     uint8_t iv[16];
@@ -1094,7 +1094,7 @@ static void ecdcCheck()
           "30c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710", plain);
     hexIn("874d6191b620e3261bef6864990db6ce9806f66b7970fdff8617187bb9fffdff"
           "5ae4df3edbd5d35e5b4f09020db03eab1e031dda2fbe03d1792170a0f3009cee", cipher);
-    const bool begun = ecdc.begin(CH32RVEcdc::AES, key, 16);
+    const bool begun = ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, 16);
     memset(out, 0, sizeof out);
     check("ctr", begun && ecdc.ctr(iv, plain, out, 64) && !memcmp(out, cipher, 64));
     static uint8_t shifted[68];
@@ -1129,7 +1129,7 @@ static void gphaCheck()
     alignas(4) static uint16_t fb16[16 * 8];
     alignas(4) static uint32_t fb32[16 * 8], src32[6 * 4], fg[16], bg[16];
     alignas(4) static uint16_t src16[6 * 4];
-    CH32RVGpha::Surface s16{fb16, CH32RVGpha::RGB565, 16}, s32{fb32, CH32RVGpha::ARGB8888, 16};
+    CH32RVGpha::Surface s16{fb16, CH32RVGphaFormat::Rgb565, 16}, s32{fb32, CH32RVGphaFormat::Argb8888, 16};
     for (auto &v : fb16) {
         v = 0xEEEE;
     }
@@ -1174,7 +1174,7 @@ static void gphaCheck()
     for (auto &v : fb16) {
         v = 0xEEEE;
     }
-    ok = gpha.copy(CH32RVGpha::Surface{src32, CH32RVGpha::ARGB8888, 6}, 1, 1, s16, 9, 4, 5, 3);
+    ok = gpha.copy(CH32RVGpha::Surface{src32, CH32RVGphaFormat::Argb8888, 6}, 1, 1, s16, 9, 4, 5, 3);
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 16; x++) {
             const uint16_t want = inside(x, y, 9, 4, 5, 3) ? to565(src32[(y - 4 + 1) * 6 + (x - 9 + 1)]) : 0xEEEE;
@@ -1188,7 +1188,7 @@ static void gphaCheck()
     for (auto &v : fb32) {
         v = 0xEEEEEEEE;
     }
-    ok = gpha.copy(CH32RVGpha::Surface{src16, CH32RVGpha::RGB565, 6}, 0, 0, s32, 2, 1, 6, 4);
+    ok = gpha.copy(CH32RVGpha::Surface{src16, CH32RVGphaFormat::Rgb565, 6}, 0, 0, s32, 2, 1, 6, 4);
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 16; x++) {
             const uint32_t want = inside(x, y, 2, 1, 6, 4) ? from565(src16[(y - 1) * 6 + (x - 2)]) : 0xEEEEEEEEu;
@@ -1209,7 +1209,7 @@ static void gphaCheck()
             v = 0xEEEE;
         }
         ok = gpha.setPalette(palette, 256) &&
-             gpha.copy(CH32RVGpha::Surface{idx, CH32RVGpha::L8, 6}, 0, 0, s16, 4, 2, 6, 4);
+             gpha.copy(CH32RVGpha::Surface{idx, CH32RVGphaFormat::L8, 6}, 0, 0, s16, 4, 2, 6, 4);
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 16; x++) {
                 const uint16_t want = inside(x, y, 4, 2, 6, 4) ? to565(palette[idx[(y - 2) * 6 + (x - 4)]]) : 0xEEEE;
@@ -1227,7 +1227,7 @@ static void gphaCheck()
             v = 0xEEEEEEEE;
         }
         ok = gpha.setLayerColor(0x3366CC) &&
-             gpha.copy(CH32RVGpha::Surface{alpha, CH32RVGpha::A8, 8}, 0, 0, s32, 4, 6, 8, 1);
+             gpha.copy(CH32RVGpha::Surface{alpha, CH32RVGphaFormat::A8, 8}, 0, 0, s32, 4, 6, 8, 1);
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 16; x++) {
                 const uint32_t want = inside(x, y, 4, 6, 8, 1) ? (uint32_t)alpha[x - 4] << 24 | 0x3366CCu : 0xEEEEEEEEu;
@@ -1244,7 +1244,7 @@ static void gphaCheck()
         for (auto &v : fb32) {
             v = 0xEEEEEEEE;
         }
-        ok = gpha.blend(CH32RVGpha::Surface{fg, CH32RVGpha::ARGB8888, 16}, 0, 0, CH32RVGpha::Surface{bg, CH32RVGpha::ARGB8888, 16},
+        ok = gpha.blend(CH32RVGpha::Surface{fg, CH32RVGphaFormat::Argb8888, 16}, 0, 0, CH32RVGpha::Surface{bg, CH32RVGphaFormat::Argb8888, 16},
                         0, 0, s32, 0, 3, 16, 1, global);
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 16; x++) {

@@ -15,7 +15,7 @@ V5F が 1 秒ごとに、V3F が見つけた素数の数と最後の素数を表
 ## API と処理の流れ
 
 - `setup1()` / `loop1()`: スケッチにどちらかがあれば、コアが `setup()` の前に V3F を起こし、そこで動かします（arduino-pico の 2 つ目のコアと同じ書き方）。V3F のスタック（4 KB、`CH32RV_V3F_STACK_SIZE`）はヒープから取ります。
-- `CH32RV.startV3F(fn, arg, stack, size)`: `setup1()` / `loop1()` を使わないときは、関数を 1 つずつ V3F に渡せます。戻ったかは `CH32RV.isV3FRunning()` で分かります。`CH32RV.onV3F()` でどちらのコアかが分かります。
+- `CH32RV.startV3F(fn, arg, stack, size)`: `setup1()` / `loop1()` を使わないときは、関数を 1 つずつ V3F に渡せます。戻ったかは `CH32RV.isV3FRunning()` で分かります。`CH32RV.isOnV3F()` でどちらのコアかが分かります。
 - データの受け渡しは、書く側を片方に決めた `volatile` の変数か、A 拡張の不可分命令で行います。共有 SRAM には、どちらのコアにもキャッシュがありません。
 
 ## 改造するとき

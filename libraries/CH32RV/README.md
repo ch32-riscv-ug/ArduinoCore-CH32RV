@@ -12,7 +12,7 @@ standard Arduino API.
 #include <CH32RV.h>
 
 CH32RV.restart();                        // software reset (does not return)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) / _DEEPSLEEP (woke from deepSleep()'s standby) ...
+CH32RV.resetReason();                    // CH32RVResetReason::Software / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) / _DEEPSLEEP (woke from deepSleep()'s standby) ...
 CH32RV.resetReasonName();                // "software" and so on, for printing
 CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
 CH32RV.wdtFeed();                        // call it in loop()
@@ -21,8 +21,8 @@ CH32RV.wwdgFeed();
 CH32RV.setBackupRegister(0, 42);         // 16-bit words that survive a reset (RTC families)
 CH32RV.getBackupRegister(0);
 CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // the RTC alarm, in time()'s seconds or a struct tm
-CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI (Clock Source menu)
-CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE (RTC Clock menu)
+CH32RV.clockSource();                    // CH32RVClockSource::Hse / _HSI (Clock Source menu)
+CH32RV.rtcClock();                       // CH32RVRtcClock::Lse / _LSI / _NONE (RTC Clock menu)
 CH32RV.calibrateHsi(&ppm);               // HSI against the LSE, HSITRIM set (also hsiTrim() / setHsiTrim())
 CH32RV.setClockOutput(CH32RV_MCO_HSI);    // HSI on the MCO pad (CH32RV_MCO_PIN); 0 stops it
 CH32RV.setRtcCalibration(20);            // the LSE RTC 20 ppm slower (faster when negative); setRtcOutput(): 512 Hz on TAMPER
@@ -64,7 +64,7 @@ analogReadVref();                        // the internal reference, on analogRea
   `wwdgEnable()` returns false (starting nothing) beyond it. Both edges are exact to one count: the reset
   never comes after the timeout, and a feed is always allowed from `windowUs` on. `earlyWarning` runs in
   an interrupt one count before the reset: feed there, or record why. Like the IWDG it cannot be stopped.
-  `resetReason()` says `CH32RV_RESET_WINDOW_WATCHDOG` for its reset, `CH32RV_RESET_WATCHDOG` for the
+  `resetReason()` says `CH32RVResetReason::WindowWatchdog` for its reset, `CH32RVResetReason::Watchdog` for the
   IWDG's. Sleeps do not feed it: its clock stops in stop / standby, but the plain-WFI parts of a sleep
   (under a second on the RTC families, under 150 ms on M030) count.
 - **Backup registers** are 16-bit words that survive a reset and standby: `backupRegisterCount()`,
@@ -99,7 +99,7 @@ analogReadVref();                        // the internal reference, on analogRea
   measurement may not show it. H41x, X305/X315 and V103 (whose CAL slows
   nothing, measured 2026-11-18) use the prescaler alone. Kept across resets.
   False when the RTC is on LSI (measured at its start instead).
-  `setRtcOutput(CH32RV_RTC_OUTPUT_CLOCK)` puts the RTC clock / 64 (512 Hz from
+  `setRtcOutput(CH32RVRtcOutput::Clock)` puts the RTC clock / 64 (512 Hz from
   the LSE) on the TAMPER pad (PC13); ALARM and SECOND the alarm or second
   pulse. Measure the error there and give it to `setRtcCalibration()`. H41x
   has none. Checked against an HSE crystal on V203 (CAL and prescaler), V103
@@ -135,7 +135,7 @@ CH32RV.lightSleep();                       // returns on waking; RAM and pin sta
 CH32RV.deepSleep();                        // starts again from setup() (a software restart)
 CH32RV.enableAlarmWakeup();                // or at setAlarm()'s time (RTC families)
 CH32RV.enableExtiLineWakeup(CH32RV_EXTI_PVD); // or on an EXTI line that is not a pin (below)
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
+CH32RV.wakeupCause();                      // CH32RVWakeupCause::Timer / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
 CH32RV.timeDomain();                       // moves on whenever unmeasured time was skipped
 ```
 
@@ -143,7 +143,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - V003, V00x, M030 and X033/X035, woken by the AWU. M030's AWU counts LSI / 51000, about 150 ms a count (no prescaler): a remainder under that is slept in a plain WFI, and the first sleep of a boot is up to 300 ms longer while it measures the LSI.
   - V20x, V205, V30x, V4x7, L103/M103, X305/X315 and H41x, woken by the RTC alarm; they sleep in stop. H41x's stop takes both cores: the V3F waits in it while the V5F runs the sketch; while the V3F runs (`loop1()`, a `startV3F()` function) there is no stop and the V5F waits as in a plain WFI - the clocks run and the current stays up, the wakeup time and `millis()` are right (measured 2026-11-22); return from the V3F's function first to sleep (and with the V3F build, the V5F is never started); its regulator stays in normal mode, as does X305/X315's. Its pin wakeup is not yet checked on a board.
   - V103 sleeps since 2026-11-18: its first `lightSleep(200 ms)` never returned because a plain WFI is not ended by SysTick on QingKe V3A, so the part under a second is waited out awake there (a trial sketch: 200 ms four times, 1.5 s once; the test cases wait for the probe's upload speed fix). H41x, V20x, V205, V30x and V407 were run; X305/X315 and M030 are built and not yet run.
-  - `CH32RV_SLEEP_UNSUPPORTED` remains for a family added later without its sleep.
+  - `CH32RVSleepResult::Unsupported` remains for a family added later without its sleep.
 - **On the RTC families `time()` is the RTC.**
   - It runs at 1 Hz from LSI, measured once (or from the LSE crystal with the RTC Clock menu), and the time survives resets and standby. After a power cut it starts again from 1970.
   - `settimeofday()` sets it, including through SNTP's `configTime()`.
@@ -156,7 +156,7 @@ CH32RV.timeDomain();                       // moves on whenever unmeasured time 
   - just before sleeping it stretches the IWDG to its longest;
   - it wakes every half of that to feed it, and nothing else runs;
   - on waking it puts back the `wdtEnable()` setting.
-- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x and X305/X315 (which have no standby) when only the timer or the alarm wakes it and the watchdog is off; `wakeupCause()` then says `CH32RV_WAKEUP_ALARM` when the alarm came first (the backup domain carries that), and the alarm's callback does not run (RAM was lost). Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
+- **`deepSleep()`** enters real standby (RAM lost, wakes through a reset) on the RTC families but H41x and X305/X315 (which have no standby) when only the timer or the alarm wakes it and the watchdog is off; `wakeupCause()` then says `CH32RVWakeupCause::Alarm` when the alarm came first (the backup domain carries that), and the alarm's callback does not run (RAM was lost). Otherwise it sleeps like `lightSleep()` and then restarts. `wakeupCause()` reads the cause across the restart.
 - **Size.** 0 B unless used. On V003, timer sleep adds about 1.4 KB, and pin wakeups about 0.65 KB more.
 
 The design and the measurements are in sections 4.3 and 5.1 of
@@ -178,7 +178,7 @@ CH32RV.idle();      // until the next interrupt
 
 ```cpp
 pinMode(PA1, OUTPUT);
-CH32RV.setPinSpeed(PA1, CH32RV_PIN_SPEED_LOW);   // slower edges (less noise)
+CH32RV.setPinSpeed(PA1, CH32RVPinSpeed::Low);   // slower edges (less noise)
 ```
 
 - `LOW` (2 MHz), `MEDIUM` (10 MHz, what `pinMode(OUTPUT)` sets), `HIGH` (50 MHz; 30 MHz on V003 / V00x). X305 / X315 have four steps in a SPEED register of their own (up to `VERY_HIGH`, pads 0-15).
@@ -195,7 +195,7 @@ core's (`setAlarm()`'s).
 ```cpp
 CH32RV.attachExtiLine(CH32RV_EXTI_USBFS_WAKEUP, onWake);   // RISING (or FALLING / CHANGE)
 CH32RV.triggerExtiLine(CH32RV_EXTI_USBFS_WAKEUP);          // the same interrupt from software (SWIEVR)
-CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // and it ends a sleep (CH32RV_WAKEUP_EXTI_LINE)
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // and it ends a sleep (CH32RVWakeupCause::ExtiLine)
 CH32RV.detachExtiLine(CH32RV_EXTI_USBFS_WAKEUP);
 CH32RV.setLowVoltageDetect(3000, onLow);                   // VDD fell below the threshold at or above 3000 mV
 CH32RV.isLowVoltage();                                     // below it now
@@ -320,7 +320,7 @@ shared.a = 1; shared.b = 2;          // what the two cores share
 CH32RV.hsemRelease(0);              // give it back
 if (CH32RV.hsemTryTake(1)) { ... }  // try without waiting
 
-CH32RV.ipcOnReceive(onMessage);     // onMessage(uint32_t) runs in an interrupt for each message to this core
+CH32RV.onIpcReceive(onMessage);     // onMessage(uint32_t) runs in an interrupt for each message to this core
 CH32RV.ipcSend(42);                 // to the other core (waits while its last message has not been taken)
 uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
 ```

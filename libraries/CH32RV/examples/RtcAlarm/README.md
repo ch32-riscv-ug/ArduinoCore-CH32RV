@@ -8,7 +8,7 @@ The RTC as a calendar, its alarm, sleeping until the alarm, and a backup registe
 
 1. Open the terminal and reset the board. The sketch prints the reset reason, the wakeup cause and the boot number from backup register 0 (it goes up by one at every reset).
 2. After a power cut the RTC starts at 1970: the sketch sets 2026-01-01 then. It prints the date, and every 10 seconds `Alarm at` with the date.
-3. Send `s`: the chip sleeps until the next alarm (`enableAlarmWakeup()`, `lightSleep()`) and prints the result and the wakeup cause (3, `CH32RV_WAKEUP_ALARM`).
+3. Send `s`: the chip sleeps until the next alarm (`enableAlarmWakeup()`, `lightSleep()`) and prints the result and the wakeup cause (3, `CH32RVWakeupCause::Alarm`).
 
 ## API and adaptation notes
 

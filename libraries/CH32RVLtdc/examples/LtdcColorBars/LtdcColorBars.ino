@@ -43,7 +43,7 @@ void setup()
             frame[y * 480 + x] = bars[x / 60];
         }
     }
-    lcd.layer(1, frame, CH32RV_LTDC_RGB565, 0, 0, 480, 272);
+    lcd.layer(1, frame, CH32RVLtdcFormat::Rgb565, 0, 0, 480, 272);
     Serial.printf("LTDC at %lu Hz pixel clock\n", (unsigned long)lcd.pixelClock());
 }
 

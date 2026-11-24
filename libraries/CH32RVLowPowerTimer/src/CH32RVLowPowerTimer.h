@@ -3,7 +3,7 @@
  * the pulses of a pin with every clock off, and wakes the chip.
  *
  *     CH32RVLowPowerTimer lpt;               // LPTIM1 (CH32RVLowPowerTimer lpt2(2) on H41x)
- *     lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32);   // LSI / 32 ticks
+ *     lpt.begin(CH32RVLowPowerTimerClock::Lsi, 32);   // LSI / 32 ticks
  *     lpt.setPeriod(lpt.clockHz() / 4);      // 250 ms
  *     lpt.onPeriod(tick);                    // in the timer's interrupt
  *     lpt.start();
@@ -17,9 +17,10 @@
  * on its pad: high from the compare value to the end of the period (low
  * with inverted), a PWM, or one pulse after startOnce().
  *
- * Clocks: CLOCK_BUS (PCLK1, the APB the timer is on; stops in Stop), CLOCK_HSI,
- * CLOCK_LSE (only when it runs - the RTC Clock menu's LSE), CLOCK_LSI
- * (started here; nominal, ±a few tens of %), each divided by 1, 2, 4 .. 128.
+ * Clocks (CH32RVLowPowerTimerClock): Bus (PCLK1, the APB the timer is on;
+ * stops in Stop), Hsi, Lse (only when it runs - the RTC Clock menu's LSE),
+ * Lsi (started here; nominal, ±a few tens of %), each divided by 1, 2, 4 ..
+ * 128.
  *
  * beginCounter() counts edges on the timer's CH1 pad: by default sampled by
  * an internal clock (no edge lost, at most that clock's rate); asynchronous,
@@ -42,22 +43,24 @@
 #define CH32RV_HAS_LPTIM 0
 #endif
 
+/* What the LPTIM counts (its CLKMX_SEL): Bus is PCLK1 (stops in Stop). */
+enum class CH32RVLowPowerTimerClock : uint8_t { Bus = 0, Hsi = 1, Lse = 2, Lsi = 3 };
+
 class CH32RVLowPowerTimer {
 public:
-    enum Clock : uint8_t { CLOCK_BUS = 0, CLOCK_HSI = 1, CLOCK_LSE = 2, CLOCK_LSI = 3 };
-
     explicit CH32RVLowPowerTimer(uint8_t number = 1) : _number(number) {}
     ~CH32RVLowPowerTimer() { end(); }
 
     /* Ticks of `clock` / divider (1, 2, 4 .. 128). False when the timer
      * does not exist, is someone else's, or the clock does not run. */
-    bool begin(Clock clock = CLOCK_LSI, uint8_t divider = 1);
+    bool begin(CH32RVLowPowerTimerClock clock = CH32RVLowPowerTimerClock::Lsi, uint8_t divider = 1);
     /* Edges of `pin` (the timer's CH1 pad): RISING, FALLING or CHANGE (not
      * asynchronously). Sampled by `clock` unless asynchronous. */
-    bool beginCounter(int pin, PinStatus edge = RISING, bool asynchronous = false, Clock clock = CLOCK_BUS);
+    bool beginCounter(int pin, PinStatus edge = RISING, bool asynchronous = false,
+                      CH32RVLowPowerTimerClock clock = CH32RVLowPowerTimerClock::Bus);
     /* A quadrature encoder on CH1 / CH2, sampled by `clock` (at least 4x
      * the edge rate). */
-    bool beginEncoder(int pinA, int pinB, Clock clock = CLOCK_BUS);
+    bool beginEncoder(int pinA, int pinB, CH32RVLowPowerTimerClock clock = CH32RVLowPowerTimerClock::Bus);
     void end();
 
     /* The counter wraps every `ticks` (1 .. 65536; 65536 by default). */

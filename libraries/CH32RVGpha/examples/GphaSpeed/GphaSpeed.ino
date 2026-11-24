@@ -18,8 +18,8 @@ void setup() {
   for (int i = 0; i < 64 * 64; i++) {
     picture[i] = 0xFF000000u | (uint32_t)(i * 4) << 16 | (uint32_t)(i % 64 * 4) << 8 | 0x80;
   }
-  CH32RVGpha::Surface screen{frame, CH32RVGpha::RGB565, W};
-  CH32RVGpha::Surface image{picture, CH32RVGpha::ARGB8888, 64};
+  CH32RVGpha::Surface screen{frame, CH32RVGphaFormat::Rgb565, W};
+  CH32RVGpha::Surface image{picture, CH32RVGphaFormat::Argb8888, 64};
 
   uint32_t t0 = micros();
   gpha.fill(screen, 0, 0, W, H, 0xFF2040C0);

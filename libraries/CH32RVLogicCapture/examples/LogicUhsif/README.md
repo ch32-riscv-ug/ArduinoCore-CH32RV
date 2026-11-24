@@ -34,7 +34,7 @@ PWM 390625.0 Hz, duty 25.0 %, 512.00 samples a period (halves 12238, skipped 122
 
 ## API and flow
 
-`logic.begin(UHSIF_DATA, 200000000)` picks the UHSIF data lines, and
+`logic.begin(CH32RVLogicUhsif::Data, 200000000)` picks the UHSIF data lines, and
 `startContinuous(buf, 32768)` keeps filling the two halves of 16384 samples
 in turn. `readBuffer()` returns a filled half. Bit n of a sample is DATAn.
 

@@ -108,7 +108,7 @@ bool CH32RVLogicCapture::begin(CH32RVLogicPort port, uint32_t sampleRate)
 {
     static const uint32_t present[] = {CH32RV_PORT_MASK_A, CH32RV_PORT_MASK_B, CH32RV_PORT_MASK_C,
                                        CH32RV_PORT_MASK_D, CH32RV_PORT_MASK_E, CH32RV_PORT_MASK_F};
-    if ((uint8_t)port > (uint8_t)PORT_F || !present[port] || sampleRate == 0) {
+    if ((uint8_t)port > (uint8_t)CH32RVLogicPort::F || !present[(uint8_t)port] || sampleRate == 0) {
         return false;
     }
     end();

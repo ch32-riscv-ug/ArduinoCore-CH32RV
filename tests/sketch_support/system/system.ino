@@ -183,7 +183,7 @@ static void reply(char *command)
         CH32RV.enableTimerWakeup((uint64_t)atol(argv[1]));
         CONSOLE.flush();
         const uint32_t before = millis();
-        const int result = CH32RV.lightSleep();
+        const int result = (int)CH32RV.lightSleep();
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
         CONSOLE.printf("TSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
@@ -198,7 +198,7 @@ static void reply(char *command)
         CONSOLE.printf("PSLEEP READY\r\n");
         CONSOLE.flush();
         const uint32_t before = millis();
-        const int result = CH32RV.lightSleep();
+        const int result = (int)CH32RV.lightSleep();
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
         CONSOLE.printf("PSLEEP %d %d %lu\r\n", result, (int)CH32RV.wakeupCause(), (unsigned long)slept);
@@ -209,7 +209,7 @@ static void reply(char *command)
         CH32RV.disableWakeup();
         CH32RV.enableTimerWakeup((uint64_t)atol(argv[1]));
         CONSOLE.flush();
-        const int result = CH32RV.deepSleep();
+        const int result = (int)CH32RV.deepSleep();
         digitalWrite(pin, LOW);
         CONSOLE.printf("DSLEEP %d\r\n", result);
     } else if (!strcmp(argv[0], "wwdg") && argc == 3) {
@@ -264,13 +264,13 @@ static void reply(char *command)
         pinMode(pin, OUTPUT);
         CONSOLE.flush();
         if (deep) {
-            const int result = CH32RV.deepSleep();
+            const int result = (int)CH32RV.deepSleep();
             digitalWrite(pin, LOW);
             CONSOLE.printf("ADEEP %d\r\n", result);
             return;
         }
         const uint32_t before = millis();
-        const int result = CH32RV.lightSleep();
+        const int result = (int)CH32RV.lightSleep();
         const uint32_t slept = millis() - before;
         digitalWrite(pin, LOW);
         CH32RV.disableWakeup();

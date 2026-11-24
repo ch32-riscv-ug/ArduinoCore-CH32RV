@@ -164,7 +164,7 @@ V5F は、スタックと引数、関数の順に書き、PFIC_SCTLR の SETEVEN
 
 関数が戻ると V3F は待ちに戻り、次の要求で同じように動きました（上の 1000 回は、毎回戻る関数）。
 
-2026-11-14: この上に API を作りました（C3 と C2）。`CH32RV.startV3F(fn, arg, stack, size)`・`isV3FRunning()`・`onV3F()`（PFIC_SCTLR の bit 16 で見分ける）と、スケッチに `setup1()` / `loop1()` があれば `setup()` の前に V3F で動かす形です（スタックは 4 KB をヒープから）。mailbox に「動いている」の語を足し、V3F の `delay()` はシステムのサービス（USB など）を回しません。待機中の V3F はストップで待つので、V5F の lightSleep() で石全体が止まります。例は libraries/CH32RV/examples/DualCoreV3F。V3F を外から止める仕組み（pico の `restartCore1()` に当たるもの）は、まだ作っていません。
+2026-11-14: この上に API を作りました（C3 と C2）。`CH32RV.startV3F(fn, arg, stack, size)`・`isV3FRunning()`・`isOnV3F()`（PFIC_SCTLR の bit 16 で見分ける）と、スケッチに `setup1()` / `loop1()` があれば `setup()` の前に V3F で動かす形です（スタックは 4 KB をヒープから）。mailbox に「動いている」の語を足し、V3F の `delay()` はシステムのサービス（USB など）を回しません。待機中の V3F はストップで待つので、V5F の lightSleep() で石全体が止まります。例は libraries/CH32RV/examples/DualCoreV3F。V3F を外から止める仕組み（pico の `restartCore1()` に当たるもの）は、まだ作っていません。
 
 2026-11-17: V3F の関数は割り込みを有効にして動くようにし（V3F で有効にした割り込みは V3F で受ける）、HSEM（`CH32RV.hsemTake/TryTake/Release()`）と IPC（`CH32RV.ipcSend/Receive/OnReceive()`、チャネル 0 が V5F へ、1 が V3F へ）の公開 API を足しました（ch32rv_multicore.h）。複数のドライバーが共有するレジスタ（RCC のクロック許可、ポートの設定、AFIO、EXTI）は、HSEM のチャネル 31 を使うコアのロックの中で書きます（internal/ch32rv_cores.h）。V3F で使えるものと約束は CH32RV の README の「H41x の 2 つのコア」、例は DualCoreMessages。ビルドのみで、実機は selfapi の cores の 3 つの試験で確かめます。V3F のヒープ（picolibc の malloc にロックが無い）と、V3F を外から止める仕組みは残りです。
 

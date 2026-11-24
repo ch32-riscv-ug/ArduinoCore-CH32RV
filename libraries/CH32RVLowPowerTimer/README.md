@@ -11,7 +11,7 @@ The low-power timer (LPTIM): one on CH32L103 / M103, two on CH32H41x. A 16-bit c
 CH32RVLowPowerTimer lpt;                    // LPTIM1 (H41x's LPTIM2: lpt2(2))
 
 void setup() {
-  lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32);   // count LSI / 32
+  lpt.begin(CH32RVLowPowerTimerClock::Lsi, 32);   // count LSI / 32
   lpt.setPeriod(lpt.clockHz() / 4);         // every 250 ms
   lpt.onPeriod(tick);                       // called in the timer's interrupt
   lpt.start();
@@ -21,7 +21,7 @@ void setup() {
 
 | Function | Meaning |
 |---|---|
-| `begin(clock, divider)` | Counts an internal clock: `CLOCK_BUS` (PCLK1; stops in Stop), `CLOCK_HSI`, `CLOCK_LSE` (only when it runs: the RTC Clock menu's LSE), `CLOCK_LSI` (started here; nominal, off by tens of percent). divider 1, 2, 4 .. 128 |
+| `begin(clock, divider)` | Counts an internal clock: `CH32RVLowPowerTimerClock::Bus` (PCLK1; stops in Stop), `CH32RVLowPowerTimerClock::Hsi`, `CH32RVLowPowerTimerClock::Lse` (only when it runs: the RTC Clock menu's LSE), `CH32RVLowPowerTimerClock::Lsi` (started here; nominal, off by tens of percent). divider 1, 2, 4 .. 128 |
 | `beginCounter(pin, edge, asynchronous, clock)` | Counts the edges of the CH1 pad (and starts). By default sampled by an internal clock (no edge lost, up to that clock's rate); asynchronous makes the pin the timer's clock, counting with every clock off, but up to the first five edges after start() are not counted (RM 17.3.9; 2-3 on H417). CHANGE (both edges) only when sampled |
 | `beginEncoder(pinA, pinB, clock)` | A quadrature encoder on CH1 / CH2 (every edge of both, four counts a cycle), up and down between 0 and period - 1; clock at least 4x the edge rate |
 | `setPeriod(ticks)` | The counter goes back to 0 every ticks (1 .. 65536; 65536 by default) |

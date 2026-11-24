@@ -10,7 +10,7 @@ CPU はほかの仕事を続け、終わったらコールバックを呼ぶ形�
 CH32RVDma dma;
 dma.begin();                          // 空いているチャネルを 1 つ取る
 dma.copy(dst, src, n);                // 写し終わるまで待つ
-dma.onDone(done, arg);                // 裏の仕事が終わるたびに done(arg)（チャネルの割り込みの中）
+dma.onDone(done);                     // 裏の仕事が終わるたびに done()（チャネルの割り込みの中）
 dma.copyAsync(dst, src, n);           // すぐ戻る。busy() / wait()
 dma.fill(dst, 0, n);                  // n バイトを 1 つの値で
 ```
@@ -23,7 +23,7 @@ dma.fill(dst, 0, n);                  // n バイトを 1 つの値で
 | `dma()` / `channel()` | 取った DMA とチャネルの番号（取る前は 0） |
 | `copy(dst, src, bytes)` / `fill(dst, value, bytes)` | 終わるまで待つ。`begin()` の前、仕事の途中、0 バイトは false で何もしない |
 | `copyAsync(dst, src, bytes)` / `fillAsync(dst, value, bytes)` | 始めてすぐ戻る。その間 CPU は自由 |
-| `onDone(cb, arg)` | 裏の仕事が終わったら、チャネルの割り込みの中で `cb(arg)`。`nullptr` で無し。待つ形（`copy()` / `fill()`）では呼ばない |
+| `onDone(cb)` | 裏の仕事が終わったら、チャネルの割り込みの中で `cb()`。関数か、小さくキャプチャするラムダ（`[&buf]` など。CH32RVCallback）。`nullptr` で無し。待つ形（`copy()` / `fill()`）では呼ばない |
 | `busy()` / `wait()` / `abort()` | 動いているか、終わるまで待つ（割り込みを止めた中からでも進める）、止める（動かした分はそのまま） |
 
 - アドレス 2 つと長さがどれも 4 の倍数なら語（32 bit）、2 の倍数なら半語、それ以外はバイトで動かします。

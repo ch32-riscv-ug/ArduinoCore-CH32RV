@@ -22,13 +22,13 @@ selfsys.backup_registers: every backup word written with a pattern survives CH32
 backupRegisterCount() is 0 (no RTC domain: V003, V00x, M030, X033 / X035).
 
 selfsys.rtc_alarm: setAlarm(time() + 2) runs its callback 0.95-3.1 s later (the RTC's whole second at or after the
-time asked) and getAlarm() is 0 after it; lightSleep() with enableAlarmWakeup() returns CH32RV_WAKEUP_ALARM with
+time asked) and getAlarm() is 0 after it; lightSleep() with enableAlarmWakeup() returns CH32RVWakeupCause::Alarm with
 millis() moved as long. n/a where setAlarm() refuses (no RTC); the sleep half is n/a (recorded, the callback still
-judged) where lightSleep() answers CH32RV_SLEEP_UNSUPPORTED (none since V103 sleeps, 2026-11-18).
+judged) where lightSleep() answers CH32RVSleepResult::Unsupported (none since V103 sleeps, 2026-11-18).
 
-selfsys.light_sleep: lightSleep() with a timer wake after 200 ms returns CH32RV_SLEEP_OK, wakeupCause() is
-CH32RV_WAKEUP_TIMER and millis() moved 150-400 ms across it; a family that cannot sleep says
-CH32RV_SLEEP_UNSUPPORTED and skips. deepSleep() is left to the system case: a WCH-LinkE could not get a part out of
+selfsys.light_sleep: lightSleep() with a timer wake after 200 ms returns CH32RVSleepResult::Ok, wakeupCause() is
+CH32RVWakeupCause::Timer and millis() moved 150-400 ms across it; a family that cannot sleep says
+CH32RVSleepResult::Unsupported and skips. deepSleep() is left to the system case: a WCH-LinkE could not get a part out of
 standby again (2026-10).
 
 selfsys.tone / servo: on the first free pad (not kept off, not held), tone(1000 Hz) gives 100 periods in 100 ms
@@ -359,7 +359,7 @@ def test_rtc_alarm(dut, ready, record_property):
     r, cause, slept = int(m.group(2)), int(m.group(3)), int(m.group(4))
     if r == SLEEP_UNSUPPORTED:
         # The alarm and its callback are checked above; the sleep half is the family's sleep.
-        record_property("asleep_skipped", "n/a: lightSleep() unsupported on this family (CH32RV_SLEEP_UNSUPPORTED)")
+        record_property("asleep_skipped", "n/a: lightSleep() unsupported on this family (CH32RVSleepResult::Unsupported)")
         return
     assert r == SLEEP_OK and cause == WAKEUP_ALARM, f"lightSleep() {r}, wakeupCause() {cause}"
     assert 900 <= slept <= 3200, f"millis() moved {slept} ms across a sleep to an alarm 2 s on"

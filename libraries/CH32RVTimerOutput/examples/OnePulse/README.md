@@ -15,7 +15,7 @@ Every 100 ms the pulse pin goes high for 20 µs, 50 µs after `fire()`. The seco
 ## API and adaptation
 
 - `fire(delayMicros, widthMicros)` starts one pulse now; it is false while one is still running (`busy()`). `begin(pin, HIGH, triggerPin, RISING)` makes an edge on another pin of the same timer (its channel 1 or 2) start the pulse in hardware instead.
-- `CH32RVOutputCompare::set(mode, atMicros)` takes `ACTIVE`, `INACTIVE`, `TOGGLE`, `FORCE_ACTIVE`, `FORCE_INACTIVE` or `TIMING`; `onMatch()` runs a callback at each match.
+- `CH32RVOutputCompare::set(mode, atMicros)` takes `CH32RVOutputCompareMode::Active`, `CH32RVOutputCompareMode::Inactive`, `CH32RVOutputCompareMode::Toggle`, `CH32RVOutputCompareMode::ForceActive`, `CH32RVOutputCompareMode::ForceInactive` or `CH32RVOutputCompareMode::Timing`; `onMatch()` runs a callback at each match.
 
 ## Before running
 

@@ -1,8 +1,8 @@
 """system (case system): CH32RV's chip-level calls - the reset reasons, the independent watchdog and the sleeps
 (tests/sketch_support/system/system.ino).
 
-- system.reset-reasons: CH32RV.restart() boots with CH32RV_RESET_SOFTWARE, the probe pulling NRST low with
-  CH32RV_RESET_EXTERNAL (resetReason(), as the sketch's READY reports it).
+- system.reset-reasons: CH32RV.restart() boots with CH32RVResetReason::Software, the probe pulling NRST low with
+  CH32RVResetReason::External (resetReason(), as the sketch's READY reports it).
 - system.watchdog and system.sleep (test_watchdog, test_sleep: a capture each) use two `<port>@<pad>` lines the probe labels (bench_lines.py gpio_lines): the
   first is the sketch's timing line, held low by the probe's input pull-down when the DUT lets it go, the second
   the wake line, which the probe drives. One capture of both, a WireSkein section per condition. The timing line is
@@ -12,26 +12,26 @@
   - watchdog: wdtEnable(ms) fed every 50 ms for 600 ms (no reset meanwhile: FED comes back), then not fed; the
     high time is the timeout - within -7 % / +3 % of ms on X033 / X035, whose IWDG runs from HSI / 1024 (the
     conversion rounds down, 46 for 46.875 ticks a millisecond), -60 % / +70 % elsewhere (the LSI is specified that
-    loosely); the next boot says CH32RV_RESET_WATCHDOG.
-  - sleep: lightSleep() woken by the timer after 200 ms (CH32RV_SLEEP_OK, CH32RV_WAKEUP_TIMER, millis() across it
+    loosely); the next boot says CH32RVResetReason::Watchdog.
+  - sleep: lightSleep() woken by the timer after 200 ms (CH32RVSleepResult::Ok, CH32RVWakeupCause::Timer, millis() across it
     within 20 % of the high time, the high time within 50 % of 200 ms); lightSleep() woken by the wake line going
-    low 200 ms after the sketch says it sleeps (CH32RV_WAKEUP_PIN, the high time 0.15 .. 2 s); deepSleep() woken by
-    the timer after 200 ms (the next boot says CH32RV_WAKEUP_TIMER; the pin's high time is judged only where deepSleep()
+    low 200 ms after the sketch says it sleeps (CH32RVWakeupCause::Pin, the high time 0.15 .. 2 s); deepSleep() woken by
+    the timer after 200 ms (the next boot says CH32RVWakeupCause::Timer; the pin's high time is judged only where deepSleep()
     is a light sleep and a restart - a real standby lets the pads go and its RTC alarm counts whole seconds). A family that cannot sleep answers
-    CH32RV_SLEEP_UNSUPPORTED, and test_sleep is skipped there (the answer recorded); a family whose wdtEnable() refuses
+    CH32RVSleepResult::Unsupported, and test_sleep is skipped there (the answer recorded); a family whose wdtEnable() refuses
     skips test_watchdog the same way.
 - system.window-watchdog (test_window_watchdog, the same two lines and capture): wwdgEnable(T, T / 2) with
   T = min(wwdgMaxTimeoutUs(), 40 ms) - the DUT's own ceiling, asked of it - fed every 3T/4 for 300 ms inside the
   window, then the timing line goes high at the last feed and (late) nothing feeds it, or (early) one more feed
-  comes T/8 after it, before the window opens. Either way the next boot says CH32RV_RESET_WINDOW_WATCHDOG (never
+  comes T/8 after it, before the window opens. Either way the next boot says CH32RVResetReason::WindowWatchdog (never
   the IWDG's), the early-warning callback ran once before the late reset and never before the early one, and the
   high time is T to one count (a count is at most wwdgMaxTimeoutUs() / 63; the reset never comes after T) or T/8.
 - system.backup-registers (test_backup_registers, no lines): every backup word written with a pattern, then
   CH32RV.restart(): the next boot reads all of them back. n/a where backupRegisterCount() is 0 (no RTC domain).
 - system.rtc-alarm (test_rtc_alarm, the same two lines and capture): setAlarm(time() + 2 s) with a callback that lets
   the timing line low (high 1-3 s: the alarm is the RTC's whole second at or after the time asked, getAlarm() 0
-  after it); lightSleep() with enableAlarmWakeup() (CH32RV_WAKEUP_ALARM, the same high time, millis() across it
-  within 20 % of it); deepSleep() the same (the next boot says CH32RV_WAKEUP_ALARM; its high time judged only where
+  after it); lightSleep() with enableAlarmWakeup() (CH32RVWakeupCause::Alarm, the same high time, millis() across it
+  within 20 % of it); deepSleep() the same (the next boot says CH32RVWakeupCause::Alarm; its high time judged only where
   it is a light sleep and a restart, as for the timer). n/a where setAlarm() refuses (no RTC)."""
 import json
 import pathlib
@@ -374,7 +374,7 @@ def timed(dut, oep_host, ws_run, record_property, part):
                 wrong.append(f"{section}: millis() moved {slept:.3f} s across a {high:.3f} s sleep")
     assert not wrong, " | ".join(wrong)
     if facts.get("sleep") == "unsupported":
-        pytest.skip("n/a: lightSleep() answers CH32RV_SLEEP_UNSUPPORTED on this family")
+        pytest.skip("n/a: lightSleep() answers CH32RVSleepResult::Unsupported on this family")
     if part == "watchdog" and all(v == "wdtEnable() refused" for v in facts.values()):
         pytest.skip("n/a: wdtEnable() refuses on this family")
     if part == "alarm" and facts.get("alarm") == "unsupported":

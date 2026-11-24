@@ -28,7 +28,7 @@ void setup() {
   const uint8_t plain[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                              0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
   uint8_t cipher[16], back[16];
-  ecdc.begin(CH32RVEcdc::AES, key, sizeof key);
+  ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, sizeof key);
   ecdc.encrypt(plain, cipher, 16);
   // en: FIPS-197 C.1: 69C4E0D86A7B0430D8CDB78070B4C55A
   // ja: FIPS-197 の C.1: 69C4E0D86A7B0430D8CDB78070B4C55A

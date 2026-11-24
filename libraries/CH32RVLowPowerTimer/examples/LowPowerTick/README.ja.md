@@ -15,7 +15,7 @@
 ## うまくいかないとき
 
 - `LPTIM begin() failed`: その系列に LPTIM がありません（CH32L103 / M103、CH32H41x にあります）。
-- 間隔が 250 ms から大きくずれる: LSI の誤差です。正確な間隔が要るなら `CLOCK_LSE`（RTC Clock メニューで LSE を選び、水晶がある板）を使ってください。
+- 間隔が 250 ms から大きくずれる: LSI の誤差です。正確な間隔が要るなら `CH32RVLowPowerTimerClock::Lse`（RTC Clock メニューで LSE を選び、水晶がある板）を使ってください。
 
 ## 実行前の準備
 

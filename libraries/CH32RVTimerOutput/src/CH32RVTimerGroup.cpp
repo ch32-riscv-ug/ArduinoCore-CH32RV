@@ -2,7 +2,7 @@
  * timer (CH32RVTimerOutput.h). */
 #include "CH32RVTimerOutput.h"
 
-#include "TimerOutputCommon.h"
+#include "internal/TimerOutputCommon.h"
 
 using namespace ch32rv_timer_output;
 
@@ -39,7 +39,7 @@ constexpr uint8_t ROLES = CH32RV_TIMER_ROLE(CH32RV_TIMER_PAD_CH) | CH32RV_TIMER_
 
 /* ---- CH32RVPwmTimer ---- */
 
-bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Align align, uint8_t timer)
+bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, CH32RVPwmTimerAlign align, uint8_t timer)
 {
     end();
     if (frequency == 0u || resolution < 1u || resolution > 16u) {
@@ -54,7 +54,7 @@ bool CH32RVPwmTimer::begin(int pin, uint32_t frequency, uint8_t resolution, Alig
     return false;
 }
 
-bool CH32RVPwmTimer::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, Align align)
+bool CH32RVPwmTimer::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_t resolution, CH32RVPwmTimerAlign align)
 {
     const CH32RVTimerCapability *cap = ch32rv_timer_capability_for(pad.timer);
     if (!cap) {
@@ -66,14 +66,14 @@ bool CH32RVPwmTimer::begin(const CH32RVTimerPad &pad, uint32_t frequency, uint8_
         return false;
     }
     /* Center-aligned: a period is the counter up to the reload and back. */
-    const uint64_t cycles = ch32rv_timer_clock_hz(pad.timer) / frequency / (align == CENTER ? 2u : 1u);
+    const uint64_t cycles = ch32rv_timer_clock_hz(pad.timer) / frequency / (align == CH32RVPwmTimerAlign::Center ? 2u : 1u);
     uint32_t prescale, steps;
     if (!split(cycles, _wide, prescale, steps)) {
         return false;
     }
-    const uint32_t reload = align == CENTER ? steps : steps - 1u;
+    const uint32_t reload = align == CH32RVPwmTimerAlign::Center ? steps : steps - 1u;
     if (!acquire(pad, prescale, reload,
-                 (uint16_t)(CH32RV_TIM_CTLR1_ARPE | (align == CENTER ? CTLR1_CMS_CENTER1 : 0u)), &_owner, _lease)) {
+                 (uint16_t)(CH32RV_TIM_CTLR1_ARPE | (align == CH32RVPwmTimerAlign::Center ? CTLR1_CMS_CENTER1 : 0u)), &_owner, _lease)) {
         return false;
     }
     _timer = pad.timer;

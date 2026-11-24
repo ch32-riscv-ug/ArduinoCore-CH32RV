@@ -8,7 +8,7 @@ their pixel format converted, and two blended, by the hardware.
 ```cpp
 #include <CH32RVGpha.h>
 CH32RVGpha gpha;
-CH32RVGpha::Surface screen{frame, CH32RVGpha::RGB565, 320};   // pixels, format, pixels a line
+CH32RVGpha::Surface screen{frame, CH32RVGphaFormat::Rgb565, 320};   // pixels, format, pixels a line
 gpha.fill(screen, 10, 20, 100, 50, 0xFF2040C0);               // x, y, w, h, ARGB
 gpha.copy(icon, 0, 0, screen, 40, 40, 32, 32);                // 32 x 32 from icon's (0, 0) to screen's (40, 40)
 gpha.blend(sprite, 0, 0, screen, 40, 40, screen, 40, 40, 32, 32, 200);   // sprite over screen, 200/255 overall

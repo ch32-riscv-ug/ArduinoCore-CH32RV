@@ -15,7 +15,7 @@
 ## API と改造時の注意
 
 - `fire(delayMicros, widthMicros)` はパルスを今始めます。前のパルスが続いている間（`busy()`）は false です。`begin(pin, HIGH, triggerPin, RISING)` にすると、同じタイマーの別の端子（チャネル 1 か 2）のエッジでハードがパルスを始めます。
-- `CH32RVOutputCompare::set(mode, atMicros)` の mode は `ACTIVE`・`INACTIVE`・`TOGGLE`・`FORCE_ACTIVE`・`FORCE_INACTIVE`・`TIMING` です。`onMatch()` で一致ごとにコールバックを呼べます。
+- `CH32RVOutputCompare::set(mode, atMicros)` の mode は `CH32RVOutputCompareMode::Active`・`CH32RVOutputCompareMode::Inactive`・`CH32RVOutputCompareMode::Toggle`・`CH32RVOutputCompareMode::ForceActive`・`CH32RVOutputCompareMode::ForceInactive`・`CH32RVOutputCompareMode::Timing` です。`onMatch()` で一致ごとにコールバックを呼べます。
 
 ## 実行前の準備
 

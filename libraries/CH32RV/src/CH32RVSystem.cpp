@@ -85,48 +85,48 @@ CH32RVResetReason CH32RVSystem::resetReason()
         _read = true;
     }
     if (_panic) {
-        return CH32RV_RESET_PANIC;
+        return CH32RVResetReason::Panic;
     }
     /* Standby's wake leaves the power-on flag (V307), the wake-up flag only
      * (V203) or nothing (V103): the sleep code tells it from those. */
     if (&ch32rv_power_standby_woke && ch32rv_power_standby_woke) {
-        return CH32RV_RESET_DEEPSLEEP;
+        return CH32RVResetReason::DeepSleep;
     }
     /* Order matters: a watchdog or software reset also leaves the pin flag
      * set on some parts, and a power-up sets the pin flag too. The most
      * specific cause wins. */
     if (_latched & CH32RV_RST_IWDG) {
-        return CH32RV_RESET_WATCHDOG;
+        return CH32RVResetReason::Watchdog;
     }
     if (_latched & CH32RV_RST_WWDG) {
-        return CH32RV_RESET_WINDOW_WATCHDOG;
+        return CH32RVResetReason::WindowWatchdog;
     }
     if (_latched & CH32RV_RST_SFT) {
-        return CH32RV_RESET_SOFTWARE;
+        return CH32RVResetReason::Software;
     }
     if (_latched & CH32RV_RST_LPWR) {
-        return CH32RV_RESET_LOW_POWER;
+        return CH32RVResetReason::LowPower;
     }
     if (_latched & CH32RV_RST_POR) {
-        return CH32RV_RESET_POWERON;
+        return CH32RVResetReason::PowerOn;
     }
     if (_latched & CH32RV_RST_PIN) {
-        return CH32RV_RESET_EXTERNAL;
+        return CH32RVResetReason::External;
     }
-    return CH32RV_RESET_UNKNOWN;
+    return CH32RVResetReason::Unknown;
 }
 
 const char *CH32RVSystem::resetReasonName()
 {
     switch (resetReason()) {
-    case CH32RV_RESET_POWERON:         return "poweron";
-    case CH32RV_RESET_EXTERNAL:        return "external";
-    case CH32RV_RESET_SOFTWARE:        return "software";
-    case CH32RV_RESET_WATCHDOG:        return "watchdog";
-    case CH32RV_RESET_WINDOW_WATCHDOG: return "window_watchdog";
-    case CH32RV_RESET_LOW_POWER:       return "low_power";
-    case CH32RV_RESET_PANIC:           return "panic";
-    case CH32RV_RESET_DEEPSLEEP:       return "deepsleep";
+    case CH32RVResetReason::PowerOn:         return "poweron";
+    case CH32RVResetReason::External:        return "external";
+    case CH32RVResetReason::Software:        return "software";
+    case CH32RVResetReason::Watchdog:        return "watchdog";
+    case CH32RVResetReason::WindowWatchdog: return "window_watchdog";
+    case CH32RVResetReason::LowPower:       return "low_power";
+    case CH32RVResetReason::Panic:           return "panic";
+    case CH32RVResetReason::DeepSleep:       return "deepsleep";
     default:                         return "unknown";
     }
 }
@@ -188,9 +188,9 @@ void CH32RVSystem::wdtFeed()
 CH32RVRtcClock CH32RVSystem::rtcClock()
 {
     if (!ch32rv_rtc_begin()) {
-        return CH32RV_RTC_CLOCK_NONE;
+        return CH32RVRtcClock::None;
     }
-    return ch32rv_rtc_on_lse() ? CH32RV_RTC_CLOCK_LSE : CH32RV_RTC_CLOCK_LSI;
+    return ch32rv_rtc_on_lse() ? CH32RVRtcClock::Lse : CH32RVRtcClock::Lsi;
 }
 
 #if defined(CH32RV_SERIES_CH32X305) || defined(CH32RV_SERIES_CH32X315)
@@ -252,7 +252,7 @@ bool CH32RVSystem::calibrateHsi(int32_t *errorPpm)
     (void)errorPpm;
     return false;
 #else
-    if (clockSource() != CH32RV_CLOCK_SOURCE_HSI || rtcClock() != CH32RV_RTC_CLOCK_LSE) {
+    if (clockSource() != CH32RVClockSource::Hsi || rtcClock() != CH32RVRtcClock::Lse) {
         return false;
     }
     /* Walk the trim toward zero error a step at a time on short windows (a
@@ -329,9 +329,9 @@ bool CH32RVSystem::setClockOutput(uint8_t source)
 CH32RVClockSource CH32RVSystem::clockSource()
 {
 #ifdef CH32RV_CLOCK_HSE_HZ
-    return ch32rv_clock_on_hse ? CH32RV_CLOCK_SOURCE_HSE : CH32RV_CLOCK_SOURCE_HSI;
+    return ch32rv_clock_on_hse ? CH32RVClockSource::Hse : CH32RVClockSource::Hsi;
 #else
-    return CH32RV_CLOCK_SOURCE_HSI;
+    return CH32RVClockSource::Hsi;
 #endif
 }
 

@@ -21,7 +21,7 @@ void setup()
     Serial.begin(115200);
     // en: LSI / 32: about 1.2 kHz, and it keeps running while the chip sleeps
     // ja: LSI / 32: 約 1.2 kHz。石が眠っている間も動き続ける
-    if (!lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32)) {
+    if (!lpt.begin(CH32RVLowPowerTimerClock::Lsi, 32)) {
         Serial.println("LPTIM begin() failed");
         return;
     }

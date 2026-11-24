@@ -15,7 +15,7 @@
    枠は `CH32RV_IRQ_ATTACH_SLOTS`（8）。
 2. **DMA の公開 API は CH32RVDma ライブラリのクラス。** `begin()` が、ほかが持っていない（`ch32rv_dma_claim()`）うえに
    割り込みを付けられる（1）チャネルを最後から探して取る。メモリ間の `copy()` / `fill()`（待つ）と
-   `copyAsync()` / `fillAsync()`（裏で動かす）、`onDone(cb, arg)`、`busy()` / `wait()` / `abort()`。65535 単位を超える
+   `copyAsync()` / `fillAsync()`（裏で動かす）、`onDone(cb)`（CH32RVCallback）、`busy()` / `wait()` / `abort()`。65535 単位を超える
    転送は割り込みから次の分を始める。全チャネルの表は variant の `CH32RV_DMA_CHANNELS`（生成）。
 3. **H41x の 2 つのコアのヒープは、CPU Core = V5F のビルドで malloc の入口を `--wrap` で包み、ロックの中で呼ぶ。**
    ロックは、そのコアの割り込みを止めて HSEM のチャネル 30 を取る（入れ子は数えるだけ）。V3F を起こさないスケッチでは

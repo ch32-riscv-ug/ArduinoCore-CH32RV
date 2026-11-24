@@ -8,7 +8,7 @@ CH32H415 / H416 / H417 の画像用の DMA（GPHA、CH32H417RM の 44 章）を�
 ```cpp
 #include <CH32RVGpha.h>
 CH32RVGpha gpha;
-CH32RVGpha::Surface screen{frame, CH32RVGpha::RGB565, 320};   // 画素、形式、1 行の画素数
+CH32RVGpha::Surface screen{frame, CH32RVGphaFormat::Rgb565, 320};   // 画素、形式、1 行の画素数
 gpha.fill(screen, 10, 20, 100, 50, 0xFF2040C0);               // x, y, 幅, 高さ, ARGB
 gpha.copy(icon, 0, 0, screen, 40, 40, 32, 32);                // icon の (0, 0) から screen の (40, 40) へ 32 x 32
 gpha.blend(sprite, 0, 0, screen, 40, 40, screen, 40, 40, 32, 32, 200);   // sprite を screen に重ねる（全体の α 200/255）

@@ -25,7 +25,7 @@ void setup()
     Serial.begin(115200);
     analogWriteFrequency(PWM_PIN, 390625);
     analogWrite(PWM_PIN, 64);
-    if (!logic.begin(UHSIF_DATA, 200000000) || !logic.startContinuous(buf, SAMPLES)) {
+    if (!logic.begin(CH32RVLogicUhsif::Data, 200000000) || !logic.startContinuous(buf, SAMPLES)) {
         // en: Wrong board, or a buffer the UHSIF cannot use (size or alignment).
         // ja: 対象外のボードか、UHSIFが使えないバッファ(大きさか位置)。
         Serial.println("UHSIF capture did not start");

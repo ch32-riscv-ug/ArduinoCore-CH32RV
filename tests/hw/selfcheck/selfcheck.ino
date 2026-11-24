@@ -450,7 +450,7 @@ static void reply(char *command)
     } else if (!strcmp(argv[0], "source")) {
         /* CH32RV.clockSource() says HSE only when SystemInit() switched to
          * the crystal; the PLL flag is the setting it then ran. */
-        const int on_hse = CH32RV.clockSource() == CH32RV_CLOCK_SOURCE_HSE;
+        const int on_hse = CH32RV.clockSource() == CH32RVClockSource::Hse;
 #ifdef CH32RV_CLOCK_HSE_HZ
         const int asked = 1;
         const int use_pll = on_hse ? CH32RV_CLOCK_HSE_USE_PLL : CH32RV_CLOCK_USE_PLL;

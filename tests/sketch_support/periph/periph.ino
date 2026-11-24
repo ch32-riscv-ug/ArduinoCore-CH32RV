@@ -707,7 +707,7 @@ static void ltdcRun(char **argv)
         for (uint16_t &px : fb) {
             px = c;
         }
-        ok = ltdc.layer(1, fb, CH32RV_LTDC_RGB565, 0, 0, 64, 32, mode == 2 ? 0 : 255);
+        ok = ltdc.layer(1, fb, CH32RVLtdcFormat::Rgb565, 0, 0, 64, 32, mode == 2 ? 0 : 255);
     }
     CONSOLE.printf("LTDC %d %lu %08lx\r\n", ok ? 1 : 0, (unsigned long)ltdc.pixelClock(),
                    (unsigned long)CH32RV_REG32(0x40014810u));   /* GCR, for its data widths */
@@ -853,7 +853,7 @@ static void reply(char *command)
             pinMode(atoi(argv[2]), INPUT);
         } else if (!strcmp(argv[0], "lpttimer") && argc == 6) {
             CH32RVLowPowerTimer lpt((uint8_t)atoi(argv[1]));
-            bool ok = lpt.begin((CH32RVLowPowerTimer::Clock)atoi(argv[2]), (uint8_t)atoi(argv[3])) &&
+            bool ok = lpt.begin((CH32RVLowPowerTimerClock)atoi(argv[2]), (uint8_t)atoi(argv[3])) &&
                       lpt.setPeriod((uint32_t)atol(argv[4]));
             lptPeriods = 0;
             lpt.onPeriod(lptTick);
@@ -868,7 +868,7 @@ static void reply(char *command)
         } else if (!strcmp(argv[0], "lptwake") && argc == 3) {
             CH32RVLowPowerTimer lpt((uint8_t)atoi(argv[1]));
             const uint32_t ms = (uint32_t)atol(argv[2]);
-            bool ok = lpt.begin(CH32RVLowPowerTimer::CLOCK_LSI, 32);
+            bool ok = lpt.begin(CH32RVLowPowerTimerClock::Lsi, 32);
             ok = ok && lpt.setPeriod((uint32_t)((uint64_t)lpt.clockHz() * ms / 1000u));
             lptPeriods = 0;
             lpt.onPeriod(lptTick);

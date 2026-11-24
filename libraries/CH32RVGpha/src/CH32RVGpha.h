@@ -3,7 +3,7 @@
  * with their pixel format converted, or two blended into a third.
  *
  *   CH32RVGpha gpha;
- *   CH32RVGpha::Surface screen{frame, CH32RVGpha::RGB565, 320};   // pixels, format, pixels a line
+ *   CH32RVGpha::Surface screen{frame, CH32RVGphaFormat::Rgb565, 320};   // pixels, format, pixels a line
  *   gpha.fill(screen, 10, 20, 100, 50, 0xFF2040C0);               // x, y, w, h, ARGB
  *   gpha.copy(icon, screen, 0, 0, 32, 32);                         // from (0, 0) of icon to (0, 0) of screen
  *
@@ -19,24 +19,27 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+/* A surface's pixel format. Output (the destination of fill / copy / blend):
+ * Argb8888 .. Argb4444; the L / A formats only as a source. */
+enum class CH32RVGphaFormat : uint8_t {
+    Argb8888 = 0,
+    Rgb888 = 1,
+    Rgb565 = 2,
+    Argb1555 = 3,
+    Argb4444 = 4,
+    L8 = 5,
+    Al44 = 6,
+    Al88 = 7,
+    L4 = 8,
+    A8 = 9,
+    A4 = 10,
+};
+
 class CH32RVGpha {
 public:
-    enum Format : uint8_t {
-        ARGB8888 = 0,
-        RGB888 = 1,
-        RGB565 = 2,
-        ARGB1555 = 3,
-        ARGB4444 = 4,
-        L8 = 5,
-        AL44 = 6,
-        AL88 = 7,
-        L4 = 8,
-        A8 = 9,
-        A4 = 10,
-    };
     struct Surface {
         void *pixels;
-        Format format;
+        CH32RVGphaFormat format;
         uint16_t pitch;        /* pixels a line of the buffer */
     };
 
@@ -63,7 +66,7 @@ public:
     bool setLayerColor(uint32_t rgb, bool background = false);
 
     /* Bits a pixel of `format`. */
-    static uint8_t bitsOf(Format format);
+    static uint8_t bitsOf(CH32RVGphaFormat format);
 
 private:
     bool run(uint32_t mode, uint16_t w, uint16_t h);

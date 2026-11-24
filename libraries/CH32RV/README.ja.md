@@ -10,7 +10,7 @@ ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全�
 #include <CH32RV.h>
 
 CH32RV.restart();                        // ソフトウェアリセット(戻らない)
-CH32RV.resetReason();                    // CH32RV_RESET_SOFTWARE / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）/ _DEEPSLEEP（deepSleep() のスタンバイから起きた）...
+CH32RV.resetReason();                    // CH32RVResetReason::Software / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）/ _DEEPSLEEP（deepSleep() のスタンバイから起きた）...
 CH32RV.resetReasonName();                // "software" など、印字用
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
@@ -19,8 +19,8 @@ CH32RV.wwdgFeed();
 CH32RV.setBackupRegister(0, 42);         // リセットをまたいで残る16ビットの語（RTCの系列）
 CH32RV.getBackupRegister(0);
 CH32RV.setAlarm(time(nullptr) + 60, onAlarm);  // RTCのアラーム。time()の秒かstruct tmで
-CH32RV.clockSource();                    // CH32RV_CLOCK_SOURCE_HSE / _HSI（Clock Source メニュー）
-CH32RV.rtcClock();                       // CH32RV_RTC_CLOCK_LSE / _LSI / _NONE（RTC Clock メニュー）
+CH32RV.clockSource();                    // CH32RVClockSource::Hse / _HSI（Clock Source メニュー）
+CH32RV.rtcClock();                       // CH32RVRtcClock::Lse / _LSI / _NONE（RTC Clock メニュー）
 CH32RV.calibrateHsi(&ppm);               // HSI を LSE と比べて HSITRIM を合わせる（hsiTrim() / setHsiTrim() も）
 CH32RV.setClockOutput(CH32RV_MCO_HSI);    // MCO の端子（CH32RV_MCO_PIN）に HSI を出す。0 で止める
 CH32RV.setRtcCalibration(20);            // LSE の RTC を 20 ppm 遅く（負なら速く）。setRtcOutput() で 512 Hz を TAMPER に
@@ -64,7 +64,7 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
   258 ms）、それを越えると `wwdgEnable()` は何も始めずに false を返します。両端とも 1 カウントの精度で、リセットが
   タイムアウトより遅れることはなく、`windowUs` 以降の餌は必ず通ります。`earlyWarning` はリセットの 1 カウント前に
   割込みの中で呼ばれます（そこで餌をやるか、理由を残す）。IWDG と同じく止められません。`resetReason()` は
-  `CH32RV_RESET_WINDOW_WATCHDOG`（IWDG は `CH32RV_RESET_WATCHDOG`）で区別できます。休止は餌をやりません。ストップと
+  `CH32RVResetReason::WindowWatchdog`（IWDG は `CH32RVResetReason::Watchdog`）で区別できます。休止は餌をやりません。ストップと
   スタンバイではクロックが止まって待ちますが、休止の中の普通の WFI（RTC の系列で 1 秒未満、M030 で 150 ms 未満）は数えます
 - **バックアップの語**は、リセットとスタンバイをまたいで残る 16 ビットの語です。`backupRegisterCount()`、
   `getBackupRegister(i)`、`setBackupRegister(i, v)`（STM32duino の名前、0 から）。BKP の DR5 以降で（DR1〜DR4 は
@@ -90,7 +90,7 @@ analogReadVref();                        // 内部基準をanalogRead()と同じ
   BKP の CAL（0.95 ppm の単位、最大 121 ppm）で残りを合わせます。CAL は 2^20 パルス（32 秒）に 1 度まとめて効くので、
   短い時間で測ると効いて見えないことがあります。H41x・X305/X315・V103（CAL を書いても遅くならない、2026-11-18 に実測）は
   分周だけです。リセットをまたいで残ります。RTC が LSI のとき（起動時に測って合わせている）は false です。
-  `setRtcOutput(CH32RV_RTC_OUTPUT_CLOCK)` は、RTC のクロック ÷64（LSE で 512 Hz）を TAMPER 端子（PC13）に出します
+  `setRtcOutput(CH32RVRtcOutput::Clock)` は、RTC のクロック ÷64（LSE で 512 Hz）を TAMPER 端子（PC13）に出します
   （ALARM・SECOND はアラームか秒のパルス）。ずれを測って `setRtcCalibration()` に渡すのに使います。H41x にはありません。
   V203（CAL と分周）・V103・H417（分周）で、水晶の HSE を基準に頼んだとおり動くことを確かめました
 - **`rtcClock()`** が LSE を返すのは、RTC Clock メニューで 32.768 kHz の水晶（LSE）を選び、その水晶が立ったときだけです。
@@ -114,16 +114,16 @@ CH32RV.lightSleep();                       // 起きたら戻る。RAMと端子�
 CH32RV.deepSleep();                        // 起きたら setup() から（ソフトで再起動）
 CH32RV.enableAlarmWakeup();                // または setAlarm() の時刻に（RTC の系列）
 CH32RV.enableExtiLineWakeup(CH32RV_EXTI_PVD); // またはピンでない EXTI の線で（下）
-CH32RV.wakeupCause();                      // CH32RV_WAKEUP_TIMER / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
+CH32RV.wakeupCause();                      // CH32RVWakeupCause::Timer / _PIN / _ALARM / _EXTI_LINE / _UNDEFINED
 CH32RV.timeDomain();                       // 測れない時間を飛ばすたびに増える
 ```
 
-- **全系列で眠ります**（V103 は 2026-11-18 から。最初の `lightSleep(200 ms)` が戻らなかった。V103（QingKe V3A）は SysTick で WFI が終わらないので、1 秒未満の端数は起きたまま待ちます）。 V003・V00x・M030・X033/X035 は AWU で起こし、V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x は RTC のアラームで起こします（ストップで眠る。H41x のストップは両方のコアが入ったときだけ効くので、V5F がスケッチを動かす間 V3F はストップで待つ。`loop1()` などで V3F が動いている間は、ストップに入らず、V5F は普通の WFI で待つのと同じになる（クロックは止まらず電流は下がらない。起きる時刻と `millis()` は正しい。2026-11-22 に測った）。眠らせたいときは V3F の関数を戻してから眠る。V3F のビルドでは V5F を起こさない。H41x と X305/X315 のレギュレータは通常のまま。H41x の端子での起床はまだ実機で確かめていない）。M030 の AWU は LSI / 51000 で 1 カウント約 150 ms（分周の選択が無い）なので、それ未満の端数は普通の WFI で待ち、起動後最初の休止は LSI を測る分だけ最大 300 ms 長くなります。V4x7・X305/X315・M030 はビルドのみです（2026-11-15）。V103 は以前、最初の休止から起きなかったので外していました。原因は 1 秒未満の端数を待つ普通の WFI が SysTick で終わらないことでした（2026-11-18、試しのスケッチで 200 ms を 4 回・1.5 s を 1 回。試験はプローブの書き込みの速さの件が直ってから）。`CH32RV_SLEEP_UNSUPPORTED` は、休止の無いまま後から足した系列のために残しています。
+- **全系列で眠ります**（V103 は 2026-11-18 から。最初の `lightSleep(200 ms)` が戻らなかった。V103（QingKe V3A）は SysTick で WFI が終わらないので、1 秒未満の端数は起きたまま待ちます）。 V003・V00x・M030・X033/X035 は AWU で起こし、V20x・V205・V30x・V4x7・L103/M103・X305/X315・H41x は RTC のアラームで起こします（ストップで眠る。H41x のストップは両方のコアが入ったときだけ効くので、V5F がスケッチを動かす間 V3F はストップで待つ。`loop1()` などで V3F が動いている間は、ストップに入らず、V5F は普通の WFI で待つのと同じになる（クロックは止まらず電流は下がらない。起きる時刻と `millis()` は正しい。2026-11-22 に測った）。眠らせたいときは V3F の関数を戻してから眠る。V3F のビルドでは V5F を起こさない。H41x と X305/X315 のレギュレータは通常のまま。H41x の端子での起床はまだ実機で確かめていない）。M030 の AWU は LSI / 51000 で 1 カウント約 150 ms（分周の選択が無い）なので、それ未満の端数は普通の WFI で待ち、起動後最初の休止は LSI を測る分だけ最大 300 ms 長くなります。V4x7・X305/X315・M030 はビルドのみです（2026-11-15）。V103 は以前、最初の休止から起きなかったので外していました。原因は 1 秒未満の端数を待つ普通の WFI が SysTick で終わらないことでした（2026-11-18、試しのスケッチで 200 ms を 4 回・1.5 s を 1 回。試験はプローブの書き込みの速さの件が直ってから）。`CH32RVSleepResult::Unsupported` は、休止の無いまま後から足した系列のために残しています。
 - **RTC の系列では `time()` が RTC になります。** LSI を測って（RTC Clock メニューで LSE を選ぶと水晶で）1 Hz にし、リセットとスタンバイをまたいで時刻が残ります（電源が切れると 1970 から）。`settimeofday()`（SNTP の `configTime()` も）が RTC を合わせます。BKP の DR1〜DR4 はコアが使います（H41x・X305/X315 には BKP のデータレジスタが無いので RAM に置く。リセットでは残るが、VBAT の電池で電源を切ったときは RTC も始めからになる。X305/X315 にはバックアップ領域そのものが無く、RTC のクロックの設定は RTC の中にある）。
 - **自動では眠りません。** 呼んだときだけ。眠る前に `Serial` は送り終えます。
 - **`millis()` は休止の間も進んだことになります**（AWU で測った分を足す）。AWU の系列で端子で途中で起きたときは測れないので、足さずに `timeDomain()` を進めます（RTC の系列は RTC で測れる）。休止の長さの正確さ（2026-10-28、ベンチの1個ずつ）: V003 は PC の時計と0.1%以内、X035 は3%長く、V006 は10%短く眠った（起きている間に測った AWU の速さと、眠っている間の速さが違う）。
 - **WDT は休止の間は止まって見えます。** IWDG は止められないので、休止の直前に最長に延ばし、その半分ごとにコアが起きて餌をやります（ほかの処理は動かない）。起きたら `wdtEnable()` の設定に戻ります。
-- **`deepSleep()`** は、RTC の系列（スタンバイの無い H41x・X305/X315 を除く）でタイマーかアラームだけで起こし WDT が無効なら本物のスタンバイ（RAM は消え、リセットから戻る）。アラームが先に来たときは `wakeupCause()` が `CH32RV_WAKEUP_ALARM` を返し（バックアップ領域で渡す）、コールバックは呼ばれません（RAM が消えたため）。それ以外は `lightSleep()` と同じ休止のあとで再起動します。起床の理由は再起動をまたいで `wakeupCause()` で読めます。
+- **`deepSleep()`** は、RTC の系列（スタンバイの無い H41x・X305/X315 を除く）でタイマーかアラームだけで起こし WDT が無効なら本物のスタンバイ（RAM は消え、リセットから戻る）。アラームが先に来たときは `wakeupCause()` が `CH32RVWakeupCause::Alarm` を返し（バックアップ領域で渡す）、コールバックは呼ばれません（RAM が消えたため）。それ以外は `lightSleep()` と同じ休止のあとで再起動します。起床の理由は再起動をまたいで `wakeupCause()` で読めます。
 - 使わなければ0 B。タイマーの休止で約1.4 KB、端子での起床を足すと約0.65 KB増えます（V003）。
 
 設計と実測は [A の機能の全体設計](../../docs/peripheral-a-design.ja.md) の 4.3 と 5.1 にあります。
@@ -144,7 +144,7 @@ CH32RV.idle();      // 次の割り込みまで
 
 ```cpp
 pinMode(PA1, OUTPUT);
-CH32RV.setPinSpeed(PA1, CH32RV_PIN_SPEED_LOW);   // 立ち上がりを緩く（雑音を減らす）
+CH32RV.setPinSpeed(PA1, CH32RVPinSpeed::Low);   // 立ち上がりを緩く（雑音を減らす）
 ```
 
 - `LOW`（2 MHz）・`MEDIUM`（10 MHz。`pinMode(OUTPUT)` の値）・`HIGH`（50 MHz。V003 / V00x は 30 MHz）。X305 / X315 は専用の SPEED レジスタの 4 段（`VERY_HIGH` まで、端子 0〜15）。
@@ -160,7 +160,7 @@ arduino-esp32 に同じものが無いので、形はこのコアのもの（`se
 ```cpp
 CH32RV.attachExtiLine(CH32RV_EXTI_USBFS_WAKEUP, onWake);   // RISING（か FALLING / CHANGE）
 CH32RV.triggerExtiLine(CH32RV_EXTI_USBFS_WAKEUP);          // 同じ割込みをソフトウェアから（SWIEVR）
-CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // 休止もこの線で終わる（CH32RV_WAKEUP_EXTI_LINE）
+CH32RV.enableExtiLineWakeup(CH32RV_EXTI_USBFS_WAKEUP);     // 休止もこの線で終わる（CH32RVWakeupCause::ExtiLine）
 CH32RV.detachExtiLine(CH32RV_EXTI_USBFS_WAKEUP);
 CH32RV.setLowVoltageDetect(3000, onLow);                   // VDD が 3000 mV 以上の最も低い閾値を下回った
 CH32RV.isLowVoltage();                                     // 今その下にある
@@ -279,7 +279,7 @@ shared.a = 1; shared.b = 2;          // 2 つのコアで共有するもの
 CH32RV.hsemRelease(0);              // 離す
 if (CH32RV.hsemTryTake(1)) { ... }  // 待たずに試す
 
-CH32RV.ipcOnReceive(onMessage);     // このコアに届いたメッセージで onMessage(uint32_t) が割り込みで動く
+CH32RV.onIpcReceive(onMessage);     // このコアに届いたメッセージで onMessage(uint32_t) が割り込みで動く
 CH32RV.ipcSend(42);                 // 相手のコアへ（前のメッセージが取られるまで待つ）
 uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
 ```

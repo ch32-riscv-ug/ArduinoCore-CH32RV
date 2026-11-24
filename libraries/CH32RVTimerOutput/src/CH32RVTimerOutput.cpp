@@ -1,6 +1,6 @@
 #include "CH32RVTimerOutput.h"
 
-#include "TimerOutputCommon.h"
+#include "internal/TimerOutputCommon.h"
 #include "internal/ch32rv_irq.h"
 #include "internal/ch32rv_registers.h"
 
@@ -431,9 +431,9 @@ void CH32RVOutputCompare::end()
     ch32rv_timer_release(&_lease);
 }
 
-bool CH32RVOutputCompare::set(Mode mode, uint32_t atMicros)
+bool CH32RVOutputCompare::set(CH32RVOutputCompareMode mode, uint32_t atMicros)
 {
-    if (!isAttached() || mode > FORCE_ACTIVE) {
+    if (!isAttached() || mode > CH32RVOutputCompareMode::ForceActive) {
         return false;
     }
     const uint64_t at = (uint64_t)atMicros * _tickHz / 1000000u;
@@ -441,7 +441,7 @@ bool CH32RVOutputCompare::set(Mode mode, uint32_t atMicros)
         return false;
     }
     setCompare(_base, _channel, (uint32_t)at, _wide);
-    channelMode(_base, _channel, (uint8_t)(mode << 4));
+    channelMode(_base, _channel, (uint8_t)((uint8_t)mode << 4));
     return true;
 }
 

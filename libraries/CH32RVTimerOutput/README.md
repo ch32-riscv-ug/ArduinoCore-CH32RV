@@ -66,7 +66,7 @@ Both outputs are active high. On a break and after `end()` both are low.
 | Call | Meaning |
 |---|---|
 | `begin(pin, periodMicros)` | The counter runs over `periodMicros` on `pin`'s timer and channel. |
-| `set(mode, atMicros)` | `atMicros` into each period, the pad does `mode`: `ACTIVE` (high), `INACTIVE` (low), `TOGGLE`, or at once `FORCE_ACTIVE` / `FORCE_INACTIVE`; `TIMING` leaves the pad alone. `TOGGLE` makes a square wave of half the period's frequency. |
+| `set(mode, atMicros)` | `atMicros` into each period, the pad does `mode`: `CH32RVOutputCompareMode::Active` (high), `CH32RVOutputCompareMode::Inactive` (low), `CH32RVOutputCompareMode::Toggle`, or at once `CH32RVOutputCompareMode::ForceActive` / `CH32RVOutputCompareMode::ForceInactive`; `CH32RVOutputCompareMode::Timing` leaves the pad alone. `CH32RVOutputCompareMode::Toggle` makes a square wave of half the period's frequency. |
 | `onMatch(callback)` | Called from the timer's interrupt at each match; `nullptr` for none. |
 | `tickHz()`, `end()`, `isAttached()` | |
 
@@ -74,7 +74,7 @@ Both outputs are active high. On a break and after `end()` both are low.
 
 | Call | What it does |
 |---|---|
-| `begin(pin, frequency, resolution = 8, align = EDGE, timer = 0)` | starts on `pin`'s (CHx or CHxN) timer and route: the first of the pad's timers that is free, or `timer` (1, 2 ...) where the pad reaches several. `CENTER`: the counter runs up and down, every channel's pulse centred on the same instant |
+| `begin(pin, frequency, resolution = 8, align = CH32RVPwmTimerAlign::Edge, timer = 0)` | starts on `pin`'s (CHx or CHxN) timer and route: the first of the pad's timers that is free, or `timer` (1, 2 ...) where the pad reaches several. `CH32RVPwmTimerAlign::Center`: the counter runs up and down, every channel's pulse centred on the same instant |
 | `attach(pin)` | another pad of the same timer and route (at duty 0) |
 | `write(pin, duty)` | `duty / 2^resolution` high - on a CHxN pad too (its output alone follows the channel, not inverted; TIM1 / TIM8 on H417, 2026-11-23) |
 | `startWith(master)` | this timer starts when `master` does (master's TRGO on its counter's enable, this one in trigger mode); both counters restart from 0 and their periods start together. False where the chip joins the two timers by no internal trigger |

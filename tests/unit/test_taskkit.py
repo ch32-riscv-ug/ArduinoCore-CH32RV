@@ -46,7 +46,7 @@ static void nest() { mark("n"); char r[8]; snprintf(r, sizeof r, "%u", (unsigned
                      snprintf(r, sizeof r, "%u", (unsigned)other.runOnce()); mark(r); }
 static Work wa(a), wb(b), wc(c), wn(nest);
 static void ctx(void *p) { mark((const char *)p); }
-static Work wx(ctx, (void *)"x");
+static Work wx([] { ctx((void *)"x"); });
 static void quitter() { mark("q"); app.detach(*selfp); }
 static Work wq(quitter);
 
@@ -114,6 +114,8 @@ def results(tmp_path_factory):
     # The real one: plain C, nothing of the target in it.
     (work / "internal" / "ch32rv_bits.h").write_text(
         (REPO / "cores/arduino/internal/ch32rv_bits.h").read_text(encoding="utf-8"))
+    (work / "CH32RVCallback.h").write_text(
+        (REPO / "cores/arduino/CH32RVCallback.h").read_text(encoding="utf-8"))
     (work / "driver.cpp").write_text(DRIVER)
     exe = work / "driver"
     subprocess.run([cxx, "-std=gnu++17", "-Wall", "-Wextra", "-Werror", "-fsanitize=address,undefined",

@@ -15,7 +15,7 @@ namespace arduino {
 
 bool CH32RVSystem::setPinSpeed(int pin, CH32RVPinSpeed speed)
 {
-    if (pin < 0 || (unsigned)speed > (unsigned)CH32RV_PIN_SPEED_VERY_HIGH) {
+    if (pin < 0 || (unsigned)speed > (unsigned)CH32RVPinSpeed::VeryHigh) {
         return false;
     }
     pin = CH32RV_PIN_RESOLVE(pin);
@@ -43,7 +43,7 @@ bool CH32RVSystem::setPinSpeed(int pin, CH32RVPinSpeed speed)
         return false;   /* an input: no speed */
     }
     static const uint8_t mode[] = {2u, 1u, 3u, 3u};   /* low 2 MHz, medium 10 MHz, high and very high the fastest */
-    ch32rv_gpio_write_config(port, bit, (cfg & ~3u) | mode[speed]);
+    ch32rv_gpio_write_config(port, bit, (cfg & ~3u) | mode[(uint8_t)speed]);
     return true;
 #endif
 }

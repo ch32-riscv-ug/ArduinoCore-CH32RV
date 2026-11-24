@@ -338,7 +338,7 @@ static void reply(char *command)
             bits[sp] = (char)('0' + v);
         }
         pinMode(pin, INPUT);
-        const bool onInput = CH32RV.setPinSpeed(pin, CH32RV_PIN_SPEED_HIGH);
+        const bool onInput = CH32RV.setPinSpeed(pin, CH32RVPinSpeed::High);
         CONSOLE.printf("SPEED %s %s %d\r\n", oks, bits, onInput ? 1 : 0);
     } else if (!strcmp(argv[0], "idle") && argc == 2) {
         static volatile uint32_t alarms;

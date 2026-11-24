@@ -4,7 +4,7 @@
  * GB/T 32907 test vector goes in and comes out as printed.
  *
  *   CH32RVEcdc ecdc;
- *   ecdc.begin(CH32RVEcdc::AES, key, 16);     // 16, 24 or 32 bytes (SM4: 16)
+ *   ecdc.begin(CH32RVEcdcAlgorithm::Aes, key, 16);     // 16, 24 or 32 bytes (SM4: 16)
  *   ecdc.encrypt(plain, cipher, 64);          // ECB, len a multiple of 16
  *   ecdc.decrypt(cipher, plain, 64);
  *   ecdc.ctr(iv, plain, cipher, 100);         // CTR: any length; the same call decrypts
@@ -22,13 +22,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* begin()'s cipher. */
+enum class CH32RVEcdcAlgorithm : uint8_t { Sm4 = 0, Aes = 1 };
+
 class CH32RVEcdc {
 public:
-    enum Algorithm : uint8_t { SM4 = 0, AES = 1 };
-
     /* The key (keyLen 16, 24 or 32 for AES, 16 for SM4) expanded and kept;
      * false for another length or without the module. */
-    bool begin(Algorithm algorithm, const uint8_t *key, size_t keyLen);
+    bool begin(CH32RVEcdcAlgorithm algorithm, const uint8_t *key, size_t keyLen);
     /* The module's clock off. */
     void end();
 
@@ -46,7 +47,7 @@ private:
 
     uint8_t _key[32] = {};
     uint8_t _keyLen = 0;
-    Algorithm _algorithm = AES;
+    CH32RVEcdcAlgorithm _algorithm = CH32RVEcdcAlgorithm::Aes;
     bool _begun = false;
     uint32_t _mode = 0;          /* CTRL as expand() left it, the run bits off */
 };

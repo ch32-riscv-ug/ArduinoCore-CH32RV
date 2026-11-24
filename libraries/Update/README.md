@@ -31,7 +31,7 @@ if (Update.end()) {
 - A sketch running a USB device ends it first (`USBDevice.end()`): it does not answer during the copy.
 
 Details: [the USB guide's firmware update section](../../docs/usb.ja.md#ファームウェア更新dfu-のダウンロードuf2-のドライブ)
-(Japanese) and the core's `ch32rv_update.h`.
+(Japanese) and the core's `internal/ch32rv_update.h`.
 
 ## Differences from arduino-esp32
 

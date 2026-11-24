@@ -268,7 +268,7 @@ void CH32RVLtdc::end()
 bool CH32RVLtdc::layer(uint8_t n, const void *fb, CH32RVLtdcFormat format, uint16_t x, uint16_t y, uint16_t w,
                        uint16_t h, uint8_t alpha)
 {
-    if (!_begun || n < 1 || n > LAYERS || (unsigned)format > CH32RV_LTDC_AL88) {
+    if (!_begun || n < 1 || n > LAYERS || (unsigned)format > (unsigned)CH32RVLtdcFormat::Al88) {
         return false;
     }
     if (!fb || !w || !h) {
@@ -284,10 +284,10 @@ bool CH32RVLtdc::layer(uint8_t n, const void *fb, CH32RVLtdcFormat format, uint1
         clear_layer(false);   /* the sketch's layer shows the background from here */
     }
     _layers |= (uint8_t)(1u << n);
-    const uint32_t bpp = bytes_per_pixel[format];
+    const uint32_t bpp = bytes_per_pixel[(uint8_t)format];
     L(n, 0x04) = (uint32_t)(x + w) << 16 | x;              /* WHPCR: stop, start */
     L(n, 0x08) = (uint32_t)(y + h) << 16 | y;              /* WVPCR */
-    L(n, 0x10) = format;                                    /* PFCR */
+    L(n, 0x10) = (uint32_t)format;                                   /* PFCR */
     L(n, 0x14) = alpha;                                     /* CACR */
     L(n, 0x18) = 0;                                         /* DCCR */
     L(n, 0x1C) = 0x600u | 0x7u;                             /* BFCR: pixel alpha x constant alpha */

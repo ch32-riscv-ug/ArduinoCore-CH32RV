@@ -9,7 +9,7 @@ library does not use it and is built from measurements on the chip (the
 notes, in Japanese: [docs/h417-uhsif.ja.md](../../docs/h417-uhsif.ja.md)).
 
 To capture like a logic analyzer, [CH32RVLogicCapture](../CH32RVLogicCapture/README.md)'s
-`begin(UHSIF_DATA, rate)`, built on this library, is the simple way.
+`begin(CH32RVLogicUhsif::Data, rate)`, built on this library, is the simple way.
 
 ## What it does (checked on CH32H417, 2026-11-11)
 

@@ -98,10 +98,10 @@ constexpr uint8_t COUNT = sizeof(instances) / sizeof(instances[0]);
 CH32RVLowPowerTimer *owners[COUNT];
 
 /* The clock runs (LSI started here; LSE only if something started it). */
-bool clock_on(CH32RVLowPowerTimer::Clock clock)
+bool clock_on(CH32RVLowPowerTimerClock clock)
 {
     switch (clock) {
-    case CH32RVLowPowerTimer::CLOCK_LSI:
+    case CH32RVLowPowerTimerClock::Lsi:
         CH32RV_RCC_RSTSCKR |= 1u;   /* LSION */
         for (uint32_t spin = 0; !(CH32RV_RCC_RSTSCKR & 2u); spin++) {
             if (spin > 1000000u) {
@@ -109,9 +109,9 @@ bool clock_on(CH32RVLowPowerTimer::Clock clock)
             }
         }
         return true;
-    case CH32RVLowPowerTimer::CLOCK_LSE:
+    case CH32RVLowPowerTimerClock::Lse:
         return (LSE_BDCTLR & 2u) != 0;   /* LSERDY */
-    case CH32RVLowPowerTimer::CLOCK_HSI:
+    case CH32RVLowPowerTimerClock::Hsi:
         CH32RV_RCC_CTLR |= 1u;    /* HSION */
         for (uint32_t spin = 0; !(CH32RV_RCC_CTLR & 2u); spin++) {
             if (spin > 1000000u) {
@@ -124,14 +124,14 @@ bool clock_on(CH32RVLowPowerTimer::Clock clock)
     }
 }
 
-uint32_t clock_hz(CH32RVLowPowerTimer::Clock clock)
+uint32_t clock_hz(CH32RVLowPowerTimerClock clock)
 {
     switch (clock) {
-    case CH32RVLowPowerTimer::CLOCK_LSI:
+    case CH32RVLowPowerTimerClock::Lsi:
         return CH32RV_LSI_HZ;
-    case CH32RVLowPowerTimer::CLOCK_LSE:
+    case CH32RVLowPowerTimerClock::Lse:
         return 32768u;
-    case CH32RVLowPowerTimer::CLOCK_HSI:
+    case CH32RVLowPowerTimerClock::Hsi:
         return CH32RV_HSI_HZ;
     default:
         return CH32RV_PCLK1_HZ;
@@ -266,7 +266,7 @@ bool CH32RVLowPowerTimer::pad(int pin, uint8_t role)
     return false;
 }
 
-bool CH32RVLowPowerTimer::begin(Clock clock, uint8_t divider)
+bool CH32RVLowPowerTimer::begin(CH32RVLowPowerTimerClock clock, uint8_t divider)
 {
     uint8_t presc = 0;
     while (presc < 7 && (1u << presc) < divider) {
@@ -276,14 +276,14 @@ bool CH32RVLowPowerTimer::begin(Clock clock, uint8_t divider)
         return false;
     }
     _encoder = false;
-    if (!open(CFGR_CLKSEL(clock) | CFGR_PRESC(presc))) {
+    if (!open(CFGR_CLKSEL((uint32_t)clock) | CFGR_PRESC(presc))) {
         return false;
     }
     _hz = clock_hz(clock) >> presc;
     return true;
 }
 
-bool CH32RVLowPowerTimer::beginCounter(int pin, PinStatus edge, bool asynchronous, Clock clock)
+bool CH32RVLowPowerTimer::beginCounter(int pin, PinStatus edge, bool asynchronous, CH32RVLowPowerTimerClock clock)
 {
     const uint8_t pol = edge == FALLING ? 1u : edge == CHANGE ? 2u : 0u;
     if ((asynchronous && pol == 2u) || (!asynchronous && !clock_on(clock))) {
@@ -291,7 +291,7 @@ bool CH32RVLowPowerTimer::beginCounter(int pin, PinStatus edge, bool asynchronou
     }
     _encoder = false;
     const uint32_t cfgr = asynchronous ? (CFGR_CKSEL | CFGR_CKPOL(pol))
-                                       : (CFGR_COUNTMODE | CFGR_CKPOL(pol) | CFGR_CLKSEL(clock));
+                                       : (CFGR_COUNTMODE | CFGR_CKPOL(pol) | CFGR_CLKSEL((uint32_t)clock));
     if (!open(cfgr)) {
         return false;
     }
@@ -303,13 +303,13 @@ bool CH32RVLowPowerTimer::beginCounter(int pin, PinStatus edge, bool asynchronou
     return start();
 }
 
-bool CH32RVLowPowerTimer::beginEncoder(int pinA, int pinB, Clock clock)
+bool CH32RVLowPowerTimer::beginEncoder(int pinA, int pinB, CH32RVLowPowerTimerClock clock)
 {
     if (!clock_on(clock)) {
         return false;
     }
     _encoder = true;
-    if (!open(CFGR_ENC | CFGR_CKPOL(2) | CFGR_CLKSEL(clock))) {
+    if (!open(CFGR_ENC | CFGR_CKPOL(2) | CFGR_CLKSEL((uint32_t)clock))) {
         return false;
     }
     if (!pad(pinA, 0) || !pad(pinB, 1)) {

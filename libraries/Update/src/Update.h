@@ -31,7 +31,7 @@
 #include <Arduino.h>
 #include <CH32RVCallback.h>
 #include <ch32rv_flash.h>
-#include <ch32rv_update.h>
+#include <internal/ch32rv_update.h>
 
 #define UPDATE_ERROR_OK           (0)
 #define UPDATE_ERROR_WRITE        (1)

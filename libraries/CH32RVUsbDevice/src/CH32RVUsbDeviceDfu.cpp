@@ -10,7 +10,7 @@
  * restarts into the image. */
 #include "internal/CH32RVUsbDeviceInternal.h"
 
-#include <ch32rv_update.h>
+#include <internal/ch32rv_update.h>
 #include <stdlib.h>
 
 #define DFU_DNLOAD    1

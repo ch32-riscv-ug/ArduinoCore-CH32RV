@@ -4,7 +4,7 @@
  *
  *     CH32RVLogicCapture logic;
  *     static uint16_t buf[32768];
- *     logic.begin(PORT_E, 10000000);          // port, samples per second
+ *     logic.begin(CH32RVLogicPort::E, 10000000);          // port, samples per second
  *     logic.startContinuous(buf, 32768);      // halves of 16384, in turn
  *     if (const uint16_t *half = logic.readBuffer()) { ... }  // from loop()
  *
@@ -52,13 +52,12 @@
 
 #include "CH32RVTimer.h"
 
-enum CH32RVLogicPort : uint8_t { PORT_A = 0, PORT_B, PORT_C, PORT_D, PORT_E, PORT_F };
+enum class CH32RVLogicPort : uint8_t { A = 0, B, C, D, E, F };
 
 #if CH32RV_LOGIC_DMAMUX
 /* CH32H41x: the 16 UHSIF data lines instead of a port (CH32RVUhsif). Sample
  * bit n = DATAn: PD10-PD15, PF0-PF2, PC6-PC9, PA13-PA15. */
-struct CH32RVLogicUhsifData {};
-constexpr CH32RVLogicUhsifData UHSIF_DATA{};
+enum class CH32RVLogicUhsif : uint8_t { Data = 0 };
 #endif
 
 class CH32RVLogicCapture {
@@ -77,7 +76,7 @@ public:
      * must last 20 us or more (8000 samples at 200 MS/s); captureBurst() is
      * not offered (0). No timer is used. */
     static constexpr uint32_t maxUhsifRate() { return CH32RV_CLOCK_SYSCLK_HZ / 2u; }
-    bool begin(CH32RVLogicUhsifData, uint32_t sampleRate);
+    bool begin(CH32RVLogicUhsif lines, uint32_t sampleRate);
 #endif
     void end();
     uint32_t sampleRate() const { return _rate; }
@@ -102,7 +101,7 @@ public:
      * least, blocks - 1 blocks' while the reader keeps up. A reader that falls
      * blocks - 1 behind skips ahead to the oldest block still whole and the
      * skipped blocks are counted (blockOverruns()). Use readBlock() or
-     * readBuffer(), not both. The GPIO port only (false on UHSIF_DATA). */
+     * readBuffer(), not both. The GPIO port only (false on CH32RVLogicUhsif::Data). */
     bool startRing(uint16_t *buffer, uint32_t samples, uint8_t blocks);
     const uint16_t *readBlock();
     uint32_t blockSamples() const;
@@ -121,7 +120,7 @@ public:
     void isr();
 
 private:
-    friend struct CH32RVLogicUhsif;
+    friend struct CH32RVLogicUhsifBackend;
     struct Backend {
         bool (*start)(CH32RVLogicCapture &, uint16_t *, uint32_t);
         void (*stop)(CH32RVLogicCapture &);
@@ -136,7 +135,7 @@ private:
     const CH32RVTimerOwner _owner = {this, quiesce, this};   /* the manager keeps a pointer */
     CH32RVTimerLease _lease = {};
 #if CH32RV_LOGIC_DMAMUX
-    const Backend *_backend = nullptr;   /* set by begin(UHSIF_DATA, ...) */
+    const Backend *_backend = nullptr;   /* set by begin(CH32RVLogicUhsif::Data, ...) */
     void setBackend(const Backend *b) { _backend = b; }
 #else
     /* No UHSIF: no pointer either (CH32V003 has 2 KB of RAM; four more bytes

@@ -25,7 +25,7 @@ PWM 390625.0 Hz, duty 25.0 %, 512.00 samples a period (halves 12238, skipped 122
 
 ## API と処理の流れ
 
-`logic.begin(UHSIF_DATA, 200000000)` で UHSIF のデータ線を選び、`startContinuous(buf, 32768)` で 16384 サンプルずつの前半と後半を交互に埋め続けます。`readBuffer()` は埋まった半分を返します。サンプルの bit n が DATAn です。
+`logic.begin(CH32RVLogicUhsif::Data, 200000000)` で UHSIF のデータ線を選び、`startContinuous(buf, 32768)` で 16384 サンプルずつの前半と後半を交互に埋め続けます。`readBuffer()` は埋まった半分を返します。サンプルの bit n が DATAn です。
 
 ## 改造するときの注意
 

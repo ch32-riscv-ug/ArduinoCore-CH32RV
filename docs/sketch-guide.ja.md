@@ -259,7 +259,7 @@ RAM の下 [ グローバル変数 ][ ヒープ → … 空き … ][ スタッ�
 - **測る:** メニュー Stack Check を「Reset on overflow」にすると、`CH32RV.getMinFreeStack()` で、起動してから
   いちばん深く使ったときに確保がどれだけ残っていたかが分かります（`CH32RV.getStackSize()` が確保の大きさ）。
 - **見張る:** 同じメニューで、スタックが確保の下端（の 64 バイト）に届いた時点でリセットします。次の起動の
-  `CH32RV.resetReason()` は `CH32RV_RESET_PANIC`（`resetReasonName()` は `"panic"`）で、ESP32 の
+  `CH32RV.resetReason()` は `CH32RVResetReason::Panic`（`resetReasonName()` は `"panic"`）で、ESP32 の
   `ESP_RST_PANIC` にあたります。費用は flash 76〜84 バイト、RAM 4 バイト、1 ms ごとに 64 バイトの比較です。
   既定は Off です（今まで確保を超えても、ヒープの空きの上で動いていたスケッチがリセットするようになるため）。
   PMP（メモリ保護）のある石では、その 64 バイトを起動時にハードで禁止の区域にし、届いたその命令でリセットします

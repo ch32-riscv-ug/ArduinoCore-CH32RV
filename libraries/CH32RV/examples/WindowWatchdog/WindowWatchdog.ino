@@ -28,7 +28,7 @@ void setup()
     Serial.begin(115200, SERIAL_8N1, RX, TX);
     Serial.print("Reset reason: ");
     Serial.println(CH32RV.resetReasonName());
-    if (warningsCheck == ~warnings && CH32RV.resetReason() == CH32RV_RESET_WINDOW_WATCHDOG) {
+    if (warningsCheck == ~warnings && CH32RV.resetReason() == CH32RVResetReason::WindowWatchdog) {
         Serial.print("Early warnings before the reset: ");
         Serial.println((unsigned long)warnings);
     }

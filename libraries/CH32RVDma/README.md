@@ -10,7 +10,7 @@ keeps working, with a callback when it ends. Every series.
 CH32RVDma dma;
 dma.begin();                          // a free channel of its own
 dma.copy(dst, src, n);                // waits until it is copied
-dma.onDone(done, arg);                // done(arg) after each background job (in the channel's interrupt)
+dma.onDone(done);                     // done() after each background job (in the channel's interrupt)
 dma.copyAsync(dst, src, n);           // returns at once; busy() / wait()
 dma.fill(dst, 0, n);                  // n bytes of one value
 ```
@@ -23,7 +23,7 @@ dma.fill(dst, 0, n);                  // n bytes of one value
 | `dma()` / `channel()` | The DMA block and channel taken (0 before) |
 | `copy(dst, src, bytes)` / `fill(dst, value, bytes)` | Waits for the end. false, with nothing moved, before `begin()`, while a job runs, or for 0 bytes |
 | `copyAsync(dst, src, bytes)` / `fillAsync(dst, value, bytes)` | Starts and returns; the CPU is free meanwhile |
-| `onDone(cb, arg)` | `cb(arg)` in the channel's interrupt when a background job ends; `nullptr` for none. Not called by the waiting forms (`copy()` / `fill()`) |
+| `onDone(cb)` | `cb()` in the channel's interrupt when a background job ends: a function, or a lambda with a small capture (`[&buf]` and the like; CH32RVCallback); `nullptr` for none. Not called by the waiting forms (`copy()` / `fill()`) |
 | `busy()` / `wait()` / `abort()` | Whether a job runs; wait for it (it is driven from there with interrupts masked too); stop it (what it moved stays) |
 
 - Words (32 bit) when both addresses and the length are multiples of 4, halfwords for multiples of 2, else bytes.

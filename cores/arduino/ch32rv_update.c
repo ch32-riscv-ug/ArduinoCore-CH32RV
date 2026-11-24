@@ -1,5 +1,5 @@
 /* See ch32rv_update.h. */
-#include "ch32rv_update.h"
+#include "internal/ch32rv_update.h"
 
 #include "ch32rv_crc.h"
 #include "ch32rv_flash.h"

@@ -60,28 +60,28 @@ bool fits(const CH32RVGpha::Surface &s, uint16_t x, uint16_t w)
     return s.pixels && w && (uint32_t)x + w <= s.pitch;
 }
 
-bool output(CH32RVGpha::Format f)
+bool output(CH32RVGphaFormat f)
 {
-    return f <= CH32RVGpha::ARGB4444;
+    return f <= CH32RVGphaFormat::Argb4444;
 }
 
 }  // namespace
 
-uint8_t CH32RVGpha::bitsOf(Format format)
+uint8_t CH32RVGpha::bitsOf(CH32RVGphaFormat format)
 {
     switch (format) {
-    case ARGB8888:
+    case CH32RVGphaFormat::Argb8888:
         return 32;
-    case RGB888:
+    case CH32RVGphaFormat::Rgb888:
         return 24;
-    case RGB565:
-    case ARGB1555:
-    case ARGB4444:
-    case AL88:
+    case CH32RVGphaFormat::Rgb565:
+    case CH32RVGphaFormat::Argb1555:
+    case CH32RVGphaFormat::Argb4444:
+    case CH32RVGphaFormat::Al88:
         return 16;
-    case L8:
-    case AL44:
-    case A8:
+    case CH32RVGphaFormat::L8:
+    case CH32RVGphaFormat::Al44:
+    case CH32RVGphaFormat::A8:
         return 8;
     default:
         return 4;
@@ -141,7 +141,7 @@ bool CH32RVGpha::fill(const Surface &to, uint16_t x, uint16_t y, uint16_t w, uin
         return false;
     }
     ch32rv_clock_enable(GPHA);
-    GPHA_OPFCCR = to.format;
+    GPHA_OPFCCR = (uint32_t)to.format;
     GPHA_OCOLR = argb;                         /* ARGB8888 whatever the output's format (measured: RGB565 too) */
     GPHA_OMAR = (uint32_t)(uintptr_t)at(to, x, y);
     GPHA_OOR = to.pitch - w;
@@ -157,8 +157,8 @@ bool CH32RVGpha::copy(const Surface &from, uint16_t fx, uint16_t fy, const Surfa
     ch32rv_clock_enable(GPHA);
     GPHA_FGMAR = (uint32_t)(uintptr_t)at(from, fx, fy);
     GPHA_FGOR = from.pitch - w;
-    GPHA_FGPFCCR = from.format;
-    GPHA_OPFCCR = to.format;
+    GPHA_FGPFCCR = (uint32_t)from.format;
+    GPHA_OPFCCR = (uint32_t)to.format;
     GPHA_OMAR = (uint32_t)(uintptr_t)at(to, tx, ty);
     GPHA_OOR = to.pitch - w;
     return run(1, w, h);
@@ -173,11 +173,11 @@ bool CH32RVGpha::blend(const Surface &fg, uint16_t fx, uint16_t fy, const Surfac
     ch32rv_clock_enable(GPHA);
     GPHA_FGMAR = (uint32_t)(uintptr_t)at(fg, fx, fy);
     GPHA_FGOR = fg.pitch - w;
-    GPHA_FGPFCCR = fg.format | PFCCR_AM_MUL | PFCCR_ALPHA(alpha);
+    GPHA_FGPFCCR = (uint32_t)fg.format | PFCCR_AM_MUL | PFCCR_ALPHA(alpha);
     GPHA_BGMAR = (uint32_t)(uintptr_t)at(bg, bx, by);
     GPHA_BGOR = bg.pitch - w;
-    GPHA_BGPFCCR = bg.format;
-    GPHA_OPFCCR = to.format;
+    GPHA_BGPFCCR = (uint32_t)bg.format;
+    GPHA_OPFCCR = (uint32_t)to.format;
     GPHA_OMAR = (uint32_t)(uintptr_t)at(to, tx, ty);
     GPHA_OOR = to.pitch - w;
     return run(2, w, h);
@@ -185,7 +185,7 @@ bool CH32RVGpha::blend(const Surface &fg, uint16_t fx, uint16_t fy, const Surfac
 
 #else
 
-uint8_t CH32RVGpha::bitsOf(Format) { return 0; }
+uint8_t CH32RVGpha::bitsOf(CH32RVGphaFormat) { return 0; }
 bool CH32RVGpha::run(uint32_t, uint16_t, uint16_t) { return false; }
 bool CH32RVGpha::fill(const Surface &, uint16_t, uint16_t, uint16_t, uint16_t, uint32_t) { return false; }
 bool CH32RVGpha::setPalette(const uint32_t *, uint16_t, bool) { return false; }

@@ -31,6 +31,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <CH32RVCallback.h>
 #include <CH32RVSyncKit.h>
 
 extern "C" unsigned long micros(void);
@@ -58,8 +59,9 @@ struct WorkStats {
 
 class Work {
 public:
-    explicit Work(void (*fn)()) : _plain(fn) {}
-    Work(void (*fn)(void *), void *context) : _withContext(fn), _context(context) {}
+    /* A function, or a lambda capturing at most two pointers (CH32RVCallback.h):
+     * Work w([&dev] { dev.step(); }); */
+    explicit Work(CH32RVCallback<void()> fn) : _fn(fn) {}
     Work(const Work &) = delete;
     Work &operator=(const Work &) = delete;
 
@@ -84,7 +86,7 @@ public:
     void wakeOn(const CH32RVSyncKit::Deadline &deadline) { _deadline = &deadline; }
     void wakeEvery(CH32RVSyncKit::Period *period) { _period = period; }
     void wakeEvery(CH32RVSyncKit::Period &period) { _period = &period; }
-    void wakeWhen(bool (*condition)()) { _when = condition; }
+    void wakeWhen(CH32RVCallback<bool()> condition) { _when = condition; }
 
     /* Collect run counts and times into stats (nullptr stops). */
     void measure(WorkStats *stats) { _stats = stats; }
@@ -97,19 +99,15 @@ private:
 
     void call()
     {
-        if (_plain) {
-            _plain();
-        } else {
-            _withContext(_context);
+        if (_fn) {
+            _fn();
         }
     }
 
-    void (*_plain)() = nullptr;
-    void (*_withContext)(void *) = nullptr;
-    void *_context = nullptr;
+    CH32RVCallback<void()> _fn;
     const CH32RVSyncKit::Deadline *_deadline = nullptr;
     CH32RVSyncKit::Period *_period = nullptr;
-    bool (*_when)() = nullptr;
+    CH32RVCallback<bool()> _when;
     WorkStats *_stats = nullptr;
     Work *_next = nullptr;
     Executor *_owner = nullptr;

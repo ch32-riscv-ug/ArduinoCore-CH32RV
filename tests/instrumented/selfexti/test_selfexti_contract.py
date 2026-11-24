@@ -13,10 +13,10 @@ selfsys.rtc_alarm); after detachExtiLine() setAlarm()'s next alarm still runs it
 for it) and the detached one does not. n/a without an RTC.
 
 selfexti.wake: on the RTC series, the RTC alarm's line as a wake source (enableExtiLineWakeup(), not
-enableAlarmWakeup()) ends lightSleep() at setAlarm(time() + 2): CH32RV_SLEEP_OK, CH32RV_WAKEUP_EXTI_LINE, millis()
+enableAlarmWakeup()) ends lightSleep() at setAlarm(time() + 2): CH32RVSleepResult::Ok, CH32RVWakeupCause::ExtiLine, millis()
 moved 0.9-3.2 s and the line's callback ran once. The sleep's own alarms are not shown to the callback (a wake on one
 would come at a whole second, before 2 s, or say TIMER). n/a without an RTC; the result is recorded where lightSleep()
-answers CH32RV_SLEEP_UNSUPPORTED (none since V103 sleeps, 2026-11-18). The AWU families (V00x, X035, M030) have no line the DUT can raise
+answers CH32RVSleepResult::Unsupported (none since V103 sleeps, 2026-11-18). The AWU families (V00x, X035, M030) have no line the DUT can raise
 while it sleeps: their wake on a line is the single (manual) PVD test with a variable supply (TEST_PLAN.ja.md).
 A sleeping image: run with CH32_TEST_BOOT_HOLD_MS.
 
@@ -99,7 +99,7 @@ def test_wake(dut, ready, record_property):
     r, cause, slept, calls = (int(x) for x in m.groups()[1:])
     record_property("wake", json.dumps(dict(result=r, cause=cause, millis=slept, calls=calls)))
     if r == SLEEP_UNSUPPORTED:
-        pytest.skip("n/a: lightSleep() unsupported on this family (CH32RV_SLEEP_UNSUPPORTED)")
+        pytest.skip("n/a: lightSleep() unsupported on this family (CH32RVSleepResult::Unsupported)")
     assert r == SLEEP_OK and cause == WAKEUP_EXTI_LINE, f"lightSleep() {r}, wakeupCause() {cause}"
     assert 900 <= slept <= 3200, f"millis() moved {slept} ms across a sleep to a line 2 s on"
     assert calls == 1, f"the line's callback ran {calls} times across the sleep"

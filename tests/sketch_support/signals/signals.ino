@@ -81,7 +81,7 @@
  *   shot <pin> <delay us> <width us>  SHOT <ok>: one pulse, started now
  *   shotoff                SHOTOFF
  *   oc <pin> <period us> <at us> <mode>  OC <ok>: output compare (mode as
- *                          CH32RVOutputCompare::Mode)
+ *                          CH32RVOutputCompareMode)
  *   ocoff                  OCOFF
  *   icap <pin> <edge>      ICAP <ok>: CH32RVInputCapture at 1 MHz, edge 1
  *                          RISING, 2 FALLING, 3 CHANGE
@@ -245,12 +245,12 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
         bridge.end();
         CONSOLE.println("COMPOFF");
     } else if (!strcmp(argv[0], "pwmtt") && argc == 5) {
-        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, CH32RVPwmTimer::EDGE, (uint8_t)a2) &&
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, CH32RVPwmTimerAlign::Edge, (uint8_t)a2) &&
                         pwmTimer.write(pin, (uint32_t)atol(argv[4]));
         say("PWMTT", 2, ok, pwmTimer.timer());
     } else if (!strcmp(argv[0], "pwmt") && argc == 7) {
         /* pwmt <a> <b> <hz> <align 0 edge / 1 center> <duty a of 1024> <duty b of 1024> */
-        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, a4 ? CH32RVPwmTimer::CENTER : CH32RVPwmTimer::EDGE) &&
+        const bool ok = pwmTimer.begin(pin, (uint32_t)a3, 10, a4 ? CH32RVPwmTimerAlign::Center : CH32RVPwmTimerAlign::Edge) &&
                         pwmTimer.attach((int)a2) && pwmTimer.write(pin, (uint32_t)a5) &&
                         pwmTimer.write((int)a2, (uint32_t)atol(argv[6]));
         say("PWMT", 1, ok);
@@ -327,7 +327,7 @@ static bool timer_reply(int argc, char **argv, pin_size_t pin)
     } else if (!strcmp(argv[0], "oc") && argc == 5) {
         /* oc <pin> <period us> <at us> <mode> */
         const bool ok = (compare.isAttached() || compare.begin(pin, (uint32_t)a2)) &&
-                        compare.set((CH32RVOutputCompare::Mode)a4, (uint32_t)a3);
+                        compare.set((CH32RVOutputCompareMode)a4, (uint32_t)a3);
         say("OC", 1, ok);
     } else if (!strcmp(argv[0], "ocoff")) {
         compare.end();

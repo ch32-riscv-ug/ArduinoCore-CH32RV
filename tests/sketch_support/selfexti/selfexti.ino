@@ -119,7 +119,7 @@ static void wake(uint32_t s)
     const uint32_t t0 = millis();
     if (!ok) {
         CH32RV.disableWakeup();               /* nothing to wake by: lightSleep() answers at once, */
-    }                                         /* CH32RV_SLEEP_UNSUPPORTED where the family has no sleep */
+    }                                         /* CH32RVSleepResult::Unsupported where the family has no sleep */
     const CH32RVSleepResult r = CH32RV.lightSleep();
     const uint32_t took = millis() - t0;
     const CH32RVWakeupCause cause = CH32RV.wakeupCause();

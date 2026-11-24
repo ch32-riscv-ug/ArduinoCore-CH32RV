@@ -63,7 +63,7 @@ CH32RVSleepResult CH32RVSystem::lightSleep()
         wdtWrite(_wdtField, _wdtTicks);
     }
 #endif
-    return r == 0 ? CH32RV_SLEEP_OK : r == 1 ? CH32RV_SLEEP_NO_WAKEUP_SOURCE : CH32RV_SLEEP_UNSUPPORTED;
+    return r == 0 ? CH32RVSleepResult::Ok : r == 1 ? CH32RVSleepResult::NoWakeupSource : CH32RVSleepResult::Unsupported;
 }
 
 CH32RVSleepResult CH32RVSystem::deepSleep()
@@ -74,7 +74,7 @@ CH32RVSleepResult CH32RVSystem::deepSleep()
         ch32rv_power_standby();
     }
     const CH32RVSleepResult r = lightSleep();
-    if (r != CH32RV_SLEEP_OK) {
+    if (r != CH32RVSleepResult::Ok) {
         return r;
     }
     ch32rv_power_keep_cause();
@@ -84,12 +84,12 @@ CH32RVSleepResult CH32RVSystem::deepSleep()
 CH32RVWakeupCause CH32RVSystem::wakeupCause()
 {
     /* The same numbers on both sides: a cause is passed as it is. */
-    static_assert(CH32RV_WAKEUP_TIMER == (int)CH32RV_POWER_WOKE_TIMER &&
-                  CH32RV_WAKEUP_PIN == (int)CH32RV_POWER_WOKE_PIN &&
-                  CH32RV_WAKEUP_ALARM == (int)CH32RV_POWER_WOKE_ALARM &&
-                  CH32RV_WAKEUP_EXTI_LINE == (int)CH32RV_POWER_WOKE_EXTI, "wake cause numbers");
+    static_assert((int)CH32RVWakeupCause::Timer == (int)CH32RV_POWER_WOKE_TIMER &&
+                  (int)CH32RVWakeupCause::Pin == (int)CH32RV_POWER_WOKE_PIN &&
+                  (int)CH32RVWakeupCause::Alarm == (int)CH32RV_POWER_WOKE_ALARM &&
+                  (int)CH32RVWakeupCause::ExtiLine == (int)CH32RV_POWER_WOKE_EXTI, "wake cause numbers");
     const uint8_t cause = ch32rv_wake_cause;
-    return cause <= CH32RV_POWER_WOKE_EXTI ? (CH32RVWakeupCause)cause : CH32RV_WAKEUP_UNDEFINED;
+    return cause <= CH32RV_POWER_WOKE_EXTI ? (CH32RVWakeupCause)cause : CH32RVWakeupCause::Undefined;
 }
 
 uint32_t CH32RVSystem::timeDomain()
