@@ -19,8 +19,8 @@
   LovyanGFX、TFT_eSPI、LVGL）のビルドを通すため A0〜 / SDA / MOSI などを定数に、wiring_private.h、Arduino.h に ltoa・<cstdlib>・
   <initializer_list>（f663eb77）。SPI のバッファ転送の CPU ループと transferAsync（DMA、d7ea1a51、spi::test_spi_block）。LSE
   （RTC Clock メニュー、7b313e9a）。CH32RVUsbHostMscFS（0548a945、usb-peer-host-fs）。eth-libs（PubSubClient など、V407 / V208）。
-- [ ] Adafruit NeoPixel は `ARDUINO_ARCH_CH32RV` の送信コードが無く `#error Architecture not supported`。動かすには Adafruit への
-  寄稿（外に出す作業なのでユーザーに聞く）。
+- [x] Adafruit NeoPixel は `ARDUINO_ARCH_CH32RV` の送信コードが無く `#error Architecture not supported`。→ 2026-11-24 ユーザー:
+  対応は不要（寄稿もしない）。WS2812 はコアの `rgbLedWrite()` / `ch32rv_rgb_led_write()`、CH32RVPwmSequence、PIOC の PiocWs2812 で送れる。
 - [x] FS の FS_SMALL_FLASH は、小さい系列に加えて、選んだ品の書き込みの上限（`CH32RV_FLASH_SIZE`）が 64 KB 以下でも
   小さい設定になる（L103、V103、V203C8 など。libraries/FS/src/FSConfig.h。2026-11-20 に済んでいたのを確かめた）。
 - [x] LSE: 水晶の無い板で LSI に戻る道は実機で見ていない（ベンチの V103 EVT・V203・nanoCH32H417 は全部水晶あり）。
