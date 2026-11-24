@@ -6,6 +6,10 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) I2S: `I2S_MODE_SPDIF_TX` on CH32H417's SAI - IEC 60958 on the SD pin alone (`setPins(-1, -1, sd)`), 16 / 24 / 32-bit stereo, consumer channel status with the rate's sampling-frequency code.
+- (JA) I2S: CH32H417 の SAI で `I2S_MODE_SPDIF_TX` - SD の端子 1 本で IEC 60958（`setPins(-1, -1, sd)`）、16 / 24 / 32 bit のステレオ、標本化周波数のコードつきの民生用チャネル状態。
+- (EN) **Breaking**: I2S's frame formats are `enum class CH32RVI2SFormat` - `CH32RVI2SFormat::Philips` / `Msb` / `Lsb` / `PcmShort` / `PcmLong` (were `I2S_FORMAT_*`).
+- (JA) **互換なし**: I2S のフレームの形式は `enum class CH32RVI2SFormat` - `CH32RVI2SFormat::Philips` / `Msb` / `Lsb` / `PcmShort` / `PcmLong`（旧 `I2S_FORMAT_*`）。
 - (EN) CH32RVUsbHostCdcSerial::setControlLines(dtr, rts): DTR and RTS in one request (EspUsbHost 2.10).
 - (JA) CH32RVUsbHostCdcSerial::setControlLines(dtr, rts): DTR と RTS を 1 回の要求で（EspUsbHost 2.10）。
 

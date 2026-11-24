@@ -69,6 +69,9 @@
  *                                      begin(I2S_MODE_TDM) as an output, FS not brought out, a counting
  *                                      sample in each slot played from loop(): SAITDM <1 / 0>
  *                                      <sampleRate()> <lastError()>
+ *   spdif <sd> <bits> <rate>           I2S_MODE_SPDIF_TX on the SAI block whose SD pad is <sd>, stereo,
+ *                                      left 0x5a3c (16-bit) / 0x5a3c96 (24 / 32), right 0x0f1e / 0x0f1e2d,
+ *                                      played from loop(): SPDIF <1 / 0> <sampleRate()> <lastError()>
  *                                      (i2s / i2srx with ws -1 run the SAI in standard mode)
  *
  * The bus itself as a peripheral (SPI_HAS_PERIPHERAL_MODE): SPI after `hw`, SoftSPI after
@@ -442,11 +445,36 @@ static void saiTdm(char *p)
         i2sFrames[k] = (uint8_t)(0x11u * (k + 1u));
     }
     i2s.setPins((int)sck, -1, (int)sd);
-    i2s.setFormat(I2S_FORMAT_PHILIPS);
+    i2s.setFormat(CH32RVI2SFormat::Philips);
     const bool ok = i2sLen && i2s.begin(I2S_MODE_TDM, (uint32_t)rate, (i2s_data_bit_width_t)bits,
                                         I2S_SLOT_MODE_STEREO, (int8_t)mask);
     i2sOn = ok;
     CONSOLE.print("SAITDM ");
+    CONSOLE.print(ok ? 1 : 0);
+    CONSOLE.print(' ');
+    CONSOLE.print((unsigned long)i2s.sampleRate());
+    CONSOLE.print(' ');
+    CONSOLE.println(i2s.lastError());
+}
+
+static void spdifCommand(char *p)
+{
+    i2s.end();
+    i2sOn = false;
+    const long sd = strtol(p, &p, 10);
+    const long bits = strtol(p, &p, 10);
+    const unsigned long rate = strtoul(p, &p, 10);
+    /* little-endian samples, left then right, the high bytes the ones SPDIF carries */
+    static const uint8_t f16[] = {0x3c, 0x5a, 0x1e, 0x0f};
+    static const uint8_t f24[] = {0x96, 0x3c, 0x5a, 0x2d, 0x1e, 0x0f};
+    static const uint8_t f32[] = {0x00, 0x96, 0x3c, 0x5a, 0x00, 0x2d, 0x1e, 0x0f};
+    const uint8_t *f = bits == 16 ? f16 : bits == 24 ? f24 : f32;
+    i2sLen = bits == 16 ? sizeof f16 : bits == 24 ? sizeof f24 : sizeof f32;
+    memcpy(i2sFrames, f, i2sLen);
+    i2s.setPins(-1, -1, (int)sd);
+    const bool ok = i2s.begin(I2S_MODE_SPDIF_TX, (uint32_t)rate, (i2s_data_bit_width_t)bits, I2S_SLOT_MODE_STEREO);
+    i2sOn = ok;
+    CONSOLE.print("SPDIF ");
     CONSOLE.print(ok ? 1 : 0);
     CONSOLE.print(' ');
     CONSOLE.print((unsigned long)i2s.sampleRate());
@@ -493,7 +521,7 @@ static void i2sReceive(char *p)
     const unsigned long rate = strtoul(p, &p, 10);
     const unsigned long want = strtoul(p, &p, 10);
     i2s.setPins((int)ck, (int)ws, -1, (int)sd);
-    i2s.setFormat(I2S_FORMAT_PHILIPS);
+    i2s.setFormat(CH32RVI2SFormat::Philips);
     const bool ok = i2s.begin(I2S_MODE_STD, (uint32_t)rate, (i2s_data_bit_width_t)bits, I2S_SLOT_MODE_STEREO);
     unsigned long got = 0, ones = 0, zeros = 0, mixed = 0, rises = 0;
     const size_t sb = (size_t)bits / 8u;
@@ -817,6 +845,12 @@ void loop()
             saiFind(p + 8);
 #else
             CONSOLE.println("SAIFIND NONE");
+#endif
+        } else if (strncmp(line, "spdif ", 6) == 0) {
+#if CH32RV_HAS_I2S
+            spdifCommand(p + 6);
+#else
+            CONSOLE.println("SPDIF 0 0 0");
 #endif
         } else if (strncmp(line, "saitdm ", 7) == 0) {
 #if CH32RV_HAS_I2S

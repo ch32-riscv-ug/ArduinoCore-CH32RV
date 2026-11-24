@@ -842,6 +842,7 @@ def test_i2s_input(dut, oep_host, ws_run, record_property):
 
 
 SAI_RATE = 60_000_000      # test_sai's two lines: SCK up to 4 MHz (TDM 8 x 32 at 16 kHz)
+SPDIF_RATE = 50_000_000   # S/PDIF at 52 kHz (48 kHz asked): half a cell 1 / (128 x 52083) s, 7.5 samples
 
 
 def test_sai(dut, oep_host, ws_run, record_property):
@@ -933,5 +934,59 @@ def test_sai(dut, oep_host, ws_run, record_property):
     finally:
         pwm.start(0, 0, 0)
         core.plan_release(oep_host.host, [pwm.fn])
+    record_property("results", json.dumps(results))
+    assert not wrong, " | ".join(wrong)
+
+
+def test_spdif(dut, oep_host, ws_run, record_property):
+    """spi.spdif (I2S_MODE_SPDIF_TX on CH32H417's SAI, 2026-11-24): the SD pad of an SAI block (saifind; SCK, FS and MCLK
+    released) carries IEC 60958 - WireSkein's spdif judges every subframe of the section: channels A and B by turns, a
+    block start every 192 frames, even parity, the value each channel carries (left 0x5a3c / 0x5a3c96, right 0x0f1e /
+    0x0f1e2d in the 24 bits the subframe holds), channel A's and B's status 0x00000004 | the rate's code (bit 2: copying
+    permitted; bits 24 .. 27: 48 kHz 0100, 44.1 kHz 0000) and the frame rate sampleRate() within 1 %. 16-bit at 48 kHz,
+    24-bit at 48 kHz, 32-bit at 44.1 kHz; 50 MS/s (half a cell is 7 samples or more)."""
+    from wireskein import runlog
+    case = settings(__file__)
+    if case.get("case") == "softspi":
+        pytest.skip("n/a: I2S is the spi case's")
+    if not hasattr(runlog, "spdif"):
+        pytest.skip("wireskein has no runlog.spdif yet (in its main, 2026-11-24: waiting for the release)")
+    m = bench_ready.ready(dut, rb" (\S+)", nonce=secrets.token_hex(4))
+    assert m.group(1).decode() == case["build_id"], "the DUT runs another build"
+    lines = {line["pin"]: line for line in gpio_lines(oep_host, case["target"])}
+    m = ask(dut, "saifind " + " ".join(str(p) for p in lines), rb"SAIFIND (NONE|\d+ \d+)")
+    if m.group(1) == b"NONE":
+        pytest.skip("no labelled lines are one SAI block's SCK and SD (or no SAI here): " +
+                    ", ".join(l["pad"] for l in lines.values()))
+    sd = int(m.group(1).split()[1])
+    SD = lines[sd]["pad"]
+    record_property("pins", json.dumps({"sd": SD}))
+    results, wrong = {}, []
+    plays = [(16, 48000, 0x5A3C00, 0x0F1E00, 0x2), (24, 48000, 0x5A3C96, 0x0F1E2D, 0x2),
+             (32, 44100, 0x5A3C96, 0x0F1E2D, 0x0)]
+
+    def steps(wait):
+        with ws_run.section(1, f"spdif {SD}"):
+            for bits, asked, left, right, code in plays:
+                name = f"{bits}-bit {asked} Hz"
+                command = f"spdif {sd} {bits} {asked}"
+                ws_run.command(command)
+                dut.write(command)
+                m = wait_reply(dut, wait, rb"SPDIF (\d) (\d+) (-?\d+)", timeout=5.0)
+                ws_run.reply(m.group(0).decode())
+                ok, rate, err = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                results[name] = dict(rate=rate, error=err)
+                if not ok:
+                    wrong.append(f"{name}: begin() failed ({err})")
+                    continue
+                wait(0.03)   # the ring's two halves start silent (about 5 ms each at 16-bit stereo)
+                status = 0x4 | code << 24
+                with ws_run.section(2, name, expect=[runlog.spdif(SD, audio={"A": left, "B": right}, status=status,
+                                                                  fs_hz=rate, fs_rel=0.01)]):
+                    wait(0.012)
+                dut.write("i2send")
+                wait_reply(dut, wait, rb"I2SEND")
+
+    ws_capture.stream(ws_run, oep_host, [lines[sd]], rate=SPDIF_RATE, steps=steps)
     record_property("results", json.dumps(results))
     assert not wrong, " | ".join(wrong)

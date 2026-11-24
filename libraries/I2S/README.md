@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Audio in or out on an SPI in I2S mode (I2S2, I2S3) of CH32V30x, CH32V4x7 and CH32H41x, on CH32H417's SAI (standard and TDM), and from PDM microphones on CH32H41x's DFSDM. The API has the shape of arduino-esp32's ESP_I2S (the header is `I2S.h`, the class `I2SClass`).
+Audio in or out on an SPI in I2S mode (I2S2, I2S3) of CH32V30x, CH32V4x7 and CH32H41x, on CH32H417's SAI (standard, TDM and SPDIF out), and from PDM microphones on CH32H41x's DFSDM. The API has the shape of arduino-esp32's ESP_I2S (the header is `I2S.h`, the class `I2SClass`).
 
 ```cpp
 #include <I2S.h>
@@ -23,11 +23,11 @@ void loop() {
 | Function | Meaning |
 |---|---|
 | `setPins(bclk, ws, dout, din = -1, mclk = -1)` | The pins. dout makes an output, din an input (one of them). mclk: a 256 fs master clock |
-| `setFormat(format)` | `I2S_FORMAT_PHILIPS` (default), `_MSB` (left-justified), `_LSB` (right-justified), `_PCM_SHORT`, `_PCM_LONG`. Before begin() |
+| `setFormat(format)` | `CH32RVI2SFormat::Philips` (default), `_MSB` (left-justified), `_LSB` (right-justified), `_PCM_SHORT`, `_PCM_LONG`. Before begin() |
 | `setPinsPdmRx(clk, din0)` | PDM microphones (`I2S_MODE_PDM_RX`): CH32H41x's DFSDM - clk a CKOUT pad, din0 a DATIN pad (the variant's `CH32RV_DFSDM_PADS`) |
 | `setInverted(bclk, ws)` | BCLK's polarity inverted; WS swaps the slots |
 | `setBufferSize(bytes)` | Each half of the DMA buffer (default 1024 bytes). Before begin() |
-| `begin(I2S_MODE_STD, I2S_MODE_TDM (SAI) or I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits 16, 24 or 32; slots `I2S_SLOT_MODE_MONO` / `_STEREO` |
+| `begin(I2S_MODE_STD, I2S_MODE_TDM (SAI), I2S_MODE_SPDIF_TX (SAI) or I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits 16, 24 or 32; slots `I2S_SLOT_MODE_MONO` / `_STEREO` |
 | `write(buf, n)` / `availableForWrite()` | Output |
 | `readBytes(buf, n)` / `read()` / `available()` | Input. readBytes() waits up to `setTimeout()` (1 s by default) |
 | `flush()` | Waits until what was written has played |
@@ -56,6 +56,7 @@ i2s.write((const uint8_t *)frame, sizeof(frame));
 - When the pins are one SAI block's (the variant's `CH32RV_SAI_PADS`: SCK, FS, SD and MCLK of block A or B), the SAI takes them; standard mode on pins that are an SPI's I2S as well picks the SPI. Output and input, standard mode (the formats above) and `I2S_MODE_TDM`.
 - TDM: `slot_mask` is the slots used (ESP_I2S's `int8_t`: slots 0 .. 6; -1: slot 0, or 0 and 1 in stereo); the frame is 2, 4 or 8 slots (the slots past the highest used are off), 16 bits each for 16-bit samples and 32 for 24 / 32; one sample per slot used in memory. Philips: FS low for the first half of the frame, one bit early; the PCM formats: a 1- or 13-bit pulse.
 - The clock: SAI_CK = SYSCLK / 6 and MCLK = SAI_CK / MCKDIV (1 .. 63) = 256 fs, so the rates are coarse: 32552 Hz for 32 kHz, 16276 for 16 kHz, 43403 for 44.1 kHz and 52083 for 48 kHz at 400 MHz (`sampleRate()` tells). FS may be left out (-1) where nothing needs it.
+- SPDIF (`I2S_MODE_SPDIF_TX`, not in ESP_I2S): `setPins(-1, -1, sd)` - the SD pad of block A or B alone (the RM wants SCK, FS and MCLK released). IEC 60958 frames of two subframes, the samples' 24 high bits (16-bit samples in the top 16), validity bit 0, consumer channel status with copying permitted and the sampling-frequency code of the rate asked (44.1, 48, 32, 88.2, 96, 176.4, 192 kHz; "not indicated" for others). The SAI's parity covers the 24 sample bits only (measured on H417; RM 36.3.8 says all 27), so each user bit is set equal to its channel-status bit to keep the parity even - receivers that read the user bits see the status pattern there. The bit cells come from the same divider (64 fs), so the rate is as coarse as above. Output only.
 - No DMA channel: the SAI's FIFO interrupt moves the samples (one interrupt for both blocks). A sketch that uses I2S on CH32H417 carries the SAI's code (about 3 KB).
 
 ### PDM microphones (CH32H41x)

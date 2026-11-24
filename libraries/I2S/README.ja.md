@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-SPI の I2S モード（I2S2・I2S3）で音声を出し入れするライブラリです。CH32V30x、CH32V4x7、CH32H41x にあります。CH32H417 の SAI（標準と TDM）、CH32H41x の DFSDM の PDM マイクにも対応します。API は arduino-esp32 の ESP_I2S と同じ形です（ヘッダーは `I2S.h`、クラスは `I2SClass`）。
+SPI の I2S モード（I2S2・I2S3）で音声を出し入れするライブラリです。CH32V30x、CH32V4x7、CH32H41x にあります。CH32H417 の SAI（標準・TDM・SPDIF 出力）、CH32H41x の DFSDM の PDM マイクにも対応します。API は arduino-esp32 の ESP_I2S と同じ形です（ヘッダーは `I2S.h`、クラスは `I2SClass`）。
 
 ```cpp
 #include <I2S.h>
@@ -23,11 +23,11 @@ void loop() {
 | 関数 | 意味 |
 |---|---|
 | `setPins(bclk, ws, dout, din = -1, mclk = -1)` | 端子。dout なら出力、din なら入力（どちらか一方）。mclk は 256 fs のマスタークロック |
-| `setFormat(format)` | `I2S_FORMAT_PHILIPS`（既定）、`_MSB`（左詰め）、`_LSB`（右詰め）、`_PCM_SHORT`、`_PCM_LONG`。begin() の前に |
+| `setFormat(format)` | `CH32RVI2SFormat::Philips`（既定）、`_MSB`（左詰め）、`_LSB`（右詰め）、`_PCM_SHORT`、`_PCM_LONG`。begin() の前に |
 | `setPinsPdmRx(clk, din0)` | PDM マイク（`I2S_MODE_PDM_RX`）。CH32H41x の DFSDM を使う。clk は CKOUT、din0 は DATIN の端子（variant の `CH32RV_DFSDM_PADS`） |
 | `setInverted(bclk, ws)` | BCLK の極性を反転、WS は左右を入れ替え |
 | `setBufferSize(bytes)` | DMA バッファーの半分の大きさ（既定 1024 バイト）。begin() の前に |
-| `begin(I2S_MODE_STD、I2S_MODE_TDM（SAI）か I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits は 16・24・32、slots は `I2S_SLOT_MODE_MONO` / `_STEREO` |
+| `begin(I2S_MODE_STD、I2S_MODE_TDM（SAI）、I2S_MODE_SPDIF_TX（SAI）か I2S_MODE_PDM_RX, rate, bits, slots, slot_mask = -1)` | bits は 16・24・32、slots は `I2S_SLOT_MODE_MONO` / `_STEREO` |
 | `write(buf, n)` / `availableForWrite()` | 出力 |
 | `readBytes(buf, n)` / `read()` / `available()` | 入力。readBytes() は `setTimeout()`（既定 1 秒）まで待つ |
 | `flush()` | 書いた音が出終わるまで待つ |
@@ -56,6 +56,7 @@ i2s.write((const uint8_t *)frame, sizeof(frame));
 - 端子が SAI のブロックのもの（variant の `CH32RV_SAI_PADS`: ブロック A か B の SCK・FS・SD・MCLK）なら SAI を使います。SPI の I2S の端子でもある場合、標準モードは SPI を選びます。出力も入力も、標準モード（上の形式）と `I2S_MODE_TDM` に対応します。
 - TDM: `slot_mask` は使うスロットです（ESP_I2S と同じ `int8_t` で、スロット 0〜6。-1 はスロット 0、ステレオなら 0 と 1）。枠は 2・4・8 スロット（使う最大より後ろは止める）で、16 bit のサンプルなら 16 bit、24・32 bit なら 32 bit ずつ。メモリーには使うスロット 1 つにつき 1 サンプル。Philips は枠の前半で FS が Low（1 ビット早く）、PCM は 1 か 13 ビットのパルスです。
 - クロック: SAI_CK = SYSCLK / 6、MCLK = SAI_CK / MCKDIV（1〜63）= 256 fs なので、速さは粗めです。400 MHz では 32 kHz → 32552 Hz、16 kHz → 16276、44.1 kHz → 43403、48 kHz → 52083（`sampleRate()` で分かる）。FS は要らなければ出さなくて（-1）かまいません。
+- SPDIF（`I2S_MODE_SPDIF_TX`。ESP_I2S には無い）: `setPins(-1, -1, sd)` で、ブロック A か B の SD の端子だけを使います（RM が SCK・FS・MCLK を放すよう求めている）。IEC 60958 の 2 サブフレームのフレームで、サンプルの上位 24 bit（16 bit のサンプルは上の 16 bit）、validity は 0、チャネル状態は民生用でコピー可、頼んだ速さの標本化周波数のコード（44.1・48・32・88.2・96・176.4・192 kHz。ほかは「示さない」）。SAI の parity はサンプルの 24 ビットだけで計算されるので（H417 で実測。RM 36.3.8 は 27 ビットと書いている）、user のビットをチャネル状態のビットと同じにして parity を偶数に保ちます。user のビットを読む受信機には、そこにチャネル状態と同じ並びが見えます。ビットのセルは同じ分周（64 fs）から作るので、速さは上と同じく粗めです。出力だけです。
 - DMA のチャネルは使いません。SAI の FIFO の割り込みでサンプルを運びます（両ブロックで 1 つの割り込み）。CH32H417 で I2S を使うスケッチには SAI のコード（約 3 KB）が入ります。
 
 ### PDM マイク（CH32H41x）

@@ -226,10 +226,27 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
         _error = I2S_ERROR_NONE;
         return true;
     }
+#ifdef CH32RV_SAI_PADS
+    if (mode == I2S_MODE_SPDIF_TX) {
+        if (rate == 0 || (bits != I2S_DATA_BIT_WIDTH_16BIT && bits != I2S_DATA_BIT_WIDTH_24BIT &&
+                          bits != I2S_DATA_BIT_WIDTH_32BIT) || (ch != I2S_SLOT_MODE_MONO && ch != I2S_SLOT_MODE_STEREO)) {
+            return false;
+        }
+        _error = I2S_ERROR_STATE;
+        if (_dout < 0 || _din >= 0) {
+            return false;   /* out only */
+        }
+        _bits = (uint8_t)bits;
+        _slots = (uint8_t)ch;
+        _mask = (uint8_t)(slot_mask < 0 ? I2S_STD_SLOT_BOTH : (slot_mask & 3));
+        _tdm_mask = 0;
+        return beginSai(true, rate, false, true);
+    }
+#endif
     if ((mode != I2S_MODE_STD && mode != I2S_MODE_TDM) || rate == 0 ||
         (bits != I2S_DATA_BIT_WIDTH_16BIT && bits != I2S_DATA_BIT_WIDTH_24BIT &&
          bits != I2S_DATA_BIT_WIDTH_32BIT) ||
-        (ch != I2S_SLOT_MODE_MONO && ch != I2S_SLOT_MODE_STEREO) || _format > I2S_FORMAT_PCM_LONG ||
+        (ch != I2S_SLOT_MODE_MONO && ch != I2S_SLOT_MODE_STEREO) || _format > CH32RVI2SFormat::PcmLong ||
         (mode == I2S_MODE_TDM && slot_mask == 0)) {
         return false;
     }
@@ -331,8 +348,8 @@ bool I2SClass::begin(i2s_mode_t mode, uint32_t rate, i2s_data_bit_width_t bits, 
     pad_mode(_mclk, CH32RV_GPIO_CFG_AF_PP_50M);
 
     static const uint8_t std_field[] = {0, 1, 2, 3, 3};
-    uint32_t cfgr = CFGR_I2SMOD | (tx ? CFGR_MASTER_TX : CFGR_MASTER_RX) | CFGR_STD(std_field[_format]) |
-                    (_format == I2S_FORMAT_PCM_LONG ? CFGR_PCMSYNC : 0u) | (_inv_bclk ? CFGR_CKPOL : 0u);
+    uint32_t cfgr = CFGR_I2SMOD | (tx ? CFGR_MASTER_TX : CFGR_MASTER_RX) | CFGR_STD(std_field[(uint8_t)_format]) |
+                    (_format == CH32RVI2SFormat::PcmLong ? CFGR_PCMSYNC : 0u) | (_inv_bclk ? CFGR_CKPOL : 0u);
     if (bits == I2S_DATA_BIT_WIDTH_24BIT) {
         cfgr |= CFGR_DATLEN(1) | CFGR_CHLEN32;
     } else if (bits == I2S_DATA_BIT_WIDTH_32BIT) {
@@ -469,7 +486,7 @@ void I2SClass::packFrame(const uint8_t *in, uint16_t *out) const
     if (_bits == 16) {
         out[0] = (uint16_t)(l >> 16);
         out[1] = (uint16_t)(r >> 16);
-    } else if (_bits == 24 && _format == I2S_FORMAT_LSB) {
+    } else if (_bits == 24 && _format == CH32RVI2SFormat::Lsb) {
         out[0] = (uint16_t)(l >> 24);
         out[1] = (uint16_t)(l >> 8);
         out[2] = (uint16_t)(r >> 24);
@@ -502,7 +519,7 @@ void I2SClass::unpackFrame(const uint16_t *in, uint8_t *out) const
     if (_bits == 16) {
         l = (uint32_t)in[0] << 16;
         r = (uint32_t)in[1] << 16;
-    } else if (_bits == 24 && _format == I2S_FORMAT_LSB) {
+    } else if (_bits == 24 && _format == CH32RVI2SFormat::Lsb) {
         l = ((uint32_t)(in[0] & 0xFFu) << 24) | ((uint32_t)in[1] << 8);
         r = ((uint32_t)(in[2] & 0xFFu) << 24) | ((uint32_t)in[3] << 8);
     } else {
@@ -889,14 +906,34 @@ void sai_irq(void *)
 }
 }   // namespace
 
-bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm)
+/* IEC 60958-3 consumer channel status, bits 0 .. 31: PCM audio, copying
+ * permitted (bit 2), category general, the sampling frequency (bits 24 ..
+ * 27, bit 24 first; "not indicated" for a rate that has no code). */
+static uint32_t spdif_status(uint32_t rate)
+{
+    static const struct { uint32_t hz; uint8_t code; } codes[] = {
+        {44100, 0x0}, {48000, 0x2}, {32000, 0x3}, {88200, 0x8}, {96000, 0xA}, {176400, 0xC}, {192000, 0xE},
+    };
+    uint8_t code = 0x1;   /* not indicated */
+    for (const auto &c : codes) {
+        if (c.hz == rate) {
+            code = c.code;
+        }
+    }
+    return 1u << 2 | (uint32_t)code << 24;
+}
+
+bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm, bool spdif)
 {
     _error = I2S_ERROR_PINS;
     const int data = tx ? _dout : _din;
     int8_t b = -1;
     for (uint8_t k = 0; k < 2 && b < 0; k++) {
-        if (!sai_owners[k] && sai_pad(_bclk, (uint8_t)(4 * k)) && sai_pad(data, (uint8_t)(4 * k + 2)) &&
-            (_ws < 0 || sai_pad(_ws, (uint8_t)(4 * k + 1))) && (_mclk < 0 || sai_pad(_mclk, (uint8_t)(4 * k + 3)))) {
+        /* SPDIF: the SD pad alone, the block's other pins released (RM 36.3.8) */
+        if (!sai_owners[k] && sai_pad(data, (uint8_t)(4 * k + 2)) &&
+            (spdif ? (_bclk < 0 && _ws < 0 && _mclk < 0)
+                   : (sai_pad(_bclk, (uint8_t)(4 * k)) && (_ws < 0 || sai_pad(_ws, (uint8_t)(4 * k + 1))) &&
+                      (_mclk < 0 || sai_pad(_mclk, (uint8_t)(4 * k + 3)))))) {
             b = (int8_t)k;
         }
     }
@@ -944,6 +981,9 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm)
         return false;
     }
     _sai = b;
+    _spdif = spdif;
+    _spdif_sub = 0;
+    _spdif_cs = spdif ? spdif_status(rate) : 0u;
     _dma = nullptr;
     _tx = tx;
     _port = (int8_t)(PORT_COUNT + b);
@@ -975,21 +1015,21 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm)
      * low for the first half of the frame. */
     uint32_t fsall = frame / 2u - 1u, fsdef = tdm ? 0u : 1u, fspol = 0, fsoff = 1, fboff = 0;
     switch (_format) {
-    case I2S_FORMAT_MSB:
+    case CH32RVI2SFormat::Msb:
         fspol = 1;
         fsoff = 0;
         break;
-    case I2S_FORMAT_LSB:
+    case CH32RVI2SFormat::Lsb:
         fspol = 1;
         fsoff = 0;
         fboff = slot_bits - _bits;
         break;
-    case I2S_FORMAT_PCM_SHORT:
+    case CH32RVI2SFormat::PcmShort:
         fsall = 0;
         fsdef = 0;
         fspol = 1;
         break;
-    case I2S_FORMAT_PCM_LONG:
+    case CH32RVI2SFormat::PcmLong:
         fsall = 12;
         fsdef = 0;
         fspol = 1;
@@ -1007,8 +1047,16 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm)
     SAI_CFGR2(b) = 2u;        /* FREQ at half the FIFO */
     SAI_FRCR(b) = (frame - 1u) | fsall << 8 | fsdef << 16 | fspol << 17 | fsoff << 18;
     SAI_SLOTR(b) = fboff | (slot_bits == 16 ? 1u : 2u) << 6 | (uint32_t)(nslots - 1u) << 8 | (uint32_t)enable << 16;
-    SAI_CFGR1(b) = (tx ? 0u : 1u) | (uint32_t)ds_code[_bits == 16 ? 0 : _bits == 24 ? 1 : 2] << 5 |
-                   (_inv_bclk ? 0u : SAI_CKSTR) | div << 20;
+    if (spdif) {
+        /* PRTCFG 01: SPDIF, master transmitter; the frame (two 32-bit
+         * subframes, 64 SCK at MCLK / 4) and the 24-bit size are fixed */
+        SAI_FRCR(b) = 0;
+        SAI_SLOTR(b) = 0;
+        SAI_CFGR1(b) = 1u << 2 | div << 20;
+    } else {
+        SAI_CFGR1(b) = (tx ? 0u : 1u) | (uint32_t)ds_code[_bits == 16 ? 0 : _bits == 24 ? 1 : 2] << 5 |
+                       (_inv_bclk ? 0u : SAI_CKSTR) | div << 20;
+    }
     sai_owners[b] = this;
     if (tx) {
         saiInterrupt();   /* the FIFO full of the (silent) ring before the clock starts */
@@ -1036,7 +1084,20 @@ void I2SClass::saiInterrupt()
     uint32_t level = (SAI_SR(b) >> 16) & 7u;
     for (uint8_t guard = 0; guard < 16u && (_tx ? level < 5u : level != 0u); guard++) {
         uint16_t *at = _ring + _sai_pos;
-        if (_tx) {
+        if (_spdif) {
+            /* DATAR[23:0] the sample's 24 high bits (MSB at 23), [26] the
+             * channel status bit of this frame, [24] valid 0, and [25] the
+             * user bit equal to it: the SAI's parity covers DATAR[23:0] only
+             * (RM 36.3.8 says [26:0]; measured on H417 2026-11-24 - V, U or
+             * C alone set left the subframe's parity wrong, U and C together
+             * right), so V, U and C hold an even number of ones. */
+            const uint32_t v = wide ? ((uint32_t)at[0] | (uint32_t)at[1] << 16) : (uint32_t)at[0] << 16;
+            const uint32_t audio = _bits == 24 ? (v & 0xFFFFFFu) : (v >> 8);
+            const uint32_t frame = _spdif_sub >> 1;
+            const uint32_t c = frame < 32u ? (_spdif_cs >> frame) & 1u : 0u;
+            SAI_DATAR(b) = audio | c << 26 | c << 25;
+            _spdif_sub = (uint16_t)(_spdif_sub + 1u == 384u ? 0u : _spdif_sub + 1u);
+        } else if (_tx) {
             SAI_DATAR(b) = wide ? ((uint32_t)at[0] | (uint32_t)at[1] << 16) : (uint32_t)(int32_t)(int16_t)at[0];
         } else {
             const uint32_t v = SAI_DATAR(b);
@@ -1076,13 +1137,14 @@ void I2SClass::endSai()
     pad_mode(_tx ? _dout : _din, CH32RV_GPIO_CFG_IN_FLOAT);
     pad_mode(_mclk, CH32RV_GPIO_CFG_IN_FLOAT);
     _sai = -1;
+    _spdif = false;
     _port = -1;
     free(_ring);
     _ring = nullptr;
     _rate = 0;
 }
 #else
-bool I2SClass::beginSai(bool, uint32_t, bool)
+bool I2SClass::beginSai(bool, uint32_t, bool, bool)
 {
     _error = I2S_ERROR_PINS;
     return false;

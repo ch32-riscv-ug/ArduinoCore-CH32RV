@@ -14,8 +14,12 @@
  * the pins when they are an SAI block's (the variant's CH32RV_SAI_PADS: SCK,
  * FS, SD and MCLK of block A or B) - standard mode and I2S_MODE_TDM
  * (slot_mask the slots used: ESP_I2S's int8_t, slots 0 .. 6, in a frame of
- * 2, 4 or 8), FS optional there (-1: not brought out). The SAI's clock is a fixed division of SYSCLK, so its rates are
- * coarse (sampleRate() says which); STD on pins that are both picks the SPI.
+ * 2, 4 or 8), FS optional there (-1: not brought out) - and I2S_MODE_SPDIF_TX,
+ * IEC 60958 on the SD pin alone (setPins(-1, -1, dout)): stereo frames of
+ * 16 / 24 / 32-bit samples sent as 24 bits, consumer channel status with the
+ * sampling-frequency code of the rate asked. The SAI's clock is a fixed
+ * division of SYSCLK, so its rates are coarse (sampleRate() says which); STD
+ * on pins that are both picks the SPI.
  * One direction per instance - the SPI's I2S is
  * half duplex, so DOUT or DIN, not both (two instances on I2S2 and I2S3 do
  * both at once). The pins pick the instance: CK, WS, SD (and MCK) have to be
@@ -55,6 +59,7 @@ typedef enum {
     I2S_MODE_TDM,
     I2S_MODE_PDM_TX,
     I2S_MODE_PDM_RX,
+    I2S_MODE_SPDIF_TX,        /* not in ESP_I2S: CH32H417's SAI, the SD pin alone (setPins(-1, -1, dout)) */
 } i2s_mode_t;
 
 typedef enum {
@@ -77,12 +82,12 @@ typedef enum {
 
 /* The frame format (setFormat(), before begin()). Not in ESP_I2S, whose
  * standard mode is Philips: the SPI's I2S has these five. */
-enum CH32RVI2SFormat : uint8_t {
-    I2S_FORMAT_PHILIPS = 0,   /* WS low = left, MSB one BCLK after WS changes */
-    I2S_FORMAT_MSB,           /* left-justified: WS high = left, MSB at the change */
-    I2S_FORMAT_LSB,           /* right-justified: the word ends at the slot's end */
-    I2S_FORMAT_PCM_SHORT,     /* PCM, a one-BCLK frame sync */
-    I2S_FORMAT_PCM_LONG,      /* PCM, a frame sync 13 BCLKs long */
+enum class CH32RVI2SFormat : uint8_t {
+    Philips = 0,              /* WS low = left, MSB one BCLK after WS changes */
+    Msb,                      /* left-justified: WS high = left, MSB at the change */
+    Lsb,                      /* right-justified: the word ends at the slot's end */
+    PcmShort,                 /* PCM, a one-BCLK frame sync */
+    PcmLong,                  /* PCM, a frame sync 13 BCLKs long */
 };
 
 /* lastError() */
@@ -167,7 +172,7 @@ private:
 
     int _bclk = -1, _ws = -1, _dout = -1, _din = -1, _mclk = -1;
     bool _inv_bclk = false, _inv_ws = false;
-    CH32RVI2SFormat _format = I2S_FORMAT_PHILIPS;
+    CH32RVI2SFormat _format = CH32RVI2SFormat::Philips;
     size_t _half_bytes = 1024;
 
     int8_t _port = -1;   /* index into the instance table, -1 when not begun */
@@ -203,7 +208,10 @@ private:
     int8_t _sai = -1;
     uint8_t _hw_slots = 2;
     uint16_t _tdm_mask = 0;
-    bool beginSai(bool tx, uint32_t rate, bool tdm);
+    bool beginSai(bool tx, uint32_t rate, bool tdm, bool spdif = false);
+    bool _spdif = false;
+    uint16_t _spdif_sub = 0;    /* the subframe of the block (0 .. 383) the SAI is given next */
+    uint32_t _spdif_cs = 0;     /* channel status bits 0 .. 31 (the rest are 0) */
     void endSai();
     void halfDone(uint8_t h);
     uint32_t _sai_pos = 0;   /* the next halfword of the ring the SAI moves */
