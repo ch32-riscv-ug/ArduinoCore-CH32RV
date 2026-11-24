@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Compiler warnings: the IDE's Compiler warnings preference is honoured (None `-w`, Default as the compiler's, More `-Wall`, All `-Wall -Wextra`), and the core and its libraries build every example with no warning at All; CI fails on a new one. The "(ignoring target-abi)" note at the link of hard-float sketches (V30x, X315, H41x) is gone.
+- (JA) コンパイラの警告: IDE の「コンパイラの警告」の設定に従う（なし `-w`、デフォルトはコンパイラのまま、もっと `-Wall`、全て `-Wall -Wextra`）。コアとライブラリは、全ての例を「全て」で警告なくビルドでき、CI で新しい警告を落とす。ハードウェアの浮動小数を使うスケッチ（V30x・X315・H41x）のリンクで出ていた "(ignoring target-abi)" が出なくなった。
 - (EN) docs/small-sketch.ja.md: making a sketch small - Optimize, Floating Point, the pin menus, the output paths (SerialSDI about 900 B smaller than Serial on V003) and coding (printf +2.6 KB, String +1.2 KB, float +1.6 KB), measured. The Optimize labels now give the measured ranges (-msave-restore 1-2 % smaller on large sketches, -Os 10-20 % larger, no LTO 1.4-2.4x).
 - (JA) docs/small-sketch.ja.md: スケッチを小さくする - Optimize、Floating Point、端子のメニュー、出力の経路（V003 で SerialSDI は Serial より約 900 B 小さい）、書き方（printf +2.6 KB、String +1.2 KB、float +1.6 KB）を測った値で。Optimize の表示名を測った幅に直した（-msave-restore は大きいスケッチで 1〜2 % 小さい、-Os は 10〜20 % 大きい、LTO なしは 1.4〜2.4 倍）。
 - (EN) Serial uses less RAM: the modes' per-USART state (RS-485, flow control, ...) is no longer linked into a sketch that uses none of them (X035 -208 B, V307 -416 B for a plain Serial sketch).

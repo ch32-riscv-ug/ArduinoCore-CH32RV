@@ -40,7 +40,7 @@ constexpr uint32_t TSTATR_TME0 = 1u << 26;
 constexpr uint32_t RFIFO_FMP = 3u, RFIFO_RFOM = 1u << 5;
 constexpr uint32_t ERRSR_BOFF = 1u << 2;
 constexpr uint32_t BTIMR_LBKM = 1u << 30, BTIMR_SILM = 1u << 31;
-constexpr uint32_t TXMIR_TXRQ = 1u << 0, TXMIR_RTR = 1u << 1, TXMIR_IDE = 1u << 2;
+constexpr uint32_t TXMIR_TXRQ = 1u << 0, TXMIR_IDE = 1u << 2;   /* RTR (bit 1): no remote frames sent */
 constexpr uint32_t FCTLR_FINIT = 1u << 0;
 constexpr uint8_t CAN2_FIRST_BANK = 14;
 

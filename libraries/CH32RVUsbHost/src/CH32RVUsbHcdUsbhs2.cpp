@@ -89,7 +89,7 @@ enum : uint32_t {
     H_PORT_ST = 0x134, H_PORT_CHG = 0x136,
 };
 
-constexpr uint8_t CFG_FORCE_FS = 0x40, CFG_SOF_EN = 0x20, CFG_DMA_EN = 0x10, CFG_PHY_SUSPENDM = 0x08,
+[[maybe_unused]] constexpr uint8_t CFG_FORCE_FS = 0x40, CFG_SOF_EN = 0x20, CFG_DMA_EN = 0x10, CFG_PHY_SUSPENDM = 0x08,
                   CFG_CLR_ALL = 0x04, CFG_RST_SIE = 0x02, CFG_RST_LINK = 0x01;
 constexpr uint8_t IF_FIFO_OVER = 0x80, IF_TX_HALT = 0x40, IF_SOF_ACT = 0x20, IF_TRANSFER = 0x10;
 constexpr uint32_t CTL_RX_NO_RES = 0x800000, CTL_TX_NO_RES = 0x400000, CTL_RX_NO_DATA = 0x200000,
@@ -98,7 +98,7 @@ constexpr uint32_t CTL_RX_NO_RES = 0x800000, CTL_TX_NO_RES = 0x400000, CTL_RX_NO
 constexpr uint32_t PORT_SET_RESET = 0x01, PORT_SET_SUSP = 0x02, PORT_CLR_SUSP = 0x04, PORT_CLR_EN = 0x10;
 constexpr uint8_t PORT_CFG_PD_EN = 0x80, PORT_CFG_HOST_EN = 0x01;
 constexpr uint16_t PST_HS = 0x0400, PST_LS = 0x0200, PST_RESET = 0x0010, PST_SUSP = 0x0004, PST_CONNECT = 0x0001;
-constexpr uint8_t PCHG_RESET = 0x10, PCHG_SUSP = 0x04, PCHG_EN = 0x02, PCHG_CONNECT = 0x01;
+[[maybe_unused]] constexpr uint8_t PCHG_RESET = 0x10, PCHG_SUSP = 0x04, PCHG_EN = 0x02, PCHG_CONNECT = 0x01;
 
 constexpr uint8_t PID_OUT = 0x1, PID_IN = 0x9, PID_SETUP = 0xD, PID_ACK = 0x2, PID_NYET = 0x6, PID_NAK = 0xA,
                   PID_STALL = 0xE, PID_DATA0 = 0x3, PID_DATA1 = 0xB, PID_MDATA = 0xF;

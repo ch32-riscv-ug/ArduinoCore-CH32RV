@@ -193,6 +193,7 @@ void SystemInit(void)
     const uint32_t pll_value = CH32RV_CLOCK_PLL_VALUE;
 #endif
     (void)on_hse;
+    (void)use_pll;
     (void)pll_mask;
     (void)pll_value;
 

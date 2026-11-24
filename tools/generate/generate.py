@@ -5999,6 +5999,13 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     lines.append(f"{board}.build.variant={board}")
     lines.append(f"{board}.build.march={fam['march']}")
     lines.append(f"{board}.build.mabi={fam['mabi']}")
+    # The LTO link generates code again in lld, which starts its target from
+    # the triple alone: with a hard-float ABI it printed "Hard-float 'f' ABI
+    # can't be used for a target that doesn't support the F instruction set
+    # extension (ignoring target-abi)" on every build (V30x, X315, H41x;
+    # 2026-11-24). The functions carry their own features; this gives the
+    # link's own target the F it needs for the ABI.
+    lines.append(f"{board}.build.lto_flags={'-Wl,-mllvm,-mattr=+f' if fam['mabi'].endswith('f') else ''}")
     # XW (platform.txt build.march_xw): only where every series the board's
     # parts belong to has it, so CH32V103 (QingKe V3A) never gets it.
     if all(SERIES_XW.get(r["series"], False) for r in rows):

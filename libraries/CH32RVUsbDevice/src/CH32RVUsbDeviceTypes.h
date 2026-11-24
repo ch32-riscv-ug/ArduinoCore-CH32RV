@@ -116,7 +116,7 @@ static constexpr uint8_t CH32RV_USB_DEVICE_MIDI_CIN_CHANNEL_PRESSURE = 0x0d;
 static constexpr uint8_t CH32RV_USB_DEVICE_MIDI_CIN_PITCH_BEND_CHANGE = 0x0e;
 
 /* ---------------------------------------------------------- keyboard layouts
- * A layout is the table of what each key types (EspUsbDevice's keymap/*.h,
+ * A layout is the table of what each key types (EspUsbDevice's keymap/ *.h,
  * byte for byte: unshifted, Shift, AltGr, AltGr+Shift as Unicode). Each one is
  * an object of its own file, so a sketch links only the layouts it names -
  * all of them together would be 17 KB. `id` is the Windows language ID that

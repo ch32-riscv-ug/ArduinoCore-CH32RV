@@ -106,12 +106,14 @@ private:
 #endif
     uint32_t _maccr = 0;            /* MACCR without speed, duplex, TE, RE */
     bool _phyOff = false;           /* V307: the PHY's clock off after a link drop */
-    uint8_t _step = 0;              /* V317: the accelerate-link sequence */
-    uint32_t _stepAt = 0;
+    /* [[maybe_unused]]: each MAC's own state, the other series' left unused */
+    [[maybe_unused]] uint8_t _step = 0;    /* V317: the accelerate-link sequence */
+    [[maybe_unused]] uint32_t _stepAt = 0;
     /* V307: WCHNET_LinkProcess()'s state */
-    uint8_t _pn = 0, _sucCnt = 0, _linkCnt = 0, _trStep = 0, _trCnt = 0, _linkStatus = 0;
-    bool _polarityCheck = false;
-    uint32_t _rand = 0, _period = 50, _linkAt = 0;
+    [[maybe_unused]] uint8_t _pn = 0, _sucCnt = 0, _linkCnt = 0, _trStep = 0, _trCnt = 0, _linkStatus = 0;
+    [[maybe_unused]] bool _polarityCheck = false;
+    uint32_t _rand = 0, _linkAt = 0;
+    [[maybe_unused]] uint32_t _period = 50;
     bool _macSet = false, _running = false, _linked = false, _full = false;
     uint8_t _speed = 0;
     uint8_t _rxNext = 0, _txNext = 0;

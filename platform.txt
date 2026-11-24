@@ -38,7 +38,19 @@ compiler.cpp.compat_flags=-Wno-reserved-user-defined-literal
 compiler.ld_flags=-fuse-ld=lld -nostdlib -Wl,--relax-gp
 compiler.libs=-lc++ -lc++abi -lc -lclang_rt.builtins
 
+# The IDE's Compiler warnings preference (arduino-cli --warnings): none,
+# default, more, all. The core and its libraries build without a warning at
+# "all" (-Wall -Wextra), which CI checks (tools/index/build_examples.py
+# --warnings all); compiler.warning_flags is what a recipe gets when no level
+# is passed.
 compiler.warning_flags=-Wall
+compiler.warning_flags.none=-w
+compiler.warning_flags.default=
+compiler.warning_flags.more=-Wall
+compiler.warning_flags.all=-Wall -Wextra
+# The LTO link's own target features (boards.txt: -Wl,-mllvm,-mattr=+f on the
+# hard-float ABI boards); empty where a board sets none.
+build.lto_flags=
 # The Optimize menu (opt) in boards.txt sets the level and link-time
 # optimisation: -Oz with LTO by default. With LTO the code is generated again
 # at the link, so the combine recipe repeats the code-generation flags: the
@@ -161,7 +173,7 @@ recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" rcs "{archive_file_path}" "
 # order the sketch includes them, and one library's archive may need
 # another's that came earlier (a sketch with NetworkClientSecure.h before
 # Network.h).
-recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" {compiler.target_flags} -march={compiler.march} -mabi={build.mabi} -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles {compiler.ld_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections {build.ld_layout_flags} "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,--defsym=__stack_size={build.stack_size}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" {compiler.libs} -Wl,--end-group
+recipe.c.combine.pattern="{compiler.path}{compiler.c.cmd}" {compiler.target_flags} -march={compiler.march} -mabi={build.mabi} -ffunction-sections -fdata-sections {build.optimize_flags} -nostartfiles {compiler.ld_flags} {build.lto_flags} {compiler.c.elf.extra_flags} -Wl,--gc-sections {build.ld_layout_flags} "-L{build.core.path}" "-L{build.variant.path}" "-T{build.variant.path}/{build.ldscript}" "-Wl,--defsym=__stack_size={build.stack_size}" "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" -Wl,--start-group {object_files} "{build.path}/{archive_file}" {compiler.libs} -Wl,--end-group
 recipe.objcopy.hex.pattern="{compiler.path}{compiler.objcopy.cmd}" -O ihex "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.hex"
 recipe.objcopy.bin.pattern="{compiler.path}{compiler.objcopy.cmd}" -O binary "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
 

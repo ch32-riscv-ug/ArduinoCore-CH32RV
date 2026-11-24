@@ -86,7 +86,7 @@ jobs:
       - name: Fetch pinned toolchain
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv-toolchain
       - name: Build every example for this profile
-        run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}"
+        run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}" --warnings all --fail-on-warning
 
   install-test:
     name: Package install (${{ matrix.os }})

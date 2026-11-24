@@ -5,9 +5,9 @@
 extern uint32_t _susrstack[];   /* the reservation's bottom (linker script) */
 extern uint32_t _eusrstack[];   /* its top */
 
-static uint32_t panic_record[2] __attribute__((section(".noinit")));
 uint8_t ch32rv_stack_panicked;
 #if CH32RV_STACK_CHECK
+static uint32_t panic_record[2] __attribute__((section(".noinit")));
 static uint8_t ch32rv_stack_filled;
 /* The reservation's bottom 64 bytes: one word alone was stepped over by a
  * frame whose unwritten part lay on it (H417, 2026-11-14: 250 frames of 64

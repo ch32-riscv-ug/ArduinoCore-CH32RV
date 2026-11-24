@@ -144,7 +144,7 @@ static uint8_t hid_ctrl[HID_EP_SIZE];
  * class of its own (hidReportDescriptor(instance) looks them up here). */
 static CH32RVUsbDeviceHidInterface *hid_itfs[CH32RV_USB_DEVICE_HID_INTERFACES];
 
-class CH32RVUsbDeviceHidInterface : public CH32RVUsbDeviceFunction {
+class CH32RVUsbDeviceHidInterface final : public CH32RVUsbDeviceFunction {
 public:
     explicit CH32RVUsbDeviceHidInterface(CH32RVUsbDevice &device)
         : CH32RVUsbDeviceFunction(device, hid_type, CH32RV_USB_HID_NAME)

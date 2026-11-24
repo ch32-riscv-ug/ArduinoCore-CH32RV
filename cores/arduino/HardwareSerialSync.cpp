@@ -150,6 +150,7 @@ const CkSet ck_sets[] = {
  * value (remap families), any row on the per-pin families; 0 when none. */
 bool ck_pad(const CkSet &set, const ch32rv_route_t &route, uint8_t &pin, uint8_t &af)
 {
+    (void)route;   /* the per-pin families take any row */
     for (uint8_t i = 0; i < set.count; i++) {
         const ch32rv_route_t &row = set.rows[i];
 #if !CH32RV_GPIO_PER_PIN_AF

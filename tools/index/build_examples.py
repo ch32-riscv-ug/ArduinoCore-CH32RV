@@ -21,6 +21,11 @@ counts as checked (it costs little - the core is rebuilt in seconds). Builds
 run one after another; CI runs one job per profile. Exit status 1 when
 any build fails; each failure is printed with its first error line (as a
 GitHub annotation under Actions).
+
+--warnings <level> builds at arduino-cli's warning level (CI: all, -Wall
+-Wextra); --fail-on-warning makes a build that printed a warning count as
+failed - a compiler diagnostic ("warning:") or LLVM's own lines without one,
+such as the LTO link's "... ABI can't be used ... (ignoring target-abi)".
 """
 import argparse
 import os
@@ -64,10 +69,19 @@ def platform(work: pathlib.Path) -> pathlib.Path:
     return user
 
 
+# A warning in a build's output: the compiler's diagnostics, and LLVM's lines
+# that carry no "warning:" (the LTO link's target-abi notice).
+WARNING = re.compile(r"\bwarning:|\(ignoring target-abi\)")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("workdir", nargs="?", type=pathlib.Path)
     ap.add_argument("--profile", action="append", help="only these profiles (default: all)")
+    ap.add_argument("--warnings", choices=("none", "default", "more", "all"),
+                    help="arduino-cli's --warnings level for every build")
+    ap.add_argument("--fail-on-warning", action="store_true",
+                    help="a build that printed a warning fails too")
     ap.add_argument("--list-profiles", action="store_true",
                     help="print the profiles the examples declare, as a JSON list, and exit")
     args = ap.parse_args()
@@ -94,6 +108,8 @@ def main() -> int:
         print("arduino-cli is not on PATH", file=sys.stderr)
         return 2
     props = ["--build-property", f"compiler.path={clang}{os.sep}"]
+    if args.warnings:
+        props += ["--warnings", args.warnings]
 
     work = args.workdir.resolve()
     work.mkdir(parents=True, exist_ok=True)
@@ -103,7 +119,7 @@ def main() -> int:
                ARDUINO_DIRECTORIES_DOWNLOADS=str(work / "downloads"))
     annotate = os.environ.get("GITHUB_ACTIONS") == "true"
 
-    built = failed = 0
+    built = failed = warned = 0
     started = time.monotonic()
     for example, ps in found:
         todo = [(p, f) for p, f in ps.items() if p in wanted]
@@ -120,16 +136,27 @@ def main() -> int:
                  "--build-path", str(work / "build" / profile), str(copy)],
                 env=env, text=True, capture_output=True)
             built += 1
+            lines = (proc.stdout + proc.stderr).splitlines()
+            warnings = [l for l in lines if WARNING.search(l)]
+            if proc.returncode == 0 and warnings:
+                warned += 1
+                print(f"WARN {profile:20} {rel}: {len(warnings)} - {warnings[0]}", flush=True)
+                if annotate:
+                    level = "error" if args.fail_on_warning else "warning"
+                    print(f"::{level} file={rel.as_posix()}/{example.name}.ino::{profile}: {warnings[0]}", flush=True)
+                if args.fail_on_warning:
+                    failed += 1
+                continue
             if proc.returncode == 0:
                 print(f"ok   {profile:20} {rel}", flush=True)
                 continue
             failed += 1
-            lines = (proc.stdout + proc.stderr).splitlines()
             first = next((l for l in lines if re.search(r"error|overflowed", l, re.I)), lines[-1] if lines else "?")
             print(f"FAIL {profile:20} {rel}: {first}", flush=True)
             if annotate:
                 print(f"::error file={rel.as_posix()}/{example.name}.ino::{profile}: {first}", flush=True)
-    print(f"{built - failed} of {built} builds passed in {time.monotonic() - started:.0f} s")
+    print(f"{built - failed} of {built} builds passed in {time.monotonic() - started:.0f} s"
+          + (f", {warned} with warnings" if warned else ""))
     return 1 if failed else 0
 
 

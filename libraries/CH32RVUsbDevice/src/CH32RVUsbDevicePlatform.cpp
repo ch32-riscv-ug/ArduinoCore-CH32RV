@@ -22,7 +22,7 @@ static void put16(uint8_t *p, uint16_t v)
     p[1] = (uint8_t)(v >> 8);
 }
 
-static void put32(uint8_t *p, uint32_t v)
+[[maybe_unused]] static void put32(uint8_t *p, uint32_t v)
 {
     put16(p, (uint16_t)v);
     put16(p + 2, (uint16_t)(v >> 16));

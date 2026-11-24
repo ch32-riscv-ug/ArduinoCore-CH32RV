@@ -66,6 +66,12 @@
 #define LWIP_STATS 0
 #ifndef NETWORK_HOST_TEST
 #define LWIP_NOASSERT 1             /* lwIP's asserts guard its own invariants; on the chip they would only hang */
+/* With the asserts out, lwIP's netif_add() keeps a count only an assert reads
+ * ("variable 'num_netifs' set but not used" at --warnings all). lwIP's sources
+ * stay as vendored; this header is included by each of them. */
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#endif
 #endif
 #define LWIP_CHECKSUM_CTRL_PER_NETIF 1   /* the Ethernet MAC checks and inserts its own; USB NCM keeps lwIP's */
 #if defined(NETWORK_LWIP_TINY)
