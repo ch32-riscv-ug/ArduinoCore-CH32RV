@@ -745,15 +745,18 @@ def vio18_menu(board: str) -> list[str]:
 # LTO measured on CH32X035 2026-10-21: 9-24% less flash at the same
 # speed; -msave-restore a further 4-5% for 7-9% slower ECC. The menu id is
 # STM32duino's for the same choice.
-# The labels say where each stands against the default in size and speed
-# (the measurements above), so the smallest is the one that says so.
+# The labels say where each stands against the default in size and speed,
+# as measured on 2026-11-24 with ch32rv-toolchain 23.1.6 (V003, X035, V203;
+# docs/small-sketch.ja.md): -msave-restore 1-2 % smaller from about 6 KB of
+# code (ButtonKeyboard -1.9 / -2.3 %), slightly larger below 3 KB; -Os 10-20 %
+# larger; no LTO 1.4-2.4 times the size.
 OPT_MENU = (
     ("ozlto", "Small (-Oz) with LTO (default)", "-Oz -flto"),
-    ("ozltosr", "Smallest (-Oz, LTO, -msave-restore): ~5% smaller, calls slower", "-Oz -flto -msave-restore"),
-    ("oslto", "Faster (-Os) with LTO: ~8% larger", "-Os -flto"),
+    ("ozltosr", "Smallest for large sketches (-Oz, LTO, -msave-restore): 1-2% less, slower calls", "-Oz -flto -msave-restore"),
+    ("oslto", "Faster (-Os) with LTO: 10-20% larger", "-Os -flto"),
     ("o2lto", "Fast (-O2) with LTO: larger", "-O2 -flto"),
     ("o3lto", "Fastest (-O3) with LTO: largest", "-O3 -flto"),
-    ("ozstd", "Small (-Oz) without LTO: 9-24% larger", "-Oz"),
+    ("ozstd", "Small (-Oz) without LTO: 1.4-2.4x larger", "-Oz"),
 )
 
 

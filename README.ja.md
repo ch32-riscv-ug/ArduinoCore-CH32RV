@@ -98,6 +98,7 @@ Board Manager の配布物は allowlist 方式で作られます。正確な対�
 - [USB Device・Host・PD とサンプルの使い方](docs/usb.ja.md)
 - [デバッグ出力](docs/debug-output.ja.md)
 - [デバッガ](docs/debugger.ja.md)
+- [スケッチを小さくする](docs/small-sketch.ja.md)（メニュー・出力の経路・書き方。測った大きさつき）
 - [フラッシュ使用量の調べ方](docs/flash-size.ja.md)
 - [設計判断](docs/adr/README.ja.md)
 

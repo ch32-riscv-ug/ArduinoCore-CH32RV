@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) docs/small-sketch.ja.md: making a sketch small - Optimize, Floating Point, the pin menus, the output paths (SerialSDI about 900 B smaller than Serial on V003) and coding (printf +2.6 KB, String +1.2 KB, float +1.6 KB), measured. The Optimize labels now give the measured ranges (-msave-restore 1-2 % smaller on large sketches, -Os 10-20 % larger, no LTO 1.4-2.4x).
+- (JA) docs/small-sketch.ja.md: スケッチを小さくする - Optimize、Floating Point、端子のメニュー、出力の経路（V003 で SerialSDI は Serial より約 900 B 小さい）、書き方（printf +2.6 KB、String +1.2 KB、float +1.6 KB）を測った値で。Optimize の表示名を測った幅に直した（-msave-restore は大きいスケッチで 1〜2 % 小さい、-Os は 10〜20 % 大きい、LTO なしは 1.4〜2.4 倍）。
 - (EN) Serial uses less RAM: the modes' per-USART state (RS-485, flow control, ...) is no longer linked into a sketch that uses none of them (X035 -208 B, V307 -416 B for a plain Serial sketch).
 - (JA) Serial の RAM が減った: モード（RS-485・フロー制御など）の USART ごとの状態を、使わないスケッチにはリンクしない（普通の Serial のスケッチで X035 -208 B、V307 -416 B）。
 - (EN) **Breaking**: the pin-assignment menus' ids (the FQBN options) are `pin_usart01` .. `pin_usart10`, `pin_i2c1` / `pin_i2c2`, `pin_spi1` .. `pin_spi3` (were `usart1`, `i2c1`, `spi1` ...): Arduino IDE 2 lists a board's menus in id order, so they now stay together, USART10 after USART9.

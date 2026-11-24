@@ -99,6 +99,7 @@ Board Manager archives use an allowlist. `PLATFORM_ENTRIES` in
 - [USB Device, Host, PD and example guides](docs/usb.ja.md) (Japanese; each example also has an English README)
 - [Debug output](docs/debug-output.ja.md) (Japanese)
 - [Debugger setup](docs/debugger.ja.md) (Japanese)
+- [Making a sketch small](docs/small-sketch.ja.md) (Japanese): menu settings, output paths and coding, with measured sizes
 - [Flash-size analysis](docs/flash-size.ja.md) (Japanese)
 - [Architecture decisions](docs/adr/README.ja.md) (Japanese)
 
