@@ -30,18 +30,18 @@ profiles:
   ch32h415:
     fqbn: ch32-riscv-ug:ch32rv:CH32H415:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.9.0)
+      - platform: ch32-riscv-ug:ch32rv (0.10.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h416:
     fqbn: ch32-riscv-ug:ch32rv:CH32H416:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.9.0)
+      - platform: ch32-riscv-ug:ch32rv (0.10.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h417:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:pnum=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.9.0)
+      - platform: ch32-riscv-ug:ch32rv (0.10.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
