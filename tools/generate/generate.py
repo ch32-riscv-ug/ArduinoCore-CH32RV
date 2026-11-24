@@ -538,12 +538,12 @@ def rstpin_menu(board: str, series: str) -> list[str]:
     return lines
 
 
-# What an upload erases (platform.txt upload.erase_args). Keep Store first and
+# What an upload erases (platform.txt upload.erase_args). Program only first and
 # empty: ch32rv's default keeps the flash tail a sketch declared with
 # CH32RV_FLASH_STORE, which costs 1 s or so over erasing the whole chip
 # (V003 16 KB 3.1 s against 2.3 s, V307 96 KB 5.0 s against 4.0 s; ch32rv
 # 0.25). An upload.* property, so changing it rebuilds nothing. DFU and HID
-# cannot erase the chip and refuse All Flash; the HID-only UIAPduino board has
+# cannot erase the chip and refuse Whole flash; the HID-only UIAPduino board has
 # no menu.
 ERASE_MENU = (
     ("keep", "Program only: keep CH32RV_FLASH_STORE data (default)", ""),
@@ -622,13 +622,12 @@ def stackcheck_menu(board: str) -> list[str]:
 # baud rate of a monitor's settings, so the menu is where an IDE user picks it
 # (arduino-cli takes it as monitor_port.<protocol>.source; --config still
 # wins). UART is the target's UART through the port: a serial port's CDC (a
-# WCH-LinkE's UART bridge, a USB-UART adapter), an OEP probe's fixture UART; a
-# wchlink:// port has no UART (its CDC is the COM / tty port), so it keeps
-# ch32rv's default there. The others attach through the debug module on every
+# WCH-LinkE's UART bridge, a USB-UART adapter), a wchlink:// port's own CDC
+# (ch32rv 0.33.0 and later), an OEP probe's fixture UART. The others attach through the debug module on every
 # kind of port (docs/debug-output.ja.md: attaching can reclock some families
 # and corrupt a register on V103 / V205).
 MONITOR_SOURCE_MENU = (
-    ("uart", "UART (Serial) (default)", {"serial": "uart", "oep": "fixture-uart"}),
+    ("uart", "UART (Serial) (default)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),
     ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
     ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
     ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),

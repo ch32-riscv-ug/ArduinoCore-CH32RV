@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.33.0: the Serial Monitor on a `wchlink://` port reads the WCH-Link's UART bridge (Monitor Source UART, the default), so the port used for uploading shows `Serial` too; `--probe` takes a bare USB serial number.
+- (JA) ch32rv 0.33.0: `wchlink://` のポートのシリアルモニターが WCH-Link の UART bridge を読む（Monitor Source の UART、既定）。書き込みに使うポートのままで `Serial` が見える。`--probe` に USB のシリアル番号をそのまま渡せる。
 - (EN) Tools menu labels in one style: every menu marks its default; CPU Clock as "144 MHz (USB)" with untested USB as "USB untested"; parseFloat, CPU Core, Reset Pin, Watchdog and Erase Flash say what each choice does (Erase Flash: "Program only: keep CH32RV_FLASH_STORE data" / "Whole flash"); pin menus "Auto: pins chosen at begin()" / "Fixed: TX:PA9, RX:PA10".
 - (JA) ツールメニューの表示名をそろえた: どのメニューも既定に印。CPU Clock は「144 MHz (USB)」の形で、確かめていない USB は「USB untested」。parseFloat・CPU Core・Reset Pin・Watchdog・Erase Flash はそれぞれの選択が何をするかを書く（Erase Flash は「Program only: keep CH32RV_FLASH_STORE data」/「Whole flash」）。端子のメニューは「Auto: pins chosen at begin()」/「Fixed: TX:PA9, RX:PA10」。
 - (EN) No more `'main' should not be 'extern "C"'` warning on every C++ file (ArduinoCore-API's Common.h declared main() in its extern "C" block).

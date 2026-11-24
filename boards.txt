@@ -204,6 +204,7 @@ CH32V002.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V002.menu.monsrc.uart=UART (Serial) (default)
 CH32V002.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V002.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V002.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V002.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V002.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -429,6 +430,7 @@ CH32V003.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V003.menu.monsrc.uart=UART (Serial) (default)
 CH32V003.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V003.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V003.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V003.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V003.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -628,6 +630,7 @@ CH32V004.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V004.menu.monsrc.uart=UART (Serial) (default)
 CH32V004.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V004.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V004.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V004.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V004.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -853,6 +856,7 @@ CH32V005.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V005.menu.monsrc.uart=UART (Serial) (default)
 CH32V005.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V005.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V005.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V005.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V005.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -1146,6 +1150,7 @@ CH32V006.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V006.menu.monsrc.uart=UART (Serial) (default)
 CH32V006.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V006.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V006.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V006.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V006.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -1411,6 +1416,7 @@ CH32V007.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V007.menu.monsrc.uart=UART (Serial) (default)
 CH32V007.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V007.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V007.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V007.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V007.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -1668,6 +1674,7 @@ CH32V103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V103.menu.monsrc.uart=UART (Serial) (default)
 CH32V103.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V103.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V103.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V103.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V103.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -2012,6 +2019,7 @@ CH32V203.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V203.menu.monsrc.uart=UART (Serial) (default)
 CH32V203.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V203.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V203.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V203.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V203.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -2275,6 +2283,7 @@ CH32V205.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V205.menu.monsrc.uart=UART (Serial) (default)
 CH32V205.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V205.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V205.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V205.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V205.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -2712,6 +2721,7 @@ CH32V208.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V208.menu.monsrc.uart=UART (Serial) (default)
 CH32V208.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V208.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V208.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V208.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V208.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -3014,6 +3024,7 @@ CH32V303.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V303.menu.monsrc.uart=UART (Serial) (default)
 CH32V303.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V303.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V303.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V303.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V303.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -3343,6 +3354,7 @@ CH32V305.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V305.menu.monsrc.uart=UART (Serial) (default)
 CH32V305.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V305.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V305.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V305.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V305.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -3670,6 +3682,7 @@ CH32V307.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V307.menu.monsrc.uart=UART (Serial) (default)
 CH32V307.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V307.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V307.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V307.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V307.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -4004,6 +4017,7 @@ CH32V317.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V317.menu.monsrc.uart=UART (Serial) (default)
 CH32V317.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V317.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V317.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V317.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V317.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -4329,6 +4343,7 @@ CH32V407.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V407.menu.monsrc.uart=UART (Serial) (default)
 CH32V407.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V407.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V407.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V407.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V407.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -4667,6 +4682,7 @@ CH32V467.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V467.menu.monsrc.uart=UART (Serial) (default)
 CH32V467.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32V467.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32V467.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32V467.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32V467.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -4971,6 +4987,7 @@ CH32X033.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X033.menu.monsrc.uart=UART (Serial) (default)
 CH32X033.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32X033.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32X033.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32X033.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32X033.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -5245,6 +5262,7 @@ CH32X035.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X035.menu.monsrc.uart=UART (Serial) (default)
 CH32X035.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32X035.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32X035.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32X035.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32X035.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -5486,6 +5504,7 @@ CH32X305.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X305.menu.monsrc.uart=UART (Serial) (default)
 CH32X305.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32X305.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32X305.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32X305.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32X305.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -5963,6 +5982,7 @@ CH32X315.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X315.menu.monsrc.uart=UART (Serial) (default)
 CH32X315.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32X315.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32X315.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32X315.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32X315.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -6598,6 +6618,7 @@ CH32L103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32L103.menu.monsrc.uart=UART (Serial) (default)
 CH32L103.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32L103.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32L103.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32L103.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32L103.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -6871,6 +6892,7 @@ CH32M007.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M007.menu.monsrc.uart=UART (Serial) (default)
 CH32M007.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32M007.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32M007.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32M007.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32M007.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -7115,6 +7137,7 @@ CH32M030.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M030.menu.monsrc.uart=UART (Serial) (default)
 CH32M030.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32M030.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32M030.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32M030.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32M030.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -7322,6 +7345,7 @@ CH32M103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M103.menu.monsrc.uart=UART (Serial) (default)
 CH32M103.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32M103.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32M103.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32M103.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32M103.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -7561,6 +7585,7 @@ CH32H415.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H415.menu.monsrc.uart=UART (Serial) (default)
 CH32H415.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32H415.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32H415.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32H415.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32H415.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -7966,6 +7991,7 @@ CH32H416.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H416.menu.monsrc.uart=UART (Serial) (default)
 CH32H416.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32H416.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32H416.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32H416.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32H416.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
@@ -8315,6 +8341,7 @@ CH32H417.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H417.menu.monsrc.uart=UART (Serial) (default)
 CH32H417.menu.monsrc.uart.monitor_port.serial.source=uart
+CH32H417.menu.monsrc.uart.monitor_port.wchlink.source=uart
 CH32H417.menu.monsrc.uart.monitor_port.oep.source=fixture-uart
 CH32H417.menu.monsrc.dmseq=DMSeq (SerialDMSeq)
 CH32H417.menu.monsrc.dmseq.monitor_port.serial.source=dmseq
