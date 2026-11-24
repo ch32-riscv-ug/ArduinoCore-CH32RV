@@ -281,7 +281,9 @@ own VBUS, and a hub may not implement per-port power.
 
 | API | For |
 |---|---|
-| `onKeyboard()` / `setKeyboardLayout()` / `setKeyboardLeds()` | Keys, the character layout, the Lock LEDs |
+| `onKeyboard()` / `setKeyboardLayout()` / `setKeyboardLeds()` | Keys, the character layout, the Lock LEDs. The keys' place in the report is learned from the report descriptor: a key array (the boot layout and most 6-key keyboards) or an NKRO bitmap; a report of ErrorRollOver keeps the last state |
+| `onKeyboardState()` / `addKeyboardStateListener()` | The whole keyboard after each report that changed it, boot and NKRO alike as one 256-key map (`CH32RVUsbHostKeyboardState`: `bitmap`, `changedBitmap`, `isDown()` / `wasPressed()` / `wasReleased()`; the modifiers are keys E0 .. E7) |
+| `keyboardUsesBitmapReport()` | Whether the keyboard reports an NKRO bitmap |
 | `onMouse()` / `onGamepad()` | Input decoded from the descriptor |
 | `onConsumerControl()` / `onSystemControl()` | Media and system usages |
 | `onHIDInput()` / `onHIDVendorInput()` / `onHIDReportDescriptor()` | Raw input, vendor input, the report descriptor |

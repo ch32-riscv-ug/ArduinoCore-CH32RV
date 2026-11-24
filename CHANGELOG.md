@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) CH32RVUsbHost: NKRO keyboards - the keys' place learned from the report descriptor (an array or a bitmap), ErrorRollOver keeping the last state; EspUsbHost's `onKeyboardState()` / `addKeyboardStateListener()` (a 256-key map) and `keyboardUsesBitmapReport()`.
+- (JA) CH32RVUsbHost: NKRO のキーボード - キーの位置をレポート記述子から読む（配列かビットマップ）。ErrorRollOver では前の状態のまま。EspUsbHost の `onKeyboardState()` / `addKeyboardStateListener()`（256 キーの表）と `keyboardUsesBitmapReport()`。
 - (EN) CH32RVUsbHost: EspUsbHost's `getHostDeviceAddresses()`, `getVideoStreamCount()`, `getNetworkInterfaces()`, `vendorOutEndpoint()` / `vendorInEndpoint()` and `serialOutPacketSize()`.
 - (JA) CH32RVUsbHost: EspUsbHost の `getHostDeviceAddresses()`、`getVideoStreamCount()`、`getNetworkInterfaces()`、`vendorOutEndpoint()` / `vendorInEndpoint()`、`serialOutPacketSize()`。
 - (EN) CH32RVUsbHost: EspUsbHost's `ccidSlotCount()`, `ccidMessage()` (any PC_to_RDR message, the raw response back) and `ccidAbort()`.

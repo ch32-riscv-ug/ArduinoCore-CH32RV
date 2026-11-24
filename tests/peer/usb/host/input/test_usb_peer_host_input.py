@@ -91,6 +91,23 @@ def test_usb_peer_host_input(dut, peers):
     device(peer, "key 47", rb"KEY 1")
     dut.expect(rb"H KEY p 47 91", timeout=5)
 
+    # An NKRO keyboard (interface 0's report 4: the modifier byte and a bitmap of usages 0 .. 135), learned from the
+    # report descriptor: seven keys at once with Shift - a press each ('A' .. 'G'), and onKeyboardState()'s map with
+    # the keys and Shift (E1 = 225) down; then every key up. The boot keyboard's report goes through the same map.
+    assert host(dut, "kbitmap", rb"KBITMAP (\d)").group(1) == b"1"
+    assert host(dut, "kstate 1", rb"KSTATEON (\d)").group(1) == b"1"
+    device(peer, "nkro 0x02 4 5 6 7 8 9 10", rb"NKRO 1")
+    for code, ascii_ in zip(range(4, 11), range(65, 72)):
+        dut.expect(rf"H KEY p {code} {ascii_}".encode(), timeout=5)
+    dut.expect(rb"H KSTATE 02 4,5,6,7,8,9,10,225 4,5,6,7,8,9,10,225", timeout=5)
+    for code in range(4, 11):
+        dut.expect(rf"H KEY r {code} ".encode(), timeout=5)
+    dut.expect(rb"H KSTATE 00 - 4,5,6,7,8,9,10,225", timeout=5)
+    device(peer, "key 4", rb"KEY 1")
+    dut.expect(rb"H KSTATE 00 4 4", timeout=5)
+    dut.expect(rb"H KSTATE 00 - 4", timeout=5)
+    assert host(dut, "kstate 0", rb"KSTATEON (\d)").group(1) == b"0"
+
     # Two CDC ports: port 1 answers each byte plus one, through onSerialData().
     assert host(dut, "ports", rb"PORTS (\d+)").group(1) == b"2"
     assert host(dut, "sser 1 0102fe", rb"SSER (\d)").group(1) == b"1"

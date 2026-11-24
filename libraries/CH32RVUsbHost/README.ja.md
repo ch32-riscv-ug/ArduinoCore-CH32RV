@@ -222,7 +222,9 @@ hub に個別電源制御の実装がない場合もあります。
 
 | API | 用途 |
 |---|---|
-| `onKeyboard()` / `setKeyboardLayout()` / `setKeyboardLeds()` | キー入力、文字配列、Lock LED |
+| `onKeyboard()` / `setKeyboardLayout()` / `setKeyboardLeds()` | キー入力、文字配列、Lock LED。キーがレポートのどこにあるかは、レポート記述子から読む（キーの配列: ブートの形とたいていの 6 キーのもの、または NKRO のビットマップ）。ErrorRollOver のレポートでは前の状態のまま |
+| `onKeyboardState()` / `addKeyboardStateListener()` | 状態が変わったレポートごとのキーボード全体。ブートも NKRO も 256 キーの表で渡す（`CH32RVUsbHostKeyboardState`: `bitmap`・`changedBitmap`・`isDown()` / `wasPressed()` / `wasReleased()`。修飾キーは E0〜E7 のキー） |
+| `keyboardUsesBitmapReport()` | キーボードが NKRO のビットマップで報告するか |
 | `onMouse()` / `onGamepad()` | descriptor を解析した入力 |
 | `onConsumerControl()` / `onSystemControl()` | メディア・システム usage |
 | `onHIDInput()` / `onHIDVendorInput()` / `onHIDReportDescriptor()` | 生入力、vendor入力、report descriptor |

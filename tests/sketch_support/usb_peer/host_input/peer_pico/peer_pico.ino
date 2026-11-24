@@ -46,7 +46,7 @@ struct UsbLock
   ~UsbLock() { mutex_exit(&__usb_mutex); }
 };
 
-enum { RID_GAMEPAD = 1, RID_SYSTEM, RID_VENDOR };
+enum { RID_GAMEPAD = 1, RID_SYSTEM, RID_VENDOR, RID_NKRO };
 
 static const uint8_t descriptor0[] = {
     TUD_HID_REPORT_DESC_GAMEPAD(HID_REPORT_ID(RID_GAMEPAD)),
@@ -65,6 +65,24 @@ static const uint8_t descriptor0[] = {
       HID_OUTPUT(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
       HID_USAGE(0x04),
       HID_FEATURE(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
+    HID_COLLECTION_END,
+    /* an NKRO keyboard: the modifier byte, then a bitmap of usages 0 .. 135 (17 bytes) */
+    HID_USAGE_PAGE(HID_USAGE_PAGE_DESKTOP),
+    HID_USAGE(HID_USAGE_DESKTOP_KEYBOARD),
+    HID_COLLECTION(HID_COLLECTION_APPLICATION),
+      HID_REPORT_ID(RID_NKRO)
+      HID_USAGE_PAGE(HID_USAGE_PAGE_KEYBOARD),
+      HID_USAGE_MIN(224),
+      HID_USAGE_MAX(231),
+      HID_LOGICAL_MIN(0),
+      HID_LOGICAL_MAX(1),
+      HID_REPORT_SIZE(1),
+      HID_REPORT_COUNT(8),
+      HID_INPUT(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
+      HID_USAGE_MIN(0),
+      HID_USAGE_MAX(135),
+      HID_REPORT_COUNT(136),
+      HID_INPUT(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
     HID_COLLECTION_END,
 };
 static const uint8_t descriptor1[] = {TUD_HID_REPORT_DESC_KEYBOARD()};
@@ -135,6 +153,16 @@ static bool key(uint8_t keycode)
   return report(hid1, 0, r, sizeof r) && report(hid1, 0, none, sizeof none);
 }
 
+/* An NKRO report with these keys down (and the modifiers), then every key up. */
+static bool nkro(uint8_t mods, const uint8_t *keys, size_t n)
+{
+  uint8_t r[18] = {mods};
+  for (size_t i = 0; i < n; i++)
+    if (keys[i] < 136) r[1 + keys[i] / 8] |= (uint8_t)(1u << (keys[i] % 8));
+  const uint8_t none[18] = {};
+  return report(hid0, RID_NKRO, r, sizeof r) && report(hid0, RID_NKRO, none, sizeof none);
+}
+
 static void onSet0(uint8_t id, hid_report_type_t type, const uint8_t *buffer, uint16_t length)
 {
   if (id == 0 && length)  /* through the OUT endpoint: the ID is the first byte */
@@ -188,6 +216,22 @@ static void run(char *cmd)
     say("PD VIN %u\n", report(hid0, RID_VENDOR, d, sizeof d) ? 1 : 0);
   }
   else if (!strcmp(cmd, "key")) say("PD KEY %u\n", key((uint8_t)strtoul(arg, nullptr, 0)) ? 1 : 0);
+  else if (!strcmp(cmd, "nkro"))   /* nkro <modifiers> <key> ...: an NKRO report of interface 0, then all up */
+  {
+    char *p = arg;
+    const uint8_t mods = (uint8_t)strtoul(p, &p, 0);
+    uint8_t keys[16];
+    size_t n = 0;
+    while (*p && n < sizeof keys)
+    {
+      char *q;
+      const unsigned long k = strtoul(p, &q, 0);
+      if (q == p) break;
+      keys[n++] = (uint8_t)k;
+      p = q;
+    }
+    say("PD NKRO %u\n", nkro(mods, keys, n) ? 1 : 0);
+  }
   else if (!strcmp(cmd, "feature"))
   {
     memset(feature, 0, sizeof feature);

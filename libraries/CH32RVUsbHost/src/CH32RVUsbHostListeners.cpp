@@ -25,6 +25,7 @@
     extern void (*ch32rv_usb_host_##name##_primary)(const CH32RVUsbHost::Type &c);                 \
     CH32RVUsbHost::Type ch32rv_usb_host_##name##_take(const CH32RVUsbHost::Type &fanout);
 CH32RV_HOST_SLOT_DECL(keyboard, KeyboardCallback)
+CH32RV_HOST_SLOT_DECL(keyboard_state, KeyboardStateCallback)
 CH32RV_HOST_SLOT_DECL(mouse, MouseCallback)
 CH32RV_HOST_SLOT_DECL(consumer, ConsumerControlCallback)
 CH32RV_HOST_SLOT_DECL(system, SystemControlCallback)
@@ -54,6 +55,7 @@ template <typename Cb> struct Table : TableBase {
 };
 
 Table<CH32RVUsbHost::KeyboardCallback> keyboard;
+Table<CH32RVUsbHost::KeyboardStateCallback> keyboard_state;
 Table<CH32RVUsbHost::MouseCallback> mouse;
 Table<CH32RVUsbHost::ConsumerControlCallback> consumer;
 Table<CH32RVUsbHost::SystemControlCallback> system_control;
@@ -131,6 +133,12 @@ CH32RVUsbHostListenerId CH32RVUsbHost::addKeyboardListener(KeyboardCallback call
                                                                        &ch32rv_usb_host_keyboard_primary);
 }
 
+CH32RVUsbHostListenerId CH32RVUsbHost::addKeyboardStateListener(KeyboardStateCallback callback)
+{
+    return add<KeyboardStateCallback, keyboard_state, CH32RVUsbHostKeyboardState>(
+        callback, ch32rv_usb_host_keyboard_state_take, &ch32rv_usb_host_keyboard_state_primary);
+}
+
 CH32RVUsbHostListenerId CH32RVUsbHost::addMouseListener(MouseCallback callback)
 {
     return add<MouseCallback, mouse, CH32RVUsbHostMouseEvent>(callback, ch32rv_usb_host_mouse_take,
@@ -201,6 +209,7 @@ bool CH32RVUsbHost::removeListener(CH32RVUsbHostListenerId listenerId)
 #else /* no host */
 
 CH32RVUsbHostListenerId CH32RVUsbHost::addKeyboardListener(KeyboardCallback) { return 0; }
+CH32RVUsbHostListenerId CH32RVUsbHost::addKeyboardStateListener(KeyboardStateCallback) { return 0; }
 CH32RVUsbHostListenerId CH32RVUsbHost::addMouseListener(MouseCallback) { return 0; }
 CH32RVUsbHostListenerId CH32RVUsbHost::addConsumerControlListener(ConsumerControlCallback) { return 0; }
 CH32RVUsbHostListenerId CH32RVUsbHost::addSystemControlListener(SystemControlCallback) { return 0; }

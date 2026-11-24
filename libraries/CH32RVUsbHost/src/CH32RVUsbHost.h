@@ -249,6 +249,26 @@ struct CH32RVUsbHostKeyboardEvent : CH32RVUsbHostHIDReportData {
     bool numLock = false, capsLock = false, scrollLock = false;
 };
 
+/* onKeyboardState(): the whole keyboard after a report that changed it, boot and NKRO alike as one 256-key map
+ * (keycode k is bit k & 7 of byte k >> 3; the modifiers are keys E0 .. E7) - EspUsbHostKeyboardState. */
+struct CH32RVUsbHostKeyboardState : CH32RVUsbHostHIDReportData {
+    uint8_t address = 0, interfaceNumber = 0;
+    uint8_t bitmap[32] = {};
+    uint8_t changedBitmap[32] = {};      /* the keys that went down or up with this report */
+    uint8_t modifiers = 0;
+    bool numLock = false, capsLock = false, scrollLock = false;
+
+    bool isDown(uint8_t keycode) const { return bitmap[keycode >> 3] & (1u << (keycode & 7)); }
+    bool wasPressed(uint8_t keycode) const
+    {
+        return isDown(keycode) && (changedBitmap[keycode >> 3] & (1u << (keycode & 7)));
+    }
+    bool wasReleased(uint8_t keycode) const
+    {
+        return !isDown(keycode) && (changedBitmap[keycode >> 3] & (1u << (keycode & 7)));
+    }
+};
+
 struct CH32RVUsbHostMouseEvent : CH32RVUsbHostHIDReportData {
     uint8_t address = 0, interfaceNumber = 0;
     int16_t x = 0, y = 0, wheel = 0, pan = 0;
@@ -582,6 +602,7 @@ class CH32RVUsbHost {
 public:
     typedef CH32RVCallback<void(const CH32RVUsbHostDeviceInfo &device)> DeviceCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostKeyboardEvent &event)> KeyboardCallback;
+    typedef CH32RVCallback<void(const CH32RVUsbHostKeyboardState &state)> KeyboardStateCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostMouseEvent &event)> MouseCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostConsumerControlEvent &event)> ConsumerControlCallback;
     typedef CH32RVCallback<void(const CH32RVUsbHostSystemControlEvent &event)> SystemControlCallback;
@@ -657,6 +678,7 @@ public:
      * delay() / after loop()); the event they get is valid only during the
      * call. */
     CH32RVUsbHostListenerId addKeyboardListener(KeyboardCallback callback);
+    CH32RVUsbHostListenerId addKeyboardStateListener(KeyboardStateCallback callback);
     CH32RVUsbHostListenerId addMouseListener(MouseCallback callback);
     CH32RVUsbHostListenerId addConsumerControlListener(ConsumerControlCallback callback);
     CH32RVUsbHostListenerId addSystemControlListener(SystemControlCallback callback);
@@ -697,6 +719,11 @@ public:
 
     /* ---- HID ---- */
     void onKeyboard(KeyboardCallback cb);
+    /* The keyboard's whole state after each report that changed it (CH32RVUsbHostKeyboardState). */
+    void onKeyboardState(KeyboardStateCallback cb);
+    /* True when the keyboard reports its keys as an NKRO bitmap (learned from its report descriptor; both are
+     * decoded alike - this says which it is). */
+    bool keyboardUsesBitmapReport(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     void onMouse(MouseCallback cb);
     void onConsumerControl(ConsumerControlCallback cb);
     void onSystemControl(SystemControlCallback cb);

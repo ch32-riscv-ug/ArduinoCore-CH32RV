@@ -35,6 +35,20 @@ struct ReportInfo {
     uint16_t usage_page;
 };
 
+/* Where a keyboard's keys sit in its report, learned from the report
+ * descriptor: the modifier field (eight 1-bit usages E0..E7) and the keys - an
+ * array of 8-bit codes (the boot layout and most 6-key ones) or a bitmap of
+ * 1-bit usages (NKRO). Bit offsets into the report's body (after its ID). */
+struct KbdLayout {
+    uint8_t reportId;
+    uint8_t kind;                            /* 0 not learned, KBD_ARRAY, KBD_BITMAP */
+    uint8_t count;                           /* array entries, or bitmap bits (up to 255) */
+    uint8_t first;                           /* the bitmap's first usage */
+    uint16_t modBit;                         /* 0xFFFF: no modifier field */
+    uint16_t keysBit;
+};
+enum : uint8_t { KBD_ARRAY = 1, KBD_BITMAP = 2 };
+
 /* One mounted HID interface. */
 struct HidItf {
     bool mounted;
@@ -49,7 +63,8 @@ struct HidItf {
     uint8_t reportCount;
     ReportInfo reports[CH32RV_USB_HOST_HID_REPORTS];
     CH32RVUsbHostMouseReportLayout mouse;
-    uint8_t lastKeys[8];
+    KbdLayout kbd;
+    uint8_t lastKeyMap[32];                  /* keys 0 .. 255 down at the last report, modifiers at E0 .. E7 */
     uint16_t lastMouseButtons;
     uint16_t lastConsumer;
     uint8_t lastSystem;
@@ -75,6 +90,8 @@ volatile uint8_t q_head, q_tail;
 
 CH32RVUsbHost::KeyboardCallback keyboard_cb;
 bool keyboard_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
+CH32RVUsbHost::KeyboardStateCallback keyboard_state_cb;
+bool keyboard_state_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::MouseCallback mouse_cb;
 bool mouse_cb_set;   /* set with it: a plain flag the compiler can fold when nothing sets it */
 CH32RVUsbHost::ConsumerControlCallback consumer_cb;
@@ -208,40 +225,88 @@ template <typename E> void fill_common(E &e, const HidItf &h, const uint8_t *raw
     e.interfaceNumber = h.itf;
 }
 
+bool bit_of(const uint8_t *d, size_t len, uint32_t bit)
+{
+    return (bit >> 3) < len && ((d[bit >> 3] >> (bit & 7)) & 1u);
+}
+
+/* A keyboard report as the 256-key map (EspUsbHost's normalised form): the
+ * learned layout (array or NKRO bitmap), else the 8-byte boot report. False
+ * for a report that is no keyboard's, and for ErrorRollOver (too many keys:
+ * the last state stands). */
+bool key_map(const HidItf &h, const uint8_t *raw, size_t rawLength, const uint8_t *body, size_t len, uint8_t *map)
+{
+    memset(map, 0, 32);
+    const KbdLayout &k = h.kbd;
+    uint8_t mods = 0;
+    if (k.kind && (k.reportId == 0 || (rawLength && raw[0] == k.reportId))) {
+        if (k.modBit != 0xFFFF) {
+            for (uint8_t b = 0; b < 8; b++) {
+                mods |= (uint8_t)(bit_of(body, len, (uint32_t)k.modBit + b) << b);
+            }
+        }
+        for (uint16_t i = 0; i < k.count; i++) {
+            uint16_t key;
+            if (k.kind == KBD_ARRAY) {
+                const uint32_t at = ((uint32_t)k.keysBit >> 3) + i;
+                key = at < len ? body[at] : 0;
+                if (key == 1) {
+                    return false;               /* ErrorRollOver */
+                }
+            } else {
+                key = bit_of(body, len, (uint32_t)k.keysBit + i) ? (uint16_t)(k.first + i) : 0;
+            }
+            if (key >= 4 && key <= 0xFF && (key < 0xE0 || k.modBit == 0xFFFF)) {
+                map[key >> 3] |= (uint8_t)(1u << (key & 7));
+            }
+        }
+    } else if (len == 8 && !k.kind) {
+        mods = body[0];
+        for (uint8_t i = 2; i < 8; i++) {
+            if (body[i] == 1) {
+                return false;
+            }
+            if (body[i] >= 4) {
+                map[body[i] >> 3] |= (uint8_t)(1u << (body[i] & 7));
+            }
+        }
+    } else {
+        return false;            /* not a keyboard report of this layout: onHIDInput() has it raw */
+    }
+    map[0xE0 >> 3] |= mods;      /* the modifiers are keys E0 .. E7 */
+    return true;
+}
+
 void keyboard_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint8_t *body, size_t len)
 {
-    if (len != 8) {
-        return;            /* not the boot layout (an NKRO bitmap, say): onHIDInput() has it raw */
+    if (!keyboard_cb_set && !keyboard_state_cb_set) {
+        return;                  /* folds away in a sketch that takes no keyboard events */
+    }
+    uint8_t now[32];
+    if (!key_map(h, raw, rawLength, body, len, now)) {
+        return;
     }
     const bool num = h.leds & CH32RV_USB_HOST_KEYBOARD_LED_NUM_LOCK;
     const bool caps = h.leds & CH32RV_USB_HOST_KEYBOARD_LED_CAPS_LOCK;
     const bool scroll = h.leds & CH32RV_USB_HOST_KEYBOARD_LED_SCROLL_LOCK;
-    const uint8_t modifiers = body[0];
-    const uint8_t *keys = body + 2;
-    const uint8_t *last = h.lastKeys + 2;
+    const uint8_t modifiers = now[0xE0 >> 3];
+    const uint8_t lastModifiers = h.lastKeyMap[0xE0 >> 3];
     if (keyboard_cb_set) {
+        /* presses, then releases; the modifier keys come as `modifiers` only */
         for (int pass = 0; pass < 2; pass++) {
-            const uint8_t *now = pass == 0 ? keys : last;
-            const uint8_t *before = pass == 0 ? last : keys;
-            for (int i = 0; i < 6; i++) {
-                const uint8_t key = now[i];
-                if (key < 4) {                            /* none, or a rollover error */
-                    continue;
-                }
-                bool there = false;
-                for (int j = 0; j < 6; j++) {
-                    there = there || before[j] == key;
-                }
-                if (there) {
+            for (uint16_t key = 4; key < 0xE0; key++) {
+                const uint8_t m = (uint8_t)(1u << (key & 7));
+                const bool down = now[key >> 3] & m, was = h.lastKeyMap[key >> 3] & m;
+                if (down == was || down != (pass == 0)) {
                     continue;
                 }
                 CH32RVUsbHostKeyboardEvent e;
                 fill_common(e, h, raw, rawLength, body, len);
                 e.pressed = pass == 0;
                 e.released = pass == 1;
-                e.keycode = key;
+                e.keycode = (uint8_t)key;
                 e.modifiers = modifiers;
-                e.unicode = keycode_unicode(key, pass == 0 ? modifiers : h.lastKeys[0], caps, num);
+                e.unicode = keycode_unicode((uint8_t)key, pass == 0 ? modifiers : lastModifiers, caps, num);
                 e.ascii = e.unicode <= 0x7F ? (uint8_t)e.unicode : 0;
                 e.numLock = num;
                 e.capsLock = caps;
@@ -250,7 +315,24 @@ void keyboard_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint
             }
         }
     }
-    memcpy(h.lastKeys, body, 8);
+    if (keyboard_state_cb_set) {
+        CH32RVUsbHostKeyboardState st;
+        bool changed = false;
+        for (uint8_t i = 0; i < 32; i++) {
+            st.bitmap[i] = now[i];
+            st.changedBitmap[i] = (uint8_t)(now[i] ^ h.lastKeyMap[i]);
+            changed = changed || st.changedBitmap[i];
+        }
+        if (changed) {
+            fill_common(st, h, raw, rawLength, body, len);
+            st.modifiers = modifiers;
+            st.numLock = num;
+            st.capsLock = caps;
+            st.scrollLock = scroll;
+            keyboard_state_cb(st);
+        }
+    }
+    memcpy(h.lastKeyMap, now, 32);
 }
 
 void mouse_report(HidItf &h, const uint8_t *raw, size_t rawLength, const uint8_t *body, size_t len)
@@ -368,13 +450,20 @@ void report(uint8_t daddr, uint8_t idx, const uint8_t *raw, uint16_t rawLength)
 }
 
 /* The top-level application collections of a report descriptor and their
- * report IDs - which report is a keyboard, which a mouse. */
-uint8_t parse_reports(ReportInfo *out, uint8_t capacity, const uint8_t *d, uint16_t length)
+ * report IDs - which report is a keyboard, which a mouse - and where the
+ * first keyboard's modifiers and keys sit (KbdLayout). */
+uint8_t parse_reports(ReportInfo *out, uint8_t capacity, const uint8_t *d, uint16_t length, KbdLayout &kbd)
 {
     uint8_t count = 0;
     uint8_t depth = 0;
     uint16_t page = 0;
     uint8_t usage = 0;
+    kbd = KbdLayout();
+    kbd.modBit = 0xFFFF;
+    bool inKeyboard = false;                    /* inside a top-level keyboard collection */
+    uint8_t reportId = 0;
+    uint32_t reportSize = 0, reportCount = 0, usageMin = 0;
+    uint16_t bit = 0;                           /* the input bits of the current report so far */
     for (uint16_t at = 0; at < length;) {
         const uint8_t prefix = d[at];
         if (prefix == 0xFE) {                       /* long item */
@@ -398,6 +487,45 @@ uint8_t parse_reports(ReportInfo *out, uint8_t capacity, const uint8_t *d, uint1
         case 0x04:                                  /* Usage Page */
             page = (uint16_t)value;
             break;
+        case 0x74:                                  /* Report Size */
+            reportSize = value;
+            break;
+        case 0x94:                                  /* Report Count */
+            reportCount = value;
+            break;
+        case 0x18:                                  /* Usage Minimum */
+            usageMin = value;
+            break;
+        case 0x80:                                  /* Input */
+            if ((keyboard_cb_set || keyboard_state_cb_set) && inKeyboard && page == 0x07 && !(value & 1u) &&
+                kbd.kind == 0) {
+                if ((value & 2u) && reportSize == 1) {          /* variable 1-bit usages */
+                    if (usageMin >= 0xE0) {
+                        if (kbd.modBit == 0xFFFF) {
+                            kbd.modBit = bit;
+                            kbd.reportId = reportId;
+                        }
+                    } else {
+                        kbd.kind = KBD_BITMAP;
+                        kbd.keysBit = bit;
+                        kbd.count = (uint8_t)(reportCount > 255u ? 255u : reportCount);
+                        kbd.first = (uint8_t)usageMin;
+                        kbd.reportId = reportId;
+                    }
+                } else if (!(value & 2u) && reportSize == 8) {   /* an array of key codes */
+                    kbd.kind = KBD_ARRAY;
+                    kbd.keysBit = bit;
+                    kbd.count = (uint8_t)(reportCount > 255u ? 255u : reportCount);
+                    kbd.reportId = reportId;
+                }
+            }
+            bit = (uint16_t)(bit + reportSize * reportCount);
+            usageMin = 0;
+            break;
+        case 0x90:                                  /* Output */
+        case 0xB0:                                  /* Feature */
+            usageMin = 0;
+            break;
         case 0x08:                                  /* Usage */
             if (depth == 0) {
                 usage = (uint8_t)value;
@@ -407,20 +535,31 @@ uint8_t parse_reports(ReportInfo *out, uint8_t capacity, const uint8_t *d, uint1
             }
             break;
         case 0xA0:                                  /* Collection */
-            if (depth == 0 && count < capacity) {
-                out[count].report_id = 0;
-                out[count].usage = usage;
-                out[count].usage_page = page;
-                count++;
+            if (depth == 0) {
+                inKeyboard = page == 0x01 && usage == 0x06;
+                if (count < capacity) {
+                    out[count].report_id = 0;
+                    out[count].usage = usage;
+                    out[count].usage_page = page;
+                    count++;
+                }
             }
             depth++;
+            usageMin = 0;
             break;
         case 0xC0:                                  /* End Collection */
             if (depth) {
                 depth--;
+                if (depth == 0) {
+                    inKeyboard = false;
+                }
             }
             break;
         case 0x84:                                  /* Report ID */
+            if ((uint8_t)value != reportId) {
+                reportId = (uint8_t)value;
+                bit = 0;
+            }
             if (depth && count) {
                 ReportInfo &r = out[count - 1];
                 if (r.report_id == 0) {
@@ -558,7 +697,12 @@ void hid_configured(uint8_t daddr, uint8_t itf)
     if (!len || ch32rv_usb_host_control_sync(daddr, 0x81, 6, 0x2200, itf, desc, len, &got, 1000) != CH32RV_USBH_OK) {
         got = 0;
     }
-    h.reportCount = parse_reports(h.reports, CH32RV_USB_HOST_HID_REPORTS, desc, got);
+    h.reportCount = parse_reports(h.reports, CH32RV_USB_HOST_HID_REPORTS, desc, got, h.kbd);
+    if (h.kbd.kind == 0) {
+        h.kbd.reportId = 0;      /* only a modifier field: not a layout to read keys by */
+        h.kbd.modBit = 0xFFFF;
+    }
+    memset(h.lastKeyMap, 0, sizeof h.lastKeyMap);
     ch32rvUsbHostParseMouseReportLayout(desc, got, h.mouse);
     if (!ch32rv_usb_host_connected(daddr)) {
         return;
@@ -664,11 +808,24 @@ void hid_detach(uint8_t daddr)
         set = static_cast<bool>(c);                                                                    \
     }
 CH32RV_HOST_SLOT(keyboard, KeyboardCallback, keyboard_cb, keyboard_cb_set)
+CH32RV_HOST_SLOT(keyboard_state, KeyboardStateCallback, keyboard_state_cb, keyboard_state_cb_set)
 CH32RV_HOST_SLOT(mouse, MouseCallback, mouse_cb, mouse_cb_set)
 CH32RV_HOST_SLOT(consumer, ConsumerControlCallback, consumer_cb, consumer_cb_set)
 CH32RV_HOST_SLOT(system, SystemControlCallback, system_cb, system_cb_set)
 CH32RV_HOST_SLOT(gamepad, GamepadCallback, gamepad_cb, gamepad_cb_set)
 void CH32RVUsbHost::onKeyboard(KeyboardCallback cb) { ch32rv_usb_host_keyboard_set(cb); }
+void CH32RVUsbHost::onKeyboardState(KeyboardStateCallback cb) { ch32rv_usb_host_keyboard_state_set(cb); }
+
+bool CH32RVUsbHost::keyboardUsesBitmapReport(uint8_t address) const
+{
+    for (int i = 0; i < HID_INTERFACES; i++) {
+        if (hids[i].mounted && hids[i].kbd.kind == KBD_BITMAP &&
+            (address == CH32RV_USB_HOST_ANY_ADDRESS || hids[i].daddr == address)) {
+            return true;
+        }
+    }
+    return false;
+}
 void CH32RVUsbHost::onMouse(MouseCallback cb) { ch32rv_usb_host_mouse_set(cb); }
 void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback cb) { ch32rv_usb_host_consumer_set(cb); }
 void CH32RVUsbHost::onSystemControl(SystemControlCallback cb) { ch32rv_usb_host_system_set(cb); }
@@ -839,6 +996,8 @@ bool CH32RVUsbHost::getKeyboardScrollLock(uint8_t address) const
 #else /* no host */
 
 void CH32RVUsbHost::onKeyboard(KeyboardCallback) {}
+void CH32RVUsbHost::onKeyboardState(KeyboardStateCallback) {}
+bool CH32RVUsbHost::keyboardUsesBitmapReport(uint8_t) const { return false; }
 void CH32RVUsbHost::onMouse(MouseCallback) {}
 void CH32RVUsbHost::onConsumerControl(ConsumerControlCallback) {}
 void CH32RVUsbHost::onSystemControl(SystemControlCallback) {}

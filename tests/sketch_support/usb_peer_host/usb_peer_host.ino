@@ -8,6 +8,9 @@
  *                        disconnections beside their on*() (events as H LKEY / H LGAMEPAD / H LSYSTEM /
  *                        H LCONN / H LDISC), or removeListener() for each: H LISTEN <listeners now> <ok>
  *   onkey2               onKeyboard() again, printing H KEY2 (after listen: through the listeners' table)
+ *   kstate <1 / 0>       onKeyboardState() printing H KSTATE <modifiers hex> <keys down, comma-separated>
+ *                        <keys changed, comma-separated> (or off): H KSTATEON <1 / 0>
+ *   kbitmap              H KBITMAP <keyboardUsesBitmapReport() 1 / 0>
  *   dev                  H DEV ... / H ITF ... per interface / H DEVEND <n>
  *   cdc <hex>            H CDC <hex echoed back within 2 s>
  *   cdcbig <n>           H CDCBIG <n> <ok> <bytes back>
@@ -768,6 +771,34 @@ static void reply(char *cmd)
         CONSOLE.println(usb.lastErrorName());
     } else if (strcmp(cmd, "listen") == 0) {
         cmd_listen(atoi(arg) != 0);
+    } else if (strcmp(cmd, "kstate") == 0) {
+        const bool on = strtoul(arg, nullptr, 10) != 0;
+        if (on) {
+            usb.onKeyboardState([](const CH32RVUsbHostKeyboardState &st) {
+                CONSOLE.printf("H KSTATE %02x ", st.modifiers);
+                bool first = true;
+                for (int k = 0; k < 256; k++) {
+                    if (st.isDown((uint8_t)k)) {
+                        CONSOLE.printf(first ? "%d" : ",%d", k);
+                        first = false;
+                    }
+                }
+                CONSOLE.print(first ? "- " : " ");
+                first = true;
+                for (int k = 0; k < 256; k++) {
+                    if (st.changedBitmap[k >> 3] & (1u << (k & 7))) {
+                        CONSOLE.printf(first ? "%d" : ",%d", k);
+                        first = false;
+                    }
+                }
+                CONSOLE.println(first ? "-" : "");
+            });
+        } else {
+            usb.onKeyboardState(nullptr);
+        }
+        CONSOLE.printf("H KSTATEON %d\n", on ? 1 : 0);
+    } else if (strcmp(cmd, "kbitmap") == 0) {
+        CONSOLE.printf("H KBITMAP %d\n", usb.keyboardUsesBitmapReport() ? 1 : 0);
     } else if (strcmp(cmd, "onkey2") == 0) {
         usb.onKeyboard([](const CH32RVUsbHostKeyboardEvent &e) {
             CONSOLE.printf("H KEY2 %c %u\n", e.pressed ? 'p' : 'r', e.keycode);

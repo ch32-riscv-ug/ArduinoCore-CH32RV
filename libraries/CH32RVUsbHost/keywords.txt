@@ -106,3 +106,7 @@ getNetworkInterfaces	KEYWORD2
 vendorOutEndpoint	KEYWORD2
 vendorInEndpoint	KEYWORD2
 serialOutPacketSize	KEYWORD2
+onKeyboardState	KEYWORD2
+addKeyboardStateListener	KEYWORD2
+keyboardUsesBitmapReport	KEYWORD2
+CH32RVUsbHostKeyboardState	KEYWORD1
