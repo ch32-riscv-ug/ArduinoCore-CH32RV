@@ -12,6 +12,7 @@
  *   system <value>           CD SYSTEM <ok>        (1 power down, 2 sleep, 3 wake up; then 0)
  *   vin <hex>                CD VIN <ok>           (vendor input report, ID 3)
  *   key <keycode>            CD KEY <ok>           (on the keyboard: pressed, then released)
+ *   nkro <mods> <key> ...    CD NKRO <ok>          (HID 0's NKRO report 4 with those keys down, then all up)
  *   feature <hex>            CD FEATURE            (what GET_REPORT(feature, 3) answers from now on)
  *   last                     CD LAST <output hex> <feature hex>  (the last vendor output / feature set)
  *   proto                    CD PROTO <keyboard protocol: 0 boot, 1 report>
@@ -92,6 +93,15 @@ static bool key(uint8_t keycode)
     return keyboard.sendReport(r, REPORT_MS) && keyboard.sendReport(CH32RVUsbDeviceBootKeyboardReport(), REPORT_MS);
 }
 
+static bool nkro(uint8_t mods, const uint8_t *keys, size_t n)
+{
+    uint8_t r[18] = {mods};
+    for (size_t i = 0; i < n; i++)
+        if (keys[i] < 136) r[1 + keys[i] / 8] |= (uint8_t)(1u << (keys[i] % 8));
+    const uint8_t none[18] = {};
+    return hid0.sendReport(r, sizeof r, RID_NKRO, REPORT_MS) && hid0.sendReport(none, sizeof none, RID_NKRO, REPORT_MS);
+}
+
 static CH32RVUsbDeviceCdcSerial &port(uint8_t n) { return n ? port1 : port0; }
 
 static char line[200];
@@ -117,6 +127,20 @@ static void run(char *cmd)
         parseHex(arg, d, sizeof d);
         say("CD VIN %u\n", hid0.sendReport(d, sizeof d, RID_VENDOR, REPORT_MS) ? 1 : 0);
     } else if (!strcmp(cmd, "key")) say("CD KEY %u\n", key((uint8_t)strtoul(arg, nullptr, 0)) ? 1 : 0);
+    else if (!strcmp(cmd, "nkro")) {
+        char *p = arg;
+        const uint8_t mods = (uint8_t)strtoul(p, &p, 0);
+        uint8_t keys[16];
+        size_t n = 0;
+        while (*p && n < sizeof keys) {
+            char *q;
+            const unsigned long k = strtoul(p, &q, 0);
+            if (q == p) break;
+            keys[n++] = (uint8_t)k;
+            p = q;
+        }
+        say("CD NKRO %u\n", nkro(mods, keys, n) ? 1 : 0);
+    }
     else if (!strcmp(cmd, "feature")) {
         memset(hid0.feature, 0, sizeof hid0.feature);
         parseHex(arg, hid0.feature, sizeof hid0.feature);

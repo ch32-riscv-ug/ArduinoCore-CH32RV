@@ -26,4 +26,4 @@ The load and save part called from `setup()` alone adds about 440 B on V003 and 
 
 Select your board and exact Part Number. UART logging uses hardware `Serial` at 115200 baud, 8N1: connect adapter RX to board TX, adapter TX to board RX, and common GND.
 
-Uploading again keeps what was saved (Tools > Erase Flash on its default, Keep Store); All Flash erases it. The generated `sketch.yaml` supplies build profiles. See [build rules](../../../../docs/examples-build-rules.ja.md) and [upload routes](../../../../docs/upload-routes.ja.md).
+Uploading again keeps what was saved (Tools > Erase Flash on its default, Program only); Whole flash erases it. The generated `sketch.yaml` supplies build profiles. See [build rules](../../../../docs/examples-build-rules.ja.md) and [upload routes](../../../../docs/upload-routes.ja.md).

@@ -67,8 +67,8 @@ def test_no_menu_entry_flashes_with_chip_auto():
 
 
 def test_every_flashable_board_but_uiapduino_offers_keep_store_first_and_all_flash():
-    """Erase Flash: Keep Store first, passing nothing (ch32rv keeps CH32RV_FLASH_STORE's tail by default), then
-    All Flash. UIAPduino uploads through its HID bootloader alone, which cannot erase the chip: no menu."""
+    """Erase Flash: Program only first, passing nothing (ch32rv keeps CH32RV_FLASH_STORE's tail by default), then
+    Whole flash. UIAPduino uploads through its HID bootloader alone, which cannot erase the chip: no menu."""
     entries = {}
     values = {}
     for line in (REPO / "boards.txt").read_text(encoding="utf-8").splitlines():

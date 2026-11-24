@@ -89,11 +89,11 @@ probe 側を SWIO だけにする必要があります。
 
 | 項目 | ch32rv に渡すもの | 動き |
 |---|---|---|
-| Keep Store（既定） | 何も渡さない（ch32rv の既定 `--erase keep-store`） | `CH32RV_FLASH_STORE` で確保した末尾を残す。WCH-Link と OEP では、ch32rv が退避して書き戻す（[flash-store.ja.md](flash-store.ja.md)） |
-| All Flash | `--erase chip` | チップ全体を消す。WCH-Link、OEP、工場の ISP で効く |
+| Program only（既定） | 何も渡さない（ch32rv の既定 `--erase keep-store`） | `CH32RV_FLASH_STORE` で確保した末尾を残す。WCH-Link と OEP では、ch32rv が退避して書き戻す（[flash-store.ja.md](flash-store.ja.md)） |
+| Whole flash | `--erase chip` | チップ全体を消す。WCH-Link、OEP、工場の ISP で効く |
 
 - 値は書き込みの設定（`upload.erase_args`）なので、切り替えても再ビルドは起きません。
-- H41x の DFU の経路は、チップ全体を消せません。All Flash を選ぶと、ch32rv が書き込みを断ります（exit 24）。
+- H41x の DFU の経路は、チップ全体を消せません。Whole flash を選ぶと、ch32rv が書き込みを断ります（exit 24）。
 - UIAPduino の板は HID のブートローダーでしか書かないので、このメニューがありません。
 
 ## 接続できなくなるイメージを試すとき（起動待ち）

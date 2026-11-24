@@ -46,7 +46,7 @@ def test_each_series_opens_on_keep_and_sets_either_value_at_boot():
         assert "factory setting" in b[f"{series}.menu.rstpin.{factory}"], series
         assert "factory setting" not in b[f"{series}.menu.rstpin.{other}"], series
         for key in (factory, other):
-            assert "set at boot" in b[f"{series}.menu.rstpin.{key}"], (series, key)
+            assert "written to the chip at boot" in b[f"{series}.menu.rstpin.{key}"], (series, key)
             assert (b[f"{series}.menu.rstpin.{key}.build.rstpin_defines"]
                     == f"-DCH32RV_RSTPIN_USER={values[key]:#04x}u -DCH32RV_RSTPIN_MASK={mask:#04x}u"), (series, key)
 

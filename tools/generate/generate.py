@@ -326,16 +326,16 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
             key = f"build.{kind}{n}_mode"
             uses.append("{" + key + "}")
             pfx = f"{board}.menu.{kind}{n}"
-            lines.append(f"{pfx}.auto=AUTO (bind at begin())")
+            lines.append(f"{pfx}.auto=Auto: pins chosen at begin() (default)")
             lines.append(f"{pfx}.auto.{key}=")
-            lines.append(f"{pfx}.disable=Disable")
+            lines.append(f"{pfx}.disable=Disabled")
             lines.append(f"{pfx}.disable.{key}=-DCH32RV_{macro}{n}_MODE=0")
             if fixed:
                 # No AFIO field: the one route the variant names, no remap to write.
                 label = ", ".join(f"{r}:{x}" for r, x in zip(roles, fixed))
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, fixed))
                 ident = "fix_" + "_".join(x.lower() for x in fixed)
-                lines.append(f"{pfx}.{ident}=FIX ({label})")
+                lines.append(f"{pfx}.{ident}=Fixed: {label}")
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x00000000u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x00000000u")
@@ -358,7 +358,7 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 # The option id names the pins, in role order, so an FQBN says
                 # what it selects: ...:i2c1=fix_pc2_pc1 is SCL PC2, SDA PC1.
                 ident = "fix_" + "_".join(x.lower() for x in names)
-                lines.append(f"{pfx}.{ident}=FIX ({label}){warn}")
+                lines.append(f"{pfx}.{ident}=Fixed: {label}{warn}")
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
@@ -420,10 +420,10 @@ RTLIB_MENU = (
 # (key, label, parse_defines). On V003 a parseFloat sketch is 4836 B in float,
 # 5848 B in integers and 8012 B in double (2026-10-31).
 PARSEFLOAT_MENU = (
-    ("auto", "As the arithmetic: integers under Float, double under Double (default)", ""),
-    ("int", "In integers (the nearest float to 11 digits)", "-DCH32RV_PARSE_FLOAT=2"),
-    ("float", "In float (smallest; the last bit off on one input in eight)", "-DCH32RV_PARSE_FLOAT=3"),
-    ("double", "In double (the nearest float; links double arithmetic)", "-DCH32RV_PARSE_FLOAT=1"),
+    ("auto", "Auto: integers with Float, double with Double (default)", ""),
+    ("int", "Integers: exact to 11 digits", "-DCH32RV_PARSE_FLOAT=2"),
+    ("float", "Float: smallest, last bit off on 1 input in 8", "-DCH32RV_PARSE_FLOAT=3"),
+    ("double", "Double: exact, links double arithmetic", "-DCH32RV_PARSE_FLOAT=1"),
 )
 
 
@@ -433,7 +433,7 @@ PARSEFLOAT_MENU = (
 # something says otherwise. The default leaves the strap alone: a board may
 # have 1.8 V parts on VIO18. CH32RV.setVio18Millivolts() changes it at run time.
 VIO18_MENU = (
-    ("hw", "Hardware default (XO strap)", ""),
+    ("hw", "As the XO strap sets it (default)", ""),
     ("3v3", "3.3 V", "-DCH32RV_VIO18_MV=3300"),
     ("2v5", "2.5 V", "-DCH32RV_VIO18_MV=2500"),
     ("1v8", "1.8 V", "-DCH32RV_VIO18_MV=1800"),
@@ -528,12 +528,12 @@ KEEP_LABEL = "Leave as set on the chip (default)"
 
 def rstpin_menu(board: str, series: str) -> list[str]:
     factory = RSTPIN[series][3]
-    entries = {"reset": "Reset input (NRST)", "gpio": "GPIO (no reset pin)"}
+    entries = {"reset": "Reset input (NRST)", "gpio": "GPIO, no reset pin"}
     lines = [f"{board}.menu.rstpin.keep={KEEP_LABEL}",
              f"{board}.menu.rstpin.keep.build.rstpin_defines="]
     for key in sorted(entries, key=lambda k: k != factory):
-        mark = ", factory setting" if key == factory else ""
-        lines.append(f"{board}.menu.rstpin.{key}={entries[key]} (set at boot{mark})")
+        mark = " (factory setting)" if key == factory else ""
+        lines.append(f"{board}.menu.rstpin.{key}={entries[key]}: written to the chip at boot{mark}")
         lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
     return lines
 
@@ -546,8 +546,8 @@ def rstpin_menu(board: str, series: str) -> list[str]:
 # cannot erase the chip and refuse All Flash; the HID-only UIAPduino board has
 # no menu.
 ERASE_MENU = (
-    ("keep", "Keep Store (default)", ""),
-    ("chip", "All Flash", "--erase chip"),
+    ("keep", "Program only: keep CH32RV_FLASH_STORE data (default)", ""),
+    ("chip", "Whole flash: the stored data too", "--erase chip"),
 )
 
 
@@ -611,7 +611,7 @@ def stackcheck_menu(board: str) -> list[str]:
     """Stack Check (internal/ch32rv_stack.h): off by default (docs: its cost);
     on, the reservation is filled before setup() and SysTick resets the part
     with resetReason() panic once the stack reaches its bottom."""
-    return [f"{board}.menu.stackcheck.off=Off",
+    return [f"{board}.menu.stackcheck.off=Off (default)",
             f"{board}.menu.stackcheck.off.build.stackcheck_defines=",
             f"{board}.menu.stackcheck.on=Reset on overflow",
             f"{board}.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1"]
@@ -628,7 +628,7 @@ def stackcheck_menu(board: str) -> list[str]:
 # kind of port (docs/debug-output.ja.md: attaching can reclock some families
 # and corrupt a register on V103 / V205).
 MONITOR_SOURCE_MENU = (
-    ("uart", "UART (Serial)", {"serial": "uart", "oep": "fixture-uart"}),
+    ("uart", "UART (Serial) (default)", {"serial": "uart", "oep": "fixture-uart"}),
     ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
     ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
     ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),
@@ -677,9 +677,9 @@ IWDG_SERIES = ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32
 def iwdg_menu(board: str) -> list[str]:
     return [f"{board}.menu.iwdg.keep={KEEP_LABEL}",
             f"{board}.menu.iwdg.keep.build.iwdg_defines=",
-            f"{board}.menu.iwdg.sw=Started by wdtEnable() (set at boot, factory setting)",
+            f"{board}.menu.iwdg.sw=Started by wdtEnable(): written to the chip at boot (factory setting)",
             f"{board}.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u",
-            f"{board}.menu.iwdg.hw=Running from power-on (set at boot)",
+            f"{board}.menu.iwdg.hw=Running from power-on: written to the chip at boot",
             f"{board}.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u"]
 
 
@@ -699,8 +699,8 @@ HEAP_WRAP_FLAGS = " ".join(f"-Wl,--wrap={name}"
                            for name in ("malloc", "free", "realloc", "memalign", "aligned_alloc", "mallinfo"))
 
 CORE_MENU = (
-    ("v5f", "V5F", True),
-    ("v3f", "V3F", False),
+    ("v5f", "V5F (400 MHz; the V3F free as a second core) (default)", True),
+    ("v3f", "V3F (100 MHz; the V5F stays asleep)", False),
 )
 
 
@@ -874,6 +874,17 @@ def load_bus2_enables(tables: pathlib.Path) -> dict:
 PPRE1_FAMILIES = {"CH32V20x", "CH32V307", "CH32L103", "CH32V103", "CH32V205", "CH32V407"}
 
 
+def clock_label(label: str, default: bool) -> str:
+    """A CPU Clock label in the menus' one style: "144 MHz", USB that has not
+    been run at that clock as "USB untested", V30x's 72 MHz (USB HS from its
+    own PLL, no USB FS) as "USB HS only", the oscillator left out of "lowest
+    power" (the Clock Source menu says which), and the default marked."""
+    label = re.sub(r"(\d)MHz", r"\1 MHz", label)
+    label = label.replace("USB, not checked", "USB untested").replace("USB not checked", "USB untested")
+    label = label.replace("no USB FS", "USB HS only").replace("HSI, lowest power", "lowest power")
+    return label + " (default)" if default else label
+
+
 def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock_for) -> list[str]:
     """The CPU Clock entries: F_CPU and the clock setting for each, checked."""
     lines = []
@@ -913,7 +924,7 @@ def clock_menu(board: str, series: str, menu: list, fam: dict, fact: dict, clock
                              f"HCLK / {min_div} is below the ADC's {fact['adc_min_hz']} Hz")
         if latency & ~fact["latency_mask"]:
             raise SystemExit(f"ERROR: {series}: CPU Clock {key}: flash latency {latency} does not fit")
-        lines.append(f"{board}.menu.clock.{key}={label}")
+        lines.append(f"{board}.menu.clock.{key}={clock_label(label, key == menu[0][0])}")
         if fam.get("h41x_clock"):
             # Which core's clock F_CPU is, the CPU Core menu says (core_menu).
             if hclk_mhz * 1000000 > H41X_HCLK_MAX_HZ or hclk_mhz * fpre * 1000000 > H41X_V5F_MAX_HZ:
@@ -1026,14 +1037,14 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
         # every V208 board carries one. CH32H41x: see FAMILY's hse_first.
         mhz = V208_HSE_HZ // 1000000 if series == "CH32V208" else \
             FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
-        return [f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
+        return [f"{board}.menu.clocksrc.hse=External {mhz} MHz crystal (HSE; falls back to HSI) (default)",
                 f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}",
                 f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
                 f"{board}.menu.clocksrc.hsi.build.clock_src_defines="]
     mhz = FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
-    return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
+    return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI) (default)",
             f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
-            f"{board}.menu.clocksrc.hse=External crystal {mhz} MHz (HSE; HSI if it does not start)",
+            f"{board}.menu.clocksrc.hse=External {mhz} MHz crystal (HSE; falls back to HSI)",
             f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
 
 
@@ -1053,9 +1064,9 @@ def rtcclock_menu(board: str, series: str) -> list[str]:
     OUT (PC14 / PC15)."""
     if SERIES_CONFIG[series]["family"] not in RTC_LSE_FAMILIES:
         return []
-    return [f"{board}.menu.rtcclock.lsi=Internal LSI (measured at start)",
+    return [f"{board}.menu.rtcclock.lsi=Internal oscillator (LSI, measured at start) (default)",
             f"{board}.menu.rtcclock.lsi.build.rtc_defines=",
-            f"{board}.menu.rtcclock.lse=External crystal 32.768 kHz (LSE; LSI if it does not start)",
+            f"{board}.menu.rtcclock.lse=External 32.768 kHz crystal (LSE; falls back to LSI)",
             f"{board}.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1",
             ""]
 
