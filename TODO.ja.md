@@ -792,6 +792,10 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
 - [x] clang は rv32ec（V003）で定数の掛け算に `__mulsi3` を呼ぶ件を洗い出した（2026-11-12）。割り込みの中では EXTI の処理だけで、
   `__builtin_ctz` を clang が掛け算に開いていた。`internal/ch32rv_bits.h`（掛け算の無いコアでは比較とシフト）に替えた。
   CH32RVSyncKit のプールも同じ。残りは数字の表示と時刻の計算（`-Oz` が呼び出しを選ぶ。UART の 1 文字より短い）。
+- [ ] ch32rv の次の版（a667edb: `arduino monitor --protocol wchlink` に uart、既定）が出たら（[ch32rv] が番号を知らせる）:
+  `tools/index/bump_tool.py ch32rv <版>` で取り込み、Monitor Source の UART に `monitor_port.wchlink.source=uart` を足す
+  （generate.py の MONITOR_SOURCE_MENU）。LinkE 一体型か LinkE の UART を Serial につないだ台で、`wchlink://` のまま Serial の行が
+  monitor まで届くことを確かめる（2026-11-24、ユーザーの要望: 書き込みの wchlink のままで Serial を見たい）。
 - [ ] CI の Examples（ch32h416）で clang が落ちた（2026-11-24、ユーザーの報告）: `libraries/CH32RVSyncKit/examples/NotifyCounter` で
   `clang: error: unable to execute command: Segmentation fault (core dumped)`（cc1 が落ちた形で、ソースの誤りの行は無い）。手元では
   ch32rv-toolchain 23.1.6-1 で 8dfae34d・作業ツリーとも 3 回ずつ通り、再現しない。ツールチェイン側の見込み。再現したら深掘りする
