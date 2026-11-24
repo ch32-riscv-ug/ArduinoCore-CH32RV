@@ -103,7 +103,9 @@ void initVariant(void);
 #ifndef HOST
 int atexit(void (*func)()) __attribute__((weak));
 #endif
-int main() __attribute__((weak));
+/* ch32rv patch: no declaration of main() here - inside extern "C" clang
+ * warns -Wmain on every C++ file; the core's main.cpp defines it
+ * (tools/vendor/check_api_sync.py). */
 
 #ifdef EXTENDED_PIN_MODE
 // Platforms who want to declare more than 256 pins need to define EXTENDED_PIN_MODE globally

@@ -94,6 +94,14 @@ PATCHES = (
                 "a controller's constant bus mode folds the call away, so SPI_HAS_PERIPHERAL_MODE costs "
                 "nothing to a sketch that never asks for a peripheral"),
     },
+    {
+        "path": "Common.h",
+        "before": "int main() __attribute__((weak));\n",
+        "after": "/* ch32rv patch: no declaration of main() here - inside extern \"C\" clang\n * warns -Wmain on every C++ file; the core's main.cpp defines it\n * (tools/vendor/check_api_sync.py). */\n",
+        "why": ("no weak main() declaration: in Common.h's extern \"C\" block clang warns 'main' should not be "
+                "'extern \"C\"' (-Wmain) once per C++ file; nothing calls it through the declaration "
+                "(crt0 jumps to the core's main.cpp)"),
+    },
 )
 
 

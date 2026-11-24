@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) No more `'main' should not be 'extern "C"'` warning on every C++ file (ArduinoCore-API's Common.h declared main() in its extern "C" block).
+- (JA) C++ のファイルごとに出ていた警告 `'main' should not be 'extern "C"'` が出なくなった（ArduinoCore-API の Common.h が extern "C" の中で main() を宣言していた）。
 - (EN) Tools menu **Monitor Source** (UART / DMSeq / DMDATA / SDI / RTT): what the Serial Monitor reads, since the IDE 2 Serial Monitor shows only the baud rate of a monitor's settings. UART by default.
 - (JA) ツールメニュー **Monitor Source**（UART / DMSeq / DMDATA / SDI / RTT）: Serial Monitor が何を読むか。IDE 2 の Serial Monitor の窓は monitor の設定のうちボーレートしか出さないため。既定は UART。
 - (EN) ch32rv 0.32.3: on an OEP probe, IDE port listing no longer stalls on a probe whose USB hangs, and CH32H417 flash-controller operations retry the V5F build's occasional busy answers safely; faster `erase --all` (block erase on H417, mass erase elsewhere).
