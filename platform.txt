@@ -58,7 +58,7 @@ build.lto_flags=
 # are bitcode only (lld links a fat object's machine code and skips its
 # bitcode); the libraries are machine code, which is what keeps the core's
 # sbrk() and _exit() in the link when libc asks for them after LTO.
-build.optimize_flags=-Oz -flto
+build.optimize_flags=-Oz -flto -fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden
 compiler.common_flags={compiler.target_flags} -march={compiler.march} -mabi={build.mabi} -g -ffunction-sections -fdata-sections {compiler.warning_flags} {build.optimize_flags}
 # api/deprecated-avr-comp is on the include path so that <avr/dtostrf.h> and
 # <avr/pgmspace.h> resolve the way AVR sketches spell them. ArduinoCore-API

@@ -747,16 +747,23 @@ def vio18_menu(board: str) -> list[str]:
 # STM32duino's for the same choice.
 # The labels say where each stands against the default in size and speed,
 # as measured on 2026-11-24 with ch32rv-toolchain 23.1.6 (V003, X035, V203;
-# docs/small-sketch.ja.md): -msave-restore 1-2 % smaller from about 6 KB of
-# code (ButtonKeyboard -1.9 / -2.3 %), slightly larger below 3 KB; -Os 10-20 %
-# larger; no LTO 1.4-2.4 times the size.
+# docs/small-sketch.ja.md): -msave-restore 1-2.5 % smaller from about 5 KB of
+# code (ButtonKeyboard -2.3 / -2.5 %), slightly larger below 3 KB; -Os 12-17 %
+# larger; no LTO 1.4-2.5 times the size.
+# With LTO, the virtual functions nothing calls are dropped as well
+# (-fvirtual-function-elimination; it needs -fwhole-program-vtables and the
+# classes' hidden LTO visibility, -fvisibility=hidden): a Serial sketch no
+# longer links end() / peek() / flush() through the vtable. Measured on
+# 2026-11-24: V003 Serial.print 1900 -> 1780 B, I2CScanner (V003) 6096 ->
+# 5216 B, ButtonKeyboard (X035) -136 B, EthernetStatus (V307) -204 B.
+LTO = "-flto -fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden"
 OPT_MENU = (
-    ("ozlto", "Small (-Oz) with LTO (default)", "-Oz -flto"),
-    ("ozltosr", "Smallest for large sketches (-Oz, LTO, -msave-restore): 1-2% less, slower calls", "-Oz -flto -msave-restore"),
-    ("oslto", "Faster (-Os) with LTO: 10-20% larger", "-Os -flto"),
-    ("o2lto", "Fast (-O2) with LTO: larger", "-O2 -flto"),
-    ("o3lto", "Fastest (-O3) with LTO: largest", "-O3 -flto"),
-    ("ozstd", "Small (-Oz) without LTO: 1.4-2.4x larger", "-Oz"),
+    ("ozlto", "Small (-Oz) with LTO (default)", f"-Oz {LTO}"),
+    ("ozltosr", "Smallest for large sketches (-Oz, LTO, -msave-restore): 1-2.5% less, slower calls", f"-Oz {LTO} -msave-restore"),
+    ("oslto", "Faster (-Os) with LTO: 10-20% larger", f"-Os {LTO}"),
+    ("o2lto", "Fast (-O2) with LTO: larger", f"-O2 {LTO}"),
+    ("o3lto", "Fastest (-O3) with LTO: largest", f"-O3 {LTO}"),
+    ("ozstd", "Small (-Oz) without LTO: 1.4-2.5x larger", "-Oz"),
 )
 
 

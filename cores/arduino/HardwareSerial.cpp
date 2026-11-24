@@ -1011,20 +1011,50 @@ void serialEventRun(void)
     if (ch32rv_serial_error_delivery) {
         ch32rv_serial_error_delivery();
     }
-    static void (*const events[])(void) = {serialEvent, serialEvent1, serialEvent2,
-                                           serialEvent3, serialEvent4, serialEvent5,
-                                           serialEvent6, serialEvent7, serialEvent8,
-                                           serialEvent9};
+#if CH32RV_SERIAL_COUNT > 0
+    /* One entry for each Serial the board has (a port's number() is below
+     * CH32RV_SERIAL_COUNT), not all ten names: on a one-USART chip the table
+     * is a single pointer. */
+    static void (*const events[CH32RV_SERIAL_COUNT])(void) = {
+        serialEvent,
+#if CH32RV_SERIAL_COUNT > 1
+        serialEvent1,
+#endif
+#if CH32RV_SERIAL_COUNT > 2
+        serialEvent2,
+#endif
+#if CH32RV_SERIAL_COUNT > 3
+        serialEvent3,
+#endif
+#if CH32RV_SERIAL_COUNT > 4
+        serialEvent4,
+#endif
+#if CH32RV_SERIAL_COUNT > 5
+        serialEvent5,
+#endif
+#if CH32RV_SERIAL_COUNT > 6
+        serialEvent6,
+#endif
+#if CH32RV_SERIAL_COUNT > 7
+        serialEvent7,
+#endif
+#if CH32RV_SERIAL_COUNT > 8
+        serialEvent8,
+#endif
+#if CH32RV_SERIAL_COUNT > 9
+        serialEvent9,
+#endif
+    };
     for (uint8_t i = 0; i < USART_COUNT; i++) {
         CH32RVHardwareSerial *port = owner[i];
         if (!port || port->available() <= 0) {
             continue;
         }
-        const uint8_t n = port->number();
-        if (n < sizeof events / sizeof events[0] && events[n]) {
-            events[n]();
+        if (void (*const event)(void) = events[port->number()]) {
+            event();
         }
     }
+#endif
 }
 
 }  // namespace arduino
