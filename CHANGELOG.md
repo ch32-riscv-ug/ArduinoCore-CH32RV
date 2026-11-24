@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) CH32RVUsbHost: EspUsbHost's `ccidSlotCount()`, `ccidMessage()` (any PC_to_RDR message, the raw response back) and `ccidAbort()`.
+- (JA) CH32RVUsbHost: EspUsbHost の `ccidSlotCount()`、`ccidMessage()`（任意の PC_to_RDR のメッセージと、そのままの応答）、`ccidAbort()`。
 - (EN) CH32RVUsbHost: EspUsbHost's `mscCapacity64()` / `mscReadBlocks64()` / `mscWriteBlocks64()` (media of 2^32 blocks and more) and `mscLastSense()`; `CH32RVUsbHostMscBlockDeviceInfo::blockCount` is 64-bit.
 - (JA) CH32RVUsbHost: EspUsbHost の `mscCapacity64()` / `mscReadBlocks64()` / `mscWriteBlocks64()`（2^32 ブロック以上の媒体）と `mscLastSense()`。`CH32RVUsbHostMscBlockDeviceInfo::blockCount` は 64 bit。
 - (EN) I2S: `I2S_MODE_SPDIF_TX` on CH32H417's SAI - IEC 60958 on the SD pin alone (`setPins(-1, -1, sd)`), 16 / 24 / 32-bit stereo, consumer channel status with the rate's sampling-frequency code.

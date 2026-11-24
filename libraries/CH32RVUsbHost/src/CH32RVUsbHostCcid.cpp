@@ -16,6 +16,7 @@ enum : uint8_t {
     PC_TO_RDR_GET_SLOT_STATUS = 0x65,
     PC_TO_RDR_ESCAPE = 0x6B,
     PC_TO_RDR_XFR_BLOCK = 0x6F,
+    PC_TO_RDR_ABORT = 0x72,
     RDR_TO_PC_DATA_BLOCK = 0x80,
     RDR_TO_PC_SLOT_STATUS = 0x81,
     RDR_TO_PC_ESCAPE = 0x83,
@@ -305,6 +306,59 @@ bool CH32RVUsbHost::ccidGetStatus(CH32RVUsbHostCcidStatus &status, uint8_t slot,
     return true;
 }
 
+uint8_t CH32RVUsbHost::ccidSlotCount(uint8_t address) const
+{
+    return matches(address) ? info.slotCount : 0u;
+}
+
+bool CH32RVUsbHost::ccidMessage(uint8_t messageType, const uint8_t *messageSpecific, const uint8_t *data,
+                                size_t length, CH32RVUsbHostCcidResponse &response, uint8_t slot, uint8_t address,
+                                uint32_t timeoutMs)
+{
+    if (!matches(address)) {
+        return fail(CH32RVUsbHostError::NotSupported);
+    }
+    static const uint8_t zeros[3] = {0, 0, 0};
+    uint32_t n = 0;
+    if (!exchange(*this, messageType, slot, messageSpecific ? messageSpecific : zeros, data, length, &n, timeoutMs)) {
+        return false;
+    }
+    response = CH32RVUsbHostCcidResponse();
+    response.messageType = message[0];
+    response.slot = message[5];
+    response.sequence = message[6];
+    response.status = message[7];
+    response.error = message[8];
+    response.chainParameter = message[9];
+    response.iccStatus = (CH32RVUsbHostCcidIccStatus)(message[7] & 3);
+    response.commandStatus = (CH32RVUsbHostCcidCommandStatus)(message[7] >> 6);
+    response.data = message + 10;
+    response.length = n;
+    _ccidError = response.commandStatus == CH32RV_USB_HOST_CCID_COMMAND_FAILED ? message[8] : 0;
+    return true;
+}
+
+bool CH32RVUsbHost::ccidAbort(uint8_t slot, uint8_t address, uint32_t timeoutMs)
+{
+    if (!matches(address)) {
+        return fail(CH32RVUsbHostError::NotSupported);
+    }
+    /* ABORT (class request 0x01, wValue bSeq << 8 | bSlot), then PC_to_RDR_Abort carrying that bSeq: exchange()
+     * takes the next sequence number, so the request names it ahead */
+    const uint8_t next = (uint8_t)(seq + 1u);
+    if (ch32rv_usb_host_control_sync(pipe.daddr, 0x21, 0x01, (uint16_t)(next << 8 | slot), info.interfaceNumber,
+                                     nullptr, 0, nullptr, timeoutMs) != CH32RV_USBH_OK) {
+        return fail(CH32RVUsbHostError::Stalled);
+    }
+    static const uint8_t zeros[3] = {0, 0, 0};
+    uint32_t n = 0;
+    if (!exchange(*this, PC_TO_RDR_ABORT, slot, zeros, nullptr, 0, &n, timeoutMs)) {
+        return false;
+    }
+    _ccidError = message[8];
+    return (message[7] >> 6) == CH32RV_USB_HOST_CCID_COMMAND_OK ? ok() : fail(CH32RVUsbHostError::TransferFailed);
+}
+
 bool CH32RVUsbHost::ccidCardPresent(uint8_t slot, uint8_t address)
 {
     CH32RVUsbHostCcidStatus s;
@@ -455,6 +509,13 @@ bool CH32RVUsbHost::ccidGetStatus(CH32RVUsbHostCcidStatus &, uint8_t, uint8_t, u
     return fail(CH32RVUsbHostError::Unsupported);
 }
 bool CH32RVUsbHost::ccidCardPresent(uint8_t, uint8_t) { return false; }
+uint8_t CH32RVUsbHost::ccidSlotCount(uint8_t) const { return 0; }
+bool CH32RVUsbHost::ccidMessage(uint8_t, const uint8_t *, const uint8_t *, size_t, CH32RVUsbHostCcidResponse &,
+                                uint8_t, uint8_t, uint32_t)
+{
+    return fail(CH32RVUsbHostError::Unsupported);
+}
+bool CH32RVUsbHost::ccidAbort(uint8_t, uint8_t, uint32_t) { return fail(CH32RVUsbHostError::Unsupported); }
 bool CH32RVUsbHost::ccidPowerOn(uint8_t *, size_t, size_t *, CH32RVUsbHostCcidVoltage, uint8_t, uint8_t, uint32_t)
 {
     return fail(CH32RVUsbHostError::Unsupported);

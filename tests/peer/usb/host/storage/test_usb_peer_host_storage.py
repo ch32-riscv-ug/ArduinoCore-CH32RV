@@ -80,6 +80,14 @@ def test_usb_peer_host_storage(dut, peers):
     assert m.group(1) == b"1"
     assert host(dut, "ccidstatus", rb"CCIDSTATUS (\d) \d+ (\d) (\d)").group(1, 2, 3) == (b"1", b"1", b"1")
     assert host(dut, "ccidesc 0a0b0c", rb"CCIDESC (\d) (\w*)").group(1, 2) == (b"1", b"0a0b0c")
+    # EspUsbHost's ccidSlotCount() / ccidMessage() / ccidAbort(): one slot; GetParameters (0x6C) passed through as a
+    # raw message, its RDR_to_PC_Parameters (0x82) of T=0 back; ABORT's class request naming the bSeq the
+    # PC_to_RDR_Abort then carries (the peer answers the Abort only when they match)
+    assert host(dut, "ccidslots", rb"CCIDSLOTS (\d+)").group(1) == b"1"
+    assert host(dut, "ccidmsg 6c", rb"CCIDMSG (\d) (\w\w) (\w\w) (\w\w) (\w*)").group(1, 2, 5) == \
+        (b"1", b"82", b"1100000a00")
+    assert host(dut, "ccidabort", rb"CCIDABORT (\d)").group(1) == b"1"
+    assert host(dut, "ccidesc 0d0e", rb"CCIDESC (\d) (\w*)").group(1, 2) == (b"1", b"0d0e")
     assert host(dut, "ccidoff", rb"CCIDOFF (\d)").group(1) == b"1"
     assert host(dut, "ccidstatus", rb"CCIDSTATUS (\d) \d+ (\d) (\d)").group(1, 2, 3) == (b"1", b"1", b"0")
     # The card taken out and put back: NotifySlotChange both ways, and the slot follows.

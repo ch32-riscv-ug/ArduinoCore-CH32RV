@@ -383,7 +383,12 @@ CCID has `ccidOpen()`, `ccidPowerOn()`, `ccidApdu()`, `ccidEscape()` and card
 state notifications. `ccidApdu()`'s response is the payload without SW1/SW2,
 and the status word is a separate output, but the receive buffer's capacity
 must hold those two status bytes too. A successful transfer and a successful
-command (`SW=9000`) are different things.
+command (`SW=9000`) are different things. EspUsbHost's `ccidSlotCount()`,
+`ccidMessage()` (any PC_to_RDR message the other calls do not wrap -
+SetParameters, GetParameters, IccClock ... - with the RDR_to_PC header and
+data back) and `ccidAbort()` (the class request ABORT, then PC_to_RDR_Abort
+with the same bSeq) are there too; `ccidGetCardInfo()` /
+`ccidIdentifyCard()` (the card's standard decoded from its ATR) are not yet.
 
 ### USB audio (UAC1 / UAC2)
 

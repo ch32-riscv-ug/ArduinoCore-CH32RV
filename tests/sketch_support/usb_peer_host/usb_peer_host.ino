@@ -50,6 +50,9 @@
  *   ccidpresent          H CCIDPRESENT <present>
  *   ccidoff              H CCIDOFF <ok>
  *   ccidesc <hex>        H CCIDESC <ok> <hex>  (ccidEscape())
+ *   ccidslots            H CCIDSLOTS <slots>   (ccidSlotCount())
+ *   ccidmsg <type> <hex> H CCIDMSG <ok> <message type> <bStatus> <bError> <hex>  (ccidMessage(), type in hex)
+ *   ccidabort            H CCIDABORT <ok>      (ccidAbort(): the class request, then PC_to_RDR_Abort)
  *   suspend              H SUSPEND <ok> <last error>   (suspend(): the root port, remote wakeup armed)
  *   resume               H RESUME <ok> <last error>
  *   power                H POWER <suspended 0/1> <remote wakeups seen>
@@ -1055,6 +1058,23 @@ static void reply(char *cmd)
         CONSOLE.print(' ');
         hex(rx, ok ? got : 0);
         CONSOLE.println();
+    } else if (strcmp(cmd, "ccidslots") == 0) {
+        CONSOLE.print("H CCIDSLOTS ");
+        CONSOLE.println(usb.ccidReady() || usb.ccidOpen() ? usb.ccidSlotCount() : 0);
+    } else if (strcmp(cmd, "ccidmsg") == 0) {
+        char *rest = arg;
+        const uint8_t type = (uint8_t)strtoul(arg, &rest, 16);
+        while (*rest == ' ') rest++;
+        uint8_t tx[32];
+        const size_t n = parse_hex(rest, tx, sizeof tx);
+        CH32RVUsbHostCcidResponse r;
+        const bool ok = (usb.ccidReady() || usb.ccidOpen()) && usb.ccidMessage(type, nullptr, tx, n, r);
+        CONSOLE.printf("H CCIDMSG %d %02x %02x %02x ", ok ? 1 : 0, r.messageType, r.status, r.error);
+        hex(r.data, ok ? r.length : 0);
+        CONSOLE.println();
+    } else if (strcmp(cmd, "ccidabort") == 0) {
+        CONSOLE.print("H CCIDABORT ");
+        CONSOLE.println((usb.ccidReady() || usb.ccidOpen()) && usb.ccidAbort() ? 1 : 0);
 #endif
 #if defined(USB_HOST_AUDIO)
     } else if (strcmp(cmd, "audstreams") == 0) {

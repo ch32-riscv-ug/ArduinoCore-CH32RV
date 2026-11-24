@@ -96,3 +96,7 @@ mscCapacity64	KEYWORD2
 mscReadBlocks64	KEYWORD2
 mscWriteBlocks64	KEYWORD2
 mscLastSense	KEYWORD2
+ccidSlotCount	KEYWORD2
+ccidMessage	KEYWORD2
+ccidAbort	KEYWORD2
+CH32RVUsbHostCcidResponse	KEYWORD1

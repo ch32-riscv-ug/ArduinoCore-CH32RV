@@ -550,6 +550,18 @@ struct CH32RVUsbHostCcidStatus {
     uint8_t error = 0;
     bool present = false, active = false;
 };
+/* ccidMessage()'s answer: the RDR_to_PC header and its data, which points into the library's message buffer and
+ * stays valid until the next CCID call (EspUsbHostCcidResponse). */
+struct CH32RVUsbHostCcidResponse {
+    uint8_t messageType = 0, slot = 0, sequence = 0;
+    uint8_t status = 0;             /* bStatus as it came */
+    uint8_t error = 0;              /* bError */
+    uint8_t chainParameter = 0;     /* bChainParameter / bClockStatus / bRFU */
+    CH32RVUsbHostCcidIccStatus iccStatus = CH32RV_USB_HOST_CCID_ICC_ABSENT;
+    CH32RVUsbHostCcidCommandStatus commandStatus = CH32RV_USB_HOST_CCID_COMMAND_OK;
+    const uint8_t *data = nullptr;
+    size_t length = 0;
+};
 struct CH32RVUsbHostCcidSlotEvent {
     uint8_t address = 0, slot = 0;
     bool present = false;
@@ -908,6 +920,8 @@ public:
     void ccidClose();
     bool ccidReady(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     bool ccidGetInterface(CH32RVUsbHostCcidInterface &info) const;
+    /* The reader's slots (bMaxSlotIndex + 1), 0 when none is open. */
+    uint8_t ccidSlotCount(uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS) const;
     bool ccidGetStatus(CH32RVUsbHostCcidStatus &status, uint8_t slot = 0,
                        uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 1000);
     bool ccidCardPresent(uint8_t slot = 0, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS);
@@ -925,6 +939,13 @@ public:
                   uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
     bool ccidEscape(const uint8_t *tx, size_t txLength, uint8_t *rx, size_t rxCapacity, size_t *rxLength,
                     uint8_t slot = 0, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
+    /* Any PC_to_RDR message the calls above do not wrap (SetParameters, GetParameters, IccClock, T0APDU ...):
+     * messageSpecific is header bytes 7 .. 9 (nullptr: zeros). EspUsbHost's ccidMessage(). */
+    bool ccidMessage(uint8_t messageType, const uint8_t *messageSpecific, const uint8_t *data, size_t length,
+                     CH32RVUsbHostCcidResponse &response, uint8_t slot = 0,
+                     uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 5000);
+    /* The class request ABORT, then PC_to_RDR_Abort with the same bSeq (CCID 1.1 5.3.1). */
+    bool ccidAbort(uint8_t slot = 0, uint8_t address = CH32RV_USB_HOST_ANY_ADDRESS, uint32_t timeoutMs = 1000);
     uint8_t ccidLastError() const { return _ccidError; }
 
     /* ---- internal: the function groups' state hangs off these ---- */

@@ -20,7 +20,8 @@
  * block 13 fails to read (the data stage stalled, sense 02/3A/00) - unit
  * 1 16 blocks of 0xA5; a note-on comes back with its note raised by 12 (other
  * MIDI packets are only recorded); vendor request 0x10 (IN) answers "RP2040";
- * the card answers an APDU reversed then 90 00, and an Escape with its bytes. */
+ * the card answers an APDU reversed then 90 00, and an Escape with its bytes; GetParameters says T=0, and
+ * PC_to_RDR_Abort succeeds when the class request ABORT named its bSeq and slot first. */
 #include <Adafruit_TinyUSB.h>
 #include <RTTStream.h>
 #include <device/usbd_pvt.h>
@@ -177,6 +178,8 @@ CFG_TUSB_MEM_ALIGN static uint8_t rx[CCID_MAX_MESSAGE + 1], tx[CCID_MAX_MESSAGE 
 
 static void ccid_arm(uint8_t rhport) { usbd_edpt_xfer(rhport, ccid_out, rx, sizeof rx, false); }
 
+/* The class request ABORT (CCID 1.1 5.3.1): its bSeq and slot, which the PC_to_RDR_Abort that follows has to name */
+static int abortSeq = -1, abortSlot = -1;
 static void ccid_reply(uint8_t rhport, uint8_t type, const uint8_t *data, uint32_t n, uint8_t status, uint8_t error,
                        uint8_t third)
 {
@@ -242,6 +245,13 @@ static void ccid_message(uint8_t rhport, uint32_t length)
     ccid_reply(rhport, 0x82, t0, sizeof t0, present, 0, 0);
     break;
   }
+  case 0x72:                                          /* Abort: done when the class request named this bSeq and slot */
+  {
+    const bool named = abortSeq == rx[6] && abortSlot == rx[5];
+    abortSeq = abortSlot = -1;
+    ccid_reply(rhport, 0x81, nullptr, 0, (named ? 0x00 : 0x40) | present, 0, 0);
+    break;
+  }
   default:                                            /* command not supported */
     ccid_reply(rhport, 0x81, nullptr, 0, 0x40 | present, 0x00, 0);
     break;
@@ -265,7 +275,17 @@ static uint16_t ccid_open(uint8_t rhport, const tusb_desc_interface_t *itf, uint
   return len;
 }
 
-static bool ccid_control(uint8_t, uint8_t, const tusb_control_request_t *) { return false; }
+static bool ccid_control(uint8_t rhport, uint8_t stage, const tusb_control_request_t *r)
+{
+  if (r->bmRequestType_bit.type != TUSB_REQ_TYPE_CLASS || r->bRequest != 0x01) return false;
+  if (stage == CONTROL_STAGE_SETUP)
+  {
+    abortSeq = r->wValue >> 8;
+    abortSlot = r->wValue & 0xFF;
+    return tud_control_status(rhport, r);
+  }
+  return true;
+}
 
 static bool ccid_xfer(uint8_t rhport, uint8_t ep, xfer_result_t result, uint32_t n)
 {

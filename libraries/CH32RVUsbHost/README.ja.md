@@ -303,6 +303,7 @@ void loop() {
 CCID は `ccidOpen()`、`ccidPowerOn()`、`ccidApdu()`、`ccidEscape()`、カード状態通知を用意します。
 `ccidApdu()` の response は SW1/SW2 を除いた payload、status word は別の出力です。ただし受信 buffer の capacity は
 SW の2 bytesも収まるよう確保します。通信成功と `SW=9000` の命令成功を分けて扱います。
+EspUsbHost の `ccidSlotCount()`、`ccidMessage()`（ほかの呼び出しが包まない PC_to_RDR のメッセージ。SetParameters・GetParameters・IccClock など。RDR_to_PC のヘッダーとデータが返る）、`ccidAbort()`（クラス要求の ABORT のあと、同じ bSeq の PC_to_RDR_Abort）もあります。ATR からカードの規格を読む `ccidGetCardInfo()` / `ccidIdentifyCard()` はまだです。
 
 ### USB オーディオ（UAC1 / UAC2）
 
