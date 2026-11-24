@@ -960,7 +960,12 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm, bool spdif)
         return false;
     }
     _hw_slots = tdm ? _slots : 2u;
-    const uint32_t div = (uint32_t)((SAI_CK_HZ + 128ull * rate) / (256ull * rate));   /* nearest */
+    /* STD / TDM: MCLK = SAI_CK / div = 256 fs. SPDIF: NODIV, the bit clock
+     * SAI_CK / div itself = 128 fs (two cells a bit, 64 bits a frame) - with
+     * the MCLK divider the cells came 16 times too slow (and 32 with 16-bit
+     * samples), H417 2026-11-24, WireSkein's spdif. */
+    const uint32_t per = spdif ? 128u : 256u;
+    const uint32_t div = (uint32_t)((SAI_CK_HZ + per / 2u * rate) / ((uint64_t)per * rate));   /* nearest */
     if (div < 1u || div > 63u) {
         return false;
     }
@@ -988,7 +993,7 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm, bool spdif)
     _tx = tx;
     _port = (int8_t)(PORT_COUNT + b);
     _sai_pos = 0;
-    _rate = (uint32_t)(SAI_CK_HZ / (256ull * div));
+    _rate = (uint32_t)(SAI_CK_HZ / ((uint64_t)per * div));
     _playing = 0;
     _w_half = 1;
     _w_ofs = 0;
@@ -1048,11 +1053,11 @@ bool I2SClass::beginSai(bool tx, uint32_t rate, bool tdm, bool spdif)
     SAI_FRCR(b) = (frame - 1u) | fsall << 8 | fsdef << 16 | fspol << 17 | fsoff << 18;
     SAI_SLOTR(b) = fboff | (slot_bits == 16 ? 1u : 2u) << 6 | (uint32_t)(nslots - 1u) << 8 | (uint32_t)enable << 16;
     if (spdif) {
-        /* PRTCFG 01: SPDIF, master transmitter; the frame (two 32-bit
-         * subframes, 64 SCK at MCLK / 4) and the 24-bit size are fixed */
+        /* PRTCFG 01: SPDIF, master transmitter; the frame is two 32-bit
+         * subframes whatever FRCR / SLOTR say */
         SAI_FRCR(b) = 0;
         SAI_SLOTR(b) = 0;
-        SAI_CFGR1(b) = 1u << 2 | div << 20;
+        SAI_CFGR1(b) = 1u << 2 | 6u << 5 | 1u << 19 | div << 20;   /* PRTCFG SPDIF, DS 24, NODIV */
     } else {
         SAI_CFGR1(b) = (tx ? 0u : 1u) | (uint32_t)ds_code[_bits == 16 ? 0 : _bits == 24 ? 1 : 2] << 5 |
                        (_inv_bclk ? 0u : SAI_CKSTR) | div << 20;

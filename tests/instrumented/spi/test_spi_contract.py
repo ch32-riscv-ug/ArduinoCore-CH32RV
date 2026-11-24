@@ -842,7 +842,7 @@ def test_i2s_input(dut, oep_host, ws_run, record_property):
 
 
 SAI_RATE = 60_000_000      # test_sai's two lines: SCK up to 4 MHz (TDM 8 x 32 at 16 kHz)
-SPDIF_RATE = 50_000_000   # S/PDIF at 52 kHz (48 kHz asked): half a cell 1 / (128 x 52083) s, 7.5 samples
+SPDIF_RATE = 50_000_000   # S/PDIF at 47348 Hz (48 kHz asked): half a cell 1 / (128 x 47348) s, 8.3 samples
 
 
 def test_sai(dut, oep_host, ws_run, record_property):
@@ -944,7 +944,7 @@ def test_spdif(dut, oep_host, ws_run, record_property):
     block start every 192 frames, even parity, the value each channel carries (left 0x5a3c / 0x5a3c96, right 0x0f1e /
     0x0f1e2d in the 24 bits the subframe holds), channel A's and B's status 0x00000004 | the rate's code (bit 2: copying
     permitted; bits 24 .. 27: 48 kHz 0100, 44.1 kHz 0000) and the frame rate sampleRate() within 1 %. 16-bit at 48 kHz,
-    24-bit at 48 kHz, 32-bit at 44.1 kHz; 50 MS/s (half a cell is 7 samples or more)."""
+    24-bit at 48 kHz, 32-bit at 44.1 kHz; 50 MS/s (half a cell is 8 samples or more)."""
     from wireskein import runlog
     case = settings(__file__)
     if case.get("case") == "softspi":
