@@ -739,13 +739,15 @@ def vio18_menu(board: str) -> list[str]:
 # LTO measured on CH32X035 2026-10-21: 9-24% less flash at the same
 # speed; -msave-restore a further 4-5% for 7-9% slower ECC. The menu id is
 # STM32duino's for the same choice.
+# The labels say where each stands against the default in size and speed
+# (the measurements above), so the smallest is the one that says so.
 OPT_MENU = (
-    ("ozlto", "Smallest (-Oz) with LTO (default)", "-Oz -flto"),
-    ("oslto", "Small and faster (-Os) with LTO", "-Os -flto"),
-    ("o2lto", "Fast (-O2) with LTO", "-O2 -flto"),
-    ("o3lto", "Fastest (-O3) with LTO", "-O3 -flto"),
-    ("ozltosr", "Smallest (-Oz) with LTO and -msave-restore (slower calls)", "-Oz -flto -msave-restore"),
-    ("ozstd", "Smallest (-Oz) without LTO", "-Oz"),
+    ("ozlto", "Small (-Oz) with LTO (default)", "-Oz -flto"),
+    ("ozltosr", "Smallest (-Oz, LTO, -msave-restore): ~5% smaller, calls slower", "-Oz -flto -msave-restore"),
+    ("oslto", "Faster (-Os) with LTO: ~8% larger", "-Os -flto"),
+    ("o2lto", "Fast (-O2) with LTO: larger", "-O2 -flto"),
+    ("o3lto", "Fastest (-O3) with LTO: largest", "-O3 -flto"),
+    ("ozstd", "Small (-Oz) without LTO: 9-24% larger", "-Oz"),
 )
 
 
