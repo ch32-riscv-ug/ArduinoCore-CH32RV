@@ -45,7 +45,7 @@
 | オプションバイト（読み出し保護・書き込み保護・DATA0/1・START_MODE・STANDYRST/STOPRST・USARTDLEN 等・PORCTR・RST_PIN_SEL・CFGCANM） | 全 12 family | 2 | 自動 | 自己（読み戻し）。保護は解くとフラッシュが消えるので専用チップ | PS:69, PM:308 |
 | PMP（メモリ保護） | V20x、V30x、V4x7、L103、X035、H41x | 2 | 自動 | 自己（禁止域に触れて例外） | PS:63, PM:296 |
 | フラッシュの ECC の診断 | M030 | 2 | 自動 | 自己 | EVT CH32M030 FLASH/FLASH_ECC, TODO:318 |
-| BootAsUser（BOOT 域をユーザーに） | V003、V006、X035 | 2 | 自動 | 自己 | EVT FLASH/BootAsUser |
+| BootAsUser（BOOT 域をユーザーに） | V003、V006、X035 | 作らない（2026-11-24、ユーザー: 得るものが少ない）。増えるのは 1920 バイト（V003 で約 12 %）だけで、工場のブートローダー（USB / UART の ISP、UIAPduino の HID）が消え、書き込みはデバッガだけ、BOOT 域にデータは置けず、V003 では BOOT 域との呼び出しに 1 回約 1 µs かかる。16 KB が苦しいときは V006 などの大きい石を使う | — | — | EVT FLASH/BootAsUser |
 | ADC・I2C のクロック範囲（バスを分周できない系列） | X315、H417、M030 | 2 | 自動 | プローブ（I2C の SCL） | TODO:190 |
 
 ## GPIO・割込み
