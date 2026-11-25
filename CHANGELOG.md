@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.12.0
 - (EN) ch32rv 0.34.0: an upload's summary line names the part it found and its sizes ("flashed 7408 bytes to CH32X035C8T6 (62 KiB flash, 20 KiB SRAM) over OEP ..."), over WCH-Link, OEP and the factory ISP; OEP and ISP uploads stop when the chip is not the part the build was for.
 - (JA) ch32rv 0.34.0: 書き込みの要約の行に、見つけた品番と大きさを出す（「flashed 7408 bytes to CH32X035C8T6 (62 KiB flash, 20 KiB SRAM) over OEP ...」）。WCH-Link、OEP、工場の ISP のどれでも。OEP と ISP の書き込みは、ビルドした品番と違う石なら止まる。
 - (EN) Breaking: board menu ids and values say what they are (they show in sketch.yaml's FQBN). Part Number `pnum` → `part`; Floating Point `rtlib` → `float` (`fltf` → `float_printf`, `flt` → `float`, `dbl` → `double`, `dblf` → `double_printf`, `libcfp` / `libcfs` / `libcfps` → `double_libc_printf` / `double_libc_scanf` / `double_libc_printf_scanf`, `dblfs` → `double_printf_scanf`, `fltfs` → `float_printf_scanf`); Optimize `ozlto` → `oz`, `ozltosr` → `oz_saverestore`, `oslto` → `os`, `o2lto` → `o2`, `o3lto` → `o3`, `ozstd` → `oz_nolto`; Clock Source / RTC Clock `hsi` / `lsi` → `internal`, `hse` / `lse` → `crystal`; Reset Pin `rstpin` → `resetpin`; Watchdog `iwdg` → Watchdog Auto Start `wdtautostart` (`sw` → `off`, `hw` → `on`); Erase `keep` / `chip` → `none` / `all`; Monitor Source `monsrc` → `monitor`; VIO18 `hw` → `strap`; Stack Size `s1024` → `1k` (and so on, `512b`); the pin menus' `disable` → `off` and `fix_pa9_pa10` → `pa9_pa10`. Labels are shorter, the point first; the details are in the README's menu table.
