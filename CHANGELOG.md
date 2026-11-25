@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) The serial monitor no longer gets the part number as its `chip`: ch32rv's monitor only checked the attached chip against it, and Arduino IDE 2 keeps a monitor's settings per board and port, so after the Part Number menu changed it refused to open with "conflicts with the detected ..." on a debug-module source. The monitor reads the attached chip itself (`auto`).
+- (JA) シリアルモニターに、型番を `chip` として渡さないようにした。ch32rv のモニターはつないだ石との照合にしか使っておらず、Arduino IDE 2 はモニターの設定をボードと口ごとに保存するため、Part Number を変えると、デバッグの経路の source で「conflicts with the detected ...」と開けなくなっていた。モニターはつないだ石を自分で読む（`auto`）。
 
 ## 0.12.0
 - (EN) ch32rv 0.34.0: an upload's summary line names the part it found and its sizes ("flashed 7408 bytes to CH32X035C8T6 (62 KiB flash, 20 KiB SRAM) over OEP ..."), over WCH-Link, OEP and the factory ISP; OEP and ISP uploads stop when the chip is not the part the build was for.

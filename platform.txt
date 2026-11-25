@@ -309,9 +309,10 @@ pluggable_discovery.ch32rv.pattern="{runtime.tools.ch32rv.path}/ch32rv" arduino 
 # ---------------------------------------------------------------- monitor
 # Every monitor is ch32rv's (docs/oep-workflow.ja.md §6), for the IDE's serial
 # ports too: its `source` setting reads the target's UART (default, a plain
-# pass-through), SDI, DMDATA, DMSeq, RTT or an OEP probe's fixture UART, and its
-# `chip` setting (boards.txt monitor_port.<protocol>.chip) keeps a debug-module
-# source off a board that is not the one attached. On an ordinary serial port
+# pass-through), SDI, DMDATA, DMSeq, RTT or an OEP probe's fixture UART. Its
+# `chip` setting is left to ch32rv (auto): the monitor reads the attached chip
+# itself, and a part number saved by the IDE would outlive the Part Number menu.
+# On an ordinary serial port
 # with no probe behind it the UART source is simply a serial monitor.
 pluggable_monitor.pattern.serial="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol serial
 pluggable_monitor.pattern.wchlink="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink

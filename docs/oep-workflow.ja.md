@@ -206,7 +206,7 @@ baud は数字が渡るだけで問題にならない。
   受け、pluggable monitor の TCP へ流す（§7.2）。
 - 設定の優先順は `--config` > profile の `port_config` > 板の既定（boards.txt `monitor_port.serial.<id>`）。`-m <profile>` のときは
   top-level の `default_port_config` は届かない。monitor が宣言しないキーを profile に書くと arduino-cli が exit 7 で止まる。
-- 板の既定として `monitor_port.serial.chip=<家系>` を持たせる。ch32rv の monitor は attach する source でこれと実際のチップを照合し、合わなければ OPEN を error にする（口の選択には使わない。§3.4）。
+- 板の既定に `monitor_port.<protocol>.chip` は持たせない（2026-11-25 に外した）。ch32rv の monitor は chip をつないだ後の照合にしか使わず、読み方はつないだ chip の ID から決める。IDE 2 はモニターの設定をボード・口・プロトコルごとに保存してメニューより優先するので、Part Number の型番を渡すと、別の型番に変えたときに照合で OPEN が失敗する。OEP で口のラベルが 1 線か 2 線かを決めない場合だけ chip が線の選び方に効くが、ベンチの口はラベルで決まっている。
 
 ### 6.2 ch32rv の monitor に要る作り
 

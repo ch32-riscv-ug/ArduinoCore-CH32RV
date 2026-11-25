@@ -1134,8 +1134,6 @@ def parsefloat_menu(board: str) -> list[str]:
 # tree calls Serial.begin(115200), so the monitor that comes up beside them
 # says the same thing.
 MONITOR_BAUD = 115200
-# The pluggable monitor protocols ch32rv serves (platform.txt pluggable_monitor.pattern.*).
-MONITOR_PROTOCOLS = ("serial", "wchlink", "oep")
 
 DEVICE_DATA_URL = "https://github.com/ch32-riscv-ug/ch32-device-data.git"
 LOCK_REL = "vendor/ch32-device-data.lock.toml"
@@ -6150,12 +6148,11 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         # A series ch32rv has no name for flashes nothing: its own name, which
         # ch32rv refuses with target-not-in-db (see ch32rv_chip()).
         lines.append(f"{pfx}.build.ch32rv_chip={known or series}")
-        # The same value for ch32rv's monitor (its DESCRIBE `chip`): it refuses a
-        # debug-module source when the attached chip is another one.
-        # `auto` where ch32rv has no name: the monitor only reads, and a name it
-        # rejects would keep even a plain UART monitor from opening.
-        for proto in MONITOR_PROTOCOLS:
-            lines.append(f"{pfx}.monitor_port.{proto}.chip={known or 'auto'}")
+        # No `chip` for ch32rv's monitor: it only checks the attached chip
+        # against it, after attaching, and finds everything it reads by from the
+        # chip ID; the IDE 2 keeps a monitor's settings per board, port and
+        # protocol whatever the menus say, so a part number left from another
+        # Part Number entry would refuse the next one (2026-11-25, [ch32rv]).
         # ANY deliberately keeps the board's variant: it already declares the
         # smallest flash in the series, so it is the "not a specific part"
         # entry and a part that needs its own table has to be picked by name.
