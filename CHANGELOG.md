@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Fix: Stack Check (`stackcheck=on`) did not link at Optimize -Os, -O2 or -O3 ("undefined hidden symbol: ch32rv_stack_overflow"): the fault handler reaches it from assembly only, which link-time optimisation did not see.
+- (JA) 修正: Stack Check（`stackcheck=on`）が、Optimize の -Os・-O2・-O3 でリンクできなかった（「undefined hidden symbol: ch32rv_stack_overflow」）。例外の処理がアセンブリからだけ呼ぶ関数を、LTO が見落としていた。
 - (EN) The Erase Flash menu is now "Erase All Flash Before Sketch Upload", Disabled (default) / Enabled, as arduino-esp32's: the sketch's own pages are rewritten either way. Same ids (`erase=keep` / `erase=chip`).
 - (JA) Erase Flash のメニューを、arduino-esp32 と同じ「Erase All Flash Before Sketch Upload」の Disabled（既定）/ Enabled にした。スケッチのページはどちらでも書き換える。id は同じ（`erase=keep` / `erase=chip`）。
 - (EN) The Debug Speed menu is gone: it was added for a SuperSpeed fault on H417 that turned out to be the USB driver's, and no board needs a slower debug clock. `ch32rv --speed` stays for the command line.

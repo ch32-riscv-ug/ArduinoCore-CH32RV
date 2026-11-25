@@ -117,7 +117,11 @@ __attribute__((naked)) void HardFault_Handler(void)
         "j 3b\n");
 }
 
-__attribute__((weak, noreturn)) void ch32rv_stack_overflow(void)
+/* `used` and default visibility: the fault handler above reaches it from
+ * assembly only, which LTO does not see, and with -fvisibility=hidden it
+ * dropped the function at -Os / -O2 (ld.lld: undefined hidden symbol,
+ * 2026-11-25); -Oz kept it through ch32rv_stack_check()'s call. */
+__attribute__((weak, noreturn, used, visibility("default"))) void ch32rv_stack_overflow(void)
 {
     panic_record[0] = CH32RV_PANIC_MAGIC;
     panic_record[1] = ~CH32RV_PANIC_MAGIC;
