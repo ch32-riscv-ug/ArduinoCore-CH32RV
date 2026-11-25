@@ -668,6 +668,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
   → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
   リリースで上げて V006 の softspi を確かめる。
+- [ ] **Arduino IDE 2 で Monitor Source が効かない（上流 arduino/arduino-ide#2988、2026-11-25 に出した）**: IDE は monitor の設定を
+  全部 `pluggable-monitor-settings.json` に、メニューの値を含まない鍵で保存し、boards.txt の既定（メニュー）より優先する。
+  画面で変えられない source も保存されるので、メニューを変えても再起動しても効かない（ユーザーが Windows の IDE で確かめた）。
+  回避は docs/debug-output.ja.md に書いた。モニターの `chip` は渡すのをやめた（同じ理由で、型番が残ると照合で開けなくなるため）。
+  上流が直したら、回避の記述を外す。
 - [ ] **常設のベンチに、工場の ISP（USB）での書き込みを試す台が無い**（2026-11-25、カバレッジの不足）: 常設の DUT の USB は、
   PC か相手（S3・P4・Pico・CH32RV）につながっていて、BOOT（X035 は PC17 を High）や NRST をプローブから操って ISP に入れる
   配線の台が無い。WeAct の X035F8U6（oep-1451 の先）は常設の外の一時的な機材で、ISP に入れる線も無い（[oep]、2026-11-25）。

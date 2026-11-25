@@ -20,6 +20,13 @@ WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として disc
 モニターが何を読むか（ch32rv の monitor の `source`）は、ツールメニューの **Monitor Source** で選びます。IDE 2 の Serial Monitor の窓には
 monitor の設定のうちボーレートしか出ないためです（arduino-cli の `--config source=…` はメニューより優先）。
 
+**Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
+その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを Tools メニューより
+優先します。そのため、あとから Monitor Source を変えても、IDE を再起動しても、最初の source のまま読みます。変えるときは、IDE を
+閉じて、IDE の設定のフォルダー（Windows は `C:\Users\<ユーザー名>\.arduinoIDE`）の `pluggable-monitor-settings.json` から、
+その口の項目（`ch32-riscv-ug:ch32rv:<ボード>-<口>-<protocol>`）を消してから、メニューを選び直してモニターを開きます。
+arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。
+
 | Monitor Source | serial port（LinkE の COM など） | `wchlink://` | `oep://` |
 |---|---|---|---|
 | UART (Serial)（既定） | `uart`: UART bridge の素通し | ch32rv の既定（`dmdata`）のまま。UART は COM の口を選ぶ | `fixture-uart`: probe の UART の線 |
