@@ -185,11 +185,20 @@ analog（PA4 / PA5 の線の揺れ、DAC2 の幅）、signals::test_complementar
   HCD に届いていない（S も E も無い）。libusb の errno は 12: usbfs が等時の URB のバッファを 1 つの kmalloc で取り、
   42 間隔 × 48 KiB = 2 MiB がメモリの断片化しだいで取れない（8 間隔は通る）。usb_iso.py はバッファを
   libusb_dev_mem_alloc（usbfs の mmap）から取るように。13 件とも通る。
-- [ ] **H417 の usb-ss-iso がまた落ちる（2026-11-25）**: test_usb_ss_enumeration_after_restart（`CH32RV.restart()` の後、
+- [x] **H417 の usb-ss-iso がまた落ちる（2026-11-25）**: test_usb_ss_enumeration_after_restart（`CH32RV.restart()` の後、
   4-1.3.1 に SS で戻らない）が 4 回続けて落ちる。test_usb_ss_iso_in[4]（Mult 2、42 間隔のうち 32〜36 だけ全部そろう、誤り 3〜5）も
   4 回中 2 回。ICF の前の版（525e4404）でも 2 回とも同じなので、2026-11-24 のリンクのオプションの変更ではない。11-23 の
   h417-itcm-full では通っていた。11-25 に 6-2 の段の電源を全部切って入れ直した後（Pico が固まった件）で、SS の口は PC の
   10 ポートのハブの USB3 側（4-1.3.1）。電源の入れ直しの前の回（full-20261124-icf-xh）でも restart の 1 件が落ちている。
+  → 直した（2026-11-25）。2 つは別の原因だった。
+  - restart: カーネルは毎回 SS でつなぎ直していた（device 17→21）。試験の `_ready()` は sysfs で通るが、libusb の一覧が
+    udev の後で追いつく前に `device()` を呼んで見つからなかった。usb_host.py の `device()` を 2 秒まで探し直すように、
+    restart の各回は devnum が変わるのを待ってから（`wait_reenumerated()`）。
+  - iso_in[4]: usbmon では誤りはすべて -71（伝送誤り）で -EXDEV（DUT の遅れ）は無く、IN の向きだけ。LINK_CFG の
+    de-emphasis を訓練ごとに替えて alt 4 を 840 区間ずつ流すと、40 320 パケットあたりの誤りが 6 dB 0〜11（中央値 0、21 回）、
+    3.5 dB 1〜453（中央値 54）、10 は 1〜516、11（EVT）35〜732。11-14 の 3.5 dB はマイクの少ないパケットで選んでいた。
+    ch32rv_usbss.h の H41x を 6 dB に（X315 と同じ。RM は 00 / 01 を通常の値とする。USB 3 の Gen1 の規格の 3〜4 dB からは
+    外れる）。usb-ss-iso 2 回、usb・usb-classes・usb-media が通る（マイクの誤りのパケット 0）。
 - [x] **H417 の signals::test_six_step**: begin() 直後の全相オフで PA7（TIM1_CH1N）に細いパルスが 8 縁（High の割合 0.0）。
   隣の PA6（break）の線か、止めた相の出力か。
   → 2026-11-21: 3 回中 2 回（流し直しの 1 回は通った）。2 回目の取り込みでは PA7 のパルスが 10 MS/s の 1 サンプル（0.1 µs）で

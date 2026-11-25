@@ -760,7 +760,7 @@ void link_lost()
 
 /* Host bring-up: the EVT's USBSSH_Init (usbss_host.c:69-98) with this
  * core's de-emphasis (CH32RV_USBSS_LINK_DEEMPH, measured on the device role
- * at 3.5 dB; the EVT writes 0x300) and the interrupts this driver uses. */
+ * at 6 dB; the EVT writes 0x300) and the interrupts this driver uses. */
 void link_start()
 {
     USB_CONTROL |= USBSS_USB_CLR_ALL;

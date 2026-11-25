@@ -61,13 +61,20 @@ extern void (*volatile ch32rv_usbss_irq_hook[2])(void);
 #define CH32RV_USBSS_CTLR_PLLRDY (1u << 23)
 #define CH32RV_USBSS_PIPE_REG    CH32RV_RCC_CFGR0
 #define CH32RV_USBSS_PIPE_BITS   ((1u << 22) | (1u << 23))   /* PIPE, UTMI */
-/* 3.5 dB, the USB 3 Gen 1 value. The EVT writes the whole field (0x300, not
- * a value the RM lists); with it some trainings came up with tens of link
- * errors a second at the hub's port, and the microphone lost a packet to a
- * transaction error every few hundred milliseconds. At 3.5 dB none of 30
- * trainings did; 6 dB enumerated late twice in 10 (bench, 6-2 behind a
- * Realtek hub, 2026-11-14). */
-#define CH32RV_USBSS_LINK_DEEMPH     0x00000100u
+/* 6 dB (00), as X315's EVT. The RM allows 00 (6 dB) and 01 (3.5 dB, the
+ * reset value and USB 3 Gen 1's nominal) in normal operation; the H41x EVT
+ * writes the whole field (11, reserved for compliance). Measured as the
+ * packets of 840 intervals of 48 x 1024 bytes IN (40 320 packets) that the
+ * PC took as transaction errors (-71), one link training each, interleaved
+ * (bench 6-2 behind the Realtek 0bda:0411 hubs, 2026-11-25):
+ *   00 (6 dB)    0-11, median 0 of 21 trainings; enumerated in 0.53-0.59 s
+ *   01 (3.5 dB)  1-453, median 54 of 21
+ *   10 (none)    1-516 of 6;  11  35-732 of 6
+ * The IN direction only: the DUT's receiver took every OUT packet. 3.5 dB
+ * was chosen on 2026-11-14 from the microphone's few packets a second (none
+ * of 30 trainings showed errors there; 6 dB enumerated late twice in 10,
+ * which 21 trainings now did not). */
+#define CH32RV_USBSS_LINK_DEEMPH     0x00000000u
 #define CH32RV_USBSS_LINK_CTRL_EXTRA 0u
 #endif
 
