@@ -664,6 +664,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   → 2026-11-25: V103 で再び（full-20261124-icf、LSBFIRST の区間、decoded_mode 0・cpol 1）。[wireskein] に report を添えて
   cpol の決め方を聞いた。→ [wireskein] が直した（CS が無いときは、最初の変化の前と最後の変化の後の SCK の水準がそろえば
   それを CPOL にする。Python と Rust の verify の両方）。この run を読み直して ok。次のリリースで上げて確かめる。
+  → 2026-11-25: wireskein 0.0.38 を取り込んで softspi を 2 回: V103 は 2 回とも PASS（mode の NG は出ない）、V006 は 1 回目 PASS、
+  2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
+- [ ] **V006 の softspi::test_spi_peripheral で 1 ビット違う**（2026-11-25、softspi-ws038-2）: mode 0 MSBFIRST で、プローブが
+  読んだのが a05a7979、DUT に渡したのが a05af979（4 バイト目の最上位ビットが 0）。1 回目は通った。前に同じ形の記録は無い。
+  再発したら、取り込みでその SCK の縁と MOSI を見る。
 - [ ] **USBSS の IN の流れで、まれに 1〜9 パケット（1 KB 単位）が化ける**（2026-11-22、上の測定の途中で見えた）: Vendor の
   writeDirect() で 32 KB を続けて送り、PC の libusb の非同期 8 本で読むと、5 秒（約 7 万ブロック）の回のうち、化けたブロックが
   0〜2 個出る回がある。共有 SRAM（ヒープ）のバッファでも DTCM のバッファでも出て、出ない日（10 回ずつ 0）もある。化けは
