@@ -40,11 +40,18 @@ uv run --project tests --locked --extra hardware --env-file tests/.env python te
 uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py --case runtime
 uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py --execute
 
+# 全台の試験: 常設のベンチの全部の台（tests/pyproject.toml の arduino_combos）
+uv run --project tests --locked --extra hardware --env-file tests/.env python tests/run_hardware.py --execute --combo all
+
 # 相手を並べる、case を選ぶ
 uv run --project tests --locked --extra hardware python tests/run_hardware.py --execute \
   --probe oep://80f1b2d835d6/x035c8t6-pico --probe wchlink://A94B8F062EE9 --case gpio --out work/run1
 ```
 
+`--combo <名前>|all` は、`arduino_combos` の組み合わせの主のプロファイル（tests/hw/profiles.toml。名前は oep-bench の台帳の
+略称）の口を、`TEST_SERIAL_PORT_<PROFILE>`（tests/.env）から引きます。常設のベンチの台はすべてコンボにあります。台を足したり
+外したりしたら、profiles.toml・arduino_combos・tests/.env をそろえます。常設のベンチの外の機材は一時的なものなので入れません。
+同じ系列の 2 枚目の板は、口の記録の `peer_only`（RECORDS 4.10）などで流すケースを絞ります。
 `--probe` と `--out` は環境変数より優先します。`--out` を省略すると `OEP_HW_RESULTS` 内に実行ごとの新しいディレクトリを作ります。書込みには常に `--execute` が必要です。機器の排他は pytest の機器ロック（`--device-lock required`）が受け持ち、ベンチの共通ロックは取りません。`--case` で、その相手で流せない case を求めると、理由つきの SKIP になります。
 
 新しいクロックの設定や休止など、接続できなくなるかもしれないイメージを試すときは、`CH32_TEST_BOOT_HOLD_MS=1000` を付けます。

@@ -668,6 +668,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
   → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
   リリースで上げて V006 の softspi を確かめる。
+- [ ] **常設のベンチに、工場の ISP（USB）での書き込みを試す台が無い**（2026-11-25、カバレッジの不足）: 常設の DUT の USB は、
+  PC か相手（S3・P4・Pico・CH32RV）につながっていて、BOOT（X035 は PC17 を High）や NRST をプローブから操って ISP に入れる
+  配線の台が無い。WeAct の X035F8U6（oep-1451 の先）は常設の外の一時的な機材で、ISP に入れる線も無い（[oep]、2026-11-25）。
+  常設の機材でどう組むか（どの台の USB を PC に出し、BOOT / NRST をどの線で操るか）をユーザーと決める。V003 の USB の
+  書き込み（UIAPduino の HID）は常設の v003f4u6-uia で流している。
 - [ ] **X035（x035c8t6-s3）の usb-peer-host-media が通らない**（2026-11-25、この組み合わせで初めて流した）: S3 が USB の
   機能（UAC / UVC）を出さず、DUT からは S3 の USB JTAG/serial（303a:1001）だけが見え、S3 の出力も 1 行も無い。esp32 4.0.0 /
   EspUsbDevice 3.4.0 でも、3.3.13 / 3.3.0 でも同じなので、依存の更新ではない。同じスケッチの P4 の profile（V407）は通る。

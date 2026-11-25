@@ -5,9 +5,58 @@
 #
 # part:    the chip (fqbn part=, and the place's chip must be the same)
 # options: menu values beside the board's defaults ("clock=8")
+#
+# Every resident board of the bench (oep-bench's ledger) is a profile and a combination (tests/pyproject.toml's
+# arduino_combos): `--combo all` is the full run. Boards off the resident bench are temporary and left out. The M030
+# motor board runs what drives no pad (its record's defect m030-motor-stage loses gpio-drive): flashing and the self tests.
+
+[v003f4p6]
+part = "CH32V003F4P6"
+
+[v003f4u6-uia]
+part = "CH32V003F4U6"
+
+[v006k8u6]
+part = "CH32V006K8U6"
+
+[v103r8t6-evt]
+part = "CH32V103R8T6"
+
+[v103r8t6-ch549]
+part = "CH32V103R8T6"
+
+[v203c8t6]
+part = "CH32V203C8T6"
+
+[v203rbt6-ch549]
+part = "CH32V203RBT6"
+
+[v205rct6-pico]
+part = "CH32V205RCT6"
+
+[v307vct6-linke]
+part = "CH32V307VCT6"
+
+[v407weu6-yd-p4]
+part = "CH32V407WEU6"
+
+[x035c8t6-pico]
+part = "CH32X035C8T6"
 
 [x035c8t6-s3]
 part = "CH32X035C8T6"
 
-[x035c8t6-pico]
-part = "CH32X035C8T6"
+[x315mcu6-pico]
+part = "CH32X315MCU6"
+
+[l103c8t6-pico]
+part = "CH32L103C8T6"
+
+[h417qeu6-pico]
+part = "CH32H417QEU6"
+
+[h417qeu6-linke]
+part = "CH32H417QEU6"
+
+[m030g8r7]
+part = "CH32M030G8R7"

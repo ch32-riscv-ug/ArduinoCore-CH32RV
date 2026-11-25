@@ -618,14 +618,51 @@ def wait_for_probe(address, tool, env, logs, chip, timeout=60):
                 raise
 
 
+def combo_addresses(names, pyproject=TESTS / "pyproject.toml", env_file=TESTS / ".env"):
+    """The addresses of arduino_combos' primary profiles (NAME, or all): TEST_SERIAL_PORT_<PROFILE> from the
+    environment or tests/.env, the profile upper-cased with - as _."""
+    import tomllib
+    combos = {}
+    for line in tomllib.loads(pyproject.read_text(encoding="utf-8"))["tool"]["pytest"]["ini_options"]["arduino_combos"]:
+        name, _, spec = line.partition(":")
+        fields = dict(f.strip().split("=", 1) for f in spec.split(",") if "=" in f)
+        combos[name.strip()] = fields["primary"]
+    wanted = list(combos) if "all" in names else names
+    unknown = [n for n in wanted if n not in combos]
+    if unknown:
+        raise ValueError(f"no combination {', '.join(unknown)} in arduino_combos")
+    env = {}
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            m = re.fullmatch(r"\s*(TEST_SERIAL_PORT_[A-Z0-9_]+)\s*=\s*(\S+)\s*", line)
+            if m:
+                env[m.group(1)] = m.group(2).strip("'\"")
+    out = []
+    for name in wanted:
+        key = "TEST_SERIAL_PORT_" + re.sub(r"[^A-Z0-9]", "_", combos[name].upper())
+        address = os.environ.get(key) or env.get(key)
+        if not address:
+            raise ValueError(f"combination {name}: no {key} in the environment or tests/.env")
+        out.append(address)
+    return out
+
+
 def parse_options(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--probe", action="append",
                         help="a target's address (repeat for several); otherwise CH32RV_PROBE (tests/.env)")
     parser.add_argument("--out", type=pathlib.Path, help="new run directory; otherwise auto-number under OEP_HW_RESULTS")
+    parser.add_argument("--combo", action="append", default=[], metavar="NAME|all",
+                        help="a combination of tests/pyproject.toml's arduino_combos (all: every one, the full run); "
+                             "its primary profile's port is TEST_SERIAL_PORT_<PROFILE> (tests/.env)")
     parser.add_argument("--case", action="append", choices=sorted(CASES), help="default: every case the target can run")
     parser.add_argument("--execute", action="store_true", help="upload test sketches, observe and operate the probe's USB power")
     args = parser.parse_args(argv)
+    if args.combo:
+        try:
+            args.probe = (args.probe or []) + combo_addresses(args.combo)
+        except ValueError as error:
+            parser.error(str(error))
     if not args.probe:
         address = places.address_from_env()
         if not address:

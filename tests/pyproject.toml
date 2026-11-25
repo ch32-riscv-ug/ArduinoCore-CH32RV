@@ -25,6 +25,21 @@ oep_memo_owner = "io.github.ch32-riscv-ug.arduino"
 # The bench's combinations (tests/hw; profiles in tests/hw/profiles.toml, ports in tests/.env). One per board with
 # its standard wiring - every case it can run - and one per configuration that differs (probe route, peer, clock).
 arduino_combos = [
-  "x035c8t6-s3: primary=x035c8t6-s3",
+  "v003f4p6: primary=v003f4p6",
+  "v003f4u6-uia: primary=v003f4u6-uia",
+  "v006k8u6: primary=v006k8u6",
+  "v103r8t6-evt: primary=v103r8t6-evt",
+  "v103r8t6-ch549: primary=v103r8t6-ch549",
+  "v203c8t6: primary=v203c8t6",
+  "v203rbt6-ch549: primary=v203rbt6-ch549",
+  "v205rct6-pico: primary=v205rct6-pico",
+  "v307vct6-linke: primary=v307vct6-linke",
+  "v407weu6-yd-p4: primary=v407weu6-yd-p4",
   "x035c8t6-pico: primary=x035c8t6-pico",
+  "x035c8t6-s3: primary=x035c8t6-s3",
+  "x315mcu6-pico: primary=x315mcu6-pico",
+  "l103c8t6-pico: primary=l103c8t6-pico",
+  "h417qeu6-pico: primary=h417qeu6-pico",
+  "h417qeu6-linke: primary=h417qeu6-linke",
+  "m030g8r7: primary=m030g8r7",
 ]
