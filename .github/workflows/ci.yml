@@ -86,7 +86,19 @@ jobs:
       - name: Fetch pinned toolchain
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32rv-toolchain
       - name: Build every example for this profile
+        # A compiler crash (clang's cc1 has segfaulted on ch32h416 now and then, 2026-11-24 / 25) leaves its
+        # reproducer - the preprocessed source and the command as a script - in CLANG_CRASH_DIAGNOSTICS_DIR.
+        env:
+          CLANG_CRASH_DIAGNOSTICS_DIR: ${{ runner.temp }}/clang-crash
         run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}" --warnings all --fail-on-warning
+      - name: Keep compiler crash reproducers
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-crash-${{ matrix.profile }}
+          path: ${{ runner.temp }}/clang-crash
+          if-no-files-found: ignore
+          retention-days: 30
 
   install-test:
     name: Package install (${{ matrix.os }})

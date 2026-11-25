@@ -155,6 +155,11 @@ def main() -> int:
             print(f"FAIL {profile:20} {rel}: {first}", flush=True)
             if annotate:
                 print(f"::error file={rel.as_posix()}/{example.name}.ino::{profile}: {first}", flush=True)
+            # The whole output: a compiler crash's backtrace and the reproducer files it names come before the
+            # one line above, and the first error line alone does not say where it crashed.
+            print(f"::group::{profile} {rel}" if annotate else f"---- {profile} {rel}", flush=True)
+            print("\n".join(lines), flush=True)
+            print("::endgroup::" if annotate else "----", flush=True)
     print(f"{built - failed} of {built} builds passed in {time.monotonic() - started:.0f} s"
           + (f", {warned} with warnings" if warned else ""))
     return 1 if failed else 0

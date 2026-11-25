@@ -824,6 +824,11 @@ docs/libc-runtime-plan.ja.md、評価は docs/clang-evaluation.ja.md。
   `clang: error: unable to execute command: Segmentation fault (core dumped)`（cc1 が落ちた形で、ソースの誤りの行は無い）。手元では
   ch32rv-toolchain 23.1.6-1 で 8dfae34d・作業ツリーとも 3 回ずつ通り、再現しない。ツールチェイン側の見込み。再現したら深掘りする
   （ユーザー）: CI でクラッシュの再現用のファイル（前処理済みのソースと実行スクリプト）を成果物に残すと調べられる。
+  → 2026-11-25: 再発（ch32h416 の CH32RVSyncKit/NotifyBits と SoftwareSerial/SoftwareSerialExample。前回も ch32h416）。手元では
+  同じ 3 つの例（NotifyCounter も）を 5 回ずつ、計 15 回ビルドして再現しない。CI の Examples に CLANG_CRASH_DIAGNOSTICS_DIR を
+  渡し、失敗した job では再現用のファイル（前処理済みのソース約 2.4 MB とスクリプト）を成果物 clang-crash-<profile> に残すように
+  した（FORCE_CLANG_DIAGNOSTICS_CRASH で手元で書かれることを確かめた）。build_examples.py は失敗の出力を全部出す（cc1 の
+  バックトレースが最初のエラーの行より前に出るため）。次に落ちたら、その成果物で手元で繰り返し、ch32rv-toolchain に報告する。
 - [ ] Windows の ch32rv-toolchain が 251 MB（ツールが別々の実行ファイル）。要るツールだけにするか、ハードリンクにできるか。
   → 2026-11-22: 23.1.5-3 の zip（267 MB、展開 706 MB）の目次を範囲取得で読んだ: bin/ が 254 MB。clang の同じ実行ファイルが
   clang・clang++・clang-cl・clang-cpp の 4 つ（各 80 MB、詰めて 31.6 MB）、lld が lld・ld.lld・lld-link・ld64.lld・wasm-ld の
