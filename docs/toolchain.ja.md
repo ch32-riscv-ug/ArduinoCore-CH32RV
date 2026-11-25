@@ -32,7 +32,7 @@ V103 には XW の無い rv32imac の版を使います。
 libc は picolibc、実行時のルーチンは compiler-rt、C++ は libc++ と GNU++17 です。exceptions、RTTI、
 thread-safe statics は無効です。picolibc の printf / scanf は整数だけの版を既定にしてビルドしてあります。
 printf の系統はコアの書式化で動き、浮動小数の扱い（double / float、`%f`、picolibc の printf / scanf）は
-Floating Point のメニュー（`rtlib`）で選びます（[printf と浮動小数](printf-float.ja.md)）。
+Floating Point のメニュー（`float`）で選びます（[printf と浮動小数](printf-float.ja.md)）。
 
 picolibc が program に任せるもの（`stdin` / `stdout` / `stderr`、`sbrk`、`write`、`_exit`、時刻の
 `gettimeofday` / `times`）はコアが定義します（`cores/arduino/ch32rv_stdio_file.c`、`ch32rv_sbrk.c`、

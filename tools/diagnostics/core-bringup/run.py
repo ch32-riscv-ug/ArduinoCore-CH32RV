@@ -52,7 +52,7 @@ def main():
     platform.parent.mkdir(parents=True)
     platform.symlink_to(REPO, target_is_directory=True)
     board = args.chip[:8]
-    fqbn = f"ch32-riscv-ug:ch32rv:{board}:pnum={args.chip}"
+    fqbn = f"ch32-riscv-ug:ch32rv:{board}:part={args.chip}"
     command = ["arduino-cli", "compile", "--fqbn", fqbn,
                "--build-property", f"compiler.path={toolchain}{os.sep}",
                "--build-path", str(work / "build"), str(pathlib.Path(__file__).parent / "core_minimal")]

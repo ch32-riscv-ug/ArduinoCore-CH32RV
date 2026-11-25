@@ -6,7 +6,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 import run_hardware  # noqa: E402
 
-TARGET = dict(fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6", chip="CH32H417QEU6", f_cpu=400_000_000,
+TARGET = dict(fqbn="ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6", chip="CH32H417QEU6", f_cpu=400_000_000,
               upload_port="oep://e8f60ae84dc2/h417qeu6-pico")
 
 

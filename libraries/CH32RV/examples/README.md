@@ -13,7 +13,7 @@ Most examples log through hardware `Serial`. Connect adapter RX to board TX, TX 
 With the core installed, compile from the repository root:
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6 \
   libraries/CH32RV/examples/Timing
 ```
 

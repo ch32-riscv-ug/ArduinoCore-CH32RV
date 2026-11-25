@@ -64,7 +64,7 @@ def render(source: pathlib.Path) -> str:
     for board in generic_boards:
         reason = unmet(need, board)
         if not reason:
-            profile(board.lower(), f"{board}:pnum=ANY{clock(need, board)}")
+            profile(board.lower(), f"{board}:part=ANY{clock(need, board)}")
             continue
         lines.append(f"  # {board}: omitted, {reason}")
         # A part with what its series' ANY entry lacks (CH32V203RBT6's
@@ -74,7 +74,7 @@ def render(source: pathlib.Path) -> str:
         if "ETHERNET" in need["caps"]:
             for part, series in ethernet_parts().items():
                 if series == board and not unmet(need, board, part):
-                    profile(part.lower(), f"{board}:pnum={part}{clock(need, board)}")
+                    profile(part.lower(), f"{board}:part={part}{clock(need, board)}")
     if not kept:
         raise ValueError(f"{source}: no generic board satisfies requirements")
     # No default_profile: no series is the example's own, and arduino-cli

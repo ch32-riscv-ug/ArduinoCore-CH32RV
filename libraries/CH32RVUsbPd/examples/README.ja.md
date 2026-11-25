@@ -24,7 +24,7 @@ PowerSource の付属 callback はログのみです。実電源制御へ置き�
 ## ビルドと確認
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6 \
   libraries/CH32RVUsbPd/examples/ListProfiles
 ```
 

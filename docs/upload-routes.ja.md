@@ -106,7 +106,7 @@ probe 側を SWIO だけにする必要があります。
 端子に触る前に、その時間だけリセット時のクロックのまま待ちます。その間ならデバッガが止めて、書き直せます。
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32L103:pnum=CH32L103C8T6,clock=96 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32L103:part=CH32L103C8T6,clock=96 \
   --build-property "build.extra_flags=-DCH32RV_BOOT_HOLD_MS=1000" <スケッチ>
 ```
 

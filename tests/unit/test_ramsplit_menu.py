@@ -56,7 +56,7 @@ def test_each_entry_sets_the_split_its_sizes_and_linker_script_name():
 def test_only_the_parts_with_the_split_follow_the_menu():
     b = boards()
     for key, value in b.items():
-        m = re.fullmatch(r"(CH32V3[01][37]|CH32V4[06]7)\.menu\.pnum\.(\w+)\.build\.ldscript", key)
+        m = re.fullmatch(r"(CH32V3[01][37]|CH32V4[06]7)\.menu\.part\.(\w+)\.build\.ldscript", key)
         if not m:
             continue
         pn = m.group(2)
@@ -64,7 +64,7 @@ def test_only_the_parts_with_the_split_follow_the_menu():
         defines = b.get(key.replace(".build.ldscript", ".build.ramsplit_defines"))
         if pn == "ANY":
             # ANY has it when every part of the series does
-            parts = [k.split(".")[3] for k in b if re.fullmatch(rf"{m.group(1)}\.menu\.pnum\.\w+", k)
+            parts = [k.split(".")[3] for k in b if re.fullmatch(rf"{m.group(1)}\.menu\.part\.\w+", k)
                      and k.split(".")[3] != "ANY"]
             assert follows == all(SPLIT_PARTS.match(p) for p in parts), key
         else:

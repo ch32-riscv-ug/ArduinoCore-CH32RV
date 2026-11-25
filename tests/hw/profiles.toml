@@ -3,7 +3,7 @@
 # that differs from the standard one (the probe route, a CPU Clock). harness/profiles.py writes them into every
 # tests/hw/*/sketch.yaml; the ports are the machine's (tests/.env: TEST_SERIAL_PORT_<PROFILE>).
 #
-# part:    the chip (fqbn pnum=, and the place's chip must be the same)
+# part:    the chip (fqbn part=, and the place's chip must be the same)
 # options: menu values beside the board's defaults ("clock=8")
 
 [x035c8t6-s3]

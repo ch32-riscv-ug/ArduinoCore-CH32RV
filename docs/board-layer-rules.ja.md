@@ -14,7 +14,7 @@ Generic board は実在する基板を表さないため、`LED_BUILTIN` や水�
 
 ## Part number
 
-`pnum` menu は exact part の次だけを選びます。
+`part` menu は exact part の次だけを選びます。
 
 - flash / RAM size と linker script
 - package と、その package に bond されている pad

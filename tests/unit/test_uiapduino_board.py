@@ -18,7 +18,7 @@ def test_named_board_uses_hid_binary_upload():
     # The always-listed waiting port too: platform.txt's per-protocol key would win over the plain one above.
     assert f"{prefix}.upload.tool.ch32rv-bootloader=ch32rv_hid" in BOARDS
     assert f"{prefix}.build.variant=UIAPduino_Pro_Micro_CH32V003_V14" in BOARDS
-    assert f"{prefix}.menu.pnum.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)" in BOARDS
+    assert f"{prefix}.menu.part.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)" in BOARDS
 
     platform = (REPO / "platform.txt").read_text(encoding="utf-8")
     pattern = re.search(r"^tools\.ch32rv_hid\.upload\.pattern=(.*)$", platform, re.M)

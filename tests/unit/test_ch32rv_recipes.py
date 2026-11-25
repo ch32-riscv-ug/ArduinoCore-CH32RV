@@ -80,5 +80,5 @@ def test_every_flashable_board_but_uiapduino_offers_keep_store_first_and_all_fla
             values[(m.group(1), m.group(2))] = m.group(3)
     assert entries and "UIAPDUINO_V003_V14" not in entries
     for board, keys in entries.items():
-        assert keys == ["keep", "chip"], board
-        assert values[(board, "keep")] == "" and values[(board, "chip")] == "--erase chip", board
+        assert keys == ["none", "all"], board
+        assert values[(board, "none")] == "" and values[(board, "all")] == "--erase chip", board

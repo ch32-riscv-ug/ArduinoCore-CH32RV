@@ -43,14 +43,13 @@ analogReadVref();                        // the internal reference, on analogRea
 
 - **There is no `wdtDisable()`.** Once running, the IWDG cannot be stopped,
   so a `disable()` that did not would be worse than none.
-- **The watchdog can run from power-on.** Tools → Watchdog → `Running from power-on`
-  has the core rewrite the option byte (USER's IWDG_SW) at boot, and the IWDG
-  then runs from power-on at its default period (about 128 ms on V003).
-  Set the period with `wdtEnable()` early in `setup()` and call `wdtFeed()` in
-  `loop()`. The factory entry does nothing and leaves the chip as set. To go
-  back, upload a sketch built with the factory entry, run
-  `ch32rv target option set iwdg=sw --yes` and reset (a `Running from power-on`
-  sketch left on the chip writes USER back to hw at every boot). The menu is on
+- **The watchdog can run from power-on.** Tools → Watchdog Auto Start → `On`
+  has the core rewrite the option byte (USER's IWDG_SW, kept in flash across
+  power-off) at boot, and the IWDG then runs from power-on at its default
+  period (about 128 ms on V003). Set the period with `wdtEnable()` early in
+  `setup()` and call `wdtFeed()` in `loop()`. `Keep chip setting` does nothing
+  and leaves the chip as set. To go back, upload a sketch built with `Off`
+  (the factory value): it sets the option byte back at boot. The menu is on
   V00x, M007, X033/X035, X305/X315, V20x, V205, V30x, L103/M103 and V407/V467.
 - **The timeout is approximate.** The LSI it counts can be off by close to
   ±50 % by the datasheet; the conversion errs towards a timeout shorter than

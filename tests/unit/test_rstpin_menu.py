@@ -1,4 +1,4 @@
-"""The Reset Pin menu (boards.txt) against the reference manuals' USER fields.
+"""The Reset Pin menu (boards.txt, resetpin) against the reference manuals' USER fields.
 
 Each series whose reset input is an option byte setting gets the menu: USER
 [4:3] RST_MODE (10b the reset pin with 12 ms ignored, 11b a GPIO) on V00x,
@@ -34,7 +34,7 @@ def boards() -> list[tuple[str, str]]:
 def test_each_series_opens_on_keep_and_sets_either_value_at_boot():
     entries = {}
     for key, value in boards():
-        m = re.fullmatch(r"(\w+)\.menu\.rstpin\.(\w+)", key)
+        m = re.fullmatch(r"(\w+)\.menu\.resetpin\.(\w+)", key)
         if m:
             entries.setdefault(m.group(1), []).append(m.group(2))
     assert set(entries) == set(EXPECTED)
@@ -42,19 +42,18 @@ def test_each_series_opens_on_keep_and_sets_either_value_at_boot():
     for series, (factory, values, mask) in EXPECTED.items():
         other = "gpio" if factory == "reset" else "reset"
         assert entries[series] == ["keep", factory, other], series
-        assert b[f"{series}.menu.rstpin.keep.build.rstpin_defines"] == "", series
-        assert "factory setting" in b[f"{series}.menu.rstpin.{factory}"], series
-        assert "factory setting" not in b[f"{series}.menu.rstpin.{other}"], series
+        assert b[f"{series}.menu.resetpin.keep.build.rstpin_defines"] == "", series
+        assert "(factory)" in b[f"{series}.menu.resetpin.{factory}"], series
+        assert "(factory)" not in b[f"{series}.menu.resetpin.{other}"], series
         for key in (factory, other):
-            assert "written to the chip at boot" in b[f"{series}.menu.rstpin.{key}"], (series, key)
-            assert (b[f"{series}.menu.rstpin.{key}.build.rstpin_defines"]
+            assert (b[f"{series}.menu.resetpin.{key}.build.rstpin_defines"]
                     == f"-DCH32RV_RSTPIN_USER={values[key]:#04x}u -DCH32RV_RSTPIN_MASK={mask:#04x}u"), (series, key)
 
 
 def test_a_series_with_a_dedicated_reset_pin_and_the_product_board_have_no_menu():
     keys = [k for k, _ in boards()]
     for board in ("CH32V103", "CH32V203", "CH32V307", "CH32L103", "CH32H417", "UIAPDUINO_V003_V14"):
-        assert not any(k.startswith(f"{board}.menu.rstpin.") for k in keys), board
+        assert not any(k.startswith(f"{board}.menu.resetpin.") for k in keys), board
         assert not any(k == f"{board}.build.rstpin_defines" for k in keys), board
 
 

@@ -47,8 +47,8 @@ def test_the_probe_is_found_by_its_serial_only(tmp_path):
 
 def test_fqbn_and_clock_come_from_boards_txt():
     assert place.fqbn_of("CH32X035C8T6") == (
-        "ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6,rstpin=reset,iwdg=sw", 48000000)
-    assert place.fqbn_of("CH32V307VCT6")[0] == "ch32-riscv-ug:ch32rv:CH32V307:pnum=CH32V307VCT6,iwdg=sw"
+        "ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6,resetpin=reset,wdtautostart=off", 48000000)
+    assert place.fqbn_of("CH32V307VCT6")[0] == "ch32-riscv-ug:ch32rv:CH32V307:part=CH32V307VCT6,wdtautostart=off"
     with pytest.raises(place.PlaceError):
         place.fqbn_of("CH32X999Z9")
 
@@ -80,7 +80,7 @@ X035 = dict(sku="CH32X035C8T6", family="CH32X035", uid="1ff9abcd880ebc48", chip_
 def test_a_place_from_the_chip_and_the_records(monkeypatch, tmp_path):
     p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, port_record={"target": "ch32x035-1ff9abcd880ebc48"},
                         record={"usb": {"to": "host"}, "defects": [{"id": "d", "lose": ["i2c"]}]})
-    assert p["fqbn"] == "ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6,rstpin=reset,iwdg=sw" and p["f_cpu"] == 48000000
+    assert p["fqbn"] == "ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6,resetpin=reset,wdtautostart=off" and p["f_cpu"] == 48000000
     assert p["power_hub"] == "3-1.4" and p["power_ports"] == [2]   # only the probe's own port
     assert p["dut_usb_serial"] == "1FF9ABCD880EBC48" and p["nrst_channel"] == 32
     assert p["cases"]["usb"] == "run" and p["cases"]["usb-peer"].startswith("skip")
@@ -348,14 +348,14 @@ def test_a_link_record_is_named_by_the_links_serial():
 
 def test_the_records_options_go_into_the_fqbn_under_ch32_test_options(monkeypatch, tmp_path):
     monkeypatch.delenv("CH32_TEST_OPTIONS", raising=False)
-    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, record={"options": {"iwdg": "sw", "opt": "oslto"}})
-    assert p["fqbn"].endswith(",iwdg=sw,opt=oslto")
-    monkeypatch.setenv("CH32_TEST_OPTIONS", "iwdg=hw")
-    p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"options": {"iwdg": "sw"}})
-    assert p["fqbn"].endswith(",iwdg=hw"), "CH32_TEST_OPTIONS wins"
-    with pytest.raises(place.PlaceError, match="has no iwdg=slow"):
-        fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"options": {"iwdg": "slow"}})
-    assert records.check_core({"options": {"vio18": "3v3", "iwdg": "sw"}}) == []
+    p, _ = fake_resolve(monkeypatch, tmp_path, info=X035, record={"options": {"wdtautostart": "off", "opt": "os"}})
+    assert p["fqbn"].endswith(",wdtautostart=off,opt=os")
+    monkeypatch.setenv("CH32_TEST_OPTIONS", "wdtautostart=on")
+    p, _ = fake_resolve(monkeypatch, tmp_path / "b", info=X035, record={"options": {"wdtautostart": "off"}})
+    assert p["fqbn"].endswith(",wdtautostart=on"), "CH32_TEST_OPTIONS wins"
+    with pytest.raises(place.PlaceError, match="has no wdtautostart=slow"):
+        fake_resolve(monkeypatch, tmp_path / "c", info=X035, record={"options": {"wdtautostart": "slow"}})
+    assert records.check_core({"options": {"vio18": "3v3", "wdtautostart": "off"}}) == []
     assert any(e.startswith("options:") for e in records.check_core({"options": {"vio18": 3}}))
 
 

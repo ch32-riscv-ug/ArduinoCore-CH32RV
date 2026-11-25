@@ -56,11 +56,11 @@ def test_board_specific_example_builds_for_that_board_only(tmp_path):
     sketch = tmp_path / "Template"
     sketch.mkdir()
     ino = sketch / "Template.ino"
-    ino.write_text("/* A template.\n *\n * board: CH32X035:pnum=CH32X035F8U6\n */\n")
-    assert requirements.target_board(sketch) == "CH32X035:pnum=CH32X035F8U6"
+    ino.write_text("/* A template.\n *\n * board: CH32X035:part=CH32X035F8U6\n */\n")
+    assert requirements.target_board(sketch) == "CH32X035:part=CH32X035F8U6"
     ino.write_text("/* keyboard: any key */\n")
     assert requirements.target_board(sketch) is None
-    for wrong in ("NOSUCHBOARD", "CH32X035:pnum=NOSUCHPART"):
+    for wrong in ("NOSUCHBOARD", "CH32X035:part=NOSUCHPART"):
         ino.write_text(f"/* board: {wrong} */\n")
         try:
             requirements.target_board(sketch)

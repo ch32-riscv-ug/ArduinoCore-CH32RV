@@ -9,7 +9,7 @@
 端末を開いた状態でリセットすると情報を表示します。`i`を送ると空きヒープをもう一度表示します。メモリ不足を起こすための確保は行いません。
 
 - `getChipModel()`はバイナリをビルドした系列を返します。製品ボードやパッケージの自動判別ではありません。
-- `clockSource()`がHSEを返すのは、Clock Sourceメニューで水晶を選び（`clocksrc=hse`。V208は既定）、起動時に水晶が立ったときだけです。立たなければ同じCPU ClockをHSIで作るので、水晶の無い板ではどちらを選んでもHSIと表示します。
+- `clockSource()`がHSEを返すのは、Clock Sourceメニューで水晶を選び（`clocksrc=crystal`。V208は既定）、起動時に水晶が立ったときだけです。立たなければ同じCPU ClockをHSIで作るので、水晶の無い板ではどちらを選んでもHSIと表示します。
 - `getSketchSize()`・`getFreeSketchSpace()`はリンクしたプログラムと選択したFlash領域の情報です。空き領域が設定保存用に確保されるわけではありません。
 - `getHeapSize()`・`getFreeHeap()`の単位はbyteです。空き領域の分断により、合計と同じ大きさを一度に確保できない場合があります。
 - `CH32RV_HAS_UNIQUE_ID`がある場合（今はすべての系列）だけ`getFlashChipSize()`・`getUniqueId()`を呼びます。ない場合は利用できない旨を表示します。UIDは上位・下位の順で、ゼロ埋めなしの16進数として表示します。MACアドレスや秘密情報としては扱いません。

@@ -24,7 +24,7 @@ PowerSource callbacks only print. Implement actual switching and set advertised 
 From the repository root, with the core installed:
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6 \
   libraries/CH32RVUsbPd/examples/ListProfiles
 ```
 

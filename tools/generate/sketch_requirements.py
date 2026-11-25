@@ -16,7 +16,7 @@ class BadRequirement(Exception):
 def all_boards() -> tuple:
     """Every series in the generated boards.txt, in file order.
 
-    One board per series and no pnum sweep: pnum picks the linker script and
+    One board per series and no part sweep: part picks the linker script and
     the flash/RAM limits, not the variant, so building one sketch for twelve
     CH32V203 part numbers compiles twelve identical translation units. A series
     is where the pads, the peripherals, the vector table and the ISA change,
@@ -69,7 +69,7 @@ def ethernet_parts() -> dict:
     out = {}
     for cond in _ethernet_conditions():
         for part in re.findall(r"(?<!!)defined\(CH32RV_PART_(\w+)\)", cond):
-            board = re.search(rf"^([A-Za-z0-9_]+)\.menu\.pnum\.{part}\.build\.part=", text, re.M)
+            board = re.search(rf"^([A-Za-z0-9_]+)\.menu\.part\.{part}\.build\.part=", text, re.M)
             if board and board.group(1) not in ethernet_series():
                 out[part] = board.group(1)
     return out
@@ -120,7 +120,7 @@ def series_limits() -> dict:
     for key, index in (("upload.maximum_size", 0),
                        ("upload.maximum_data_size", 1)):
         for board, value in re.findall(
-                rf"^([A-Za-z0-9_]+)\.menu\.pnum\.ANY\.{key}=(\d+)$", text, re.M):
+                rf"^([A-Za-z0-9_]+)\.menu\.part\.ANY\.{key}=(\d+)$", text, re.M):
             pair = list(out.get(board, (0, 0)))
             pair[index] = int(value)
             out[board] = tuple(pair)
@@ -176,7 +176,7 @@ def requirements(src: pathlib.Path) -> dict:
 def target_board(src: pathlib.Path):
     """The one board a board-specific example is for, or None.
 
-    `/* board: CH32X035:pnum=CH32X035F8U6 */` names a boards.txt entry and its
+    `/* board: CH32X035:part=CH32X035F8U6 */` names a boards.txt entry and its
     menu options (the fqbn after `ch32-riscv-ug:ch32rv:`). Such an example - a
     product board's template - is built for that board only, instead of one
     generic board per series.
@@ -216,7 +216,7 @@ def ethernet_clocks() -> dict:
 def part_limits(board: str, part: str) -> tuple:
     """(flash, RAM) of one part's menu entry."""
     text = (REPO / "boards.txt").read_text(encoding="utf-8")
-    return tuple(int(re.search(rf"^{board}\.menu\.pnum\.{part}\.{key}=(\d+)$", text, re.M).group(1))
+    return tuple(int(re.search(rf"^{board}\.menu\.part\.{part}\.{key}=(\d+)$", text, re.M).group(1))
                  for key in ("upload.maximum_size", "upload.maximum_data_size"))
 
 

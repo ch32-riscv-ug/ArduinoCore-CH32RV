@@ -90,7 +90,7 @@ GCC でも Clang でも、次のものを xPack GNU RISC-V Embedded GCC 15.2.0 �
 | D. 32 bit の割り算（V003） | `div.o` の 126 B。compiler-rt のものと大きさ・速さを比べる | 小 |
 | E. 64 bit の割り算 | ライブラリのレートの計算で `_udivdi3` が 0.9〜1.2 KB 入る。割る数が定数か 2 のべき乗にできるところは、ライブラリ側で避ける | 該当する例で −0.9 KB 前後 |
 | F. soft-float の四則演算 | V003 で浮動小数を使うと、足し算だけで 1.3 KB（float）、2.3 KB（double）。compiler-rt と比べ、小さい方を使う。結果がビット単位で同じかを、今の引き算と同じやり方で照合する | 測ってから決める |
-| G. newlib の printf / scanf を使うメニュー | Floating Point の `nanofp`、`nanofs`、`dblfs`、`fltfs`、`nanofps` は newlib の printf / scanf に頼っている（printf で約 21 KB、scanf で約 24 KB）。段 2 で newlib を外すなら、コアで `%e` / `%g` と scanf の `%f` を持つか、選んだ libc のもの（picolibc の tinystdio など）にする | 段 2 では必須 |
+| G. newlib の printf / scanf を使うメニュー | Floating Point の `nanofp`、`nanofs`、`double_printf_scanf`、`float_printf_scanf`、`nanofps` は newlib の printf / scanf に頼っている（printf で約 21 KB、scanf で約 24 KB）。段 2 で newlib を外すなら、コアで `%e` / `%g` と scanf の `%f` を持つか、選んだ libc のもの（picolibc の tinystdio など）にする | 段 2 では必須 |
 | H. 書式化そのもの | コアの printf の大きさを GCC と Clang で測り直し、`-Oz` で増えるところや重複を探す | 測ってから決める |
 
 ## 進め方

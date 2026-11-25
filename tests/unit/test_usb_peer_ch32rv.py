@@ -90,7 +90,7 @@ def test_the_peer_is_resolved_from_its_own_address(monkeypatch, tmp_path):
     assert p["usb_peer"] == "ch32rv" and p["usb_peer_address"] == PEER
     assert p["usb_peer_controller"] == "super_speed" and p["usb_peer_ch32rv_controller"] == "super_speed"
     assert p["usb_peer_chip"] == "CH32H417QEU6" and p["usb_peer_board"] == "wch:nanoCH32H417"
-    assert p["usb_peer_fqbn"].startswith("ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6") and "vio18=3v3" in p["usb_peer_fqbn"]
+    assert p["usb_peer_fqbn"].startswith("ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6") and "vio18=3v3" in p["usb_peer_fqbn"]
     assert p["usb_link_speed"] == 3
     assert p["cases"]["usb-peer"] == "run" and p["cases"]["usb-peer-host"] == "run"
     # The slower side's speed: the DUT's FS against the peer's SS port.
@@ -115,13 +115,13 @@ def test_a_peer_on_a_wch_link_takes_its_record_from_the_environment(monkeypatch,
     env = {"OEP_PORT_MEMO_FB868F068059": json.dumps({"board": "weact:CH32X035-CoreBoard-V1.0"})}
     peer = place.peer_place("wchlink://fb868f068059", "ch32rv", None, tmp_path, environ=env)
     assert peer["chip"] == "CH32X035F8U6" and peer["board"] == "weact:CH32X035-CoreBoard-V1.0"
-    assert peer["fqbn"].startswith("ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6")
+    assert peer["fqbn"].startswith("ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6")
 
 
-TARGET = dict(fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6", chip="CH32H417QEU6", f_cpu=400_000_000,
+TARGET = dict(fqbn="ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6", chip="CH32H417QEU6", f_cpu=400_000_000,
               upload_port=DUT, usb_peer="ch32rv", usb_peer_address=PEER, usb_peer_controller="super_speed",
               usb_peer_ch32rv_controller="super_speed", usb_peer_chip="CH32H417QEU6",
-              usb_peer_fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6,vio18=3v3", usb_link_speed=3)
+              usb_peer_fqbn="ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6,vio18=3v3", usb_link_speed=3)
 
 
 def test_the_runner_stages_the_peer_sketch_for_its_board(tmp_path):

@@ -3,7 +3,7 @@ bonds (device-data's pinout.csv).
 
 generate.py chooses one default route per instance for the whole series; a part that does not bond that route, or
 has one of its pads as its own NRST / SWD / BOOT, gets its own default (emit_misfit_defaults). Here every
-`<board>.menu.pnum.<part>` is preprocessed with its CH32RV_PART_ define, and every default pad must be a pad of that
+`<board>.menu.part.<part>` is preprocessed with its CH32RV_PART_ define, and every default pad must be a pad of that
 part and not one of its debug or strap pads (V006E8R6 / E8R7 and V005E6R6 have NRST on PC5, SPI1's series-wide SCK;
 the small X035 packages do not bond PA10 / PA11, I2C1's)."""
 import csv
@@ -71,7 +71,7 @@ def parts():
                 if "=" in line and not line.startswith("#"))
     out = []
     for key, value in keys.items():
-        m = re.fullmatch(r"(\w+)\.menu\.pnum\.(\w+)\.build\.part", key)
+        m = re.fullmatch(r"(\w+)\.menu\.part\.(\w+)\.build\.part", key)
         if m and value != "ANY":
             board = m.group(1)
             out.append((board, keys[f"{board}.build.series"], keys[f"{board}.build.variant"], value))

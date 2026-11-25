@@ -107,7 +107,7 @@ def board_names(platform_dir: pathlib.Path) -> list:
     names = []
     for line in (platform_dir / "boards.txt").read_text(encoding="utf-8").splitlines():
         key, _, value = line.partition("=")
-        # `<ID>.name=` only; menu entries are `<ID>.menu.pnum.<PN>=`.
+        # `<ID>.name=` only; menu entries are `<ID>.menu.part.<PN>=`.
         if key.endswith(".name") and key.count(".") == 1 and value:
             names.append({"name": value.strip()})
     if not names:

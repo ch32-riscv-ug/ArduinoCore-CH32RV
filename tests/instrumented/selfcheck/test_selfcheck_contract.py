@@ -10,9 +10,9 @@ selfcheck.clocks: the bus clocks the build assumes (CH32RV_PCLK2_HZ, internal/ch
 RCC_CFGR0 is set to, where the family has the STM32F1-shaped PPRE2 field.
 
 selfcheck.clock_source: the oscillator the Clock Source menu asked for is the one the part runs (CH32RV.clockSource(),
-RCC_CTLR's HSERDY): with clocksrc=hse the crystal started - run it on a board that carries its EVT's (8 MHz on V20x / V30x /
+RCC_CTLR's HSERDY): with clocksrc=crystal the crystal started - run it on a board that carries its EVT's (8 MHz on V20x / V30x /
 L103 / V103 / M030, 24 on V00x, 20 on X3x5, 25 on V4x7 / H41x, 32 on V208) - and HSI otherwise; RCC_CFGR0's SWS is the
-PLL where the setting has one, else that oscillator. With CH32_TEST_OPTIONS=clocksrc=hse (and clock=...) per entry.
+PLL where the setting has one, else that oscillator. With CH32_TEST_OPTIONS=clocksrc=crystal (and clock=...) per entry.
 
 selfcheck.serial_transmit: every HardwareSerial object sends 64 bytes at 115200 and 1000000 baud: BRR is the
 rounded clock / baud of the USART's own bus (USART1 on PCLK2, the rest on PCLK1), and sending them took 10 bits a
@@ -171,10 +171,10 @@ def test_hsi_calibration(dut, ready, record_property):
     """CH32RV.calibrateHsi() against the LSE: from three trim steps off, the trim it settles on is the nearest of its
     neighbours (each measured over 500 ms against the crystal; 300 ppm for the measurement's own spread) and within
     1 % of the right frequency. Runs where the build asked for the RTC's LSE and the system clock is HSI
-    (CH32_TEST_OPTIONS=rtcclock=lse)."""
+    (CH32_TEST_OPTIONS=rtcclock=crystal)."""
     asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
     if not asked or clock != 2:
-        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=crystal, a board with the crystal)")
     m = ask(dut, "hsical", rb"HSICAL (\d) (\d+) (-?\d+) (-?\d+) (-?\d+)", timeout=30)
     ok, trim, err, below, above = (int(x) for x in m.groups())
     record_property("hsi_calibration", json.dumps(dict(trim=trim, ppm=err, below=below, above=above)))
@@ -186,17 +186,17 @@ def test_hsi_calibration(dut, ready, record_property):
 
 
 def test_rtc_calibration(dut, ready, record_property):
-    """(CH32_TEST_OPTIONS=rtcclock=lse,clocksrc=hse: both clocks crystals.) setRtcCalibration(ppm) slows the LSE RTC by that much (speeds it when negative): against micros() over 32 s each
+    """(CH32_TEST_OPTIONS=rtcclock=crystal,clocksrc=crystal: both clocks crystals.) setRtcCalibration(ppm) slows the LSE RTC by that much (speeds it when negative): against micros() over 32 s each
     (CAL skips its pulses at once every 2^20 LSE periods, 32 s: a shorter window holds that moment or not),
     the RTC's rate moves from setRtcCalibration(0)'s by -ppm within 50 ppm (the RTC read to its prescaler period,
     30.5 us, and micros() to 1 us: about 1 ppm in 32 s; the system clock's own drift between the windows is the rest). 120 is CAL alone
     on the series that have it, -1000 and 1000 move the prescaler too. Calibration 0 is left at the end."""
     asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
     if not asked or clock != 2:
-        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=crystal, a board with the crystal)")
     on_hse = int(ask(dut, "source", rb"SOURCE \d (\d) \d \d \d").group(1))
     if not on_hse:
-        pytest.skip("needs a crystal for micros() too (clocksrc=hse): HSI drifts by hundreds of ppm between windows")
+        pytest.skip("needs a crystal for micros() too (clocksrc=crystal): HSI drifts by hundreds of ppm between windows")
     rates = {}
     try:
         for ppm in (0, 120, -1000, 1000):
@@ -217,7 +217,7 @@ def test_rtc_output(dut, ready, record_property):
     has no such output (false)."""
     asked, clock = (int(x) for x in ask(dut, "rtcsrc", rb"RTCSRC (\d) (\d)").groups())
     if not asked or clock != 2:
-        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=lse, a board with the crystal)")
+        pytest.skip("needs the RTC on LSE (CH32_TEST_OPTIONS=rtcclock=crystal, a board with the crystal)")
     ok, edges = (int(x) for x in ask(dut, "rtcout", rb"RTCOUT (\d) (-?\d+)", timeout=10).groups())
     record_property("rtc_output_edges", edges)
     if not ok:

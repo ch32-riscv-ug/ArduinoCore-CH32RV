@@ -291,7 +291,7 @@ handle_reset:
     .align    1
 ch32rv_loadcode_ram:
 #ifdef CH32RV_IWDG_USER
-/* The Watchdog menu (ch32rv_option_user.c), from RAM: the stack is set. */
+/* The Watchdog Auto Start menu (ch32rv_option_user.c), from RAM: the stack is set. */
     call ch32rv_iwdg_check
 #endif
 #else
@@ -312,7 +312,7 @@ ch32rv_loadcode_ram:
     call ch32rv_rstpin_check
 #endif
 #ifdef CH32RV_IWDG_USER
-/* The Watchdog menu (ch32rv_option_user.c): started by software or at power-on. */
+/* The Watchdog Auto Start menu (ch32rv_option_user.c): started by software or at power-on. */
     call ch32rv_iwdg_check
 #endif
 

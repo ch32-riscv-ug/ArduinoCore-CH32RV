@@ -16,7 +16,7 @@ I/O 電圧と `Serial.begin()` の通信条件を合わせます。USB コネク
 CLI は core 導入済みの環境で、リポジトリのルートからビルドできます。
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6 \
   libraries/CH32RV/examples/Timing
 ```
 

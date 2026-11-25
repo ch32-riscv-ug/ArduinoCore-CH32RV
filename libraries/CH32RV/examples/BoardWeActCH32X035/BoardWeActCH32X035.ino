@@ -2,7 +2,7 @@
 // ja: WeAct CH32X035でUSB・UART・SPI・ADC・PWMを組み合わせる。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
-/* board: CH32X035:pnum=CH32X035F8U6 */
+/* board: CH32X035:part=CH32X035F8U6 */
 
 #include <CH32RVUsbDevice.h>
 #include <CH32RVUsbPd.h>

@@ -46,7 +46,7 @@ M007 は ADC のチャンネル 0 が外に出ていないので `A0` があり�
 （arduino-cli では `-b` か `--profile` で選びます）。
 
 ```c
-/* board: CH32X035:pnum=CH32X035F8U6 */
+/* board: CH32X035:part=CH32X035F8U6 */
 ```
 silicon capability はコア API の実装範囲や実機設備とは別です。
 

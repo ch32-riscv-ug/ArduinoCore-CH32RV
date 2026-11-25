@@ -353,10 +353,10 @@ STATUS = {
         "。H41xはPVDの割込みが無く未対応、V004/V007/M007はdevice-dataに段が無く未対応"),
     "MCO (クロック出力)": ("未実装", "-", "クロックを端子に出す。ベンチでクロックを測るのにも使える"),
     "HSE (外部水晶)": ("一部実装", "Clock Sourceメニュー",
-        "`clocksrc=hse`でCPU Clockの同じ周波数をEVTの前提の水晶(V00x 24 MHz、V103/V20x/V205/V30x/L103/M030 8 MHz、X305/X315 20 MHz、"
-        "V407/V467 25 MHz、V208 32 MHz。EVTの回路図のY1も同じ)から作る。V208は`hse`が既定。水晶が立たなければHSIで同じ周波数。`CH32RV.clockSource()"
+        "`clocksrc=crystal`でCPU Clockの同じ周波数をEVTの前提の水晶(V00x 24 MHz、V103/V20x/V205/V30x/L103/M030 8 MHz、X305/X315 20 MHz、"
+        "V407/V467 25 MHz、V208 32 MHz。EVTの回路図のY1も同じ)から作る。V208は`crystal`が既定。水晶が立たなければHSIで同じ周波数。`CH32RV.clockSource()"
         "`。V003/V006/V103/V203/V205/V307/L103で実機確認(2026-10-28)。V208(2026-11-03、runtime・uart・synckit・flash・logic)"
-        "でも実機確認。H41x は 25 MHz で `hse` が既定(UHSIF・HSADC の速さが HSI の約 1% のずれから正確になる。H417 で実機確認、2026-11-14: `clockSource()"
+        "でも実機確認。H41x は 25 MHz で `crystal` が既定(UHSIF・HSADC の速さが HSI の約 1% のずれから正確になる。H417 で実機確認、2026-11-14: `clockSource()"
         "` が HSE、10 kHz の PWM が UHSIF で 312.5 サンプル/半周期、HSI では 315)。M030・X305/X315・V407/V467は2026-11-17に入れた(ビルドのみ、"
         "実機で未確認)。X3x5とV4x7はEVTのHSEの設定の手順をそのまま書く(X3x5のPLLはUSBHSのPLL、V4x7の60/120 MHzは水晶からのUSBHSのPLL。HSIのときはメインのPLL)"
         "。V4x7の20 MHzは水晶(25 MHz)と周波数が違うのでHSIのまま。H41xの25 MHzの項目はHSEをそのままSYSCLKにする。M030はUSBのPLL(×18)も水晶が立っていれば水晶から作る。"

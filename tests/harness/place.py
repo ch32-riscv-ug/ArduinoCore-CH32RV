@@ -178,12 +178,12 @@ def menu_f_cpu(text, board, chosen=None):
 
 
 def boards(path=REPO / "boards.txt"):
-    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's pnum menus: every menu at its first entry
+    """{part: (board id, the first clock entry's f_cpu)} from boards.txt's Part Number menus (part): every menu at its first entry
     (menu_f_cpu)."""
     text = path.read_text(encoding="utf-8")
     first_clock = {}
     out = {}
-    for board, part in re.findall(r"^([A-Za-z0-9_]+)\.menu\.pnum\.([A-Z0-9]+)=", text, re.M):
+    for board, part in re.findall(r"^([A-Za-z0-9_]+)\.menu\.part\.([A-Z0-9]+)=", text, re.M):
         if board not in first_clock:
             first_clock[board] = menu_f_cpu(text, board)
         out.setdefault(part, (board, first_clock[board]))
@@ -191,9 +191,9 @@ def boards(path=REPO / "boards.txt"):
 
 
 def part_ram(part, path=REPO / "boards.txt"):
-    """The part's RAM in bytes (its pnum entry's upload.maximum_data_size in boards.txt), or None where the entry
+    """The part's RAM in bytes (its part entry's upload.maximum_data_size in boards.txt), or None where the entry
     has none (a RAM split menu sets it: V30x, V407, V317)."""
-    m = re.search(rf"^[A-Za-z0-9_]+\.menu\.pnum\.{re.escape(part)}\.upload\.maximum_data_size=(\d+)$",
+    m = re.search(rf"^[A-Za-z0-9_]+\.menu\.part\.{re.escape(part)}\.upload\.maximum_data_size=(\d+)$",
                   path.read_text(encoding="utf-8"), re.M)
     return int(m.group(1)) if m else None
 
@@ -203,7 +203,7 @@ def part_ram(part, path=REPO / "boards.txt"):
 # reasons and a recovery need it -, and the watchdog started by wdtEnable(), as system's watchdog expects (a chip
 # left running it from power-on would reset every case). A board without the menu (a dedicated reset pin, the
 # UIAPduino) gets neither.
-BENCH_MENUS = (("rstpin", "reset"), ("iwdg", "sw"))
+BENCH_MENUS = (("resetpin", "reset"), ("wdtautostart", "off"))
 
 
 def bench_menus(board, path=REPO / "boards.txt"):
@@ -273,7 +273,7 @@ def ethernet_clock(fqbn, path=REPO / "boards.txt"):
 
 
 def with_options(fqbn, f_cpu, options, path=REPO / "boards.txt"):
-    """The fqbn with CH32_TEST_OPTIONS's menu values ("clock=48,opt=oslto") in place of the defaults, and the f_cpu
+    """The fqbn with CH32_TEST_OPTIONS's menu values ("clock=48,opt=os") in place of the defaults, and the f_cpu
     a chosen entry sets (CPU Clock, CPU Core). An option boards.txt does not have for the board is an error."""
     if not options.strip():
         return fqbn, f_cpu
@@ -293,11 +293,11 @@ def with_options(fqbn, f_cpu, options, path=REPO / "boards.txt"):
 def fqbn_of(part):
     found = boards().get(part)
     if not found:
-        raise PlaceError(f"{part}: no board in boards.txt names it (pnum)")
+        raise PlaceError(f"{part}: no board in boards.txt names it (part)")
     board, f_cpu = found
     if not f_cpu:
         raise PlaceError(f"{board}: no clock menu in boards.txt")
-    return ",".join([f"ch32-riscv-ug:ch32rv:{board}:pnum={part}"] + bench_menus(board)), f_cpu
+    return ",".join([f"ch32-riscv-ug:ch32rv:{board}:part={part}"] + bench_menus(board)), f_cpu
 
 
 def series_needs():

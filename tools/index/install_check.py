@@ -48,9 +48,9 @@ class Failure(Exception):
 
 PACKAGER = "ch32-riscv-ug"
 ARCH = "ch32rv"
-FQBN_BLINK = f"{PACKAGER}:{ARCH}:CH32V006:pnum=ANY"
-FQBN_ACCEPTANCE = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
-FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:pnum=ANY"
+FQBN_BLINK = f"{PACKAGER}:{ARCH}:CH32V006:part=ANY"
+FQBN_ACCEPTANCE = f"{PACKAGER}:{ARCH}:CH32X035:part=ANY"
+FQBN_LIBRARIES = f"{PACKAGER}:{ARCH}:CH32X035:part=ANY"
 
 # Nothing of the repository's own scaffolding may reach a user's machine.
 # gen_index.py packages an allowlist, so a leak means the allowlist grew

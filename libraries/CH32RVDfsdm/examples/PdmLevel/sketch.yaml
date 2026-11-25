@@ -30,7 +30,7 @@ profiles:
   # CH32H415: omitted, requires PE9, PD6, which CH32H415 does not have
   # CH32H416: omitted, requires PD6, which CH32H416 does not have
   ch32h417:
-    fqbn: ch32-riscv-ug:ch32rv:CH32H417:pnum=ANY
+    fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=ANY
     platforms:
       - platform: ch32-riscv-ug:ch32rv (0.11.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json

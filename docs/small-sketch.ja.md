@@ -121,6 +121,6 @@ Stack Size は RAM の予約で、flash は変わりません。Stack Check（On
 [Flash 使用量の調べ方](flash-size.ja.md)）。メニューを変えて比べるときは、FQBN のオプションで渡せます。
 
 ```sh
-arduino-cli compile -b ch32-riscv-ug:ch32rv:CH32V003:opt=ozltosr,rtlib=flt --build-path /tmp/b <sketch>
+arduino-cli compile -b ch32-riscv-ug:ch32rv:CH32V003:opt=oz_saverestore,float=float --build-path /tmp/b <sketch>
 llvm-size -A /tmp/b/<sketch>.ino.elf
 ```

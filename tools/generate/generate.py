@@ -2,11 +2,11 @@
 """Generate boards.txt and linker scripts from ch32-device-data tables.
 
 Reads the normalized CSV tables (parts.csv) and writes, per configured family:
-  - boards.txt            (board entry + menu.pnum entry per part number)
+  - boards.txt            (board entry + menu.part entry per part number)
   - variants/<VARIANT>/<ld>  (one MEMORY script per unique flash/sram combination)
 
 Design rules (see docs/board-layer-rules.ja.md):
-  - one board per mirror family, menu.pnum lists every part number
+  - one board per mirror family, menu.part lists every part number
   - deterministic ordering: canonical series order, then part number
   - generated files carry a DO-NOT-EDIT header; the source repo pin (commit,
     sha256 of index/manifest.csv) is recorded once, in
@@ -260,17 +260,17 @@ def pin_menu_id(kind: str, n: int) -> str:
     return f"pin_{kind}{n:02d}" if kind == "usart" else f"pin_{kind}{n}"
 
 
-MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.rtcclock=RTC Clock\nmenu.opt=Optimize\nmenu.rtlib=Floating Point\nmenu.parsefloat=parseFloat\n"
+MENU_HEADER = ("menu.part=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock Source\nmenu.rtcclock=RTC Clock\nmenu.opt=Optimize\nmenu.float=Floating Point\nmenu.parsefloat=parseFloat\n"
                + "".join(f"menu.{pin_menu_id('usart', n)}=USART{n}\n" for n in range(1, 11))
                + "".join(f"menu.{pin_menu_id('i2c', n)}=I2C{n}\n" for n in range(1, 3))
                + "".join(f"menu.{pin_menu_id('spi', n)}=SPI{n}\n" for n in range(1, 4))
                + "menu.core=CPU Core\n"
                + "menu.vio18=VIO18 Supply\n"
                + "menu.ramsplit=Flash / RAM Split\n"
-               + "menu.rstpin=Reset Pin\n"
-               + "menu.iwdg=Watchdog\n"
+               + "menu.resetpin=Reset Pin\n"
+               + "menu.wdtautostart=Watchdog Auto Start\n"
                + "menu.erase=Erase All Flash Before Sketch Upload\n"
-               + "menu.monsrc=Monitor Source\n"
+               + "menu.monitor=Monitor Source\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
 
@@ -332,16 +332,16 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
             key = f"build.{kind}{n}_mode"
             uses.append("{" + key + "}")
             pfx = f"{board}.menu.{pin_menu_id(kind, n)}"
-            lines.append(f"{pfx}.auto=Auto: pins chosen at begin() (default)")
+            lines.append(f"{pfx}.auto=Auto (default)")
             lines.append(f"{pfx}.auto.{key}=")
-            lines.append(f"{pfx}.disable=Disabled")
-            lines.append(f"{pfx}.disable.{key}=-DCH32RV_{macro}{n}_MODE=0")
+            lines.append(f"{pfx}.off=Off")
+            lines.append(f"{pfx}.off.{key}=-DCH32RV_{macro}{n}_MODE=0")
             if fixed:
                 # No AFIO field: the one route the variant names, no remap to write.
                 label = ", ".join(f"{r}:{x}" for r, x in zip(roles, fixed))
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, fixed))
-                ident = "fix_" + "_".join(x.lower() for x in fixed)
-                lines.append(f"{pfx}.{ident}=Fixed: {label}")
+                ident = "_".join(x.lower() for x in fixed)
+                lines.append(f"{pfx}.{ident}={label}")
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x00000000u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x00000000u")
@@ -362,9 +362,9 @@ def periph_menu(board: str, series: str, parts: list, pins_by_kind: dict,
                 fix = " ".join(f"-DCH32RV_{macro}{n}_FIX_{r}={x}" for r, x in zip(roles, names))
                 warn = " [debug/strap pin]" if any(p in straps for p in pads) else ""
                 # The option id names the pins, in role order, so an FQBN says
-                # what it selects: ...:pin_i2c1=fix_pc2_pc1 is SCL PC2, SDA PC1.
-                ident = "fix_" + "_".join(x.lower() for x in names)
-                lines.append(f"{pfx}.{ident}=Fixed: {label}{warn}")
+                # what it selects: ...:pin_i2c1=pc2_pc1 is SCL PC2, SDA PC1.
+                ident = "_".join(x.lower() for x in names)
+                lines.append(f"{pfx}.{ident}={label}{warn}")
                 lines.append(f"{pfx}.{ident}.{key}=-DCH32RV_{macro}{n}_MODE=2 {fix} "
                              f"-DCH32RV_{macro}{n}_FIX_V1=0x{v1:08x}u "
                              f"-DCH32RV_{macro}{n}_FIX_V2=0x{v2:08x}u")
@@ -413,23 +413,23 @@ _LIBCS = "-DCH32RV_SCANF_LIBC=1"
 # soft-float before soft-double, printf's %f after what it adds to, picolibc
 # last.
 RTLIB_MENU = (
-    ("fltf", "Float (32-bit) + printf %f (default)", f"{_F32} {_PF}", 0),
-    ("flt", "Float (32-bit)", _F32, 0),
-    ("dbl", "Double (64-bit)", "", 0),
-    ("dblf", "Double (64-bit) + printf %f", _PF, 0),
-    ("libcfp", "Double (64-bit) + picolibc printf %f %e %g", _LIBCP, 6),
-    ("libcfs", "Double (64-bit) + picolibc scanf %f", _LIBCS, 5),
-    ("dblfs", "Double (64-bit) + printf %f + picolibc scanf %f", f"{_PF} {_LIBCS}", 9),
-    ("fltfs", "Float (32-bit) + printf %f + picolibc scanf %f", f"{_F32} {_PF} {_LIBCS}", 6),
-    ("libcfps", "Double (64-bit) + picolibc printf/scanf %f %e %g", f"{_LIBCP} {_LIBCS}", 9),
+    ("float_printf", "Float, printf %f (default)", f"{_F32} {_PF}", 0),
+    ("float", "Float", _F32, 0),
+    ("double", "Double", "", 0),
+    ("double_printf", "Double, printf %f", _PF, 0),
+    ("double_libc_printf", "Double, libc printf %f %e %g", _LIBCP, 6),
+    ("double_libc_scanf", "Double, libc scanf %f", _LIBCS, 5),
+    ("double_printf_scanf", "Double, printf %f, libc scanf %f", f"{_PF} {_LIBCS}", 9),
+    ("float_printf_scanf", "Float, printf %f, libc scanf %f", f"{_F32} {_PF} {_LIBCS}", 6),
+    ("double_libc_printf_scanf", "Double, libc printf/scanf %f %e %g", f"{_LIBCP} {_LIBCS}", 9),
 )
 # (key, label, parse_defines). On V003 a parseFloat sketch is 4836 B in float,
 # 5848 B in integers and 8012 B in double (2026-10-31).
 PARSEFLOAT_MENU = (
-    ("auto", "Auto: integers with Float, double with Double (default)", ""),
-    ("int", "Integers: exact to 11 digits", "-DCH32RV_PARSE_FLOAT=2"),
-    ("float", "Float: smallest, last bit off on 1 input in 8", "-DCH32RV_PARSE_FLOAT=3"),
-    ("double", "Double: exact, links double arithmetic", "-DCH32RV_PARSE_FLOAT=1"),
+    ("auto", "Auto (default)", ""),
+    ("int", "Integers only", "-DCH32RV_PARSE_FLOAT=2"),
+    ("float", "Float", "-DCH32RV_PARSE_FLOAT=3"),
+    ("double", "Double", "-DCH32RV_PARSE_FLOAT=1"),
 )
 
 
@@ -439,7 +439,7 @@ PARSEFLOAT_MENU = (
 # something says otherwise. The default leaves the strap alone: a board may
 # have 1.8 V parts on VIO18. CH32RV.setVio18Millivolts() changes it at run time.
 VIO18_MENU = (
-    ("hw", "As the XO strap sets it (default)", ""),
+    ("strap", "XO strap (default)", ""),
     ("3v3", "3.3 V", "-DCH32RV_VIO18_MV=3300"),
     ("2v5", "2.5 V", "-DCH32RV_VIO18_MV=2500"),
     ("1v8", "1.8 V", "-DCH32RV_VIO18_MV=1800"),
@@ -529,18 +529,18 @@ def rstpin_defines(series: str, key: str) -> str:
 # Each value is an entry of its own that sets the chip at boot, the factory one
 # too, so a chip changed once (by another sketch, by ch32rv) can be brought
 # back from the menu (docs/adr/0017-option-byte-menus.ja.md).
-KEEP_LABEL = "Leave as set on the chip (default)"
+KEEP_LABEL = "Keep chip setting (default)"
 
 
 def rstpin_menu(board: str, series: str) -> list[str]:
     factory = RSTPIN[series][3]
-    entries = {"reset": "Reset input (NRST)", "gpio": "GPIO, no reset pin"}
-    lines = [f"{board}.menu.rstpin.keep={KEEP_LABEL}",
-             f"{board}.menu.rstpin.keep.build.rstpin_defines="]
+    entries = {"reset": "Reset pin (NRST)", "gpio": "GPIO"}
+    lines = [f"{board}.menu.resetpin.keep={KEEP_LABEL}",
+             f"{board}.menu.resetpin.keep.build.rstpin_defines="]
     for key in sorted(entries, key=lambda k: k != factory):
-        mark = " (factory setting)" if key == factory else ""
-        lines.append(f"{board}.menu.rstpin.{key}={entries[key]}: written to the chip at boot{mark}")
-        lines.append(f"{board}.menu.rstpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
+        mark = " (factory)" if key == factory else ""
+        lines.append(f"{board}.menu.resetpin.{key}={entries[key]}{mark}")
+        lines.append(f"{board}.menu.resetpin.{key}.build.rstpin_defines={rstpin_defines(series, key)}")
     return lines
 
 
@@ -556,8 +556,8 @@ def rstpin_menu(board: str, series: str) -> list[str]:
 # pages are rewritten either way, so the question is only the rest
 # (CH32RV_FLASH_STORE data among it).
 ERASE_MENU = (
-    ("keep", "Disabled (default)", ""),
-    ("chip", "Enabled", "--erase chip"),
+    ("none", "Disabled (default)", ""),
+    ("all", "Enabled", "--erase chip"),
 )
 
 
@@ -594,12 +594,13 @@ def stack_menu(board: str, ram: int, loadcode: bool) -> list[str]:
         sizes.append(size)
         size *= 2
     label = lambda n: f"{n // 1024} KB" if n >= 1024 else f"{n} B"
-    lines = [f"{board}.menu.stack.s{default}={label(default)} (default)",
-             f"{board}.menu.stack.s{default}.build.stack_size={default}"]
+    ident = lambda n: f"{n // 1024}k" if n >= 1024 else f"{n}b"
+    lines = [f"{board}.menu.stack.{ident(default)}={label(default)} (default)",
+             f"{board}.menu.stack.{ident(default)}.build.stack_size={default}"]
     for n in sizes:
         if n != default:
-            lines.append(f"{board}.menu.stack.s{n}={label(n)}")
-            lines.append(f"{board}.menu.stack.s{n}.build.stack_size={n}")
+            lines.append(f"{board}.menu.stack.{ident(n)}={label(n)}")
+            lines.append(f"{board}.menu.stack.{ident(n)}.build.stack_size={n}")
     return lines
 
 
@@ -634,9 +635,9 @@ MONITOR_SOURCE_MENU = (
 def monitor_source_menu(board: str) -> list[str]:
     lines = []
     for key, label, sources in MONITOR_SOURCE_MENU:
-        lines.append(f"{board}.menu.monsrc.{key}={label}")
+        lines.append(f"{board}.menu.monitor.{key}={label}")
         for protocol, source in sources.items():
-            lines.append(f"{board}.menu.monsrc.{key}.monitor_port.{protocol}.source={source}")
+            lines.append(f"{board}.menu.monitor.{key}.monitor_port.{protocol}.source={source}")
     return lines
 
 
@@ -657,12 +658,12 @@ IWDG_SERIES = ("CH32V002", "CH32V003", "CH32V004", "CH32V005", "CH32V006", "CH32
 
 
 def iwdg_menu(board: str) -> list[str]:
-    return [f"{board}.menu.iwdg.keep={KEEP_LABEL}",
-            f"{board}.menu.iwdg.keep.build.iwdg_defines=",
-            f"{board}.menu.iwdg.sw=Started by wdtEnable(): written to the chip at boot (factory setting)",
-            f"{board}.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u",
-            f"{board}.menu.iwdg.hw=Running from power-on: written to the chip at boot",
-            f"{board}.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u"]
+    return [f"{board}.menu.wdtautostart.keep={KEEP_LABEL}",
+            f"{board}.menu.wdtautostart.keep.build.iwdg_defines=",
+            f"{board}.menu.wdtautostart.off=Off: starts at wdtEnable() (factory)",
+            f"{board}.menu.wdtautostart.off.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_MASK=0x01u",
+            f"{board}.menu.wdtautostart.on=On: runs from power-on",
+            f"{board}.menu.wdtautostart.on.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u"]
 
 
 # CH32H41x's CPU Core menu: which core runs the sketch. The V5F (400 MHz)
@@ -681,8 +682,8 @@ HEAP_WRAP_FLAGS = " ".join(f"-Wl,--wrap={name}"
                            for name in ("malloc", "free", "realloc", "memalign", "aligned_alloc", "mallinfo"))
 
 CORE_MENU = (
-    ("v5f", "V5F (400 MHz; the V3F free as a second core) (default)", True),
-    ("v3f", "V3F (100 MHz; the V5F stays asleep)", False),
+    ("v5f", "V5F (default)", True),
+    ("v3f", "V3F", False),
 )
 
 
@@ -734,12 +735,12 @@ def vio18_menu(board: str) -> list[str]:
 # 5216 B, ButtonKeyboard (X035) -136 B, EthernetStatus (V307) -204 B.
 LTO = "-flto -fwhole-program-vtables -fvirtual-function-elimination -fvisibility=hidden"
 OPT_MENU = (
-    ("ozlto", "Small (-Oz) with LTO (default)", f"-Oz {LTO}"),
-    ("ozltosr", "Smallest for large sketches (-Oz, LTO, -msave-restore): 1-2.5% less, slower calls", f"-Oz {LTO} -msave-restore"),
-    ("oslto", "Faster (-Os) with LTO: 10-20% larger", f"-Os {LTO}"),
-    ("o2lto", "Fast (-O2) with LTO: larger", f"-O2 {LTO}"),
-    ("o3lto", "Fastest (-O3) with LTO: largest", f"-O3 {LTO}"),
-    ("ozstd", "Small (-Oz) without LTO: 1.4-2.5x larger", "-Oz"),
+    ("oz", "-Oz LTO: small (default)", f"-Oz {LTO}"),
+    ("oz_saverestore", "-Oz LTO save-restore: smallest, slower", f"-Oz {LTO} -msave-restore"),
+    ("os", "-Os LTO: faster", f"-Os {LTO}"),
+    ("o2", "-O2 LTO: fast", f"-O2 {LTO}"),
+    ("o3", "-O3 LTO: fastest", f"-O3 {LTO}"),
+    ("oz_nolto", "-Oz no LTO", "-Oz"),
 )
 
 
@@ -1033,15 +1034,15 @@ def clocksrc_menu(board: str, series: str) -> list[str]:
         # every V208 board carries one. CH32H41x: see FAMILY's hse_first.
         mhz = V208_HSE_HZ // 1000000 if series == "CH32V208" else \
             FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
-        return [f"{board}.menu.clocksrc.hse=External {mhz} MHz crystal (HSE; falls back to HSI) (default)",
-                f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}",
-                f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI)",
-                f"{board}.menu.clocksrc.hsi.build.clock_src_defines="]
+        return [f"{board}.menu.clocksrc.crystal=HSE {mhz} MHz crystal (default)",
+                f"{board}.menu.clocksrc.crystal.build.clock_src_defines={{build.clock_hse_defines}}",
+                f"{board}.menu.clocksrc.internal=HSI internal",
+                f"{board}.menu.clocksrc.internal.build.clock_src_defines="]
     mhz = FAMILY[SERIES_CONFIG[series]["family"]]["hse_hz"] // 1000000
-    return [f"{board}.menu.clocksrc.hsi=Internal oscillator (HSI) (default)",
-            f"{board}.menu.clocksrc.hsi.build.clock_src_defines=",
-            f"{board}.menu.clocksrc.hse=External {mhz} MHz crystal (HSE; falls back to HSI)",
-            f"{board}.menu.clocksrc.hse.build.clock_src_defines={{build.clock_hse_defines}}"]
+    return [f"{board}.menu.clocksrc.internal=HSI internal (default)",
+            f"{board}.menu.clocksrc.internal.build.clock_src_defines=",
+            f"{board}.menu.clocksrc.crystal=HSE {mhz} MHz crystal",
+            f"{board}.menu.clocksrc.crystal.build.clock_src_defines={{build.clock_hse_defines}}"]
 
 
 # Families whose RTC can count LSE, the 32.768 kHz crystal (clock_sources.csv's
@@ -1060,10 +1061,10 @@ def rtcclock_menu(board: str, series: str) -> list[str]:
     OUT (PC14 / PC15)."""
     if SERIES_CONFIG[series]["family"] not in RTC_LSE_FAMILIES:
         return []
-    return [f"{board}.menu.rtcclock.lsi=Internal oscillator (LSI, measured at start) (default)",
-            f"{board}.menu.rtcclock.lsi.build.rtc_defines=",
-            f"{board}.menu.rtcclock.lse=External 32.768 kHz crystal (LSE; falls back to LSI)",
-            f"{board}.menu.rtcclock.lse.build.rtc_defines=-DCH32RV_RTC_LSE=1",
+    return [f"{board}.menu.rtcclock.internal=LSI internal (default)",
+            f"{board}.menu.rtcclock.internal.build.rtc_defines=",
+            f"{board}.menu.rtcclock.crystal=LSE 32.768 kHz crystal",
+            f"{board}.menu.rtcclock.crystal.build.rtc_defines=-DCH32RV_RTC_LSE=1",
             ""]
 
 
@@ -1115,10 +1116,9 @@ def rtlib_menu(board: str, min_flash: int) -> list[str]:
     lines = []
     for key, label, fp_flags, kb_cost in RTLIB_MENU:
         if kb_cost:
-            label += f" (+~{kb_cost} KB"
-            label += "; tight on 16 KB parts)" if min_flash <= 16 * 1024 and kb_cost >= 9 else ")"
-        lines.append(f"{board}.menu.rtlib.{key}={label}")
-        lines.append(f"{board}.menu.rtlib.{key}.build.fp_flags={fp_flags}")
+            label += f" (+{kb_cost} KB" + (", tight on 16 KB" if min_flash <= 16 * 1024 and kb_cost >= 9 else "") + ")"
+        lines.append(f"{board}.menu.float.{key}={label}")
+        lines.append(f"{board}.menu.float.{key}.build.fp_flags={fp_flags}")
     return lines
 
 
@@ -6059,7 +6059,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
            if fact['afio_aflr'] not in (None, 0x20) else "")
         + (f" -DCH32RV_AFIO_AF_PORTS={fact['afio_af_ports']}u"
            if fact['afio_af_ports'] not in (0, 5) else ""))
-    # Its own property, not part of core_defines: a pnum entry has to be able
+    # Its own property, not part of core_defines: a part entry has to be able
     # to replace it outright, and a menu value that referred back to the board
     # value would be referring to itself.
     board_clock = clock_defines(clk, latency)
@@ -6068,7 +6068,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append(f"{board}.build.clock_hse_defines={v208_hse_defines(clk)}")
     elif hse_series(series):
         # The first CPU Clock entry's, as build.clock_defines is: what a build
-        # without the menu (a bare FQBN) gets with clocksrc=hse.
+        # without the menu (a bare FQBN) gets with clocksrc=crystal.
         lines.append(f"{board}.build.clock_hse_defines="
                      f"{hse_defines_for(series, menu[0][0], clk, latency, fam, clock_for)}")
     lines.append("")
@@ -6128,7 +6128,7 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     split_parts = {pn for pn, _, _, _ in entries[1:] if ramsplit_part(pn) and not loadcode}
     split_any = bool(split_parts) and len(split_parts) == len(entries) - 1
     for pn, label, flash, sram in entries:
-        pfx = f"{board}.menu.pnum.{pn}"
+        pfx = f"{board}.menu.part.{pn}"
         split = pn in split_parts or (pn == "ANY" and split_any)
         lines.append(f"{pfx}={label}")
         # The part goes to CH32RV_PART_<pn>; ARDUINO_<board> stays the board's

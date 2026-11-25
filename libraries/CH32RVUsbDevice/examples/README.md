@@ -14,7 +14,7 @@ Connect the board as a USB device to a PC or another host. Start with [SerialUSB
 With the core installed, compile from the repository root:
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035F8U6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6 \
   libraries/CH32RVUsbDevice/examples/SerialUSBEcho
 ```
 

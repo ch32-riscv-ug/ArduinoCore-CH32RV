@@ -1,20 +1,20 @@
 # printf と浮動小数
 
-`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、`Serial.parseFloat()` の読み取り、それに `strftime()` などの時刻の関数について説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/internal/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point**（`rtlib`）と **parseFloat**（`parsefloat`）の 2 つのメニューで選びます。どちらの項目の組み合わせも選べます。
+`Serial.printf()`、`printf()`、`sprintf()` / `snprintf()` と、`Serial.print(float)`、`String(float)`、`dtostrf()` の書式化、`Serial.parseFloat()` の読み取り、それに `strftime()` などの時刻の関数について説明します。書式化はコア（`cores/arduino/ch32rv_format.c`）で、読み取りの計算もコア（`cores/arduino/internal/ch32rv_parse_float.h`）で動きます。浮動小数の扱いは **Floating Point**（`float`）と **parseFloat**（`parsefloat`）の 2 つのメニューで選びます。どちらの項目の組み合わせも選べます。
 
 ## Floating Point のメニュー
 
 | 項目の id | 計算 | printf の `%f` | scanf の `%f` |
 |---|---|---|---|
-| **`fltf`（既定）** Float (32-bit) + printf %f | float | コア | なし |
-| `flt` Float (32-bit) | float | 出さない（書式のまま） | なし |
-| `dbl` Double (64-bit) | double | 出さない | なし |
-| `dblf` Double (64-bit) + printf %f | double | コア | なし |
-| `libcfp` Double (64-bit) + picolibc printf %f %e %g | double | picolibc | なし |
-| `libcfs` Double (64-bit) + picolibc scanf %f | double | 出さない | picolibc |
-| `dblfs` Double (64-bit) + printf %f + picolibc scanf %f | double | コア | picolibc |
-| `fltfs` Float (32-bit) + printf %f + picolibc scanf %f | float | コア | picolibc |
-| `libcfps` Double (64-bit) + picolibc printf/scanf %f %e %g | double | picolibc | picolibc |
+| **`float_printf`（既定）** Float (32-bit) + printf %f | float | コア | なし |
+| `float` Float (32-bit) | float | 出さない（書式のまま） | なし |
+| `double` Double (64-bit) | double | 出さない | なし |
+| `double_printf` Double (64-bit) + printf %f | double | コア | なし |
+| `double_libc_printf` Double (64-bit) + picolibc printf %f %e %g | double | picolibc | なし |
+| `double_libc_scanf` Double (64-bit) + picolibc scanf %f | double | 出さない | picolibc |
+| `double_printf_scanf` Double (64-bit) + printf %f + picolibc scanf %f | double | コア | picolibc |
+| `float_printf_scanf` Float (32-bit) + printf %f + picolibc scanf %f | float | コア | picolibc |
+| `double_libc_printf_scanf` Double (64-bit) + picolibc printf/scanf %f %e %g | double | picolibc | picolibc |
 
 「なし」の項目でも scanf は使えます。整数だけの版（picolibc の既定）で、`%f` は読みません。
 
@@ -29,14 +29,14 @@
 | `float` | float |
 | `double` | double |
 
-- **計算が float の選択肢**（`flt`、`fltf`、`fltfs`）:
+- **計算が float の選択肢**（`float`、`float_printf`、`float_printf_scanf`）:
   - 小数の定数（`3.3` など）を float として扱います（`-fsingle-precision-constant`）。
   - `Serial.print(float)`、`String(float)`、`dtostrf()`、`%f` も float で計算します。
   - FPU のない系列（V00x、X035、L103 など）では、この float の計算を、float の値のビットに対する整数の計算で行います。丸めも float の計算と同じなので、出力は 1 文字も変わりません。小数の表示のためだけに soft-float が入ることはありません。
   - AVR の Arduino（double が 32 bit）と同じ精度で、有効数字は 7 桁ほどです。
   - double の正確な定数が要るときは、`(double)3.14159265358979L` と書きます。`L` を付けずにキャストしただけでは、float の精度のままです。
 - **計算が double の選択肢**：`Serial.print(float)`、`String(float)`、`dtostrf()` の出力は、以前のコアと同じです。
-- **picolibc の選択肢**（`libcfp`、`libcfps`）：printf の系統は picolibc の書式化（double の版）に戻ります。`%e` と `%g` も出せます。picolibc の浮動小数の書式化が入るので、約 6 KB 増えます（newlib の頃は約 21 KB）。
+- **picolibc の選択肢**（`double_libc_printf`、`double_libc_printf_scanf`）：printf の系統は picolibc の書式化（double の版）に戻ります。`%e` と `%g` も出せます。picolibc の浮動小数の書式化が入るので、約 6 KB 増えます（newlib の頃は約 21 KB）。
 - **printf の `%f` を有効にしていない選択肢**：`%f` は書式の文字列（`%.2f` など）のまま出ます。浮動小数の処理は何もつながりません。
 
 ## 既定と選び方
@@ -59,38 +59,38 @@ float と double の変換（`__extendsfdf2`、`__truncdfsf2`）、先頭と末�
 
 V003 で、機能を足していったときの実測です。
 
-| スケッチ | `fltf`（既定） | `flt` | `dbl` |
+| スケッチ | `float_printf`（既定） | `float` | `double` |
 |---|---|---|---|
 | `Serial.begin()` だけ | 2056 | 2056 | 2056 |
 | ＋ 整数を `Serial.printf` | 4808 | 3788 | 3788 |
 | ＋ `analogRead() * 3.3 / 1023` を `Serial.println` | 6908 | 6472 | 8684 |
 | ＋ `Serial.printf("%.2f")` | 6924 | 6520（`%.2f` のまま出る） | 8924（`%.2f` のまま出る） |
 
-### 既定（`fltf`）にした理由
+### 既定（`float_printf`）にした理由
 
 - **小数を使わず printf も使わないスケッチ**は、どの選択肢でも同じ大きさです。V003 で一番小さくするなら、この書き方にします。
 - **小数を使うスケッチ**は、Float なら soft-double（V003 で約 3.7 KB。GCC の頃は 9〜15 KB）が入りません。`%f` を足しても数十 B です。
 - **損をするのは、小数を使わずに printf を使うスケッチだけ**です（V003 で +1.0 KB、X035 で +0.9 KB、V307 で +1.0 KB）。16 KB の部品では、printf はもともと贅沢なので、`%f` も書けるほうが混乱が少ないと判断しました。
-  - これを省くには、`Float (32-bit)` の選択肢（`flt`）を選びます。
-- **Double が要るとき**は、`dbl` か `dblf` を選びます。GPS の緯度経度（float では 0.5 m ほどの誤差）や、小さな値を何万回も足す計算です。ARM や ESP32 の Arduino と同じ結果がほしいときも同様です。
+  - これを省くには、`Float (32-bit)` の選択肢（`float`）を選びます。
+- **Double が要るとき**は、`double` か `double_printf` を選びます。GPS の緯度経度（float では 0.5 m ほどの誤差）や、小さな値を何万回も足す計算です。ARM や ESP32 の Arduino と同じ結果がほしいときも同様です。
 
 ### 並び順
 
 どちらのメニューも、既定を先頭に置きます。Floating Point の残りは、入る部品の少ない順です。
 
-1. `fltf`（既定）
-2. `flt`（soft-float だけ）
-3. `dbl`（小数を使うと soft-double）
-4. `dblf`（printf を使うと soft-double）
-5. picolibc の `libcfp`、`libcfs`、`dblfs`、`fltfs`、`libcfps`（+5〜9 KB）
+1. `float_printf`（既定）
+2. `float`（soft-float だけ）
+3. `double`（小数を使うと soft-double）
+4. `double_printf`（printf を使うと soft-double）
+5. picolibc の `double_libc_printf`、`double_libc_scanf`、`double_printf_scanf`、`float_printf_scanf`、`double_libc_printf_scanf`（+5〜9 KB）
 
 picolibc の項目の大きさ（2026-11-12）は、`sscanf("%f")` と `snprintf("%f %e %g")` を 1 回ずつ使うスケッチで、
-`dbl` より増える分です。X035 で `libcfp` +5.8 KB、`libcfs` +5.0 KB、`dblfs` +9.3 KB、`fltfs` +5.9 KB、`libcfps` +9.3 KB。
-V003 と V307 もこれと 1 KB 以内の差で、V003（16 KB）では `dblfs` が 16,328 B、`libcfps` が 16 B はみ出しました。
+`double` より増える分です。X035 で `double_libc_printf` +5.8 KB、`double_libc_scanf` +5.0 KB、`double_printf_scanf` +9.3 KB、`float_printf_scanf` +5.9 KB、`double_libc_printf_scanf` +9.3 KB。
+V003 と V307 もこれと 1 KB 以内の差で、V003（16 KB）では `double_printf_scanf` が 16,328 B、`double_libc_printf_scanf` が 16 B はみ出しました。
 
 ### 大きさの実測（スケッチ全体の flash、ch32rv-toolchain 23.1.5-2、2026-11-12）
 
-| スケッチ | 系列 | `dbl` | `dblf` | `flt` | `fltf` |
+| スケッチ | 系列 | `double` | `double_printf` | `float` | `float_printf` |
 |---|---|---|---|---|---|
 | `Serial.printf` で整数 | V003 | 4036 | 9000 | 4036 | 5052 |
 | | X035 | 4192 | 8496 | 4192 | 5088 |
@@ -123,9 +123,9 @@ V003 と V307 もこれと 1 KB 以内の差で、V003（16 KB）では `dblfs` 
 - `int` で 12 桁以上の入力が 1 ビットずれるのは、値が 2 つの float のちょうど中間に、11 桁目より細かいところまで近いときだけです。
 - 以前のコアは、Float の選択肢で `0.1` が float の定数になっていました。そのため、double の計算でも、0.27% ほどの入力が 1 ビットずれていました。今はどの選択肢でも double の `0.1` を使います。
 
-### 大きさ（スケッチ全体、2026-10-28。V003・X035 の `flt` の 1 行目は 2026-10-29）
+### 大きさ（スケッチ全体、2026-10-28。V003・X035 の `float` の 1 行目は 2026-10-29）
 
-| スケッチ（Floating Point ＋ parseFloat） | 系列 | `dbl`＋`double` | `dbl`＋`int` | `dbl`＋`float` | `flt`＋`double` | `flt`＋`int` | `flt`＋`float` |
+| スケッチ（Floating Point ＋ parseFloat） | 系列 | `double`＋`double` | `double`＋`int` | `double`＋`float` | `float`＋`double` | `float`＋`int` | `float`＋`float` |
 |---|---|---|---|---|---|---|---|
 | `parseFloat` の値を `Serial.println(v, 6)` | V003 | 11148 | 13352 | 12588 | 8104 | 6476 | 5732 |
 | | X035 | 11132 | 12888 | 12500 | 8272 | 6396 | 6036 |

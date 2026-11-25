@@ -6,7 +6,7 @@
 
 - FQBN は `ch32-riscv-ug:ch32rv:<board>` とする
 - Generic board は `Generic <SERIES>` と表示し、一つの silicon series を表す
-- `pnum` menu の先頭に `ANY`、続いて exact part number を置く
+- `part` menu（Part Number）の先頭に `ANY`、続いて exact part number を置く
 - `ANY` は同じ series の最小 flash / RAM を宣言する
 - board ID は part menu で変えず、part と series はそれぞれ `CH32RV_PART_*`、`CH32RV_SERIES_*` で渡す
 - 実機確認状況を board 名へ埋め込まず、`docs/support-status.ja.md` で管理する

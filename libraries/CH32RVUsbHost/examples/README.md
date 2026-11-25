@@ -17,7 +17,7 @@ Every example uses the hardware `Serial` at 115200 baud, 8N1. Wire board TX→ad
 Choose the exact Part Number in Arduino IDE, then File → Examples → CH32RVUsbHost. From the repository root with the core installed:
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6 \
   libraries/CH32RVUsbHost/examples/DeviceInfo
 ```
 

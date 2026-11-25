@@ -18,7 +18,7 @@ Host の有無は系列名だけでなく正確な型番で確認します。Dev
 Arduino IDE の「スケッチ例 → CH32RVUsbHost」から選び、正確な Part Number を設定します。CLI でリポジトリのルートからビルドする例です。
 
 ```sh
-arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:pnum=CH32X035C8T6 \
+arduino-cli compile --fqbn ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6 \
   libraries/CH32RVUsbHost/examples/DeviceInfo
 ```
 

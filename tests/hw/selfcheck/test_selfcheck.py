@@ -10,9 +10,9 @@ selfcheck.clocks: the bus clocks the build assumes (CH32RV_PCLK2_HZ, internal/ch
 RCC_CFGR0 is set to, where the family has the STM32F1-shaped PPRE2 field.
 
 selfcheck.clock_source: the oscillator the Clock Source menu asked for is the one the part runs (CH32RV.clockSource(),
-RCC_CTLR's HSERDY): with clocksrc=hse the crystal started - run it on a board that carries its EVT's (8 MHz on V20x / V30x /
+RCC_CTLR's HSERDY): with clocksrc=crystal the crystal started - run it on a board that carries its EVT's (8 MHz on V20x / V30x /
 L103 / V103 / M030, 24 on V00x, 20 on X3x5, 25 on V4x7 / H41x, 32 on V208) - and HSI otherwise; RCC_CFGR0's SWS is the
-PLL where the setting has one, else that oscillator. With CH32_TEST_OPTIONS=clocksrc=hse (and clock=...) per entry.
+PLL where the setting has one, else that oscillator. With CH32_TEST_OPTIONS=clocksrc=crystal (and clock=...) per entry.
 
 selfcheck.serial_transmit: every HardwareSerial object sends 64 bytes at 115200 and 1000000 baud: BRR is the
 rounded clock / baud of the USART's own bus (USART1 on PCLK2, the rest on PCLK1), and sending them took 10 bits a

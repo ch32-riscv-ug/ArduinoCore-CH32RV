@@ -57,7 +57,7 @@ def profile_fqbn(test_path, profile):
 
 
 def part_of(fqbn):
-    m = re.search(r"[:,]pnum=([A-Z0-9]+)", fqbn or "")
+    m = re.search(r"[:,]part=([A-Z0-9]+)", fqbn or "")
     return m.group(1) if m else None
 
 
@@ -70,7 +70,7 @@ def pytest_arduino_cli_skip_reason(item, combination):
         return None
     part = part_of(profile_fqbn(item.path, combination.primary))
     if part is None:
-        return f"profile {combination.primary}: its fqbn names no part (pnum=)"
+        return f"profile {combination.primary}: its fqbn names no part (part=)"
     return places.static_reason(case, part)
 
 

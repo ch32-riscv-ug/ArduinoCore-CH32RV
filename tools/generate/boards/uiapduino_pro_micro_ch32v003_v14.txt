@@ -27,8 +27,8 @@ UIAPDUINO_V003_V14.monitor_port.serial.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.wchlink.chip=CH32V003F4U6
 UIAPDUINO_V003_V14.monitor_port.oep.chip=CH32V003F4U6
 
-# Product hardware fixes the part number, but a no-op `pnum=ANY` menu is
+# Product hardware fixes the part number, but a no-op `part=ANY` menu is
 # deliberately present so generic Arduino CI invocations that supply the
-# platform-wide pnum option remain valid. It must not select a different SKU.
-UIAPDUINO_V003_V14.menu.pnum.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)
+# platform-wide part option remain valid. It must not select a different SKU.
+UIAPDUINO_V003_V14.menu.part.ANY=CH32V003F4U6 (fixed on UIAPduino V1.4)
 

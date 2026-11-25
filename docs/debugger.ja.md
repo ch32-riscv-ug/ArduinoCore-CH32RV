@@ -23,7 +23,7 @@ export PATH="<openocd-bin>:$PATH"
 # command 単位
 arduino-cli debug \
   --debug-property server.openocd.path=/path/to/openocd \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 \
+  --fqbn ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4P6 \
   -P wch-link ./MySketch
 ```
 
@@ -33,7 +33,7 @@ repository を Arduino hardware directory として直接使う場合は、GDB�
 arduino-cli debug \
   --debug-property toolchain.path=/path/to/ch32rv-toolchain/bin/ \
   --debug-property server.openocd.path=/path/to/openocd \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 \
+  --fqbn ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4P6 \
   -P wch-link ./MySketch
 ```
 
@@ -47,9 +47,9 @@ debug.server.openocd.path=/path/to/openocd
 
 ```sh
 arduino-cli compile \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 ./MySketch
+  --fqbn ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4P6 ./MySketch
 arduino-cli debug \
-  --fqbn ch32-riscv-ug:ch32rv:CH32V003:pnum=CH32V003F4P6 \
+  --fqbn ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4P6 \
   -P wch-link ./MySketch
 ```
 
