@@ -668,6 +668,21 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
   → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
   リリースで上げて V006 の softspi を確かめる。
+- [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める）**: IDE で source を選べないので、既定を「取れるものは一緒に
+  取る」mix にしたい。受信はどこから来たか区別しなくてよく、送信は届く相手だけでよい。同じ仕組みで排他の組は、取れるほうを
+  取る。利用者への推奨は UART か DMSeq だが、mix はできるだけ広く取る。
+  - 組は 3 つ（[ch32rv]）: UART 系（OEP の fixture-uart、WCH-Link の CDC。LinkE の SDI はこの CDC に混ざって来る）、郵便受け系
+    （SDI・DMDATA・DMSeq は Debug Module の DATA0/1 を使い、同時には 1 つ）、RTT（RAM のリング。poll のたびに hart を止める）。
+  - OEP（実験、WeAct の X035F8U6 / oep-1451、常駐外）: monitor を 3 つ同時に開き、fixture-uart・dmseq・rtt が 15 秒で 30 回ずつ
+    欠けずに届いた。送信も uart / dmseq の両方向で届いた。郵便受け系の仕組みを間違えて開くと黙るだけで target は止まらず、後から
+    正しい仕組みで続きが読めた（順に試して見分けられる）。OEP の attach は target を止めず副作用が無い。RTT は ch32rv が host 側で
+    riscv-dm の上で読む（OEP のファームには無い、要らない）。
+  - WCH-Link（未実験、常駐の台が空いてから）: 郵便受け系と RTT と SDI の転送の有効化は attach が要り、V003 以外は副作用がある
+    （クロックの組み直し、V103 / V205 / H417 のレジスタの上書き）。ユーザー: 壊しても再起動でよい。試すこと: attach してから
+    リセットして読み続けられるか、connect-under-reset、CDC に uart と SDI が混ざって壊れないか、郵便受け系を順に試せるか。
+  - そのほか: 書き込んだイメージから使うコンソールを知る手（ELF のインスタンスの記号 `SerialSDI` などは LTO の後も残る。
+    begin() の中の非 ALLOC の印 `.ch32rv.console` は使ったときだけ残り、flash / RAM は増えない）。mix を ch32rv で作るなら、
+    今は 1 つの monitor で 1 つの stream なので、ブローカーへの流れを並べる形になる。
 - [ ] **Arduino IDE 2 で Monitor Source が効かない（上流 arduino/arduino-ide#2988、2026-11-25 に出した）**: IDE は monitor の設定を
   全部 `pluggable-monitor-settings.json` に、メニューの値を含まない鍵で保存し、boards.txt の既定（メニュー）より優先する。
   画面で変えられない source も保存されるので、メニューを変えても再起動しても効かない（ユーザーが Windows の IDE で確かめた）。

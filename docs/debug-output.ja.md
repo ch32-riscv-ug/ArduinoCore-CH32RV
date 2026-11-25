@@ -12,6 +12,11 @@ CH32RV では UART と debug interface を使う複数の `Print` / `Stream` を
 
 API の buffer size、`printf()`、同時使用制約は各 library の README を正本とします。
 
+**どれを使うか:** ふつうは `Serial`（UART）か `SerialDMSeq` を勧めます。`Serial` は UART の配線が要るだけで、debug interface に
+attach しないので target に何も起きません。`SerialDMSeq` は debug の線だけで双方向に使え、通し番号と CRC-8 で取りこぼしや
+重複が分かります。`SerialSDI`（一方向、WCH-LinkE だけ）、`SerialDMDATA`（番号が無く重複を見分けられない）、`SerialRTT`（poll
+のたびに短時間 halt する）は、それが要る事情があるときに選びます。
+
 ## Arduino IDE / CLI
 
 WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として discovery されます。WCH-LinkE の UART bridge は、それとは
