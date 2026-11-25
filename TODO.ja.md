@@ -685,7 +685,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     1 つだけが読めた。試しの間もスケッチは止まらない（正しい経路を閉じた後、DMSeq / DMDATA の出力が PC の返事を待つ間だけ遅く
     なる）。WCH-Link は ch32rv の転送無しの SDI ができてからやり直す（LinkE の転送で代用した回は参考: 9 回とも正しかったが、転送を
     有効にすると SDI 以外のスケッチで UART が止まったり、出所不明の文字が出たりした）。SDI と DMDATA は語の低 byte の bit 7 で
-    分けられる（[ch32rv]）。: IDE で source を選べないので、既定を「取れるものは一緒に
+    分けられる（[ch32rv]）。
+  - WCH-Link の本番の経路（2026-11-26、ch32rv 6da9dd6 リリース前: `--source sdi` が転送無しで DATA0 を DMI で読む、LinkE の転送は
+    `sdi-forward`）: V307 LinkE で 3 つの各スケッチを 3 回ずつ DMSeq → SDI → DMDATA の順に試し、9 回とも正しい 1 つだけが読めた
+    （12 行ずつ、化け無し）。違う経路では dmseq-no-console / sdi-no-console がはっきり出る（DMDATA は黙る）。試しの間もスケッチは
+    止まらない。uart と sdi を同じ Link で同時に開いて、12 秒で両方 24 行ずつ届いた（転送では UART が止まっていた）。: IDE で source を選べないので、既定を「取れるものは一緒に
   取る」mix にしたい。受信はどこから来たか区別しなくてよく、送信は届く相手だけでよい。同じ仕組みで排他の組は、取れるほうを
   取る。利用者への推奨は UART か DMSeq だが、mix はできるだけ広く取る。
   - 組は 3 つ（[ch32rv]）: UART 系（OEP の fixture-uart、WCH-Link の CDC）、郵便受け系（SDI・DMDATA・DMSeq は Debug Module の
