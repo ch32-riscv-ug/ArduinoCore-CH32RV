@@ -250,7 +250,7 @@ CH32RV_PEERS = {
 }
 # The host peer's FAT (its own, apart from the DUT's FatFS) is the Pico's: staged beside the CH32RV peer's sketch.
 PEER_FAT = TESTS / "sketch_support/usb_peer/device/peer_pico/peer_fat.h"
-# The Pico peers' TinyUSB: Adafruit TinyUSB Library 3.7.7 (arduino-pico 6.3.x's) with
+# The Pico peers' TinyUSB: Adafruit TinyUSB Library 3.7.7 (arduino-pico 6.3.2's; it must be the bundled one) with
 # sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch (its RP2040 host sends an OUT data stage as DATA0).
 PICO_TINYUSB = dict(version="3.7.7",
                     url="https://github.com/adafruit/Adafruit_TinyUSB_Arduino/archive/refs/tags/3.7.7.tar.gz",

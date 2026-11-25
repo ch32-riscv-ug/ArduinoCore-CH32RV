@@ -668,6 +668,15 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
   → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
   リリースで上げて V006 の softspi を確かめる。
+- [ ] **X035（x035c8t6-s3）の usb-peer-host-media が通らない**（2026-11-25、この組み合わせで初めて流した）: S3 が USB の
+  機能（UAC / UVC）を出さず、DUT からは S3 の USB JTAG/serial（303a:1001）だけが見え、S3 の出力も 1 行も無い。esp32 4.0.0 /
+  EspUsbDevice 3.4.0 でも、3.3.13 / 3.3.0 でも同じなので、依存の更新ではない。同じスケッチの P4 の profile（V407）は通る。
+  S3 の側のスケッチが起動で止まっているかから見る（S3 の UART0 の出力が取れるか）。
+- [ ] **tests/unit/network の DHCP の試験がまれに落ちる**（2026-11-25）: 単体試験の全体の実行で test_dhcp_client が 1 回、
+  test_dhcp_server が 1 回（別の実行）。どちらも全体の出力の末尾しか残しておらず、どの確認が落ちたかは分からない。その後、
+  ベンチの試験で負荷がかかる中で dhcpc / dhcps を 12 回ずつ（scratch の dhcp_loop.py: 一度だけビルドして net_driver を
+  繰り返す）、単独の pytest で 2 回流して、一度も落ちない。次に落ちたら、pytest の出力を全部残して、落ちた項目と
+  sketch_output を見る。
 - [ ] **V006 の softspi::test_spi_peripheral で 1 ビット違う**（2026-11-25、softspi-ws038-2）: mode 0 MSBFIRST で、プローブが
   読んだのが a05a7979、DUT に渡したのが a05af979（4 バイト目の最上位ビットが 0）。1 回目は通った。前に同じ形の記録は無い。
   再発したら、取り込みでその SCK の縁と MOSI を見る。

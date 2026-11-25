@@ -20,8 +20,8 @@ jobs:
     name: Board-free workspace
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - name: Run checks without hardware
         working-directory: tests
         run: uv run --locked pytest
@@ -30,8 +30,8 @@ jobs:
     name: Generated platform and example profiles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - name: Fetch pinned device data
         run: uv run --no-project python tools/index/fetch_tools.py --tool ch32-device-data
       - name: Check generated platform files
@@ -43,8 +43,8 @@ jobs:
     name: Upstream source provenance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - name: Compare ArduinoCore-API with the pinned upstream commit
         run: uv run --no-project python tools/vendor/check_api_sync.py "${{ runner.temp }}/api-sync"
 
@@ -54,8 +54,8 @@ jobs:
     outputs:
       profiles: ${{ steps.list.outputs.profiles }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - id: list
         run: echo "profiles=$(uv run --no-project python tools/index/build_examples.py --list-profiles)" >> "$GITHUB_OUTPUT"
 
@@ -68,8 +68,8 @@ jobs:
         profile: ${{ fromJSON(needs.example-profiles.outputs.profiles) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - uses: arduino/setup-arduino-cli@v2
       - name: Toolchain given by hand
         if: ${{ inputs.toolchain != '' }}
@@ -79,7 +79,7 @@ jobs:
           [[ "$TOOLCHAIN" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || { echo "toolchain must look like 23.1.6-1: got '$TOOLCHAIN'" >&2; exit 1; }
           uv run --no-project python tools/index/bump_tool.py ch32rv-toolchain "$TOOLCHAIN" --no-fetch
       - name: Cache tool archives
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .tools/cache
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}
@@ -93,7 +93,7 @@ jobs:
         run: uv run --no-project python tools/index/build_examples.py "${{ runner.temp }}/examples" --profile "${{ matrix.profile }}" --warnings all --fail-on-warning
       - name: Keep compiler crash reproducers
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: clang-crash-${{ matrix.profile }}
           path: ${{ runner.temp }}/clang-crash
@@ -108,8 +108,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
       - uses: arduino/setup-arduino-cli@v2
       - name: Toolchain given by hand
         if: ${{ inputs.toolchain != '' }}
@@ -119,7 +119,7 @@ jobs:
           [[ "$TOOLCHAIN" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] || { echo "toolchain must look like 23.1.6-1: got '$TOOLCHAIN'" >&2; exit 1; }
           uv run --no-project python tools/index/bump_tool.py ch32rv-toolchain "$TOOLCHAIN" --no-fetch
       - name: Cache tool archives
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .tools/cache
           key: tools-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/index/tools_*.json') }}

@@ -46,10 +46,10 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v10
 
       - name: Determine version
         id: ver
@@ -134,7 +134,7 @@ jobs:
       # The archive has to exist at the URL the index names before anyone can
       # install from that index, so the Release goes up before Pages.
       - name: Create the GitHub Release and attach the archive
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ steps.ver.outputs.version }}
           body_path: release_body.md
@@ -144,7 +144,7 @@ jobs:
             dist/package_ch32-riscv-ug_index.json
 
       - name: Publish the index to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./package

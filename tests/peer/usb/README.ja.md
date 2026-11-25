@@ -55,7 +55,7 @@ DUT と同じ OEP プローブに Pico をつなぎ、記録に `usb: {to: rp204
   - device 役の名前は、S3 と同じ形で別の名前にしています（`Pico peer hid` / `Pico peer classes`、製造元 `ch32rv-tests`）。
   - VID は Adafruit TinyUSB の既定の 239a です。
 - **流せないケース:** usb-peer-media は流しません。RP2040 のホストのドライバにアイソクロナス転送がありません。
-- **TinyUSB:** Pico 側は、arduino-pico 6.3.1 に同梱の Adafruit TinyUSB 3.7.7 では動きません。
+- **TinyUSB:** Pico 側は、arduino-pico（6.3.2）に同梱の Adafruit TinyUSB 3.7.7 では動きません。
   run_hardware は、3.7.7 の固定のアーカイブに `sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch` を当てた写しを
   キャッシュに作ります。それを peer の sketch.yaml の `- TINYUSB` の行（`- dir:` に置き換える）で差します。パッチの中身:
   - RP2040 のポートを上流の tinyusb 38bd85a0c0 に差し替える。理由は 2 つあります。
@@ -64,6 +64,14 @@ DUT と同じ OEP プローブに Pico をつなぎ、記録に `usb: {to: rp204
   - ホストの列挙のバッファを 1024 にする（usb_contracts の構成記述子は 302 バイト）。
   - `tuh_edpt_xfer()` を有効にする。
   - MSC ホストが転送の失敗で止まらないようにする。失敗した段は失敗の CSW で終え、列挙中は TEST UNIT READY に戻る。
+  - Adafruit TinyUSB の版は、arduino-pico が同梱する版に合わせます（libpico.a の中のデバイス側の TinyUSB と同じ中身）。
+    2026-11-25 に 3.8.1 を試すと、3.8.1 で `tu_fifo_count` などがヘッダーの中の関数になったため、libpico.a の usbd.c.o が
+    pico-sdk 側の tusb_fifo.c.o まで引き込み、リンクで「multiple definition」になった。
+    3.8.1 の RP2040 のポートには、上のパッチの 1 つ目の直しが入っている。arduino-pico が同梱の版を上げたら、パッチを見直す。
+  - arduino-pico は 6.3.2 に止めています。6.4.0（2026-11-17）の core の main.cpp は、`USE_TINYUSB` のとき
+    `tud_cdc_write_flush()` を無条件に呼びます。Pico がホストの構成（`usbstack=tinyusb_host`）では、そのデバイス側の関数が無いので
+    libpico.a のデバイス側の TinyUSB が丸ごと引き込まれ、同じ「multiple definition」でリンクできません（Pico がデバイスの
+    構成は 6.4.0 でも通った）。上流で直ったら上げる。
 
 ### TinyUSB（Pico）側の挙動
 
@@ -129,7 +137,7 @@ DUT の USB の口を別の CH32RV の基板の口につなぎ、記録に `usb:
 
 - DUT の USB（D+ / D- / GND）を S3 の USB OTG ポートへ。VBUS は使いません（DUT と S3 はそれぞれ給電）。
 - S3 の制御は UART0（ボードの USB シリアル）。ベンチ設定の target に `usb_peer_port`（安定した by-id のパス）を書きます。
-- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 3.3.13、EspUsbHost 2.10.2、EspUsbDevice 3.3.0）。
+- S3 のコアとライブラリは sketch.yaml で版を固定します（esp32 4.0.0、EspUsbHost 2.11.1、EspUsbDevice 3.4.0）。
   run_hardware.py は Arduino の data / downloads を `~/.cache/ch32rv-core-bench/arduino` に置き、実行のたびに
   ESP32 のツールチェーンを取り直さないようにしています（~/.arduino15 には触れません）。
 
