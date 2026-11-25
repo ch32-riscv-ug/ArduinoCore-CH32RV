@@ -671,6 +671,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] **V006 の softspi::test_spi_peripheral で 1 ビット違う**（2026-11-25、softspi-ws038-2）: mode 0 MSBFIRST で、プローブが
   読んだのが a05a7979、DUT に渡したのが a05af979（4 バイト目の最上位ビットが 0）。1 回目は通った。前に同じ形の記録は無い。
   再発したら、取り込みでその SCK の縁と MOSI を見る。
+  → 2026-11-25 再発（softspi-ws039-2、wireskein 0.0.39 で 3 回中 1 回）: mode 0 LSBFIRST で 0ab1b6aa が 0ab1b7aa。2 回とも
+  「4 バイト目の、最初に送るビット」（MSBFIRST の bit 7、LSBFIRST の bit 0）が違う。バイトの境目の最初のビットで、MOSI が
+  SCK の縁に近すぎる（セットアップの時間が足りない）疑い。取り込みでその縁の前後の MOSI と SCK の間隔を測る。
+  softspi の test_shift（mode・MOSI の読み）は 0.0.39 で 3 回とも ok、V103 の softspi は 3 回とも PASS。
 - [ ] **USBSS の IN の流れで、まれに 1〜9 パケット（1 KB 単位）が化ける**（2026-11-22、上の測定の途中で見えた）: Vendor の
   writeDirect() で 32 KB を続けて送り、PC の libusb の非同期 8 本で読むと、5 秒（約 7 万ブロック）の回のうち、化けたブロックが
   0〜2 個出る回がある。共有 SRAM（ヒープ）のバッファでも DTCM のバッファでも出て、出ない日（10 回ずつ 0）もある。化けは
