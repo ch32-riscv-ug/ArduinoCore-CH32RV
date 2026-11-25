@@ -668,6 +668,13 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
   → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
   リリースで上げて V006 の softspi を確かめる。
+- [ ] **全台の試験（2026-11-25、`--combo all` の 17 台、full-20261125-combo）**: 387 PASS・12 FAIL。既知: L103 の ADC（selfsys・
+  selfapi）、H417 6-2 の wire、X035+S3 の usb-peer-host-media、nanoCH32H417 の sd（test_sd_spi）。M030 の selfsys は試験の誤り
+  （AWU の最初の休止は LSI を測る分だけ長い。最初に一度眠ってから測るように直し、508 ms → 200 ms で通った）。残り 6 件は
+  流し直して通った（rr1126-*）: V006 periph と H417 selfcheck（書き込みの前で 300 秒の打ち切り）、X035+S3 usb-peer（S3 の MIDI が
+  来ない）、X315 spi（test_spi_three_wire、250 kHz・プルダウンで receive() が c0000000）、H417 usb-ss-iso（抜き差しの後 ENODEV）。
+  - [ ] V006 signals::test_timer_pulse_in が `TPULSEIN -49`（timerPulseIn() が負の幅、流し直しでは通った）: 始まりと終わりの
+    捕捉の時刻の、16 ビットのカウンターの桁あふれの数え方（pulse_stamp の pending の扱い）の境目の競合の疑い。再現の手を作る。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める）**: IDE で source を選べないので、既定を「取れるものは一緒に
   取る」mix にしたい。受信はどこから来たか区別しなくてよく、送信は届く相手だけでよい。同じ仕組みで排他の組は、取れるほうを
   取る。利用者への推奨は UART か DMSeq だが、mix はできるだけ広く取る。

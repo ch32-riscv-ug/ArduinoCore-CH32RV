@@ -395,11 +395,18 @@ def test_idle(dut, ready, record_property):
 
 
 def test_light_sleep(dut, ready, record_property):
+    """lightSleep(200): Ok, woken by the timer, millis() moved 150-400 ms. The AWU families measure their clock in
+    the first sleep of a boot, which makes that one longer (on M030, whose shortest AWU period is about 150 ms, by
+    up to about 300 ms: ch32rv_power.c); so a first sleep, judged on its result and cause alone, comes before the
+    timed one (M030's first sleep of 200 ms took 507, 2026-11-25)."""
+    first, first_cause, first_took = (int(x) for x in ask(dut, "sleep 200", rb"SLEEP (-?\d+) (-?\d+) (\d+)").groups())
+    if first == SLEEP_UNSUPPORTED:
+        pytest.skip("lightSleep() unsupported on this family")
     t0 = time.monotonic()
     r, cause, took = (int(x) for x in ask(dut, "sleep 200", rb"SLEEP (-?\d+) (-?\d+) (\d+)").groups())
     host = time.monotonic() - t0
-    record_property("sleep", json.dumps(dict(result=r, cause=cause, millis=took, host_s=round(host, 3))))
-    if r == SLEEP_UNSUPPORTED:
-        pytest.skip("lightSleep() unsupported on this family")
+    record_property("sleep", json.dumps(dict(result=r, cause=cause, millis=took, host_s=round(host, 3),
+                                             first=dict(result=first, cause=first_cause, millis=first_took))))
+    assert first == SLEEP_OK and first_cause == WAKEUP_TIMER, f"first lightSleep() {first}, wakeupCause() {first_cause}"
     assert r == SLEEP_OK and cause == WAKEUP_TIMER, f"lightSleep() {r}, wakeupCause() {cause}"
     assert 150 <= took <= 400, f"millis() moved {took} ms across a 200 ms sleep"
