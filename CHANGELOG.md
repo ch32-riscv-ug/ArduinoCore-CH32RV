@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) CPU Clock menu: V305 / V307 / V317 say which USB each entry keeps ("USB FS and HS", or "USB HS only, no USB FS" at 72 and 8 MHz, where the system PLL cannot give FS its 48 MHz). V303, which has no USB HS, said "USB HS only" there; it now says "no USB", as V20x.
+- (JA) CPU Clock のメニュー: V305 / V307 / V317 は、項目ごとに使える USB を書くようにした（「USB FS and HS」、72 / 8 MHz は FS の 48 MHz を作れないので「USB HS only, no USB FS」）。USB HS の無い V303 がそこで「USB HS only」と出ていたのを、V20x と同じ「no USB」にした。
 - (EN) Fix: `CH32RVPwmSequence::play()` could put one extra period of the first duty before the data (an extra WS2812 bit; seen on V203 with 48 bits every time). It now starts the sequence on an update event of its own.
 - (JA) 修正: `CH32RVPwmSequence::play()` が、データの前に最初の duty の周期を 1 つ余分に出すことがあった（WS2812 のビットが 1 つ増える。V203 で 48 ビットのとき毎回）。自分で起こした更新のイベントから始めるようにした。
 - (EN) Fix: H417 / H416 at SuperSpeed lost isochronous IN packets to link errors on some trainings (up to about 1 % of packets): the transmitter's de-emphasis is now 6 dB (as X315), not 3.5 dB. On the bench it took the PC's transaction errors from a median of 54 to 0 per 40 320 packets.

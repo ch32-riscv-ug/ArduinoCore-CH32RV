@@ -790,8 +790,11 @@ OPT_MENU = (
 _V20X_CLOCKS = [("144", 144, 144, "144MHz (USB)"), ("96", 96, 96, "96MHz (USB)"),
                 ("72", 72, 72, "72MHz (no USB)"), ("48", 48, 48, "48MHz (USB)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")]
-_V30X_CLOCKS = [("144", 144, 144, "144MHz (USB)"), ("96", 96, 96, "96MHz (USB)"),
-                ("72", 72, 72, "72MHz (no USB FS)"), ("48", 48, 48, "48MHz (USB)"),
+# V305 / V307 / V317 have two USB ports: FS takes 48 MHz from the system PLL
+# (USBPRE /1, /2, /3: 48, 96, 144 MHz), HS has a PLL of its own (from HSE)
+# and works at every entry. V303 has no USBHS: its entries are V20x's.
+_V30X_CLOCKS = [("144", 144, 144, "144MHz (USB FS and HS)"), ("96", 96, 96, "96MHz (USB FS and HS)"),
+                ("72", 72, 72, "72MHz (no USB FS)"), ("48", 48, 48, "48MHz (USB FS and HS)"),
                 ("8", 8, 8, "8MHz (HSI, lowest power, no USB FS)")]
 _V00X_CLOCKS = [("24", 24, 24, "24MHz"), ("48", 48, 48, "48MHz"),
                 ("8", 24, 8, "8MHz (lowest power)")]
@@ -813,7 +816,8 @@ CLOCK_MENU = {
                  ("96", 96, 96, "96MHz (USB, no Ethernet)"), ("72", 72, 72, "72MHz (no USB, no Ethernet)"),
                  ("60", 120, 60, "60MHz (Ethernet, no USB)"), ("48", 48, 48, "48MHz (USB, no Ethernet)"),
                  ("8", 8, 8, "8MHz (HSI, lowest power, no USB)")],
-    **{s: _V30X_CLOCKS for s in ("CH32V303", "CH32V305", "CH32V307", "CH32V317")},
+    "CH32V303": _V20X_CLOCKS,
+    **{s: _V30X_CLOCKS for s in ("CH32V305", "CH32V307", "CH32V317")},
     "CH32X033": _X035_CLOCKS, "CH32X035": _X035_CLOCKS,
     "CH32L103": _L103_CLOCKS, "CH32M103": _L103_CLOCKS,
     # V205: 160 MHz, EVT's default (there from HSE). Every entry ran on a
@@ -893,11 +897,11 @@ PPRE1_FAMILIES = {"CH32V20x", "CH32V307", "CH32L103", "CH32V103", "CH32V205", "C
 def clock_label(label: str, default: bool) -> str:
     """A CPU Clock label in the menus' one style: "144 MHz", USB that has not
     been run at that clock as "USB untested", V30x's 72 MHz (USB HS from its
-    own PLL, no USB FS) as "USB HS only", the oscillator left out of "lowest
+    own PLL, no USB FS; V305 / V307 / V317) as "USB HS only, no USB FS", the oscillator left out of "lowest
     power" (the Clock Source menu says which), and the default marked."""
     label = re.sub(r"(\d)MHz", r"\1 MHz", label)
     label = label.replace("USB, not checked", "USB untested").replace("USB not checked", "USB untested")
-    label = label.replace("no USB FS", "USB HS only").replace("HSI, lowest power", "lowest power")
+    label = label.replace("no USB FS", "USB HS only, no USB FS").replace("HSI, lowest power", "lowest power")
     return label + " (default)" if default else label
 
 
