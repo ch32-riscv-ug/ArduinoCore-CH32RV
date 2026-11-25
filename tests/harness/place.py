@@ -451,6 +451,11 @@ def choose_cases(place, items=None, caps=None):
             for case in FEATURE_CASES.get(feature, ()):
                 if out.get(case) == "run":
                     out[case] = f"skip: defect {defect.get('id')} ({feature})"
+    if core.get("peer_only"):
+        from harness.bench import PEER_CASES
+        for case, state in out.items():
+            if state == "run" and case not in PEER_CASES:
+                out[case] = "skip: the record's peer_only: this board runs the cases that need its USB peer"
     own = PRODUCT_BOARD_CASES.get(core.get("board"))
     if own is not None:
         for case, state in out.items():

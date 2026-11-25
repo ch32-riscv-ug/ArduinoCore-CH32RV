@@ -110,6 +110,8 @@ def set_records(address, args):
         core_changes["spi"] = {"cs": args.spi_cs.lower()}
     if args.option:
         core_changes["options"] = dict(o.split("=", 1) for o in args.option)
+    if args.peer_only:
+        core_changes["peer_only"] = args.peer_only == "true"
     if args.note:
         core_changes["note"] = args.note
     if core_changes or args.remove:
@@ -162,6 +164,8 @@ def main(argv=None):
             s.add_argument("--spi-cs", help="<pad>: the labelled line the spi tests use as CS (away from the SPI's lines in the harness)")
             s.add_argument("--option", action="append",
                            help="<menu>=<value> of boards.txt the board needs (vio18=3v3); repeat for each")
+            s.add_argument("--peer-only", choices=("true", "false"),
+                           help="true: the board runs only the cases that need its USB peer (usb-peer*)")
             s.add_argument("--note")
             s.add_argument("--remove", action="append", help="a core record member to drop")
     args = ap.parse_args(argv)

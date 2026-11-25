@@ -105,6 +105,21 @@ def test_an_ambiguous_chip_takes_the_recorded_part_only_if_it_is_a_candidate(mon
         fake_resolve(monkeypatch, tmp_path / "c", info=v103, port_record={"part": "CH32V103R6T6"})
 
 
+def test_a_peer_only_board_runs_the_peer_cases_alone():
+    """peer_only (RECORDS 4.10): a second board of a series kept for its USB peer runs usb-peer* only."""
+    from harness.bench import PEER_CASES
+    items, caps = place.series_needs()
+    c8 = dict(chip="CH32X035C8T6", kind="oep", lines={"tx": 1, "rx": 2},
+              record={"usb": {"to": "esp32-s3", "serial": "58FA041040"}, "peer_only": True})
+    cases = place.choose_cases(c8, items, caps)
+    assert cases["usb-peer-host-media"] == "run" and cases["usb-peer"] == "run"
+    assert all(case in PEER_CASES for case, state in cases.items() if state == "run")
+    assert cases["gpio"] == cases["uart"] == "skip: the record's peer_only: this board runs the cases that need its USB peer"
+    everything = place.choose_cases(dict(c8, record={"usb": c8["record"]["usb"]}), items, caps)
+    assert everything["gpio"] == "run"
+    assert records.check_core({"peer_only": True}) == [] and records.check_core({"peer_only": "yes"}) == ["peer_only: true or false"]
+
+
 def test_a_bad_record_stops_before_the_chip_is_touched(monkeypatch, tmp_path):
     with pytest.raises(place.PlaceError, match="serial .* or, for a bridge without one, mac"):
         fake_resolve(monkeypatch, tmp_path, info=X035, record={"usb": {"to": "esp32-s3"}})

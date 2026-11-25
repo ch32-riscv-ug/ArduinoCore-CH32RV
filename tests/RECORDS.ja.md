@@ -203,7 +203,16 @@ OEP の口の欄です。spi の試験が SPI の CS に使うラベル付きの
 - この欄が無い口は、試験が自分で選びます（DUT の端子として離れた線、次にプローブのチャンネルの離れた線）。
 - 書き方: `tests/bench_record.py set <アドレス> --spi-cs pa0`。
 
-### 4.10 `note`・`updated`
+### 4.10 `peer_only`
+
+`true` のとき、その台では、USB の相手が要るケース（usb-peer 系）だけを流します。ほかのケースは skip として結果に残します。
+
+- 同じ系列の 2 枚目の板を、そこにつないだ相手のために置いているときに使います。例: X035 の x035c8t6-s3（S3 を相手に
+  つないだ板）。gpio や uart などは、Pico を相手にした x035c8t6-pico の板で流します。
+- 全台の試験では、こうした台も `--probe` に並べます。記録が、その台で流すケースを絞ります。
+- 書き方: `tests/bench_record.py set <アドレス> --peer-only true`（外すときは `--remove peer_only`）。
+
+### 4.11 `note`・`updated`
 
 - `note`: 人のためのメモです。試験は読みません。
 - `updated`: 最後に書いた日です（`YYYY-MM-DD`）。`bench_record.py set` が書くたびに入れます。

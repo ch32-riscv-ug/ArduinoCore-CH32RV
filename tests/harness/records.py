@@ -214,7 +214,10 @@ CORE_MEMBERS = {
                               "(tx: the DUT's TX into the Link; a direction not wired is left out, {} for none)"),
     "spi": (_spi, "an OEP port: the labelled line the spi tests use as CS, {cs: <pad>} - one the harness keeps away "
                   "from the SPI's lines (the test picks one by itself otherwise)"),
-    "options": (_options, "board menu values this board needs (boards.txt), under CH32_TEST_OPTIONS: {vio18: 3v3, debugspeed: low}"),
+    "options": (_options, "board menu values this board needs (boards.txt), under CH32_TEST_OPTIONS: {vio18: 3v3}"),
+    "peer_only": (lambda v, e: None if isinstance(v, bool) else e.append("peer_only: true or false"),
+                  "true: run only the cases that need this board's USB peer (usb-peer*) - a second board of a series "
+                  "kept for the peer it is wired to"),
     "note": (lambda v, e: None, "for people"),
     "updated": (lambda v, e: None if re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(v)) else e.append("updated: YYYY-MM-DD"),
                 "the day it was last written"),
