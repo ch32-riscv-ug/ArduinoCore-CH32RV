@@ -666,6 +666,8 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   それを CPOL にする。Python と Rust の verify の両方）。この run を読み直して ok。次のリリースで上げて確かめる。
   → 2026-11-25: wireskein 0.0.38 を取り込んで softspi を 2 回: V103 は 2 回とも PASS（mode の NG は出ない）、V006 は 1 回目 PASS、
   2 回目に test_shift の LSBFIRST で「mosi None」（PD7 の縁 8 つは f0 fa c0 と合って見える。[wireskein] に run を送った）。
+  → [wireskein] が直した（CS が無いとき、解析が外した名指しの線を標本の辺で直に読む）。両方の run を読み直して ok。次の
+  リリースで上げて V006 の softspi を確かめる。
 - [ ] **V006 の softspi::test_spi_peripheral で 1 ビット違う**（2026-11-25、softspi-ws038-2）: mode 0 MSBFIRST で、プローブが
   読んだのが a05a7979、DUT に渡したのが a05af979（4 バイト目の最上位ビットが 0）。1 回目は通った。前に同じ形の記録は無い。
   再発したら、取り込みでその SCK の縁と MOSI を見る。
