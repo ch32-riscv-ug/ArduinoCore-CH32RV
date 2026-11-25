@@ -12,10 +12,15 @@ CH32RV では UART と debug interface を使う複数の `Print` / `Stream` を
 
 API の buffer size、`printf()`、同時使用制約は各 library の README を正本とします。
 
-**どれを使うか:** ふつうは `Serial`（UART）か `SerialDMSeq` を勧めます。`Serial` は UART の配線が要るだけで、debug interface に
-attach しないので target に何も起きません。`SerialDMSeq` は debug の線だけで双方向に使え、通し番号と CRC-8 で取りこぼしや
-重複が分かります。`SerialSDI`（一方向、WCH-LinkE だけ）、`SerialDMDATA`（番号が無く重複を見分けられない）、`SerialRTT`（poll
-のたびに短時間 halt する）は、それが要る事情があるときに選びます。
+**どれを使うか:**
+
+1. **UART が使えるなら `Serial`。** debug interface に attach しないので、target に何も起きません。
+2. **UART が使えないなら `SerialDMSeq`。** debug の線だけで双方向に使え、通し番号と CRC-8 で取りこぼしや重複が分かります。
+3. **ログを出すだけ（一方向）で、大きさを最小にしたいなら `SerialSDI`。** 例のスケッチ（X035）で `SerialSDI` 1264 B、
+   `SerialDMSeq` 2392 B でした。PC からスケッチへは送れません。
+
+`SerialDMDATA`（ch32fun の minichlink と同じ書き方。番号が無く、重複や欠けを見分けられない）と `SerialRTT`（poll のたびに
+短時間 halt する）は、それが要る事情があるときに選びます。
 
 ## Arduino IDE / CLI
 
