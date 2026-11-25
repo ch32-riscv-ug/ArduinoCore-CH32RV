@@ -630,6 +630,14 @@ bool CH32RVPwmSequence::play(const uint16_t *duties, size_t count, bool loop)
     if (_dma) {
         quiesce(this, _timer, _channel);
     }
+    /* Start on a period boundary the timer is told of, not wherever the
+     * running counter is: with the update request enabled mid-period, V203
+     * put one extra period of the first bit's duty before the data (an extra
+     * WS2812 bit, every time with 48 bits, never with 24; 2026-11-25). Duty 0 now (UG: the counter restarts
+     * with the line low), then UG again with the request on: the DMA puts the
+     * first duty in the preload and a whole period of 0 goes before it. */
+    setCompare(_base, _channel, 0, _wide);
+    CH32RV_TIM_SWEVGR(_base) = CH32RV_TIM_SWEVGR_UG;
     if (!ch32rv_dma_claim(_line.dma, _line.channel)) {
         return false;                  /* another holds the channel (a USART's DMA, on H41x another sequence) */
     }
@@ -643,5 +651,6 @@ bool CH32RVPwmSequence::play(const uint16_t *duties, size_t count, bool loop)
                               (_wide ? CH32RV_DMA_CFGR_PSIZE_32 : (1u << 8)) | CH32RV_DMA_CFGR_PL(2) |
                               (loop ? CH32RV_DMA_CFGR_CIRC : 0u) | CH32RV_DMA_CFGR_EN;
     CH32RV_TIM_DMAINTENR(_base) |= DMAINTENR_UDE;
+    CH32RV_TIM_SWEVGR(_base) = CH32RV_TIM_SWEVGR_UG;
     return true;
 }

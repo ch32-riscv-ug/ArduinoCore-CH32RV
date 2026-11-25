@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Fix: `CH32RVPwmSequence::play()` could put one extra period of the first duty before the data (an extra WS2812 bit; seen on V203 with 48 bits every time). It now starts the sequence on an update event of its own.
+- (JA) 修正: `CH32RVPwmSequence::play()` が、データの前に最初の duty の周期を 1 つ余分に出すことがあった（WS2812 のビットが 1 つ増える。V203 で 48 ビットのとき毎回）。自分で起こした更新のイベントから始めるようにした。
 - (EN) Fix: H417 / H416 at SuperSpeed lost isochronous IN packets to link errors on some trainings (up to about 1 % of packets): the transmitter's de-emphasis is now 6 dB (as X315), not 3.5 dB. On the bench it took the PC's transaction errors from a median of 54 to 0 per 40 320 packets.
 - (JA) 修正: H417 / H416 の SuperSpeed で、リンクの訓練によっては等時の IN のパケットがリンクの誤りで失われていた（最大でパケットの約 1 %）。送信の de-emphasis を 3.5 dB から 6 dB にした（X315 と同じ）。ベンチでは、40 320 パケットあたりの PC の伝送誤りが中央値 54 から 0 になった。
 - (EN) Fix: SPI three-wire `receive()` timed its stop with a counted loop, whose speed moves with where the code lands; it could clock two bits too many (seen on X035 once functions were folded). It now waits on SysTick.

@@ -661,6 +661,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   全部正しく、WireSkein の判定が mode 0 ではなく 3（cpol 1）。shiftIn() は SCK の High の間に digitalRead() が入り、High と
   Low の長さが近いので、極性の決め方が揺れるとみる。shiftOut / shiftIn は delayMicroseconds() を使わない。試験の側で極性を
   固定して渡すか、[wireskein] に cpol の決め方を聞く。
+  → 2026-11-25: V103 で再び（full-20261124-icf、LSBFIRST の区間、decoded_mode 0・cpol 1）。[wireskein] に report を添えて
+  cpol の決め方を聞いた。→ [wireskein] が直した（CS が無いときは、最初の変化の前と最後の変化の後の SCK の水準がそろえば
+  それを CPOL にする。Python と Rust の verify の両方）。この run を読み直して ok。次のリリースで上げて確かめる。
 - [ ] **USBSS の IN の流れで、まれに 1〜9 パケット（1 KB 単位）が化ける**（2026-11-22、上の測定の途中で見えた）: Vendor の
   writeDirect() で 32 KB を続けて送り、PC の libusb の非同期 8 本で読むと、5 秒（約 7 万ブロック）の回のうち、化けたブロックが
   0〜2 個出る回がある。共有 SRAM（ヒープ）のバッファでも DTCM のバッファでも出て、出ない日（10 回ずつ 0）もある。化けは
