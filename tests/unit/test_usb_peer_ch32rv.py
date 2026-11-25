@@ -121,7 +121,7 @@ def test_a_peer_on_a_wch_link_takes_its_record_from_the_environment(monkeypatch,
 TARGET = dict(fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6", chip="CH32H417QEU6", f_cpu=400_000_000,
               upload_port=DUT, usb_peer="ch32rv", usb_peer_address=PEER, usb_peer_controller="super_speed",
               usb_peer_ch32rv_controller="super_speed", usb_peer_chip="CH32H417QEU6",
-              usb_peer_fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6,debugspeed=low", usb_link_speed=3)
+              usb_peer_fqbn="ch32-riscv-ug:ch32rv:CH32H417:pnum=CH32H417QEU6,vio18=3v3", usb_link_speed=3)
 
 
 def test_the_runner_stages_the_peer_sketch_for_its_board(tmp_path):
@@ -132,7 +132,7 @@ def test_the_runner_stages_the_peer_sketch_for_its_board(tmp_path):
     assert (peer / "peer_ch32rv.ino").exists() and (peer / "peer_fat.h").exists()
     yaml = (peer / "sketch.yaml").read_text()
     assert f'fqbn: "{TARGET["usb_peer_fqbn"]}"' in yaml and "chip: CH32H417QEU6" in yaml
-    assert "source: dmseq" in yaml and "speed: low" in yaml and "default_profile: ch32rv" in yaml
+    assert "source: dmseq" in yaml and "speed:" not in yaml and "default_profile: ch32rv" in yaml
     assert (peer / "build_opt.h").read_text() == "-DPEER_USB_HOST_PORT=CH32RV_USB_HOST_PORT_SUPER_SPEED\n"
     assert staged["usb_peer_port"] == PEER
     # The DUT's own controller, as before.

@@ -161,7 +161,7 @@ def main(argv=None):
             s.add_argument("--defect", action="append", help="JSON: {id, lose: [...], why}; repeat for each")
             s.add_argument("--spi-cs", help="<pad>: the labelled line the spi tests use as CS (away from the SPI's lines in the harness)")
             s.add_argument("--option", action="append",
-                           help="<menu>=<value> of boards.txt the board needs (vio18=3v3, debugspeed=low); repeat for each")
+                           help="<menu>=<value> of boards.txt the board needs (vio18=3v3); repeat for each")
             s.add_argument("--note")
             s.add_argument("--remove", action="append", help="a core record member to drop")
     args = ap.parse_args(argv)

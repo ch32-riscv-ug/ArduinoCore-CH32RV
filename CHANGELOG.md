@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) The Debug Speed menu is gone: it was added for a SuperSpeed fault on H417 that turned out to be the USB driver's, and no board needs a slower debug clock. `ch32rv --speed` stays for the command line.
+- (JA) Debug Speed のメニューを外した。H417 の SuperSpeed の不具合のために足したが、原因は USB のドライバーだった。遅いデバッグのクロックが要るボードも無い。コマンドラインの `ch32rv --speed` はそのまま。
 - (EN) CPU Clock menu: V305 / V307 / V317 say which USB each entry keeps ("USB FS and HS", or "USB HS only, no USB FS" at 72 and 8 MHz, where the system PLL cannot give FS its 48 MHz). V303, which has no USB HS, said "USB HS only" there; it now says "no USB", as V20x.
 - (JA) CPU Clock のメニュー: V305 / V307 / V317 は、項目ごとに使える USB を書くようにした（「USB FS and HS」、72 / 8 MHz は FS の 48 MHz を作れないので「USB HS only, no USB FS」）。USB HS の無い V303 がそこで「USB HS only」と出ていたのを、V20x と同じ「no USB」にした。
 - (EN) Fix: `CH32RVPwmSequence::play()` could put one extra period of the first duty before the data (an extra WS2812 bit; seen on V203 with 48 bits every time). It now starts the sequence on an update event of its own.

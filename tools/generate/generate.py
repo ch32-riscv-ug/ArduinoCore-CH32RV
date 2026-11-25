@@ -270,7 +270,6 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.rstpin=Reset Pin\n"
                + "menu.iwdg=Watchdog\n"
                + "menu.erase=Erase Flash\n"
-               + "menu.debugspeed=Debug Speed\n"
                + "menu.monsrc=Monitor Source\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
@@ -566,21 +565,6 @@ def erase_menu(board: str) -> list[str]:
     return lines
 
 
-# The SWD / SDI clock an upload over a debug probe runs at (platform.txt
-# upload.speed_args, ch32rv --speed). High is ch32rv's default and empty here.
-# Medium / Low are for links that fail at the default: long or noisy debug
-# wires, pads shared with other traces. Added for the H417 evaluation board
-# (SWD on PB8 / PB9 seemed to break SuperSpeed enumeration, 2026-11-13); that
-# turned out to be the USBSS driver's EP0 status stage, and the menu stays as
-# a general setting (the user, 2026-11-14). An upload.* property, so changing
-# it rebuilds nothing.
-DEBUG_SPEED_MENU = (
-    ("high", "High (default)", ""),
-    ("medium", "Medium", "--speed medium"),
-    ("low", "Low", "--speed low"),
-)
-
-
 def stack_default(ram: int, loadcode: bool) -> int:
     """The stack the linker reserves above the heap (platform.txt's
     --defsym=__stack_size). The heap may grow up to the reservation, so a
@@ -649,19 +633,6 @@ def monitor_source_menu(board: str) -> list[str]:
         lines.append(f"{board}.menu.monsrc.{key}={label}")
         for protocol, source in sources.items():
             lines.append(f"{board}.menu.monsrc.{key}.monitor_port.{protocol}.source={source}")
-    return lines
-
-
-def debug_speed_menu(board: str) -> list[str]:
-    """The monitor gets the same speed (ch32rv's pluggable monitor `speed`, from
-    ch32rv 0.32): a debug-module console reads over the same pads all the time."""
-    lines = []
-    for key, label, args in DEBUG_SPEED_MENU:
-        lines.append(f"{board}.menu.debugspeed.{key}={label}")
-        lines.append(f"{board}.menu.debugspeed.{key}.upload.speed_args={args}")
-        if args:
-            for protocol in ("wchlink", "oep"):
-                lines.append(f"{board}.menu.debugspeed.{key}.monitor_port.{protocol}.speed={key}")
     return lines
 
 
@@ -6230,7 +6201,6 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append("")
     lines += erase_menu(board)
     lines.append("")
-    lines += debug_speed_menu(board)
     lines.append("")
     lines += monitor_source_menu(board)
     lines.append("")

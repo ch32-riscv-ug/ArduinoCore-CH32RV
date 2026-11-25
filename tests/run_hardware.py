@@ -406,13 +406,6 @@ def pico_tinyusb():
     return library
 
 
-def monitor_speed(fqbn):
-    """The port_config speed line for the Debug Speed menu's value in the fqbn (written out so the test does not depend
-    on the monitor client reading board defaults), else nothing."""
-    m = re.search(r"[:,]debugspeed=(\w+)", fqbn)
-    return f"      speed: {m.group(1)}\n" if m else ""
-
-
 def stage_ch32rv_peer(directory, case, target):
     """peer_ch32rv/ beside the case: the peer's sketch, a sketch.yaml for the peer's board (its fqbn and chip, as
     place.peer_place resolved them) and a build_opt.h naming the controller of it the cable reaches - the host port
@@ -424,7 +417,7 @@ def stage_ch32rv_peer(directory, case, target):
     fqbn, controller = target["usb_peer_fqbn"], target["usb_peer_ch32rv_controller"]
     (peer / "sketch.yaml").write_text(
         f"profiles:\n  ch32rv:\n    fqbn: {json.dumps(fqbn)}\n"
-        f"    port_config:\n      source: dmseq\n      chip: {target['usb_peer_chip']}\n" + monitor_speed(fqbn)
+        f"    port_config:\n      source: dmseq\n      chip: {target['usb_peer_chip']}\n"
         + "default_profile: ch32rv\n")
     if case in places.PEER_DEVICE_CASES:
         if controller not in USB_HOST_PORTS:
@@ -525,8 +518,6 @@ def stage_case(work, name, case, target):
             + ("      baudrate: 115200\n" if uart else "")
             +
             f"      chip: {target['chip']}\n"
-            # The Debug Speed menu's value for the monitor too.
-            + monitor_speed(target["fqbn"])
         )
         flag = CONSOLE_FLAGS.get(case)
         (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n'

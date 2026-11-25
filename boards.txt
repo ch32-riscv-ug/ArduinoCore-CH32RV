@@ -30,7 +30,6 @@ menu.ramsplit=Flash / RAM Split
 menu.rstpin=Reset Pin
 menu.iwdg=Watchdog
 menu.erase=Erase Flash
-menu.debugspeed=Debug Speed
 menu.monsrc=Monitor Source
 menu.stack=Stack Size
 menu.stackcheck=Stack Check
@@ -192,16 +191,6 @@ CH32V002.menu.erase.keep.upload.erase_args=
 CH32V002.menu.erase.chip=Whole flash: the stored data too
 CH32V002.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V002.menu.debugspeed.high=High (default)
-CH32V002.menu.debugspeed.high.upload.speed_args=
-CH32V002.menu.debugspeed.medium=Medium
-CH32V002.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V002.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V002.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V002.menu.debugspeed.low=Low
-CH32V002.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V002.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V002.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V002.menu.monsrc.uart=UART (Serial) (default)
 CH32V002.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -419,16 +408,6 @@ CH32V003.menu.erase.keep.upload.erase_args=
 CH32V003.menu.erase.chip=Whole flash: the stored data too
 CH32V003.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V003.menu.debugspeed.high=High (default)
-CH32V003.menu.debugspeed.high.upload.speed_args=
-CH32V003.menu.debugspeed.medium=Medium
-CH32V003.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V003.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V003.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V003.menu.debugspeed.low=Low
-CH32V003.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V003.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V003.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V003.menu.monsrc.uart=UART (Serial) (default)
 CH32V003.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -620,16 +599,6 @@ CH32V004.menu.erase.keep.upload.erase_args=
 CH32V004.menu.erase.chip=Whole flash: the stored data too
 CH32V004.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V004.menu.debugspeed.high=High (default)
-CH32V004.menu.debugspeed.high.upload.speed_args=
-CH32V004.menu.debugspeed.medium=Medium
-CH32V004.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V004.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V004.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V004.menu.debugspeed.low=Low
-CH32V004.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V004.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V004.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V004.menu.monsrc.uart=UART (Serial) (default)
 CH32V004.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -847,16 +816,6 @@ CH32V005.menu.erase.keep.upload.erase_args=
 CH32V005.menu.erase.chip=Whole flash: the stored data too
 CH32V005.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V005.menu.debugspeed.high=High (default)
-CH32V005.menu.debugspeed.high.upload.speed_args=
-CH32V005.menu.debugspeed.medium=Medium
-CH32V005.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V005.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V005.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V005.menu.debugspeed.low=Low
-CH32V005.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V005.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V005.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V005.menu.monsrc.uart=UART (Serial) (default)
 CH32V005.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -1142,16 +1101,6 @@ CH32V006.menu.erase.keep.upload.erase_args=
 CH32V006.menu.erase.chip=Whole flash: the stored data too
 CH32V006.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V006.menu.debugspeed.high=High (default)
-CH32V006.menu.debugspeed.high.upload.speed_args=
-CH32V006.menu.debugspeed.medium=Medium
-CH32V006.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V006.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V006.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V006.menu.debugspeed.low=Low
-CH32V006.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V006.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V006.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V006.menu.monsrc.uart=UART (Serial) (default)
 CH32V006.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -1409,16 +1358,6 @@ CH32V007.menu.erase.keep.upload.erase_args=
 CH32V007.menu.erase.chip=Whole flash: the stored data too
 CH32V007.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V007.menu.debugspeed.high=High (default)
-CH32V007.menu.debugspeed.high.upload.speed_args=
-CH32V007.menu.debugspeed.medium=Medium
-CH32V007.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V007.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V007.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V007.menu.debugspeed.low=Low
-CH32V007.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V007.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V007.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V007.menu.monsrc.uart=UART (Serial) (default)
 CH32V007.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -1668,16 +1607,6 @@ CH32V103.menu.erase.keep.upload.erase_args=
 CH32V103.menu.erase.chip=Whole flash: the stored data too
 CH32V103.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V103.menu.debugspeed.high=High (default)
-CH32V103.menu.debugspeed.high.upload.speed_args=
-CH32V103.menu.debugspeed.medium=Medium
-CH32V103.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V103.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V103.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V103.menu.debugspeed.low=Low
-CH32V103.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V103.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V103.menu.monsrc.uart=UART (Serial) (default)
 CH32V103.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -2014,16 +1943,6 @@ CH32V203.menu.erase.keep.upload.erase_args=
 CH32V203.menu.erase.chip=Whole flash: the stored data too
 CH32V203.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V203.menu.debugspeed.high=High (default)
-CH32V203.menu.debugspeed.high.upload.speed_args=
-CH32V203.menu.debugspeed.medium=Medium
-CH32V203.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V203.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V203.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V203.menu.debugspeed.low=Low
-CH32V203.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V203.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V203.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V203.menu.monsrc.uart=UART (Serial) (default)
 CH32V203.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -2279,16 +2198,6 @@ CH32V205.menu.erase.keep.upload.erase_args=
 CH32V205.menu.erase.chip=Whole flash: the stored data too
 CH32V205.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V205.menu.debugspeed.high=High (default)
-CH32V205.menu.debugspeed.high.upload.speed_args=
-CH32V205.menu.debugspeed.medium=Medium
-CH32V205.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V205.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V205.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V205.menu.debugspeed.low=Low
-CH32V205.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V205.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V205.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V205.menu.monsrc.uart=UART (Serial) (default)
 CH32V205.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -2718,16 +2627,6 @@ CH32V208.menu.erase.keep.upload.erase_args=
 CH32V208.menu.erase.chip=Whole flash: the stored data too
 CH32V208.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V208.menu.debugspeed.high=High (default)
-CH32V208.menu.debugspeed.high.upload.speed_args=
-CH32V208.menu.debugspeed.medium=Medium
-CH32V208.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V208.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V208.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V208.menu.debugspeed.low=Low
-CH32V208.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V208.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V208.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V208.menu.monsrc.uart=UART (Serial) (default)
 CH32V208.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -3022,16 +2921,6 @@ CH32V303.menu.erase.keep.upload.erase_args=
 CH32V303.menu.erase.chip=Whole flash: the stored data too
 CH32V303.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V303.menu.debugspeed.high=High (default)
-CH32V303.menu.debugspeed.high.upload.speed_args=
-CH32V303.menu.debugspeed.medium=Medium
-CH32V303.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V303.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V303.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V303.menu.debugspeed.low=Low
-CH32V303.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V303.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V303.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V303.menu.monsrc.uart=UART (Serial) (default)
 CH32V303.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -3353,16 +3242,6 @@ CH32V305.menu.erase.keep.upload.erase_args=
 CH32V305.menu.erase.chip=Whole flash: the stored data too
 CH32V305.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V305.menu.debugspeed.high=High (default)
-CH32V305.menu.debugspeed.high.upload.speed_args=
-CH32V305.menu.debugspeed.medium=Medium
-CH32V305.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V305.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V305.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V305.menu.debugspeed.low=Low
-CH32V305.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V305.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V305.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V305.menu.monsrc.uart=UART (Serial) (default)
 CH32V305.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -3682,16 +3561,6 @@ CH32V307.menu.erase.keep.upload.erase_args=
 CH32V307.menu.erase.chip=Whole flash: the stored data too
 CH32V307.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V307.menu.debugspeed.high=High (default)
-CH32V307.menu.debugspeed.high.upload.speed_args=
-CH32V307.menu.debugspeed.medium=Medium
-CH32V307.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V307.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V307.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V307.menu.debugspeed.low=Low
-CH32V307.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V307.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V307.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V307.menu.monsrc.uart=UART (Serial) (default)
 CH32V307.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -4018,16 +3887,6 @@ CH32V317.menu.erase.keep.upload.erase_args=
 CH32V317.menu.erase.chip=Whole flash: the stored data too
 CH32V317.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V317.menu.debugspeed.high=High (default)
-CH32V317.menu.debugspeed.high.upload.speed_args=
-CH32V317.menu.debugspeed.medium=Medium
-CH32V317.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V317.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V317.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V317.menu.debugspeed.low=Low
-CH32V317.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V317.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V317.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V317.menu.monsrc.uart=UART (Serial) (default)
 CH32V317.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -4345,16 +4204,6 @@ CH32V407.menu.erase.keep.upload.erase_args=
 CH32V407.menu.erase.chip=Whole flash: the stored data too
 CH32V407.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V407.menu.debugspeed.high=High (default)
-CH32V407.menu.debugspeed.high.upload.speed_args=
-CH32V407.menu.debugspeed.medium=Medium
-CH32V407.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V407.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V407.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V407.menu.debugspeed.low=Low
-CH32V407.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V407.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V407.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V407.menu.monsrc.uart=UART (Serial) (default)
 CH32V407.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -4685,16 +4534,6 @@ CH32V467.menu.erase.keep.upload.erase_args=
 CH32V467.menu.erase.chip=Whole flash: the stored data too
 CH32V467.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32V467.menu.debugspeed.high=High (default)
-CH32V467.menu.debugspeed.high.upload.speed_args=
-CH32V467.menu.debugspeed.medium=Medium
-CH32V467.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32V467.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32V467.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32V467.menu.debugspeed.low=Low
-CH32V467.menu.debugspeed.low.upload.speed_args=--speed low
-CH32V467.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32V467.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32V467.menu.monsrc.uart=UART (Serial) (default)
 CH32V467.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -4991,16 +4830,6 @@ CH32X033.menu.erase.keep.upload.erase_args=
 CH32X033.menu.erase.chip=Whole flash: the stored data too
 CH32X033.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32X033.menu.debugspeed.high=High (default)
-CH32X033.menu.debugspeed.high.upload.speed_args=
-CH32X033.menu.debugspeed.medium=Medium
-CH32X033.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32X033.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32X033.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32X033.menu.debugspeed.low=Low
-CH32X033.menu.debugspeed.low.upload.speed_args=--speed low
-CH32X033.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32X033.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X033.menu.monsrc.uart=UART (Serial) (default)
 CH32X033.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -5267,16 +5096,6 @@ CH32X035.menu.erase.keep.upload.erase_args=
 CH32X035.menu.erase.chip=Whole flash: the stored data too
 CH32X035.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32X035.menu.debugspeed.high=High (default)
-CH32X035.menu.debugspeed.high.upload.speed_args=
-CH32X035.menu.debugspeed.medium=Medium
-CH32X035.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32X035.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32X035.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32X035.menu.debugspeed.low=Low
-CH32X035.menu.debugspeed.low.upload.speed_args=--speed low
-CH32X035.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32X035.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X035.menu.monsrc.uart=UART (Serial) (default)
 CH32X035.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -5510,16 +5329,6 @@ CH32X305.menu.erase.keep.upload.erase_args=
 CH32X305.menu.erase.chip=Whole flash: the stored data too
 CH32X305.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32X305.menu.debugspeed.high=High (default)
-CH32X305.menu.debugspeed.high.upload.speed_args=
-CH32X305.menu.debugspeed.medium=Medium
-CH32X305.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32X305.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32X305.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32X305.menu.debugspeed.low=Low
-CH32X305.menu.debugspeed.low.upload.speed_args=--speed low
-CH32X305.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32X305.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X305.menu.monsrc.uart=UART (Serial) (default)
 CH32X305.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -5989,16 +5798,6 @@ CH32X315.menu.erase.keep.upload.erase_args=
 CH32X315.menu.erase.chip=Whole flash: the stored data too
 CH32X315.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32X315.menu.debugspeed.high=High (default)
-CH32X315.menu.debugspeed.high.upload.speed_args=
-CH32X315.menu.debugspeed.medium=Medium
-CH32X315.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32X315.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32X315.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32X315.menu.debugspeed.low=Low
-CH32X315.menu.debugspeed.low.upload.speed_args=--speed low
-CH32X315.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32X315.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32X315.menu.monsrc.uart=UART (Serial) (default)
 CH32X315.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -6626,16 +6425,6 @@ CH32L103.menu.erase.keep.upload.erase_args=
 CH32L103.menu.erase.chip=Whole flash: the stored data too
 CH32L103.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32L103.menu.debugspeed.high=High (default)
-CH32L103.menu.debugspeed.high.upload.speed_args=
-CH32L103.menu.debugspeed.medium=Medium
-CH32L103.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32L103.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32L103.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32L103.menu.debugspeed.low=Low
-CH32L103.menu.debugspeed.low.upload.speed_args=--speed low
-CH32L103.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32L103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32L103.menu.monsrc.uart=UART (Serial) (default)
 CH32L103.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -6901,16 +6690,6 @@ CH32M007.menu.erase.keep.upload.erase_args=
 CH32M007.menu.erase.chip=Whole flash: the stored data too
 CH32M007.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32M007.menu.debugspeed.high=High (default)
-CH32M007.menu.debugspeed.high.upload.speed_args=
-CH32M007.menu.debugspeed.medium=Medium
-CH32M007.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32M007.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32M007.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32M007.menu.debugspeed.low=Low
-CH32M007.menu.debugspeed.low.upload.speed_args=--speed low
-CH32M007.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32M007.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M007.menu.monsrc.uart=UART (Serial) (default)
 CH32M007.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -7147,16 +6926,6 @@ CH32M030.menu.erase.keep.upload.erase_args=
 CH32M030.menu.erase.chip=Whole flash: the stored data too
 CH32M030.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32M030.menu.debugspeed.high=High (default)
-CH32M030.menu.debugspeed.high.upload.speed_args=
-CH32M030.menu.debugspeed.medium=Medium
-CH32M030.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32M030.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32M030.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32M030.menu.debugspeed.low=Low
-CH32M030.menu.debugspeed.low.upload.speed_args=--speed low
-CH32M030.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32M030.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M030.menu.monsrc.uart=UART (Serial) (default)
 CH32M030.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -7356,16 +7125,6 @@ CH32M103.menu.erase.keep.upload.erase_args=
 CH32M103.menu.erase.chip=Whole flash: the stored data too
 CH32M103.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32M103.menu.debugspeed.high=High (default)
-CH32M103.menu.debugspeed.high.upload.speed_args=
-CH32M103.menu.debugspeed.medium=Medium
-CH32M103.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32M103.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32M103.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32M103.menu.debugspeed.low=Low
-CH32M103.menu.debugspeed.low.upload.speed_args=--speed low
-CH32M103.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32M103.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32M103.menu.monsrc.uart=UART (Serial) (default)
 CH32M103.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -7597,16 +7356,6 @@ CH32H415.menu.erase.keep.upload.erase_args=
 CH32H415.menu.erase.chip=Whole flash: the stored data too
 CH32H415.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32H415.menu.debugspeed.high=High (default)
-CH32H415.menu.debugspeed.high.upload.speed_args=
-CH32H415.menu.debugspeed.medium=Medium
-CH32H415.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32H415.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32H415.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32H415.menu.debugspeed.low=Low
-CH32H415.menu.debugspeed.low.upload.speed_args=--speed low
-CH32H415.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32H415.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H415.menu.monsrc.uart=UART (Serial) (default)
 CH32H415.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -8004,16 +7753,6 @@ CH32H416.menu.erase.keep.upload.erase_args=
 CH32H416.menu.erase.chip=Whole flash: the stored data too
 CH32H416.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32H416.menu.debugspeed.high=High (default)
-CH32H416.menu.debugspeed.high.upload.speed_args=
-CH32H416.menu.debugspeed.medium=Medium
-CH32H416.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32H416.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32H416.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32H416.menu.debugspeed.low=Low
-CH32H416.menu.debugspeed.low.upload.speed_args=--speed low
-CH32H416.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32H416.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H416.menu.monsrc.uart=UART (Serial) (default)
 CH32H416.menu.monsrc.uart.monitor_port.serial.source=uart
@@ -8355,16 +8094,6 @@ CH32H417.menu.erase.keep.upload.erase_args=
 CH32H417.menu.erase.chip=Whole flash: the stored data too
 CH32H417.menu.erase.chip.upload.erase_args=--erase chip
 
-CH32H417.menu.debugspeed.high=High (default)
-CH32H417.menu.debugspeed.high.upload.speed_args=
-CH32H417.menu.debugspeed.medium=Medium
-CH32H417.menu.debugspeed.medium.upload.speed_args=--speed medium
-CH32H417.menu.debugspeed.medium.monitor_port.wchlink.speed=medium
-CH32H417.menu.debugspeed.medium.monitor_port.oep.speed=medium
-CH32H417.menu.debugspeed.low=Low
-CH32H417.menu.debugspeed.low.upload.speed_args=--speed low
-CH32H417.menu.debugspeed.low.monitor_port.wchlink.speed=low
-CH32H417.menu.debugspeed.low.monitor_port.oep.speed=low
 
 CH32H417.menu.monsrc.uart=UART (Serial) (default)
 CH32H417.menu.monsrc.uart.monitor_port.serial.source=uart
