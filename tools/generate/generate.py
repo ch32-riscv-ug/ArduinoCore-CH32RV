@@ -5968,7 +5968,10 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
     # What the IDE's serial monitor opens with. The platform specification puts
     # port settings in boards.txt, per board, and the built-in monitor's own
     # default is 9600 - which is not what a single sketch in this tree uses.
-    lines.append(f"{board}.monitor_port.serial.baudrate={MONITOR_BAUD}")
+    # wchlink:// and oep:// carry the UART too (the Link's CDC, the probe's
+    # fixture-uart), and ch32rv's own default there is 9600 as well.
+    for protocol in ("serial", "wchlink", "oep"):
+        lines.append(f"{board}.monitor_port.{protocol}.baudrate={MONITOR_BAUD}")
     # A bare `upload -p <port>` (the IDE's Upload button) needs a protocol, or
     # arduino-cli asks for a programmer; platform.txt then picks the tool by the
     # port's protocol (upload.tool.serial / wchlink / oep / hid). Every board,
