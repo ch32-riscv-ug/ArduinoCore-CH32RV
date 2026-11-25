@@ -671,8 +671,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める）**: IDE で source を選べないので、既定を「取れるものは一緒に
   取る」mix にしたい。受信はどこから来たか区別しなくてよく、送信は届く相手だけでよい。同じ仕組みで排他の組は、取れるほうを
   取る。利用者への推奨は UART か DMSeq だが、mix はできるだけ広く取る。
-  - 組は 3 つ（[ch32rv]）: UART 系（OEP の fixture-uart、WCH-Link の CDC。LinkE の SDI はこの CDC に混ざって来る）、郵便受け系
-    （SDI・DMDATA・DMSeq は Debug Module の DATA0/1 を使い、同時には 1 つ）、RTT（RAM のリング。poll のたびに hart を止める）。
+  - 組は 3 つ（[ch32rv]）: UART 系（OEP の fixture-uart、WCH-Link の CDC）、郵便受け系（SDI・DMDATA・DMSeq は Debug Module の
+    DATA0/1 を使い、同時には 1 つ）、RTT（RAM のリング。poll のたびに hart を止める）。
+  - LinkE の SDI の転送は Link の設定（`monitor sdi on`）で、有効にすると LinkE が DATA0 を約 30 µs ごとに読んで 0 を書き戻し、
+    出力を UART と同じ CDC に流す。DMSeq / DMDATA の語を横取りし、CDC を読まずにいると溜まった SDI が UART の byte の代わりに
+    届いた（LinkE 2.22）。mix では SDI の転送は切ったままにし、ch32rv が DATA0 を DMI で直接読んで SDI の書き方も解く。
   - OEP（実験、WeAct の X035F8U6 / oep-1451、常駐外）: monitor を 3 つ同時に開き、fixture-uart・dmseq・rtt が 15 秒で 30 回ずつ
     欠けずに届いた。送信も uart / dmseq の両方向で届いた。郵便受け系の仕組みを間違えて開くと黙るだけで target は止まらず、後から
     正しい仕組みで続きが読めた（順に試して見分けられる）。OEP の attach は target を止めず副作用が無い。RTT は ch32rv が host 側で
