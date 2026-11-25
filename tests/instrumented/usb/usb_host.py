@@ -76,13 +76,32 @@ class PcUsbHost:
             time.sleep(0.02)
         return False
 
-    def device(self):
+    def device(self, timeout=2):
+        """The application device at this port, through libusb. libusb learns of a new device from udev, after sysfs
+        shows it: right after an enumeration (which wait_ids() sees in sysfs) its list can still lack the device, so
+        look again for up to `timeout` seconds (2026-11-25: restart rounds failed on that gap, the kernel had the
+        device at SuperSpeed)."""
         bus, ports = self.topology.split("-", 1)
         path = tuple(int(p) for p in ports.split("."))
-        for dev in usb.core.find(find_all=True, idVendor=0x1209, idProduct=0x0001):
-            if dev.bus == int(bus) and dev.port_numbers == path:
-                return dev
-        raise AssertionError("application device not found at " + self.topology)
+        deadline = time.monotonic() + timeout
+        while True:
+            for dev in usb.core.find(find_all=True, idVendor=0x1209, idProduct=0x0001):
+                if dev.bus == int(bus) and dev.port_numbers == path:
+                    return dev
+            if time.monotonic() >= deadline:
+                raise AssertionError("application device not found at " + self.topology)
+            time.sleep(0.05)
+
+    def wait_reenumerated(self, devnum, timeout):
+        """True once the port holds a device numbered other than `devnum` (the one before a reset): the host saw the
+        old one go and enumerated again. Until then sysfs still describes the old device."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            now = self.devnum()
+            if now is not None and now != devnum:
+                return True
+            time.sleep(0.02)
+        return False
 
     def product(self):
         try:

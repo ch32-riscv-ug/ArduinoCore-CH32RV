@@ -410,8 +410,13 @@ def test_usb_ss_enumeration_after_restart(dut, record_property):
     host = _ready(dut)
     speeds, wrong = [], []
     for round_ in range(RESTARTS):
+        before = host.devnum()
         dut.write("restart")
         dut.expect(rb"STARTUP", timeout=15)
+        if not host.wait_reenumerated(before, 10):
+            wrong.append(f"round {round_}: the host did not enumerate the DUT again at {host.topology} "
+                         f"(device number {before} -> {host.devnum()})")
+            break
         host = _ready(dut)
         dev = host.device()
         speeds.append(dev.speed)
