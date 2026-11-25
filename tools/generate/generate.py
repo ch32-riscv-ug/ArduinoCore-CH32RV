@@ -568,11 +568,12 @@ def erase_menu(board: str) -> list[str]:
 
 # The SWD / SDI clock an upload over a debug probe runs at (platform.txt
 # upload.speed_args, ch32rv --speed). High is ch32rv's default and empty here.
-# Low is for a board whose debug pads share traces with something fast: the
-# H417 evaluation board's PB8 / PB9 are also its USB3-A connector's USB 2.0
-# pair, and SWD at high speed during SuperSpeed enumeration broke it (6-2,
-# 2026-11-13: error -110 / no BOS in 1 of 2 at high, 0 of 2 at low). An
-# upload.* property, so changing it rebuilds nothing.
+# Medium / Low are for links that fail at the default: long or noisy debug
+# wires, pads shared with other traces. Added for the H417 evaluation board
+# (SWD on PB8 / PB9 seemed to break SuperSpeed enumeration, 2026-11-13); that
+# turned out to be the USBSS driver's EP0 status stage, and the menu stays as
+# a general setting (the user, 2026-11-14). An upload.* property, so changing
+# it rebuilds nothing.
 DEBUG_SPEED_MENU = (
     ("high", "High (default)", ""),
     ("medium", "Medium", "--speed medium"),
