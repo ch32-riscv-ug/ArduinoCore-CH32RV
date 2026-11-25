@@ -686,6 +686,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     決め直し）で、送れていない入力は捨てる。
   - [ch32rv] の 4 点も承認: WCH-Link は attach → 再起動 → 読む、WCH-Link は DATA0 を 1 つの読み手で語の形から見分ける（OEP は順に
     試す）、RTT は開いた後と DMSeq の SYN の後の数秒だけ探す、`[ch32rv monitor] auto: uart + dmseq` のような状態の行。
+  - ch32rv 7100e87（リリース前、2026-11-26）の確認: [ch32rv] が V307・WeAct X035・M030 で、私が常駐の V203（OEP、rx/tx の
+    ラベルあり）と V307 で試した。V203 で fixture-uart + dmseq + rtt が一緒に読めた（30 秒で各 60 行）。ping は最後に出力が来た
+    rtt に送られ、3 経路に ECHO が返った。再起動の後も続いた。不具合 2 つを [ch32rv] に返した: (1) スケッチの再起動で郵便受けの
+    種類が変わっても選び直さない（OEP・WCH-Link とも。再起動ごとに DMSeq → SDI → DMDATA と変える mbswap で、dmdata のまま）、
+    (2) V307 の DMDATA で、行の途中に uart の行が入る（100 ms で途中の行を出すため）。arduino monitor の wchlink / oep の
+    ボーレートの既定が 9600 で UART が化けたのは、コアの monitor_port の既定で直した（128899e5）。
   - コアの側（ch32rv のリリースの後）: Monitor Source に `auto` を足して既定に、`sdi-forward`（LinkE の転送）を足す、SDI は転送無しの
     経路になる旨と auto を docs/debug-output.ja.md に書く。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
