@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) The Erase Flash menu is now "Erase All Flash Before Sketch Upload", Disabled (default) / Enabled, as arduino-esp32's: the sketch's own pages are rewritten either way. Same ids (`erase=keep` / `erase=chip`).
+- (JA) Erase Flash のメニューを、arduino-esp32 と同じ「Erase All Flash Before Sketch Upload」の Disabled（既定）/ Enabled にした。スケッチのページはどちらでも書き換える。id は同じ（`erase=keep` / `erase=chip`）。
 - (EN) The Debug Speed menu is gone: it was added for a SuperSpeed fault on H417 that turned out to be the USB driver's, and no board needs a slower debug clock. `ch32rv --speed` stays for the command line.
 - (JA) Debug Speed のメニューを外した。H417 の SuperSpeed の不具合のために足したが、原因は USB のドライバーだった。遅いデバッグのクロックが要るボードも無い。コマンドラインの `ch32rv --speed` はそのまま。
 - (EN) CPU Clock menu: V305 / V307 / V317 say which USB each entry keeps ("USB FS and HS", or "USB HS only, no USB FS" at 72 and 8 MHz, where the system PLL cannot give FS its 48 MHz). V303, which has no USB HS, said "USB HS only" there; it now says "no USB", as V20x.

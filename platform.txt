@@ -241,7 +241,7 @@ upload.tool.ch32rv-bootloader=ch32rv_isp
 # --progress none because a recipe's stdout is not a tty; ch32rv defaults to a
 # progress bar only on one, but saying so keeps the log identical either way.
 # --confirm-run fails (exit 50) when the target does not run after the reset.
-# upload.erase_args comes from the Erase Flash menu: empty keeps the flash
+# upload.erase_args comes from the Erase All Flash Before Sketch Upload menu: empty keeps the flash
 # tail a sketch declared with CH32RV_FLASH_STORE (ch32rv's default,
 # keep-store), "--erase chip" erases the whole chip. Every route is given it;
 # one that cannot erase the chip (DFU, HID) refuses it with exit 24 rather

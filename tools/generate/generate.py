@@ -269,7 +269,7 @@ MENU_HEADER = ("menu.pnum=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.ramsplit=Flash / RAM Split\n"
                + "menu.rstpin=Reset Pin\n"
                + "menu.iwdg=Watchdog\n"
-               + "menu.erase=Erase Flash\n"
+               + "menu.erase=Erase All Flash Before Sketch Upload\n"
                + "menu.monsrc=Monitor Source\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
@@ -544,16 +544,20 @@ def rstpin_menu(board: str, series: str) -> list[str]:
     return lines
 
 
-# What an upload erases (platform.txt upload.erase_args). Program only first and
-# empty: ch32rv's default keeps the flash tail a sketch declared with
+# Whether an upload erases the whole flash first (platform.txt
+# upload.erase_args). Disabled first and empty: ch32rv's default rewrites the
+# sketch's pages and keeps the flash tail a sketch declared with
 # CH32RV_FLASH_STORE, which costs 1 s or so over erasing the whole chip
 # (V003 16 KB 3.1 s against 2.3 s, V307 96 KB 5.0 s against 4.0 s; ch32rv
 # 0.25). An upload.* property, so changing it rebuilds nothing. DFU and HID
-# cannot erase the chip and refuse Whole flash; the HID-only UIAPduino board has
+# cannot erase the chip and refuse Enabled; the HID-only UIAPduino board has
 # no menu.
+# As arduino-esp32's "Erase All Flash Before Sketch Upload": the sketch's own
+# pages are rewritten either way, so the question is only the rest
+# (CH32RV_FLASH_STORE data among it).
 ERASE_MENU = (
-    ("keep", "Program only: keep CH32RV_FLASH_STORE data (default)", ""),
-    ("chip", "Whole flash: the stored data too", "--erase chip"),
+    ("keep", "Disabled (default)", ""),
+    ("chip", "Enabled", "--erase chip"),
 )
 
 

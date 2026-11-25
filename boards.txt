@@ -29,7 +29,7 @@ menu.vio18=VIO18 Supply
 menu.ramsplit=Flash / RAM Split
 menu.rstpin=Reset Pin
 menu.iwdg=Watchdog
-menu.erase=Erase Flash
+menu.erase=Erase All Flash Before Sketch Upload
 menu.monsrc=Monitor Source
 menu.stack=Stack Size
 menu.stackcheck=Stack Check
@@ -186,9 +186,9 @@ CH32V002.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V002.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V002.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V002.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V002.menu.erase.keep=Disabled (default)
 CH32V002.menu.erase.keep.upload.erase_args=
-CH32V002.menu.erase.chip=Whole flash: the stored data too
+CH32V002.menu.erase.chip=Enabled
 CH32V002.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -403,9 +403,9 @@ CH32V003.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V003.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V003.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V003.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V003.menu.erase.keep=Disabled (default)
 CH32V003.menu.erase.keep.upload.erase_args=
-CH32V003.menu.erase.chip=Whole flash: the stored data too
+CH32V003.menu.erase.chip=Enabled
 CH32V003.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -594,9 +594,9 @@ CH32V004.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V004.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V004.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V004.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V004.menu.erase.keep=Disabled (default)
 CH32V004.menu.erase.keep.upload.erase_args=
-CH32V004.menu.erase.chip=Whole flash: the stored data too
+CH32V004.menu.erase.chip=Enabled
 CH32V004.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -811,9 +811,9 @@ CH32V005.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V005.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V005.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V005.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V005.menu.erase.keep=Disabled (default)
 CH32V005.menu.erase.keep.upload.erase_args=
-CH32V005.menu.erase.chip=Whole flash: the stored data too
+CH32V005.menu.erase.chip=Enabled
 CH32V005.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -1096,9 +1096,9 @@ CH32V006.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V006.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V006.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V006.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V006.menu.erase.keep=Disabled (default)
 CH32V006.menu.erase.keep.upload.erase_args=
-CH32V006.menu.erase.chip=Whole flash: the stored data too
+CH32V006.menu.erase.chip=Enabled
 CH32V006.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -1353,9 +1353,9 @@ CH32V007.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V007.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V007.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V007.menu.erase.keep=Disabled (default)
 CH32V007.menu.erase.keep.upload.erase_args=
-CH32V007.menu.erase.chip=Whole flash: the stored data too
+CH32V007.menu.erase.chip=Enabled
 CH32V007.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -1602,9 +1602,9 @@ CH32V103.menu.parsefloat.float.build.parse_defines=-DCH32RV_PARSE_FLOAT=3
 CH32V103.menu.parsefloat.double=Double: exact, links double arithmetic
 CH32V103.menu.parsefloat.double.build.parse_defines=-DCH32RV_PARSE_FLOAT=1
 
-CH32V103.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V103.menu.erase.keep=Disabled (default)
 CH32V103.menu.erase.keep.upload.erase_args=
-CH32V103.menu.erase.chip=Whole flash: the stored data too
+CH32V103.menu.erase.chip=Enabled
 CH32V103.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -1938,9 +1938,9 @@ CH32V203.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V203.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V203.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V203.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V203.menu.erase.keep=Disabled (default)
 CH32V203.menu.erase.keep.upload.erase_args=
-CH32V203.menu.erase.chip=Whole flash: the stored data too
+CH32V203.menu.erase.chip=Enabled
 CH32V203.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -2193,9 +2193,9 @@ CH32V205.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V205.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V205.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V205.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V205.menu.erase.keep=Disabled (default)
 CH32V205.menu.erase.keep.upload.erase_args=
-CH32V205.menu.erase.chip=Whole flash: the stored data too
+CH32V205.menu.erase.chip=Enabled
 CH32V205.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -2622,9 +2622,9 @@ CH32V208.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V208.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V208.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V208.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V208.menu.erase.keep=Disabled (default)
 CH32V208.menu.erase.keep.upload.erase_args=
-CH32V208.menu.erase.chip=Whole flash: the stored data too
+CH32V208.menu.erase.chip=Enabled
 CH32V208.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -2916,9 +2916,9 @@ CH32V303.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V303.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V303.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V303.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V303.menu.erase.keep=Disabled (default)
 CH32V303.menu.erase.keep.upload.erase_args=
-CH32V303.menu.erase.chip=Whole flash: the stored data too
+CH32V303.menu.erase.chip=Enabled
 CH32V303.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -3237,9 +3237,9 @@ CH32V305.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V305.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V305.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V305.menu.erase.keep=Disabled (default)
 CH32V305.menu.erase.keep.upload.erase_args=
-CH32V305.menu.erase.chip=Whole flash: the stored data too
+CH32V305.menu.erase.chip=Enabled
 CH32V305.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -3556,9 +3556,9 @@ CH32V307.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V307.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V307.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V307.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V307.menu.erase.keep=Disabled (default)
 CH32V307.menu.erase.keep.upload.erase_args=
-CH32V307.menu.erase.chip=Whole flash: the stored data too
+CH32V307.menu.erase.chip=Enabled
 CH32V307.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -3882,9 +3882,9 @@ CH32V317.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V317.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V317.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V317.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V317.menu.erase.keep=Disabled (default)
 CH32V317.menu.erase.keep.upload.erase_args=
-CH32V317.menu.erase.chip=Whole flash: the stored data too
+CH32V317.menu.erase.chip=Enabled
 CH32V317.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -4199,9 +4199,9 @@ CH32V407.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V407.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V407.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V407.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V407.menu.erase.keep=Disabled (default)
 CH32V407.menu.erase.keep.upload.erase_args=
-CH32V407.menu.erase.chip=Whole flash: the stored data too
+CH32V407.menu.erase.chip=Enabled
 CH32V407.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -4529,9 +4529,9 @@ CH32V467.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32V467.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32V467.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32V467.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32V467.menu.erase.keep=Disabled (default)
 CH32V467.menu.erase.keep.upload.erase_args=
-CH32V467.menu.erase.chip=Whole flash: the stored data too
+CH32V467.menu.erase.chip=Enabled
 CH32V467.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -4825,9 +4825,9 @@ CH32X033.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32X033.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32X033.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32X033.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32X033.menu.erase.keep=Disabled (default)
 CH32X033.menu.erase.keep.upload.erase_args=
-CH32X033.menu.erase.chip=Whole flash: the stored data too
+CH32X033.menu.erase.chip=Enabled
 CH32X033.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -5091,9 +5091,9 @@ CH32X035.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32X035.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32X035.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32X035.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32X035.menu.erase.keep=Disabled (default)
 CH32X035.menu.erase.keep.upload.erase_args=
-CH32X035.menu.erase.chip=Whole flash: the stored data too
+CH32X035.menu.erase.chip=Enabled
 CH32X035.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -5324,9 +5324,9 @@ CH32X305.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32X305.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32X305.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32X305.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32X305.menu.erase.keep=Disabled (default)
 CH32X305.menu.erase.keep.upload.erase_args=
-CH32X305.menu.erase.chip=Whole flash: the stored data too
+CH32X305.menu.erase.chip=Enabled
 CH32X305.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -5793,9 +5793,9 @@ CH32X315.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32X315.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32X315.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32X315.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32X315.menu.erase.keep=Disabled (default)
 CH32X315.menu.erase.keep.upload.erase_args=
-CH32X315.menu.erase.chip=Whole flash: the stored data too
+CH32X315.menu.erase.chip=Enabled
 CH32X315.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -6420,9 +6420,9 @@ CH32L103.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32L103.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32L103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32L103.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32L103.menu.erase.keep=Disabled (default)
 CH32L103.menu.erase.keep.upload.erase_args=
-CH32L103.menu.erase.chip=Whole flash: the stored data too
+CH32L103.menu.erase.chip=Enabled
 CH32L103.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -6685,9 +6685,9 @@ CH32M007.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32M007.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32M007.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32M007.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32M007.menu.erase.keep=Disabled (default)
 CH32M007.menu.erase.keep.upload.erase_args=
-CH32M007.menu.erase.chip=Whole flash: the stored data too
+CH32M007.menu.erase.chip=Enabled
 CH32M007.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -6921,9 +6921,9 @@ CH32M030.menu.rstpin.gpio.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x18u -DCH32
 CH32M030.menu.rstpin.reset=Reset input (NRST): written to the chip at boot
 CH32M030.menu.rstpin.reset.build.rstpin_defines=-DCH32RV_RSTPIN_USER=0x10u -DCH32RV_RSTPIN_MASK=0x18u
 
-CH32M030.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32M030.menu.erase.keep=Disabled (default)
 CH32M030.menu.erase.keep.upload.erase_args=
-CH32M030.menu.erase.chip=Whole flash: the stored data too
+CH32M030.menu.erase.chip=Enabled
 CH32M030.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -7120,9 +7120,9 @@ CH32M103.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32M103.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32M103.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32M103.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32M103.menu.erase.keep=Disabled (default)
 CH32M103.menu.erase.keep.upload.erase_args=
-CH32M103.menu.erase.chip=Whole flash: the stored data too
+CH32M103.menu.erase.chip=Enabled
 CH32M103.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -7351,9 +7351,9 @@ CH32H415.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32H415.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32H415.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32H415.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32H415.menu.erase.keep=Disabled (default)
 CH32H415.menu.erase.keep.upload.erase_args=
-CH32H415.menu.erase.chip=Whole flash: the stored data too
+CH32H415.menu.erase.chip=Enabled
 CH32H415.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -7748,9 +7748,9 @@ CH32H416.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32H416.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32H416.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32H416.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32H416.menu.erase.keep=Disabled (default)
 CH32H416.menu.erase.keep.upload.erase_args=
-CH32H416.menu.erase.chip=Whole flash: the stored data too
+CH32H416.menu.erase.chip=Enabled
 CH32H416.menu.erase.chip.upload.erase_args=--erase chip
 
 
@@ -8089,9 +8089,9 @@ CH32H417.menu.iwdg.sw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x01u -DCH32RV_IWDG_
 CH32H417.menu.iwdg.hw=Running from power-on: written to the chip at boot
 CH32H417.menu.iwdg.hw.build.iwdg_defines=-DCH32RV_IWDG_USER=0x00u -DCH32RV_IWDG_MASK=0x01u
 
-CH32H417.menu.erase.keep=Program only: keep CH32RV_FLASH_STORE data (default)
+CH32H417.menu.erase.keep=Disabled (default)
 CH32H417.menu.erase.keep.upload.erase_args=
-CH32H417.menu.erase.chip=Whole flash: the stored data too
+CH32H417.menu.erase.chip=Enabled
 CH32H417.menu.erase.chip.upload.erase_args=--erase chip
 
 

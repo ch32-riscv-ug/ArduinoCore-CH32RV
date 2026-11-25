@@ -83,17 +83,17 @@ probe 側を SWIO だけにする必要があります。
 - 初代の WCH-Link（CH549）の firmware 2.11 では、CH32V103R8T6 に書いたあと target が起動しませんでした（probe-rs で書いた記録）。ベンチでの確認は LinkE 2.22、CH549 Link 2.12 です。
 - 「USB device」の列はハードウェアの有無です。このコアの USB device の対応は [usb.ja.md](usb.ja.md) にあります。
 
-## 書き込みで消す範囲（Erase Flash）
+## 書き込みの前に全体を消すか（Erase All Flash Before Sketch Upload）
 
-ツール → Erase Flash で選びます。
+ツール → Erase All Flash Before Sketch Upload で選びます（arduino-esp32 と同じ名前と値）。スケッチの入るページはどちらでも書き換えます。
 
 | 項目 | ch32rv に渡すもの | 動き |
 |---|---|---|
-| Program only（既定） | 何も渡さない（ch32rv の既定 `--erase keep-store`） | `CH32RV_FLASH_STORE` で確保した末尾を残す。WCH-Link と OEP では、ch32rv が退避して書き戻す（[flash-store.ja.md](flash-store.ja.md)） |
-| Whole flash | `--erase chip` | チップ全体を消す。WCH-Link、OEP、工場の ISP で効く |
+| Disabled（既定） | 何も渡さない（ch32rv の既定 `--erase keep-store`） | スケッチの入るページだけを消して書き、ほかは残す。`CH32RV_FLASH_STORE` で確保した末尾も残す。WCH-Link と OEP では、ch32rv が退避して書き戻す（[flash-store.ja.md](flash-store.ja.md)） |
+| Enabled | `--erase chip` | 先にチップ全体を消す。WCH-Link、OEP、工場の ISP で効く |
 
 - 値は書き込みの設定（`upload.erase_args`）なので、切り替えても再ビルドは起きません。
-- H41x の DFU の経路は、チップ全体を消せません。Whole flash を選ぶと、ch32rv が書き込みを断ります（exit 24）。
+- H41x の DFU の経路は、チップ全体を消せません。Enabled を選ぶと、ch32rv が書き込みを断ります（exit 24）。
 - UIAPduino の板は HID のブートローダーでしか書かないので、このメニューがありません。
 
 ## 接続できなくなるイメージを試すとき（起動待ち）
