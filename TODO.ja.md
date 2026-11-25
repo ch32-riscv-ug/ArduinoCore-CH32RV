@@ -675,6 +675,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   来ない）、X315 spi（test_spi_three_wire、250 kHz・プルダウンで receive() が c0000000）、H417 usb-ss-iso（抜き差しの後 ENODEV）。
   - [ ] V006 signals::test_timer_pulse_in が `TPULSEIN -49`（timerPulseIn() が負の幅、流し直しでは通った）: 始まりと終わりの
     捕捉の時刻の、16 ビットのカウンターの桁あふれの数え方（pulse_stamp の pending の扱い）の境目の競合の疑い。再現の手を作る。
+- [ ] **モニターの source=auto（2026-11-26、仕様の案を [ch32rv] に送って作成を依頼。ユーザー: リリースせず auto ができるまで進める）**
+  - 案: 名前は `auto`（正式リリース前なので変えられる）。UART 系（serial の uart / wchlink の CDC / oep の fixture-uart）と、郵便受け系
+    （DMSeq → SDI → DMDATA の順に試してデータが来たものに決め、target の再起動で決め直す。WCH-Link の SDI は DMI の経路）と、
+    RTT（制御ブロックが見つかったときだけ）を、1 つの monitor で一緒に読み、受信は 1 本にまとめる。送信は uart に常に、郵便受け系は
+    DMSeq / DMDATA に決まった後、RTT は見つかった後。WCH-Link は開くときに再起動してから attach、OEP は再起動しない。Link の SDI
+    転送は変えない。DMDATA は本番の経路の試験で SDI を壊さず誤判定もしなかったので含める（最後）。
+  - コアの側（ch32rv のリリースの後）: Monitor Source に `auto` を足して既定に、`sdi-forward`（LinkE の転送）を足す、SDI は転送無しの
+    経路になる旨と auto を docs/debug-output.ja.md に書く。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
   - 決まったこと（2026-11-26、ユーザー）: WCH-Link ではモニターを開くときに再起動する（石ごとの副作用を気にしない）。郵便受け系は
     DMSeq → SDI → DMDATA の順に試す（DMDATA は安全に区別できれば残す。外すことも検討中）。WCH-Link の SDI は LinkE の転送を
