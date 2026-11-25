@@ -687,9 +687,16 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     欠けずに届いた。送信も uart / dmseq の両方向で届いた。郵便受け系の仕組みを間違えて開くと黙るだけで target は止まらず、後から
     正しい仕組みで続きが読めた（順に試して見分けられる）。OEP の attach は target を止めず副作用が無い。RTT は ch32rv が host 側で
     riscv-dm の上で読む（OEP のファームには無い、要らない）。
-  - WCH-Link（未実験、常駐の台が空いてから）: 郵便受け系と RTT と SDI の転送の有効化は attach が要り、V003 以外は副作用がある
-    （クロックの組み直し、V103 / V205 / H417 のレジスタの上書き）。ユーザー: 壊しても再起動でよい。試すこと: attach してから
-    リセットして読み続けられるか、connect-under-reset、CDC に uart と SDI が混ざって壊れないか、郵便受け系を順に試せるか。
+  - WCH-Link（実験 2026-11-26、ユーザー: 壊しても再起動でよい）:
+    - V307（LinkE 一体型、既定の 144 MHz）: uart（CDC）を開いたまま dmseq で attach しても、uart は化けずに続いた（37 行）。dmseq も
+      同時に読めた（24 行）。attach のクロックの組み直しは、既定の設定と同じ先なので効かなかったとみる（別のクロックの項目は未）。
+    - V103（Link 一体型）: ch32rv は attach で s1 が壊れることを知っていて、attach の後にスケッチを再起動する。uart では BOOT が出直し
+      て数え直し、化けずに続いた。dmseq も再起動の直後から読めた。「attach してから再起動」はもう入っている。
+    - デバッグの経路を 2 つ（dmseq と rtt）別のプロセスで同時に: 2 つ目は Link を取れず何も受けない。WCH-Link で両方を取るには、
+      ch32rv の 1 つの monitor が同じ接続から両方を読む形にする必要がある。
+    - LinkE の SDI の転送（`monitor sdi on`）を有効にすると、CDC には SDI の出力だけが届き、UART の出力は 1 行も届かない（UART の
+      橋渡しが止まる）。切れば UART が戻る。なので WCH-Link の mix で SDI を取るなら、転送は切ったまま ch32rv が DATA0 を DMI で
+      読んで SDI の書き方を解く形（今は無い）。
   - そのほか: 書き込んだイメージから使うコンソールを知る手（ELF のインスタンスの記号 `SerialSDI` などは LTO の後も残る。
     begin() の中の非 ALLOC の印 `.ch32rv.console` は使ったときだけ残り、flash / RAM は増えない）。mix を ch32rv で作るなら、
     今は 1 つの monitor で 1 つの stream なので、ブローカーへの流れを並べる形になる。
