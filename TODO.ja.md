@@ -675,7 +675,17 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   来ない）、X315 spi（test_spi_three_wire、250 kHz・プルダウンで receive() が c0000000）、H417 usb-ss-iso（抜き差しの後 ENODEV）。
   - [ ] V006 signals::test_timer_pulse_in が `TPULSEIN -49`（timerPulseIn() が負の幅、流し直しでは通った）: 始まりと終わりの
     捕捉の時刻の、16 ビットのカウンターの桁あふれの数え方（pulse_stamp の pending の扱い）の境目の競合の疑い。再現の手を作る。
-- [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める）**: IDE で source を選べないので、既定を「取れるものは一緒に
+- [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
+  - 決まったこと（2026-11-26、ユーザー）: WCH-Link ではモニターを開くときに再起動する（石ごとの副作用を気にしない）。郵便受け系は
+    DMSeq → SDI → DMDATA の順に試す（DMDATA は安全に区別できれば残す。外すことも検討中）。WCH-Link の SDI は LinkE の転送を
+    使わず、ch32rv が DATA0 を DMI で読む経路を既定にする（auto でなくても `source=sdi` の本来の経路。転送の経路は明示して選べる形で
+    残す）。Link の SDI 転送の設定は勝手に変えず、無効と仮定する（RAM だけの設定で電源で消え、ch32rv も終わるときに切る。変える
+    人はほとんどいない）。取り合いが分かれば警告と `monitor sdi off` の案内。→ [ch32rv] が作る（半日ほど）。
+  - 区別の試験（本番の経路）: OEP（WeAct X035、プローブの sdi / dmdata / dmseq）で 3 つの各スケッチを 3 回ずつ、9 回とも正しい
+    1 つだけが読めた。試しの間もスケッチは止まらない（正しい経路を閉じた後、DMSeq / DMDATA の出力が PC の返事を待つ間だけ遅く
+    なる）。WCH-Link は ch32rv の転送無しの SDI ができてからやり直す（LinkE の転送で代用した回は参考: 9 回とも正しかったが、転送を
+    有効にすると SDI 以外のスケッチで UART が止まったり、出所不明の文字が出たりした）。SDI と DMDATA は語の低 byte の bit 7 で
+    分けられる（[ch32rv]）。: IDE で source を選べないので、既定を「取れるものは一緒に
   取る」mix にしたい。受信はどこから来たか区別しなくてよく、送信は届く相手だけでよい。同じ仕組みで排他の組は、取れるほうを
   取る。利用者への推奨は UART か DMSeq だが、mix はできるだけ広く取る。
   - 組は 3 つ（[ch32rv]）: UART 系（OEP の fixture-uart、WCH-Link の CDC）、郵便受け系（SDI・DMDATA・DMSeq は Debug Module の
