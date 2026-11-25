@@ -678,9 +678,14 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
 - [ ] **モニターの source=auto（2026-11-26、仕様の案を [ch32rv] に送って作成を依頼。ユーザー: リリースせず auto ができるまで進める）**
   - 案: 名前は `auto`（正式リリース前なので変えられる）。UART 系（serial の uart / wchlink の CDC / oep の fixture-uart）と、郵便受け系
     （DMSeq → SDI → DMDATA の順に試してデータが来たものに決め、target の再起動で決め直す。WCH-Link の SDI は DMI の経路）と、
-    RTT（制御ブロックが見つかったときだけ）を、1 つの monitor で一緒に読み、受信は 1 本にまとめる。送信は uart に常に、郵便受け系は
-    DMSeq / DMDATA に決まった後、RTT は見つかった後。WCH-Link は開くときに再起動してから attach、OEP は再起動しない。Link の SDI
+    RTT（制御ブロックが見つかったときだけ）を、1 つの monitor で一緒に読み、受信は 1 本にまとめる。WCH-Link は開くときに再起動してから attach、OEP は再起動しない。Link の SDI
     転送は変えない。DMDATA は本番の経路の試験で SDI を壊さず誤判定もしなかったので含める（最後）。
+  - 送信（2026-11-26、ユーザーが推奨の案で決定）: 最後にスケッチの出力が来た経路へ返す（UART・DMSeq・DMDATA・RTT）。SDI は
+    受信だけなので、最後が SDI なら UART へ。まだ何も来ていなければ UART。郵便受け系は決まるまで送らない。改行は IDE が付けたまま。
+    経路ごとに順番を守り、遅い経路は順に送って捨てない。target の再起動（DMSeq の SYN・WCH-Link の開くときの再起動・郵便受け系の
+    決め直し）で、送れていない入力は捨てる。
+  - [ch32rv] の 4 点も承認: WCH-Link は attach → 再起動 → 読む、WCH-Link は DATA0 を 1 つの読み手で語の形から見分ける（OEP は順に
+    試す）、RTT は開いた後と DMSeq の SYN の後の数秒だけ探す、`[ch32rv monitor] auto: uart + dmseq` のような状態の行。
   - コアの側（ch32rv のリリースの後）: Monitor Source に `auto` を足して既定に、`sdi-forward`（LinkE の転送）を足す、SDI は転送無しの
     経路になる旨と auto を docs/debug-output.ja.md に書く。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
