@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv-toolchain 23.1.6-2: an H41x build (CPU Core = V5F) no longer fails now and then with "ld.lld: Segmentation fault" (an lld use-after-free with --enable-non-contiguous-regions, about 1 link in 64; patched in the toolchain, reported upstream as llvm/llvm-project#245888).
+- (JA) ch32rv-toolchain 23.1.6-2: H41x（CPU Core = V5F）のビルドが、ときどき「ld.lld: Segmentation fault」で失敗しなくなった（--enable-non-contiguous-regions での lld の解放後のメモリの読み出し。リンク約 64 回に 1 回。ツールチェーンで直し、上流に llvm/llvm-project#245888 で報告済み）。
 - (EN) The serial monitor no longer gets the part number as its `chip`: ch32rv's monitor only checked the attached chip against it, and Arduino IDE 2 keeps a monitor's settings per board and port, so after the Part Number menu changed it refused to open with "conflicts with the detected ..." on a debug-module source. The monitor reads the attached chip itself (`auto`).
 - (JA) シリアルモニターに、型番を `chip` として渡さないようにした。ch32rv のモニターはつないだ石との照合にしか使っておらず、Arduino IDE 2 はモニターの設定をボードと口ごとに保存するため、Part Number を変えると、デバッグの経路の source で「conflicts with the detected ...」と開けなくなっていた。モニターはつないだ石を自分で読む（`auto`）。
 
