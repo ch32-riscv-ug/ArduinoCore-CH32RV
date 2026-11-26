@@ -105,7 +105,7 @@ Blink needs the actual board LED assigned to `LED_BUILTIN`. Use a product-board 
 | Example | What it teaches |
 |---|---|
 | [WeActCH32X035](08.Boards/WeActCH32X035/README.md) | A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names. |
-| [UIAPduinoProMicro](08.Boards/UIAPduinoProMicro/README.md) | Initialize UART, I2C, SPI, ADC and PWM using the UIAPduino Pro Micro board pin assignments. |
+| [UIAPduinoProMicro](08.Boards/UIAPduinoProMicro/README.md) | Blink the UIAPduino Pro Micro's LED by its printed number (USB alone); the README maps the pins and says how to see Serial. |
 
 Verify examples separately before combining them. Examples that wait in `delay()` and extensive demonstration logging are not intended as the final structure for many concurrent features. Continue with the [sketch composition guide (Japanese)](../../../docs/sketch-guide.ja.md) for time management, ISR data transfer and callback handling.
 

@@ -109,7 +109,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | 例 | 学ぶこと |
 |---|---|
 | [WeActCH32X035](08.Boards/WeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board の端子名を明示して、各周辺機能を組み合わせる出発点です。 |
-| [UIAPduinoProMicro](08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro の基板上の端子名を使って、UART・I2C・SPI・ADC・PWM を初期化します。 |
+| [UIAPduinoProMicro](08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro の LED を、印刷の番号で点滅させます（USB だけで動く）。端子の対応と、Serial を見るための配線も説明します。 |
 
 一つずつ動作を確認してから組み合わせます。`delay()` で待つ例や、見せるためにログを多く出す例は、
 多数の機能を同時に動かす最終形ではありません。[スケッチの組み立て方](../../../docs/sketch-guide.ja.md) で

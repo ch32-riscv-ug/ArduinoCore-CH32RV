@@ -1,103 +1,42 @@
-// en: Initialize and exercise the UIAPduino Pro Micro board peripherals.
-// ja: UIAPduino Pro Microの各周辺機能を初期化して使う。
+// en: Blink the UIAPduino Pro Micro's LED by its printed pin number, with USB alone.
+// ja: UIAPduino Pro MicroのLEDを、基板に印刷された番号で点滅させる（USBだけで動く）。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 /* board: UIAPDUINO_V003_V14 */
 
-#include <SPI.h>
-#include <Wire.h>
+// en: The board's USB is the bootloader's (it uploads over HID). While the sketch runs, the USB does
+// en: nothing: CH32V003 has no USB peripheral. So with USB alone, the LED is what you can see.
+// ja: 基板のUSBはブートローダーのもの（HIDで書き込む）。スケッチが動いている間、USBは何もしない
+// ja: （CH32V003にUSBの周辺機能は無い）。USBだけで目に見えるのはLEDだけ。
+//
+// en: To see Serial, wire a USB-UART adapter to TX = 15 (PD5) and RX = 16 (PD6), and call
+// en: Serial.begin(115200). With a WCH-LinkE on SWIO (11 = PD1), SerialSDI or SerialDMSeq needs no wires.
+// ja: Serialを見るには、USB-UARTの変換器をTX = 15（PD5）とRX = 16（PD6）につなぎ、
+// ja: Serial.begin(115200)を呼ぶ。WCH-LinkEをSWIO（11 = PD1）につなげば、SerialSDIかSerialDMSeqで配線なしに読める。
 
-static const int LED_PIN = PC0;
+// en: The printed numbers reach the pads: 2 is D2 is PC0, the on-board LED (High lights it).
+// ja: 印刷の番号がそのまま端子になる: 2 = D2 = PC0 が基板のLED（Highで点灯）。
+static const int LED_PIN = 2;
 
-static const int UART_TX = PD5;
-static const int UART_RX = PD6;
-
-static const int I2C_SCL = PC2;
-static const int I2C_SDA = PC1;
-
-static const int SPI_SCK = PC5;
-static const int SPI_MISO = PC7;
-static const int SPI_MOSI = PC6;
-// en: Use a GPIO CS to leave I2C and the LED pins available.
-// ja: I2CとLEDの端子を空けるため、CSは別のGPIOを使う。
-static const int SPI_CS = PC3;
-
-static const int ANALOG_1 = A0;
-static const int ANALOG_2 = A1;
-static const int ANALOG_3 = A2;
-
-static const int PWM_PIN = PD2;
-
-static uint8_t pwmLevel;
-static int8_t pwmStep = 4;
+// en: Pads the board keeps for itself: 13 / 14 (PD3 / PD4) are the bootloader's USB, 11 (PD1) is SWIO,
+// en: 17 (PD7) is RESET. Leave them alone so the board can still be uploaded to and recovered.
+// ja: 基板が使う端子: 13 / 14（PD3 / PD4）はブートローダーのUSB、11（PD1）はSWIO、17（PD7）はRESET。
+// ja: 書き込みと復旧ができるように、これらは使わない。
 
 void setup()
 {
     pinMode(LED_PIN, OUTPUT);
-
-    Serial.begin(115200, SERIAL_8N1, UART_RX, UART_TX);
-
-    Wire.begin(I2C_SDA, I2C_SCL);
-
-    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, -1);
-    pinMode(SPI_CS, OUTPUT);
-    // en: Leave CS inactive until sending, so the SPI peripheral does not accept unintended clocks.
-    // ja: 送信まではCSを無効に保ち、相手機器が意図しないclockを受け付けないようにする。
-    digitalWrite(SPI_CS, HIGH);
-
-    pinMode(ANALOG_1, INPUT);
-    pinMode(ANALOG_2, INPUT);
-    pinMode(ANALOG_3, INPUT);
-    pinMode(PWM_PIN, OUTPUT);
 }
 
 void loop()
 {
-    static uint32_t lastTick;
-    if (millis() - lastTick >= 100) {
-        lastTick = millis();
-
-        digitalWrite(SPI_CS, LOW);
-        // en: Keep the selected device active for the whole SPI transaction.
-        // ja: SPIのtransaction中は対象機器のCSを有効に保つ。
-        SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-        SPI.transfer(0xA5);
-        SPI.endTransaction();
-        digitalWrite(SPI_CS, HIGH);
-
-        pwmLevel = (uint8_t)(pwmLevel + pwmStep);
-        if (pwmLevel == 0 || pwmLevel >= 252) {
-            pwmStep = (int8_t)-pwmStep;
-        }
-        analogWrite(PWM_PIN, pwmLevel);
+    // en: Two short flashes, then a pause: a pattern no other sketch on the board shows by accident.
+    // ja: 短く2回光ってから休む。ほかのスケッチがたまたま出す光り方と区別できる。
+    for (int i = 0; i < 2; i++) {
+        digitalWrite(LED_PIN, HIGH);
+        delay(100);
+        digitalWrite(LED_PIN, LOW);
+        delay(150);
     }
-
-    while (Serial.available()) {
-        Serial.write(Serial.read());
-    }
-
-    static uint32_t lastStatus;
-    if (millis() - lastStatus >= 1000) {
-        lastStatus = millis();
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-
-        Serial.print("I2C:");
-        for (uint8_t address = 0x08; address < 0x78; address++) {
-            // en: Probe one address at a time; success means an acknowledgement, not identification of a model.
-            // ja: 一つずつアドレスを調べる。成功は応答ありを示し、機器の型を特定するものではない。
-            Wire.beginTransmission(address);
-            if (Wire.endTransmission() == 0) {
-                Serial.print(' ');
-                Serial.print(address, HEX);
-            }
-        }
-        Serial.print(" A0=");
-        Serial.print(analogRead(ANALOG_1));
-        Serial.print(" A1=");
-        Serial.print(analogRead(ANALOG_2));
-        Serial.print(" A2=");
-        Serial.print(analogRead(ANALOG_3));
-        Serial.print(" PWM=");
-        Serial.println(pwmLevel);
-    }
+    delay(700);
 }

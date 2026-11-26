@@ -2,40 +2,42 @@
 
 [English](README.md)
 
-UIAPduino Pro Micro の基板上の端子名を使って、UART・I2C・SPI・ADC・PWM を初期化します。
+UIAPduino Pro Micro の LED を、基板に印刷された番号（2 = PC0）で点滅させます。USB をつなぐだけで書き込んで、そのまま動きます。
 
 ## 必要なものと配線
 
-対象基板と UART モニタを用意します。I2C を接続する場合は適切な pull-up と共通 GND、SPI は指定した GPIO の CS を使います。
+UIAPduino Pro Micro CH32V003 V1.4 と USB ケーブルだけです。ボードは「UIAPduino Pro Micro CH32V003 V1.4」、port は基板の
+USB（HID のブートローダー）を選んで書き込みます。
 
 ## 操作と期待する結果
 
-LED・PWM の変化と UART の状態表示を確認します。SPI のループバックを試す場合は MOSI と MISO を接続します。
+基板の LED が、短く 2 回光ってから休む、を繰り返します。
 
-## API と処理の流れ
+## この基板の USB について
 
-`Wire.begin(SDA, SCL)` と `SPI.begin(SCK, MISO, MOSI, -1)` では引数順が異なります。CS は GPIO として明示的に制御します。
+基板の USB は、書き込みのためのブートローダーのものです。スケッチが動いている間、USB は何もしません（CH32V003 に USB の
+周辺機能はありません）。そのため、USB だけでは `Serial` の出力は見えません。ほかの機能を試すときは、次のどちらかを足します。
 
-## 改造するときの注意
+- **UART:** USB-UART の変換器を TX = 15（PD5）・RX = 16（PD6）・GND につなぎ、`Serial.begin(115200)` で使います。
+- **デバッグの線:** WCH-LinkE を SWIO（11 = PD1）・GND につなぐと、`SerialSDI` や `SerialDMSeq` で、UART の配線なしに
+  読めます（[デバッグ出力](../../../../../docs/debug-output.ja.md)）。
 
-メーカー図の NSS とスケッチの CS は必ずしも同じ場所ではありません。CS を変更するときは I2C・LED との競合も確認します。基板の USB 書き込み機能と、スケッチから使える USB Device 機能は区別します。
+## 基板の端子
 
-### 基板上の端子割り当て
+印刷の番号（0〜17）、`D0`〜`D17`、端子名（`PC0` など）は、どれで書いても同じ端子に届きます。
 
-雛形の対象はUIAPduino Pro Micro CH32V003 V1.4です。下の別名はこの基板のもので、Generic V003の基板配置を示すものではありません。
-
-| 機能 | pad / 基板表記 |
+| 機能 | 印刷の番号 / 端子 |
 |---|---|
-| LED | PC0 / D2、Highで点灯 |
-| UART | TX PD5 / D15、RX PD6 / D16 |
-| I2C | SDA PC1 / D3、SCL PC2 / D4 |
-| SPI | SCK PC5 / D7、MISO PC7 / D9、MOSI PC6 / D8 |
-| GPIOのCS | PC3 / D5 |
-| ADC | A0 PA2 / D1、A1 PA1 / D0、A2 PC4 / D6 |
-| PWM | PD2 / D12 |
-| デバッグ / reset | SWIO PD1 / RESET PD7 |
+| LED | 2 / PC0、High で点灯 |
+| UART | TX 15 / PD5、RX 16 / PD6 |
+| I2C | SDA 3 / PC1、SCL 4 / PC2 |
+| SPI | SCK 7 / PC5、MISO 9 / PC7、MOSI 8 / PC6 |
+| ADC | A0 = 1 / PA2、A1 = 0 / PA1、A2 = 6 / PC4 |
+| PWM の例 | 12 / PD2 |
+| 基板が使う端子 | USB 13 / PD3・14 / PD4（ブートローダー）、SWIO 11 / PD1、RESET 17 / PD7 |
 
-メーカー図のNSS候補PC1はI2CのSDA、PC0はLEDと重なります。どちらかをCSに使うなら、置き換える機能を外します。CSはGPIOで制御するので、hardware NSSと同じ端子である必要はありません。USB bootloaderはPD3/PD4を使いますが、その配線だけでアプリのUSB Device対応を意味するものではありません。
+基板が使う端子は、書き込みと復旧のために使わないでください。メーカーの図にある SPI の NSS の候補（PC1 / PC0）は、I2C の SDA と
+LED に重なります。SPI の CS は、空いている GPIO（たとえば 5 / PC3）を使います。
 
 ## 関連資料
 

@@ -416,7 +416,7 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 | Example | Board | Sets up |
 |---|---|---|
 | [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
-| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
+| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | The LED (PC0, printed 2) blinking, nothing more: the board's USB is the bootloader's and does nothing while a sketch runs (Serial needs a USB-UART adapter on PD5 / PD6, or a WCH-LinkE on SWIO). The README maps the pins |
 
 Both were run on the boards (2026-10-14).
 

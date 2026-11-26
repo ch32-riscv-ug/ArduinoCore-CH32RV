@@ -368,7 +368,7 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 | example | 板 | 初期化するもの |
 |---|---|---|
 | [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
-| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
+| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | LED（PC0 = 印刷の 2）の点滅だけ。基板の USB はブートローダーのもので、スケッチの実行中は使えないため（Serial を見るには PD5 / PD6 に USB-UART の変換器、または SWIO に WCH-LinkE）。README に端子の対応表 |
 
 どちらも実機で動作を確かめています（2026-10-14）。
 
