@@ -58,7 +58,7 @@ WCH純正のツールでも有効にできます。
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable`（`wlink flash --enable-sdi-print --watch-serial firmware.elf`で書き込みと監視をまとめられます） |
 
 IDEのシリアルモニターでは、転送を有効にしてから、Monitor SourceのUART（またはAuto）で同じportを開けば読めます
-（モニターはLinkEの設定を変えないので、メニューに転送の項目はありません）。
+（メニューのどの経路もLinkEの転送の設定を変えないので、転送の項目はありません）。
 転送を有効にしたままだと、LinkEが先に文字を取るので、ch32rvの`sdi`・`auto`では読めません（ch32rvが警告
 `sdi-quiet`で`ch32rv monitor sdi off`を案内します）。
 **詳しくは[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**

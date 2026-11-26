@@ -62,7 +62,7 @@ WCH's own tools switch it on too:
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` (`wlink flash --enable-sdi-print --watch-serial firmware.elf` flashes and watches in one go) |
 
 In the IDE's serial monitor, switch forwarding on first and open the same port with Monitor Source UART
-(or Auto): the monitor does not change the LinkE's settings, so the menu has no forwarding entry.
+(or Auto): no menu entry switches the LinkE's forwarding on or off, so there is no forwarding entry.
 With forwarding left on, the LinkE takes the characters first, so ch32rv's `sdi` and `auto` get nothing
 (ch32rv warns `sdi-quiet` and points at `ch32rv monitor sdi off`).
 **Details are in [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**

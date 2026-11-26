@@ -54,8 +54,8 @@ monitor の設定のうちボーレートしか出ないためです（arduino-c
 | DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
 
 `SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
-LinkE 自身の SDI の転送（WCH-LinkUtility・wlink などで有効にするもの）はメニューにありません。モニターは Link の設定を変えない
-ためです。転送を有効にしてあれば、転送された文字は CDC に来るので、UART（または Auto）で読めます。転送している間は、CDC に
+LinkE 自身の SDI の転送（WCH-LinkUtility・wlink などで有効にするもの）はメニューにありません。メニューのどの経路も、
+LinkE の転送の設定を変えません（入れることも切ることもしません）。転送を有効にしてあれば、転送された文字は CDC に来るので、UART（または Auto）で読めます。転送している間は、CDC に
 UART の出力が届きません。CLI では `ch32rv monitor --source sdi-forward` が転送を有効にしてから読みます。
 
 **Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
