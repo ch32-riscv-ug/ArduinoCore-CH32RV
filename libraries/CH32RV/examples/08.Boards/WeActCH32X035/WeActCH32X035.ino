@@ -24,10 +24,15 @@ void setup()
 void loop()
 {
     static unsigned long count;
-    digitalWrite(LED_PIN, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN, LOW);
-    delay(900);
+    // en: Two short flashes, then a pause: a pattern no other sketch on the board shows by accident.
+    // ja: 短く2回光ってから休む。ほかのスケッチがたまたま出す光り方と区別できる。
+    for (int i = 0; i < 2; i++) {
+        digitalWrite(LED_PIN, HIGH);
+        delay(100);
+        digitalWrite(LED_PIN, LOW);
+        delay(150);
+    }
+    delay(500);
 
     // en: Nothing is lost while no terminal is open: the line just is not sent.
     // ja: 端末を開いていない間は送らないだけで、スケッチは止まらない。

@@ -23,7 +23,7 @@ See [upload routes (Japanese)](../../../../../docs/upload-routes.ja.md).
 
 ## Steps and expected results
 
-The LED flashes briefly once a second. Open the serial monitor on the USB serial port (or the
+The LED flashes twice, briefly, then pauses, once a second. Open the serial monitor on the USB serial port (or the
 `ch32rv-app://` port): `hello from WeAct CH32X035 0`, `1`, ... arrive once a second.
 
 ## Board pins
