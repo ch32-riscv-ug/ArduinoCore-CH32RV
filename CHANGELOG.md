@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.16.0
 - (EN) Breaking: the Monitor Source board menu is gone. Arduino IDE 2 keeps a port's monitor settings once opened and never applied a changed menu value (arduino/arduino-ide#2988), and the monitor's own default, Auto, reads every path the sketch uses. Pick another source with arduino-cli's `--config source=...`, a sketch.yaml profile's `port_config: source:`, or a client that shows the monitor's settings (the Arduino CLI Wrapper for VS Code). A sketch.yaml FQBN that still says `monitor=...` stops with "invalid option 'monitor'": delete that option.
 - (JA) 破壊的変更: ボードメニューの Monitor Source を外した。Arduino IDE 2 は一度開いた口のモニターの設定を保存し続け、メニューを変えても効かなかった（arduino/arduino-ide#2988）。モニター自体の既定の Auto が、スケッチの使う経路を全部読む。ほかの source にするときは、arduino-cli の `--config source=…`、sketch.yaml の profile の `port_config: source:`、モニターの設定を出すクライアント（VS Code の Arduino CLI Wrapper）で選ぶ。sketch.yaml の FQBN に `monitor=…` が残っていると「invalid option 'monitor'」で止まるので、その項目を消す。
 - (EN) ch32rv 0.35.4, for Linux without udev rules: the Auto monitor opens with the UART alone when a debug path cannot be opened and says why in one warning line; a permission error carries the exact fix, with the bundled ch32rv's full path; an OEP probe that cannot be opened is still listed as `oep://<unit>` labelled "no permission: udev rules missing". The bundled 60-ch32rv.rules also lets the logged-in user open the WCH-Link's and OEP probe's serial ports (uaccess), without the `dialout` group.
