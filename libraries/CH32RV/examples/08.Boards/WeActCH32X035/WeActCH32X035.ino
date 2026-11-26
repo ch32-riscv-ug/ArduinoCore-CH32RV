@@ -1,137 +1,36 @@
-// en: Combine USB, serial, SPI, ADC and PWM on the WeAct CH32X035 board.
-// ja: WeAct CH32X035でUSB・UART・SPI・ADC・PWMを組み合わせる。
+// en: The smallest start for the WeAct CH32X035 Core Board: blink the LED and print over its USB-C port.
+// ja: WeAct CH32X035 Core Boardのいちばん小さい出発点。LEDを点滅させ、USB-Cの口へ出力する。
 // en: Wiring and operation: README.md.
 // ja: 配線と操作: README.ja.md。
 /* board: CH32X035:part=CH32X035F8U6 */
 
 #include <CH32RVUsbDevice.h>
-#include <CH32RVUsbPd.h>
-#include <SPI.h>
-// en: Optional I2C replaces USB or debug pins; choose one pair (see README).
-// ja: 任意のI2CはUSBまたはデバッグ端子と排他。一組だけ選ぶ（README参照）。
-// #include <Wire.h>
 
+// en: The on-board LED (High lights it).
+// ja: 基板のLED（Highで点灯）。
 static const int LED_PIN = PB12;
-
-static const int UART_TX = PA2;
-static const int UART_RX = PA3;
-static const int UART2_TX = PB0;
-static const int UART2_RX = PB1;
-
-static const int SPI_SCK = PA5;
-static const int SPI_MISO = PA6;
-static const int SPI_MOSI = PA7;
-static const int SPI_CS = PA4;
-
-static const int ANALOG_1 = A0;
-static const int ANALOG_2 = A1;
-
-static const int PWM_PIN = PB11;
-
-// en: Debug-pin route; replaces SWD/DMSeq.
-// ja: デバッグ端子の経路。SWD/DMSeqと排他。
-// static const int I2C_SDA = PC18;
-// static const int I2C_SCL = PC19;
-// en: USB-pin route; replaces USB data.
-// ja: USB端子の経路。USBデータと排他。
-// static const int I2C_SDA = PC17;
-// static const int I2C_SCL = PC16;
-
-static uint8_t pwmLevel;
-static int8_t pwmStep = 4;
 
 void setup()
 {
     pinMode(LED_PIN, OUTPUT);
 
-    CH32RVUsbDeviceConfig usb;
-    usb.product = "WeAct CH32X035";
-    // en: Configure USB identity before starting the predefined CDC device.
-    // ja: 定義済みCDCデバイスの起動前にUSBの識別情報を設定する。
-    USBDevice.begin(usb);
+    // en: SerialUSB is a USB serial port on the board's USB-C. It also carries the DFU runtime, so the
+    // en: next upload can pick this sketch's ch32rv-app:// port and needs no DOWNLOAD key.
+    // ja: SerialUSBは基板のUSB-CのUSBシリアル。DFUランタイムも一緒に載るので、次の書き込みはこのスケッチの
+    // ja: ch32rv-app://の口を選べばよく、DOWNLOADキーは要らない。
     SerialUSB.begin();
-
-    // en: Start attach detection without waiting for a PD source.
-    // ja: PD電源の接続を待たずに検出を始める。
-    USBPD.begin();
-
-    Serial.begin(115200, SERIAL_8N1, UART_RX, UART_TX);
-    Serial1.begin(115200, SERIAL_8N1, UART2_RX, UART2_TX);
-
-    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, -1);
-    pinMode(SPI_CS, OUTPUT);
-    digitalWrite(SPI_CS, HIGH);
-
-    // Wire.begin(I2C_SDA, I2C_SCL);
-
-    pinMode(ANALOG_1, INPUT);
-    pinMode(ANALOG_2, INPUT);
-    pinMode(PWM_PIN, OUTPUT);
-}
-
-// en: Accept the common Print interface so the same status routine can write to UART or USB CDC.
-// ja: 共通のPrint型で受け、同じ表示処理をUARTとUSB CDCの両方で使う。
-static void status(Print &out)
-{
-    out.print("A0=");
-    out.print(analogRead(ANALOG_1));
-    out.print(" A1=");
-    out.print(analogRead(ANALOG_2));
-    out.print(" PWM=");
-    out.print(pwmLevel);
-    out.print(" PD=");
-    if (USBPD.ready()) {
-        out.print(USBPD.voltage());
-        out.print("mV/");
-        out.print(USBPD.current());
-        out.print("mA");
-    } else {
-        out.print(USBPD.connected() ? "no-PD" : "none");
-    }
-    out.println();
 }
 
 void loop()
 {
-    USBPD.maintain();
+    static unsigned long count;
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_PIN, LOW);
+    delay(900);
 
-    static uint32_t lastSpi;
-    if (millis() - lastSpi >= 100) {
-        lastSpi = millis();
-        digitalWrite(SPI_CS, LOW);
-        SPI.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-        SPI.transfer(0xA5);
-        SPI.endTransaction();
-        digitalWrite(SPI_CS, HIGH);
-
-        pwmLevel = (uint8_t)(pwmLevel + pwmStep);
-        if (pwmLevel == 0 || pwmLevel >= 252) {
-            pwmStep = (int8_t)-pwmStep;
-        }
-        analogWrite(PWM_PIN, pwmLevel);
-    }
-
-    while (Serial.available()) {
-        SerialUSB.write(Serial.read());
-    }
-    while (Serial1.available()) {
-        SerialUSB.write(Serial1.read());
-    }
-    // en: Data arriving over USB is forwarded to the UARTs; the preceding loops handle the opposite direction.
-    // ja: USBから届いた分をUARTへ渡す。上のループは反対向きの中継を行う。
-    while (SerialUSB.available()) {
-        const int c = SerialUSB.read();
-        Serial.write(c);
-        Serial1.write(c);
-    }
-
-    static uint32_t lastStatus;
-    if (millis() - lastStatus >= 1000) {
-        lastStatus = millis();
-        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-        status(Serial);
-        if (SerialUSB.connected()) {
-            status(SerialUSB);
-        }
-    }
+    // en: Nothing is lost while no terminal is open: the line just is not sent.
+    // ja: 端末を開いていない間は送らないだけで、スケッチは止まらない。
+    SerialUSB.print("hello from WeAct CH32X035 ");
+    SerialUSB.println(count++);
 }

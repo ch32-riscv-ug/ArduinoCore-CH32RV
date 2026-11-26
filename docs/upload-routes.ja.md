@@ -166,6 +166,8 @@ DFU ランタイムが既定で付きます）、ch32rv の discovery が `ch32r
 出します。その口を選んで書き込みを押すと、DFU_DETACH（または 1200bps touch）で ISP に入れてから書きます（[usb.ja.md](usb.ja.md)）。
 同じデバイスの CDC はシリアルポート（`COMx`、`/dev/ttyACM…`）としても出ますが、そちらを選ぶとデバッグプローブの経路になるので、
 書き込みには `ch32rv-app://` を選びます。
+arduino-cli で書くときは `--discovery-timeout 10s` を付けます。既定の 1 秒では ch32rv の discovery がこの口を見つける前に
+探すのをやめ、`port not found` で止まります（IDE は discovery を動かし続けているので要りません）。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、
 「キー操作なしの USBFS ダウンロード」（`USBFSDLEN`）が option byte の既定で有効です（CH32X315 リファレンスマニュアル）。

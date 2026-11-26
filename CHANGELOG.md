@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) The WeAct CH32X035 board example is now a small start: blink the LED and print on the USB-C `SerialUSB`, so one USB cable uploads it and shows the output, and later uploads go to its `ch32rv-app://` port without the DOWNLOAD key. The previous all-peripherals sketch is WeActCH32X035Peripherals. The UIAPduino board example blinks the LED by its printed number: its USB is the HID bootloader's and does nothing while a sketch runs.
+- (JA) WeAct CH32X035 のボードの例を小さい出発点にした。LED を点滅させ、USB-C の `SerialUSB` へ出すだけなので、USB ケーブル 1 本で書き込んで出力まで見られ、2 回目からは `ch32rv-app://` の口で DOWNLOAD キーなしに書ける。前の全部入りのスケッチは WeActCH32X035Peripherals にした。UIAPduino のボードの例は、印刷の番号で LED を点滅させるだけにした（基板の USB は HID のブートローダーのもので、スケッチの実行中は何もしない）。
 - (EN) Opening the serial monitor on a HID bootloader port (`ch32rv-hid://`, the UIAPduino's) now says "the HID bootloader has no console to monitor", as the ISP and bootloader ports do, instead of the IDE's "No monitor available for the port protocol ch32rv-hid".
 - (JA) HID のブートローダーの口（`ch32rv-hid://`、UIAPduino など）でシリアルモニターを開くと、ISP やブートローダーの口と同じく「the HID bootloader has no console to monitor」と出るようにした。今までは IDE の「No monitor available for the port protocol ch32rv-hid」だった。
 

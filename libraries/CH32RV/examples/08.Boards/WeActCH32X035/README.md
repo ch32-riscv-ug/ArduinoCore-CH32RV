@@ -2,47 +2,49 @@
 
 [日本語](README.ja.md)
 
-A starting point combining the peripherals exposed by the WeAct CH32X035 Core Board, with explicit pin names.
+The smallest start for the WeAct CH32X035 Core Board: blink the LED (PB12) and print one line a second
+on the board's USB-C serial port (`SerialUSB`). One USB cable uploads it and shows the output.
 
 ## Hardware and connections
 
-Use the target board and match UART/SPI wiring to the sketch pin table. USB CDC requires a data connection; PD tests require a suitable supply.
+A WeAct CH32X035 Core Board (CH32X035F8U6) and a USB-C cable. Select the board "Generic CH32X035" and
+the Part Number CH32X035F8U6.
+
+## Uploading
+
+- **The first time:** pick the port `ch32rv-bootloader://WAIT_FOR_BOOT`, press Upload, and once it waits,
+  plug the USB in while holding the DOWNLOAD key (the factory USB ISP returns to the app after about
+  10 s without an upload, so enter it after pressing Upload).
+- **From then on:** while this sketch runs, the port list shows `ch32rv-app://...` (labelled
+  "CH32RV Arduino (CH32RV, USB)"). Pick it and press Upload: no DOWNLOAD key. The same USB's serial
+  port (`COMx`, `/dev/ttyACM...`) is for the monitor.
+
+See [upload routes (Japanese)](../../../../../docs/upload-routes.ja.md).
 
 ## Steps and expected results
 
-Observe LED/PWM changes and ADC/PD status on `Serial` and connected `SerialUSB`. Remove unused features one at a time.
+The LED flashes briefly once a second. Open the serial monitor on the USB serial port (or the
+`ch32rv-app://` port): `hello from WeAct CH32X035 0`, `1`, ... arrive once a second.
 
-## API and processing flow
+## Board pins
 
-UART and SPI initialization specify pins. Read USB communication state and PD contract separately. `status(Print &out)` shares one output routine between UART and CDC.
-
-## Adapting the example
-
-Check the comments for pin conflicts. Enabling I2C requires removing the USB or debug-pin function it replaces. Compare schematics before using this on another X035 board.
-
-### Board connections and shared pins
-
-This template targets the WeAct CH32X035 Core Board with CH32X035F8U6. Use the schematic for your board revision.
-
-| Function | Sketch pins | Notes |
+| Function | Pads | Notes |
 |---|---|---|
-| LED | PB12 | High turns it on |
-| `Serial` | TX PA2, RX PA3 | USART2 |
-| `Serial1` | TX PB0, RX PB1 | USART4 |
-| SPI | SCK PA5, MISO PA6, MOSI PA7, CS PA4 | CS is an ordinary GPIO |
-| ADC | A0 / PA0, A1 / PA1 | Match input voltage to the analog supply |
-| PWM | PB11 | Keeps the UART, SPI and ADC pins free |
-| USB data | D− PC16, D+ PC17 | Separate from the CC pins |
-| USB PD | CC1 PC14, CC2 PC15 | Contract status is independent of CDC communication |
-| Debug | PC18 / PC19 | Shared with one optional I2C route |
+| LED | PB12 | active High |
+| UART (`Serial`) | TX PA2, RX PA3 | USART2 |
+| UART (`Serial1`) | TX PB0, RX PB1 | USART4 |
+| SPI | SCK PA5, MISO PA6, MOSI PA7, CS PA4 | CS is a plain GPIO |
+| ADC | A0 / PA0, A1 / PA1 | |
+| USB data | D- PC16, D+ PC17 | used by `SerialUSB` |
+| USB PD | CC1 PC14, CC2 PC15 | [CH32RVUsbPd](../../../../CH32RVUsbPd/README.md) |
+| Debug | PC18 / PC19 | for a WCH-Link or an OEP probe |
 
-Only one optional I2C pair can be enabled: SDA PC18 / SCL PC19 replaces debug-pin use, or SDA PC17 / SCL PC16 replaces USB data. Uncomment `<Wire.h>`, the chosen pair and `Wire.begin()` together, after disabling the conflicting function. The package does not expose every USART route, so do not assume `Serial` must use USART1.
-
-The DOWNLOAD key participates in the board's factory-upload entry. Follow the [upload routes (Japanese)](../../../../../docs/upload-routes.ja.md) rather than treating it as an ordinary application button.
+I2C exists only on the USB data pins or the debug pins. UART, SPI, ADC, PWM, PD and I2C together are in
+[WeActCH32X035Peripherals](../WeActCH32X035Peripherals/README.md).
 
 ## Related documentation
 
 - [Sketch](WeActCH32X035.ino)
 - [Basic example setup and index](../../README.md)
+- [USB serial examples (CH32RVUsbDevice)](../../../../CH32RVUsbDevice/examples/README.md)
 - [Example guide](../../../../../docs/examples.md)
-- [Sketch composition guide (Japanese)](../../../../../docs/sketch-guide.ja.md)
