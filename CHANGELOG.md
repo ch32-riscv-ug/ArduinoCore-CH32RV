@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.14.0
 - (EN) ch32rv 0.35.2: the serial monitor's settings are Monitor Source, Baud Rate (UART), DTR (UART) and RTS (UART) only. `chip` and `speed` are gone - the IDE could not show them and the core no longer passed them, yet Arduino IDE 2 saved them (all 127 part names) for every port; a saved one is accepted and ignored, so an old pluggable-monitor-settings.json still opens.
 - (JA) ch32rv 0.35.2: シリアルモニターの設定を、Monitor Source・Baud Rate (UART)・DTR (UART)・RTS (UART) の 4 つだけにした。`chip` と `speed` は外した（IDE の画面に出ず、コアも渡していないのに、Arduino IDE 2 が口ごとに保存していた。`chip` は型番 127 個）。保存済みの値は受けて無視するので、古い pluggable-monitor-settings.json のままでも開ける。
 
