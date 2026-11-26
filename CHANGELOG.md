@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.35.6: on Windows, `isp` also finds an ISP bootloader (1a86:55e0) bound to the CH372/CH375 driver that WCH's WCHISPTool installs.
+- (JA) ch32rv 0.35.6: Windows で、WCH の WCHISPTool が入れる CH372/CH375 のドライバが付いた ISP のブートローダー（1a86:55e0）も、`isp` が見つけるようにした。
 - (EN) The WeAct CH32X035 board example is now a small start: blink the LED and print on the USB-C `SerialUSB`, so one USB cable uploads it and shows the output, and later uploads go to its `ch32rv-app://` port without the DOWNLOAD key. The previous all-peripherals sketch is WeActCH32X035Peripherals. The UIAPduino board example blinks the LED by its printed number: its USB is the HID bootloader's and does nothing while a sketch runs.
 - (JA) WeAct CH32X035 のボードの例を小さい出発点にした。LED を点滅させ、USB-C の `SerialUSB` へ出すだけなので、USB ケーブル 1 本で書き込んで出力まで見られ、2 回目からは `ch32rv-app://` の口で DOWNLOAD キーなしに書ける。前の全部入りのスケッチは WeActCH32X035Peripherals にした。UIAPduino のボードの例は、印刷の番号で LED を点滅させるだけにした（基板の USB は HID のブートローダーのもので、スケッチの実行中は何もしない）。
 - (EN) Opening the serial monitor on a HID bootloader port (`ch32rv-hid://`, the UIAPduino's) now says "the HID bootloader has no console to monitor", as the ISP and bootloader ports do, instead of the IDE's "No monitor available for the port protocol ch32rv-hid".
