@@ -16,8 +16,8 @@ the Part Number CH32X035F8U6.
   plug the USB in while holding the DOWNLOAD key (the factory USB ISP returns to the app after about
   10 s without an upload, so enter it after pressing Upload).
 - **From then on:** while this sketch runs, the port list shows `ch32rv-app://...` (labelled
-  "CH32RV Arduino (CH32RV, USB)"). Pick it and press Upload: no DOWNLOAD key. The same USB's serial
-  port (`COMx`, `/dev/ttyACM...`) is for the monitor.
+  "CH32RV Arduino (CH32RV, USB)"). Pick it and press Upload: no DOWNLOAD key. Picking the same USB's
+  serial port (`COMx`, `/dev/ttyACM...`) uploads the same way.
 
 See [upload routes (Japanese)](../../../../../docs/upload-routes.ja.md).
 

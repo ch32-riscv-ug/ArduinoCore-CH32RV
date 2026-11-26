@@ -164,9 +164,10 @@ IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます
 **2 回目からは BOOT は要りません。** 書き込んだスケッチが `CH32RVUsbDevice` で USB を動かしていれば（`SerialUSB` など。
 DFU ランタイムが既定で付きます）、ch32rv の discovery が `ch32rv-app://<USB シリアル>` の口（表示は「<製品名> (CH32RV, USB)」）を
 出します。その口を選んで書き込みを押すと、DFU_DETACH（または 1200bps touch）で ISP に入れてから書きます（[usb.ja.md](usb.ja.md)）。
-同じデバイスの CDC はシリアルポート（`COMx`、`/dev/ttyACM…`）としても出ますが、そちらを選ぶとデバッグプローブの経路になるので、
-書き込みには `ch32rv-app://` を選びます。
-arduino-cli で書くときは `--discovery-timeout 10s` を付けます。既定の 1 秒では ch32rv の discovery がこの口を見つける前に
+同じデバイスの CDC のシリアルポート（`COMx`、`/dev/ttyACM…`）を選んでも同じように書けます（ch32rv 0.35.7 から。ch32rv が
+CH32RV のスケッチのシリアルポートだと見分けて、`isp flash --entry auto` で書きます）。Windows でスケッチの DFU ランタイムに
+ドライバが付かないときは、1200bps touch で入れます。
+arduino-cli で `ch32rv-app://` の口へ書くときは `--discovery-timeout 10s` を付けます。既定の 1 秒では ch32rv の discovery がこの口を見つける前に
 探すのをやめ、`port not found` で止まります（IDE は discovery を動かし続けているので要りません）。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、

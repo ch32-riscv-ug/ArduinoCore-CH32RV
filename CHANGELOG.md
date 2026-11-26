@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.35.7: uploading to a running CH32RV sketch's USB serial port (`COMx`, `/dev/ttyACM...`) now works like its `ch32rv-app://` port (into the USB bootloader, then written) instead of failing as if it were an OEP probe; on Windows, when the sketch's DFU runtime has no driver, the 1200 bps touch enters the bootloader instead.
+- (JA) ch32rv 0.35.7: 動いている CH32RV のスケッチの USB シリアルポート（`COMx`、`/dev/ttyACM…`）を選んだ書き込みが、`ch32rv-app://` の口と同じく通るようにした（USB のブートローダーに入れてから書く）。今までは OEP プローブの口とみなして失敗していた。Windows でスケッチの DFU ランタイムにドライバが付かないときは、1200bps touch でブートローダーに入れる。
 
 ## 0.18.0
 - (EN) ch32rv 0.35.6: on Windows, `isp` also finds an ISP bootloader (1a86:55e0) bound to the CH372/CH375 driver that WCH's WCHISPTool installs.
