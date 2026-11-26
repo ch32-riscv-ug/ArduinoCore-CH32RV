@@ -112,6 +112,19 @@ extern const uint8_t ch32rv_board_pins[CH32RV_BOARD_PIN_COUNT];
      ((CH32RV_PORT_MASK(CH32RV_PIN_PORT(pad)) >> CH32RV_PIN_BIT(pad)) & 1u))
 #define digitalPinIsValid(pin) ch32rv_pad_is_valid(CH32RV_PIN_RESOLVE(pin))
 
+/* A pin's pad name, "PC19", for printing: the core keeps a pin as a number
+ * that packs the port and the bit (PC19 is 147), so printing the number itself
+ * says nothing. A board's printed number gives its pad ("2" on UIAPduino is
+ * "PC0"); a pin this series does not have gives "NC". The text is the
+ * function's own and stays valid until the next call (ch32rv_pin_name.c). */
+#ifdef __cplusplus
+extern "C" {
+#endif
+const char *digitalPinToName(pin_size_t pin);
+#ifdef __cplusplus
+}
+#endif
+
 /* Same, restricted to the pads present on every part in the series - the set a
  * sketch built for the ANY menu entry can rely on. */
 #define ch32rv_pad_is_common(pad) \

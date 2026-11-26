@@ -30,16 +30,6 @@ static const int SCL_PIN = SCL;
 #include <CH32RV.h>
 #endif
 
-// en: A pin by its name, PC19 rather than the number the core keeps for it.
-// ja: 端子を名前で表示する（コアの内部の番号ではなくPC19のように）。
-static void printPin(int pin)
-{
-    const int pad = CH32RV_PIN_RESOLVE(pin);
-    Console.print('P');
-    Console.print((char)('A' + CH32RV_PIN_PORT(pad)));
-    Console.print(CH32RV_PIN_BIT(pad));
-}
-
 static bool busReady;
 
 void setup()
@@ -61,10 +51,12 @@ static void scan()
         // ja: この端子がつながるI2Cの周辺機能（I2C1、I2C2など）。
         Console.print(Wire.peripheral());
     }
+    // en: digitalPinToName() gives the pad's name (PC19), not the number the core keeps for it.
+    // ja: digitalPinToName()は端子の名前（PC19）を返す。コアの内部の番号ではない。
     Console.print(" on SDA=");
-    printPin(SDA_PIN);
+    Console.print(digitalPinToName(SDA_PIN));
     Console.print(" SCL=");
-    printPin(SCL_PIN);
+    Console.print(digitalPinToName(SCL_PIN));
     Console.println();
 
     if (!busReady) {

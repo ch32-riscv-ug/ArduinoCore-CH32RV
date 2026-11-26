@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) `digitalPinToName(pin)` gives a pin's pad name for printing ("PC19"; a board's printed number gives its pad, a pin the part lacks "NC"): the core keeps a pin as a number packing port and bit (PC19 is 147), which printed as such says nothing. The I2CScanner example prints its pins with it.
+- (JA) `digitalPinToName(pin)` を足した。端子の名前（"PC19"）を返す。ボードの印刷の番号はその端子の名前に、その石に無い端子は "NC" になる。コアは端子をポートとビットを詰めた番号（PC19 なら 147）で持つので、番号をそのまま出しても分からなかった。I2CScanner の例はこれで端子を出す。
 - (EN) ch32rv 0.35.8: the USB upload's progress lines go to standard output, so the IDE no longer shows a successful upload in red; when a sketch has stopped its USB, the upload asks for BOOT and waits up to 60 s for the bootloader on the same USB port instead of failing.
 - (JA) ch32rv 0.35.8: USB での書き込みの途中経過の行を標準出力に出すので、成功した書き込みが IDE で赤く表示されなくなった。スケッチが USB を止めているときは、すぐ失敗せず、BOOT を押すよう案内して、同じ USB の差し口にブートローダーが現れるのを最大 60 秒待つ。
 - (EN) `CH32RV.releaseDebugPins()` turns the debug interface off until the next reset, so its pads (X035's PC18 / PC19, V003's PD1, V20x / V30x's PA13 / PA14, ...) work as ordinary pads. Without it, a route chosen by those pins (`Wire.begin(sda, scl)`, `setPins()`, `setRoute()` on Wire, SPI, Serial and CAN) now returns false instead of an I2C that timed out on every address; default routes are unchanged. Never done on the core's own: afterwards no WCH-Link or OEP probe can attach to the running sketch, and on V00x the debug wire is the only way in. UIAPduino's `pinV32_DisconnectDebug(PD_1)` does the same.
