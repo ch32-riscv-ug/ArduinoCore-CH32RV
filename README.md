@@ -14,11 +14,14 @@ then install **CH32 RISC-V** from Boards Manager:
 https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
-With arduino-cli:
+With arduino-cli, register the URL in its configuration first, so that later
+`arduino-cli core update-index` and `arduino-cli core upgrade` pick up new versions
+(`core install --additional-urls ...` uses the URL for that one command only, so it never upgrades):
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32rv \
-  --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+arduino-cli config add board_manager.additional_urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+arduino-cli core update-index
+arduino-cli core install ch32-riscv-ug:ch32rv
 ```
 
 This also installs the toolchain (ch32-riscv-ug/ch32rv-toolchain: clang and lld with picolibc, compiler-rt, libc++ and GDB) and the `ch32rv` upload/monitor tool.

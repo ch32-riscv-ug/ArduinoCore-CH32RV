@@ -14,11 +14,13 @@ Arduino IDE の「ファイル → 基本設定 → 追加のボードマネー�
 https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 ```
 
-arduino-cli では次のようにします。
+arduino-cli では、URL を設定に登録してからインストールします。登録しておくと、あとで `arduino-cli core update-index` と
+`arduino-cli core upgrade` で新しい版に上がります（`core install --additional-urls …` だとその 1 回だけ効くので、上がりません）。
 
 ```sh
-arduino-cli core install ch32-riscv-ug:ch32rv \
-  --additional-urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+arduino-cli config add board_manager.additional_urls https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
+arduino-cli core update-index
+arduino-cli core install ch32-riscv-ug:ch32rv
 ```
 
 toolchain（ch32-riscv-ug/ch32rv-toolchain：clang と lld、picolibc、compiler-rt、libc++、GDB）と書き込みツール `ch32rv` も一緒にインストールされます。書き込み時は IDE の port で
