@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.35.10: the port list sends the ports it knows without opening anything (WCH-Link, the HID / ISP bootloaders, a running sketch's `ch32rv-app://`, WAIT_FOR_BOOT) right away, so an upload to them no longer misses them in arduino-cli's 1 s wait (`--discovery-timeout` is not needed); and an upload that reaches such a port as a debug probe writes it the right way instead of refusing.
+- (JA) ch32rv 0.35.10: ポートの一覧で、機器を開かずに分かる口（WCH-Link、HID・ISP のブートローダー、動いているスケッチの `ch32rv-app://`、WAIT_FOR_BOOT）を、すぐに送るようにした。arduino-cli の 1 秒の待ちで見落とさなくなった（`--discovery-timeout` は要らない）。そうした口がデバッグプローブとして渡されても、断らずに正しい方法で書く。
 
 ## 0.21.0
 - (EN) Fix (Windows): a sketch without build_opt.h failed to compile with "no such file or directory: '@...\\build_opt.h'" since the faster rebuilds (0.20.0): the one-line cmd hook that keeps build_opt.h made no file. The Windows half is now a batch file shipped with the platform (build_opt.cmd).

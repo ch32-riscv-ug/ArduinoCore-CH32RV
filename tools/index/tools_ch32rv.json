@@ -1,58 +1,58 @@
 {
-  "comment": "ch32rv 0.35.9 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.35.9. No mirror is needed: this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
+  "comment": "ch32rv 0.35.10 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.35.10. No mirror is needed: this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
   "name": "ch32rv",
-  "version": "0.35.9",
-  "upstreamTag": "v0.35.9",
+  "version": "0.35.10",
+  "upstreamTag": "v0.35.10",
   "systems": [
     {
       "host": "x86_64-pc-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-x86_64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.35.9-x86_64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:0d97a3e942b0c98216c1708d2b4a32479a8c6f1b68ba3d89e839544a7d0b41cc",
-      "size": "2492579"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.35.10-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:7083a75807955084def0a42bdeb5114ef0d5b5c4dad0103e5340a70bcda7b4b0",
+      "size": "2495325"
     },
     {
       "host": "aarch64-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-aarch64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.35.9-aarch64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:1c88663d65b0d820b7471f3d30f7b5f0d79c958492e222e6c7529fd69def7607",
-      "size": "2413931"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.35.10-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:527cb24a4e8e5487884e522541b84a5f3a700fd67f41be16756b86494278ee88",
+      "size": "2416120"
     },
     {
       "host": "x86_64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-x86_64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.35.9-x86_64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:f6c40839f12ef18c33e6c1474188e39c5870372704b544f488cfb7da1815a505",
-      "size": "2374663"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.35.10-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:ce4e6462279f90babc402d6b92f0e08b5a445aebcb2def28da0c9ba71bc950c8",
+      "size": "2377605"
     },
     {
       "host": "arm64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-aarch64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.35.9-aarch64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:1e0becb56f5b6b797d1b9eb0f3615244185797f29fe730ed7bd7ac7884670bd1",
-      "size": "2262151"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.35.10-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:060b0233aa6751d811786d3a30a8a0bfaf3928139138f98fb7233362bcd67cea",
+      "size": "2266369"
     },
     {
       "host": "x86_64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:889dd108d98131d6e61a18b806e953bc384d825b83975f5b5690130621985ccc",
-      "size": "2314778"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:b052e46c8661df75ba38f4f7e2ec4c90931b34b9594e42fd75c49f9406619427",
+      "size": "2321018"
     },
     {
       "host": "i686-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:889dd108d98131d6e61a18b806e953bc384d825b83975f5b5690130621985ccc",
-      "size": "2314778",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:b052e46c8661df75ba38f4f7e2ec4c90931b34b9594e42fd75c49f9406619427",
+      "size": "2321018",
       "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
     },
     {
       "host": "arm64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.9/ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.9-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:889dd108d98131d6e61a18b806e953bc384d825b83975f5b5690130621985ccc",
-      "size": "2314778",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.10/ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.10-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:b052e46c8661df75ba38f4f7e2ec4c90931b34b9594e42fd75c49f9406619427",
+      "size": "2321018",
       "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation, and USB access goes through the ordinary Win32 APIs"
     }
   ]

@@ -170,8 +170,6 @@ CH32RV のスケッチのシリアルポートだと見分けて、`isp flash --
 Windows（WeAct CH32X035F8U6、ISP の bootloader に WCHISPTool の CH375 ドライバ、ch32rv 0.35.7、2026-11-26）で、
 `WAIT_FOR_BOOT`、`ch32rv-app://`（DFU ランタイムが開けず 1200bps touch に切り替え）、スケッチの COM ポートの 3 通りとも、書き込み・
 照合・アプリの起動まで通りました。UIAPduino の HID の bootloader（1209:b803）も、BOOT で入れた後に IDE の一覧に出ました。
-arduino-cli で `ch32rv-app://` の口へ書くときは `--discovery-timeout 10s` を付けます。既定の 1 秒では ch32rv の discovery がこの口を見つける前に
-探すのをやめ、`port not found` で止まります（IDE は discovery を動かし続けているので要りません）。
 
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、
 「キー操作なしの USBFS ダウンロード」（`USBFSDLEN`）が option byte の既定で有効です（CH32X315 リファレンスマニュアル）。
