@@ -318,9 +318,12 @@ pluggable_monitor.pattern.serial="{runtime.tools.ch32rv.path}/ch32rv" arduino mo
 pluggable_monitor.pattern.wchlink="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol wchlink
 pluggable_monitor.pattern.oep="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol oep
 # ch32rv-app opens the sketch's own CDC port (none: the monitor says so);
-# ch32rv-isp and ch32rv-bootloader have nothing to show and refuse.
+# ch32rv-isp, ch32rv-hid and ch32rv-bootloader have nothing to show and refuse, saying so
+# ("the HID bootloader has no console to monitor") - without a pattern the IDE only says
+# "No monitor available for the port protocol".
 pluggable_monitor.pattern.ch32rv-app="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-app
 pluggable_monitor.pattern.ch32rv-isp="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-isp
+pluggable_monitor.pattern.ch32rv-hid="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-hid
 pluggable_monitor.pattern.ch32rv-bootloader="{runtime.tools.ch32rv.path}/ch32rv" arduino monitor --protocol ch32rv-bootloader
 
 # ---------------------------------------------------------------- debug

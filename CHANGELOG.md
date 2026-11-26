@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Opening the serial monitor on a HID bootloader port (`ch32rv-hid://`, the UIAPduino's) now says "the HID bootloader has no console to monitor", as the ISP and bootloader ports do, instead of the IDE's "No monitor available for the port protocol ch32rv-hid".
+- (JA) HID のブートローダーの口（`ch32rv-hid://`、UIAPduino など）でシリアルモニターを開くと、ISP やブートローダーの口と同じく「the HID bootloader has no console to monitor」と出るようにした。今までは IDE の「No monitor available for the port protocol ch32rv-hid」だった。
 
 ## 0.17.0
 - (EN) The CH32RV library's examples are grouped into numbered folders, which the IDE shows as submenus: 01.Basics, 02.GPIO, 03.Analog, 04.Serial, 05.Timer, 06.System, 07.Chips (CH32H417's dual-core examples) and 08.Boards (one board each; BoardUIAPduinoProMicro and BoardWeActCH32X035 are now UIAPduinoProMicro and WeActCH32X035).
