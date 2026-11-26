@@ -14,7 +14,7 @@ profiles:
   ch32v205:
     fqbn: ch32-riscv-ug:ch32rv:CH32V205:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.19.0)
+      - platform: ch32-riscv-ug:ch32rv (0.20.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   # CH32V208: omitted, requires CH32RV_QSPI_PADS_ANY, which CH32V208 does not have
@@ -36,12 +36,12 @@ profiles:
   ch32h416:
     fqbn: ch32-riscv-ug:ch32rv:CH32H416:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.19.0)
+      - platform: ch32-riscv-ug:ch32rv (0.20.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h417:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.19.0)
+      - platform: ch32-riscv-ug:ch32rv (0.20.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 

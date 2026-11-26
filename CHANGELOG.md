@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.20.0
 - (EN) ch32rv 0.35.9: `ch32rv flash --probe /dev/serial/by-id/...` recognises a running CH32RV sketch's serial port through the symlink too.
 - (JA) ch32rv 0.35.9: `ch32rv flash --probe /dev/serial/by-id/…` でも、動いている CH32RV のスケッチのシリアルポートを見分けるようにした（シンボリックリンクを解決する）。
 - (EN) `digitalPinToName(pin)` gives a pin's pad name for printing ("PC19"; a board's printed number gives its pad, a pin the part lacks "NC"): the core keeps a pin as a number packing port and bit (PC19 is 147), which printed as such says nothing. The I2CScanner example prints its pins with it.
