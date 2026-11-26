@@ -52,10 +52,11 @@ monitor の設定のうちボーレートしか出ないためです（arduino-c
 | Auto（既定） | `auto`: UART だけ | `auto`: CDC の UART・郵便受け系・RTT | `auto`: fixture-uart・郵便受け系・RTT |
 | UART (Serial) | `uart`: UART bridge の素通し | `uart`: Link の CDC | `fixture-uart`: probe の UART の線 |
 | DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
-| SDI, LinkE forwarding | `sdi-forward` | `sdi-forward` | `sdi` |
 
 `SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
-`SDI, LinkE forwarding` は、LinkE に SDI の転送をさせて CDC で受けます。転送している間は、CDC に UART の出力が届きません。
+LinkE 自身の SDI の転送（WCH-LinkUtility・wlink などで有効にするもの）はメニューにありません。モニターは Link の設定を変えない
+ためです。転送を有効にしてあれば、転送された文字は CDC に来るので、UART（または Auto）で読めます。転送している間は、CDC に
+UART の出力が届きません。CLI では `ch32rv monitor --source sdi-forward` が転送を有効にしてから読みます。
 
 **Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
 その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを Tools メニューより

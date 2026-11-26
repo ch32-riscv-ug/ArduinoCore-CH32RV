@@ -45,7 +45,7 @@ WCH-LinkE自身に転送させる方法もあります。転送を有効にす�
   probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
 
 ```
-ch32rv monitor --source sdi-forward            # 転送を有効にしてからCDCを読む（Monitor Sourceの「SDI, LinkE forwarding」）
+ch32rv monitor --source sdi-forward            # 転送を有効にしてからCDCを読む
 ch32rv monitor sdi off                         # 転送を切る（LinkEのRAMの設定なので、電源を切っても消えます）
 ```
 
@@ -57,6 +57,8 @@ WCH純正のツールでも有効にできます。
 | **MounRiver Studio 同梱のOpenOCD** | Linux / macOS / Windows | 同じくWCH純正。`openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable`（`wlink flash --enable-sdi-print --watch-serial firmware.elf`で書き込みと監視をまとめられます） |
 
+IDEのシリアルモニターでは、転送を有効にしてから、Monitor SourceのUART（またはAuto）で同じportを開けば読めます
+（モニターはLinkEの設定を変えないので、メニューに転送の項目はありません）。
 転送を有効にしたままだと、LinkEが先に文字を取るので、ch32rvの`sdi`・`auto`では読めません（ch32rvが警告
 `sdi-quiet`で`ch32rv monitor sdi off`を案内します）。
 **詳しくは[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**

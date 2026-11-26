@@ -631,16 +631,16 @@ def stackcheck_menu(board: str) -> list[str]:
 # OEP probe's fixture UART. The others attach through the debug module on every
 # kind of port (docs/debug-output.ja.md: attaching can reclock some families
 # and corrupt a register on V103 / V205). SDI reads the mailbox over DMI on a
-# WCH-Link too (ch32rv 0.35.0), beside the UART; SDI (LinkE forwarding) turns
-# on the LinkE's own SDI forwarding instead, which takes the CDC from the UART
-# while it is on (an OEP probe has no forwarding: plain SDI there).
+# WCH-Link too (ch32rv 0.35.0), beside the UART, without touching the Link's
+# settings. ch32rv's sdi-forward is left out: it turns on the LinkE's own
+# forwarding (a setting the monitor should not change), and with forwarding on
+# - switched on by WCH's tools - the CDC is read just as UART reads it.
 MONITOR_SOURCE_MENU = (
     ("auto", "Auto (UART + debug console) (default)", {"serial": "auto", "wchlink": "auto", "oep": "auto"}),
     ("uart", "UART (Serial)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),
     ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
     ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
     ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),
-    ("sdi_forward", "SDI, LinkE forwarding (SerialSDI)", {"serial": "sdi-forward", "wchlink": "sdi-forward", "oep": "sdi"}),
     ("rtt", "RTT (SerialRTT)", {"serial": "rtt", "wchlink": "rtt", "oep": "rtt"}),
 )
 

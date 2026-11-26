@@ -49,7 +49,7 @@ bridge stops).
   have the registers but the probe firmware will not poll them (ch32rv's direct read above works there).
 
 ```
-ch32rv monitor --source sdi-forward            # switches forwarding on, then reads the CDC ("SDI, LinkE forwarding")
+ch32rv monitor --source sdi-forward            # switches forwarding on, then reads the CDC
 ch32rv monitor sdi off                         # switches it off (the LinkE keeps it in RAM: power-off clears it too)
 ```
 
@@ -61,6 +61,8 @@ WCH's own tools switch it on too:
 | **OpenOCD bundled with MounRiver Studio** | Linux / macOS / Windows | Also WCH's. `openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` (`wlink flash --enable-sdi-print --watch-serial firmware.elf` flashes and watches in one go) |
 
+In the IDE's serial monitor, switch forwarding on first and open the same port with Monitor Source UART
+(or Auto): the monitor does not change the LinkE's settings, so the menu has no forwarding entry.
 With forwarding left on, the LinkE takes the characters first, so ch32rv's `sdi` and `auto` get nothing
 (ch32rv warns `sdi-quiet` and points at `ch32rv monitor sdi off`).
 **Details are in [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**
