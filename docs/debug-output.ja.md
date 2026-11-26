@@ -65,7 +65,12 @@ WCH-Link では、ch32rv が直接読むより約 2 倍速く出せます（V307
 優先します。そのため、あとから Monitor Source を変えても、IDE を再起動しても、最初の source のまま読みます。変えるときは、IDE を
 閉じて、IDE の設定のフォルダー（Windows は `C:\Users\<ユーザー名>\.arduinoIDE`）の `pluggable-monitor-settings.json` から、
 その口の項目（`ch32-riscv-ug:ch32rv:<ボード>-<口>-<protocol>`）を消してから、メニューを選び直してモニターを開きます。
-arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。既定の Auto が全部を読むのは、このためです。
+arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。
+
+**Arduino IDE 以外で選ぶ:** arduino-cli では `arduino-cli monitor -p <口> --config source=dmseq` のように、開くたびに選べます。
+VS Code の [Arduino CLI Wrapper](https://marketplace.visualstudio.com/items?itemName=tanakamasayuki.vscode-arduino-cli-wrapper)
+は、monitor の設定（Monitor Source・Baud Rate (UART) など）をラベルで出すので、口ごとに選べます（Windows と WSL で確認、
+2026-11-26）。既定の Auto が全部を読むのは、このためです。
 
 `uart` 以外の source を選ぶと debug で attach するので、走っている firmware のクロックが組み直されることがあり、V103 / V205 では
 register が 1 つ壊れることがあります（[chip-caveats.ja.md](chip-caveats.ja.md)）。モニターの窓の先頭に
