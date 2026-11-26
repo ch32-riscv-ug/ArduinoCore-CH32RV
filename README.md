@@ -28,6 +28,24 @@ This also installs the toolchain (ch32-riscv-ug/ch32rv-toolchain: clang and lld 
 In the IDE, select a WCH-Link, OEP probe, or supported board bootloader as the port,
 then press Upload.
 
+**On Linux, install the udev rules once first.** Without them the WCH-Link and OEP probes cannot be
+opened: they are missing from the port list, or uploads and the monitor fail with `permission denied`.
+The Boards Manager install's output, and `ch32rv`'s error when permission is missing, print the exact
+commands (with this machine's absolute path). By hand (`<version>` is the installed `ch32rv`'s):
+
+```sh
+~/.arduino15/packages/ch32-riscv-ug/tools/ch32rv/<version>/ch32rv doctor --emit-udev | sudo tee /etc/udev/rules.d/60-ch32rv.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Then replug the probe.
+
+**Using only a sketch.yaml profile (no Boards Manager install):** building, uploading and the monitor
+work, but arduino-cli does not start the port discovery of a platform installed through a profile, so
+the `wchlink://` and `oep://` ports are not listed (they still work when named with the protocol, as in
+`-p wchlink://<serial> -l wchlink`), and no udev guidance is shown either. For the Arduino IDE, or to
+pick ports from a list, install through Boards Manager.
+
 The [implementation matrix](docs/support-status.ja.md) lists which series have
 build and upload support (Japanese).
 

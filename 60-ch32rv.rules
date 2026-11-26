@@ -24,3 +24,9 @@ KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct
 # pair; hidraw carries the OEP HID.
 SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="4f45", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4f45", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Serial ports (tty) of WCH-Links (their UART bridge: the monitor's `uart`) and of OEP probes (the
+# OEP link on USB CDC): uaccess only, so a user outside `dialout` on the seat can open them; the
+# tty keeps its group (`dialout`) for everyone else.
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8010", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="8011", TAG+="uaccess"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4f45", TAG+="uaccess"

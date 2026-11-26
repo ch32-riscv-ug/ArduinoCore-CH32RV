@@ -26,6 +26,23 @@ arduino-cli core install ch32-riscv-ug:ch32rv
 toolchain（ch32-riscv-ug/ch32rv-toolchain：clang と lld、picolibc、compiler-rt、libc++、GDB）と書き込みツール `ch32rv` も一緒にインストールされます。書き込み時は IDE の port で
 WCH-Link、OEP probe、または対応ボードのブートローダを選び、「書き込み」を実行します。
 
+**Linux では、最初に一度 udev のルールを入れます。** 入れないと、WCH-Link や OEP probe を開く権限が無く、port の一覧に
+出なかったり、書き込みやモニターが `permission denied` で失敗したりします。ボードマネージャでのインストールの出力と、
+権限で失敗したときの `ch32rv` のエラーに、打つ手順（その環境の絶対パス入り）がそのまま出ます。手で打つときは次のとおりです
+（`<版>` は入った `ch32rv` の版）。
+
+```sh
+~/.arduino15/packages/ch32-riscv-ug/tools/ch32rv/<版>/ch32rv doctor --emit-udev | sudo tee /etc/udev/rules.d/60-ch32rv.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+そのあと probe を抜き差しします。
+
+**sketch.yaml の profile だけで使う場合（ボードマネージャで入れない場合）:** ビルド、書き込み、モニターは動きますが、
+arduino-cli は profile で入れた platform の port の検出を起動しないので、`wchlink://`・`oep://` の port が一覧に出ません
+（`-p wchlink://<serial> -l wchlink` のように port と protocol を指定すれば使えます）。udev の案内も出ません。
+Arduino IDE で使うときや、port を一覧から選ぶときは、ボードマネージャでインストールしてください。
+
 系列ごとのビルド、書き込みの実装範囲は
 [系列ごとの実装範囲](docs/support-status.ja.md) を参照してください。
 

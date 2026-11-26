@@ -6,6 +6,10 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.35.4, for Linux without udev rules: the Auto monitor opens with the UART alone when a debug path cannot be opened and says why in one warning line; a permission error carries the exact fix, with the bundled ch32rv's full path; an OEP probe that cannot be opened is still listed as `oep://<unit>` labelled "no permission: udev rules missing". The bundled 60-ch32rv.rules also lets the logged-in user open the WCH-Link's and OEP probe's serial ports (uaccess), without the `dialout` group.
+- (JA) ch32rv 0.35.4（udev のルールの無い Linux 向け）: Auto のモニターは、デバッグの経路が開けなくても UART だけで開き、理由を警告の 1 行で出す。権限のエラーには、同梱の ch32rv の絶対パス入りの直し方が付く。開けない OEP プローブも `oep://<unit>` として「no permission: udev rules missing」のラベルで一覧に出る。同梱の 60-ch32rv.rules は、WCH-Link と OEP プローブの serial port も、ログインしている利用者が `dialout` のグループ無しで開けるようにした（uaccess）。
+- (EN) The README says to install the udev rules once on Linux, and that a sketch.yaml profile alone (no Boards Manager install) lists no `wchlink://` / `oep://` ports and shows no udev advice: arduino-cli does not start a profile platform's discovery.
+- (JA) README に、Linux では最初に一度 udev のルールを入れること、sketch.yaml の profile だけで使う（ボードマネージャで入れない）と `wchlink://`・`oep://` の口が一覧に出ず udev の案内も出ないこと（arduino-cli は profile の platform の検出を起動しない）を書いた。
 
 ## 0.15.0
 - (EN) ch32rv 0.35.3: the Auto monitor prints one status line, right after open (`[ch32rv monitor] auto: uart; looking for dmseq / sdi / dmdata, rtt`), and none when a path is found, a search stops or the sketch restarts; warnings are unchanged.

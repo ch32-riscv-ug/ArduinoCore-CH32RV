@@ -94,15 +94,20 @@ arduino-cli monitor -p /dev/ttyACM0 -b ch32-riscv-ug:ch32rv:CH32V103
 
 ## Linux の権限
 
-Board Manager installation には `60-ch32rv.rules` と `post_install.sh` が含まれます。権限不足が出る場合は
-次で診断し、表示された udev rule を導入します。
+WCH-Link と OEP probe を root 以外で開くには、udev のルールが要ります（入れ方は [README](../README.ja.md#インストール)）。
+ボードマネージャで入れると `post_install.sh` が手順を出しますが、普通のユーザーで動くので、ルールそのものは書けません。
+sketch.yaml の profile で入れた場合は、`post_install.sh` は動きません。権限が無いと、次のようになります。
 
-```sh
-ch32rv doctor
-ch32rv doctor --emit-udev
-```
+- **port の一覧:** OEP probe は口の名前が読めないので、`oep://<unit>` が 1 つだけ「no permission: udev rules missing」の
+  label で出ます。
+- **モニター（Auto）:** debug の経路が開けなくても、UART だけで開いて読み、`[ch32rv monitor] warning: reading the UART only; …`
+  の行で原因と手順を出します。
+- **書き込みや、debug の経路を選んだモニター:** エラーに、打つ手順（その環境の `ch32rv` の絶対パス入り）がそのまま出ます。
 
-UART / CDC port には distribution の serial-port group (`dialout` 等)への所属も必要です。
+診断は `ch32rv doctor` です（PATH には無いので、`~/.arduino15/packages/ch32-riscv-ug/tools/ch32rv/<版>/ch32rv doctor`）。
+
+ルールは WCH-Link と OEP probe の serial port（tty）も、ログインしている利用者が開けるようにします（`uaccess`）。ほかの
+USB-UART などの serial port には、distribution の serial-port group（`dialout` 等）への所属が要ります。
 
 ## 経路の選び方
 
