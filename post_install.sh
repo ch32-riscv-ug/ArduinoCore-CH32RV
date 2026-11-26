@@ -5,7 +5,7 @@
 # (or with --run-post-install); the IDE 1.x never does.
 #
 # 60-ch32rv.rules next to this script is a byte copy of what the bundled ch32rv prints with
-# `ch32rv doctor --emit-udev` (tests/build/vendor/test_udev_rules.py keeps them in step).
+# `ch32rv doctor --emit-udev` (tests/unit/test_udev_rules.py keeps them in step).
 #
 # The IDE runs this as the ordinary user, so /etc/udev is usually not writable: then say what to
 # type and exit 0 - a failed post-install must not make the platform install fail. `ch32rv doctor`
@@ -13,9 +13,13 @@
 set -u
 RULES="$(dirname "$0")/60-ch32rv.rules"
 DEST=/etc/udev/rules.d/60-ch32rv.rules
+# The bundled ch32rv, by its full path: it is not on PATH (packages/<vendor>/hardware/ch32rv/<version>/ ->
+# packages/<vendor>/tools/ch32rv/<version>/ch32rv; the newest one when several are installed).
+CH32RV="$(ls -d "$(dirname "$0")"/../../../tools/ch32rv/*/ch32rv 2>/dev/null | sort -V | tail -n 1)"
+[ -n "$CH32RV" ] && CH32RV="$(cd "$(dirname "$CH32RV")" && pwd)/ch32rv" || CH32RV=ch32rv
 
 [ "$(uname -s)" = "Linux" ] || exit 0
-[ -f "$RULES" ] || { echo "ArduinoCore-CH32RV: $RULES is missing; run: ch32rv doctor --emit-udev | sudo tee $DEST"; exit 0; }
+[ -f "$RULES" ] || { echo "ArduinoCore-CH32RV: $RULES is missing; run: \"$CH32RV\" doctor --emit-udev | sudo tee $DEST"; exit 0; }
 
 if [ -f "$DEST" ] && cmp -s "$RULES" "$DEST"; then
     exit 0
@@ -32,6 +36,6 @@ to write $DEST). To let the probes open without root, run once:
     sudo cp "$RULES" $DEST
     sudo udevadm control --reload-rules && sudo udevadm trigger
 
-then unplug and replug the probe. \`ch32rv doctor\` checks this too.
+then unplug and replug the probe. "$CH32RV" doctor checks this too.
 EOF
 exit 0
