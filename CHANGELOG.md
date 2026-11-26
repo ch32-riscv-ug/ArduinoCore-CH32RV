@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.35.9: `ch32rv flash --probe /dev/serial/by-id/...` recognises a running CH32RV sketch's serial port through the symlink too.
+- (JA) ch32rv 0.35.9: `ch32rv flash --probe /dev/serial/by-id/…` でも、動いている CH32RV のスケッチのシリアルポートを見分けるようにした（シンボリックリンクを解決する）。
 - (EN) `digitalPinToName(pin)` gives a pin's pad name for printing ("PC19"; a board's printed number gives its pad, a pin the part lacks "NC"): the core keeps a pin as a number packing port and bit (PC19 is 147), which printed as such says nothing. The I2CScanner example prints its pins with it.
 - (JA) `digitalPinToName(pin)` を足した。端子の名前（"PC19"）を返す。ボードの印刷の番号はその端子の名前に、その石に無い端子は "NC" になる。コアは端子をポートとビットを詰めた番号（PC19 なら 147）で持つので、番号をそのまま出しても分からなかった。I2CScanner の例はこれで端子を出す。
 - (EN) ch32rv 0.35.8: the USB upload's progress lines go to standard output, so the IDE no longer shows a successful upload in red; when a sketch has stopped its USB, the upload asks for BOOT and waits up to 60 s for the bootloader on the same USB port instead of failing.
