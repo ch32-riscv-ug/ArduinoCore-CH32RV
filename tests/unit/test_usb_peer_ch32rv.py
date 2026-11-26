@@ -131,7 +131,7 @@ def test_the_runner_stages_the_peer_sketch_for_its_board(tmp_path):
     assert not (case / "peer_s3").exists() and not (case / "peer_pico").exists()
     assert (peer / "peer_ch32rv.ino").exists() and (peer / "peer_fat.h").exists()
     yaml = (peer / "sketch.yaml").read_text()
-    assert f'fqbn: "{TARGET["usb_peer_fqbn"]}"' in yaml and "chip: CH32H417QEU6" in yaml
+    assert f'fqbn: "{TARGET["usb_peer_fqbn"]}"' in yaml and "chip:" not in yaml
     assert "source: dmseq" in yaml and "speed:" not in yaml and "default_profile: ch32rv" in yaml
     assert (peer / "build_opt.h").read_text() == "-DPEER_USB_HOST_PORT=CH32RV_USB_HOST_PORT_SUPER_SPEED\n"
     assert staged["usb_peer_port"] == PEER

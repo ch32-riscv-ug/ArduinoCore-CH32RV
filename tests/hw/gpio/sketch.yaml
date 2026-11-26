@@ -4,84 +4,67 @@ profiles:
     fqbn: ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4P6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V003F4P6
   v003f4u6-uia:
     fqbn: ch32-riscv-ug:ch32rv:CH32V003:part=CH32V003F4U6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V003F4U6
   v006k8u6:
     fqbn: ch32-riscv-ug:ch32rv:CH32V006:part=CH32V006K8U6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V006K8U6
   v103r8t6-evt:
     fqbn: ch32-riscv-ug:ch32rv:CH32V103:part=CH32V103R8T6
     port_config:
       source: dmseq
-      chip: CH32V103R8T6
   v103r8t6-ch549:
     fqbn: ch32-riscv-ug:ch32rv:CH32V103:part=CH32V103R8T6
     port_config:
       source: dmseq
-      chip: CH32V103R8T6
   v203c8t6:
     fqbn: ch32-riscv-ug:ch32rv:CH32V203:part=CH32V203C8T6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V203C8T6
   v203rbt6-ch549:
     fqbn: ch32-riscv-ug:ch32rv:CH32V203:part=CH32V203RBT6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V203RBT6
   v205rct6-pico:
     fqbn: ch32-riscv-ug:ch32rv:CH32V205:part=CH32V205RCT6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V205RCT6
   v307vct6-linke:
     fqbn: ch32-riscv-ug:ch32rv:CH32V307:part=CH32V307VCT6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V307VCT6
   v407weu6-yd-p4:
     fqbn: ch32-riscv-ug:ch32rv:CH32V407:part=CH32V407WEU6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32V407WEU6
   x035c8t6-pico:
     fqbn: ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32X035C8T6
   x035c8t6-s3:
     fqbn: ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035C8T6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32X035C8T6
   x315mcu6-pico:
     fqbn: ch32-riscv-ug:ch32rv:CH32X315:part=CH32X315MCU6,resetpin=reset,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32X315MCU6
   l103c8t6-pico:
     fqbn: ch32-riscv-ug:ch32rv:CH32L103:part=CH32L103C8T6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32L103C8T6
   h417qeu6-pico:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32H417QEU6
   h417qeu6-linke:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6,wdtautostart=off
     port_config:
       source: dmseq
-      chip: CH32H417QEU6
   m030g8r7:
     fqbn: ch32-riscv-ug:ch32rv:CH32M030:part=CH32M030G8R7,resetpin=reset
     port_config:
       source: dmseq
-      chip: CH32M030G8R7

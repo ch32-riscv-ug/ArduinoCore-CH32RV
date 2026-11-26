@@ -417,7 +417,7 @@ def stage_ch32rv_peer(directory, case, target):
     fqbn, controller = target["usb_peer_fqbn"], target["usb_peer_ch32rv_controller"]
     (peer / "sketch.yaml").write_text(
         f"profiles:\n  ch32rv:\n    fqbn: {json.dumps(fqbn)}\n"
-        f"    port_config:\n      source: dmseq\n      chip: {target['usb_peer_chip']}\n"
+        f"    port_config:\n      source: dmseq\n"
         + "default_profile: ch32rv\n")
     if case in places.PEER_DEVICE_CASES:
         if controller not in USB_HOST_PORTS:
@@ -516,8 +516,6 @@ def stage_case(work, name, case, target):
             +
             f"    port_config:\n      source: {'fixture-uart' if uart else CONSOLE_SOURCES.get(case, 'dmseq')}\n"
             + ("      baudrate: 115200\n" if uart else "")
-            +
-            f"      chip: {target['chip']}\n"
         )
         flag = CONSOLE_FLAGS.get(case)
         (directory / "build_config.toml").write_text('[defines]\nCH32_TEST_BUILD_ID = "BENCH_BUILD_ID"\n'

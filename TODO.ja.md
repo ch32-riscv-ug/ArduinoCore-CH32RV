@@ -711,11 +711,12 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     （ch32rv-0350-console）。
   - コアの側（ch32rv のリリースの後）: Monitor Source に `auto` を足して既定に、`sdi-forward`（LinkE の転送）を足す、SDI は転送無しの
     経路になる旨と auto を docs/debug-output.ja.md に書く。
-- [ ] **IDE のモニターの設定から `chip` と `speed` を外す（2026-11-26、ユーザー。[ch32rv] に依頼）**: IDE 2 は DESCRIBE の設定を口ごとに
+- [x] **IDE のモニターの設定から `chip` と `speed` を外す（2026-11-26、ユーザー。[ch32rv] に依頼）**: IDE 2 は DESCRIBE の設定を口ごとに
   選択肢の一覧ごと保存し、以後それを優先する（#2988）。`chip`（127 個の型番）と `speed` は画面に出ず、コアも渡していないので、
   保存されて固まるだけ。残すのは `source`・`baudrate`・`dtr`・`rts`。CLI の `--chip` / `--speed` は残す。`source` のラベルは "Runtime output source" から
   "Monitor Source"（ツールメニューと同じ名前。入力も運ぶので output は誤り）に、ほかも "Baud Rate (UART)"・"DTR (UART)"・
-  "RTS (UART)" に（ユーザーが VS Code の arduino-cli 拡張でラベルから選べるようにするため）。出たら取り込む。
+  "RTS (UART)" に（ユーザーが VS Code の arduino-cli 拡張でラベルから選べるようにするため）。ch32rv 0.35.2 で取り込んだ。
+  試験の sketch.yaml の port_config も chip を渡さないようにした（渡すと arduino-cli が exit 7 で止まる）。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
   - 決まったこと（2026-11-26、ユーザー）: WCH-Link ではモニターを開くときに再起動する（石ごとの副作用を気にしない）。郵便受け系は
     DMSeq → SDI → DMDATA の順に試す（DMDATA は安全に区別できれば残す。外すことも検討中）。WCH-Link の SDI は LinkE の転送を

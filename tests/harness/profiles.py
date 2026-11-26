@@ -31,7 +31,7 @@ def sketch_yaml(directory, profiles):
     for name, spec in profiles.items():
         fqbn, _ = place.with_options(*place.fqbn_of(spec["part"]), spec.get("options", ""))
         lines += [f"  {name}:\n", f"    fqbn: {fqbn}\n", "    port_config:\n",
-                  f"      source: {source}\n", f"      chip: {spec['part']}\n"]
+                  f"      source: {source}\n"]
     return "".join(lines)
 
 
