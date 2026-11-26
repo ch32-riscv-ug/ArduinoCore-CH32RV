@@ -48,7 +48,7 @@ others as noise.
 
 | | host tool | direction | integrity |
 |---|---|---|---|
-| `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
+| `SerialSDI` | ch32rv monitor --source sdi, wlink, WCH-LinkUtility | send only | none |
 | `SerialDMDATA` | minichlink, `ch32rv --source dmdata` | two-way | none |
 | **`SerialDMSeq`** | **`ch32rv --source dmseq`, OEP** | **two-way** | **sequence + CRC** |
 | `SerialRTT` | ch32rv monitor --source rtt | two-way | - |

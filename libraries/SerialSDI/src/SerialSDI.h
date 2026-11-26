@@ -3,13 +3,13 @@
  * The two words at 0xE0000380/0x384 are the RISC-V debug module's abstract
  * data registers, mapped into the hart's address space. hartinfo says so on
  * these parts (dataaccess=1, datasize=2, dataaddr=0x380), so the addresses are
- * a fact the hardware reports rather than a magic number. A WCH-LinkE told to
- * do so polls them over the debug transport and forwards what it finds to its
- * own USB CDC port.
+ * a fact the hardware reports rather than a magic number. The bundled ch32rv
+ * reads them over the debug transport (`ch32rv monitor --source sdi`, and the
+ * IDE monitor's default `auto`); a WCH-LinkE told to forward polls them itself
+ * and sends what it finds to its own USB CDC port (`--source sdi-forward`).
  *
  * What that buys: **no UART, no pin, no wiring**, and the core is never
- * halted. What it costs: the host has to have enabled it - the bundled ch32rv
- * does (`ch32rv monitor --source sdi`).
+ * halted. What it costs: a host has to be reading the debug module.
  *
  * This is a separate Stream rather than a compile-time switch inside
  * HardwareSerial - which is how WCH's own examples and the older community

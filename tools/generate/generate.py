@@ -618,16 +618,29 @@ def stackcheck_menu(board: str) -> list[str]:
 # as the board's default port setting - the IDE 2 Serial Monitor shows only the
 # baud rate of a monitor's settings, so the menu is where an IDE user picks it
 # (arduino-cli takes it as monitor_port.<protocol>.source; --config still
-# wins). UART is the target's UART through the port: a serial port's CDC (a
-# WCH-LinkE's UART bridge, a USB-UART adapter), a wchlink:// port's own CDC
-# (ch32rv 0.33.0 and later), an OEP probe's fixture UART. The others attach through the debug module on every
+# wins). Auto (ch32rv 0.35.0) reads every path the sketch uses at once, merged
+# into one stream: the UART, the one mailbox console the sketch uses (DMSeq,
+# SDI or DMDATA, told apart on the fly) and RTT when there is a control block;
+# input goes back to the path the sketch's output came from last. On a
+# wchlink:// port it restarts the sketch on open (the attach's side effects go
+# with it); on oep:// it does not; a plain serial port has the UART only.
+# IDE 2 keeps a port's monitor settings once opened (arduino-ide#2988), which
+# is why the default reads everything instead of one choice.
+# UART is the target's UART through the port: a serial port's CDC (a
+# WCH-LinkE's UART bridge, a USB-UART adapter), a wchlink:// port's own CDC, an
+# OEP probe's fixture UART. The others attach through the debug module on every
 # kind of port (docs/debug-output.ja.md: attaching can reclock some families
-# and corrupt a register on V103 / V205).
+# and corrupt a register on V103 / V205). SDI reads the mailbox over DMI on a
+# WCH-Link too (ch32rv 0.35.0), beside the UART; SDI (LinkE forwarding) turns
+# on the LinkE's own SDI forwarding instead, which takes the CDC from the UART
+# while it is on (an OEP probe has no forwarding: plain SDI there).
 MONITOR_SOURCE_MENU = (
-    ("uart", "UART (Serial) (default)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),
+    ("auto", "Auto (UART + debug console) (default)", {"serial": "auto", "wchlink": "auto", "oep": "auto"}),
+    ("uart", "UART (Serial)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),
     ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
     ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
     ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),
+    ("sdi_forward", "SDI, LinkE forwarding (SerialSDI)", {"serial": "sdi-forward", "wchlink": "sdi-forward", "oep": "sdi"}),
     ("rtt", "RTT (SerialRTT)", {"serial": "rtt", "wchlink": "rtt", "oep": "rtt"}),
 )
 

@@ -5,7 +5,7 @@ CH32RV では UART と debug interface を使う複数の `Print` / `Stream` を
 | API | Host 側 | 方向 | 主な制約 |
 |---|---|---|---|
 | `Serial` | Arduino Serial Monitor | 双方向 | UART pin と baud rate が必要 |
-| `SerialSDI` | `ch32rv monitor --source sdi` | target → host | WCH-LinkE の SDI print 対応 chip に限定 |
+| `SerialSDI` | `ch32rv monitor --source sdi` | target → host | 郵便受け（DM の DATA0）を使う。`SerialDMDATA`・`SerialDMSeq` と併用不可 |
 | `SerialRTT` | `ch32rv monitor --source rtt` | 双方向 | RAM ring buffer を使用し、poll 時に短時間 halt する |
 | `SerialDMDATA` | `ch32rv monitor --source dmdata` | 双方向 | `SerialSDI` と同じ register を使うため併用不可 |
 | `SerialDMSeq` | `ch32rv monitor --source dmseq` | 双方向 | DMI transport が必要。通し番号と CRC-8 を使用 |
@@ -28,29 +28,51 @@ WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として disc
 別の serial port（Windows の `COMx`、Linux の `/dev/ttyACM…`）として出ます。
 
 モニターが何を読むか（ch32rv の monitor の `source`）は、ツールメニューの **Monitor Source** で選びます。IDE 2 の Serial Monitor の窓には
-monitor の設定のうちボーレートしか出ないためです（arduino-cli の `--config source=…` はメニューより優先）。
+monitor の設定のうちボーレートしか出ないためです（arduino-cli の `--config source=…` はメニューより優先）。既定は **Auto** で、
+スケッチが使っている経路を全部一緒に読みます。
+
+**Auto（既定、ch32rv 0.35.0 から）:**
+
+- **読むもの:** UART（LinkE の CDC、OEP の probe の fixture-uart）と、郵便受け系の 1 つ（`SerialDMSeq`・`SerialSDI`・`SerialDMDATA`
+  のうちスケッチが使うもの）と、RTT（`SerialRTT` を使っていれば）を、1 本にまとめて出します。どの経路から来た行かは付きません。
+  行は経路ごとにまとめて出すので、2 つの経路の行が 1 行に混ざることはありません。
+- **送るもの:** 窓から送った文字は、スケッチの出力が最後に来た経路へ送ります。まだ何も来ていなければ UART へ送ります。
+  `SerialSDI` は受け取れないので、最後が SDI のときも UART へ送ります。
+- **何を読んでいるか:** 窓に `[ch32rv monitor] auto: uart + dmseq + rtt` のような行が出ます（変わるたびに出ます）。
+- **`wchlink://`:** モニターを開くたびにスケッチを最初から走らせ直します（接続でクロックが組み直されたり、V103 / V205 で
+  レジスタが壊れたりする副作用を、走らせ直しで消すため）。開く前に窓で打った文字は捨てます。スケッチが自分で再起動したら、
+  郵便受け系と RTT を選び直します。
+- **`oep://`:** スケッチを止めず、走らせ直しもしません。郵便受け系は DMSeq → SDI → DMDATA の順に 3 秒ずつ試して、データが来た
+  ものに決めます（決まるまで数秒かかります）。決めた経路が 5 秒黙ったら試し直します。UART は、probe の口に rx / tx のラベルが
+  あるときだけ読みます。
+- **serial port（LinkE の COM など）:** UART だけを読みます。
+
+| Monitor Source | serial port（LinkE の COM など） | `wchlink://` | `oep://` |
+|---|---|---|---|
+| Auto（既定） | `auto`: UART だけ | `auto`: CDC の UART・郵便受け系・RTT | `auto`: fixture-uart・郵便受け系・RTT |
+| UART (Serial) | `uart`: UART bridge の素通し | `uart`: Link の CDC | `fixture-uart`: probe の UART の線 |
+| DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
+| SDI, LinkE forwarding | `sdi-forward` | `sdi-forward` | `sdi` |
+
+`SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
+`SDI, LinkE forwarding` は、LinkE に SDI の転送をさせて CDC で受けます。転送している間は、CDC に UART の出力が届きません。
 
 **Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
 その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを Tools メニューより
 優先します。そのため、あとから Monitor Source を変えても、IDE を再起動しても、最初の source のまま読みます。変えるときは、IDE を
 閉じて、IDE の設定のフォルダー（Windows は `C:\Users\<ユーザー名>\.arduinoIDE`）の `pluggable-monitor-settings.json` から、
 その口の項目（`ch32-riscv-ug:ch32rv:<ボード>-<口>-<protocol>`）を消してから、メニューを選び直してモニターを開きます。
-arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。
+arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。既定の Auto が全部を読むのは、このためです。
 
-| Monitor Source | serial port（LinkE の COM など） | `wchlink://` | `oep://` |
-|---|---|---|---|
-| UART (Serial)（既定） | `uart`: UART bridge の素通し | ch32rv の既定（`dmdata`）のまま。UART は COM の口を選ぶ | `fixture-uart`: probe の UART の線 |
-| DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
-
-`uart` 以外は debug で attach するので、走っている firmware のクロックが組み直されることがあり、V103 / V205 では register が 1 つ壊れることが
-あります（[chip-caveats.ja.md](chip-caveats.ja.md)）。モニターの窓の先頭に `[ch32rv monitor] attaching may have changed the target clock`
-が出たら attach した印です。
+`uart` 以外の source を選ぶと debug で attach するので、走っている firmware のクロックが組み直されることがあり、V103 / V205 では
+register が 1 つ壊れることがあります（[chip-caveats.ja.md](chip-caveats.ja.md)）。モニターの窓の先頭に
+`[ch32rv monitor] attaching may have changed the target clock` が出たら attach した印です（Auto の `wchlink://` は走らせ直すので出ません）。
 
 CLI では次の形です。
 
 ```sh
 ch32rv probe list
-ch32rv monitor --source rtt --chip CH32V103 --probe serial:<probe-serial>
+ch32rv monitor --source auto --probe serial:<probe-serial>
 ```
 
 通常の UART は OS の serial port を Arduino monitor で開きます。

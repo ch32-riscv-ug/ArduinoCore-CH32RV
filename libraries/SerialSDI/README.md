@@ -5,8 +5,8 @@ Serial output through the debug module, with **no UART, no pin and no wiring**.
 The two words `data0`/`data1` are the RISC-V debug module's abstract data
 registers, mapped into the hart's address space - the address is what
 `hartinfo.dataaddr` reports, so it is a fact the hardware states rather than a
-magic number. A WCH-LinkE that has been told to do so polls them and forwards
-what it finds to its own USB serial port. **The core is never halted.**
+magic number. A host (the bundled ch32rv, or the WCH-LinkE itself) reads them
+over the debug wires. **The core is never halted.**
 
 **The address differs per family**: `0xE00000F4` on the V2 families
 (V003/V00x), `0xE0000340` on most V3 families (V205/V407/X315/M030) and
@@ -23,57 +23,47 @@ void setup() {
 }
 ```
 
-## Nothing comes out until you switch it on (that is correct)
+## Reading it
 
-This library **only works on a WCH-LinkE, and only after the probe has been
-told to forward**. With nothing configured you get not one character - that is
-not a fault, it is the probe not forwarding yet. Two conditions:
-
-- **A WCH-LinkE.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it
-- **A chip the probe supports**: V003, V00x, V103, V20x, V30x, V317, X035, L103
-
-**An OEP probe carries it too.** The bundled ch32rv's `monitor --source sdi`
-receives the same output with the port `oep://<unit>/<port>` (ch32rv switches it on as well).
-
-Once it is on, the probe forwards what it collects to **its own USB CDC port**,
-so the ordinary serial monitor is where to read it - no special monitor needed.
-
-**That port is the UART bridge as well.** If the sketch also uses
-`Serial.println()`, both streams arrive **mixed together** in one monitor
-window. They cannot be separated; use one or the other if that matters.
-
-## Switching it on
-
-The bundled ch32rv does it as part of watching:
+**The Arduino IDE's serial monitor reads it as it is.** The default Monitor Source, Auto, reads
+SerialSDI's output together with `Serial` (the UART), from the bundled ch32rv 0.35.0 on. Pick the
+`wchlink://...` port (a WCH-Link) or the `oep://...` port (an OEP probe). ch32rv reads the mailbox
+directly over the debug wires, so **nothing on the probe is changed**.
 
 ```
-ch32rv monitor --source sdi --chip CH32V003     # switches SDI print on, then reads the CDC
+ch32rv monitor --source sdi                    # SerialSDI only
+ch32rv monitor --source auto                   # together with the UART and the other paths
 ```
 
-`ch32rv monitor sdi on|off` switches it alone. WCH's own tools do it too:
+Opening only the LinkE's COM port (the UART bridge) shows nothing from SerialSDI; pick the
+`wchlink://...` port.
+
+## Reading it through the LinkE's forwarding (WCH's own way)
+
+The WCH-LinkE can also forward it itself: once forwarding is on, the probe sends what it collects to
+**its own USB CDC port**. While it forwards, **the UART's output no longer reaches that CDC** (the UART
+bridge stops).
+
+- **A WCH-LinkE only.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it.
+- **Only the series the probe forwards**: V003, V00x, V103, V20x, V30x, V317, X035, L103. Other series
+  have the registers but the probe firmware will not poll them (ch32rv's direct read above works there).
+
+```
+ch32rv monitor --source sdi-forward            # switches forwarding on, then reads the CDC ("SDI, LinkE forwarding")
+ch32rv monitor sdi off                         # switches it off (the LinkE keeps it in RAM: power-off clears it too)
+```
+
+WCH's own tools switch it on too:
 
 | | OS | |
 |---|---|---|
 | **WCH-LinkUtility** | **Windows only** | WCH's own. **Target** menu -> **Enable SDI Printf** |
 | **OpenOCD bundled with MounRiver Studio** | Linux / macOS / Windows | Also WCH's. `openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
-| **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` |
+| **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` (`wlink flash --enable-sdi-print --watch-serial firmware.elf` flashes and watches in one go) |
 
-```
-wlink sdi-print enable          # once; forwarding outlives the wlink process
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V003
-```
-
-wlink can also do the flashing and the watching in one go:
-
-```
-wlink flash --enable-sdi-print --watch-serial firmware.elf
-```
-
-The port is the WCH-LinkE's own CDC (`1a86:8010`); in the IDE, pick that same
-port. **Per-OS instructions are in
-[docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**
-
-Other series have the registers but the probe firmware will not poll them.
+With forwarding left on, the LinkE takes the characters first, so ch32rv's `sdi` and `auto` get nothing
+(ch32rv warns `sdi-quiet` and points at `ch32rv monitor sdi off`).
+**Details are in [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**
 
 ## Retargeting printf()
 

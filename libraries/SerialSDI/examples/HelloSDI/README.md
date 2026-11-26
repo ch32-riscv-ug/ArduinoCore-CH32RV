@@ -10,7 +10,7 @@ Use a supported probe and debug wiring; no MCU UART wiring is needed.
 
 ## Steps and expected results
 
-Start a monitor such as `ch32rv monitor --source sdi --chip CH32V003`, adapting the chip, and inspect startup text and uptime.
+Open the Arduino IDE serial monitor (Monitor Source: the default Auto, port `wchlink://...` or `oep://...`) or `ch32rv monitor --source sdi`, and inspect startup text and uptime.
 
 ## API and processing flow
 

@@ -16,7 +16,7 @@
  * **This cannot be used together with SerialSDI or SerialDMDATA.** All three
  * write the same two registers. Pick the one whose host you have:
  *
- *   SerialSDI      wlink, WCH-LinkUtility          send only
+ *   SerialSDI      ch32rv --source sdi, wlink      send only
  *   SerialDMDATA   minichlink (ch32fun)            two-way
  *   SerialDMSeq    ch32rv --source dmseq, OEP      two-way, checked
  *

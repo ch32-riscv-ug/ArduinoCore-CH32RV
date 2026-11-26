@@ -39,7 +39,7 @@ OSごとの手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)に�
 
 | | host側ツール | 方向 | 代償 |
 |---|---|---|---|
-| `SerialSDI` | wlink、WCH-LinkUtility | 送信のみ | なし |
+| `SerialSDI` | ch32rv monitor --source sdi、wlink、WCH-LinkUtility | 送信のみ | なし |
 | **`SerialDMDATA`** | **ch32rv monitor --source dmdata、minichlink** | **双方向** | **なし** |
 | `SerialRTT` | ch32rv monitor --source rtt | 双方向 | RAM |
 

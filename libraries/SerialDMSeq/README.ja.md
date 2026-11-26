@@ -43,7 +43,7 @@ ch32rv monitor --source dmseq
 
 | | hostのtool | 向き | 完全性 |
 |---|---|---|---|
-| `SerialSDI` | wlink、WCH-LinkUtility | 送りのみ | なし |
+| `SerialSDI` | ch32rv monitor --source sdi、wlink、WCH-LinkUtility | 送りのみ | なし |
 | `SerialDMDATA` | minichlink、`ch32rv --source dmdata` | 双方向 | なし |
 | **`SerialDMSeq`** | **`ch32rv --source dmseq`、OEP** | **双方向** | **通し番号+CRC** |
 | `SerialRTT` | ch32rv monitor --source rtt | 双方向 | - |

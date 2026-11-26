@@ -199,8 +199,8 @@ baud は数字が渡るだけで問題にならない。
 ### 6.1 monitor
 
 - この platform の protocol serial の pluggable monitor は **ch32rv**（`pluggable_monitor.pattern.serial`）。LinkE の CDC でも OEP の
-  probe の serial port でも、`wchlink://` / `oep://` でも、monitor のプロセスは ch32rv。DESCRIBE の `source`（uart 既定 / sdi /
-  dmdata / dmseq / rtt）は、ツールメニューの Monitor Source が板の既定（`monitor_port.<protocol>.source`）として渡す。IDE 2 の
+  probe の serial port でも、`wchlink://` / `oep://` でも、monitor のプロセスは ch32rv。DESCRIBE の `source`（auto 既定 / uart /
+  sdi / sdi-forward / dmdata / dmseq / rtt）は、ツールメニューの Monitor Source が板の既定（`monitor_port.<protocol>.source`）として渡す。IDE 2 の
   Serial Monitor の窓は monitor の設定のうちボーレートしか出さない（2026-11-24、Windows の IDE で確認）。
 - ch32rv の monitor は、OEP の probe（と LinkE の debug の口を使う source）では**ブローカーの client** として console のストリームを
   受け、pluggable monitor の TCP へ流す（§7.2）。

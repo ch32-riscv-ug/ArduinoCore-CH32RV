@@ -13,7 +13,7 @@
  * registers, and a host reading one framing sees the other as noise. Pick the
  * one whose host tool you have:
  *
- *   SerialSDI      wlink, WCH-LinkUtility          send only, 20 bytes of RAM
+ *   SerialSDI      ch32rv --source sdi, wlink      send only, 20 bytes of RAM
  *   SerialDMDATA   minichlink (ch32fun)            two-way,   36 bytes of RAM
  *   SerialRTT      ch32rv monitor --source rtt     two-way,  364 bytes of RAM
  *

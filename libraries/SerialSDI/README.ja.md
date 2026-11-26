@@ -5,7 +5,7 @@
 `data0`/`data1`の2ワードはRISC-Vデバッグモジュールのabstract data registerで、
 hartのアドレス空間に見えています。番地は`hartinfo.dataaddr`がハードウェア自身で
 述べている事実で、**魔法の番地ではありません**。
-指示を受けたWCH-LinkEがこれをポーリングし、自分のUSBシリアルへ転送します。
+host（同梱のch32rv、またはWCH-LinkE自身）がデバッグの線越しにこれを読みます。
 **coreは一度もhaltしません。**
 
 番地は**familyで違います**。V2系(V003/V00x)が`0xE00000F4`、V3系の多く
@@ -22,58 +22,44 @@ void setup() {
 }
 ```
 
-## 書いただけでは出ません(それが正しい状態です)
+## 読み方
 
-このlibraryは**WCH-LinkEで有効化してはじめて使えます**。
-何も設定していなければ1文字も出てきませんが、それは不具合ではなく、
-**probeが転送を始めていない**だけです。条件は2つ。
-
-- **WCH-LinkEであること。** 初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません
-- **chipが対応していること。** V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103
-
-**OEPのprobeでも読めます。** 同梱のch32rvの`monitor --source sdi`が、
-portに`oep://<unit>/<口>`を選ぶだけで同じ出力を受け取ります(有効化もch32rvが行います)。
-
-有効にすると、probeは受け取った文字を**自分のUSB CDC portへ流します**。
-つまり**普通のSerial Monitorがそのまま監視先**になります(専用のmonitorは要りません)。
-
-**そのportはUARTブリッジと同じです。** `Serial.println()`も使っていると、
-1つのSerial Monitorに**両方が混ざって**流れてきます。分離はできないので、
-混ぜたくなければどちらか一方だけを使ってください。
-
-## 有効化のしかた
-
-同梱のch32rvは監視と一緒に有効化します。
+**Arduino IDEのシリアルモニターで、そのまま読めます。** Monitor Sourceの既定のAutoが、`Serial`（UART）と一緒に
+SerialSDIの出力も読みます（同梱のch32rv 0.35.0から）。portは`wchlink://…`（WCH-Link）か`oep://…`（OEPのprobe）を選びます。
+ch32rvが郵便受けをデバッグの線越しに直接読むので、**probeの設定は何も変えません**。
 
 ```
-ch32rv monitor --source sdi --chip CH32V003     # SDI printを有効にしてからCDCを読む
+ch32rv monitor --source sdi                    # SerialSDIだけを読む
+ch32rv monitor --source auto                   # UARTなど、ほかの経路と一緒に読む
 ```
 
-有効化だけなら`ch32rv monitor sdi on|off`。
-WCH純正のツールでもできます。
+LinkEのCOM port（UARTブリッジ）だけを開いても、SerialSDIの出力は出てきません。`wchlink://…`のportを選んでください。
+
+## LinkEの転送で読む（WCH純正のやり方）
+
+WCH-LinkE自身に転送させる方法もあります。転送を有効にすると、LinkEは受け取った文字を**自分のUSB CDC port**へ流します。
+ただし、転送している間は、**同じCDCにUARTの出力が届かなくなります**（UARTブリッジが止まります）。
+
+- **WCH-LinkEだけ**です。初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません。
+- **probeが転送する系列だけ**です（V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103）。ほかの系列はレジスタこそありますが、
+  probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
+
+```
+ch32rv monitor --source sdi-forward            # 転送を有効にしてからCDCを読む（Monitor Sourceの「SDI, LinkE forwarding」）
+ch32rv monitor sdi off                         # 転送を切る（LinkEのRAMの設定なので、電源を切っても消えます）
+```
+
+WCH純正のツールでも有効にできます。
 
 | | 対応OS | |
 |---|---|---|
 | **WCH-LinkUtility** | **Windowsのみ** | WCH公式。**Target**メニュー → **Enable SDI Printf** |
 | **MounRiver Studio 同梱のOpenOCD** | Linux / macOS / Windows | 同じくWCH純正。`openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
-| **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` |
+| **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable`（`wlink flash --enable-sdi-print --watch-serial firmware.elf`で書き込みと監視をまとめられます） |
 
-```
-wlink sdi-print enable                 # 一度だけ。wlinkを終了しても転送は続きます
-arduino-cli monitor -p /dev/ttyACM4 -b ch32-riscv-ug:ch32rv:CH32V003
-```
-
-wlinkなら書き込みと監視をまとめることもできます。
-
-```
-wlink flash --enable-sdi-print --watch-serial firmware.elf
-```
-
-portはWCH-LinkE自身のCDC(`1a86:8010`)です。IDEなら同じportを選ぶだけです。
-**OSごとの詳しい手順は[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**
-
-
-対象外のseriesはレジスタこそありますが、probeのfirmwareがポーリングしません。
+転送を有効にしたままだと、LinkEが先に文字を取るので、ch32rvの`sdi`・`auto`では読めません（ch32rvが警告
+`sdi-quiet`で`ch32rv monitor sdi off`を案内します）。
+**詳しくは[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**
 
 ## printf()の出力先を変える
 

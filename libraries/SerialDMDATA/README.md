@@ -42,7 +42,7 @@ other as noise. Pick by the tool you have:
 
 | | host tool | direction | cost |
 |---|---|---|---|
-| `SerialSDI` | wlink, WCH-LinkUtility | send only | none |
+| `SerialSDI` | ch32rv monitor --source sdi, wlink, WCH-LinkUtility | send only | none |
 | **`SerialDMDATA`** | **ch32rv monitor --source dmdata, minichlink** | **two-way** | **none** |
 | `SerialRTT` | ch32rv monitor --source rtt | two-way | RAM |
 

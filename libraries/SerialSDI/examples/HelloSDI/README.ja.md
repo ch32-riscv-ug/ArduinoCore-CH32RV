@@ -10,7 +10,7 @@ UART を使わず、デバッグ接続を通して文字列を表示します。
 
 ## 操作と期待する結果
 
-`ch32rv monitor --source sdi --chip CH32V003` のように対象チップに合わせてモニタを開始し、起動メッセージと経過秒数を確認します。
+Arduino IDE のシリアルモニター（Monitor Source は既定の Auto、port は `wchlink://…` か `oep://…`）か `ch32rv monitor --source sdi` でモニタを開始し、起動メッセージと経過秒数を確認します。
 
 ## API と処理の流れ
 
