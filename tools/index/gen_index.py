@@ -76,6 +76,8 @@ PLATFORM_ENTRIES = (
     # (the IDE 2.x runs post_install.sh after installing the platform).
     "60-ch32rv.rules",
     "post_install.sh",
+    # Windows' half of the build_opt.h hook (platform.txt recipe.hooks.prebuild).
+    "build_opt.cmd",
     # The MIT license's notice travels with the copies (the third-party ones sit in their own folders).
     "LICENSE",
 )

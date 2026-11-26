@@ -168,7 +168,10 @@ build.opt.name=build_opt.h
 build.opt.path={build.path}/{build.opt.name}
 build.opt.flags="@{build.opt.path}"
 recipe.hooks.prebuild.1.pattern=/usr/bin/env bash -c "{ [ ! -f '{build.source.path}/{build.opt.name}' ] || cat '{build.source.path}/{build.opt.name}'; } > '{build.opt.path}.new' && if cmp -s '{build.opt.path}.new' '{build.opt.path}'; then rm -f '{build.opt.path}.new'; else mv -f '{build.opt.path}.new' '{build.opt.path}' && rm -rf '{build.path}/core' '{build.path}/libraries' && find '{build.path}/sketch' -name '*.o' -delete 2>/dev/null; fi; exit 0"
-recipe.hooks.prebuild.1.pattern.windows=cmd /c (if exist "{build.source.path}\{build.opt.name}" (copy /y "{build.source.path}\{build.opt.name}" "{build.opt.path}.new" >nul) else (type nul > "{build.opt.path}.new")) & (fc /b "{build.opt.path}.new" "{build.opt.path}" >nul 2>&1 && del /q "{build.opt.path}.new" || (move /y "{build.opt.path}.new" "{build.opt.path}" >nul & rmdir /s /q "{build.path}\core" 2>nul & rmdir /s /q "{build.path}\libraries" 2>nul & del /s /q "{build.path}\sketch\*.o" 2>nul)) & exit /b 0
+# Windows: build_opt.cmd next to this file - one cmd line with the same branches
+# failed in the field (no build_opt.h was made, so the compile stopped at the
+# missing @file), and a batch file can be read and fixed.
+recipe.hooks.prebuild.1.pattern.windows=cmd /c call "{runtime.platform.path}\build_opt.cmd" "{build.source.path}" "{build.path}" "{build.opt.name}"
 
 recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} {compiler.c.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"
 recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} {compiler.cpp.extra_flags} {compiler.defines} {build.extra_flags} {build.opt.flags} {includes} -c "{source_file}" -o "{object_file}"

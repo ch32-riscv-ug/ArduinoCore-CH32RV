@@ -1,2 +1,5 @@
 # FatFs is vendored byte for byte (CRLF, as released); vendor/fatfs.lock.toml hashes those bytes.
 libraries/FS/src/fatfs/** -text
+
+# Windows batch: CRLF, as cmd expects (labels and goto misbehave on LF-only files).
+build_opt.cmd text eol=crlf
