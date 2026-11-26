@@ -632,11 +632,10 @@ def stackcheck_menu(board: str) -> list[str]:
 # kind of port (docs/debug-output.ja.md: attaching can reclock some families
 # and corrupt a register on V103 / V205). SDI reads the mailbox over DMI on a
 # WCH-Link too (ch32rv 0.35.0), beside the UART, without touching the Link's
-# settings. No entry touches the LinkE's own SDI forwarding (the policy for
-# now, 2026-11-26): ch32rv's sdi-forward switches it on, and offering that
-# would ask SDI and Auto to switch it back off to be consistent. With
-# forwarding switched on elsewhere (WCH's tools), the CDC is read just as UART
-# reads it.
+# settings. No entry switches the LinkE's own SDI forwarding on or off (the
+# user, 2026-11-26: ch32rv keeps the explicit `monitor sdi on|off` and drops
+# the sdi-forward source); with forwarding switched on beforehand, UART reads
+# the forwarded characters from the CDC.
 MONITOR_SOURCE_MENU = (
     ("auto", "Auto (UART + debug console) (default)", {"serial": "auto", "wchlink": "auto", "oep": "auto"}),
     ("uart", "UART (Serial)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),

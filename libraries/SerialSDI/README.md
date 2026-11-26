@@ -41,15 +41,19 @@ Opening only the LinkE's COM port (the UART bridge) shows nothing from SerialSDI
 ## Reading it through the LinkE's forwarding (WCH's own way)
 
 The WCH-LinkE can also forward it itself: once forwarding is on, the probe sends what it collects to
-**its own USB CDC port**. While it forwards, **the UART's output no longer reaches that CDC** (the UART
+**its own USB CDC port**. On a WCH-Link that is about twice as fast as ch32rv's direct read (V307: about
+20 KB/s against 10 KB/s; an OEP probe reads it directly at about 28 KB/s). While it forwards, **the UART's output no longer reaches that CDC** (the UART
 bridge stops).
 
 - **A WCH-LinkE only.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it.
 - **Only the series the probe forwards**: V003, V00x, V103, V20x, V30x, V317, X035, L103. Other series
   have the registers but the probe firmware will not poll them (ch32rv's direct read above works there).
 
+Switch forwarding on yourself before using it (the monitor never switches it on or off), then open the
+`wchlink://...` port (or the LinkE's COM port) with Monitor Source UART.
+
 ```
-ch32rv monitor --source sdi-forward            # switches forwarding on, then reads the CDC
+ch32rv monitor sdi on                          # switches forwarding on
 ch32rv monitor sdi off                         # switches it off (the LinkE keeps it in RAM: power-off clears it too)
 ```
 
@@ -61,8 +65,6 @@ WCH's own tools switch it on too:
 | **OpenOCD bundled with MounRiver Studio** | Linux / macOS / Windows | Also WCH's. `openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable` (`wlink flash --enable-sdi-print --watch-serial firmware.elf` flashes and watches in one go) |
 
-In the IDE's serial monitor, switch forwarding on first and open the same port with Monitor Source UART
-(or Auto): no menu entry switches the LinkE's forwarding on or off, so there is no forwarding entry.
 With forwarding left on, the LinkE takes the characters first, so ch32rv's `sdi` and `auto` get nothing
 (ch32rv warns `sdi-quiet` and points at `ch32rv monitor sdi off`).
 **Details are in [docs/debug-output.ja.md](../../docs/debug-output.ja.md) (Japanese).**

@@ -703,9 +703,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     100・200 ms のどれも m:BOOT 7/7 で欠けない。種類が変わるのは書き込み（IDE はモニターを閉じて開き直す）のときだけなので、
     ライブラリの待ちは変えない。
   - 取り込み（2026-11-26、ch32rv 0.35.0）: Monitor Source に Auto（既定）を足した（`sdi-forward` は入れない。転送の文字は UART で読める）。
-    Link の設定を書き換えないのは今の方針で、確定ではない（ユーザー、2026-11-26）。書き換えるなら、転送を入れる経路を足すのと
-    合わせて、SDI・Auto が転送を切る（無効に戻す）ようにしないと整合しない。今の ch32rv の CLI は `sdi-forward` で入れるが、
-    `sdi` は切らずに警告（sdi-quiet）だけ。docs/debug-output と
+    LinkE の転送（ユーザーの決定、2026-11-26）: 明示的に入れる・切る機能（`ch32rv monitor sdi on|off`）は残し、モニターが自動で
+    変える `sdi-forward` は ch32rv から外す（[ch32rv] に依頼）。転送を使うなら、先に `sdi on` にして UART で読む。速さは 48 バイトの
+    行を出し続けて、V307 の `sdi`（DMI）約 194 行/秒、`sdi-forward` 約 395 行/秒、OEP（V203）の `sdi` 約 560 行/秒、どれも欠け無し。docs/debug-output と
     SerialSDI の README（WCH-Link でも転送なしで読める）を書き直した。arduino-cli monitor の既定で V307（uart + dmseq + rtt）・
     V203（fixture-uart + dmseq + rtt）が読め、ping が返った。console-sdi / dmdata / rtt と runtime が V307・V203・M030 で 12/12 PASS
     （ch32rv-0350-console）。

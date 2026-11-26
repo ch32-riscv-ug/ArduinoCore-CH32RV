@@ -38,15 +38,19 @@ LinkEのCOM port（UARTブリッジ）だけを開いても、SerialSDIの出力
 ## LinkEの転送で読む（WCH純正のやり方）
 
 WCH-LinkE自身に転送させる方法もあります。転送を有効にすると、LinkEは受け取った文字を**自分のUSB CDC port**へ流します。
+WCH-Linkでは、ch32rvが直接読むより約2倍速く出せます（V307で約20 KB/sと約10 KB/s。OEPのprobeは直接読んで約28 KB/s）。
 ただし、転送している間は、**同じCDCにUARTの出力が届かなくなります**（UARTブリッジが止まります）。
 
 - **WCH-LinkEだけ**です。初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません。
 - **probeが転送する系列だけ**です（V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103）。ほかの系列はレジスタこそありますが、
   probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
 
+転送は、使う前に自分で有効にします（モニターは転送を入れたり切ったりしません）。有効にしてから、Monitor SourceのUARTで
+`wchlink://…`のport（またはLinkEのCOM port）を開けば読めます。
+
 ```
-ch32rv monitor --source sdi-forward            # 転送を有効にしてからCDCを読む
-ch32rv monitor sdi off                         # 転送を切る（LinkEのRAMの設定なので、電源を切っても消えます）
+ch32rv monitor sdi on                          # 転送を有効にする
+ch32rv monitor sdi off                         # 転送を切る（LinkEのRAMの設定なので、Linkの電源を切っても消えます）
 ```
 
 WCH純正のツールでも有効にできます。
@@ -57,8 +61,6 @@ WCH純正のツールでも有効にできます。
 | **MounRiver Studio 同梱のOpenOCD** | Linux / macOS / Windows | 同じくWCH純正。`openocd -f wch-riscv.cfg -c "sdi_printf enable" -c init -c exit` |
 | **[wlink](https://github.com/ch32-rs/wlink)** | Linux / macOS / Windows | `wlink sdi-print enable`（`wlink flash --enable-sdi-print --watch-serial firmware.elf`で書き込みと監視をまとめられます） |
 
-IDEのシリアルモニターでは、転送を有効にしてから、Monitor SourceのUART（またはAuto）で同じportを開けば読めます
-（メニューのどの経路もLinkEの転送の設定を変えないので、転送の項目はありません）。
 転送を有効にしたままだと、LinkEが先に文字を取るので、ch32rvの`sdi`・`auto`では読めません（ch32rvが警告
 `sdi-quiet`で`ch32rv monitor sdi off`を案内します）。
 **詳しくは[docs/debug-output.ja.md](../../docs/debug-output.ja.md)にあります。**

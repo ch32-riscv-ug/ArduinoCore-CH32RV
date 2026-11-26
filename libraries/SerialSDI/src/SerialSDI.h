@@ -6,7 +6,8 @@
  * a fact the hardware reports rather than a magic number. The bundled ch32rv
  * reads them over the debug transport (`ch32rv monitor --source sdi`, and the
  * IDE monitor's default `auto`); a WCH-LinkE told to forward polls them itself
- * and sends what it finds to its own USB CDC port (`--source sdi-forward`).
+ * and sends what it finds to its own USB CDC port (`ch32rv monitor sdi on`, then
+ * read the CDC as the UART).
  *
  * What that buys: **no UART, no pin, no wiring**, and the core is never
  * halted. What it costs: a host has to be reading the debug module.

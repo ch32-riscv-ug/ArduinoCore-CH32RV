@@ -54,9 +54,10 @@ monitor の設定のうちボーレートしか出ないためです（arduino-c
 | DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
 
 `SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
-LinkE 自身の SDI の転送（WCH-LinkUtility・wlink などで有効にするもの）はメニューにありません。メニューのどの経路も、
-LinkE の転送の設定を変えません（入れることも切ることもしません）。転送を有効にしてあれば、転送された文字は CDC に来るので、UART（または Auto）で読めます。転送している間は、CDC に
-UART の出力が届きません。CLI では `ch32rv monitor --source sdi-forward` が転送を有効にしてから読みます。
+LinkE 自身の SDI の転送は、モニターが入れたり切ったりしません。使うときは、先に `ch32rv monitor sdi on`（または WCH-LinkUtility・
+wlink）で有効にしてから、UART で読みます（転送された文字は CDC に来ます。転送している間は、CDC に UART の出力が届きません）。
+WCH-Link では、ch32rv が直接読むより約 2 倍速く出せます（V307 で約 20 KB/s と約 10 KB/s。OEP は直接読んで約 28 KB/s）。
+戻すときは `ch32rv monitor sdi off` です。
 
 **Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
 その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを Tools メニューより
