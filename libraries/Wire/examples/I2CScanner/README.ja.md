@@ -16,7 +16,7 @@ SDA・SCL・GND を接続します。SDA と SCL には適切な電源への pul
 
 X035 の PC18 / PC19 のように、デバッグの端子を I2C に使うときは、スケッチの `USE_DEBUG_PADS` を 1 にします（`CH32RV.releaseDebugPins()` を呼びます）。
 次のリセットまでデバッガーが端子を手放し、その間は WCH-Link や OEP の probe から接続できません。書き込みは USB（WeAct の X035 なら
-`ch32rv-app://` の口かシリアルポート）でします。USB で書き込む基板では、出力先の `Console` を `SerialUSB` にします。
+`ch32rv-app://` の口かシリアルポート）でします。出力先の `Console` は `SerialUSB` にします。USB のデバイスを動かさないスケッチだと、次の書き込みの手段が無くなり、基板の BOOT / DOWNLOAD キーでしか書き直せません（WeAct X035 で実際に起きました）。
 
 ## API と処理の流れ
 

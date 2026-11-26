@@ -15,9 +15,11 @@ static const int SCL_PIN = SCL;
 // static const int SCL_PIN = PC19;
 
 // en: 1 when the pins above are the debug interface's pads: the debugger lets go of them until the next
-// en: reset, and no WCH-Link or OEP probe can attach meanwhile (upload over USB instead).
+// en: reset, and no WCH-Link or OEP probe can attach meanwhile. Upload over USB then, and make Console SerialUSB
+// en: below: a sketch with no USB device leaves no way back but the board's BOOT / DOWNLOAD key.
 // ja: 上の端子がデバッグの端子のときは1にする。次のリセットまでデバッガーが端子を手放し、その間は
-// ja: WCH-LinkやOEPのprobeから接続できない（書き込みはUSBで）。
+// ja: WCH-LinkやOEPのprobeから接続できない。書き込みはUSBでし、下のConsoleをSerialUSBにする。USBのデバイスを
+// ja: 動かさないスケッチだと、基板のBOOT / DOWNLOADキーでしか書き直せなくなる。
 #define USE_DEBUG_PADS 0
 
 // en: Where the results go: Serial (a UART), or SerialUSB on a board you upload over USB

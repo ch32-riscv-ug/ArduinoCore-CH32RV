@@ -186,6 +186,11 @@ Afterwards no WCH-Link or OEP probe can attach until the next reset: upload over
 On a chip with no USB upload, such as V00x, the debug wire is the only way in: power-cycle it and
 upload during the boot hold. The core never does this on its own.
 
+On a chip you upload over USB, keep a USB device running in a sketch that releases the pads
+(`SerialUSB.begin()`: it carries the DFU runtime and gives the `ch32rv-app://` port and a serial port).
+Release them with no USB device and nothing is left to upload the next sketch through but the board's
+BOOT / DOWNLOAD key (it happened on the WeAct X035).
+
 On X035 (WeAct, captured by a P4X probe, 2026-11-27), before the release the debug function held PC18
 (SWDIO) low, so as I2C's SDA every address timed out (`endTransmission()` 5). After it, PC18 / PC19 as
 GPIO (1 kHz, 500 Hz) and as I2C (100 kHz and 10 kHz, an absent address giving 2) came out right by
