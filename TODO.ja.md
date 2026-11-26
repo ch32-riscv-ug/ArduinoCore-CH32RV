@@ -717,6 +717,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   "Monitor Source"（ツールメニューと同じ名前。入力も運ぶので output は誤り）に、ほかも "Baud Rate (UART)"・"DTR (UART)"・
   "RTS (UART)" に（ユーザーが VS Code の arduino-cli 拡張でラベルから選べるようにするため）。ch32rv 0.35.2 で取り込んだ。
   試験の sketch.yaml の port_config も chip を渡さないようにした（渡すと arduino-cli が exit 7 で止まる）。
+- [x] **X035 のデバッグの端子を I2C / GPIO に（2026-11-27、WeAct X035・P4X 1451）**: USB で書いたスケッチで、`CH32RV.releaseDebugPins()` の前は PC18（SWDIO）が Low に押さえられ（PC19 は High）、GPIO を書いても動かず、`Wire.begin(PC18, PC19)` は false。手放した後は GPIO 1 kHz / 500 Hz の矩形波と、I2C 100 kHz / 10 kHz で応答の無いアドレスへの書き込み（NACK、`endTransmission()` 2）が WireSkein で OK（プローブの線のプルアップ）。ユーザーの前日の `result == 5` は、手放す仕組みが無く SDA が Low のままだったため。記録は scratchpad の dbgexp/run2.wireskein。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
   - 決まったこと（2026-11-26、ユーザー）: WCH-Link ではモニターを開くときに再起動する（石ごとの副作用を気にしない）。郵便受け系は
     DMSeq → SDI → DMDATA の順に試す（DMDATA は安全に区別できれば残す。外すことも検討中）。WCH-Link の SDI は LinkE の転送を
