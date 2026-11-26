@@ -1886,6 +1886,117 @@
               "version": "0.35.2"
             }
           ]
+        },
+        {
+          "name": "CH32 RISC-V (ArduinoCore-CH32RV)",
+          "architecture": "ch32rv",
+          "version": "0.15.0",
+          "category": "Contributed",
+          "url": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/releases/download/v0.15.0/ArduinoCore-CH32RV-0.15.0.tar.bz2",
+          "archiveFileName": "ArduinoCore-CH32RV-0.15.0.tar.bz2",
+          "checksum": "SHA-256:5f5d26d5ae55ef52814c0fa1203801f323af201876ca8cf5975a49bb85230c62",
+          "size": "3182257",
+          "help": {
+            "online": "https://github.com/ch32-riscv-ug/ArduinoCore-CH32RV/issues"
+          },
+          "boards": [
+            {
+              "name": "Generic CH32V002"
+            },
+            {
+              "name": "Generic CH32V003"
+            },
+            {
+              "name": "Generic CH32V004"
+            },
+            {
+              "name": "Generic CH32V005"
+            },
+            {
+              "name": "Generic CH32V006"
+            },
+            {
+              "name": "Generic CH32V007"
+            },
+            {
+              "name": "Generic CH32V103"
+            },
+            {
+              "name": "Generic CH32V203"
+            },
+            {
+              "name": "Generic CH32V205"
+            },
+            {
+              "name": "Generic CH32V208"
+            },
+            {
+              "name": "Generic CH32V303"
+            },
+            {
+              "name": "Generic CH32V305"
+            },
+            {
+              "name": "Generic CH32V307"
+            },
+            {
+              "name": "Generic CH32V317"
+            },
+            {
+              "name": "Generic CH32V407"
+            },
+            {
+              "name": "Generic CH32V467"
+            },
+            {
+              "name": "Generic CH32X033"
+            },
+            {
+              "name": "Generic CH32X035"
+            },
+            {
+              "name": "Generic CH32X305"
+            },
+            {
+              "name": "Generic CH32X315"
+            },
+            {
+              "name": "Generic CH32L103"
+            },
+            {
+              "name": "Generic CH32M007"
+            },
+            {
+              "name": "Generic CH32M030"
+            },
+            {
+              "name": "Generic CH32M103"
+            },
+            {
+              "name": "Generic CH32H415"
+            },
+            {
+              "name": "Generic CH32H416"
+            },
+            {
+              "name": "Generic CH32H417"
+            },
+            {
+              "name": "UIAPduino Pro Micro CH32V003 V1.4"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv-toolchain",
+              "version": "23.1.6-2"
+            },
+            {
+              "packager": "ch32-riscv-ug",
+              "name": "ch32rv",
+              "version": "0.35.3"
+            }
+          ]
         }
       ],
       "tools": [
@@ -2769,6 +2880,61 @@
           ]
         },
         {
+          "name": "ch32rv",
+          "version": "0.35.2",
+          "systems": [
+            {
+              "host": "x86_64-pc-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.35.2-x86_64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:bb63df39dfc8210ff1e0f7495aa9d72a5bee0902bedabe467435c0fd17d9797c",
+              "size": "2463154"
+            },
+            {
+              "host": "aarch64-linux-gnu",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-aarch64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.35.2-aarch64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:8d0dabfbc213f97f5c89fe8c66e7e3b9d08c1631255b3912fa56e675f753c348",
+              "size": "2387808"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.35.2-x86_64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:9043c258c6748a370093aab0681232b9f1654235b34c489d357f6859ff3027c8",
+              "size": "2349120"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-aarch64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.35.2-aarch64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:1ea4fed47b533203774cb83e56790d850d06f7fca47a3b379b5dc7ccf1c8ed72",
+              "size": "2240576"
+            },
+            {
+              "host": "x86_64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
+              "size": "2288222"
+            },
+            {
+              "host": "i686-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
+              "size": "2288222"
+            },
+            {
+              "host": "arm64-mingw32",
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
+              "size": "2288222"
+            }
+          ]
+        },
+        {
           "name": "ch32rv-toolchain",
           "version": "23.1.6-2",
           "systems": [
@@ -2827,56 +2993,56 @@
         },
         {
           "name": "ch32rv",
-          "version": "0.35.2",
+          "version": "0.35.3",
           "systems": [
             {
               "host": "x86_64-pc-linux-gnu",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-unknown-linux-gnu.tar.gz",
-              "archiveFileName": "ch32rv-0.35.2-x86_64-unknown-linux-gnu.tar.gz",
-              "checksum": "SHA-256:bb63df39dfc8210ff1e0f7495aa9d72a5bee0902bedabe467435c0fd17d9797c",
-              "size": "2463154"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-x86_64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.35.3-x86_64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:24b51f56f594abe11b15971fc1262aa3550d9461ba9ab546d416297fc7b07ae6",
+              "size": "2464294"
             },
             {
               "host": "aarch64-linux-gnu",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-aarch64-unknown-linux-gnu.tar.gz",
-              "archiveFileName": "ch32rv-0.35.2-aarch64-unknown-linux-gnu.tar.gz",
-              "checksum": "SHA-256:8d0dabfbc213f97f5c89fe8c66e7e3b9d08c1631255b3912fa56e675f753c348",
-              "size": "2387808"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-aarch64-unknown-linux-gnu.tar.gz",
+              "archiveFileName": "ch32rv-0.35.3-aarch64-unknown-linux-gnu.tar.gz",
+              "checksum": "SHA-256:3bb376f8e5713936e660018ed0210776850b6605c11b1409ec93f8d03ce0bc03",
+              "size": "2387910"
             },
             {
               "host": "x86_64-apple-darwin",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-apple-darwin.tar.gz",
-              "archiveFileName": "ch32rv-0.35.2-x86_64-apple-darwin.tar.gz",
-              "checksum": "SHA-256:9043c258c6748a370093aab0681232b9f1654235b34c489d357f6859ff3027c8",
-              "size": "2349120"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-x86_64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.35.3-x86_64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:9f62d6c40f171fbbbd4a57cd20ff5f16eed91ae920119b3952235da9ff05b88a",
+              "size": "2352864"
             },
             {
               "host": "arm64-apple-darwin",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-aarch64-apple-darwin.tar.gz",
-              "archiveFileName": "ch32rv-0.35.2-aarch64-apple-darwin.tar.gz",
-              "checksum": "SHA-256:1ea4fed47b533203774cb83e56790d850d06f7fca47a3b379b5dc7ccf1c8ed72",
-              "size": "2240576"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-aarch64-apple-darwin.tar.gz",
+              "archiveFileName": "ch32rv-0.35.3-aarch64-apple-darwin.tar.gz",
+              "checksum": "SHA-256:4617232de5af0bfb5a7ad211866a23090c12252f255a28d9860039da389837f0",
+              "size": "2242007"
             },
             {
               "host": "x86_64-mingw32",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
-              "size": "2288222"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:1ba9b81fd41c8fcede2fff4f996411a68f6d8f05f217e9b73a549d8663093475",
+              "size": "2289091"
             },
             {
               "host": "i686-mingw32",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
-              "size": "2288222"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:1ba9b81fd41c8fcede2fff4f996411a68f6d8f05f217e9b73a549d8663093475",
+              "size": "2289091"
             },
             {
               "host": "arm64-mingw32",
-              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.2/ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "archiveFileName": "ch32rv-0.35.2-x86_64-pc-windows-msvc.zip",
-              "checksum": "SHA-256:cc5d7c35c5caed99820262a30c7e694301a4937ba16c77952cd1671ee2d172c6",
-              "size": "2288222"
+              "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.3/ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "archiveFileName": "ch32rv-0.35.3-x86_64-pc-windows-msvc.zip",
+              "checksum": "SHA-256:1ba9b81fd41c8fcede2fff4f996411a68f6d8f05f217e9b73a549d8663093475",
+              "size": "2289091"
             }
           ]
         }

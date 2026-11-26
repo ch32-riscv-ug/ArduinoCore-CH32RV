@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.15.0
 - (EN) ch32rv 0.35.3: the Auto monitor prints one status line, right after open (`[ch32rv monitor] auto: uart; looking for dmseq / sdi / dmdata, rtt`), and none when a path is found, a search stops or the sketch restarts; warnings are unchanged.
 - (JA) ch32rv 0.35.3: Auto のモニターの状態の行は、開いた直後の 1 行（`[ch32rv monitor] auto: uart; looking for dmseq / sdi / dmdata, rtt`）だけにした。経路が見つかったとき、探すのをやめたとき、スケッチが再起動したときは出さない。警告はそのまま。
 

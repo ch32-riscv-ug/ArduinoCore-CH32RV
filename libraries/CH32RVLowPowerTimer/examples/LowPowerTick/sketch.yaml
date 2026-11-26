@@ -26,7 +26,7 @@ profiles:
   ch32l103:
     fqbn: ch32-riscv-ug:ch32rv:CH32L103:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.14.0)
+      - platform: ch32-riscv-ug:ch32rv (0.15.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   # CH32M007: omitted, requires LOW_POWER_TIMER, which CH32M007 does not have
@@ -34,24 +34,24 @@ profiles:
   ch32m103:
     fqbn: ch32-riscv-ug:ch32rv:CH32M103:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.14.0)
+      - platform: ch32-riscv-ug:ch32rv (0.15.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h415:
     fqbn: ch32-riscv-ug:ch32rv:CH32H415:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.14.0)
+      - platform: ch32-riscv-ug:ch32rv (0.15.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h416:
     fqbn: ch32-riscv-ug:ch32rv:CH32H416:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.14.0)
+      - platform: ch32-riscv-ug:ch32rv (0.15.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
   ch32h417:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=ANY
     platforms:
-      - platform: ch32-riscv-ug:ch32rv (0.14.0)
+      - platform: ch32-riscv-ug:ch32rv (0.15.0)
         platform_index_url: https://ch32-riscv-ug.github.io/ArduinoCore-CH32RV/package_ch32-riscv-ug_index.json
 
