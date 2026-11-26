@@ -38,26 +38,32 @@ ch32rv monitor --source auto                   # together with the UART and the 
 Opening only the LinkE's COM port (the UART bridge) shows nothing from SerialSDI; pick the
 `wchlink://...` port.
 
-## Reading it through the LinkE's forwarding (WCH's own way)
+## Reading it through the LinkE's forwarding (not really recommended)
 
-The WCH-LinkE can also forward it itself: once forwarding is on, the probe sends what it collects to
-**its own USB CDC port**. On a WCH-Link that is about twice as fast as ch32rv's direct read (V307: about
-20 KB/s against 10 KB/s; an OEP probe reads it directly at about 28 KB/s). While it forwards, **the UART's output no longer reaches that CDC** (the UART
-bridge stops).
+WCH's own way is to let the WCH-LinkE forward it: once forwarding is on, the probe sends what it collects
+to **its own USB CDC port**. Reading it as above (ch32rv reads it directly) is normally enough, and
+forwarding is awkward enough that we don't really recommend it:
 
-- **A WCH-LinkE only.** Neither the original WCH-Link (CH549) nor the WCH-LinkW has it.
-- **Only the series the probe forwards**: V003, V00x, V103, V20x, V30x, V317, X035, L103. Other series
-  have the registers but the probe firmware will not poll them (ch32rv's direct read above works there).
+- **It is easily switched off.** Every ch32rv command that opens the Link (the upload, the Auto monitor)
+  turns it off: LinkE 2.23 stops forwarding on the probe-info query ch32rv sends first. It needs
+  switching on again after every upload.
+- **The UART stops.** While it forwards, **the UART's output no longer reaches that CDC** (the UART
+  bridge stops).
+- **Not in the IDE.** Arduino IDE 2 cannot pick the monitor's source, and its default, Auto, turns
+  forwarding off when it opens (Auto reads the same output over the debug wires instead).
+- **Narrow reach.** A WCH-LinkE only (neither the original WCH-Link (CH549) nor the WCH-LinkW has it),
+  and only the series the probe forwards: V003, V00x, V103, V20x, V30x, V317, X035, L103 (ch32rv's
+  direct read works on the others too).
 
-Switch forwarding on yourself after uploading (every ch32rv command that opens the Link, the upload
-included, turns forwarding off: the LinkE stops it on the probe-info query ch32rv sends first), then open the `wchlink://...` port (or the LinkE's COM
-port) with the monitor's `uart` source (arduino-cli's `--config source=uart`, the Arduino CLI Wrapper for
-VS Code, ...). Arduino IDE 2 cannot pick the monitor's source, and its default, Auto, turns the forwarding
-off when it opens the Link, so the IDE cannot read through forwarding (Auto reads the same output
-over the debug wires instead).
+Its one advantage is speed: on a WCH-Link it is about twice as fast as ch32rv's direct read (V307: about
+20 KB/s against 10 KB/s; an OEP probe reads it directly at about 28 KB/s, faster than forwarding).
+
+**To read through forwarding anyway:** switch it on after uploading, then open the `wchlink://...` port
+(or the LinkE's COM port) with the monitor's `uart` source, which does not open the Link (arduino-cli's
+`--config source=uart`, the Arduino CLI Wrapper for VS Code, ...). Switch it on again after each upload.
 
 ```
-ch32rv monitor sdi on                          # switches forwarding on
+ch32rv monitor sdi on                          # switches forwarding on (after uploading)
 ch32rv monitor sdi off                         # switches it off (the LinkE keeps it in RAM: power-off clears it too)
 ```
 

@@ -54,11 +54,11 @@ WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として disc
 | `dmseq` / `dmdata` / `sdi` / `rtt` | その経路（debug で attach） | 同じ | 同じ |
 
 `SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
-LinkE 自身の SDI の転送は、モニターが自分から入れることはありません。使うときは、書き込んだ後に `ch32rv monitor sdi on`（または WCH-LinkUtility・
-wlink）で有効にしてから、`uart` で読みます。ch32rv は Link を開くたびに（書き込みも、Auto のモニターも）転送を切ります
-（LinkE 2.23 は、ch32rv が最初に送る probe 情報の問い合わせで転送を止めます）。Link を開かない `uart` だけは切りません（転送された文字は CDC に来ます。転送している間は、CDC に UART の出力が届きません）。
-WCH-Link では、ch32rv が直接読むより約 2 倍速く出せます（V307 で約 20 KB/s と約 10 KB/s。OEP は直接読んで約 28 KB/s）。
-戻すときは `ch32rv monitor sdi off` です。
+LinkE 自身の SDI の転送（WCH 純正のやり方）は、あまりおすすめしません。ch32rv が Link を開くたびに（書き込みも、Auto の
+モニターも）切れ、転送している間は CDC に UART の出力が届かず、IDE では読めないためです（LinkE 2.23 は、ch32rv が最初に送る
+probe 情報の問い合わせで転送を止めます）。利点は、WCH-Link で直接読むより約 2 倍速いことだけです（V307 で約 20 KB/s と約
+10 KB/s。OEP は直接読んで約 28 KB/s）。それでも使うときは、書き込んだ後に `ch32rv monitor sdi on`（または WCH-LinkUtility・
+wlink）で有効にして、Link を開かない `uart` で読みます。戻すときは `ch32rv monitor sdi off` です（[SerialSDI の README](../libraries/SerialSDI/README.ja.md)）。
 
 **選び方:** Auto 以外にしたいときに使います。
 

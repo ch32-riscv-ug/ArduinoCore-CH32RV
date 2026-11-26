@@ -35,24 +35,28 @@ ch32rv monitor --source auto                   # UARTなど、ほかの経路と
 
 LinkEのCOM port（UARTブリッジ）だけを開いても、SerialSDIの出力は出てきません。`wchlink://…`のportを選んでください。
 
-## LinkEの転送で読む（WCH純正のやり方）
+## LinkEの転送で読む（あまりおすすめしません）
 
-WCH-LinkE自身に転送させる方法もあります。転送を有効にすると、LinkEは受け取った文字を**自分のUSB CDC port**へ流します。
-WCH-Linkでは、ch32rvが直接読むより約2倍速く出せます（V307で約20 KB/sと約10 KB/s。OEPのprobeは直接読んで約28 KB/s）。
-ただし、転送している間は、**同じCDCにUARTの出力が届かなくなります**（UARTブリッジが止まります）。
+WCH-LinkE自身に転送させる、WCH純正のやり方もあります。転送を有効にすると、LinkEは受け取った文字を**自分のUSB CDC port**へ
+流します。ただ、ふつうは上の「読み方」（ch32rvが直接読む）で足ります。転送は次の点で扱いにくいので、あまりおすすめしません。
 
-- **WCH-LinkEだけ**です。初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません。
-- **probeが転送する系列だけ**です（V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103）。ほかの系列はレジスタこそありますが、
-  probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
+- **切れやすい:** ch32rvはLinkを開くたびに（書き込みも、Autoのモニターも）転送を切ります（LinkE 2.23は、ch32rvが最初に送る
+  probe情報の問い合わせで転送を止めます）。書き込むたびに入れ直しが要ります。
+- **UARTが止まる:** 転送している間は、**同じCDCにUARTの出力が届きません**（UARTブリッジが止まります）。
+- **IDEでは読めない:** Arduino IDE 2ではモニターのsourceを選べず、既定のAutoが開くときに転送を切ります（Autoはデバッグの線越しに
+  同じ出力を読みます）。
+- **使える範囲が狭い:** WCH-LinkEだけです（初代WCH-Link(CH549)にも**WCH-LinkWにも**ありません）。系列も、probeが転送する
+  V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103だけです（ch32rvが直接読む方法なら、ほかの系列でも読めます）。
 
-転送は、書き込んだ後に自分で有効にします（ch32rvはLinkを開くたびに、書き込みも含めて、LinkEの転送を切ってしまいます。
-LinkEが、ch32rvが最初に送るprobe情報の問い合わせで転送を止めるためです）。有効にしてから、モニターの`uart`で`wchlink://…`のport（またはLinkEのCOM port）を
-開けば読めます（arduino-cliの`--config source=uart`、VS CodeのArduino CLI Wrapperなど）。Arduino IDE 2ではモニターの
-sourceを選べず、既定のAutoは開くときにLinkを開いて転送を切ってしまうので、IDEでは転送では読めません
-（Autoがデバッグの線越しに同じ出力を読みます）。
+利点は速さだけです。WCH-Linkでは、ch32rvが直接読むより約2倍速く出せます（V307で約20 KB/sと約10 KB/s。OEPのprobeは直接読んで
+約28 KB/sで、転送より速く出ます）。
+
+**それでも転送で読むとき:** 書き込んだ後に転送を有効にし、Linkを開かないモニターの`uart`で`wchlink://…`のport（またはLinkEの
+COM port）を開きます（arduino-cliの`--config source=uart`、VS CodeのArduino CLI Wrapperなど）。書き込み直したら、また有効に
+します。
 
 ```
-ch32rv monitor sdi on                          # 転送を有効にする
+ch32rv monitor sdi on                          # 転送を有効にする（書き込んだ後に）
 ch32rv monitor sdi off                         # 転送を切る（LinkEのRAMの設定なので、Linkの電源を切っても消えます）
 ```
 
