@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.21.0
 - (EN) Fix (Windows): a sketch without build_opt.h failed to compile with "no such file or directory: '@...\\build_opt.h'" since the faster rebuilds (0.20.0): the one-line cmd hook that keeps build_opt.h made no file. The Windows half is now a batch file shipped with the platform (build_opt.cmd).
 - (JA) 修正（Windows）: 再ビルドを速くした版（0.20.0）から、build_opt.h の無いスケッチが「no such file or directory: '@…\\build_opt.h'」でコンパイルできなかった。build_opt.h を用意する cmd の 1 行の処理がファイルを作っていなかった。Windows の側は、プラットフォームに同梱するバッチファイル（build_opt.cmd）にした。
 
