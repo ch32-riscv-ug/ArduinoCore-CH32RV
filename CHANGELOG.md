@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) Faster repeated builds: the compiler now writes dependency files (-MMD), so arduino-cli recompiles only what changed instead of the whole core and every library each time (a repeated build of Blink went from 3.8 s to 0.3 s, of a USB sketch from 7.6 s to 0.7 s). A changed build_opt.h, or a deleted one, still rebuilds everything with the new options.
+- (JA) 2 回目からのビルドを速くした。コンパイラが依存関係のファイルを書く（-MMD）ので、arduino-cli は毎回コアとライブラリを全部コンパイルし直さず、変わった所だけを作り直す（Blink の 2 回目が 3.8 秒から 0.3 秒、USB のスケッチが 7.6 秒から 0.7 秒）。build_opt.h を変えたり消したりしたときは、今までどおり新しいオプションで全部作り直す。
 
 ## 0.19.0
 - (EN) ch32rv 0.35.7: uploading to a running CH32RV sketch's USB serial port (`COMx`, `/dev/ttyACM...`) now works like its `ch32rv-app://` port (into the USB bootloader, then written) instead of failing as if it were an OEP probe; on Windows, when the sketch's DFU runtime has no driver, the 1200 bps touch enters the bootloader instead.

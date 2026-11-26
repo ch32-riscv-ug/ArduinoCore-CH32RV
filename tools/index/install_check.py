@@ -298,6 +298,22 @@ def run(work: pathlib.Path, port: int = 8731) -> dict:
         print(f"BUILD_OPT.H OK (RAM {ram['BuildOptBaseline']} -> {ram['BuildOpt']})",
               flush=True)
 
+        # 3c) a changed build_opt.h rebuilds the core in the same build directory:
+        # the objects are kept between builds (-MMD) and an @file is no dependency,
+        # so the prebuild hook deletes them when the file changes. Without the
+        # buffer size, the RAM falls back to the baseline; with it again, it rises.
+        d = work / "BuildOpt"
+        resized = {}
+        for step, opt in (("smaller", "-DCH32RV_BUILD_OPT_PROBE=1\n"), ("again", BUILD_OPT_H)):
+            (d / "build_opt.h").write_text(opt, encoding="utf-8")
+            out = cli("compile", "--fqbn", FQBN_BLINK, "--build-path",
+                      str(work / "build-BuildOpt"), str(d), "--format", "json", env=env)
+            sections = json.loads(out)["builder_result"]["executable_sections_size"]
+            resized[step] = next((x["size"] for x in sections if x["name"] == "data"), None)
+        if resized["smaller"] != ram["BuildOptBaseline"] or resized["again"] != ram["BuildOpt"]:
+            raise Failure(f"a changed build_opt.h did not rebuild the core: RAM {ram} then {resized}")
+        print(f"BUILD_OPT.H CHANGE OK (RAM {resized['smaller']} -> {resized['again']})", flush=True)
+
         installed = work / "data" / "packages" / PACKAGER / "hardware" / ARCH
         leaked = [p for p in installed.glob("*/*") if p.name in FORBIDDEN]
         if leaked:
