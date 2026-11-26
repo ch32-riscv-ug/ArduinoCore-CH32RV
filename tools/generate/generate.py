@@ -1840,6 +1840,22 @@ def load_gpio_speed(tables: pathlib.Path) -> dict:
     return out
 
 
+# series -> the debug interface's pads (SWDIO / SWIO first, then SWCLK when the
+# series has a two-wire interface), from index/debug_interfaces.csv. Set by
+# main() before the variants are written; gen_pins() reads it.
+DEBUG_PADS: dict = {}
+
+
+def load_debug_pads(tables: pathlib.Path) -> dict:
+    """series -> [pads] of its debug interface. Every series with a row has
+    AFIO_PCFR1.SW(J)_CFG at bits 26:24, and 100b there turns the interface off
+    until reset (evidence/register_fields.csv) - CH32RV.releaseDebugPins()."""
+    out: dict = {}
+    for r in read_table(tables, "debug_interfaces.csv", ("series", "swdio_pads", "swclk_pads")):
+        out[r["series"]] = [p for p in (r["swdio_pads"], r["swclk_pads"]) if p]
+    return out
+
+
 def load_adc_bases(tables: pathlib.Path) -> dict:
     """family -> {instance: base address}, from index/register_blocks.csv.
 
@@ -5874,6 +5890,19 @@ def gen_pins(series: str, rows: list, pads: dict, adc: dict, uarts: dict,
         out.append("#define CH32RV_QSPI_PADS_ANY 1   /* some QSPI has pads here (examples' requires) */")
         out.append("")
 
+    # --- the debug interface's pads ---
+    # They stay the debugger's after every reset until a sketch calls
+    # CH32RV.releaseDebugPins() (AFIO_PCFR1.SW_CFG = 100b); a peripheral route
+    # chosen by pins (setPins(), setRoute(), begin() with pins) through one of
+    # them is refused until then (ch32rv_debug_pins.c).
+    dbg = DEBUG_PADS.get(series, [])
+    if dbg:
+        out.append("/* The debug interface's pads (index/debug_interfaces.csv): the")
+        out.append(" * debugger's after every reset, until CH32RV.releaseDebugPins(). */")
+        out.append(f"#define CH32RV_DEBUG_PAD_COUNT {len(dbg)}")
+        out.append("#define CH32RV_DEBUG_PADS { " + ", ".join(dbg) + " }")
+        out.append("")
+
     # --- no LED_BUILTIN ---
     # A Generic board is a silicon series, not a PCB, so it does not know where
     # an LED is - or whether there is one. The old placeholder here was the
@@ -6266,6 +6295,7 @@ def main() -> int:
     argb = load_argb(args.tables)
     sdio = load_sdio(args.tables)
     gpio_speed = load_gpio_speed(args.tables)
+    DEBUG_PADS.update(load_debug_pads(args.tables))
     errata_ids = load_errata_ids(args.tables)
     facts = load_family_facts(args.tables, pads, products)
     die = load_die_variants(args.tables)

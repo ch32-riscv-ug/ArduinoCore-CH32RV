@@ -3,6 +3,7 @@
 #include "Arduino.h"
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_debug_pins.h"
 
 using namespace arduino;
 
@@ -881,6 +882,13 @@ void CH32RVTwoWire::er_irq(void)
 
 
 /* --------------------------------------------------------------- routes */
+/* A pad still the debugger's (internal/ch32rv_debug_pins.h): refused until
+ * CH32RV.releaseDebugPins(), so the route fails here instead of timing out. */
+static bool debug_locked(int pin)
+{
+    return pin >= 0 && pin <= 0xFE && ch32rv_debug_pin_locked((uint8_t)CH32RV_PIN_RESOLVE(pin));
+}
+
 bool CH32RVTwoWire::setRoute(uint8_t route)
 {
     if (WIRE_COUNT == 0) {
@@ -896,7 +904,7 @@ bool CH32RVTwoWire::setRoute(uint8_t route)
 
 bool CH32RVTwoWire::setPins(int sda, int scl)
 {
-    if (sda < 0 || scl < 0 || sda > 0xFE || scl > 0xFE) {
+    if (sda < 0 || scl < 0 || sda > 0xFE || scl > 0xFE || debug_locked(sda) || debug_locked(scl)) {
         return false;
     }
     const Found f = find_route(_number, (uint8_t)CH32RV_PIN_RESOLVE(scl),

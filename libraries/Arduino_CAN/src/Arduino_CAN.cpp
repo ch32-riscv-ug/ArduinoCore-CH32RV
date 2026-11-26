@@ -4,6 +4,7 @@
 
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
+#include "internal/ch32rv_debug_pins.h"
 
 using namespace arduino;
 
@@ -134,6 +135,12 @@ uint32_t timing(uint32_t clock, uint32_t bitrate)
 
 bool CH32RVCan::setPins(int rx, int tx)
 {
+    /* A pad still the debugger's is refused until CH32RV.releaseDebugPins()
+     * (internal/ch32rv_debug_pins.h). */
+    if ((rx >= 0 && rx <= 0xFE && ch32rv_debug_pin_locked((uint8_t)CH32RV_PIN_RESOLVE(rx))) ||
+        (tx >= 0 && tx <= 0xFE && ch32rv_debug_pin_locked((uint8_t)CH32RV_PIN_RESOLVE(tx)))) {
+        return false;
+    }
     const ch32rv_route_t *rows = nullptr;
     uint8_t count = 0;
 #if defined(CH32RV_CAN1_ROUTES)

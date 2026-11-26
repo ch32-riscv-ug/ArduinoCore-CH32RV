@@ -66,4 +66,8 @@ def test_v14_keeps_official_numeric_pin_contract():
 def test_official_sdio_disconnect_extension_is_source_compatible():
     assert "#define PD_1 ((PinName)0x31u)" in PINS
     assert "static inline void pinV32_DisconnectDebug(PinName pin)" in PINS
-    assert "(*pcfr1 & ~0x07000000u) | 0x04000000u" in PINS
+    # The register write is the core's (CH32RV.releaseDebugPins()), so that the
+    # routes through PD1 are let through afterwards as well.
+    assert "ch32rv_release_debug_pins();" in PINS
+    core = (REPO / "cores/arduino/ch32rv_debug_pins.c").read_text(encoding="utf-8")
+    assert "#define SW_CFG_MASK 0x07000000u" in core and "#define SW_CFG_OFF  0x04000000u" in core

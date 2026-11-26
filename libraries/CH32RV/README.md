@@ -14,6 +14,7 @@ standard Arduino API.
 CH32RV.restart();                        // software reset (does not return)
 CH32RV.resetReason();                    // CH32RVResetReason::Software / _WATCHDOG / _PANIC (Stack Check reset on a stack overflow) / _DEEPSLEEP (woke from deepSleep()'s standby) ...
 CH32RV.resetReasonName();                // "software" and so on, for printing
+CH32RV.releaseDebugPins();               // the debug pads (X035 PC18 / PC19, V003 PD1, ...) as ordinary pads until reset
 CH32RV.wdtEnable(2000);                  // reset unless fed every 2 s
 CH32RV.wdtFeed();                        // call it in loop()
 CH32RV.wwdgEnable(20000, 10000);         // window watchdog: feed 10-20 ms after the last feed
@@ -172,6 +173,18 @@ CH32RV.idle();      // until the next interrupt
 - SysTick wakes the CPU every millisecond too, so the time is as exact as `delay()`'s.
 - On V103 SysTick does not end a WFI, so it waits awake.
 - selfsys::test_idle (a 1 kHz timer interrupt counted through a 200 ms idle) passes on V203, V103 and H417 (2026-11-23).
+
+### The debug pads (`releaseDebugPins()`)
+
+The debug interface's pads (X035's PC18 / PC19, V003's PD1, V20x / V30x's PA13 / PA14, ...) belong to
+the debugger after every reset. To use them for I2C, SPI, a UART or GPIO, call
+`CH32RV.releaseDebugPins()` first (it sets AFIO_PCFR1.SW_CFG to 100b). Without it, a route chosen by
+those pins (`Wire.begin(sda, scl)`, `setPins()`, `setRoute()`) returns false.
+
+Afterwards no WCH-Link or OEP probe can attach until the next reset: upload over USB (on X035, the
+`ch32rv-app://` port or the serial port), or catch the chip right after a reset (`CH32RV_BOOT_HOLD_MS`).
+On a chip with no USB upload, such as V00x, the debug wire is the only way in: power-cycle it and
+upload during the boot hold. The core never does this on its own.
 
 ### Output speed (`setPinSpeed()`)
 

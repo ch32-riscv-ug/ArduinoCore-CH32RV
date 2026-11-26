@@ -6,6 +6,10 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) `CH32RV.releaseDebugPins()` turns the debug interface off until the next reset, so its pads (X035's PC18 / PC19, V003's PD1, V20x / V30x's PA13 / PA14, ...) work as ordinary pads. Without it, a route chosen by those pins (`Wire.begin(sda, scl)`, `setPins()`, `setRoute()` on Wire, SPI, Serial and CAN) now returns false instead of an I2C that timed out on every address; default routes are unchanged. Never done on the core's own: afterwards no WCH-Link or OEP probe can attach to the running sketch, and on V00x the debug wire is the only way in. UIAPduino's `pinV32_DisconnectDebug(PD_1)` does the same.
+- (JA) `CH32RV.releaseDebugPins()` を足した。次のリセットまでデバッグのインターフェースを切り、その端子（X035 の PC18 / PC19、V003 の PD1、V20x / V30x の PA13 / PA14 など）を普通の端子として使える。呼ばずにその端子で経路を選ぶと（Wire・SPI・Serial・CAN の `Wire.begin(sda, scl)`・`setPins()`・`setRoute()`）、false を返すようにした。今までは I2C がどのアドレスでもタイムアウトしていた。既定の経路は変えていない。コアが自分から切ることはない（切った後は WCH-Link や OEP から接続できず、V00x ではデバッグの線が唯一の入口のため）。UIAPduino の `pinV32_DisconnectDebug(PD_1)` も同じ処理をする。
+- (EN) Wire's I2CScanner example scans every 5 seconds, names the pins (PC18, not the core's number), explains a timeout, and shows how to use debug pads (`USE_DEBUG_PADS`) and SerialUSB.
+- (JA) Wire の I2CScanner の例を、5 秒ごとにスキャンし、端子を名前で出し（コアの内部の番号ではなく PC18）、タイムアウトの理由を出す形にした。デバッグの端子（`USE_DEBUG_PADS`）と SerialUSB を使う形も示した。
 - (EN) Faster repeated builds: the compiler now writes dependency files (-MMD), so arduino-cli recompiles only what changed instead of the whole core and every library each time (a repeated build of Blink went from 3.8 s to 0.3 s, of a USB sketch from 7.6 s to 0.7 s). A changed build_opt.h, or a deleted one, still rebuilds everything with the new options.
 - (JA) 2 回目からのビルドを速くした。コンパイラが依存関係のファイルを書く（-MMD）ので、arduino-cli は毎回コアとライブラリを全部コンパイルし直さず、変わった所だけを作り直す（Blink の 2 回目が 3.8 秒から 0.3 秒、USB のスケッチが 7.6 秒から 0.7 秒）。build_opt.h を変えたり消したりしたときは、今までどおり新しいオプションで全部作り直す。
 

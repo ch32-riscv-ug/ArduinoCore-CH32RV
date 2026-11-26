@@ -10,7 +10,13 @@ SDA・SCL・GND を接続します。SDA と SCL には適切な電源への pul
 
 ## 操作と期待する結果
 
-起動時に一度スキャンし、応答のあるアドレスを表示します。`bus timed out` の場合は配線と pull-up を先に確認します。再実行はリセットします。
+5 秒ごとにスキャンし、使っている端子（`SDA=PC18 SCL=PC19` のように名前で）と、応答のあるアドレスを表示します。`bus timed out`（`endTransmission()` が 5）は、SCL か SDA が High に戻らない状態です。プルアップが無い、機器が線を Low に押さえている、端子が実際には I2C になっていない、のどれかです。`these pins cannot carry I2C here` は、その端子の組がこの石の I2C の経路に無いか、まだ手放していないデバッグの端子です。
+
+## デバッグの端子を使うとき
+
+X035 の PC18 / PC19 のように、デバッグの端子を I2C に使うときは、スケッチの `USE_DEBUG_PADS` を 1 にします（`CH32RV.releaseDebugPins()` を呼びます）。
+次のリセットまでデバッガーが端子を手放し、その間は WCH-Link や OEP の probe から接続できません。書き込みは USB（WeAct の X035 なら
+`ch32rv-app://` の口かシリアルポート）でします。USB で書き込む基板では、出力先の `Console` を `SerialUSB` にします。
 
 ## API と処理の流れ
 

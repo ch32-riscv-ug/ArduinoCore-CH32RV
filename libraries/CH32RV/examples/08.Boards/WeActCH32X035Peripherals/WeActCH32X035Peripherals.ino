@@ -28,8 +28,10 @@ static const int ANALOG_2 = A1;
 
 static const int PWM_PIN = PB11;
 
-// en: Debug-pin route; replaces SWD/DMSeq.
-// ja: デバッグ端子の経路。SWD/DMSeqと排他。
+// en: Debug-pin route; replaces SWD/DMSeq. Needs CH32RV.releaseDebugPins() (#include <CH32RV.h>) before
+// en: Wire.begin(): until the next reset no WCH-Link or OEP probe can attach, so upload over USB.
+// ja: デバッグ端子の経路。SWD/DMSeqと排他。Wire.begin()の前にCH32RV.releaseDebugPins()（#include <CH32RV.h>）が
+// ja: 要る。次のリセットまでWCH-LinkやOEPのprobeから接続できないので、書き込みはUSBで。
 // static const int I2C_SDA = PC18;
 // static const int I2C_SCL = PC19;
 // en: USB-pin route; replaces USB data.
@@ -62,6 +64,7 @@ void setup()
     pinMode(SPI_CS, OUTPUT);
     digitalWrite(SPI_CS, HIGH);
 
+    // CH32RV.releaseDebugPins();   // en: only for the debug-pin route / ja: デバッグ端子の経路のときだけ
     // Wire.begin(I2C_SDA, I2C_SCL);
 
     pinMode(ANALOG_1, INPUT);

@@ -229,6 +229,17 @@ public:
     /* Reset the whole chip through the PFIC. Does not return. */
     [[noreturn]] void restart();
 
+    /* Turn the debug interface off until the next reset, so its pads (X035's
+     * PC18 / PC19, V003's PD1, V20x / V30x's PA13 / PA14, ...) work as
+     * ordinary pads - for I2C, SPI, a UART or GPIO. Until it is called, a
+     * route chosen by those pins (Wire.begin(sda, scl), setPins(), setRoute())
+     * returns false. Afterwards no WCH-Link or OEP probe can attach to the
+     * running sketch: upload over USB, or catch the chip right after a reset
+     * (CH32RV_BOOT_HOLD_MS) - on V00x the debug wire is the only way in. */
+    void releaseDebugPins();
+    /* Whether releaseDebugPins() has run since reset. */
+    bool debugPinsReleased();
+
     /* Why this boot happened. POWERON wins over the pin flag (a power-up
      * sets both), and the watchdog and software flags win over both, since
      * they describe the most recent, most specific cause. */

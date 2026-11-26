@@ -36,7 +36,7 @@ UART と SPI は端子を渡して初期化します。USB の通信状態と PD
 | USB PD | CC1 PC14、CC2 PC15 | 契約状態とCDC通信は別に確認 |
 | デバッグ | PC18 / PC19 | 任意のI2C経路の一つと兼用 |
 
-任意のI2Cは一組だけ有効にします。SDA PC18 / SCL PC19はデバッグ端子の利用と、SDA PC17 / SCL PC16はUSBデータと排他です。競合する機能を外してから、`<Wire.h>`、選んだ端子の組、`Wire.begin()`のコメントをそろえて解除します。すべてのUSART経路がパッケージに出ているわけではなく、`Serial`をUSART1と決めつけません。
+任意のI2Cは一組だけ有効にします。SDA PC18 / SCL PC19はデバッグ端子の利用と、SDA PC17 / SCL PC16はUSBデータと排他です。PC18 / PC19を使うときは、`Wire.begin()`の前に`CH32RV.releaseDebugPins()`を呼びます（呼ばないと`Wire.begin()`がfalseを返します。呼んだ後は次のリセットまでWCH-LinkやOEPのprobeから接続できないので、書き込みはUSBでします）。競合する機能を外してから、`<Wire.h>`、選んだ端子の組、`Wire.begin()`のコメントをそろえて解除します。すべてのUSART経路がパッケージに出ているわけではなく、`Serial`をUSART1と決めつけません。
 
 DOWNLOADキーは基板の工場書き込み入口に関わります。通常のアプリ用ボタンとして扱わず、[書き込み経路](../../../../../docs/upload-routes.ja.md)に従います。
 

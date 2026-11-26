@@ -8,6 +8,7 @@
 #include "internal/ch32rv_irq.h"
 
 #include <stdint.h>
+#include "internal/ch32rv_debug_pins.h"
 
 extern "C" {
 extern char _end[];
@@ -68,6 +69,16 @@ __attribute__((weak)) void CH32RVSystem::restart()
         /* The write takes effect within a couple of cycles; this is only
          * here so the compiler believes [[noreturn]]. */
     }
+}
+
+void CH32RVSystem::releaseDebugPins()
+{
+    ch32rv_release_debug_pins();
+}
+
+bool CH32RVSystem::debugPinsReleased()
+{
+    return ch32rv_debug_pins_released();
 }
 
 /* Set by the sleep code's boot hook (ch32rv_power.c) when this boot is the

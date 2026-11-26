@@ -10,7 +10,14 @@ Connect SDA, SCL and common GND. Both signals need pull-ups to a suitable voltag
 
 ## Steps and expected results
 
-The sketch scans once at startup and prints responding addresses. On `bus timed out`, check wiring and pull-ups first. Reset to repeat.
+The sketch scans every 5 seconds and prints the pins it uses (by name, as in `SDA=PC18 SCL=PC19`) and the addresses that answer. `bus timed out` (`endTransmission()` returning 5) means SCL or SDA never went high: no pull-ups, a device holding a line low, or pins that are not actually I2C. `these pins cannot carry I2C here` means the pair is no I2C route of this chip, or a debug pad not yet released.
+
+## Using the debug pads
+
+To use debug pads such as X035's PC18 / PC19 for I2C, set the sketch's `USE_DEBUG_PADS` to 1 (it calls
+`CH32RV.releaseDebugPins()`). Until the next reset the debugger lets go of them, and no WCH-Link or OEP
+probe can attach meanwhile: upload over USB (on the WeAct X035, its `ch32rv-app://` port or serial port).
+On a board you upload over USB, make `Console` `SerialUSB`.
 
 ## API and processing flow
 

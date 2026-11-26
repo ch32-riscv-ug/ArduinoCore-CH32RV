@@ -5,6 +5,7 @@
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_interrupt.h"
 #include "internal/ch32rv_serial_irq.h"
+#include "internal/ch32rv_debug_pins.h"
 
 using namespace arduino;
 
@@ -806,8 +807,18 @@ void CH32RVHardwareSerial::close(void)
     release_pin(_rx_pin);
 }
 
+/* A pad still the debugger's (internal/ch32rv_debug_pins.h): refused until
+ * CH32RV.releaseDebugPins(), so the route fails here instead of timing out. */
+static bool debug_locked(int pin)
+{
+    return pin >= 0 && pin <= 0xFE && ch32rv_debug_pin_locked((uint8_t)CH32RV_PIN_RESOLVE(pin));
+}
+
 bool CH32RVHardwareSerial::setPins(int rxPin, int txPin, int ctsPin, int rtsPin)
 {
+    if (debug_locked(rxPin) || debug_locked(txPin) || debug_locked(ctsPin) || debug_locked(rtsPin)) {
+        return false;
+    }
     const bool control = ctsPin >= 0 || rtsPin >= 0;
     if (rxPin < 0 && txPin < 0) {
         /* CTS / RTS alone, the route kept (ESP32: -1 leaves a pin as it is). */

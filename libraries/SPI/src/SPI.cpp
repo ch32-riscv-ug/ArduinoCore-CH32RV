@@ -6,6 +6,7 @@
 #include "internal/ch32rv_gpio.h"
 #include "internal/ch32rv_registers.h"
 #include "internal/ch32rv_dma.h"
+#include "internal/ch32rv_debug_pins.h"
 
 using namespace arduino;
 
@@ -826,9 +827,17 @@ bool CH32RVSPIClass::setRoute(uint8_t route)
     return setPins(set.rows[r].pins[0], set.rows[r].pins[1], set.rows[r].pins[2]);
 }
 
+/* A pad still the debugger's (internal/ch32rv_debug_pins.h): refused until
+ * CH32RV.releaseDebugPins(), so the route fails here instead of timing out. */
+static bool debug_locked(int pin)
+{
+    return pin >= 0 && pin <= 0xFE && ch32rv_debug_pin_locked((uint8_t)CH32RV_PIN_RESOLVE(pin));
+}
+
 bool CH32RVSPIClass::setPins(int sck, int miso, int mosi)
 {
-    if (sck < 0 || miso < 0 || mosi < 0 || sck > 0xFE || miso > 0xFE || mosi > 0xFE) {
+    if (sck < 0 || miso < 0 || mosi < 0 || sck > 0xFE || miso > 0xFE || mosi > 0xFE ||
+        debug_locked(sck) || debug_locked(miso) || debug_locked(mosi)) {
         return false;
     }
     const uint8_t want[CH32RV_ROUTE_PINS] = {(uint8_t)CH32RV_PIN_RESOLVE(sck),

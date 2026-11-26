@@ -62,6 +62,7 @@
  * PD1/D11. Disabling SWIO is intentionally explicit and remains in effect
  * until reset; ordinary pinMode(PD1, ...) does not do it behind the user's
  * back, so a fixture can always recover the board over SWIO. */
+#include "internal/ch32rv_debug_pins.h"
 typedef uint8_t PinName;
 #define PD_1 ((PinName)0x31u)
 
@@ -69,12 +70,7 @@ static inline void pinV32_DisconnectDebug(PinName pin)
 {
 #ifndef CH32V_LOCK_DEBUG
     if (pin == PD_1) {
-        volatile uint32_t *const apb2pcenr =
-            (volatile uint32_t *)(uintptr_t)CH32RV_CLKEN_AFIO_ADDR;
-        volatile uint32_t *const pcfr1 =
-            (volatile uint32_t *)(uintptr_t)0x40010004u;
-        *apb2pcenr |= CH32RV_CLKEN_AFIO_MASK;
-        *pcfr1 = (*pcfr1 & ~0x07000000u) | 0x04000000u;
+        ch32rv_release_debug_pins();   /* CH32RV.releaseDebugPins() */
     }
 #else
     (void)pin;

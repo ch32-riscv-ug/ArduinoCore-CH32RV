@@ -36,7 +36,7 @@ This template targets the WeAct CH32X035 Core Board with CH32X035F8U6. Use the s
 | USB PD | CC1 PC14, CC2 PC15 | Contract status is independent of CDC communication |
 | Debug | PC18 / PC19 | Shared with one optional I2C route |
 
-Only one optional I2C pair can be enabled: SDA PC18 / SCL PC19 replaces debug-pin use, or SDA PC17 / SCL PC16 replaces USB data. Uncomment `<Wire.h>`, the chosen pair and `Wire.begin()` together, after disabling the conflicting function. The package does not expose every USART route, so do not assume `Serial` must use USART1.
+Only one optional I2C pair can be enabled: SDA PC18 / SCL PC19 replaces debug-pin use, or SDA PC17 / SCL PC16 replaces USB data. For PC18 / PC19, call `CH32RV.releaseDebugPins()` before `Wire.begin()` (without it `Wire.begin()` returns false; after it no WCH-Link or OEP probe can attach until the next reset, so upload over USB). Uncomment `<Wire.h>`, the chosen pair and `Wire.begin()` together, after disabling the conflicting function. The package does not expose every USART route, so do not assume `Serial` must use USART1.
 
 The DOWNLOAD key participates in the board's factory-upload entry. Follow the [upload routes (Japanese)](../../../../../docs/upload-routes.ja.md) rather than treating it as an ordinary application button.
 

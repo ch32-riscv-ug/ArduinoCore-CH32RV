@@ -1680,6 +1680,11 @@ static const uint8_t SS = PIN_SPI_SS;
     { 7, PC9, 0x0000000fu, 0x00000000u }, \
 }
 
+/* The debug interface's pads (index/debug_interfaces.csv): the
+ * debugger's after every reset, until CH32RV.releaseDebugPins(). */
+#define CH32RV_DEBUG_PAD_COUNT 2
+#define CH32RV_DEBUG_PADS { PB9, PB8 }
+
 /* No LED_BUILTIN: a Generic board is a silicon series, not a
  * board, so it does not know where an LED is. Define it yourself -
  * a product-board variant does it before including this header,

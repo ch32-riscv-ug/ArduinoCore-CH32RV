@@ -12,6 +12,7 @@ ESP core の `ESP.*` と同じ役割で、Arduino 標準 API がない chip 全�
 CH32RV.restart();                        // ソフトウェアリセット(戻らない)
 CH32RV.resetReason();                    // CH32RVResetReason::Software / _WATCHDOG / _PANIC（Stack Check がスタックのあふれでリセットした）/ _DEEPSLEEP（deepSleep() のスタンバイから起きた）...
 CH32RV.resetReasonName();                // "software" など、印字用
+CH32RV.releaseDebugPins();               // デバッグの端子（X035 の PC18 / PC19、V003 の PD1 など）をリセットまで普通の端子にする
 CH32RV.wdtEnable(2000);                  // 2秒ごとに餌をやらないとリセット
 CH32RV.wdtFeed();                        // loop()で呼ぶ
 CH32RV.wwdgEnable(20000, 10000);         // 窓ウォッチドッグ: 前の餌から10〜20 msの間に餌
@@ -137,6 +138,16 @@ CH32RV.idle();      // 次の割り込みまで
 - SysTick も 1 ms ごとに CPU を起こすので、`delay()` のように時間は正確です。
 - V103 は SysTick で WFI が終わらないので、起きたまま待ちます。
 - selfsys::test_idle（1 kHz のタイマーの割り込みを 200 ms の idle の間に数える）が V203・V103・H417 で通ります（2026-11-23）。
+
+### デバッグの端子を使う（`releaseDebugPins()`）
+
+デバッグのインターフェースの端子（X035 の PC18 / PC19、V003 の PD1、V20x / V30x の PA13 / PA14 など）は、リセットのたびに
+デバッガーのものになります。I2C・SPI・UART・GPIO に使うときは、先に `CH32RV.releaseDebugPins()` を呼びます（AFIO_PCFR1 の
+SW_CFG を 100b にします）。呼ばずにその端子で経路を選ぶと（`Wire.begin(sda, scl)`、`setPins()`、`setRoute()`）、false が返ります。
+
+呼んだ後は、次のリセットまで WCH-Link や OEP の probe からつなげません。書き込みは USB で（X035 なら `ch32rv-app://` の口か
+シリアルポート）するか、リセット直後に捕まえます（`CH32RV_BOOT_HOLD_MS`）。V00x のように USB の書き込みが無い石では、
+デバッグの線が唯一の入口なので、戻すには電源を入れ直して、起動待ちの間に書き込みます。コアが自分から切ることはありません。
 
 ### 出力の速さ（`setPinSpeed()`）
 
