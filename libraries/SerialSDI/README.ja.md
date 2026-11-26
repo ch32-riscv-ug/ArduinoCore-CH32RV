@@ -45,9 +45,10 @@ WCH-Linkでは、ch32rvが直接読むより約2倍速く出せます（V307で�
 - **probeが転送する系列だけ**です（V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103）。ほかの系列はレジスタこそありますが、
   probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
 
-転送は、使う前に自分で有効にします。有効にしてから、モニターの`uart`で`wchlink://…`のport（またはLinkEのCOM port）を
+転送は、書き込んだ後に自分で有効にします（ch32rvはLinkを開くたびに、書き込みも含めて、LinkEの転送を切ってしまいます。
+LinkEが、ch32rvが最初に送るprobe情報の問い合わせで転送を止めるためです）。有効にしてから、モニターの`uart`で`wchlink://…`のport（またはLinkEのCOM port）を
 開けば読めます（arduino-cliの`--config source=uart`、VS CodeのArduino CLI Wrapperなど）。Arduino IDE 2ではモニターの
-sourceを選べず、既定のAutoはWCH-Linkで開くときの接続で転送を切ってしまうので、IDEでは転送では読めません
+sourceを選べず、既定のAutoは開くときにLinkを開いて転送を切ってしまうので、IDEでは転送では読めません
 （Autoがデバッグの線越しに同じ出力を読みます）。
 
 ```

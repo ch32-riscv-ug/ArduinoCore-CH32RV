@@ -763,8 +763,9 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   上流が直したら、回避の記述を外す。
   - [x] Monitor Source のメニューを外した（ユーザー、2026-11-26）。既定は ch32rv の auto。ほかの source は `--config source=…`、
     profile の `port_config`、VS Code の Arduino CLI Wrapper で選ぶ。FQBN に `monitor=…` が残っていると arduino-cli が
-    「invalid option」で止まる（CHANGELOG に破壊的変更として書いた）。WCH-Link で Auto を開くと、接続で LinkE の SDI の転送が
-    切れる（V307、0.35.4。[ch32rv] に知らせた）。IDE では転送では読めない（Auto がデバッグの線越しに読む）。
+    「invalid option」で止まる（CHANGELOG に破壊的変更として書いた）。WCH-Link で Auto を開くと、LinkE の SDI の転送が切れる
+    （V307、0.35.4）。原因は ch32rv が Link を開くたびに最初に送る GetProbeInfo で、LinkE 2.23 はこれで転送を止める
+    （[ch32rv] が確かめた）。書き込みでも切れるので、転送は書き込んだ後に入れて `uart` で読む。IDE では転送では読めない（Auto がデバッグの線越しに読む）。
     sketch.yaml の fqbn に `monitor=` を書いた利用者は、外すとビルドが通らなくなる（メニューに無い値）。
 - [ ] **常設のベンチに、工場の ISP（USB）での書き込みを試す台が無い**（2026-11-25、カバレッジの不足）: 常設の DUT の USB は、
   PC か相手（S3・P4・Pico・CH32RV）につながっていて、BOOT（X035 は PC17 を High）や NRST をプローブから操って ISP に入れる

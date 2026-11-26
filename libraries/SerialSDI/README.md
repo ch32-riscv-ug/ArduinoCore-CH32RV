@@ -49,10 +49,11 @@ bridge stops).
 - **Only the series the probe forwards**: V003, V00x, V103, V20x, V30x, V317, X035, L103. Other series
   have the registers but the probe firmware will not poll them (ch32rv's direct read above works there).
 
-Switch forwarding on yourself before using it, then open the `wchlink://...` port (or the LinkE's COM
+Switch forwarding on yourself after uploading (every ch32rv command that opens the Link, the upload
+included, turns forwarding off: the LinkE stops it on the probe-info query ch32rv sends first), then open the `wchlink://...` port (or the LinkE's COM
 port) with the monitor's `uart` source (arduino-cli's `--config source=uart`, the Arduino CLI Wrapper for
 VS Code, ...). Arduino IDE 2 cannot pick the monitor's source, and its default, Auto, turns the forwarding
-off with its attach on a WCH-Link, so the IDE cannot read through forwarding (Auto reads the same output
+off when it opens the Link, so the IDE cannot read through forwarding (Auto reads the same output
 over the debug wires instead).
 
 ```
