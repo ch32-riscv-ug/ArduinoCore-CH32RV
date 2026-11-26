@@ -692,6 +692,11 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
     種類が変わっても選び直さない（OEP・WCH-Link とも。再起動ごとに DMSeq → SDI → DMDATA と変える mbswap で、dmdata のまま）、
     (2) V307 の DMDATA で、行の途中に uart の行が入る（100 ms で途中の行を出すため）。arduino monitor の wchlink / oep の
     ボーレートの既定が 9600 で UART が化けたのは、コアの monitor_port の既定で直した（128899e5）。
+  - ch32rv 52f5988（リリース前）: 選び直しを直した。WCH-Link は再起動を DMSTATUS で見る（WCH の DM は CH32RV.restart() で
+    anyhavereset を立てないので、hart を一瞬止めて走らせて allresumeack を立てておき、それが落ちたら再起動とする）。OEP は
+    決めた経路が 5 秒黙ったら試し直す（DMSTATUS にするには生の DMI の口が要るので、遅いと言われたら考える）。mbswap で V203・
+    V307 とも再起動ごとに dmseq → sdi → dmdata と選び直した。V307 で、決めた直後の RTT を探す間に行が 2 つ割れる（[ch32rv] に
+    返した）。
   - コアの側（ch32rv のリリースの後）: Monitor Source に `auto` を足して既定に、`sdi-forward`（LinkE の転送）を足す、SDI は転送無しの
     経路になる旨と auto を docs/debug-output.ja.md に書く。
 - [ ] **モニターの mix（ユーザー、2026-11-25。仕様は調査の後で決める。名前は仮称、`auto` などを検討中）**
