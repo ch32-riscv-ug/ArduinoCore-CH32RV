@@ -1,58 +1,58 @@
 {
-  "comment": "ch32rv 0.35.0 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.35.0. No mirror is needed: this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
+  "comment": "ch32rv 0.35.1 tool definition, taken from the ch32-riscv-ug/ch32rv release v0.35.1. No mirror is needed: this is the same organisation's own release, and its archives already contain the single root directory arduino-cli requires. Seven host slots from five artifacts - the three Windows slots share the x64 build on purpose, see the per-entry comments. Adopting a new version is deliberate; rebuild this file rather than hand-editing it.",
   "name": "ch32rv",
-  "version": "0.35.0",
-  "upstreamTag": "v0.35.0",
+  "version": "0.35.1",
+  "upstreamTag": "v0.35.1",
   "systems": [
     {
       "host": "x86_64-pc-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-x86_64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.35.0-x86_64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:a9b78f7a05c4a135abfaf87b8054edf2115d3ef76592af880afa7473b7df11be",
-      "size": "2488850"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-x86_64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.35.1-x86_64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:29832b7a5fb4f6dbceb5bdaa689a0fed88c37f18fbfe239799dee17c4dc228c6",
+      "size": "2472246"
     },
     {
       "host": "aarch64-linux-gnu",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-aarch64-unknown-linux-gnu.tar.gz",
-      "archiveFileName": "ch32rv-0.35.0-aarch64-unknown-linux-gnu.tar.gz",
-      "checksum": "SHA-256:732d9afd398edb767f0938fabc533a5b0282c6a79f6e5e6929569a115e04bafd",
-      "size": "2412639"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-aarch64-unknown-linux-gnu.tar.gz",
+      "archiveFileName": "ch32rv-0.35.1-aarch64-unknown-linux-gnu.tar.gz",
+      "checksum": "SHA-256:99b6ac63df1d43129135e96a02b3d82529ce24671e37563a470a694ad5cc1372",
+      "size": "2393926"
     },
     {
       "host": "x86_64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-x86_64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.35.0-x86_64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:acfc6d1c59ab44bd1f75f9761cac3cbac8f6df4440578430e9b0c6efe37ae351",
-      "size": "2367190"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.35.1-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:e9b4eb2835f94a4a98f87f3baa7a982af23d19f9819a3822869a35167d292b90",
+      "size": "2358359"
     },
     {
       "host": "arm64-apple-darwin",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-aarch64-apple-darwin.tar.gz",
-      "archiveFileName": "ch32rv-0.35.0-aarch64-apple-darwin.tar.gz",
-      "checksum": "SHA-256:b86ef936a52145170e249699bd6f3dc26041d4f70aac6a190bf3128dede2f5f0",
-      "size": "2260451"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-aarch64-apple-darwin.tar.gz",
+      "archiveFileName": "ch32rv-0.35.1-aarch64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:6b6d64e496113d94f47e0f0a019371bde8b0f883f101fb2710f8288e4dbfb388",
+      "size": "2246236"
     },
     {
       "host": "x86_64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:dd438df445e878c2fdfb6a48dd368663d6517e5de9cdeec62fe1c4e307142fd9",
-      "size": "2302459"
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:c7cfedb753bd26f771f4832f914649280f2e935e9dda44fb8fe21e0a50bdede1",
+      "size": "2293347"
     },
     {
       "host": "i686-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:dd438df445e878c2fdfb6a48dd368663d6517e5de9cdeec62fe1c4e307142fd9",
-      "size": "2302459",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:c7cfedb753bd26f771f4832f914649280f2e935e9dda44fb8fe21e0a50bdede1",
+      "size": "2293347",
       "comment": "no 32-bit build: 64-bit Windows runs the x64 binary, and arduino-cli picks a host slot, not an architecture"
     },
     {
       "host": "arm64-mingw32",
-      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.0/ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "archiveFileName": "ch32rv-0.35.0-x86_64-pc-windows-msvc.zip",
-      "checksum": "SHA-256:dd438df445e878c2fdfb6a48dd368663d6517e5de9cdeec62fe1c4e307142fd9",
-      "size": "2302459",
+      "url": "https://github.com/ch32-riscv-ug/ch32rv/releases/download/v0.35.1/ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "archiveFileName": "ch32rv-0.35.1-x86_64-pc-windows-msvc.zip",
+      "checksum": "SHA-256:c7cfedb753bd26f771f4832f914649280f2e935e9dda44fb8fe21e0a50bdede1",
+      "size": "2293347",
       "comment": "no native arm64 build: Windows on ARM runs the x64 binary under emulation, and USB access goes through the ordinary Win32 APIs"
     }
   ]
