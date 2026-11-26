@@ -10,7 +10,7 @@
 | 用途 | ライブラリ・案内 | 最初に試す例 |
 |---|---|---|
 | 基本の入出力 | [CH32RV](../libraries/CH32RV/examples/README.ja.md) | PinCapabilities → Blink / SerialEcho → Timing |
-| ハードウェア I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.ja.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery |
+| ハードウェア I2C | [Wire](../libraries/Wire/examples/I2CScanner/README.ja.md) | I2CScanner → I2CRegisterRead / I2CSlaveRegister → I2CTimeoutRecovery、I2COledSH1106（OLED の表示） |
 | GPIO による I2C | [SoftWire](../libraries/Wire/examples/SoftI2CScanner/README.ja.md) | SoftI2CScanner |
 | ハードウェア SPI | [SPI](../libraries/SPI/examples/SPILoopback/README.ja.md) | SPILoopback → SpiFlashId |
 | Ethernet、TCP / UDP、HTTP、mDNS、NTP | [Network](../libraries/Network/README.ja.md) | EthernetStatus → TcpEchoServer / UdpEcho → HttpGet → MdnsWebServer / NetworkTime |

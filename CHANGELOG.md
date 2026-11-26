@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) New Wire example I2COledSH1106: text and a counter on an SH1106 128x64 OLED with Wire alone (no display library, no frame buffer, so it fits V003), with the WeAct CH32X035's debug pads as an option. Checked on hardware.
+- (JA) Wire の例 I2COledSH1106 を足した。SH1106（128×64 の OLED）に、Wire だけで文字とカウンタを出す（表示のライブラリも画面のバッファも使わないので V003 にも入る）。WeAct CH32X035 のデバッグの端子で使う形も示した。実機で動作を確認。
 - (EN) ch32rv 0.35.10: the port list sends the ports it knows without opening anything (WCH-Link, the HID / ISP bootloaders, a running sketch's `ch32rv-app://`, WAIT_FOR_BOOT) right away, so an upload to them no longer misses them in arduino-cli's 1 s wait (`--discovery-timeout` is not needed); and an upload that reaches such a port as a debug probe writes it the right way instead of refusing.
 - (JA) ch32rv 0.35.10: ポートの一覧で、機器を開かずに分かる口（WCH-Link、HID・ISP のブートローダー、動いているスケッチの `ch32rv-app://`、WAIT_FOR_BOOT）を、すぐに送るようにした。arduino-cli の 1 秒の待ちで見落とさなくなった（`--discovery-timeout` は要らない）。そうした口がデバッグプローブとして渡されても、断らずに正しい方法で書く。
 
