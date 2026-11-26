@@ -35,7 +35,7 @@ CORE = REPO / "cores" / "arduino"
 
 VARIANTS = sorted((REPO / "variants").glob("*/pins_arduino.h"))
 GENERIC_VARIANTS = [p for p in VARIANTS if p.parent.name.startswith("CH32")]
-EXAMPLES = sorted((REPO / "libraries").glob("*/examples/*/*.ino"))
+EXAMPLES = sorted((REPO / "libraries").glob("*/examples/**/*.ino"))
 
 
 def _strip_comments(text: str) -> str:

@@ -49,17 +49,17 @@ UART ログを見るための USB-UART アダプタも、MCU 自身の USB デ�
 
 ## UART・システム情報の次の例
 
-`SerialEcho`の次は、固定長の[行受信](../libraries/CH32RV/examples/SerialLineReceiver/README.ja.md)と[バイナリ受信](../libraries/CH32RV/examples/SerialPacketReceiver/README.ja.md)で、入力待ちを分割する方法を試せます。
-[SerialReceiveEvent](../libraries/CH32RV/examples/SerialReceiveEvent/README.ja.md)は線が静かになったところでまとまりを受け取ります。UART のほかのモードは[SerialFlowControl](../libraries/CH32RV/examples/SerialFlowControl/README.ja.md)（RTS / CTS）、[SerialRS485](../libraries/CH32RV/examples/SerialRS485/README.ja.md)（トランシーバーの DE）、[SerialHalfDuplex](../libraries/CH32RV/examples/SerialHalfDuplex/README.ja.md)（1 線）で試せます。[SerialDmaBuffers](../libraries/CH32RV/examples/SerialDmaBuffers/README.ja.md)は DMA が運ぶ大きいバッファで 1 Mbaud の流れを受け取ります。
-[SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.ja.md)・[ResetReason](../libraries/CH32RV/examples/ResetReason/README.ja.md)・[WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.ja.md)はUARTだけで試せるシステムAPIの入口です。[WindowWatchdog](../libraries/CH32RV/examples/WindowWatchdog/README.ja.md)（窓ウォッチドッグ）と[RtcAlarm](../libraries/CH32RV/examples/RtcAlarm/README.ja.md)（RTCの暦とアラーム、アラームまでの休止、バックアップレジスタ）がその先です。
-設定を内蔵のフラッシュに残す[FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.ja.md)・[FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.ja.md)は上級者向けです。制約と費用は[フラッシュへの保存](flash-store.ja.md)を読んでから使います。
-`Fade`の次は[PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.ja.md)で、周波数とdutyの違いを観察します。
+`SerialEcho`の次は、固定長の[行受信](../libraries/CH32RV/examples/04.Serial/SerialLineReceiver/README.ja.md)と[バイナリ受信](../libraries/CH32RV/examples/04.Serial/SerialPacketReceiver/README.ja.md)で、入力待ちを分割する方法を試せます。
+[SerialReceiveEvent](../libraries/CH32RV/examples/04.Serial/SerialReceiveEvent/README.ja.md)は線が静かになったところでまとまりを受け取ります。UART のほかのモードは[SerialFlowControl](../libraries/CH32RV/examples/04.Serial/SerialFlowControl/README.ja.md)（RTS / CTS）、[SerialRS485](../libraries/CH32RV/examples/04.Serial/SerialRS485/README.ja.md)（トランシーバーの DE）、[SerialHalfDuplex](../libraries/CH32RV/examples/04.Serial/SerialHalfDuplex/README.ja.md)（1 線）で試せます。[SerialDmaBuffers](../libraries/CH32RV/examples/04.Serial/SerialDmaBuffers/README.ja.md)は DMA が運ぶ大きいバッファで 1 Mbaud の流れを受け取ります。
+[SystemInfo](../libraries/CH32RV/examples/06.System/SystemInfo/README.ja.md)・[ResetReason](../libraries/CH32RV/examples/06.System/ResetReason/README.ja.md)・[WatchdogRecovery](../libraries/CH32RV/examples/06.System/WatchdogRecovery/README.ja.md)はUARTだけで試せるシステムAPIの入口です。[WindowWatchdog](../libraries/CH32RV/examples/06.System/WindowWatchdog/README.ja.md)（窓ウォッチドッグ）と[RtcAlarm](../libraries/CH32RV/examples/06.System/RtcAlarm/README.ja.md)（RTCの暦とアラーム、アラームまでの休止、バックアップレジスタ）がその先です。
+設定を内蔵のフラッシュに残す[FlashSettings](../libraries/CH32RV/examples/06.System/FlashSettings/README.ja.md)・[FlashSettingsTwoBanks](../libraries/CH32RV/examples/06.System/FlashSettingsTwoBanks/README.ja.md)は上級者向けです。制約と費用は[フラッシュへの保存](flash-store.ja.md)を読んでから使います。
+`Fade`の次は[PwmFrequency](../libraries/CH32RV/examples/03.Analog/PwmFrequency/README.ja.md)で、周波数とdutyの違いを観察します。
 
 ## 物理入力からUSB HIDへ
 
-[ButtonDebounce](../libraries/CH32RV/examples/ButtonDebounce/README.ja.md)で押下・解放を安定させてから、
+[ButtonDebounce](../libraries/CH32RV/examples/01.Basics/ButtonDebounce/README.ja.md)で押下・解放を安定させてから、
 [ButtonKeyboard](../libraries/CH32RVUsbDevice/examples/ButtonKeyboard/README.ja.md)・[ButtonMouse](../libraries/CH32RVUsbDevice/examples/ButtonMouse/README.ja.md)でホスト入力へ進みます。
-[AnalogInputToPwm](../libraries/CH32RV/examples/AnalogInputToPwm/README.ja.md)で数値範囲の変換を確認したら、
+[AnalogInputToPwm](../libraries/CH32RV/examples/01.Basics/AnalogInputToPwm/README.ja.md)で数値範囲の変換を確認したら、
 [AnalogGamepad](../libraries/CH32RVUsbDevice/examples/AnalogGamepad/README.ja.md)で2軸の中央補正と中立帯を試せます。
 
 ## サンプルを動かす手順

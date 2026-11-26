@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-2軸のアナログジョイスティック、または2つの可変抵抗とボタンをUSBゲームパッドとして使います。[AnalogInputToPwm](../../../CH32RV/examples/AnalogInputToPwm/README.ja.md)と[ButtonDebounce](../../../CH32RV/examples/ButtonDebounce/README.ja.md)で扱う数値変換と安定した入力状態を組み合わせます。
+2軸のアナログジョイスティック、または2つの可変抵抗とボタンをUSBゲームパッドとして使います。[AnalogInputToPwm](../../../CH32RV/examples/01.Basics/AnalogInputToPwm/README.ja.md)と[ButtonDebounce](../../../CH32RV/examples/01.Basics/ButtonDebounce/README.ja.md)で扱う数値変換と安定した入力状態を組み合わせます。
 
 ## 配線と校正
 

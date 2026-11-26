@@ -224,8 +224,8 @@ OEP の常設とは別の、小さな組にします。
 
 | ボード | boards.txt / 例 | 今の手持ち | 接続の案 |
 |---|---|---|---|
-| UIAPduino Pro Micro CH32V003 V1.4 | `UIAPDUINO_V003_V14`、例 BoardUIAPduinoProMicro | あり（HID で書き込み、コンソールは ESP32 経由） | OEP を V003 などと共有。HID の書き込みはエコシステム側 |
-| WeAct CH32X035F8U6 | 汎用の `CH32X035`、例 BoardWeActCH32X035 | P4 30eda0e34a0e の口 `weact`（**今は USB に見えていない**） | OEP 専用（今の形）。PD・USB device の試験を受け持つ |
+| UIAPduino Pro Micro CH32V003 V1.4 | `UIAPDUINO_V003_V14`、例 UIAPduinoProMicro | あり（HID で書き込み、コンソールは ESP32 経由） | OEP を V003 などと共有。HID の書き込みはエコシステム側 |
+| WeAct CH32X035F8U6 | 汎用の `CH32X035`、例 WeActCH32X035 | P4 30eda0e34a0e の口 `weact`（**今は USB に見えていない**） | OEP 専用（今の形）。PD・USB device の試験を受け持つ |
 
 ほかに対応する製品ボードの予定があれば、ここに足します（TODO「製品ボード別のテンプレート」）。
 

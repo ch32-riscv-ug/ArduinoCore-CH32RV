@@ -46,11 +46,11 @@ delay(ms) の間も、裏の仕事は回り続ける（callback は動かない�
 
 | 段階 | 例 | 分かること |
 |---|---|---|
-| 1 | [Blink](../libraries/CH32RV/examples/Blink/Blink.ino) | `pinMode()`、`digitalWrite()`、`delay()` |
-| 2 | [SerialEcho](../libraries/CH32RV/examples/SerialEcho/SerialEcho.ino) | UART の入出力 |
-| 3 | [Timing](../libraries/CH32RV/examples/Timing/Timing.ino) | `millis()` の引き算で時間を測る。桁あふれに強い書き方 |
+| 1 | [Blink](../libraries/CH32RV/examples/01.Basics/Blink/Blink.ino) | `pinMode()`、`digitalWrite()`、`delay()` |
+| 2 | [SerialEcho](../libraries/CH32RV/examples/04.Serial/SerialEcho/SerialEcho.ino) | UART の入出力 |
+| 3 | [Timing](../libraries/CH32RV/examples/01.Basics/Timing/Timing.ino) | `millis()` の引き算で時間を測る。桁あふれに強い書き方 |
 | 4 | [DeadlinePeriod](../libraries/CH32RVSyncKit/examples/DeadlinePeriod/README.ja.md) | `delay()` を使わずに、2 つの予定を同時に進める |
-| 5 | [PinInterrupt](../libraries/CH32RV/examples/PinInterrupt/PinInterrupt.ino) | `attachInterrupt()` と、ISR が書く変数の読み方 |
+| 5 | [PinInterrupt](../libraries/CH32RV/examples/02.GPIO/PinInterrupt/PinInterrupt.ino) | `attachInterrupt()` と、ISR が書く変数の読み方 |
 | 6 | [QueueFromInterrupt](../libraries/CH32RVSyncKit/examples/QueueFromInterrupt/README.ja.md) | ISR から `loop()` へ、値を取りこぼさずに渡す |
 | 7 | [CriticalSection](../libraries/CH32RVSyncKit/examples/CriticalSection/README.ja.md) | 割り込み禁止区間。何を中に入れ、何を入れないか |
 | 8 | [SerialEvents](../libraries/CH32RVUsbDevice/examples/SerialEvents/README.ja.md) | USB の callback が動く場所（`loop()` の後と `deliverEvents()`）|

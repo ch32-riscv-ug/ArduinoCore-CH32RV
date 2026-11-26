@@ -30,7 +30,7 @@ def update_platform_version(version: str) -> None:
 
 def update_sketch_pins(version: str) -> tuple[int, int]:
     matched = changed = 0
-    for path in sorted((ROOT / "libraries").glob("*/examples/*/sketch.yaml")):
+    for path in sorted((ROOT / "libraries").glob("*/examples/**/sketch.yaml")):
         if SKIP & set(path.relative_to(ROOT).parts):
             continue
         lines = path.read_text(encoding="utf-8").splitlines()

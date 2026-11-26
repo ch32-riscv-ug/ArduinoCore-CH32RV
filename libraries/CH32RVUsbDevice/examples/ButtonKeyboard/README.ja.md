@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-物理スイッチでキーボードの1キーを押下・解放します。入力の処理は[ButtonDebounce](../../../CH32RV/examples/ButtonDebounce/README.ja.md)から読むと追いやすくなります。
+物理スイッチでキーボードの1キーを押下・解放します。入力の処理は[ButtonDebounce](../../../CH32RV/examples/01.Basics/ButtonDebounce/README.ja.md)から読むと追いやすくなります。
 
 ## 配線と操作
 

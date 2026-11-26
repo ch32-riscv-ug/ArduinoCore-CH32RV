@@ -46,17 +46,17 @@ Distinguish USB roles first: Device connects as a peripheral to a PC or another 
 
 ## Further UART and system examples
 
-After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/examples/SerialLineReceiver/README.md) and [binary packet receiver](../libraries/CH32RV/examples/SerialPacketReceiver/README.md) to process input incrementally.
-[SerialReceiveEvent](../libraries/CH32RV/examples/SerialReceiveEvent/README.md) takes a message at once when the line goes quiet; [SerialFlowControl](../libraries/CH32RV/examples/SerialFlowControl/README.md) (RTS / CTS), [SerialRS485](../libraries/CH32RV/examples/SerialRS485/README.md) (a transceiver's driver enable) and [SerialHalfDuplex](../libraries/CH32RV/examples/SerialHalfDuplex/README.md) (one wire) show the UART's other modes; [SerialDmaBuffers](../libraries/CH32RV/examples/SerialDmaBuffers/README.md) takes a 1 Mbaud stream into larger buffers moved by DMA.
-[SystemInfo](../libraries/CH32RV/examples/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/WatchdogRecovery/README.md) introduce system APIs using only UART; [WindowWatchdog](../libraries/CH32RV/examples/WindowWatchdog/README.md) (the window watchdog) and [RtcAlarm](../libraries/CH32RV/examples/RtcAlarm/README.md) (the RTC's calendar and alarm, sleeping until it, backup registers) go further.
-[FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.md) and [FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.md) keep settings in the internal flash; they are for advanced use - read [storing in flash](flash-store.ja.md) for the limits and costs first.
-After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/PwmFrequency/README.md) to distinguish frequency from duty.
+After `SerialEcho`, try the fixed-buffer [line receiver](../libraries/CH32RV/examples/04.Serial/SerialLineReceiver/README.md) and [binary packet receiver](../libraries/CH32RV/examples/04.Serial/SerialPacketReceiver/README.md) to process input incrementally.
+[SerialReceiveEvent](../libraries/CH32RV/examples/04.Serial/SerialReceiveEvent/README.md) takes a message at once when the line goes quiet; [SerialFlowControl](../libraries/CH32RV/examples/04.Serial/SerialFlowControl/README.md) (RTS / CTS), [SerialRS485](../libraries/CH32RV/examples/04.Serial/SerialRS485/README.md) (a transceiver's driver enable) and [SerialHalfDuplex](../libraries/CH32RV/examples/04.Serial/SerialHalfDuplex/README.md) (one wire) show the UART's other modes; [SerialDmaBuffers](../libraries/CH32RV/examples/04.Serial/SerialDmaBuffers/README.md) takes a 1 Mbaud stream into larger buffers moved by DMA.
+[SystemInfo](../libraries/CH32RV/examples/06.System/SystemInfo/README.md), [ResetReason](../libraries/CH32RV/examples/06.System/ResetReason/README.md) and [WatchdogRecovery](../libraries/CH32RV/examples/06.System/WatchdogRecovery/README.md) introduce system APIs using only UART; [WindowWatchdog](../libraries/CH32RV/examples/06.System/WindowWatchdog/README.md) (the window watchdog) and [RtcAlarm](../libraries/CH32RV/examples/06.System/RtcAlarm/README.md) (the RTC's calendar and alarm, sleeping until it, backup registers) go further.
+[FlashSettings](../libraries/CH32RV/examples/06.System/FlashSettings/README.md) and [FlashSettingsTwoBanks](../libraries/CH32RV/examples/06.System/FlashSettingsTwoBanks/README.md) keep settings in the internal flash; they are for advanced use - read [storing in flash](flash-store.ja.md) for the limits and costs first.
+After `Fade`, use [PwmFrequency](../libraries/CH32RV/examples/03.Analog/PwmFrequency/README.md) to distinguish frequency from duty.
 
 ## From physical input to USB HID
 
-Start with [ButtonDebounce](../libraries/CH32RV/examples/ButtonDebounce/README.md), then use
+Start with [ButtonDebounce](../libraries/CH32RV/examples/01.Basics/ButtonDebounce/README.md), then use
 [ButtonKeyboard](../libraries/CH32RVUsbDevice/examples/ButtonKeyboard/README.md) or [ButtonMouse](../libraries/CH32RVUsbDevice/examples/ButtonMouse/README.md) to turn stable switch state into host input.
-After [AnalogInputToPwm](../libraries/CH32RV/examples/AnalogInputToPwm/README.md) introduces numeric scaling,
+After [AnalogInputToPwm](../libraries/CH32RV/examples/01.Basics/AnalogInputToPwm/README.md) introduces numeric scaling,
 [AnalogGamepad](../libraries/CH32RVUsbDevice/examples/AnalogGamepad/README.md) adds two-axis center calibration and a dead zone.
 
 ## Run an example

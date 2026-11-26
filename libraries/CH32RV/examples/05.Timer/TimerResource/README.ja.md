@@ -1,0 +1,28 @@
+# TimerResource
+
+[English](README.md)
+
+タイマーを借り、基準周期と更新割り込みを設定するライブラリ実装者向けの例です。
+
+## 必要なものと配線
+
+UART モニタを用意します。GPIO の配線は不要です。
+
+## 操作と期待する結果
+
+`TIM lease: active` または `lost` と更新回数を表示します。取得・設定に失敗した場合も active にはなりません。
+
+## API と処理の流れ
+
+`ch32rv_timer_try_acquire()` で lease を得て、`ch32rv_timer_apply_base()`、`ch32rv_timer_attach_update_interrupt()`、`ch32rv_timer_start()` の順で使います。lease の有効性も確認します。
+
+## 改造するときの注意
+
+割り込みは回数を記録するだけです。`onQuiesce()` は同期的に呼ばれ、タイマー管理 API を再帰的に呼びません。普通の周期作業は [Timing](../../01.Basics/Timing/README.ja.md) を使い、低水準の契約は [タイマー設計](../../../../../docs/timer-design.ja.md) を参照します。
+
+## 関連資料
+
+- [スケッチ](TimerResource.ino)
+- [基本サンプルの準備と一覧](../../README.ja.md)
+- [サンプルの案内](../../../../../docs/examples.ja.md)
+- [スケッチの組み立て方](../../../../../docs/sketch-guide.ja.md)

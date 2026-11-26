@@ -268,7 +268,7 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
 ### H41x の 2 つのコア（V5F と V3F）
 
 CPU Core = V5F（既定）では、スケッチは V5F で動き、V3F を 2 つ目のコアとして使えます（`setup1()` / `loop1()`、
-`CH32RV.startV3F()`、例 [DualCoreV3F](examples/DualCoreV3F/README.ja.md)）。2 つのコアの間の排他と通知は次の API です
+`CH32RV.startV3F()`、例 [DualCoreV3F](examples/07.Chips/CH32H417/DualCoreV3F/README.ja.md)）。2 つのコアの間の排他と通知は次の API です
 （C の関数は `ch32rv_multicore.h`）。どちらのコアからも同じ呼び方です。
 
 ```cpp
@@ -306,7 +306,7 @@ uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
   割り込みを止めて取るので、同じコアの割り込み処理の中の `malloc` も守られます。
 - **V3F で使わないもの:** システムのサービス（USB、IP のスタック、USB PD）、休止・`restart()`・ウォッチドッグ・
   RTC・フラッシュ（`CH32RV.*`）、命令の数で時間を作るもの（`rgbLedWrite()`：`F_CPU` は V5F の 400 MHz）。
-- 例: [DualCoreMessages](examples/DualCoreMessages/README.ja.md)。試験は selfapi の `test_cores_hsem`・
+- 例: [DualCoreMessages](examples/07.Chips/CH32H417/DualCoreMessages/README.ja.md)。試験は selfapi の `test_cores_hsem`・
   `test_cores_ipc`・`test_cores_v3f_serial`（1 つのイメージに両方のコアのコードが入るので、書き込みは 1 回）。
 
 オブジェクト、examples、逃げ道が同居している理由は、Arduinoのプラットフォームが**ライブラリ経由でしかexamplesを
@@ -330,29 +330,29 @@ uint32_t m; CH32RV.ipcReceive(m);   // コールバック無しで取る
 
 | example | 何を示すか |
 |---|---|
-| [Blink](examples/Blink/README.ja.md) | `pinMode`・`digitalWrite`・`delay` |
-| [SerialEcho](examples/SerialEcho/README.ja.md) | `Serial`の入出力 |
-| [AnalogRead](examples/AnalogRead/README.ja.md) | `analogRead`・`analogReadMilliVolts` |
-| [AnalogContinuous](examples/AnalogContinuous/README.ja.md) | `analogContinuous`・`analogContinuousRead`（arduino-esp32 の連続 ADC の API） |
-| [Fade](examples/Fade/README.ja.md) | `analogWrite` |
-| [ToneMelody](examples/ToneMelody/README.ja.md) | `tone`・`noTone` |
-| [PinInterrupt](examples/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |
-| [LowVoltageDetect](examples/LowVoltageDetect/README.ja.md) | `CH32RV.setLowVoltageDetect`、`triggerExtiLine`（PVDのEXTIの線） |
-| [ShiftOut](examples/ShiftOut/README.ja.md) | 74HC595への`shiftOut` |
-| [PulseIn](examples/PulseIn/README.ja.md) | `pulseIn`・`delayMicroseconds` |
-| [TimerAlarm](examples/TimerAlarm/README.ja.md) | `timerBegin`・`timerAttachInterrupt`・`timerAlarm`（arduino-esp32 のタイマー API） |
-| [Timing](examples/Timing/README.ja.md) | `millis`・`micros`と、その巻き戻り |
-| [RandomNumbers](examples/RandomNumbers/README.ja.md) | `random`・`randomSeed`・`ch32rv_random`・`ch32rv_fill_random` |
-| [Crc32](examples/Crc32/README.ja.md) | `CH32RV.crc32`（1 回で、分けて） |
-| [RgbLed](examples/RgbLed/README.ja.md) | 1 個は `rgbLedWrite`、チェーンは `ch32rv_rgb_led_write` |
-| [InterruptPriority](examples/InterruptPriority/README.ja.md) | `ch32rv_irq_set_priority`、コアの SysTick の下での入れ子 |
-| [AnalogResolution](examples/AnalogResolution/README.ja.md) | `analogReadResolution`・`analogWriteResolution` |
-| [CriticalSection](examples/CriticalSection/README.ja.md) | `interrupts`・`noInterrupts`・`volatile` |
-| [PrintFormatting](examples/PrintFormatting/README.ja.md) | `Print`・`String`・`dtostrf` |
-| [TimerResource](examples/TimerResource/README.ja.md) | タイマーの取得・設定・所有権を扱う上級例 |
-| [PinCapabilities](examples/PinCapabilities/README.ja.md) | このチップに実在するpad |
-| [DualCoreV3F](examples/DualCoreV3F/README.ja.md) | CH32H417: 2 つ目のコアでの `setup1()` / `loop1()` と `CH32RV.startV3F()` |
-| [DualCoreMessages](examples/DualCoreMessages/README.ja.md) | CH32H417: 2 つのコアの間の `CH32RV.ipcSend()` と `CH32RV.hsemTake()`、V3F の `Serial1` |
+| [Blink](examples/01.Basics/Blink/README.ja.md) | `pinMode`・`digitalWrite`・`delay` |
+| [SerialEcho](examples/04.Serial/SerialEcho/README.ja.md) | `Serial`の入出力 |
+| [AnalogRead](examples/03.Analog/AnalogRead/README.ja.md) | `analogRead`・`analogReadMilliVolts` |
+| [AnalogContinuous](examples/03.Analog/AnalogContinuous/README.ja.md) | `analogContinuous`・`analogContinuousRead`（arduino-esp32 の連続 ADC の API） |
+| [Fade](examples/01.Basics/Fade/README.ja.md) | `analogWrite` |
+| [ToneMelody](examples/01.Basics/ToneMelody/README.ja.md) | `tone`・`noTone` |
+| [PinInterrupt](examples/02.GPIO/PinInterrupt/README.ja.md) | `attachInterrupt`とISRとの状態共有 |
+| [LowVoltageDetect](examples/06.System/LowVoltageDetect/README.ja.md) | `CH32RV.setLowVoltageDetect`、`triggerExtiLine`（PVDのEXTIの線） |
+| [ShiftOut](examples/01.Basics/ShiftOut/README.ja.md) | 74HC595への`shiftOut` |
+| [PulseIn](examples/02.GPIO/PulseIn/README.ja.md) | `pulseIn`・`delayMicroseconds` |
+| [TimerAlarm](examples/05.Timer/TimerAlarm/README.ja.md) | `timerBegin`・`timerAttachInterrupt`・`timerAlarm`（arduino-esp32 のタイマー API） |
+| [Timing](examples/01.Basics/Timing/README.ja.md) | `millis`・`micros`と、その巻き戻り |
+| [RandomNumbers](examples/01.Basics/RandomNumbers/README.ja.md) | `random`・`randomSeed`・`ch32rv_random`・`ch32rv_fill_random` |
+| [Crc32](examples/06.System/Crc32/README.ja.md) | `CH32RV.crc32`（1 回で、分けて） |
+| [RgbLed](examples/02.GPIO/RgbLed/README.ja.md) | 1 個は `rgbLedWrite`、チェーンは `ch32rv_rgb_led_write` |
+| [InterruptPriority](examples/05.Timer/InterruptPriority/README.ja.md) | `ch32rv_irq_set_priority`、コアの SysTick の下での入れ子 |
+| [AnalogResolution](examples/03.Analog/AnalogResolution/README.ja.md) | `analogReadResolution`・`analogWriteResolution` |
+| [CriticalSection](examples/05.Timer/CriticalSection/README.ja.md) | `interrupts`・`noInterrupts`・`volatile` |
+| [PrintFormatting](examples/01.Basics/PrintFormatting/README.ja.md) | `Print`・`String`・`dtostrf` |
+| [TimerResource](examples/05.Timer/TimerResource/README.ja.md) | タイマーの取得・設定・所有権を扱う上級例 |
+| [PinCapabilities](examples/02.GPIO/PinCapabilities/README.ja.md) | このチップに実在するpad |
+| [DualCoreV3F](examples/07.Chips/CH32H417/DualCoreV3F/README.ja.md) | CH32H417: 2 つ目のコアでの `setup1()` / `loop1()` と `CH32RV.startV3F()` |
+| [DualCoreMessages](examples/07.Chips/CH32H417/DualCoreMessages/README.ja.md) | CH32H417: 2 つのコアの間の `CH32RV.ipcSend()` と `CH32RV.hsemTake()`、V3F の `Serial1` |
 
 **知らないboardで最初に走らせるべきはPinCapabilities**です。
 CH32のpin番号は`((port + 2) << 5) | bit`なので飛び飛びで、
@@ -367,8 +367,8 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 
 | example | 板 | 初期化するもの |
 |---|---|---|
-| [BoardWeActCH32X035](examples/BoardWeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
-| [BoardUIAPduinoProMicro](examples/BoardUIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
+| [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
+| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART、I2C（スキャン）、SPI、ADC 3本、PWM、LED（PC0）。SPI はボードメニューの AUTO のまま。メーカーの配置図にある NSS（PC1 / PC0）は I2C と LED に重なるので、CS は PC3 にしてコメントで示す |
 
 どちらも実機で動作を確かめています（2026-10-14）。
 

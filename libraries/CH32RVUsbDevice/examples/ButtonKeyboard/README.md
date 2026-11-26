@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Use a physical switch to hold and release one keyboard key. Start with [ButtonDebounce](../../../CH32RV/examples/ButtonDebounce/README.md) to understand the input filtering.
+Use a physical switch to hold and release one keyboard key. Start with [ButtonDebounce](../../../CH32RV/examples/01.Basics/ButtonDebounce/README.md) to understand the input filtering.
 
 ## Connections and operation
 

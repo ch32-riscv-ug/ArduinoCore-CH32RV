@@ -60,7 +60,7 @@ def receiver(request, tmp_path_factory):
         pytest.skip("host C++ compiler unavailable")
     name = request.param
     work = tmp_path_factory.mktemp(name)
-    source = REPO / "libraries/CH32RV/examples" / name / f"{name}.ino"
+    source = next((REPO / "libraries/CH32RV/examples").glob(f"**/{name}/{name}.ino"))
     driver = work / "driver.cpp"
     driver.write_text(PRELUDE + f'\n#include "{source.as_posix()}"\n' + DRIVER)
     binary = work / "receiver"

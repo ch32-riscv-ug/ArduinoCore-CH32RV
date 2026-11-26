@@ -7,6 +7,8 @@ workflow がそれを版の節に移し、その節を GitHub の Release の本
 
 ## Unreleased
 
+- (EN) The CH32RV library's examples are grouped into numbered folders, which the IDE shows as submenus: 01.Basics, 02.GPIO, 03.Analog, 04.Serial, 05.Timer, 06.System, 07.Chips (CH32H417's dual-core examples) and 08.Boards (one board each; BoardUIAPduinoProMicro and BoardWeActCH32X035 are now UIAPduinoProMicro and WeActCH32X035).
+- (JA) CH32RV ライブラリの例を、番号付きのフォルダに分けた（IDE ではメニューの階層になる）: 01.Basics、02.GPIO、03.Analog、04.Serial、05.Timer、06.System、07.Chips（CH32H417 のデュアルコアの例）、08.Boards（ボードごとの例。BoardUIAPduinoProMicro と BoardWeActCH32X035 は UIAPduinoProMicro と WeActCH32X035 に改名）。
 ## 0.16.0
 - (EN) Breaking: the Monitor Source board menu is gone. Arduino IDE 2 keeps a port's monitor settings once opened and never applied a changed menu value (arduino/arduino-ide#2988), and the monitor's own default, Auto, reads every path the sketch uses. Pick another source with arduino-cli's `--config source=...`, a sketch.yaml profile's `port_config: source:`, or a client that shows the monitor's settings (the Arduino CLI Wrapper for VS Code). A sketch.yaml FQBN that still says `monitor=...` stops with "invalid option 'monitor'": delete that option.
 - (JA) 破壊的変更: ボードメニューの Monitor Source を外した。Arduino IDE 2 は一度開いた口のモニターの設定を保存し続け、メニューを変えても効かなかった（arduino/arduino-ide#2988）。モニター自体の既定の Auto が、スケッチの使う経路を全部読む。ほかの source にするときは、arduino-cli の `--config source=…`、sketch.yaml の profile の `port_config: source:`、モニターの設定を出すクライアント（VS Code の Arduino CLI Wrapper）で選ぶ。sketch.yaml の FQBN に `monitor=…` が残っていると「invalid option 'monitor'」で止まるので、その項目を消す。

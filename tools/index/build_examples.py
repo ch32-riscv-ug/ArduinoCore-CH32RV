@@ -51,7 +51,7 @@ PROFILE = re.compile(rf"^  (\w+):\n    fqbn: {PACKAGER}:{ARCH}:(\S+)", re.M)
 def examples() -> list:
     """[(example dir, {profile: fqbn tail})], in path order."""
     out = []
-    for yml in sorted(REPO.glob("libraries/*/examples/*/sketch.yaml")):
+    for yml in sorted(REPO.glob("libraries/*/examples/**/sketch.yaml")):
         out.append((yml.parent, dict(PROFILE.findall(yml.read_text()))))
     return out
 

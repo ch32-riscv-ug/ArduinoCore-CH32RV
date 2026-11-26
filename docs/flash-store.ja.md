@@ -24,8 +24,8 @@
 
 | したいこと | 使うもの |
 |---|---|
-| 数個の設定を残す（電源断で既定値に戻ってよい） | 例 [FlashSettings](../libraries/CH32RV/examples/FlashSettings/README.ja.md) |
-| 数個の設定を残す（電源断でも前の値を残す） | 例 [FlashSettingsTwoBanks](../libraries/CH32RV/examples/FlashSettingsTwoBanks/README.ja.md) |
+| 数個の設定を残す（電源断で既定値に戻ってよい） | 例 [FlashSettings](../libraries/CH32RV/examples/06.System/FlashSettings/README.ja.md) |
+| 数個の設定を残す（電源断でも前の値を残す） | 例 [FlashSettingsTwoBanks](../libraries/CH32RV/examples/06.System/FlashSettingsTwoBanks/README.ja.md) |
 | 自分で形式を決める | 下の関数を直接使う |
 
 `EEPROM.h` は用意しません。Arduino の EEPROM の API は 1 バイトずつ書き換えられる前提ですが、フラッシュでは単位ごとに消すので、同じ使い方をすると寿命と時間を大きく使います。

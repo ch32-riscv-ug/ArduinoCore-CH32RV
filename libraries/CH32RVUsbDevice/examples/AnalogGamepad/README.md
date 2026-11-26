@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Use a two-axis analog joystick or two potentiometers and a button as a USB gamepad. This follows [AnalogInputToPwm](../../../CH32RV/examples/AnalogInputToPwm/README.md) and [ButtonDebounce](../../../CH32RV/examples/ButtonDebounce/README.md), combining analog scaling and stable button state.
+Use a two-axis analog joystick or two potentiometers and a button as a USB gamepad. This follows [AnalogInputToPwm](../../../CH32RV/examples/01.Basics/AnalogInputToPwm/README.md) and [ButtonDebounce](../../../CH32RV/examples/01.Basics/ButtonDebounce/README.md), combining analog scaling and stable button state.
 
 ## Wiring and calibration
 

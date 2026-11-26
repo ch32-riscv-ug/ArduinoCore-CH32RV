@@ -202,7 +202,7 @@ def build_input(tmp_path_factory):
             work = tmp_path_factory.mktemp(name)
             (work / "CH32RVUsbDevice.h").write_text("// API stand-ins supplied by driver.cpp\n")
             lib = "CH32RV" if name in BASIC else "CH32RVUsbDevice"
-            ino = REPO / "libraries" / lib / "examples" / name / f"{name}.ino"
+            ino = next((REPO / "libraries" / lib / "examples").glob(f"**/{name}/{name}.ino"))
             driver = work / "driver.cpp"
             driver.write_text(PRELUDE + f'\n#include "{ino.as_posix()}"\n' + DRIVER)
             binary = work / "run"

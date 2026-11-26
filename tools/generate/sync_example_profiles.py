@@ -88,7 +88,7 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     stale = []
-    for ino in sorted((REPO / "libraries").glob("*/examples/*/*.ino")):
+    for ino in sorted((REPO / "libraries").glob("*/examples/**/*.ino")):
         if ino.stem != ino.parent.name:
             continue
         destination = ino.parent / "sketch.yaml"

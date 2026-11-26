@@ -310,7 +310,7 @@ ch32rv_irq_set_priority(irqn, CH32RV_IRQ_PRIORITY(1));   // ch32rv_priority.h
 ### H41x's two cores (V5F and V3F)
 
 With CPU Core = V5F (the default) the sketch runs on the V5F and the V3F is a second core (`setup1()` / `loop1()`,
-`CH32RV.startV3F()`, example [DualCoreV3F](examples/DualCoreV3F/README.md)). Exclusion and notification between the
+`CH32RV.startV3F()`, example [DualCoreV3F](examples/07.Chips/CH32H417/DualCoreV3F/README.md)). Exclusion and notification between the
 two, called the same way from either core (the C functions are in `ch32rv_multicore.h`):
 
 ```cpp
@@ -351,7 +351,7 @@ uint32_t m; CH32RV.ipcReceive(m);   // take one without a callback
 - **Not on the V3F:** the system services (USB, the IP stack, USB PD), sleep, `restart()`, the watchdogs, the RTC
   and the flash (`CH32RV.*`), anything timed by counting instructions (`rgbLedWrite()`: `F_CPU` is the V5F's 400
   MHz).
-- Example: [DualCoreMessages](examples/DualCoreMessages/README.md). Tests: selfapi's `test_cores_hsem`,
+- Example: [DualCoreMessages](examples/07.Chips/CH32H417/DualCoreMessages/README.md). Tests: selfapi's `test_cores_hsem`,
   `test_cores_ipc` and `test_cores_v3f_serial` (one image holds both cores' code, so one write).
 
 The object, the examples and the escape hatch share a library because an
@@ -376,29 +376,29 @@ to any library, so their examples are here. Every one of them:
 
 | Example | Shows |
 |---|---|
-| [Blink](examples/Blink/README.md) | `pinMode`, `digitalWrite`, `delay` |
-| [SerialEcho](examples/SerialEcho/README.md) | `Serial` in and out |
-| [AnalogRead](examples/AnalogRead/README.md) | `analogRead`, `analogReadMilliVolts` |
-| [AnalogContinuous](examples/AnalogContinuous/README.md) | `analogContinuous`, `analogContinuousRead` (arduino-esp32's continuous ADC API) |
-| [Fade](examples/Fade/README.md) | `analogWrite` |
-| [ToneMelody](examples/ToneMelody/README.md) | `tone`, `noTone` |
-| [PinInterrupt](examples/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |
-| [LowVoltageDetect](examples/LowVoltageDetect/README.md) | `CH32RV.setLowVoltageDetect`, `triggerExtiLine` (the PVD's EXTI line) |
-| [ShiftOut](examples/ShiftOut/README.md) | `shiftOut` into a 74HC595 |
-| [PulseIn](examples/PulseIn/README.md) | `pulseIn`, `delayMicroseconds` |
-| [TimerAlarm](examples/TimerAlarm/README.md) | `timerBegin`, `timerAttachInterrupt`, `timerAlarm` (arduino-esp32's timer API) |
-| [Timing](examples/Timing/README.md) | `millis`, `micros`, and how they wrap |
-| [RandomNumbers](examples/RandomNumbers/README.md) | `random`, `randomSeed`, `ch32rv_random`, `ch32rv_fill_random` |
-| [Crc32](examples/Crc32/README.md) | `CH32RV.crc32`, in one call and in pieces |
-| [RgbLed](examples/RgbLed/README.md) | `rgbLedWrite` for one LED, `ch32rv_rgb_led_write` for a chain |
-| [InterruptPriority](examples/InterruptPriority/README.md) | `ch32rv_irq_set_priority`, nesting under the core's SysTick |
-| [AnalogResolution](examples/AnalogResolution/README.md) | `analogReadResolution`, `analogWriteResolution` |
-| [CriticalSection](examples/CriticalSection/README.md) | `interrupts`, `noInterrupts`, `volatile` |
-| [PrintFormatting](examples/PrintFormatting/README.md) | `Print`, `String`, `dtostrf` |
-| [TimerResource](examples/TimerResource/README.md) | Advanced timer acquisition, setup and ownership |
-| [PinCapabilities](examples/PinCapabilities/README.md) | which pads this chip actually has |
-| [DualCoreV3F](examples/DualCoreV3F/README.md) | CH32H417: `setup1()` / `loop1()` and `CH32RV.startV3F()` on the second core |
-| [DualCoreMessages](examples/DualCoreMessages/README.md) | CH32H417: `CH32RV.ipcSend()` and `CH32RV.hsemTake()` between the cores, `Serial1` on the V3F |
+| [Blink](examples/01.Basics/Blink/README.md) | `pinMode`, `digitalWrite`, `delay` |
+| [SerialEcho](examples/04.Serial/SerialEcho/README.md) | `Serial` in and out |
+| [AnalogRead](examples/03.Analog/AnalogRead/README.md) | `analogRead`, `analogReadMilliVolts` |
+| [AnalogContinuous](examples/03.Analog/AnalogContinuous/README.md) | `analogContinuous`, `analogContinuousRead` (arduino-esp32's continuous ADC API) |
+| [Fade](examples/01.Basics/Fade/README.md) | `analogWrite` |
+| [ToneMelody](examples/01.Basics/ToneMelody/README.md) | `tone`, `noTone` |
+| [PinInterrupt](examples/02.GPIO/PinInterrupt/README.md) | `attachInterrupt`, sharing state with an ISR |
+| [LowVoltageDetect](examples/06.System/LowVoltageDetect/README.md) | `CH32RV.setLowVoltageDetect`, `triggerExtiLine` (the PVD's EXTI line) |
+| [ShiftOut](examples/01.Basics/ShiftOut/README.md) | `shiftOut` into a 74HC595 |
+| [PulseIn](examples/02.GPIO/PulseIn/README.md) | `pulseIn`, `delayMicroseconds` |
+| [TimerAlarm](examples/05.Timer/TimerAlarm/README.md) | `timerBegin`, `timerAttachInterrupt`, `timerAlarm` (arduino-esp32's timer API) |
+| [Timing](examples/01.Basics/Timing/README.md) | `millis`, `micros`, and how they wrap |
+| [RandomNumbers](examples/01.Basics/RandomNumbers/README.md) | `random`, `randomSeed`, `ch32rv_random`, `ch32rv_fill_random` |
+| [Crc32](examples/06.System/Crc32/README.md) | `CH32RV.crc32`, in one call and in pieces |
+| [RgbLed](examples/02.GPIO/RgbLed/README.md) | `rgbLedWrite` for one LED, `ch32rv_rgb_led_write` for a chain |
+| [InterruptPriority](examples/05.Timer/InterruptPriority/README.md) | `ch32rv_irq_set_priority`, nesting under the core's SysTick |
+| [AnalogResolution](examples/03.Analog/AnalogResolution/README.md) | `analogReadResolution`, `analogWriteResolution` |
+| [CriticalSection](examples/05.Timer/CriticalSection/README.md) | `interrupts`, `noInterrupts`, `volatile` |
+| [PrintFormatting](examples/01.Basics/PrintFormatting/README.md) | `Print`, `String`, `dtostrf` |
+| [TimerResource](examples/05.Timer/TimerResource/README.md) | Advanced timer acquisition, setup and ownership |
+| [PinCapabilities](examples/02.GPIO/PinCapabilities/README.md) | which pads this chip actually has |
+| [DualCoreV3F](examples/07.Chips/CH32H417/DualCoreV3F/README.md) | CH32H417: `setup1()` / `loop1()` and `CH32RV.startV3F()` on the second core |
+| [DualCoreMessages](examples/07.Chips/CH32H417/DualCoreMessages/README.md) | CH32H417: `CH32RV.ipcSend()` and `CH32RV.hsemTake()` between the cores, `Serial1` on the V3F |
 
 **PinCapabilities is the one to run first on a board you do not know.** CH32 pin
 numbers are `((port + 2) << 5) | bit`, so they are sparse: PA0 is 64, PB0 is 96,
@@ -415,8 +415,8 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 
 | Example | Board | Sets up |
 |---|---|---|
-| [BoardWeActCH32X035](examples/BoardWeActCH32X035/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
-| [BoardUIAPduinoProMicro](examples/BoardUIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
+| [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
+| [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | UART, I2C (a bus scan), SPI, three analog inputs, PWM, the LED (PC0). SPI stays AUTO in the board menu; the maker's NSS pads (PC1 / PC0) are I2C's SDA and the LED, so CS is PC3, with the alternatives in comments |
 
 Both were run on the boards (2026-10-14).
 
