@@ -24,7 +24,7 @@ void setup() {
 
 ## 読み方
 
-**Arduino IDEのシリアルモニターで、そのまま読めます。** Monitor Sourceの既定のAutoが、`Serial`（UART）と一緒に
+**Arduino IDEのシリアルモニターで、そのまま読めます。** モニターの既定のAutoが、`Serial`（UART）と一緒に
 SerialSDIの出力も読みます（同梱のch32rv 0.35.0から）。portは`wchlink://…`（WCH-Link）か`oep://…`（OEPのprobe）を選びます。
 ch32rvが郵便受けをデバッグの線越しに直接読むので、**probeの設定は何も変えません**。
 
@@ -45,8 +45,10 @@ WCH-Linkでは、ch32rvが直接読むより約2倍速く出せます（V307で�
 - **probeが転送する系列だけ**です（V003 / V00x / V103 / V20x / V30x / V317 / X035 / L103）。ほかの系列はレジスタこそありますが、
   probeのfirmwareがポーリングしません（ch32rvが直接読む上の方法なら、ほかの系列でも読めます）。
 
-転送は、使う前に自分で有効にします（モニターは転送を入れたり切ったりしません）。有効にしてから、Monitor SourceのUARTで
-`wchlink://…`のport（またはLinkEのCOM port）を開けば読めます。
+転送は、使う前に自分で有効にします。有効にしてから、モニターの`uart`で`wchlink://…`のport（またはLinkEのCOM port）を
+開けば読めます（arduino-cliの`--config source=uart`、VS CodeのArduino CLI Wrapperなど）。Arduino IDE 2ではモニターの
+sourceを選べず、既定のAutoはWCH-Linkで開くときの接続で転送を切ってしまうので、IDEでは転送では読めません
+（Autoがデバッグの線越しに同じ出力を読みます）。
 
 ```
 ch32rv monitor sdi on                          # 転送を有効にする

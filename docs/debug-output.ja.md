@@ -27,9 +27,8 @@ API の buffer size、`printf()`、同時使用制約は各 library の README �
 WCH-Link は `wchlink://…`、OEP probe は `oep://…` の port として discovery されます。WCH-LinkE の UART bridge は、それとは
 別の serial port（Windows の `COMx`、Linux の `/dev/ttyACM…`）として出ます。
 
-モニターが何を読むか（ch32rv の monitor の `source`）は、ツールメニューの **Monitor Source** で選びます。IDE 2 の Serial Monitor の窓には
-monitor の設定のうちボーレートしか出ないためです（arduino-cli の `--config source=…` はメニューより優先）。既定は **Auto** で、
-スケッチが使っている経路を全部一緒に読みます。
+モニターが何を読むかは、ch32rv の monitor の設定 **Monitor Source**（id は `source`）で決まります。既定は **Auto** で、
+スケッチが使っている経路を全部一緒に読むので、ふつうは選ぶ必要がありません。
 
 **Auto（既定、ch32rv 0.35.0 から）:**
 
@@ -50,27 +49,30 @@ monitor の設定のうちボーレートしか出ないためです（arduino-c
 
 | Monitor Source | serial port（LinkE の COM など） | `wchlink://` | `oep://` |
 |---|---|---|---|
-| Auto（既定） | `auto`: UART だけ | `auto`: CDC の UART・郵便受け系・RTT | `auto`: fixture-uart・郵便受け系・RTT |
-| UART (Serial) | `uart`: UART bridge の素通し | `uart`: Link の CDC | `fixture-uart`: probe の UART の線 |
-| DMSeq / DMDATA / SDI / RTT | その経路（debug で attach） | 同じ | 同じ |
+| `auto`（既定） | UART だけ | CDC の UART・郵便受け系・RTT | fixture-uart・郵便受け系・RTT |
+| `uart` | UART bridge の素通し | Link の CDC | ―（`fixture-uart`: probe の UART の線） |
+| `dmseq` / `dmdata` / `sdi` / `rtt` | その経路（debug で attach） | 同じ | 同じ |
 
 `SDI` は、WCH-Link でも ch32rv が郵便受けを DMI で直接読むので、UART と一緒に読めて、Link の設定も変えません。
-LinkE 自身の SDI の転送は、モニターが入れたり切ったりしません。使うときは、先に `ch32rv monitor sdi on`（または WCH-LinkUtility・
-wlink）で有効にしてから、UART で読みます（転送された文字は CDC に来ます。転送している間は、CDC に UART の出力が届きません）。
+LinkE 自身の SDI の転送は、モニターが自分から入れることはありません。使うときは、先に `ch32rv monitor sdi on`（または WCH-LinkUtility・
+wlink）で有効にしてから、`uart` で読みます。Auto では読めません（WCH-Link で開くときの接続で、転送が切れます）（転送された文字は CDC に来ます。転送している間は、CDC に UART の出力が届きません）。
 WCH-Link では、ch32rv が直接読むより約 2 倍速く出せます（V307 で約 20 KB/s と約 10 KB/s。OEP は直接読んで約 28 KB/s）。
 戻すときは `ch32rv monitor sdi off` です。
 
-**Arduino IDE 2 の制限（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）:** IDE は、
-その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを Tools メニューより
-優先します。そのため、あとから Monitor Source を変えても、IDE を再起動しても、最初の source のまま読みます。変えるときは、IDE を
-閉じて、IDE の設定のフォルダー（Windows は `C:\Users\<ユーザー名>\.arduinoIDE`）の `pluggable-monitor-settings.json` から、
-その口の項目（`ch32-riscv-ug:ch32rv:<ボード>-<口>-<protocol>`）を消してから、メニューを選び直してモニターを開きます。
-arduino-cli の `monitor` は、起動のたびにメニューの値を読むので、この制限はありません。
+**選び方:** Auto 以外にしたいときに使います。
 
-**Arduino IDE 以外で選ぶ:** arduino-cli では `arduino-cli monitor -p <口> --config source=dmseq` のように、開くたびに選べます。
-VS Code の [Arduino CLI Wrapper](https://marketplace.visualstudio.com/items?itemName=tanakamasayuki.vscode-arduino-cli-wrapper)
-は、monitor の設定（Monitor Source・Baud Rate (UART) など）をラベルで出すので、口ごとに選べます（Windows と WSL で確認、
-2026-11-26）。既定の Auto が全部を読むのは、このためです。
+- **Arduino IDE 2:** 選べません。IDE 2 の Serial Monitor の窓は、monitor の設定のうちボーレートと改行しか出さないためです。
+  また IDE 2 は、その口で一度モニターを開くと、monitor の設定を全部 `pluggable-monitor-settings.json` に保存し、次からはそれを
+  使い続けます（2026-11-25、[arduino/arduino-ide#2988](https://github.com/arduino/arduino-ide/issues/2988)）。前の版で一度開いた
+  口が Auto にならないときは、IDE を閉じて、IDE の設定のフォルダー（Windows は `C:\Users\<ユーザー名>\.arduinoIDE`）の
+  `pluggable-monitor-settings.json` から、その口の項目（`ch32-riscv-ug:ch32rv:<ボード>-<口>-<protocol>`）を消します。
+- **arduino-cli:** `arduino-cli monitor -p <口> --config source=dmseq` のように、開くたびに選べます。sketch.yaml の profile では
+  `port_config:` の `source:` に書けます。
+- **VS Code:** [Arduino CLI Wrapper](https://marketplace.visualstudio.com/items?itemName=tanakamasayuki.vscode-arduino-cli-wrapper)
+  は、monitor の設定（Monitor Source・Baud Rate (UART) など）をラベルで出すので、口ごとに選べます（Windows と WSL で確認、
+  2026-11-26）。
+
+ツールメニューの Monitor Source は 2026-11-26 に外しました（IDE 2 では上の保存のため、変えても効かなかったため）。
 
 `uart` 以外の source を選ぶと debug で attach するので、走っている firmware のクロックが組み直されることがあり、V103 / V205 では
 register が 1 つ壊れることがあります（[chip-caveats.ja.md](chip-caveats.ja.md)）。モニターの窓の先頭に

@@ -92,7 +92,7 @@ Stack Size は RAM の予約で、flash は変わりません。Stack Check（On
 - `SerialDMSeq` は欠けや重なりを見つけるための作りで、V003 では `Serial` より少し大きくなります。
 - デバッグの経路は、走っている石に接続するときにクロックが組み直されることがあり、V103 / V205 では
   レジスタが 1 つ壊れることがあります（[系列ごとの注意点](chip-caveats.ja.md)）。シリアルモニターは、
-  Monitor Source の既定の Auto で、スケッチが使う経路を全部一緒に読みます（[デバッグ出力](debug-output.ja.md)）。
+  モニターの既定の Auto で、スケッチが使う経路を全部一緒に読みます（[デバッグ出力](debug-output.ja.md)）。
 
 ## コードの書き方
 

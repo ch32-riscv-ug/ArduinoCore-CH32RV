@@ -761,9 +761,10 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   画面で変えられない source も保存されるので、メニューを変えても再起動しても効かない（ユーザーが Windows の IDE で確かめた）。
   回避は docs/debug-output.ja.md に書いた。モニターの `chip` は渡すのをやめた（同じ理由で、型番が残ると照合で開けなくなるため）。
   上流が直したら、回避の記述を外す。
-  - [ ] Monitor Source のメニューを一時的に外すか決める（ユーザー、2026-11-25: IDE では反映しない項目なので、消すほうがよいかも。
-    削除は今度考える）。外すときの影響: arduino-cli の `monitor` はメニューの値を読んで効いている（-b <fqbn>,monitor=…）。外せば
-    source は ch32rv の既定（serial / wchlink は uart、oep は fixture-uart）になり、変えるのは `--config source=…` だけになる。
+  - [x] Monitor Source のメニューを外した（ユーザー、2026-11-26）。既定は ch32rv の auto。ほかの source は `--config source=…`、
+    profile の `port_config`、VS Code の Arduino CLI Wrapper で選ぶ。FQBN に `monitor=…` が残っていると arduino-cli が
+    「invalid option」で止まる（CHANGELOG に破壊的変更として書いた）。WCH-Link で Auto を開くと、接続で LinkE の SDI の転送が
+    切れる（V307、0.35.4。[ch32rv] に知らせた）。IDE では転送では読めない（Auto がデバッグの線越しに読む）。
     sketch.yaml の fqbn に `monitor=` を書いた利用者は、外すとビルドが通らなくなる（メニューに無い値）。
 - [ ] **常設のベンチに、工場の ISP（USB）での書き込みを試す台が無い**（2026-11-25、カバレッジの不足）: 常設の DUT の USB は、
   PC か相手（S3・P4・Pico・CH32RV）につながっていて、BOOT（X035 は PC17 を High）や NRST をプローブから操って ISP に入れる

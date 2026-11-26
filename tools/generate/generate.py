@@ -270,7 +270,6 @@ MENU_HEADER = ("menu.part=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.resetpin=Reset Pin\n"
                + "menu.wdtautostart=Watchdog Auto Start\n"
                + "menu.erase=Erase All Flash Before Sketch Upload\n"
-               + "menu.monitor=Monitor Source\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
 
@@ -614,46 +613,13 @@ def stackcheck_menu(board: str) -> list[str]:
             f"{board}.menu.stackcheck.on.build.stackcheck_defines=-DCH32RV_STACK_CHECK=1"]
 
 
-# Monitor Source: what ch32rv's pluggable monitor reads (its `source` setting),
-# as the board's default port setting - the IDE 2 Serial Monitor shows only the
-# baud rate of a monitor's settings, so the menu is where an IDE user picks it
-# (arduino-cli takes it as monitor_port.<protocol>.source; --config still
-# wins). Auto (ch32rv 0.35.0) reads every path the sketch uses at once, merged
-# into one stream: the UART, the one mailbox console the sketch uses (DMSeq,
-# SDI or DMDATA, told apart on the fly) and RTT when there is a control block;
-# input goes back to the path the sketch's output came from last. On a
-# wchlink:// port it restarts the sketch on open (the attach's side effects go
-# with it); on oep:// it does not; a plain serial port has the UART only.
-# IDE 2 keeps a port's monitor settings once opened (arduino-ide#2988), which
-# is why the default reads everything instead of one choice.
-# UART is the target's UART through the port: a serial port's CDC (a
-# WCH-LinkE's UART bridge, a USB-UART adapter), a wchlink:// port's own CDC, an
-# OEP probe's fixture UART. The others attach through the debug module on every
-# kind of port (docs/debug-output.ja.md: attaching can reclock some families
-# and corrupt a register on V103 / V205). SDI reads the mailbox over DMI on a
-# WCH-Link too (ch32rv 0.35.0), beside the UART, without touching the Link's
-# settings. No entry switches the LinkE's own SDI forwarding on or off (the
-# user, 2026-11-26: ch32rv keeps the explicit `monitor sdi on|off` and drops
-# the sdi-forward source); with forwarding switched on beforehand, UART reads
-# the forwarded characters from the CDC.
-MONITOR_SOURCE_MENU = (
-    ("auto", "Auto (UART + debug console) (default)", {"serial": "auto", "wchlink": "auto", "oep": "auto"}),
-    ("uart", "UART (Serial)", {"serial": "uart", "wchlink": "uart", "oep": "fixture-uart"}),
-    ("dmseq", "DMSeq (SerialDMSeq)", {"serial": "dmseq", "wchlink": "dmseq", "oep": "dmseq"}),
-    ("dmdata", "DMDATA (SerialDMDATA)", {"serial": "dmdata", "wchlink": "dmdata", "oep": "dmdata"}),
-    ("sdi", "SDI (SerialSDI)", {"serial": "sdi", "wchlink": "sdi", "oep": "sdi"}),
-    ("rtt", "RTT (SerialRTT)", {"serial": "rtt", "wchlink": "rtt", "oep": "rtt"}),
-)
-
-
-def monitor_source_menu(board: str) -> list[str]:
-    lines = []
-    for key, label, sources in MONITOR_SOURCE_MENU:
-        lines.append(f"{board}.menu.monitor.{key}={label}")
-        for protocol, source in sources.items():
-            lines.append(f"{board}.menu.monitor.{key}.monitor_port.{protocol}.source={source}")
-    return lines
-
+# No Monitor Source menu (removed 2026-11-26, the user): which path ch32rv's
+# monitor reads is its own `source` setting, default `auto` (every path the
+# sketch uses, merged; docs/debug-output.ja.md). A board menu could only set
+# the default, and IDE 2 keeps a port's monitor settings once opened and
+# prefers them over the board's (arduino-ide#2988), so a menu change did
+# nothing there; arduino-cli picks the source with --config source=... and
+# clients that show the monitor's settings pick it per port.
 
 # The Watchdog of the series whose USER option byte writer (ch32rv_option_user.c)
 # has run on the chip through Reset Pin or Flash / RAM Split: USER bit 0 IWDG_SW,
@@ -6219,8 +6185,6 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines.append("")
     lines += erase_menu(board)
     lines.append("")
-    lines.append("")
-    lines += monitor_source_menu(board)
     lines.append("")
     lines += stack_menu(board, LOADCODE_RAM[cfg["family"]][1] if loadcode else min_sram, bool(loadcode))
     lines.append("")
