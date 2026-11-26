@@ -146,6 +146,17 @@ IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます
 - 行き先はボードで決まります。既定は factory USB ISP で、UIAPduino は boards.txt の `upload.tool.ch32rv-bootloader` で HID の bootloader に向けています。
 - USB の無いチップ（V002〜V007、M007）は、ch32rv が待つ前に断ります。
 
+**どの USB 端子に書くか:** 口の選び方で、書き込む先の範囲が変わります。
+
+| 選ぶ口 | 書く先 |
+|---|---|
+| `ch32rv-bootloader://WAIT_FOR_BOOT` | どの USB 端子でも、書き込みを押した後に BOOT で現れた 1 台 |
+| `ch32rv-hid://<topology>`（UIAPduino の HID の bootloader） | その USB 端子（`<topology>` は PC の USB の差し口の位置）に今いる bootloader だけ |
+| `ch32rv-isp://<topology>`（factory USB ISP） | 同じく、その USB 端子の bootloader だけ |
+
+`ch32rv-hid://` や `ch32rv-isp://` は、その差し口の位置で口を決めるので、ボードを別の差し口に挿し直すと別の口になります。
+どこに挿しても書きたいとき、または書き込みを押してから BOOT に入れるときは、`WAIT_FOR_BOOT` を選びます。
+
 X305 / X315 は、電源投入時に BOOT 領域から起動する設定（`START_MD`）と、
 「キー操作なしの USBFS ダウンロード」（`USBFSDLEN`）が option byte の既定で有効です（CH32X315 リファレンスマニュアル）。
 ボタンなしで USB ISP に入れる可能性がありますが、実機では確認していません。
