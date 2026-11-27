@@ -41,6 +41,8 @@ REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 
 from fetch_tools import DEFAULT_ROOT, env_defaults   # noqa: E402
+sys.path.insert(0, str(HERE.parent / "generate"))
+from sketch_requirements import libraries as declared_libraries   # noqa: E402
 from gen_index import PLATFORM_ENTRIES               # noqa: E402
 
 PACKAGER = "ch32-riscv-ug"
@@ -121,10 +123,26 @@ def main() -> int:
 
     built = failed = warned = 0
     started = time.monotonic()
+    installed = set()
+    third_party = str(work / "user" / "libraries") + os.sep   # platform(work)'s sketchbook
     for example, ps in found:
         todo = [(p, f) for p, f in ps.items() if p in wanted]
         if not todo:
             continue
+        # The third-party libraries the example declares (/* libraries: Name (version) */, which its profiles carry):
+        # the build here is the work tree's platform by -b, not the profile, so they are installed into this
+        # sketchbook first, at the declared version.
+        for lib in declared_libraries(example):
+            if lib in installed:
+                continue
+            name, version = lib[:-1].rsplit(" (", 1)
+            got = subprocess.run(["arduino-cli", "lib", "install", f"{name}@{version}"],
+                                 env=env, text=True, capture_output=True)
+            if got.returncode != 0:
+                print(f"FAIL library {lib} for {example.relative_to(REPO)}: {(got.stdout + got.stderr).strip()}",
+                      flush=True)
+                return 1
+            installed.add(lib)
         copy = work / "sketch" / example.name
         shutil.rmtree(copy.parent, ignore_errors=True)
         shutil.copytree(example, copy, ignore=shutil.ignore_patterns("sketch.yaml", "build"))
@@ -137,7 +155,10 @@ def main() -> int:
                 env=env, text=True, capture_output=True)
             built += 1
             lines = (proc.stdout + proc.stderr).splitlines()
-            warnings = [l for l in lines if WARNING.search(l)]
+            # A third-party library the example declares is installed into this sketchbook's libraries/: its own
+            # warnings are its authors' (U8g2 2.36.19's u8x8_d_st7301.c), not the core's, and do not fail the build.
+            # The core and the libraries it bundles live in the platform, so theirs still count.
+            warnings = [l for l in lines if WARNING.search(l) and third_party not in l]
             if proc.returncode == 0 and warnings:
                 warned += 1
                 print(f"WARN {profile:20} {rel}: {len(warnings)} - {warnings[0]}", flush=True)
