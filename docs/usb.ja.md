@@ -233,7 +233,7 @@ ch32rv --non-interactive isp flash sketch.ino.elf --entry auto --device /dev/tty
 ビルドからも外すには、スケッチの `build_opt.h` に `-DCH32RV_USB_NO_DEFAULT_DFU` と書きます。
 
 **ch32rv の discovery**: DFU ランタイムのインターフェース名が "CH32RV"（`CH32RV_USB_DFU_RUNTIME_NAME`）のデバイスは、
-ch32rv の discovery が書き込み先のポート（`ch32rv-app://<USB シリアル>`、表示は「<製品名> (CH32RV, USB)」。モニタは同じデバイスの
+ch32rv の discovery が書き込み先のポート（`ch32rv-app://<USB シリアル>`、表示は「<製品名> <USB シリアル> (<シリアルポート>)」。ch32rv 0.36.0 から。モニタは同じデバイスの
 CDC）として出します（ch32rv f20aee7）。
 VID:PID ではこのコアのスケッチだと判定できないので、この名前を目印にしています。名前を変えると DFU_DETACH 自体は
 動きますが、このポートには出なくなります。工場出荷のブートローダーにいる間は `ch32rv-isp://<USB の位置>` が出ます。

@@ -15,7 +15,7 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="8012", MODE="0660", 
 # IAP mode here, and the reserved `isp` will use the ISP bootloader.
 SUBSYSTEM=="usb", ATTR{idVendor}=="4348", ATTR{idProduct}=="55e0", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 SUBSYSTEM=="usb", ATTR{idVendor}=="1a86", ATTR{idProduct}=="55e0", MODE="0660", GROUP="plugdev", TAG+="uaccess"
-# HID bootloaders for `boot hid flash` (rv003usb 1209:b803, UIAPduino 1209:b003): the USB node and hidraw.
+# HID bootloaders for `boot hid flash` (UIAPduino 1209:b803, rv003usb 1209:b003): the USB node and hidraw.
 SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="b803", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 SUBSYSTEM=="usb", ATTR{idVendor}=="1209", ATTR{idProduct}=="b003", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="b803", MODE="0660", GROUP="plugdev", TAG+="uaccess"

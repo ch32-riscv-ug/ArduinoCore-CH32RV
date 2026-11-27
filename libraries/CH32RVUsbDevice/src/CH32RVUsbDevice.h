@@ -73,7 +73,7 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
 #define CH32RV_USB_DEVICE_VERSION 0x0100
 #define CH32RV_USB_DEVICE_MANUFACTURER "ch32-riscv-ug"
 /* The default product name says which chip it is - what the IDE's port list
- * ("CH32X035F8U6 (CH32RV, USB)") and /dev/serial/by-id show: the part number
+ * ("CH32X035F8U6 <serial> (COM6)") and /dev/serial/by-id show: the part number
  * chosen in the Part Number menu, the series when it is ANY. A product board's
  * variant may define CH32RV_USB_DEVICE_PRODUCT (a string) before this. The
  * names come from platform.txt as bare tokens (CH32RV_PART_ID, CH32RV_SERIES_ID)

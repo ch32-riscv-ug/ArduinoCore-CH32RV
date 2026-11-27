@@ -162,7 +162,7 @@ IDE では、bootloader が出す `ch32rv-isp://` の口を選んで書きます
 `WAIT_FOR_BOOT` を選んで書き込みを押し、ch32rv が待ちに入ってから BOOT で入れるのが確実です。
 
 **2 回目からは BOOT は要りません。** 書き込んだスケッチが `CH32RVUsbDevice` で USB を動かしていれば（`SerialUSB` など。
-DFU ランタイムが既定で付きます）、ch32rv の discovery が `ch32rv-app://<USB シリアル>` の口（表示は「<製品名> (CH32RV, USB)」）を
+DFU ランタイムが既定で付きます）、ch32rv の discovery が `ch32rv-app://<USB シリアル>` の口（表示は「<製品名> <USB シリアル> (<シリアルポート>)」、例「CH32X035F8U6 AFC6ABCD17D0BC3D (COM6)」）を
 出します。その口を選んで書き込みを押すと、DFU_DETACH（または 1200bps touch）で ISP に入れてから書きます（[usb.ja.md](usb.ja.md)）。
 同じデバイスの CDC のシリアルポート（`COMx`、`/dev/ttyACM…`）を選んでも同じように書けます（ch32rv 0.35.7 から。ch32rv が
 CH32RV のスケッチのシリアルポートだと見分けて、`isp flash --entry auto` で書きます）。Windows でスケッチの DFU ランタイムに

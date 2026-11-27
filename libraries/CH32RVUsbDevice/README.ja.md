@@ -34,7 +34,7 @@ void loop() {
 `USBDevice` と `SerialUSB` は `Serial` と同じく定義済みなので、`SerialUSB.begin()` だけでも使えます。
 
 製品名（`config.product`）を付けないときは、ボードメニューで選んだ型番（Part Number が ANY なら系列名、例 `CH32X035F8U6`、
-`CH32H417`）になります。IDE のポートの一覧（`CH32X035F8U6 (CH32RV, USB)`）や Linux の `/dev/serial/by-id/` に、その名前で
+`CH32H417`）になります。IDE のポートの一覧（`CH32X035F8U6 <USB シリアル> (COM6)`）や Linux の `/dev/serial/by-id/` に、その名前で
 出ます。
 
 配線・ビルド・UART と USB CDC の区別・エラー対処は[サンプル共通ガイド](examples/README.ja.md)へ、
