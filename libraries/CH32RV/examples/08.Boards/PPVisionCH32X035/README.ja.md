@@ -32,6 +32,9 @@ Adafruit のライブラリはコアに同梱していません。ライブラ�
 - **ボードメニュー:** CH32X035、Part Number は CH32X035G8U6。
 - **書き込み:** 3V3 / GND / DIO / DCK のパッド（SWDIO PC18、SWCLK PC19）に WCH-LinkE をつなぎます。スケッチは USB の
   デバイス（`SerialUSB`）を動かすので、次からは基板の USB の `ch32rv-app://` の口かシリアルポートでも書き込めます。
+- **読み出し保護:** この基板は出荷時に読み出し保護が掛かっていることがあります。最初の書き込みが
+  `error[target-protected]: the chip is read-protected` で止まったら、ツール → Remove Read Protection Before Sketch Upload を
+  Enabled にして書き込み直します。保護を外すと flash が全部消え、そのあとスケッチを書きます。書けたら Disabled に戻します。
 - **期待する表示:** 上に `CH32X035 + ST7735`、中央に数、右に UP / DOWN の枠が出て、ボタンを押している間は枠が塗られます。
   UP で 1 増え、DOWN で 1 減り、変わるたびに USB のシリアルポートへ出します。4 つの LED が 200 ms ごとに順に光ります。
 

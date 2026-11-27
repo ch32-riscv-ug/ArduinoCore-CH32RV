@@ -96,6 +96,35 @@ probe 側を SWIO だけにする必要があります。
 - H41x の DFU の経路は、チップ全体を消せません。Enabled を選ぶと、ch32rv が書き込みを断ります（exit 24）。
 - UIAPduino の板は HID のブートローダーでしか書かないので、このメニューがありません。
 
+## 読み出し保護を外して書くか（Remove Read Protection Before Sketch Upload）
+
+読み出し保護（RDPR）が掛かったチップには、そのままでは書けません。ch32rv 0.38.0 からは、書く前に保護を見つけて止まり、
+次のエラーを出します（exit 21）。経路で文言が少し違いますが、どれも `error[target-protected]` と `read-protected` を含みます。
+
+```
+ch32rv: error[target-protected]: the chip is read-protected: code flash cannot be written while it is
+ch32rv: error[target-protected]: the chip is read-protected: its bootloader does not write code flash while it is
+```
+
+**このエラーが出たら、ツール → Remove Read Protection Before Sketch Upload を Enabled にして書き込み直します。** 出荷時に
+保護が掛かった板があります（例: PPVision の CH32X035）。そうした板では最初の書き込みで必ずこのエラーになります。
+
+| 項目 | ch32rv に渡すもの | 動き |
+|---|---|---|
+| Disabled（既定） | 何も渡さない | 保護が掛かっていたら書く前に止まる（exit 21） |
+| Enabled (erases all flash) | `--unprotect` | 保護が掛かっていたら外してから書く。外すとコードの flash が全部消える（`CH32RV_FLASH_STORE` の保存も消える）。掛かっていなければ何もしない |
+
+- メニューで選ぶこと自体を同意とみなすので、確認は出ません。保護を外すと読まれたくない中身も消えるので、既定は Disabled です。
+  書き終わったら Disabled に戻すと、別の保護された板をうっかり消さずに済みます。
+- 経路ごとの動き: WCH-Link・OEP（デバッグ線）と工場の ISP は、保護を外してから書きます。H41x の DFU の経路は何もしません
+  （保護中はブートローダーが動かないため）。UIAPduino の HID のブートローダーは保護を外せず、外し方を添えて止まります。その
+  ときは WCH-Link などのデバッグプローブで `ch32rv recover --method unprotect` を実行します（コードの flash が消えます）。
+- X035 などの工場の ISP では、保護中でも BOOT キーで入れたブートローダーは USB に現れますが、書いても中身は変わりません。
+  動いているスケッチの USB やデバッグ線からブートローダーに入れる経路は、保護中はブートローダーが動きません。保護された板の
+  最初の 1 回は、BOOT キーで入れて Enabled で書きます。工場の ISP で保護を外す動きは、実機ではまだ確かめていません。
+- Erase All Flash Before Sketch Upload と一緒に Enabled にしても書けます。
+- 値は書き込みの設定（`upload.unprotect_args`）なので、切り替えても再ビルドは起きません。
+
 ## 接続できなくなるイメージを試すとき（起動待ち）
 
 書いたイメージがデバッガを受け付けない場合があります。たとえば、プローブが追従できないクロックへすぐ切り替えるものや、

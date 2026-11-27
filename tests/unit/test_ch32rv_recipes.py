@@ -17,16 +17,18 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 
 RECIPES = {
     'tools.ch32rv.upload.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} --probe "{upload.port.address}"',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} {upload.unprotect_args} --probe "{upload.port.address}"',
     'tools.ch32rv.program.pattern':
-        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.probe_args}',
+        '"{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.unprotect_args} {upload.probe_args}',
     'tools.ch32rv_isp.upload.pattern':
-        '"{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
+        '"{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}',
     'tools.ch32rv_dfu.upload.pattern':
-        '"{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
+        '"{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}',
     'tools.ch32rv_hid.upload.pattern':
-        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} --device "{upload.port.address}" {upload.verbose}',
+        '"{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}',
     'upload.erase_args':
+        '',
+    'upload.unprotect_args':
         '',
     'pluggable_discovery.ch32rv.pattern':
         '"{runtime.tools.ch32rv.path}/ch32rv" arduino discovery',
@@ -82,3 +84,26 @@ def test_every_flashable_board_but_uiapduino_offers_keep_store_first_and_all_fla
     for board, keys in entries.items():
         assert keys == ["none", "all"], board
         assert values[(board, "none")] == "" and values[(board, "all")] == "--erase chip", board
+
+
+def test_every_board_with_the_erase_menu_offers_refusal_first_and_unprotect():
+    """Remove Read Protection Before Sketch Upload: Disabled first, passing nothing (ch32rv stops before writing a
+    read-protected chip, exit 21), then Enabled passing --unprotect (ch32rv 0.38.0: protection off, all of code flash
+    erased). On the same boards as the erase menu."""
+    entries = {}
+    values = {}
+    erase = set()
+    for line in (REPO / "boards.txt").read_text(encoding="utf-8").splitlines():
+        m = re.fullmatch(r"(\w+)\.menu\.unprotect\.(\w+)=(.*)", line)
+        if m:
+            entries.setdefault(m.group(1), []).append(m.group(2))
+        m = re.fullmatch(r"(\w+)\.menu\.unprotect\.(\w+)\.upload\.unprotect_args=(.*)", line)
+        if m:
+            values[(m.group(1), m.group(2))] = m.group(3)
+        m = re.fullmatch(r"(\w+)\.menu\.erase\.none=.*", line)
+        if m:
+            erase.add(m.group(1))
+    assert entries and set(entries) == erase
+    for board, keys in entries.items():
+        assert keys == ["none", "remove"], board
+        assert values[(board, "none")] == "" and values[(board, "remove")] == "--unprotect", board

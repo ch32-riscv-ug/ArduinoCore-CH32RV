@@ -80,6 +80,7 @@ V307 と H417 は、消去後の値が 0xFF ではないことから、データ
 |---|---|
 | ch32rv flash、既定の `--erase keep-store`(ch32rv 0.25 から。ELF の `.ch32rv_store` を退避して書き戻す) | 残る |
 | ch32rv flash `--erase chip`(Erase All Flash Before Sketch Upload の Enabled) | 消える |
+| ch32rv flash `--unprotect` で読み出し保護を外したとき（Remove Read Protection Before Sketch Upload の Enabled） | 消える |
 | ch32rv flash `--erase sector`(イメージが覆うページだけを消す) | 残る |
 | H417 の DFU(`boot dfu flash`、イメージのブロックだけ書く) | 残る |
 

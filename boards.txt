@@ -30,6 +30,7 @@ menu.ramsplit=Flash / RAM Split
 menu.resetpin=Reset Pin
 menu.wdtautostart=Watchdog Auto Start
 menu.erase=Erase All Flash Before Sketch Upload
+menu.unprotect=Remove Read Protection Before Sketch Upload
 menu.stack=Stack Size
 menu.stackcheck=Stack Check
 
@@ -173,6 +174,11 @@ CH32V002.menu.erase.none=Disabled (default)
 CH32V002.menu.erase.none.upload.erase_args=
 CH32V002.menu.erase.all=Enabled
 CH32V002.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V002.menu.unprotect.none=Disabled (default)
+CH32V002.menu.unprotect.none.upload.unprotect_args=
+CH32V002.menu.unprotect.remove=Enabled (erases all flash)
+CH32V002.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V002.menu.stack.512b=512 B (default)
@@ -357,6 +363,11 @@ CH32V003.menu.erase.none.upload.erase_args=
 CH32V003.menu.erase.all=Enabled
 CH32V003.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V003.menu.unprotect.none=Disabled (default)
+CH32V003.menu.unprotect.none.upload.unprotect_args=
+CH32V003.menu.unprotect.remove=Enabled (erases all flash)
+CH32V003.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V003.menu.stack.512b=512 B (default)
 CH32V003.menu.stack.512b.build.stack_size=512
@@ -519,6 +530,11 @@ CH32V004.menu.erase.none=Disabled (default)
 CH32V004.menu.erase.none.upload.erase_args=
 CH32V004.menu.erase.all=Enabled
 CH32V004.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V004.menu.unprotect.none=Disabled (default)
+CH32V004.menu.unprotect.none.upload.unprotect_args=
+CH32V004.menu.unprotect.remove=Enabled (erases all flash)
+CH32V004.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V004.menu.stack.512b=512 B (default)
@@ -702,6 +718,11 @@ CH32V005.menu.erase.none=Disabled (default)
 CH32V005.menu.erase.none.upload.erase_args=
 CH32V005.menu.erase.all=Enabled
 CH32V005.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V005.menu.unprotect.none=Disabled (default)
+CH32V005.menu.unprotect.none.upload.unprotect_args=
+CH32V005.menu.unprotect.remove=Enabled (erases all flash)
+CH32V005.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V005.menu.stack.512b=512 B (default)
@@ -942,6 +963,11 @@ CH32V006.menu.erase.none.upload.erase_args=
 CH32V006.menu.erase.all=Enabled
 CH32V006.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V006.menu.unprotect.none=Disabled (default)
+CH32V006.menu.unprotect.none.upload.unprotect_args=
+CH32V006.menu.unprotect.remove=Enabled (erases all flash)
+CH32V006.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V006.menu.stack.512b=512 B (default)
 CH32V006.menu.stack.512b.build.stack_size=512
@@ -1165,6 +1191,11 @@ CH32V007.menu.erase.none.upload.erase_args=
 CH32V007.menu.erase.all=Enabled
 CH32V007.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V007.menu.unprotect.none=Disabled (default)
+CH32V007.menu.unprotect.none.upload.unprotect_args=
+CH32V007.menu.unprotect.remove=Enabled (erases all flash)
+CH32V007.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V007.menu.stack.512b=512 B (default)
 CH32V007.menu.stack.512b.build.stack_size=512
@@ -1379,6 +1410,11 @@ CH32V103.menu.erase.none=Disabled (default)
 CH32V103.menu.erase.none.upload.erase_args=
 CH32V103.menu.erase.all=Enabled
 CH32V103.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V103.menu.unprotect.none=Disabled (default)
+CH32V103.menu.unprotect.none.upload.unprotect_args=
+CH32V103.menu.unprotect.remove=Enabled (erases all flash)
+CH32V103.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V103.menu.stack.512b=512 B (default)
@@ -1658,6 +1694,11 @@ CH32V203.menu.erase.none.upload.erase_args=
 CH32V203.menu.erase.all=Enabled
 CH32V203.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V203.menu.unprotect.none=Disabled (default)
+CH32V203.menu.unprotect.none.upload.unprotect_args=
+CH32V203.menu.unprotect.remove=Enabled (erases all flash)
+CH32V203.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V203.menu.stack.512b=512 B (default)
 CH32V203.menu.stack.512b.build.stack_size=512
@@ -1878,6 +1919,11 @@ CH32V205.menu.erase.none=Disabled (default)
 CH32V205.menu.erase.none.upload.erase_args=
 CH32V205.menu.erase.all=Enabled
 CH32V205.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V205.menu.unprotect.none=Disabled (default)
+CH32V205.menu.unprotect.none.upload.unprotect_args=
+CH32V205.menu.unprotect.remove=Enabled (erases all flash)
+CH32V205.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V205.menu.stack.2k=2 KB (default)
@@ -2274,6 +2320,11 @@ CH32V208.menu.erase.none.upload.erase_args=
 CH32V208.menu.erase.all=Enabled
 CH32V208.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V208.menu.unprotect.none=Disabled (default)
+CH32V208.menu.unprotect.none.upload.unprotect_args=
+CH32V208.menu.unprotect.remove=Enabled (erases all flash)
+CH32V208.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V208.menu.stack.4k=4 KB (default)
 CH32V208.menu.stack.4k.build.stack_size=4096
@@ -2530,6 +2581,11 @@ CH32V303.menu.erase.none=Disabled (default)
 CH32V303.menu.erase.none.upload.erase_args=
 CH32V303.menu.erase.all=Enabled
 CH32V303.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V303.menu.unprotect.none=Disabled (default)
+CH32V303.menu.unprotect.none.upload.unprotect_args=
+CH32V303.menu.unprotect.remove=Enabled (erases all flash)
+CH32V303.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V303.menu.stack.2k=2 KB (default)
@@ -2818,6 +2874,11 @@ CH32V305.menu.erase.none.upload.erase_args=
 CH32V305.menu.erase.all=Enabled
 CH32V305.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V305.menu.unprotect.none=Disabled (default)
+CH32V305.menu.unprotect.none.upload.unprotect_args=
+CH32V305.menu.unprotect.remove=Enabled (erases all flash)
+CH32V305.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V305.menu.stack.2k=2 KB (default)
 CH32V305.menu.stack.2k.build.stack_size=2048
@@ -3105,6 +3166,11 @@ CH32V307.menu.erase.none=Disabled (default)
 CH32V307.menu.erase.none.upload.erase_args=
 CH32V307.menu.erase.all=Enabled
 CH32V307.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V307.menu.unprotect.none=Disabled (default)
+CH32V307.menu.unprotect.none.upload.unprotect_args=
+CH32V307.menu.unprotect.remove=Enabled (erases all flash)
+CH32V307.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V307.menu.stack.4k=4 KB (default)
@@ -3404,6 +3470,11 @@ CH32V317.menu.erase.none.upload.erase_args=
 CH32V317.menu.erase.all=Enabled
 CH32V317.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V317.menu.unprotect.none=Disabled (default)
+CH32V317.menu.unprotect.none.upload.unprotect_args=
+CH32V317.menu.unprotect.remove=Enabled (erases all flash)
+CH32V317.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V317.menu.stack.4k=4 KB (default)
 CH32V317.menu.stack.4k.build.stack_size=4096
@@ -3686,6 +3757,11 @@ CH32V407.menu.erase.none=Disabled (default)
 CH32V407.menu.erase.none.upload.erase_args=
 CH32V407.menu.erase.all=Enabled
 CH32V407.menu.erase.all.upload.erase_args=--erase chip
+
+CH32V407.menu.unprotect.none=Disabled (default)
+CH32V407.menu.unprotect.none.upload.unprotect_args=
+CH32V407.menu.unprotect.remove=Enabled (erases all flash)
+CH32V407.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32V407.menu.stack.4k=4 KB (default)
@@ -3986,6 +4062,11 @@ CH32V467.menu.erase.none.upload.erase_args=
 CH32V467.menu.erase.all=Enabled
 CH32V467.menu.erase.all.upload.erase_args=--erase chip
 
+CH32V467.menu.unprotect.none=Disabled (default)
+CH32V467.menu.unprotect.none.upload.unprotect_args=
+CH32V467.menu.unprotect.remove=Enabled (erases all flash)
+CH32V467.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32V467.menu.stack.4k=4 KB (default)
 CH32V467.menu.stack.4k.build.stack_size=4096
@@ -4257,6 +4338,11 @@ CH32X033.menu.erase.none.upload.erase_args=
 CH32X033.menu.erase.all=Enabled
 CH32X033.menu.erase.all.upload.erase_args=--erase chip
 
+CH32X033.menu.unprotect.none=Disabled (default)
+CH32X033.menu.unprotect.none.upload.unprotect_args=
+CH32X033.menu.unprotect.remove=Enabled (erases all flash)
+CH32X033.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32X033.menu.stack.1k=1 KB (default)
 CH32X033.menu.stack.1k.build.stack_size=1024
@@ -4480,6 +4566,11 @@ CH32X035.menu.erase.none.upload.erase_args=
 CH32X035.menu.erase.all=Enabled
 CH32X035.menu.erase.all.upload.erase_args=--erase chip
 
+CH32X035.menu.unprotect.none=Disabled (default)
+CH32X035.menu.unprotect.none.upload.unprotect_args=
+CH32X035.menu.unprotect.remove=Enabled (erases all flash)
+CH32X035.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32X035.menu.stack.1k=1 KB (default)
 CH32X035.menu.stack.1k.build.stack_size=1024
@@ -4687,6 +4778,11 @@ CH32X305.menu.erase.none=Disabled (default)
 CH32X305.menu.erase.none.upload.erase_args=
 CH32X305.menu.erase.all=Enabled
 CH32X305.menu.erase.all.upload.erase_args=--erase chip
+
+CH32X305.menu.unprotect.none=Disabled (default)
+CH32X305.menu.unprotect.none.upload.unprotect_args=
+CH32X305.menu.unprotect.remove=Enabled (erases all flash)
+CH32X305.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32X305.menu.stack.4k=4 KB (default)
@@ -5125,6 +5221,11 @@ CH32X315.menu.erase.none=Disabled (default)
 CH32X315.menu.erase.none.upload.erase_args=
 CH32X315.menu.erase.all=Enabled
 CH32X315.menu.erase.all.upload.erase_args=--erase chip
+
+CH32X315.menu.unprotect.none=Disabled (default)
+CH32X315.menu.unprotect.none.upload.unprotect_args=
+CH32X315.menu.unprotect.remove=Enabled (erases all flash)
+CH32X315.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32X315.menu.stack.4k=4 KB (default)
@@ -5713,6 +5814,11 @@ CH32L103.menu.erase.none.upload.erase_args=
 CH32L103.menu.erase.all=Enabled
 CH32L103.menu.erase.all.upload.erase_args=--erase chip
 
+CH32L103.menu.unprotect.none=Disabled (default)
+CH32L103.menu.unprotect.none.upload.unprotect_args=
+CH32L103.menu.unprotect.remove=Enabled (erases all flash)
+CH32L103.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32L103.menu.stack.1k=1 KB (default)
 CH32L103.menu.stack.1k.build.stack_size=1024
@@ -5944,6 +6050,11 @@ CH32M007.menu.erase.none.upload.erase_args=
 CH32M007.menu.erase.all=Enabled
 CH32M007.menu.erase.all.upload.erase_args=--erase chip
 
+CH32M007.menu.unprotect.none=Disabled (default)
+CH32M007.menu.unprotect.none.upload.unprotect_args=
+CH32M007.menu.unprotect.remove=Enabled (erases all flash)
+CH32M007.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32M007.menu.stack.512b=512 B (default)
 CH32M007.menu.stack.512b.build.stack_size=512
@@ -6143,6 +6254,11 @@ CH32M030.menu.erase.none.upload.erase_args=
 CH32M030.menu.erase.all=Enabled
 CH32M030.menu.erase.all.upload.erase_args=--erase chip
 
+CH32M030.menu.unprotect.none=Disabled (default)
+CH32M030.menu.unprotect.none.upload.unprotect_args=
+CH32M030.menu.unprotect.remove=Enabled (erases all flash)
+CH32M030.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32M030.menu.stack.512b=512 B (default)
 CH32M030.menu.stack.512b.build.stack_size=512
@@ -6316,6 +6432,11 @@ CH32M103.menu.erase.none=Disabled (default)
 CH32M103.menu.erase.none.upload.erase_args=
 CH32M103.menu.erase.all=Enabled
 CH32M103.menu.erase.all.upload.erase_args=--erase chip
+
+CH32M103.menu.unprotect.none=Disabled (default)
+CH32M103.menu.unprotect.none.upload.unprotect_args=
+CH32M103.menu.unprotect.remove=Enabled (erases all flash)
+CH32M103.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32M103.menu.stack.1k=1 KB (default)
@@ -6522,6 +6643,11 @@ CH32H415.menu.erase.none=Disabled (default)
 CH32H415.menu.erase.none.upload.erase_args=
 CH32H415.menu.erase.all=Enabled
 CH32H415.menu.erase.all.upload.erase_args=--erase chip
+
+CH32H415.menu.unprotect.none=Disabled (default)
+CH32H415.menu.unprotect.none.upload.unprotect_args=
+CH32H415.menu.unprotect.remove=Enabled (erases all flash)
+CH32H415.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32H415.menu.stack.16k=16 KB (default)
@@ -6895,6 +7021,11 @@ CH32H416.menu.erase.none.upload.erase_args=
 CH32H416.menu.erase.all=Enabled
 CH32H416.menu.erase.all.upload.erase_args=--erase chip
 
+CH32H416.menu.unprotect.none=Disabled (default)
+CH32H416.menu.unprotect.none.upload.unprotect_args=
+CH32H416.menu.unprotect.remove=Enabled (erases all flash)
+CH32H416.menu.unprotect.remove.upload.unprotect_args=--unprotect
+
 
 CH32H416.menu.stack.16k=16 KB (default)
 CH32H416.menu.stack.16k.build.stack_size=16384
@@ -7204,6 +7335,11 @@ CH32H417.menu.erase.none=Disabled (default)
 CH32H417.menu.erase.none.upload.erase_args=
 CH32H417.menu.erase.all=Enabled
 CH32H417.menu.erase.all.upload.erase_args=--erase chip
+
+CH32H417.menu.unprotect.none=Disabled (default)
+CH32H417.menu.unprotect.none.upload.unprotect_args=
+CH32H417.menu.unprotect.remove=Enabled (erases all flash)
+CH32H417.menu.unprotect.remove.upload.unprotect_args=--unprotect
 
 
 CH32H417.menu.stack.16k=16 KB (default)

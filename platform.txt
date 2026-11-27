@@ -256,9 +256,15 @@ upload.tool.ch32rv-bootloader=ch32rv_isp
 # one that cannot erase the chip (DFU, HID) refuses it with exit 24 rather
 # than ignoring it.
 upload.erase_args=
+# upload.unprotect_args comes from the Remove Read Protection Before Sketch
+# Upload menu: empty stops before writing a read-protected chip (ch32rv exit
+# 21, error[target-protected]), "--unprotect" turns the protection off first,
+# which erases all of code flash (ch32rv 0.38.0; every route takes it, see
+# tools/generate/generate.py UNPROTECT_MENU).
+upload.unprotect_args=
 tools.ch32rv.upload.params.verbose=--verbose
 tools.ch32rv.upload.params.quiet=
-tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} --probe "{upload.port.address}"
+tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {upload.verbose} {upload.erase_args} {upload.unprotect_args} --probe "{upload.port.address}"
 
 # `upload --programmer wch-link` (programmers.txt) stays for the probe-less
 # command line: it takes the only WCH-Link attached, or the one named by
@@ -267,7 +273,7 @@ tools.ch32rv.upload.pattern="{path}/{cmd}" flash "{build.path}/{build.project_na
 upload.probe_args=
 tools.ch32rv.program.params.verbose=--verbose
 tools.ch32rv.program.params.quiet=
-tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.probe_args}
+tools.ch32rv.program.pattern="{path}/{cmd}" flash "{build.path}/{build.project_name}.elf" --format elf --chip {build.ch32rv_chip} --reset run --confirm-run --non-interactive --progress none {program.verbose} {upload.erase_args} {upload.unprotect_args} {upload.probe_args}
 
 # Over USB alone, through the factory USB ISP bootloader (docs/usb.ja.md). On a
 # ch32rv-app port, --entry auto sends DFU_DETACH (or the 1200 bps touch) to the
@@ -279,7 +285,7 @@ tools.ch32rv_isp.cmd=ch32rv
 tools.ch32rv_isp.cmd.windows=ch32rv.exe
 tools.ch32rv_isp.upload.params.verbose=--verbose
 tools.ch32rv_isp.upload.params.quiet=
-tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
+tools.ch32rv_isp.upload.pattern="{path}/{cmd}" --non-interactive --progress none isp flash "{build.path}/{build.project_name}.elf" --chip {build.ch32rv_chip} --entry auto {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}
 
 # Over USB alone, on the parts whose sketch rewrites its own flash
 # (CH32H41x, CH32RV_FLASH_SELF_WRITE): the running sketch's DFU interface
@@ -292,7 +298,7 @@ tools.ch32rv_dfu.cmd=ch32rv
 tools.ch32rv_dfu.cmd.windows=ch32rv.exe
 tools.ch32rv_dfu.upload.params.verbose=--verbose
 tools.ch32rv_dfu.upload.params.quiet=
-tools.ch32rv_dfu.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
+tools.ch32rv_dfu.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot dfu flash "{build.path}/{build.project_name}.bin" --format bin {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}
 
 # UIAPduino Pro Micro CH32V003 V1.4 product bootloader. rv003usb takes the raw
 # binary, and boot entry still needs an external action (docs/uiapduino-hid-upload.ja.md).
@@ -301,7 +307,7 @@ tools.ch32rv_hid.cmd=ch32rv
 tools.ch32rv_hid.cmd.windows=ch32rv.exe
 tools.ch32rv_hid.upload.params.verbose=--verbose
 tools.ch32rv_hid.upload.params.quiet=
-tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} --device "{upload.port.address}" {upload.verbose}
+tools.ch32rv_hid.upload.pattern="{path}/{cmd}" --non-interactive --progress none boot hid flash "{build.path}/{build.project_name}.bin" {upload.erase_args} {upload.unprotect_args} --device "{upload.port.address}" {upload.verbose}
 
 # ---------------------------------------------------------------- discovery
 # ch32rv lists what a plain serial scan cannot see or name: every WCH-Link as

@@ -270,6 +270,7 @@ MENU_HEADER = ("menu.part=Part Number\nmenu.clock=CPU Clock\nmenu.clocksrc=Clock
                + "menu.resetpin=Reset Pin\n"
                + "menu.wdtautostart=Watchdog Auto Start\n"
                + "menu.erase=Erase All Flash Before Sketch Upload\n"
+               + "menu.unprotect=Remove Read Protection Before Sketch Upload\n"
                + "menu.stack=Stack Size\n"
                + "menu.stackcheck=Stack Check\n")
 
@@ -565,6 +566,33 @@ def erase_menu(board: str) -> list[str]:
     for key, label, args in ERASE_MENU:
         lines.append(f"{board}.menu.erase.{key}={label}")
         lines.append(f"{board}.menu.erase.{key}.upload.erase_args={args}")
+    return lines
+
+
+# Whether an upload first turns the chip's read protection off (platform.txt
+# upload.unprotect_args, ch32rv 0.38.0 --unprotect). Disabled first and empty:
+# ch32rv then stops before writing a read-protected chip (exit 21,
+# error[target-protected]) and says how to turn it off. Enabled passes
+# --unprotect: protection on is turned off, which erases all of code flash
+# (CH32RV_FLASH_STORE data and anything else the sketch kept), then the sketch
+# is written; protection off does nothing. Choosing the entry is the consent,
+# so ch32rv asks for no --yes. Every route takes it: DFU does nothing (its
+# bootloader does not run on a protected chip), HID cannot turn protection off
+# and stops with a hint (a debug probe's `ch32rv recover --method unprotect`).
+# Disabled by default because those who protect a chip do not want it read,
+# and the erase reaches past the sketch. Some boards ship protected (PPVision
+# CH32X035); docs/upload-routes says to pick Enabled for that first upload.
+UNPROTECT_MENU = (
+    ("none", "Disabled (default)", ""),
+    ("remove", "Enabled (erases all flash)", "--unprotect"),
+)
+
+
+def unprotect_menu(board: str) -> list[str]:
+    lines = []
+    for key, label, args in UNPROTECT_MENU:
+        lines.append(f"{board}.menu.unprotect.{key}={label}")
+        lines.append(f"{board}.menu.unprotect.{key}.upload.unprotect_args={args}")
     return lines
 
 
@@ -6213,6 +6241,8 @@ def gen_board(series: str, rows: list, ch32rv: tuple, facts: dict,
         lines += iwdg_menu(board)
         lines.append("")
     lines += erase_menu(board)
+    lines.append("")
+    lines += unprotect_menu(board)
     lines.append("")
     lines.append("")
     lines += stack_menu(board, LOADCODE_RAM[cfg["family"]][1] if loadcode else min_sram, bool(loadcode))

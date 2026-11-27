@@ -32,6 +32,10 @@ profile installs those versions by itself).
 - **Board menu:** CH32X035, Part Number CH32X035G8U6.
 - **Upload:** with a WCH-LinkE on the 3V3 / GND / DIO / DCK pads (SWDIO PC18, SWCLK PC19). The sketch keeps a USB
   device (`SerialUSB`) up, so the next upload can also go to the board's `ch32rv-app://` port or serial port.
+- **Read protection:** these boards can come read-protected from the factory. If the first upload stops with
+  `error[target-protected]: the chip is read-protected`, set Tools > Remove Read Protection Before Sketch Upload to
+  Enabled and upload again: the protection is turned off, which erases all of the flash, then the sketch is written.
+  Set it back to Disabled afterwards.
 - **What it shows:** `CH32X035 + ST7735` at the top, a count in the middle, UP / DOWN boxes on the right that fill
   while the button is held. UP adds one, DOWN takes one away, and each change is printed on the USB serial port.
   The four LEDs light in turn every 200 ms.
