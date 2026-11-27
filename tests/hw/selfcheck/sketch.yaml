@@ -64,6 +64,10 @@ profiles:
     fqbn: ch32-riscv-ug:ch32rv:CH32H417:part=CH32H417QEU6,wdtautostart=off
     port_config:
       source: dmseq
+  x035f8u6-abcd:
+    fqbn: ch32-riscv-ug:ch32rv:CH32X035:part=CH32X035F8U6,resetpin=reset,wdtautostart=off
+    port_config:
+      source: dmseq
   m030g8r7:
     fqbn: ch32-riscv-ug:ch32rv:CH32M030:part=CH32M030G8R7,resetpin=reset
     port_config:

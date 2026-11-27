@@ -58,5 +58,8 @@ part = "CH32H417QEU6"
 [h417qeu6-linke]
 part = "CH32H417QEU6"
 
+[x035f8u6-abcd]
+part = "CH32X035F8U6"
+
 [m030g8r7]
 part = "CH32M030G8R7"

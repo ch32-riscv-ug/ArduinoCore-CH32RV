@@ -423,6 +423,13 @@ scope = "series"
 any_of = ["USBFS", "USBHS", "USBHS1", "USBHS2", "USBD", "USB", "USBSS", "OTG_FS"]
 
 [[item]]
+id = "usb-upload"           # the IDE's upload through the running sketch's USB: DFU_DETACH / the serial port, factory USB ISP
+test = "usb-upload"
+scope = "series"
+needs = ["FACTORY_USB_ISP"]  # named by no variant: the series below are the ones whose application reaches it
+also = ["CH32X033", "CH32X035"]
+
+[[item]]
 id = "eth"
 test = "eth"
 scope = "series"

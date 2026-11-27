@@ -32,12 +32,16 @@ BOARD_IDENTIFY = pathlib.Path("/run/board-identify/by-id")
 USB_DEVICE_ONLY_PARTS = ("CH32X035F8U6", "CH32X035F7P6", "CH32X035D8U6", "CH32X033F8P6")
 USB_HOST_NO_PARTS = USB_DEVICE_ONLY_PARTS + ("CH32V203F6P6", "CH32V203G6U6")
 UIAPDUINO_BOARD = "uiapduino:pro-micro-ch32v003-v1.4"
+WEACT_X035_BOARD = "weact:CH32X035-CoreBoard-V1.0"
 # Product boards whose series a generic board also covers (the record's board): their pads are the board's
 # (UIAPduino's PD3 / PD4 are its USB), so the bench runs only the flashing and the board's own cases there; the
 # generic peripheral cases are the generic boards' (v003f4p6 for V003) - the user, 2026-11-19. Not for a series with
 # no official board, whose product board is all the bench has (V407 / V467: VCC-GND's YD-WCHV4x7; M030: the motor
 # board, which keeps its pads by its gpio-drive defect instead): those run every case as any board does.
-PRODUCT_BOARD_CASES = {UIAPDUINO_BOARD: ("runtime", "hid")}
+PRODUCT_BOARD_CASES = {UIAPDUINO_BOARD: ("runtime", "hid"),
+                       # The WeAct X035 F8U6 (x035f8u6-abcd): the core's upload path through the board's own USB - the
+                       # generic X035 boards run the rest (the user, 2026-11-27).
+                       WEACT_X035_BOARD: ("runtime", "usb", "usb-upload")}
 USB_CASES = ("usb", "usb-classes", "usb-media", "usb-ss-iso")
 PEER_DEVICE_CASES = ("usb-peer", "usb-peer-classes", "usb-peer-media", "usb-peer-net", "usb-peer-fs", "usb-peer-firmware", "usb-peer-input")
 PEER_HOST_CASES = ("usb-peer-host", "usb-peer-host-classes", "usb-peer-host-input", "usb-peer-host-storage",
@@ -410,6 +414,11 @@ def choose_cases(place, items=None, caps=None):
                                   f"{same[0]} only")
     device = series_has("usb", series, items, caps)
     host = series_has("usb-peer-host", series, items, caps) and part not in USB_HOST_NO_PARTS
+    # usb-upload: the IDE's upload through the running sketch's USB (ch32rv-app:// and its serial port), on the series
+    # whose application reaches the factory USB ISP (coverage.toml's usb-upload).
+    out["usb-upload"] = ("run" if usb.get("to") == "host" and device and series_has("usb-upload", series, items, caps, part)
+                         else "skip: no port of the record's usb is {to: host}" if usb.get("to") != "host"
+                         else f"skip: {part} has no upload through its application's USB")
     for case in USB_CASES:
         # A case of one controller (usb-ss-iso: USBSS) on the series that have it (coverage.toml's needs).
         own = series_has(case, series, items, caps, part)

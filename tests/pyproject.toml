@@ -42,4 +42,5 @@ arduino_combos = [
   "h417qeu6-pico: primary=h417qeu6-pico",
   "h417qeu6-linke: primary=h417qeu6-linke",
   "m030g8r7: primary=m030g8r7",
+  "x035f8u6-abcd: primary=x035f8u6-abcd",
 ]

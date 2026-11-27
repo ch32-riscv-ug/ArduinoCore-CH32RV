@@ -41,6 +41,7 @@ MODULES = {
     "usb-classes": TESTS / "instrumented/usb/test_usb_classes_contract.py",
     "usb-media": TESTS / "instrumented/usb/test_usb_media_contract.py",
     "usb-ss-iso": TESTS / "instrumented/usb/test_usb_ss_iso.py",
+    "usb-upload": TESTS / "instrumented/usb/test_usb_upload.py",
     "eth": TESTS / "instrumented/eth/test_eth_contract.py",
     "eth-libs": TESTS / "instrumented/eth/test_eth_libs.py",
     "logic": TESTS / "instrumented/logic/test_logic_contract.py",
@@ -134,6 +135,7 @@ CONSOLE_FLAGS = {"console-rtt": "CONSOLE_RTT", "console-dmdata": "CONSOLE_DMDATA
                  "usb-peer-host-media": "USB_HOST_AUDIO"}
 SKETCHES = {
     "usb": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
+    "usb-upload": TESTS / "sketch_support/usb_contracts/usb_contracts.ino",
     "usb-classes": TESTS / "sketch_support/usb_classes/usb_classes.ino",
     "usb-media": TESTS / "sketch_support/usb_media/usb_media.ino",
     "usb-ss-iso": TESTS / "sketch_support/usb_ss_iso/usb_ss_iso.ino",
@@ -258,6 +260,7 @@ PICO_TINYUSB = dict(version="3.7.7",
                     patch=TESTS / "sketch_support/usb_peer/pico/adafruit-tinyusb-3.7.7.patch")
 HELPERS = {
     "usb": [TESTS / "instrumented/usb/usb_host.py"],
+    "usb-upload": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-classes": [TESTS / "instrumented/usb/usb_host.py"],
     "usb-media": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
     "usb-ss-iso": [TESTS / "instrumented/usb/usb_host.py", TESTS / "instrumented/usb/usb_iso.py"],
