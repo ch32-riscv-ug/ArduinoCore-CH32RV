@@ -11,7 +11,7 @@ hardware = [
     "pytest-embedded-arduino-cli==1.12.0",
     "pytest-embedded-arduino-cli-ch32rv==0.0.10",
     "pytest-embedded-wireskein==0.0.8",
-    "wireskein==0.0.39",
+    "wireskein==0.1.0",
 ]
 
 [tool.pytest.ini_options]
