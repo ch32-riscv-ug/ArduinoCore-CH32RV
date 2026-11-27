@@ -64,6 +64,9 @@ jobs:
     needs: example-profiles
     strategy:
       fail-fast: false
+      # 29 profiles: without a limit they take every runner the account has at once (20), and the
+      # other workflows (release, other repositories) wait until the whole matrix is done.
+      max-parallel: 8
       matrix:
         profile: ${{ fromJSON(needs.example-profiles.outputs.profiles) }}
     runs-on: ubuntu-latest
