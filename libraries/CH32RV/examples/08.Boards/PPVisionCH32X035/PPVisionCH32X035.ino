@@ -61,14 +61,11 @@ void setup()
     pinMode(BUTTON_UP, INPUT_PULLUP);
     pinMode(BUTTON_DOWN, INPUT_PULLUP);
 
-    // en: The "plugin" 160x80 panel: offsets 26 / 1 and BGR, as the board's own driver uses.
-    // ja: 160x80の「plugin」のパネル。オフセット26 / 1とBGRで、基板のドライバーと同じ。
+    // en: The "plugin" 160x80 panel: offsets 26 / 1, BGR and inverted (INVON), all as the library sets it (checked
+    // en: on the board: black is black).
+    // ja: 160x80の「plugin」のパネル。オフセット26 / 1、BGR、反転（INVON）で、どれもライブラリの設定のまま（実機で
+    // ja: 黒が黒に出ることを確認）。
     tft.initR(INITR_MINI160x80_PLUGIN);
-    // en: The board's driver leaves the panel not inverted (INVOFF); for this panel type the library maps
-    // en: invertDisplay(true) to INVOFF. If the colours come out inverted, use false.
-    // ja: 基板のドライバーは反転しない（INVOFF）。このパネルの種類では、ライブラリは invertDisplay(true) を
-    // ja: INVOFFにする。色が反転して見えたら false にする。
-    tft.invertDisplay(true);
     // en: Landscape, the right way up (checked on the board); 1 is upside down.
     // ja: 横向き。正しい向き（実機で確認）。1だと上下が逆。
     tft.setRotation(3);

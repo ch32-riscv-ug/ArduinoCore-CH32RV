@@ -10,7 +10,7 @@ and lights the LEDs one after another.
 ## Pins
 
 The board publishes no schematic. The pins below come from its sample sources (`Apps/gpio`, `Apps/FreeRTOS`,
-`components/lcd`); the LEDs' and buttons' places on the board are not confirmed.
+`components/lcd`).
 
 | Function | Pin | Source |
 |---|---|---|
@@ -21,7 +21,7 @@ The board publishes no schematic. The pins below come from its sample sources (`
 | SPI flash CS (not used here) | PB3 | commented `SPI_CS2` |
 | Header TX2 / RX2 | PA2 / PA3 (USART2) | `Apps/SimulateCDC` |
 
-The LCD is the "plugin" 160x80 panel: offsets 26 / 1, BGR, not inverted, as the board's own driver sets it.
+The LCD is the "plugin" 160x80 panel: offsets 26 / 1, BGR, inverted (INVON), as Adafruit's `INITR_MINI160x80_PLUGIN` sets it. The pins, LEDs, buttons, colours and orientation are checked on the board.
 
 The Adafruit libraries are not bundled with the core: install "Adafruit ST7735 and ST7789 Library" from the Library
 Manager (it brings Adafruit GFX and BusIO; checked with 1.12.0 / 2.0.0 / 1.17.4, and a build from the sketch.yaml
@@ -30,8 +30,11 @@ profile installs those versions by itself).
 ## Uploading and operation
 
 - **Board menu:** CH32X035, Part Number CH32X035G8U6.
-- **Upload:** with a WCH-LinkE on the 3V3 / GND / DIO / DCK pads (SWDIO PC18, SWCLK PC19). The sketch keeps a USB
-  device (`SerialUSB`) up, so the next upload can also go to the board's `ch32rv-app://` port or serial port.
+- **Upload over USB alone:** the first time, put the board in its USB bootloader with the BOOT key (hold BOOT while
+  plugging the USB in or resetting) and upload to the "WCH ISP bootloader" port. The sketch keeps a USB device
+  (`SerialUSB`) up, so later uploads go to its `ch32rv-app://` port or serial port without the key. While the
+  bootloader runs, the sketch's ports are gone: pick the bootloader's port then. A WCH-LinkE on the 3V3 / GND / DIO /
+  DCK pads (SWDIO PC18, SWCLK PC19) works too.
 - **Read protection:** these boards can come read-protected from the factory. If the first upload stops with
   `error[target-protected]: the chip is read-protected`, set Tools > Remove Read Protection Before Sketch Upload to
   Enabled and upload again: the protection is turned off, which erases all of the flash, then the sketch is written.
@@ -44,8 +47,8 @@ profile installs those versions by itself).
 
 ## Changing it
 
-- If the colours come out inverted (black shown white), change `tft.invertDisplay(true)` to `false`. If the picture
-  is shifted by a few pixels, the panel is another variant: try `INITR_MINI160x80` instead.
+- If another panel shows the colours inverted (black shown white), add `tft.invertDisplay(true)` after `initR()`. If
+  the picture is shifted by a few pixels, the panel is another variant: try `INITR_MINI160x80` instead.
 - `tft.setRotation(1)` turns the picture upside down; 0 / 2 are portrait (80x160).
 
 ## Related

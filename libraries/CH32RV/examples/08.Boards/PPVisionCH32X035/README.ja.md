@@ -10,7 +10,7 @@ ST7735 の液晶、横のボタン 2 つ、LED 4 つが載っています。ス�
 ## 端子
 
 回路図は公開されていません。下の端子は基板のサンプルのソース（`Apps/gpio`、`Apps/FreeRTOS`、`components/lcd`）から
-読んだものです。LED とボタンの基板上の位置は確かめていません。
+読んだものです。
 
 | 機能 | 端子 | 出どころ |
 |---|---|---|
@@ -21,7 +21,7 @@ ST7735 の液晶、横のボタン 2 つ、LED 4 つが載っています。ス�
 | SPI フラッシュの CS（この例では使わない） | PB3 | `SPI_CS2` のコメント |
 | ヘッダーの TX2 / RX2 | PA2 / PA3（USART2） | `Apps/SimulateCDC` |
 
-液晶は 160×80 の「plugin」のパネルです。基板のドライバーと同じく、オフセット 26 / 1、BGR、反転なしにします。
+液晶は 160×80 の「plugin」のパネルです。Adafruit の `INITR_MINI160x80_PLUGIN` の設定どおり、オフセット 26 / 1、BGR、反転（INVON）にします。端子・LED・ボタン・色・向きは実機で確かめました。
 
 Adafruit のライブラリはコアに同梱していません。ライブラリマネージャで「Adafruit ST7735 and ST7789 Library」を入れます
 （Adafruit GFX と BusIO も入ります。確かめた版は 1.12.0 / 2.0.0 / 1.17.4。sketch.yaml のプロファイルでビルドすると、
@@ -30,8 +30,10 @@ Adafruit のライブラリはコアに同梱していません。ライブラ�
 ## 書き込みと操作
 
 - **ボードメニュー:** CH32X035、Part Number は CH32X035G8U6。
-- **書き込み:** 3V3 / GND / DIO / DCK のパッド（SWDIO PC18、SWCLK PC19）に WCH-LinkE をつなぎます。スケッチは USB の
-  デバイス（`SerialUSB`）を動かすので、次からは基板の USB の `ch32rv-app://` の口かシリアルポートでも書き込めます。
+- **USB だけで書き込み:** 最初は BOOT キーで USB のブートローダーに入れ（BOOT を押したまま USB をつなぐかリセット）、
+  「WCH ISP bootloader」の口に書き込みます。スケッチは USB のデバイス（`SerialUSB`）を動かすので、次からはキーなしで
+  `ch32rv-app://` の口かシリアルポートに書けます。ブートローダーが動いている間はスケッチの口は無いので、そのときは
+  ブートローダーの口を選びます。3V3 / GND / DIO / DCK のパッド（SWDIO PC18、SWCLK PC19）に WCH-LinkE をつないでも書けます。
 - **読み出し保護:** この基板は出荷時に読み出し保護が掛かっていることがあります。最初の書き込みが
   `error[target-protected]: the chip is read-protected` で止まったら、ツール → Remove Read Protection Before Sketch Upload を
   Enabled にして書き込み直します。保護を外すと flash が全部消え、そのあとスケッチを書きます。書けたら Disabled に戻します。
@@ -43,7 +45,7 @@ Adafruit のライブラリはコアに同梱していません。ライブラ�
 
 ## 改造するときの注意
 
-- 色が反転して見えたら（黒が白になる）、`tft.invertDisplay(true)` を `false` にします。絵が数ドットずれるときは別の種類の
+- 別のパネルで色が反転して見えたら（黒が白になる）、`initR()` の後に `tft.invertDisplay(true)` を足します。絵が数ドットずれるときは別の種類の
   パネルなので、`INITR_MINI160x80` を試します。
 - `tft.setRotation(1)` で上下が逆になります。0 / 2 は縦（80×160）です。
 
