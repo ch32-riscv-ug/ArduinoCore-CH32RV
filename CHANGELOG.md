@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.22.0
 - (EN) ch32rv 0.37.0: an upload through the running sketch's USB no longer fails now and then with "access denied" when the bootloader has just appeared (it waits up to 2 s for the system to grant access), and asks the sketch once more when no bootloader comes while the sketch is still there.
 - (JA) ch32rv 0.37.0: 動いているスケッチの USB からの書き込みで、ブートローダーが現れた直後に「access denied」でときどき失敗していたのを直した（システムが権限を付けるまで最長 2 秒待つ）。ブートローダーが来ずにスケッチが残っているときは、もう一度だけ頼む。
 - (EN) ch32rv 0.36.0: the IDE's port list names a running CH32RV sketch by its product name, USB serial and serial port ("CH32X035F8U6 AFC6ABCD17D0BC3D (COM6)"), so two boards with the same sketch are told apart; the ISP bootloader shows its USB position ("WCH ISP bootloader (USB 1.3.2)").
