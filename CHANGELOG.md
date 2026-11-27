@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+
+## 0.23.0
 - (EN) New menu Tools > Remove Read Protection Before Sketch Upload (ch32rv 0.38.0's `--unprotect`). Disabled (default): a read-protected chip is not written, and the upload stops before writing with `error[target-protected]: the chip is read-protected` (before, it failed after writing, e.g. "verify mismatch at offset 0" through the ISP). Enabled: the protection is turned off first, which erases all of the flash, then the sketch is written; an unprotected chip is written as before. Some boards ship read-protected (PPVision CH32X035): pick Enabled when the first upload stops with that error.
 - (JA) ツール → Remove Read Protection Before Sketch Upload のメニューを足した（ch32rv 0.38.0 の `--unprotect`）。Disabled（既定）は読み出し保護されたチップに書かず、書く前に `error[target-protected]: the chip is read-protected` で止まる（今までは書いた後に失敗していた。ISP では "verify mismatch at offset 0"）。Enabled は先に保護を外してから書く。外すと flash が全部消える。保護が無ければ今までどおり書く。出荷時に保護された板がある（PPVision CH32X035）。最初の書き込みがこのエラーで止まったら Enabled にする。
 - (EN) New board example 08.Boards/PPVisionCH32X035: ppvision's CH32X035G8U6 board, its 160x80 ST7735 LCD drawn with Adafruit's ST7735 library, the two buttons and four LEDs. The board has no published schematic; the pins are read from its sample sources.
