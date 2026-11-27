@@ -35,6 +35,10 @@ void loop() {
 `USBDevice` and `SerialUSB` are predefined like `Serial`, so `SerialUSB.begin()`
 alone works too.
 
+Without a product name (`config.product`), the device calls itself by the part number chosen in the
+board menu (the series when Part Number is ANY: `CH32X035F8U6`, `CH32H417`), which is what the IDE's
+port list (`CH32X035F8U6 (CH32RV, USB)`) and Linux's `/dev/serial/by-id/` show.
+
 Start with [SerialUSBEcho](examples/SerialUSBEcho/README.md). The
 [example guide](examples/README.md) covers wiring, building, UART versus USB
 CDC, and troubleshooting. Every example has English and Japanese instructions.

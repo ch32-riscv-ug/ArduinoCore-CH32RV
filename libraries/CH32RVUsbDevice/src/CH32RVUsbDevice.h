@@ -72,7 +72,23 @@ enum CH32RVUsbDeviceMsOs20Layout : uint8_t {
 #define CH32RV_USB_DEVICE_PID 0x0001
 #define CH32RV_USB_DEVICE_VERSION 0x0100
 #define CH32RV_USB_DEVICE_MANUFACTURER "ch32-riscv-ug"
+/* The default product name says which chip it is - what the IDE's port list
+ * ("CH32X035F8U6 (CH32RV, USB)") and /dev/serial/by-id show: the part number
+ * chosen in the Part Number menu, the series when it is ANY. A product board's
+ * variant may define CH32RV_USB_DEVICE_PRODUCT (a string) before this. The
+ * names come from platform.txt as bare tokens (CH32RV_PART_ID, CH32RV_SERIES_ID)
+ * so that no quoting differs between shells. */
+#ifndef CH32RV_USB_DEVICE_PRODUCT
+#define CH32RV_USB_DEVICE_STR_(x) #x
+#define CH32RV_USB_DEVICE_STR(x) CH32RV_USB_DEVICE_STR_(x)
+#if defined(CH32RV_PART_ID) && !defined(CH32RV_PART_ANY)
+#define CH32RV_USB_DEVICE_PRODUCT CH32RV_USB_DEVICE_STR(CH32RV_PART_ID)
+#elif defined(CH32RV_SERIES_ID)
+#define CH32RV_USB_DEVICE_PRODUCT CH32RV_USB_DEVICE_STR(CH32RV_SERIES_ID)
+#else
 #define CH32RV_USB_DEVICE_PRODUCT "CH32RV Arduino"
+#endif
+#endif
 /* Interface names (iInterface) - what the host shows for each function. */
 #define CH32RV_USB_CDC_NAME "CDC"
 #define CH32RV_USB_HID_NAME "HID"

@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) A USB device's default product name is the chip: the part number chosen in the board menu, or the series when Part Number is ANY (`CH32X035F8U6`, `CH32H417`), instead of "CH32RV Arduino" for every board. It is what the IDE's port list ("CH32X035F8U6 (CH32RV, USB)") and /dev/serial/by-id show; `config.product` still overrides it. Paths that named "CH32RV_Arduino" change.
+- (JA) USB のデバイスの既定の製品名を、どの基板でも「CH32RV Arduino」だったのをやめ、石の名前にした。ボードメニューで選んだ型番（Part Number が ANY なら系列名。`CH32X035F8U6`、`CH32H417`）。IDE のポートの一覧（「CH32X035F8U6 (CH32RV, USB)」）や /dev/serial/by-id にその名前で出る。`config.product` で変えれば今までどおりそちらが優先。「CH32RV_Arduino」を含むパスは変わる。
 - (EN) New board example 08.Boards/WeActCH32X035OledSH1106: an SH1106 OLED on the WeAct CH32X035's PC18 / PC19 drawn with U8g2, releasing the debug pads and keeping SerialUSB up so uploads stay on USB. Checked on hardware.
 - (JA) ボードの例 08.Boards/WeActCH32X035OledSH1106 を足した。WeAct CH32X035 の PC18 / PC19 につないだ SH1106 の OLED に U8g2 で描く。デバッグの端子を手放し、SerialUSB を動かして書き込みを USB に保つ。実機で動作を確認。
 - (EN) New Wire example I2COledSH1106U8g2: the same SH1106 display with the U8g2 library (page mode, so it fits V003). Examples can now declare third-party libraries (`/* libraries: U8g2 (2.36.19) */`); their sketch.yaml profiles carry them, so a profile build installs that version.

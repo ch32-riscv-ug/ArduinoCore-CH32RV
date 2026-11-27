@@ -114,7 +114,7 @@ compiler.vector_defines=-DCH32RV_IRQNS=irqn_{build.vector_variant}.h -DCH32RV_EX
 # (CH32RV_SERIES_CH32V003) - prefixed, since a bare CH32V003 is what other
 # cores and the vendor SDKs test - and the part CH32RV_PART_{build.part}:
 # CH32RV_PART_CH32V003F4U6, or CH32RV_PART_ANY for the ANY entry.
-compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -DCH32RV_SERIES_{build.series} -DCH32RV_PART_{build.part} -DCH32RV_FLASH_SIZE={upload.maximum_size} -DCH32RV_RAM_SIZE={upload.maximum_data_size} {compiler.version_defines}
+compiler.defines=-DF_CPU={build.f_cpu} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_ARCH_{build.arch} -DCH32RV_SERIES_{build.series} -DCH32RV_PART_{build.part} -DCH32RV_SERIES_ID={build.series} -DCH32RV_PART_ID={build.part} -DCH32RV_FLASH_SIZE={upload.maximum_size} -DCH32RV_RAM_SIZE={upload.maximum_data_size} {compiler.version_defines}
 # The platform version as numbers, for `#if CH32RV_VERSION >= CH32RV_VERSION_VAL(0, 1, 0)`
 # (cores/arduino/ch32rv_version.h). Written from `version=` above by
 # tools/index/gen_index.py, which the release workflow runs before it commits
