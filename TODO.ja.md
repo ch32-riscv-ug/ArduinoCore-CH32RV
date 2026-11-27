@@ -8,6 +8,49 @@
 [追加機能の採否検討](FEATURE_CANDIDATES.ja.md) にまとめます。
 
 
+## 正式リリースの前に（2026-11-27 ユーザーと整理）
+
+正式リリースから後は、利用者の互換を守る前提になる。それまでにしか直せないもの（名前・既定値）を先にする。進め方は、
+一覧を作って気になる所に印を付け、ユーザーが決める。
+
+### 1. 名前と既定値を固める（後から変えにくい。最初にする）
+- [ ] boards.txt のメニューの id・値・表示名・並び順の一覧を作り、見直す（`erase`・`unprotect` など新しいものも含む。表示は英語）。
+- [ ] ボードの id（FQBN の `CH32X035`・`UIAPDUINO_V003_V14` など）と表示名の一覧を作り、見直す。
+- [ ] 公開 API の一覧を作り、見直す（`CH32RV.*`、`setPins()`、`releaseDebugPins()`、`digitalPinToName()`、同梱ライブラリのクラスと
+  メソッド。ESP32 にそろえたものは向きが正しいか）。
+- [ ] 利用者が使う `CH32RV_*` のマクロ（`CH32RV_FLASH_STORE`、`CH32RV_BOOT_HOLD_MS` など）、ヘッダー、ライブラリの名前の一覧を作り、
+  見直す。内部用のものは internal/ にあるかも確かめる。
+- [ ] 配布の名前: packager（`ch32-riscv-ug`）、tool（`ch32rv`、`ch32rv-toolchain`）、index の URL、リポジトリの名前。
+- [ ] 既定値の見直し: 既定の端子（X035 の Serial の既定の PB10 が F8U6 に無い件を含む）、Optimize・Floating Point・Stack などの
+  メニューの既定、USB の製品名の既定。
+
+### 2. 方針の判断（ユーザー）
+- [ ] 未実装の機能（docs/unimplemented.ja.md、優先 1 が 47 件）のうち、正式版に入れるものと後の版に回すものを決める。
+- [ ] 範囲の判断が要る項目（RTOS の port、EVT / SPL 互換、ベンダ IDE 互換、CH32F、無線 SoC、汎用ドライバの同梱、EVT のバイナリの
+  ライブラリ相当）を決める（「未実装の機能」の節の残り）。
+- [ ] 下書きの ADR（0015 の per-instance メニュー）を確定するか外す。ほかの ADR も今の実装と合っているか読み直す。
+- [ ] 正式版で互換を約束する範囲（API・メニューの id・FQBN・文書に書いた動き）と、版の番号（1.0.0）の決め方を決め、文書にする。
+
+### 3. 品質の確認
+- [ ] リリース候補の版で、常駐ベンチの全台・全部の試験を流す（「Clang だけにする」の節の「リリースの版で、もう一度全部の系列を
+  流す」と同じ）。WireSkein の NG と unchecked を全部見る。
+- [ ] 残っている揺れを、直すか既知の問題として文書に書くかを決める: V006 の timerPulseIn（-49）、V006 の SoftSPI の先頭のビット、
+  DHCP の試験、ユニット試験の流し直すと通る失敗、P4X の I2C の相手が 1 ビット早い件（[oep] 待ち）、X035 の S3 の host-media。
+- [ ] 依存の版を確かめる（`arduino-sketch-tool check`、ch32rv、ch32rv-toolchain、wireskein、oep-client-python、pytest-embedded-*）。
+- [ ] CI の例のビルドが全系列で警告なしに通る（`--fail-on-warning`）ことを、リリース候補のコミットで確かめる。
+
+### 4. インストールと文書
+- [ ] Windows・macOS・Linux で、公開の index から IDE 2 に入れて、例を書き込むまでを手で一度通す（CI の install-test に加えて）。
+  Linux の udev（post_install と `ch32rv doctor --emit-udev`）の案内も通す。
+- [ ] README の入口（インストール → 最初の書き込み → 困ったとき）を、初めての人の目で読み直す。
+- [ ] 困ったときの節を作る: 読み出し保護（Remove Read Protection Before Sketch Upload）、BOOT キーと WAIT_FOR_BOOT、BOOT の間は
+  ch32rv-app の口が無いこと、Linux の権限（udev）、デバッグの端子を手放したあとの戻し方、出荷時に保護された板（PPVision CH32X035）。
+- [ ] ch32rv の次の版で変わるエラーの文言（`the chip (<型番>) is read-protected`、ISP は `(<型番>, bootloader <版>)`）に、
+  docs/upload-routes.ja.md と PPVisionCH32X035 の README の引用を合わせる（次のリリースのとき）。
+- [ ] 英訳の対のずれを確かめる（`python3 tools/docs/pairdiff.py .`）。
+- [ ] ライセンス: 同梱しているベンダーのコード（EVT 由来のヘッダーなど）と外部のコードの表記と、LICENSE / NOTICE を確かめる。
+- [ ] CHANGELOG の正式版の節（何を約束するか、前の版からの移行の注意）を書く。
+
 ## 未実装の機能（一番先にやる。2026-11-14 ユーザー）
 
 機能は基本すべて作る。作らないのは特殊なもの（今は BLE だけ）で、ユーザーが決める。実装が無い・実機が無いを理由に外さない。
