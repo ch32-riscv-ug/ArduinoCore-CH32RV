@@ -127,8 +127,7 @@ ch32rv: error[target-protected]: the chip is read-protected: its bootloader does
      「read protection is off; ... put the chip in its bootloader again now (hold BOOT and reset it ...)」と案内する。
   2. 案内が出たら、もう一度 BOOT キーを押したままリセット（か USB の抜き差し）する。ch32rv が同じ USB の位置で最長 60 秒
      待ち、現れたブートローダーに書く。
-  ch32rv 0.38.0 は 1 回目のあと同じまま書こうとして照合で失敗します（exit 30）。そのときは BOOT キーで入れ直して、もう一度
-  書き込むと通ります（PPVision CH32X035G8U6、bootloader 2.60 で確認）。
+  PPVision CH32X035G8U6（bootloader 2.60）で、保護を外したあと BOOT キーで入れ直せば書けることを確かめています。
 - Erase All Flash Before Sketch Upload と一緒に Enabled にしても書けます。
 - 値は書き込みの設定（`upload.unprotect_args`）なので、切り替えても再ビルドは起きません。
 

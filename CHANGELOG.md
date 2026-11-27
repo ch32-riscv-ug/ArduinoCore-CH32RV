@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.39.0: Remove Read Protection Before Sketch Upload over the USB bootloader (factory ISP) no longer fails to verify after turning the protection off: the setting applies from the chip's next reset, so ch32rv resets it and asks to put it in the bootloader again with the BOOT key, waits up to 60 s and then writes. The BOOT key is used twice.
+- (JA) ch32rv 0.39.0: USB のブートローダー（工場の ISP）で Remove Read Protection Before Sketch Upload を使ったとき、保護を外した直後の書き込みが照合で失敗していたのを直した。保護の解除はチップの次のリセットから効くので、ch32rv がリセットし、BOOT キーでもう一度ブートローダーに入れるよう案内して、最長 60 秒待ってから書く。BOOT キーは 2 回使う。
 
 ## 0.23.0
 - (EN) New menu Tools > Remove Read Protection Before Sketch Upload (ch32rv 0.38.0's `--unprotect`). Disabled (default): a read-protected chip is not written, and the upload stops before writing with `error[target-protected]: the chip is read-protected` (before, it failed after writing, e.g. "verify mismatch at offset 0" through the ISP). Enabled: the protection is turned off first, which erases all of the flash, then the sketch is written; an unprotected chip is written as before. Some boards ship read-protected (PPVision CH32X035): pick Enabled when the first upload stops with that error.

@@ -40,7 +40,7 @@ profile installs those versions by itself).
   Enabled and upload again: the protection is turned off, which erases all of the flash, then the sketch is written.
   Set it back to Disabled afterwards. Over the USB bootloader this takes the BOOT key twice: the protection is off
   only after a reset, so when ch32rv says "put the chip in its bootloader again now", hold BOOT and reset the board
-  again (with ch32rv 0.38.0 the first try fails to verify; enter the bootloader again and upload once more).
+  again; ch32rv waits up to 60 s for it and then writes the sketch.
 - **What it shows:** `CH32X035 + ST7735` at the top, a count in the middle, UP / DOWN boxes on the right that fill
   while the button is held. UP adds one, DOWN takes one away, and each change is printed on the USB serial port.
   The four LEDs light in turn every 200 ms.

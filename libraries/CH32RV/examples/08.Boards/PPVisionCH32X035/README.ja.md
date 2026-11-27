@@ -38,8 +38,8 @@ Adafruit のライブラリはコアに同梱していません。ライブラ�
   `error[target-protected]: the chip is read-protected` で止まったら、ツール → Remove Read Protection Before Sketch Upload を
   Enabled にして書き込み直します。保護を外すと flash が全部消え、そのあとスケッチを書きます。書けたら Disabled に戻します。
   USB のブートローダーから書くときは BOOT キーを 2 回使います。保護の解除はリセットの後に効くので、ch32rv が
-  「put the chip in its bootloader again now」と案内したら、もう一度 BOOT キーを押したままリセットします（ch32rv 0.38.0 では
-  1 回目が照合で失敗するので、ブートローダーに入れ直してもう一度書き込みます）。
+  「put the chip in its bootloader again now」と案内したら、もう一度 BOOT キーを押したままリセットします。ch32rv は最長
+  60 秒待ってから、スケッチを書きます。
 - **期待する表示:** 上に `CH32X035 + ST7735`、中央に数、右に UP / DOWN の枠が出て、ボタンを押している間は枠が塗られます。
   UP で 1 増え、DOWN で 1 減り、変わるたびに USB のシリアルポートへ出します。4 つの LED が 200 ms ごとに順に光ります。
 
