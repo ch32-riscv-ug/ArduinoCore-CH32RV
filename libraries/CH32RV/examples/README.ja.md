@@ -111,6 +111,7 @@ Generic board ではスケッチへ定義を加えるか、実際の端子名を
 | [WeActCH32X035](08.Boards/WeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board のいちばん小さい出発点です。LED を点滅させ、USB-C の USB シリアルへ出します（USB だけで書き込みと出力）。 |
 | [WeActCH32X035Peripherals](08.Boards/WeActCH32X035Peripherals/README.ja.md) | 同じ基板で USB・PD・UART 2 本・SPI・ADC・PWM をまとめて使います。 |
 | [WeActCH32X035OledSH1106](08.Boards/WeActCH32X035OledSH1106/README.ja.md) | WeAct CH32X035 の PC18 / PC19 に SH1106 の OLED をつなぎ、U8g2 で描きます（デバッグの端子を手放し、書き込みは USB）。 |
+| [PPVisionCH32X035](08.Boards/PPVisionCH32X035/README.ja.md) | ppvision の CH32X035 の基板です。160×80 の ST7735 の液晶を Adafruit のライブラリで描き、ボタン 2 つと LED 4 つを使います（端子は基板のサンプルのソースから）。 |
 | [UIAPduinoProMicro](08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro の LED を、印刷の番号で点滅させます（USB だけで動く）。端子の対応と、Serial を見るための配線も説明します。 |
 
 一つずつ動作を確認してから組み合わせます。`delay()` で待つ例や、見せるためにログを多く出す例は、

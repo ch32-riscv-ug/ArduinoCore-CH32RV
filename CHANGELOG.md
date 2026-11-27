@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) New board example 08.Boards/PPVisionCH32X035: ppvision's CH32X035G8U6 board, its 160x80 ST7735 LCD drawn with Adafruit's ST7735 library, the two buttons and four LEDs. The board has no published schematic; the pins are read from its sample sources.
+- (JA) ボードの例 08.Boards/PPVisionCH32X035 を足した。ppvision の CH32X035G8U6 の基板で、160×80 の ST7735 の液晶を Adafruit の ST7735 のライブラリで描き、ボタン 2 つと LED 4 つを使う。基板の回路図は公開されていないので、端子は基板のサンプルのソースから読んだ。
 
 ## 0.22.0
 - (EN) ch32rv 0.37.0: an upload through the running sketch's USB no longer fails now and then with "access denied" when the bootloader has just appeared (it waits up to 2 s for the system to grant access), and asks the sketch once more when no bootloader comes while the sketch is still there.

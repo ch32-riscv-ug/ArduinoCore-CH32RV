@@ -441,6 +441,7 @@ board (fqbn) only (`board:`, `docs/examples-build-rules.ja.md`).
 | [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | The LED (PB12) blinking and lines on the USB-C `SerialUSB`, nothing more; later uploads go to the `ch32rv-app://` port with no DOWNLOAD key |
 | [WeActCH32X035Peripherals](examples/08.Boards/WeActCH32X035Peripherals/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | USB (`SerialUSB` + the DFU runtime for uploads), USB PD (5 V), two UARTs, SPI, two analog inputs, PWM, the LED (PB12). I2C exists only on the USB or SWD pins, so it is commented out |
 | [WeActCH32X035OledSH1106](examples/08.Boards/WeActCH32X035OledSH1106/README.md) | WeAct CH32X035 Core Board (CH32X035F8U6) | An SH1106 OLED on PC18 / PC19 with U8g2 (`releaseDebugPins()` hands the pads over, `SerialUSB` keeps uploads on USB) |
+| [PPVisionCH32X035](examples/08.Boards/PPVisionCH32X035/README.md) | ppvision CH32X035 (CH32X035G8U6) | The 160x80 ST7735 LCD (SPI1, CS PB4 / DC PB1 / RST PB0) with Adafruit's library, the buttons (PB8 / PB6) and LEDs (PA0, PA1, PC0, PC3), `SerialUSB` |
 | [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.md) | UIAPduino Pro Micro CH32V003 V1.4 | The LED (PC0, printed 2) blinking, nothing more: the board's USB is the bootloader's and does nothing while a sketch runs (Serial needs a USB-UART adapter on PD5 / PD6, or a WCH-LinkE on SWIO). The README maps the pins |
 
 Both were run on the boards (2026-10-14).

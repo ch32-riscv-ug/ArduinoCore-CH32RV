@@ -390,6 +390,7 @@ PA0が64、PB0が96、その間のほとんどの番号はpadに対応しませ�
 | [WeActCH32X035](examples/08.Boards/WeActCH32X035/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | LED（PB12）の点滅と、USB-C の `SerialUSB` への出力だけ。2 回目からは `ch32rv-app://` の口で DOWNLOAD キーなしに書ける |
 | [WeActCH32X035Peripherals](examples/08.Boards/WeActCH32X035Peripherals/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | USB（`SerialUSB` + 書き込み用の DFU ランタイム）、USB PD（5 V）、UART 2系統、SPI、ADC 2本、PWM、LED（PB12）。I2C は USB か SWD の端子にしか出ていないのでコメントで外してある |
 | [WeActCH32X035OledSH1106](examples/08.Boards/WeActCH32X035OledSH1106/README.ja.md) | WeAct CH32X035 Core Board（CH32X035F8U6） | PC18 / PC19 の SH1106 の OLED を U8g2 で（`releaseDebugPins()` で端子を手放し、`SerialUSB` を動かして書き込みは USB） |
+| [PPVisionCH32X035](examples/08.Boards/PPVisionCH32X035/README.ja.md) | ppvision CH32X035（CH32X035G8U6） | 160×80 の ST7735 の液晶（SPI1、CS PB4 / DC PB1 / RST PB0）を Adafruit のライブラリで、ボタン（PB8 / PB6）、LED（PA0、PA1、PC0、PC3）、`SerialUSB` |
 | [UIAPduinoProMicro](examples/08.Boards/UIAPduinoProMicro/README.ja.md) | UIAPduino Pro Micro CH32V003 V1.4 | LED（PC0 = 印刷の 2）の点滅だけ。基板の USB はブートローダーのもので、スケッチの実行中は使えないため（Serial を見るには PD5 / PD6 に USB-UART の変換器、または SWIO に WCH-LinkE）。README に端子の対応表 |
 
 どちらも実機で動作を確かめています（2026-10-14）。
