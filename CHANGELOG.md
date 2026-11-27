@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) New board example 08.Boards/WeActCH32X035OledSH1106: an SH1106 OLED on the WeAct CH32X035's PC18 / PC19 drawn with U8g2, releasing the debug pads and keeping SerialUSB up so uploads stay on USB. Checked on hardware.
+- (JA) ボードの例 08.Boards/WeActCH32X035OledSH1106 を足した。WeAct CH32X035 の PC18 / PC19 につないだ SH1106 の OLED に U8g2 で描く。デバッグの端子を手放し、SerialUSB を動かして書き込みを USB に保つ。実機で動作を確認。
 - (EN) New Wire example I2COledSH1106U8g2: the same SH1106 display with the U8g2 library (page mode, so it fits V003). Examples can now declare third-party libraries (`/* libraries: U8g2 (2.36.19) */`); their sketch.yaml profiles carry them, so a profile build installs that version.
 - (JA) Wire の例 I2COledSH1106U8g2 を足した。同じ SH1106 の表示を U8g2 のライブラリで描く（ページの形なので V003 にも入る）。例がコアに同梱しないライブラリを宣言できるようにした（`/* libraries: U8g2 (2.36.19) */`）。sketch.yaml のプロファイルに入るので、プロファイルでビルドするとその版が入る。
 - (EN) New Wire example I2COledSH1106: text and a counter on an SH1106 128x64 OLED with Wire alone (no display library, no frame buffer, so it fits V003), with the WeAct CH32X035's debug pads as an option. Checked on hardware.
