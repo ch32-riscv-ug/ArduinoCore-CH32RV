@@ -47,7 +47,7 @@ profile installs those versions by itself).
 
 ## Changing it
 
-- If another panel shows the colours inverted (black shown white), add `tft.invertDisplay(true)` after `initR()`. If
+- If another panel shows the colours inverted (black shown white), change `tft.invertDisplay(false)` to `true`. If
   the picture is shifted by a few pixels, the panel is another variant: try `INITR_MINI160x80` instead.
 - `tft.setRotation(1)` turns the picture upside down; 0 / 2 are portrait (80x160).
 
