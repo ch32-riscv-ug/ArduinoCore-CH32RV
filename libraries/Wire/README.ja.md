@@ -188,12 +188,14 @@ Adafruit_Something device(&bus);
   プルアップが無くてタイムアウトした場合は、そうと分かる表示をします。
 - **SoftI2CScanner** — 同じことを`SoftWire`で、選んだ2 padに対して行います。
 - **I2COledSH1106** — SH1106（128×64 の OLED）に、Wire だけで文字とカウンタを出します。
+- **I2COledSH1106U8g2** — 同じ表示を U8g2 のライブラリで（フォント・図形。U8g2 は同梱しません）。
 
 ## サンプルの詳しい使い方
 
 - [I2CScanner](examples/I2CScanner/README.ja.md)：配線・操作・API の使い方と改造時の注意。
 - [SoftI2CScanner](examples/SoftI2CScanner/README.ja.md)：`SoftWire`で任意の2 padを走査します。
 - [I2COledSH1106](examples/I2COledSH1106/README.ja.md)：表示のライブラリ無しで SH1106 の OLED を動かします（WeAct X035 ではデバッグの端子で）。
+- [I2COledSH1106U8g2](examples/I2COledSH1106U8g2/README.ja.md)：同じことを U8g2 で（版は sketch.yaml に固定）。
 - [I2CRegisterRead](examples/I2CRegisterRead/README.ja.md): レジスタを選んで読み、書き込みエラーと受信長を確認します。
 - [I2CSlaveRegister](examples/I2CSlaveRegister/README.ja.md): 短い割り込みcallbackで小さなレジスタを公開します。
 - [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.ja.md): NACKとtimeoutを区別し、明示的な操作でバスを復旧します。

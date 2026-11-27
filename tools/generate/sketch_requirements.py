@@ -173,6 +173,28 @@ def requirements(src: pathlib.Path) -> dict:
     return need
 
 
+def libraries(src: pathlib.Path) -> list:
+    """Third-party libraries an example uses, as profile entries ("U8g2 (2.36.19)").
+
+    `/* libraries: U8g2 (2.36.19), Other Lib (1.2.3) */` in the .ino: arduino-cli
+    installs a profile's `libraries:` before it compiles, so an example built from
+    its sketch.yaml (the IDE, build_examples.py, CI) gets the pinned version.
+    """
+    ino = src / f"{src.name}.ino"
+    if not ino.exists():
+        return []
+    match = re.search(r"^\s*(?:/\*|\*)\s*libraries:\s*([^*\n]+)", ino.read_text(encoding="utf-8"), re.M)
+    if not match:
+        return []
+    out = []
+    for item in match.group(1).split(","):
+        item = item.strip()
+        if not re.fullmatch(r"[A-Za-z0-9_. -]+ \([0-9][0-9A-Za-z.+-]*\)", item):
+            raise ValueError(f"{ino}: library {item!r} is not 'Name (version)'")
+        out.append(item)
+    return out
+
+
 def target_board(src: pathlib.Path):
     """The one board a board-specific example is for, or None.
 

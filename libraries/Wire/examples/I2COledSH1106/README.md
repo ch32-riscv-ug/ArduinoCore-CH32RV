@@ -2,7 +2,7 @@
 
 [日本語](README.ja.md)
 
-Show text and a counter on an SH1106 128x64 OLED over I2C, with Wire alone (no display library).
+Show text and a counter on an SH1106 128x64 OLED over I2C, with Wire alone (no display library). For fonts and drawing, [I2COledSH1106U8g2](../I2COledSH1106U8g2/README.md) with U8g2 is easier.
 
 ## Hardware and connections
 

@@ -5,7 +5,7 @@ import pathlib
 import re
 import sys
 
-from sketch_requirements import (all_boards, ethernet_clocks, ethernet_parts, requirements,
+from sketch_requirements import (all_boards, ethernet_clocks, ethernet_parts, libraries, requirements,
                                  series_capabilities, target_board, unmet)
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
@@ -24,6 +24,8 @@ def render(source: pathlib.Path) -> str:
     version = re.search(r"^version=(.+)$", (REPO / "platform.txt").read_text(),
                         re.M).group(1).strip()
     need = requirements(source)
+    libs = libraries(source)
+    lib_lines = (["    libraries:"] + [f"      - {lib}" for lib in libs]) if libs else []
     # Every generic board (one per series, in boards.txt's order), whatever the
     # bench has: a profile declares that the example compiles there.
     capabilities = series_capabilities()
@@ -45,6 +47,7 @@ def render(source: pathlib.Path) -> str:
             "    platforms:",
             f"      - platform: ch32-riscv-ug:ch32rv ({version})",
             f"        platform_index_url: {INDEX_URL}",
+            *lib_lines,
             "",
             f"default_profile: {name}",
             "",
@@ -58,6 +61,7 @@ def render(source: pathlib.Path) -> str:
             "    platforms:",
             f"      - platform: ch32-riscv-ug:ch32rv ({version})",
             f"        platform_index_url: {INDEX_URL}",
+            *lib_lines,
             "",
         ])
 

@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) New Wire example I2COledSH1106U8g2: the same SH1106 display with the U8g2 library (page mode, so it fits V003). Examples can now declare third-party libraries (`/* libraries: U8g2 (2.36.19) */`); their sketch.yaml profiles carry them, so a profile build installs that version.
+- (JA) Wire の例 I2COledSH1106U8g2 を足した。同じ SH1106 の表示を U8g2 のライブラリで描く（ページの形なので V003 にも入る）。例がコアに同梱しないライブラリを宣言できるようにした（`/* libraries: U8g2 (2.36.19) */`）。sketch.yaml のプロファイルに入るので、プロファイルでビルドするとその版が入る。
 - (EN) New Wire example I2COledSH1106: text and a counter on an SH1106 128x64 OLED with Wire alone (no display library, no frame buffer, so it fits V003), with the WeAct CH32X035's debug pads as an option. Checked on hardware.
 - (JA) Wire の例 I2COledSH1106 を足した。SH1106（128×64 の OLED）に、Wire だけで文字とカウンタを出す（表示のライブラリも画面のバッファも使わないので V003 にも入る）。WeAct CH32X035 のデバッグの端子で使う形も示した。実機で動作を確認。
 - (EN) ch32rv 0.35.10: the port list sends the ports it knows without opening anything (WCH-Link, the HID / ISP bootloaders, a running sketch's `ch32rv-app://`, WAIT_FOR_BOOT) right away, so an upload to them no longer misses them in arduino-cli's 1 s wait (`--discovery-timeout` is not needed); and an upload that reaches such a port as a debug probe writes it the right way instead of refusing.

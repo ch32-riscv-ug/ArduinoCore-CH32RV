@@ -256,12 +256,14 @@ compile.
   bus times out because the pull-ups are missing.
 - **SoftI2CScanner** - the same with `SoftWire`, on two pads you choose.
 - **I2COledSH1106** - text and a counter on an SH1106 128x64 OLED, with Wire alone.
+- **I2COledSH1106U8g2** - the same display with the U8g2 library (fonts, drawing; U8g2 is not bundled).
 
 ## Detailed example guides
 
 - [I2CScanner](examples/I2CScanner/README.md): connections, operation, API use and adaptation notes.
 - [SoftI2CScanner](examples/SoftI2CScanner/README.md): scan two pads of your choice with `SoftWire`.
 - [I2COledSH1106](examples/I2COledSH1106/README.md): drive an SH1106 OLED with no display library (WeAct X035: on the debug pads).
+- [I2COledSH1106U8g2](examples/I2COledSH1106U8g2/README.md): the same with U8g2 (pinned in the sketch.yaml).
 - [I2CRegisterRead](examples/I2CRegisterRead/README.md): Select and read registers, checking write errors and short replies.
 - [I2CSlaveRegister](examples/I2CSlaveRegister/README.md): Expose a small register map with short interrupt callbacks.
 - [I2CTimeoutRecovery](examples/I2CTimeoutRecovery/README.md): Distinguish NACK from timeout and explicitly request bus recovery.
