@@ -773,7 +773,7 @@ V20x の standby が RTC で起きない、HardwareSerial の end() が端子を
   スケッチの `ch32rv-app://` の口とシリアルポートの両方へ書き、作り直された USB とコンソールで確かめる）が通った。製品ボード
   として runtime・usb・usb-upload だけを流す（ほかの台のデバッグの線がつながる PA0 / PA6 / PA7 / PC14 / PC15 は記録で外す）。
   DOWNLOAD キーの要る WAIT_FOR_BOOT は試せない。残り: DFU_DETACH の直後に ISP のブートローダーを開くと、udev が権限を付ける
-  前に開いて errno 13 になることがある（3 回に 1 回。[ch32rv] に再試行を依頼）。
+  前に開いて errno 13 になることがあった（3 回に 1 回）→ ch32rv 0.37.0 で直った（再試行。usb-upload が 3 回とも PASS）。
 - [ ] （旧）常設のベンチに、工場の ISP（USB）での書き込みを試す台が無い（2026-11-25、カバレッジの不足）: 常設の DUT の USB は、
   PC か相手（S3・P4・Pico・CH32RV）につながっていて、BOOT（X035 は PC17 を High）や NRST をプローブから操って ISP に入れる
   配線の台が無い。WeAct の X035F8U6（oep-1451 の先）は常設の外の一時的な機材で、ISP に入れる線も無い（[oep]、2026-11-25）。

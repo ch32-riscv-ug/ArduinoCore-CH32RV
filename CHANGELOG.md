@@ -6,6 +6,8 @@ Changes from 0.8.0 on. Write each user-facing change under `## Unreleased` as a 
 workflow がそれを版の節に移し、その節を GitHub の Release の本文にします。
 
 ## Unreleased
+- (EN) ch32rv 0.37.0: an upload through the running sketch's USB no longer fails now and then with "access denied" when the bootloader has just appeared (it waits up to 2 s for the system to grant access), and asks the sketch once more when no bootloader comes while the sketch is still there.
+- (JA) ch32rv 0.37.0: 動いているスケッチの USB からの書き込みで、ブートローダーが現れた直後に「access denied」でときどき失敗していたのを直した（システムが権限を付けるまで最長 2 秒待つ）。ブートローダーが来ずにスケッチが残っているときは、もう一度だけ頼む。
 - (EN) ch32rv 0.36.0: the IDE's port list names a running CH32RV sketch by its product name, USB serial and serial port ("CH32X035F8U6 AFC6ABCD17D0BC3D (COM6)"), so two boards with the same sketch are told apart; the ISP bootloader shows its USB position ("WCH ISP bootloader (USB 1.3.2)").
 - (JA) ch32rv 0.36.0: IDE のポートの一覧で、動いている CH32RV のスケッチを、製品名・USB のシリアル番号・シリアルポートで出す（「CH32X035F8U6 AFC6ABCD17D0BC3D (COM6)」）。同じスケッチの基板が 2 台あっても見分けられる。ISP のブートローダーは USB の位置を添えて出す（「WCH ISP bootloader (USB 1.3.2)」）。
 - (EN) A USB device's default product name is the chip: the part number chosen in the board menu, or the series when Part Number is ANY (`CH32X035F8U6`, `CH32H417`), instead of "CH32RV Arduino" for every board. It is what the IDE's port list ("CH32X035F8U6 (CH32RV, USB)") and /dev/serial/by-id show; `config.product` still overrides it. Paths that named "CH32RV_Arduino" change.
