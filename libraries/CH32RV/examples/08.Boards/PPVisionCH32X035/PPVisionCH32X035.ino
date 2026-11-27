@@ -69,9 +69,9 @@ void setup()
     // ja: 基板のドライバーは反転しない（INVOFF）。このパネルの種類では、ライブラリは invertDisplay(true) を
     // ja: INVOFFにする。色が反転して見えたら false にする。
     tft.invertDisplay(true);
-    // en: Landscape, the same way up as the board's demos.
-    // ja: 横向き。基板のデモと同じ向き。
-    tft.setRotation(1);
+    // en: Landscape, the right way up (checked on the board); 1 is upside down.
+    // ja: 横向き。正しい向き（実機で確認）。1だと上下が逆。
+    tft.setRotation(3);
     tft.fillScreen(ST77XX_BLACK);
     tft.setTextSize(1);
     tft.setTextColor(ST77XX_CYAN);
